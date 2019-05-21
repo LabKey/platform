@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp.taglib;
 
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Collection;
@@ -26,9 +25,9 @@ import java.util.Set;
 
 public class OptionsTag extends SimpleTagBase
 {
-    Map<?, String> _map;
-    Set<String> _set;
-    Object _value;
+    private Map<?, String> _map;
+    private Set<String> _set;
+    private Object _value;
 
     public boolean isSelected(Object test)
     {
@@ -38,39 +37,41 @@ public class OptionsTag extends SimpleTagBase
             return Objects.equals(test, _value);
     }
 
+    @Override
     public void doTag() throws IOException
     {
+        // TODO: HtmlString
         JspWriter out = getOut();
         if (_map != null)
         {
             for (Map.Entry<?, String> option : _map.entrySet())
             {
-                out.write("\n<option value=\"");
-                out.write(h(option.getKey()));
-                out.write("\"");
+                out.print("\n<option value=\"");
+                out.print(h(option.getKey()));
+                out.print("\"");
                 if (isSelected(option.getKey()))
                 {
-                    out.write(" selected");
+                    out.print(" selected");
                 }
-                out.write(">");
-                out.write(h(option.getValue()));
-                out.write("</option>");
+                out.print(">");
+                out.print(h(option.getValue()));
+                out.print("</option>");
             }
         }
         else if (_set != null)
         {
             for (String value : _set)
             {
-                out.write("\n<option value=\"");
-                out.write(h(value));
-                out.write("\"");
+                out.print("\n<option value=\"");
+                out.print(h(value));
+                out.print("\"");
                 if (isSelected(value))
                 {
-                    out.write(" selected");
+                    out.print(" selected");
                 }
-                out.write(">");
-                out.write(h(value));
-                out.write("</option>");
+                out.print(">");
+                out.print(h(value));
+                out.print("</option>");
             }
         }
         else
@@ -93,5 +94,4 @@ public class OptionsTag extends SimpleTagBase
     {
         _value = value;
     }
-
 }

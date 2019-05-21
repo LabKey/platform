@@ -83,6 +83,7 @@ public class IssuesListView extends VBox
             _webPart = webPart;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             JspView view = new JspView<>("/org/labkey/issue/view/issueListWebPartConfig.jsp", _webPart);

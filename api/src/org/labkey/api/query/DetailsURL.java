@@ -431,16 +431,18 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     }
 
 
-    public void setContainerContext(ContainerContext cc)
+    public DetailsURL setContainerContext(ContainerContext cc)
     {
         setContainerContext(cc, true);
+        return this;
     }
 
-    public void setContainerContext(ContainerContext cc, boolean overwrite)
+    public DetailsURL setContainerContext(ContainerContext cc, boolean overwrite)
     {
-        assert this != LINK_DISABLER : "Shouldn't set ContainerFilter on disabled link";
+        assert this != LINK_DISABLER : "Shouldn't set ContainerContext on disabled link";
         if (null == _containerContext || overwrite)
             _containerContext = cc;
+        return this;
     }
 
     public ContainerContext getContainerContext()

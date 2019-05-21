@@ -86,7 +86,10 @@
             <td valign="top"><%=formatDate(protocolApplication.getEndTime())%></td>
             <td valign="top"><%=h(Objects.toString(protocolApplication.getRecordCount(), " "))%></td>
             <td valign="top">
-                <% if (!props.isEmpty()) out.write(h(new JSONObject(props).toString(2))); %>
+                <%
+                    if (!props.isEmpty())
+                        out.print(h(new JSONObject(props).toString(2)));
+                %>
             </td>
         </tr>
 
@@ -107,7 +110,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -127,7 +130,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -147,7 +150,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -167,7 +170,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>

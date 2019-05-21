@@ -149,6 +149,7 @@ public class FormTag extends BodyTagSupport
         return isNoValidate == null ? false : isNoValidate;
     }
 
+    @Override
     public int doStartTag() throws JspException
     {
         StringBuilder sb = new StringBuilder();
@@ -208,7 +209,7 @@ public class FormTag extends BodyTagSupport
         try
         {
             JspWriter out = pageContext.getOut();
-            out.write(sb.toString());
+            out.print(sb.toString());
         }
         catch (IOException e)
         {
@@ -218,6 +219,7 @@ public class FormTag extends BodyTagSupport
     }
 
 
+    @Override
     public int doEndTag() throws JspException
     {
         try
@@ -226,9 +228,9 @@ public class FormTag extends BodyTagSupport
             String csrf = CSRFUtil.getExpectedToken(pageContext);
             if (StringUtils.equals("POST", method))
             {
-                out.write("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
+                out.print("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"" + PageFlowUtil.filter(csrf) + "\">");
             }
-            out.write("</form>");
+            out.print("</form>");
         }
         catch (IOException e)
         {

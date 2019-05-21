@@ -70,7 +70,7 @@
    {
 %>
 <tr>
-    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">System description (used in emails)</td>
@@ -135,7 +135,7 @@
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Customize settings used in system emails (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">
@@ -198,7 +198,7 @@
     String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
 %>
 <tr>
-    <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize date and number formats (<%=bean.helpLink%>)</td>
 </tr>
 <%
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
@@ -236,7 +236,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize column restrictions (<%=text(bean.customColumnRestrictionHelpLink)%>)</td>
+    <td colspan=2>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Restrict charting columns by measure and dimension flags</td>
@@ -253,7 +253,7 @@
             "<br/><br/>Requires AdminOperationsPermission to update.";
 %>
 <tr>
-    <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Provide a custom login page (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, true)%></td>
@@ -273,7 +273,7 @@
             " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
 %>
 <tr>
-    <td colspan=2>Provide a custom site welcome page (<%=text(bean.welcomeLink)%>)</td>
+    <td colspan=2>Provide a custom site welcome page (<%=bean.welcomeLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Alternative site welcome page<%=PageFlowUtil.helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>

@@ -37,7 +37,7 @@
     if (ReportsController.TAB_SOURCE.equals(nextTab))
     {
         for (Pair<String, String> param : bean.getParameters())
-            out.write("<input type=\"hidden\" name=\"" + param.getKey() + "\" value=\"" + h(param.getValue()) + "\">");
+            out.print("<input type=\"hidden\" name=\"" + param.getKey() + "\" value=\"" + h(param.getValue()) + "\">");
     }
 %>
     <table class="labkey-tab-strip">

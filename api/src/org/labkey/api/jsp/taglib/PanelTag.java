@@ -82,8 +82,11 @@ public class PanelTag extends BodyTagSupport
         this.width = width;
     }
 
+    @Override
     public int doStartTag() throws JspException
     {
+        // TODO: HtmlString
+
         StringBuilder sb = new StringBuilder();
 
         sb.append("<div class=\"panel panel-" + getType());
@@ -110,25 +113,26 @@ public class PanelTag extends BodyTagSupport
 
         sb.append("<div class=\"panel-body\">");
 
-        write(sb);
+        print(sb);
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
 
+    @Override
     public int doEndTag() throws JspException
     {
         StringBuilder sb = new StringBuilder();
 
         sb.append("</div></div>");
 
-        write(sb);
+        print(sb);
         return BodyTagSupport.EVAL_PAGE;
     }
 
-    private void write(StringBuilder sb) throws JspException
+    private void print(StringBuilder sb) throws JspException
     {
         try
         {
-            pageContext.getOut().write(sb.toString());
+            pageContext.getOut().print(sb.toString());
         }
         catch (IOException e)
         {

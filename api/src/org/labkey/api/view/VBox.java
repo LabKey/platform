@@ -36,6 +36,7 @@ public class VBox extends WebPartView
         _views = new ArrayList<>(Arrays.asList(views));
     }
 
+    @Override
     public boolean isVisible()
     {
         return null != _views && !_views.isEmpty();

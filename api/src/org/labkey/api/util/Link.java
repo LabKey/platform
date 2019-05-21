@@ -7,7 +7,7 @@ import org.labkey.api.view.DisplayElement;
 import java.io.IOException;
 import java.io.Writer;
 
-public class Link extends DisplayElement
+public class Link extends DisplayElement implements HasHtmlString
 {
     private LinkBuilder lb;
 
@@ -20,27 +20,26 @@ public class Link extends DisplayElement
     }
 
     @Override
-    public String toString()
+    public HtmlString getHtmlString()
     {
-        boolean icon = lb.iconCls != null;
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<a ");
-
-        if (null != lb.cssClass || icon)
-            sb.append("class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\" ");
-
-        if (null != lb.attributes)
-            sb.append(lb.attributes);
-
-        sb.append("href=\"");
+        sb.append("<a href=\"");
 
         if (lb.usePost)
             sb.append("javascript:void(0);");
         else
             sb.append(PageFlowUtil.filter(lb.href));
 
-        sb.append("\" ");
+        sb.append("\"");
+
+        boolean icon = lb.iconCls != null;
+
+        if (null != lb.cssClass || icon)
+            sb.append("class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\" ");
+
+        if (null != lb.attributes)
+            sb.append(" ").append(lb.attributes);
 
         if (null != lb.id)
             sb.append(" id=\"").append(lb.id).append("\"");
@@ -60,13 +59,19 @@ public class Link extends DisplayElement
 
         sb.append("</a>");
 
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
+    }
+
+    @Override // TODO: HtmlString - remove this
+    public String toString()
+    {
+        return getHtmlString().toString();
     }
 
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        out.write(toString());
+        out.write(getHtmlString().toString());
     }
 
     public static class LinkBuilder extends DisplayElementBuilder<Link, LinkBuilder>
@@ -88,6 +93,7 @@ public class Link extends DisplayElement
             return this;
         }
 
+        @NotNull
         @Override
         public Link build()
         {
