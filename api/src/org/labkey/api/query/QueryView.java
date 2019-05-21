@@ -521,15 +521,14 @@ public class QueryView extends WebPartView<Object>
     protected ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = null;
-
         switch (action)
         {
             case deleteQueryRows:
                 if (null != _deleteURL)
-                    ret = DetailsURL.fromString(_deleteURL).getActionURL();
+                    ret = DetailsURL.fromString(_deleteURL).setContainerContext(_schema.getContainer()).getActionURL();
                 break;
             case detailsQueryRow:
-                // TODO kinda suspect...
+                // TODO kinda suspect... since this is a per-row url
                 if (null != _detailsURL)
                     ret = _detailsURL.getActionURL();
                 break;
@@ -540,11 +539,11 @@ public class QueryView extends WebPartView<Object>
                 break;
             case insertQueryRow:
                 if (null != _insertURL)
-                    ret = new ActionURL(_insertURL);
+                    ret = DetailsURL.fromString(_insertURL).setContainerContext(_schema.getContainer()).getActionURL();
                 break;
             case importData:
                 if (null != _importURL)
-                    ret = DetailsURL.fromString(_importURL).getActionURL();
+                    ret = DetailsURL.fromString(_importURL).setContainerContext(_schema.getContainer()).getActionURL();
                 break;
         }
 
