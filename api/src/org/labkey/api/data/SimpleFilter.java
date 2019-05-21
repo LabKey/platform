@@ -50,7 +50,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
@@ -224,17 +223,6 @@ public class SimpleFilter implements Filter
             else
                 sb.append(sqlf);
             return result;
-        }
-
-        /**
-         * @deprecated Use {@link #getFieldKeys()}
-         */
-        @Deprecated
-        public List<String> getColumnNames()
-        {
-            return getFieldKeys().stream()
-                .map(fk->fk.toString())
-                .collect(Collectors.toList());
         }
 
         abstract public List<FieldKey> getFieldKeys();
