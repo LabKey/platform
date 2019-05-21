@@ -116,7 +116,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * and encoding it.
      *
      * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and not prefixed paths.
-     * @return Properly encoded URL in an _HtmlString
+     * @return Properly encoded URL in an HtmlString
      */
     public HtmlString getWebappURL(String path)
     {
@@ -130,6 +130,34 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String text(String s)
     {
         return null==s ? "" : s;
+    }
+
+
+    /**
+     * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
+     * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
+     * TODO: Eventually, remove this method and all usages.
+     * @param s An HtmlString
+     * @return The HtmlString
+     */
+    @Deprecated
+    public HtmlString text(HtmlString s)
+    {
+        return s;
+    }
+
+
+    /**
+     * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
+     * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
+     * TODO: Eventually, remove this method and all usages.
+     * @param s A HasHtmlString
+     * @return The parameter's HtmlString
+     */
+    @Deprecated
+    public HtmlString text(HasHtmlString s)
+    {
+        return s.getHtmlString();
     }
 
 
