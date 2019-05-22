@@ -877,7 +877,7 @@ public class IssuesController extends SpringActionController
                         IssuesApiForm.action action = getAction(issuesForm);
                         Issue issue = issuesForm.getBean();
                         Issue prevIssue = new Issue();
-                        if (issuesForm.getIssueId() != 0)
+                        if (action != IssuesApiForm.action.insert && issuesForm.getIssueId() != 0)
                         {
                             prevIssue = IssueManager.getIssue(getContainer(), getUser(), issuesForm.getIssueId());
                             issuesForm.setOldValues(prevIssue);
