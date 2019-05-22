@@ -46,8 +46,7 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
     @Override
     public <FlagType extends ExpQCFlag> void saveFlag(Container container, User user, FlagType flag)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, new SchemaKey(null, "exp"));
-        TableInfo tableInfo = schema.getTable(ExpSchema.TableType.QCFlags.name());
+        TableInfo tableInfo = getQCFlagTable(container, user);
         if (tableInfo != null)
         {
             try
@@ -67,10 +66,27 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
     }
 
     @Override
-    public int deleteFlags(Container container, User user, int runId)
+    public <FlagType extends ExpQCFlag> void deleteFlag(Container container, User user, FlagType flag)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, new SchemaKey(null, "exp"));
-        TableInfo tableInfo = schema.getTable(ExpSchema.TableType.QCFlags.name());
+        TableInfo tableInfo = getQCFlagTable(container, user);
+        if (flag != null && tableInfo != null)
+        {
+            try
+            {
+                QueryUpdateService qus = tableInfo.getUpdateService();
+                qus.deleteRows(user, container, Collections.singletonList(Collections.singletonMap("RowId", flag.getRowId())), null, null);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public int deleteFlagsForRun(Container container, User user, int runId)
+    {
+        TableInfo tableInfo = getQCFlagTable(container, user);
         if (tableInfo != null)
         {
             try
@@ -92,6 +108,12 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
             }
         }
         return 0;
+    }
+
+    private TableInfo getQCFlagTable(Container container, User user)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(user, container, new SchemaKey(null, "exp"));
+        return schema.getTable(ExpSchema.TableType.QCFlags.name());
     }
 
     @Override

@@ -57,7 +57,12 @@ public interface AssayFlagHandler
     /**
      * Delete all flags for the run.
      */
-    int deleteFlags(Container container, User user, int runId);
+    int deleteFlagsForRun(Container container, User user, int runId);
+
+    /**
+     * Delete the specified flag
+     */
+    <FlagType extends ExpQCFlag> void deleteFlag(Container container, User user, FlagType flag);
 
     /**
      * Returns the flags for the specified run.

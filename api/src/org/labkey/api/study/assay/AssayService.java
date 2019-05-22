@@ -197,8 +197,16 @@ public interface AssayService
     /**
      * Delete the flags for the run.
      * The assay provider must implement an instance of the AssayFlagHandler interface
+     *
+     * @return the count of flags deleted
      */
-    int deleteFlags(Container container, User user, AssayProvider provider, int runId);
+    int deleteFlagsForRun(Container container, User user, AssayProvider provider, int runId);
+
+    /**
+     * Delete the specified flag.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    <FlagType extends ExpQCFlag> void deleteFlag(Container container, User user, AssayProvider provider, FlagType flag);
 
     /**
      * Returns the flags for the specified run.
