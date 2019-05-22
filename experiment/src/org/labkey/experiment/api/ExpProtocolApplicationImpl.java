@@ -296,7 +296,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
             countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
             if (countInputs > 0)
-                ExperimentServiceImpl.get().uncacheLineageGraph();
+                ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
             Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter(FieldKey.fromParts("ProtocolApplicationId"), getRowId()));
 
             SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
@@ -360,7 +360,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoDataInput(), obj);
-        ExperimentServiceImpl.get().uncacheLineageGraph();
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
         return new ExpDataRunInputImpl(obj);
     }
 
@@ -387,7 +387,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         }
 
         obj = Table.insert(user, ExperimentServiceImpl.get().getTinfoMaterialInput(), obj);
-        ExperimentServiceImpl.get().uncacheLineageGraph();
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
         return new ExpMaterialRunInputImpl(obj);
     }
 
@@ -402,7 +402,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("DataId"), data.getRowId());
         Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), filter);
-        ExperimentServiceImpl.get().uncacheLineageGraph();
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
     }
 
     @Override
@@ -416,7 +416,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         filter.addCondition(FieldKey.fromParts("TargetApplicationId"), getRowId());
         filter.addCondition(FieldKey.fromParts("MaterialId"), material.getRowId());
         Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), filter);
-        ExperimentServiceImpl.get().uncacheLineageGraph();
+        ExperimentServiceImpl.get().queueSyncRunEdges(_object.getRunId());
     }
 
     public static List<ExpProtocolApplicationImpl> fromProtocolApplications(List<ProtocolApplication> apps)

@@ -292,7 +292,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             throw new ExperimentException(e);
         }
-        ExperimentService.get().syncRunEdges(run);
+        ExperimentService.get().queueSyncRunEdges(run);
 
         return run;
     }

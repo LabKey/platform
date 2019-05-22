@@ -75,7 +75,28 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.Data;
+import org.labkey.experiment.api.DataInput;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpExperimentImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolApplicationImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.Experiment;
+import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.IdentifiableEntity;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.MaterialInput;
+import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.ProtocolAction;
+import org.labkey.experiment.api.ProtocolActionPredecessor;
+import org.labkey.experiment.api.ProtocolActionStepDetail;
+import org.labkey.experiment.api.ProtocolApplication;
+import org.labkey.experiment.api.RunItem;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -387,7 +408,7 @@ public class XarReader extends AbstractXarImporter
             try
             {
                 ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
-                ExperimentService.get().syncRunEdges(loadedRun);
+                ExperimentService.get().queueSyncRunEdges(loadedRun);
             }
             catch (BatchValidationException e)
             {
@@ -1042,7 +1063,6 @@ public class XarReader extends AbstractXarImporter
         {
             loadData(d, experimentRun, protAppId, context);
         }
-        ExperimentServiceImpl.get().uncacheLineageGraph();
         getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
     }
 
