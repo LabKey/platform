@@ -1602,10 +1602,18 @@ public class SimpleFilter implements Filter
             filter.addClause(new CompareClause(FieldKey.fromParts("Field1"), CompareType.EQUAL, 1));
             filter.addClause(new ContainsOneOfClause(FieldKey.fromParts("Field2"), Arrays.asList("x", "y"), true));
 
-            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By", filter.toQueryString("query"));
+            FilterClause containsClause = new CompareType.ContainsClause(FieldKey.fromParts("Field3"), "o_O");
+            // Issue 37524: QueryWebPart with CONTAINS filter and value that includes an underscore will generate incorrect filter on the "select all" url
+            // LikeClause escapes SQL wildcards in the the parameter value, but it shouldn't ent up on the URL
+            assertArrayEquals(new Object[] { "o!_O" }, containsClause.getParamVals());
+            assertEquals("o_O", containsClause.toURLParam("query").getValue());
+            filter.addClause(containsClause);
+
+            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By&query.Field3%7Econtains=o_O", filter.toQueryString("query"));
             URLHelper url = new URLHelper("http://labkey.com");
+
             filter.applyToURL(url, "query");
-            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By", url.getQueryString());
+            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By&query.Field3%7Econtains=o_O", url.getQueryString());
         }
     }
 
