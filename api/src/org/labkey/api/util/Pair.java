@@ -24,10 +24,10 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Map;
 
 @JsonSerialize(using = PairSerializer.class)
@@ -106,18 +106,12 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
         public void testStringPairSerialize() throws IOException
         {
             Pair<String, Integer> pair = Pair.of("Val1", 99);
-
-            VirtualFile vf = new MemoryVirtualFile();
-
             ObjectMapper objectMapper = PipelineJob.createObjectMapper();
-            try (OutputStream os = vf.getOutputStream("test.txt"))
+            try (ByteArrayOutputStream os = new ByteArrayOutputStream())
             {
                 objectMapper.writeValue(os, pair);
-            }
 
-            try (InputStream is = vf.getInputStream("test.txt"))
-            {
-                Pair<File, File> pair2 = objectMapper.readValue(is, Pair.class);
+                Pair<File, File> pair2 = objectMapper.readValue(new ByteArrayInputStream(os.toByteArray()), Pair.class);
                 assertEquals("Pair not serialized correctly", pair.first, pair2.first);
                 assertEquals("Pair not serialized correctly", pair.second, pair2.second);
             }
@@ -134,14 +128,11 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
             VirtualFile vf = new MemoryVirtualFile();
 
             ObjectMapper objectMapper = PipelineJob.createObjectMapper();
-            try (OutputStream os = vf.getOutputStream("test.txt"))
+            try (ByteArrayOutputStream os = new ByteArrayOutputStream())
             {
                 objectMapper.writeValue(os, pair);
-            }
 
-            try (InputStream is = vf.getInputStream("test.txt"))
-            {
-                Pair<File, File> pair2 = objectMapper.readValue(is, Pair.class);
+                Pair<File, File> pair2 = objectMapper.readValue(new ByteArrayInputStream(os.toByteArray()), Pair.class);
                 assertEquals("Pair not serialized correctly", pair.first, pair2.first);
                 assertEquals("Pair not serialized correctly", pair.second, pair2.second);
             }

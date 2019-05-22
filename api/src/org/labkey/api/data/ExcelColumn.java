@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import jxl.format.Colour;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -52,8 +51,9 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ExcelFactory;
@@ -61,14 +61,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.writer.MemoryVirtualFile;
-import org.labkey.api.writer.VirtualFile;
-import org.springframework.beans.MutablePropertyValues;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -871,41 +870,42 @@ public class ExcelColumn extends RenderColumn
             }
 
             //download as excel:
-            BindException errors = new NullSafeBindException(new Object(), "command");
-            MutablePropertyValues mpv = new MutablePropertyValues();
-
-            mpv.addPropertyValue("schemaName", "lists");
-            mpv.addPropertyValue("query.queryName", LISTNAME);
-            List<String> fields = Arrays.stream(FIELDS).map(x -> {
-                return x[0].toString();
+            QueryForm qf = new QueryForm();
+            qf.setSchemaName("lists");
+            qf.setQueryName(LISTNAME);
+            qf.setViewContext(ViewContext.getMockViewContext(TestContext.get().getUser(), getProject(), getProject().getStartURL(TestContext.get().getUser()), false));
+            List<FieldKey> fields = Arrays.stream(FIELDS).map(x -> {
+                return FieldKey.fromString(x[0].toString());
             }).collect(Collectors.toList());
-            mpv.addPropertyValue("query.columns", StringUtils.join(fields, ","));
+            qf.getQuerySettings().setFieldKeys(fields);
 
-            QuerySettings qs = us.getSettings(mpv, "query");
-            QueryView view = new QueryView(us, qs, errors);
+            BindException errors = new NullSafeBindException(new Object(), "command");
+            QueryView view = us.createView(qf, errors);
             try (ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
             {
-                VirtualFile f = new MemoryVirtualFile();
-                excel.write(f.getOutputStream("excel.xlsx"));
-                Sheet wb = ExcelFactory.create(f.getInputStream("excel.xlsx")).getSheetAt(0);
-                DataFormatter formatter = new DataFormatter();
-                for (int rowIdx=0;rowIdx<DATA.length;rowIdx++)
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
                 {
-                    Object[] expectedData = DATA[rowIdx];
-                    Row excelRow = wb.getRow(rowIdx + 1);
-                    for (int fieldIdx=0;fieldIdx< FIELDS.length;fieldIdx++)
+                    excel.write(baos);
+                    Sheet wb = ExcelFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
+                    DataFormatter formatter = new DataFormatter();
+                    for (int rowIdx = 0; rowIdx < DATA.length; rowIdx++)
                     {
-                        Object[] fieldDef = FIELDS[fieldIdx];
-                        ColumnInfo ci = ti.getColumn((String)fieldDef[0]);
+                        Object[] expectedData = DATA[rowIdx];
+                        Row excelRow = wb.getRow(rowIdx + 1);
+                        for (int fieldIdx = 0; fieldIdx < FIELDS.length; fieldIdx++)
+                        {
+                            Object[] fieldDef = FIELDS[fieldIdx];
+                            ColumnInfo ci = ti.getColumn((String) fieldDef[0]);
 
-                        String expected = parseAndFormatExpected(expectedData[fieldIdx], ci);
-                        Cell cell = excelRow.getCell(fieldIdx);
-                        String actual = formatter.formatCellValue(cell);
-                        assertEquals("Incorrect Excel Value", expected, actual);
+                            String expected = parseAndFormatExpected(expectedData[fieldIdx], ci);
+                            Cell cell = excelRow.getCell(fieldIdx);
+                            String actual = formatter.formatCellValue(cell);
+                            assertEquals("Incorrect Excel Value", expected, actual);
 
-                        Object expectedObj = ConvertHelper.convert(expected, ci.getJavaClass());
-                        Object actualObj = ConvertHelper.convert(actual, ci.getJavaClass());
-                        assertEquals("Incorrect Parsed Excel Value", expectedObj, actualObj);
+                            Object expectedObj = ConvertHelper.convert(expected, ci.getJavaClass());
+                            Object actualObj = ConvertHelper.convert(actual, ci.getJavaClass());
+                            assertEquals("Incorrect Parsed Excel Value", expectedObj, actualObj);
+                        }
                     }
                 }
             }
