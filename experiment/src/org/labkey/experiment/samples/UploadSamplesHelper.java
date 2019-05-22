@@ -21,12 +21,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.CoerceDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -39,10 +41,13 @@ import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
@@ -58,6 +63,8 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.experiment.ExpDataIterators;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
@@ -310,7 +317,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpMaterial sample = findMaterial(c, user, null, parentValue, cache, materialMap);
                     if (sample != null)
-                        parentMaterials.put(sample, "Sample");
+                        parentMaterials.put(sample, sampleRole(sample));
                     else
                         throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
@@ -321,7 +328,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
                     if (sample != null)
-                        parentMaterials.put(sample, "Sample");
+                        parentMaterials.put(sample, sampleRole(sample));
                     else
                         throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
@@ -329,7 +336,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
                     if (sample != null)
-                        childMaterials.put(sample, "Sample");
+                        childMaterials.put(sample, sampleRole(sample));
                     else
                         throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
                 }
@@ -339,7 +346,7 @@ public abstract class UploadSamplesHelper
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        parentData.put(data, data.getName());
+                        parentData.put(data, dataRole(data, user));
                     else
                         throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -347,7 +354,7 @@ public abstract class UploadSamplesHelper
                 {
                     ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
                     if (data != null)
-                        childData.put(data, data.getName());
+                        childData.put(data, dataRole(data, user));
                     else
                         throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
                 }
@@ -363,6 +370,18 @@ public abstract class UploadSamplesHelper
             children = new RunInputOutputBean(childMaterials, childData);
 
         return Pair.of(parents, children);
+    }
+
+    private static String sampleRole(ExpMaterial material)
+    {
+        ExpSampleSet ss = material.getSampleSet();
+        return ss != null ? ss.getName() : "Sample";
+    }
+
+    private static String dataRole(ExpData data, User user)
+    {
+        ExpDataClass dc = data.getDataClass(user);
+        return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;
     }
 
 
@@ -479,12 +498,14 @@ public abstract class UploadSamplesHelper
         final ExpSampleSetImpl sampleset;
         final DataIteratorBuilder builder;
         final Lsid.LsidBuilder lsidBuilder;
+        final ExpMaterialTableImpl materialTable;
 
-        public PrepareDataIteratorBuilder(ExpSampleSetImpl sampleset, DataIteratorBuilder in)
+        public PrepareDataIteratorBuilder(ExpSampleSetImpl sampleset, TableInfo materialTable, DataIteratorBuilder in)
         {
             this.sampleset = sampleset;
             this.builder = in;
             this.lsidBuilder = generateSampleLSID(sampleset.getDataObject());
+            this.materialTable = materialTable instanceof ExpMaterialTableImpl ? (ExpMaterialTableImpl) materialTable : null;       // TODO: should we throw exception if not
         }
 
         @Override
@@ -527,15 +548,18 @@ public abstract class UploadSamplesHelper
             addGenId.setDebugName("add genId");
             addGenId.selectAll(Sets.newCaseInsensitiveHashSet("genId"));
 
-            ColumnInfo genIdCol = new ColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
+            ColumnInfo genIdCol = new BaseColumnInfo(FieldKey.fromParts("genId"), JdbcType.INTEGER);
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
-            addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.GENID_SEQUENCE_NAME, sampleset.getRowId(), batchSize);
-            DataIterator logGenId = LoggingDataIterator.wrap(addGenId);
+            addGenId.addSequenceColumn(genIdCol, sampleset.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, sampleset.getRowId(), batchSize);
+            DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
+            // Table Counters
+            DataIteratorBuilder dib = ExpDataIterators.CounterDataIteratorBuilder.create(DataIteratorBuilder.wrap(dataIterator), sampleset.getContainer(), materialTable, ExpSampleSet.SEQUENCE_PREFIX, sampleset.getRowId());
+            dataIterator = dib.getDataIterator(context);
 
             // sampleset.createSampleNames() + generate lsid
             // TODO does not handle insertIgnore
-            DataIterator names = new _GenerateNamesDataIterator(sampleset, DataIteratorUtil.wrapMap(logGenId, false), context);
+            DataIterator names = new _GenerateNamesDataIterator(sampleset, DataIteratorUtil.wrapMap(dataIterator, false), context);
 
             return LoggingDataIterator.wrap(names);
         }
@@ -564,10 +588,10 @@ public abstract class UploadSamplesHelper
             skip.addAll("name","lsid");
             selectAll(skip);
 
-            addColumn(new ColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
-            addColumn(new ColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
+            addColumn(new BaseColumnInfo("name",JdbcType.VARCHAR), (Supplier)() -> generatedName);
+            addColumn(new BaseColumnInfo("lsid",JdbcType.VARCHAR), (Supplier)() -> generatedLsid);
             // Ensure we have a cpasType column and it is of the right value
-            addColumn(new ColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleset.getLSID()));
+            addColumn(new BaseColumnInfo("cpasType",JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleset.getLSID()));
         }
 
         void onFirst()

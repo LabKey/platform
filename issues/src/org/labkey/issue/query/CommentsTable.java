@@ -50,17 +50,17 @@ import java.util.Collections;
  */
 public class CommentsTable extends FilteredTable<IssuesQuerySchema>
 {
-    public CommentsTable(IssuesQuerySchema schema)
+    public CommentsTable(IssuesQuerySchema schema, ContainerFilter cf)
     {
-        super(IssuesSchema.getInstance().getTableInfoComments(), schema);
+        super(IssuesSchema.getInstance().getTableInfoComments(), schema, cf);
 
-        ColumnInfo commentIdColumn = wrapColumn(_rootTable.getColumn("CommentId"));
+        var commentIdColumn = wrapColumn(_rootTable.getColumn("CommentId"));
         commentIdColumn.setSortDirection(Sort.SortDirection.DESC);      // This is a nice idea, but only sorts if the column is shown
         commentIdColumn.setHidden(true);
         addColumn(commentIdColumn);
 
         IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), IssueListDef.DEFAULT_ISSUE_LIST_NAME);
-        ColumnInfo issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
+        var issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setLabel(names.singularName);
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
         issueIdColumn.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
@@ -75,12 +75,12 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         issueIdColumn.setDisplayColumnFactory(colInfo -> new IssueIdDisplayColumn(colInfo,getContainer(), getUserSchema().getUser()));
         addColumn(issueIdColumn);
 
-        ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
+        var createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
         UserIdForeignKey.initColumn(createdBy);
         addColumn(createdBy);
 
         addWrapColumn(_rootTable.getColumn("Created"));
-        ColumnInfo comment = addWrapColumn(_rootTable.getColumn("Comment"));
+        var comment = addWrapColumn(_rootTable.getColumn("Comment"));
 
         // Special display column to render the HTML comment with proper formatting
         comment.setDisplayColumnFactory(new DisplayColumnFactory()

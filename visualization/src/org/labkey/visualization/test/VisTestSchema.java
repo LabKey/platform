@@ -20,8 +20,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -56,7 +58,7 @@ public class VisTestSchema extends UserSchema
 
     @Nullable
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         switch (name.toLowerCase())
         {
@@ -87,11 +89,11 @@ public class VisTestSchema extends UserSchema
         final String sql;
         final String[] keys;
 
-        TestTableInfo(String name, ColumnInfo[] columns, String[] keys, Object[][] data)
+        TestTableInfo(String name, BaseColumnInfo[] columns, String[] keys, Object[][] data)
         {
             super(getDbSchema(), name);
             this.keys = keys;
-            for (ColumnInfo c : columns)
+            for (var c : columns)
             {
                 c.setParentTable(this);
                 this.addColumn(c);
@@ -183,13 +185,13 @@ public class VisTestSchema extends UserSchema
 
     TableInfo createDemographics()
     {
-        ColumnInfo[] cols = new ColumnInfo[]
+        BaseColumnInfo[] cols = new BaseColumnInfo[]
         {
-                new ColumnInfo("participantid", JdbcType.VARCHAR),
-                new ColumnInfo("study", JdbcType.VARCHAR),
-                new ColumnInfo("age", JdbcType.INTEGER),
-                new ColumnInfo("gender", JdbcType.VARCHAR),
-                new ColumnInfo("species", JdbcType.VARCHAR)
+                new BaseColumnInfo("participantid", JdbcType.VARCHAR),
+                new BaseColumnInfo("study", JdbcType.VARCHAR),
+                new BaseColumnInfo("age", JdbcType.INTEGER),
+                new BaseColumnInfo("gender", JdbcType.VARCHAR),
+                new BaseColumnInfo("species", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
@@ -253,11 +255,11 @@ public class VisTestSchema extends UserSchema
 
     TableInfo createStudy()
     {
-        ColumnInfo[] cols = new ColumnInfo[]
+        BaseColumnInfo[] cols = new BaseColumnInfo[]
         {
-                new ColumnInfo("study", JdbcType.VARCHAR),
-                new ColumnInfo("type", JdbcType.VARCHAR),
-                new ColumnInfo("condition", JdbcType.VARCHAR)
+                new BaseColumnInfo("study", JdbcType.VARCHAR),
+                new BaseColumnInfo("type", JdbcType.VARCHAR),
+                new BaseColumnInfo("condition", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
@@ -273,11 +275,11 @@ public class VisTestSchema extends UserSchema
 
     TableInfo createVisit()
     {
-        ColumnInfo[] cols = new ColumnInfo[]
+        BaseColumnInfo[] cols = new BaseColumnInfo[]
         {
-                new ColumnInfo("sequencenum", JdbcType.INTEGER),
-                new ColumnInfo("visit", JdbcType.VARCHAR),
-                new ColumnInfo("label", JdbcType.VARCHAR)
+                new BaseColumnInfo("sequencenum", JdbcType.INTEGER),
+                new BaseColumnInfo("visit", JdbcType.VARCHAR),
+                new BaseColumnInfo("label", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
@@ -292,14 +294,14 @@ public class VisTestSchema extends UserSchema
 
     TableInfo createAssay(String assayName, String measureName, double range, String scale)
     {
-        ColumnInfo[] cols = new ColumnInfo[]
+        BaseColumnInfo[] cols = new BaseColumnInfo[]
         {
-                new ColumnInfo("container", JdbcType.VARCHAR),
-                new ColumnInfo("participantid", JdbcType.VARCHAR),
-                new ColumnInfo("sequencenum", JdbcType.INTEGER),
-                new ColumnInfo("antigen", JdbcType.VARCHAR),
-                new ColumnInfo("population", JdbcType.VARCHAR),
-                new ColumnInfo(measureName,JdbcType.DOUBLE)
+                new BaseColumnInfo("container", JdbcType.VARCHAR),
+                new BaseColumnInfo("participantid", JdbcType.VARCHAR),
+                new BaseColumnInfo("sequencenum", JdbcType.INTEGER),
+                new BaseColumnInfo("antigen", JdbcType.VARCHAR),
+                new BaseColumnInfo("population", JdbcType.VARCHAR),
+                new BaseColumnInfo(measureName,JdbcType.DOUBLE)
         };
         String[] keys = new String[] {"container", "participantid","sequencenum","antigen","population"};
         ArrayList<Object[]> data = new ArrayList<>();

@@ -19,8 +19,10 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ForeignKey;
@@ -68,33 +70,33 @@ public class ParticipantTable extends BaseStudyTable
 
     private static final String ALIAS_INNER_QUERY_ALIAS = "X";
 
-    public ParticipantTable(StudyQuerySchema schema, boolean hideDatasets)
+    public ParticipantTable(StudyQuerySchema schema, ContainerFilter cf, boolean hideDatasets)
     {
-        super(schema, StudySchema.getInstance().getTableInfoParticipant());
+        super(schema, StudySchema.getInstance().getTableInfoParticipant(), cf);
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
 
         _study = StudyManager.getInstance().getStudy(schema.getContainer());
-        ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
+        var rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
         rowIdColumn.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId", getContainerContext()));
         addColumn(rowIdColumn);
 
-        ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
+        var datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
         datasetColumn.setKeyField(false);
         datasetColumn.setIsUnselectable(true);
         datasetColumn.setLabel("DataSet");
-        datasetColumn.setFk(new AbstractForeignKey()
+        datasetColumn.setFk(new AbstractForeignKey(getUserSchema(), null)
         {
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 if (displayField == null)
                     return null;
-                return new ParticipantDatasetTable(_userSchema, parent).getColumn(displayField);
+                return new ParticipantDatasetTable(_userSchema, cf, parent).getColumn(displayField);
             }
 
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantDatasetTable(_userSchema, null);
+                return new ParticipantDatasetTable(_userSchema, cf, null);
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -107,7 +109,7 @@ public class ParticipantTable extends BaseStudyTable
 
         addContainerColumn();
 
-        ColumnInfo currentCohortColumn;
+        BaseColumnInfo currentCohortColumn;
         boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
         if (!showCohorts)
         {
@@ -118,11 +120,11 @@ public class ParticipantTable extends BaseStudyTable
         {
             currentCohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CurrentCohortId"));
         }
-        currentCohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, currentCohortColumn.getLabel()));
+        currentCohortColumn.setFk(new CohortForeignKey(_userSchema, cf, showCohorts, currentCohortColumn.getLabel()));
         addColumn(currentCohortColumn);
 
 
-        ColumnInfo initialCohortColumn;
+        BaseColumnInfo initialCohortColumn;
         if (!showCohorts)
         {
             initialCohortColumn = new NullColumnInfo(this, "InitialCohort", JdbcType.INTEGER);
@@ -137,10 +139,10 @@ public class ParticipantTable extends BaseStudyTable
             initialCohortColumn = new AliasedColumn(this, "InitialCohort", _rootTable.getColumn("CurrentCohortId"));
             initialCohortColumn.setHidden(true);
         }
-        initialCohortColumn.setFk(new CohortForeignKey(_userSchema, showCohorts, initialCohortColumn.getLabel()));
+        initialCohortColumn.setFk(new CohortForeignKey(_userSchema, cf, showCohorts, initialCohortColumn.getLabel()));
         addColumn(initialCohortColumn);
 
-        ForeignKey fkSite = LocationTable.fkFor(_userSchema);
+        ForeignKey fkSite = LocationTable.fkFor(_userSchema, cf);
         addColumn(new AliasedColumn(this, "EnrollmentLocationId", _rootTable.getColumn("EnrollmentSiteId"))).setFk(fkSite);
         addColumn(new AliasedColumn(this, "CurrentLocationId", _rootTable.getColumn("CurrentSiteId"))).setFk(fkSite);
         addWrapColumn(_rootTable.getColumn("StartDate"));
@@ -157,7 +159,7 @@ public class ParticipantTable extends BaseStudyTable
         // join in participant categories
         for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _userSchema.getUser()))
         {
-            ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
+            var categoryColumn = new ParticipantCategoryColumn(category, this);
             if (!_columnMap.containsKey(categoryColumn.getName()))
                 addColumn(categoryColumn);
         }
@@ -173,8 +175,8 @@ public class ParticipantTable extends BaseStudyTable
             {
                 // Get the table and the two admin-configured columns
                 final DatasetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);
-                final ColumnInfo aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
-                final ColumnInfo sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
+                final var aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
+                final var sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
 
                 if (aliasColumn != null && sourceColumn != null)
                 {
@@ -199,7 +201,7 @@ public class ParticipantTable extends BaseStudyTable
                     addColumn(aliasesColumn);
 
                     // Add a separate column that pivots out the individual aliases based on source
-                    ColumnInfo linkedIDsColumn = wrapColumn(LINKED_IDS_COLUMN_NAME, getRealTable().getColumn("ParticipantID"));
+                    var linkedIDsColumn = wrapColumn(LINKED_IDS_COLUMN_NAME, getRealTable().getColumn("ParticipantID"));
                     linkedIDsColumn.setFk(new PivotedAliasForeignKey(datasetTable, sourceColumn, aliasColumn));
                     linkedIDsColumn.setIsUnselectable(true);
                     addColumn(linkedIDsColumn);
@@ -317,7 +319,7 @@ public class ParticipantTable extends BaseStudyTable
 
         public PivotedAliasForeignKey(TableInfo datasetTable, ColumnInfo sourceColumn, ColumnInfo aliasColumn)
         {
-            super(StudyQuerySchema.SCHEMA_NAME, "PivotedParticipantAliases", null);
+            super(datasetTable.getUserSchema(), null, StudyQuerySchema.SCHEMA_NAME, "PivotedParticipantAliases", null);
             _datasetTable = datasetTable;
             _sourceColumn = sourceColumn;
             _aliasColumn = aliasColumn;
@@ -364,7 +366,7 @@ public class ParticipantTable extends BaseStudyTable
             VirtualTable result = new VirtualTable(getSchema(), null);
             for (String source : getParticipantAliasSources(_datasetTable, _sourceColumn))
             {
-                ColumnInfo column = new ColumnInfo(source, JdbcType.VARCHAR);
+                var column = new BaseColumnInfo(source, JdbcType.VARCHAR);
                 column.setParentTable(result);
                 result.safeAddColumn(column);
             }

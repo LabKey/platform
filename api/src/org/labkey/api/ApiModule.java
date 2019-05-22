@@ -24,6 +24,7 @@ import org.labkey.api.data.SqlScanner;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.api.ExpRunAttachmentType;
+import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -34,9 +35,12 @@ import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AvatarType;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
+import javax.servlet.jsp.JspFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -60,6 +64,14 @@ public class ApiModule extends CodeOnlyModule
         // TODO: why is this here instead of in ExperimentModule?
         if (ModuleLoader.getInstance().hasModule("Experiment"))
             AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
+
+        // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
+        if (AppProps.getInstance().isDevMode())
+        {
+            LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
+            JspFactory.setDefaultFactory(factory);
+            ContextListener.addShutdownListener(factory);
+        }
     }
 
     @NotNull

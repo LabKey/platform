@@ -20,14 +20,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.CoreController" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
-<%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    ProjectSettingsAction.LookAndFeelResourcesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
+    AdminController.LookAndFeelResourcesBean bean = ((JspView<AdminController.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
@@ -39,7 +39,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize the logo, icon, and stylesheets used <%=text(c.isRoot() ? "throughout the site" : "in this project")%> (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize the logo, icon, and stylesheets used <%=text(c.isRoot() ? "throughout the site" : "in this project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>

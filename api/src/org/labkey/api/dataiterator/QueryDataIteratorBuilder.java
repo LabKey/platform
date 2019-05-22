@@ -130,6 +130,9 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         else
             qd = qs.createQueryDef(_user, _container, _schemaKey, "source");
 
+        if (null != _containerFilter)
+            qd.setContainerFilter(_containerFilter);
+
         qd.setSql(sql);
         ArrayList<QueryException> qerrors = new ArrayList<>();
         TableInfo t = qd.getTable(qerrors, true);
@@ -149,10 +152,12 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
             return null;
         }
 
+        /*
         if (null != _containerFilter && t instanceof ContainerFilterable && t.supportsContainerFilter())
         {
             ((ContainerFilterable) t).setContainerFilter(_containerFilter);
         }
+        */
 
         try
         {

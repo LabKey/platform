@@ -40,6 +40,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -406,23 +407,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     new ParticipantVisitResolverChooser(participantVisitResolverCol.getName(), form.getProvider().getParticipantVisitResolverTypes(),
                             participantVisitResolverCol.getColumnInfo()));
         }
-
-        // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
-        for (DomainProperty property : properties)
-        {
-            DisplayColumn displayColumn = view.getDataRegion().getDisplayColumn(property.getName());
-            if (displayColumn != null)
-            {
-                AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, displayColumn.getColumnInfo(), getContainer(), getUser());
-                if (renderer != null)
-                {
-                    ColumnInfo columnInfo = displayColumn.getColumnInfo();
-                    renderer.fixupColumnInfo(_protocol, columnInfo);
-                    view.getDataRegion().replaceDisplayColumn(displayColumn.getName(), columnInfo.getRenderer());
-                }
-            }
-        }
-
+        baseTable.setLocked(true);
         return view;
     }
 
@@ -503,7 +488,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 targetURL.addParameter(param.getKey(), param.getValue());
         }
 
-        ActionButton newRunButton = new ActionButton(targetURL, "Next", DataRegion.MODE_INSERT, ActionButton.Action.POST);
+        ActionButton newRunButton = new ActionButton(targetURL, "Next", ActionButton.Action.POST);
         newRunButton.setScript("this.className += \" labkey-disabled-button\";", true);
         bbar.add(newRunButton);
     }
@@ -557,8 +542,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected InsertView createRunInsertView(FormType newRunForm, boolean errorReshow, BindException errors) throws ExperimentException
     {
         List<DomainProperty> propertySet = new ArrayList<>(newRunForm.getRunProperties().keySet());
-        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
-                "lsid", propertySet, errorReshow, RunStepHandler.NAME, newRunForm, errors);
+
+        ExpSchema schema = new ExpSchema(getUser(), getContainer());
+        ExpRunTable runTable = schema.getRunsTable(true);
+        runTable.addAllowablePermission(InsertPermission.class);
+
+        return createInsertView(runTable, "lsid", propertySet, errorReshow, RunStepHandler.NAME, newRunForm, errors);
     }
 
     protected InsertView createBatchInsertView(FormType runForm, boolean reshow, BindException errors) throws ExperimentException
@@ -605,7 +594,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
         }
 
-        ExpRunTable table = AssayService.get().createRunTable(_protocol, newRunForm.getProvider(), newRunForm.getUser(), newRunForm.getContainer());
+        ExpRunTable table = AssayService.get().createRunTable(_protocol, newRunForm.getProvider(), newRunForm.getUser(), newRunForm.getContainer(), null);
         insertView.getDataRegion().addColumn(0, table.getColumn("Name"));
         insertView.getDataRegion().addColumn(1, table.getColumn("Comments"));
 
@@ -783,7 +772,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             if (dp.isShownInInsertView())
             {
-                ColumnInfo info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getUser(), getContainer());
+                var info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getUser(), getContainer());
+
+                // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
+                AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, info, getContainer(), getUser());
+                if (renderer != null)
+                {
+                    renderer.fixupColumnInfo(_protocol, info);
+                }
                 rgn.addColumn(info);
                 if (columnNameToPropertyName != null)
                     columnNameToPropertyName.put(info.getName(), dp.getName());

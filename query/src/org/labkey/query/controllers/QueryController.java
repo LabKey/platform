@@ -3043,7 +3043,17 @@ public class QueryController extends SpringActionController
         {
             ensureQueryExists(form);
 
-            TableInfo table = form.getSchema().getTable(form.getQueryName());
+            QuerySettings settings = form.getQuerySettings();
+            ContainerFilter cf = null;
+            if (null != form.getContainerFilter())
+            {
+                // If the user specified an incorrect filter, throw an IllegalArgumentException
+                ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(form.getContainerFilter());
+                settings.setContainerFilterName(containerFilterType.name());
+                cf = ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), getUser());
+            }
+
+            TableInfo table = form.getSchema().getTable(form.getQueryName(), cf);
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
@@ -3087,17 +3097,6 @@ public class QueryController extends SpringActionController
                 settings.setMaxRows(DEFAULT_API_MAX_ROWS);
             else
                 settings.setMaxRows(Integer.parseInt(getViewContext().getRequest().getParameter(QueryParam.maxRows.toString())));
-
-            if (null != form.getContainerFilter())
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                        ContainerFilter.Type.valueOf(form.getContainerFilter());
-                settings.setContainerFilterName(containerFilterType.name());
-
-                if (table instanceof ContainerFilterable)
-                    ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), table.getUserSchema().getUser()));
-            }
 
             List<FieldKey> fieldKeys = settings.getFieldKeys();
             if (null == fieldKeys || fieldKeys.size() != 1)
@@ -6055,6 +6054,7 @@ public class QueryController extends SpringActionController
 
         private class NoRecordView extends HttpView
         {
+            @Override
             protected void renderInternal(Object model, PrintWriter out)
             {
                 out.write("<p>No current record found</p>");
@@ -6203,7 +6203,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SaveNamedSetAction extends ReadOnlyApiAction<NamedSetForm>
+    public class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
         @Override
         public Object execute(NamedSetForm namedSetForm, BindException errors)

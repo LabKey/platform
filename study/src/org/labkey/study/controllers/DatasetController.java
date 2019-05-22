@@ -155,7 +155,6 @@ public class DatasetController extends BaseStudyController
                         objForm.set(DatasetDefinition.DATASETKEY, datasetId);
 
                         DetailsView objView = new DetailsView(objForm);
-                        objView.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
                         view.addView(objView);
                     }
@@ -199,6 +198,7 @@ public class DatasetController extends BaseStudyController
 
         private class NoRecordView extends HttpView
         {
+            @Override
             protected void renderInternal(Object model, PrintWriter out)
             {
                 out.write("<p>No current record found</p>");

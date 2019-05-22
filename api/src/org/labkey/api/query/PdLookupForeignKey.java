@@ -23,7 +23,6 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
@@ -48,27 +47,51 @@ public class PdLookupForeignKey extends AbstractForeignKey
     Container _currentContainer;
     private Container _targetContainer;
 
-    public PdLookupForeignKey(@NotNull User user, @NotNull PropertyDescriptor pd, @NotNull Container container)
+    static public PdLookupForeignKey create(QuerySchema sourceSchema, @NotNull PropertyDescriptor pd)
     {
-        super(pd.getLookupSchema(), pd.getLookupQuery(), null);
-        _pd = pd;
-        _user = user;
+        return create(sourceSchema, sourceSchema.getUser(), sourceSchema.getContainer(), pd);
+    }
+
+    static public PdLookupForeignKey create(QuerySchema sourceSchema, @NotNull User user, @NotNull Container container, @NotNull PropertyDescriptor pd)
+    {
         assert container != null : "Container cannot be null";
-        _currentContainer = container;
-        _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
+
+        Container currentContainer = container;
+        Container targetContainer = pd.getLookupContainer() == null ? null : ContainerManager.getForId(pd.getLookupContainer());
+        String lookupSchemaName = pd.getLookupSchema();
+        String lookupQuery = pd.getLookupQuery();
 
         // check for conceptURI if the lookup container/schema/query are not already specified
-        if (pd.getConceptURI() != null && _targetContainer == null && _lookupSchemaName == null && _tableName == null)
+        if (pd.getConceptURI() != null && targetContainer == null && lookupSchemaName == null && lookupQuery == null)
         {
             Lookup lookup = ConceptURIProperties.getLookup(container, pd.getConceptURI());
             if (lookup != null)
             {
-                _targetContainer = lookup.getContainer();
-                _lookupSchemaName = lookup.getSchemaName();
-                _tableName = lookup.getQueryName();
+                targetContainer = lookup.getContainer();
+                lookupSchemaName = lookup.getSchemaName();
+                lookupQuery = lookup.getQueryName();
             }
         }
+        ContainerFilter cf;
+        if ("core".equalsIgnoreCase(lookupSchemaName) && "Containers".equalsIgnoreCase(lookupQuery))
+            cf = new ContainerFilter.AllFolders(user);
+        else
+            cf = new ContainerFilter.SimpleContainerFilterWithUser(user, targetContainer!=null ? targetContainer : container);
+
+        return new PdLookupForeignKey(sourceSchema, currentContainer, user, cf, pd, lookupSchemaName, lookupQuery, targetContainer);
     }
+
+
+    public PdLookupForeignKey(QuerySchema sourceSchema, Container currentContainer, @NotNull User user, ContainerFilter cf, PropertyDescriptor pd, String lookupSchemaName, String lookupQuery, Container targetContainer)
+    {
+        super(sourceSchema, cf, lookupSchemaName, lookupQuery, null);
+        _pd = pd;
+        _user = user;
+        assert currentContainer != null : "Container cannot be null";
+        _currentContainer = currentContainer;
+        _targetContainer = _pd.getLookupContainer() == null ? null : ContainerManager.getForId(_pd.getLookupContainer());
+    }
+
 
     @Override
     public String getLookupTableName()
@@ -125,6 +148,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return table;
     }
 
+
     private TableInfo _tableInfo = null;
 
     private TableInfo findTableInfo(Container container)
@@ -142,7 +166,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (schema == null)
             return null;
 
-        _tableInfo = schema.getTable(_tableName);
+        _tableInfo = schema.getTable(_tableName, _containerFilter);
         return _tableInfo;
     }
 
@@ -158,18 +182,6 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
         if (displayField == null)
             return null;
-
-        if (table.supportsContainerFilter() && parent.getParentTable().getContainerFilter() != null)
-        {
-            ContainerFilterable newTable = (ContainerFilterable)table;
-
-            // if the lookup is to the core.containers table, don't filter the container to the current container
-            if ("core".equalsIgnoreCase(newTable.getSchema().getName()) && "Containers".equalsIgnoreCase(newTable.getName()))
-                newTable.setContainerFilter(new ContainerFilter.AllFolders(_user));
-            // Only override if the new table doesn't already have some special filter
-            else if (newTable.hasDefaultContainerFilter())
-                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable()));
-        }
 
         return LookupColumn.create(parent, table.getColumn(getLookupColumnName()), table.getColumn(displayField), false);
     }
@@ -196,18 +208,14 @@ public class PdLookupForeignKey extends AbstractForeignKey
         }
     }
 
-
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
         // if the lookup table is core.containers, list all of the containers the user has access to
         if ("core".equalsIgnoreCase(_pd.getLookupSchema()) && "Containers".equalsIgnoreCase(_pd.getLookupQuery()))
         {
-            TableInfo lookupTable = getLookupTableInfo();
-            if (lookupTable == null)
-                return new NamedObjectList();
-            ((ContainerTable) lookupTable).setContainerFilter(new ContainerFilter.AllFolders(_user));
-
+            UserSchema schema = QueryService.get().getUserSchema(_user, _currentContainer, "core");
+            TableInfo lookupTable = schema.getTable("Containers", new ContainerFilter.AllFolders(_user));
             return ((ContainerTable) lookupTable).getPathSelectList();
         }
 

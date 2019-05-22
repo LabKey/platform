@@ -119,24 +119,24 @@
 
 <%
     // create the map of email template names to template properties
-    out.write("var emailTemplates = [");
+    out.print("var emailTemplates = [");
     String sep = "{";
     for (EmailTemplate et : emailTemplates)
     {
-        out.write(sep);
-        out.write("\t\"name\":\"" + et.getClass().getName() + "\",\n");
-        out.write("\t\"description\":" + PageFlowUtil.jsString(et.getDescription()) + ",\n");
-        out.write("\t\"sender\":" + PageFlowUtil.jsString(et.getSenderName()) + ",\n");
-        out.write("\t\"replyToEmail\":" + PageFlowUtil.jsString(et.getReplyToEmail()) + ",\n");
-        out.write("\t\"subject\":" + PageFlowUtil.jsString(et.getSubject()) + ",\n");
-        out.write("\t\"message\":" + PageFlowUtil.jsString(et.getBody()) + ",\n");
+        out.print(sep);
+        out.print("\t\"name\":\"" + et.getClass().getName() + "\",\n");
+        out.print("\t\"description\":" + PageFlowUtil.jsString(et.getDescription()) + ",\n");
+        out.print("\t\"sender\":" + PageFlowUtil.jsString(et.getSenderName()) + ",\n");
+        out.print("\t\"replyToEmail\":" + PageFlowUtil.jsString(et.getReplyToEmail()) + ",\n");
+        out.print("\t\"subject\":" + PageFlowUtil.jsString(et.getSubject()) + ",\n");
+        out.print("\t\"message\":" + PageFlowUtil.jsString(et.getBody()) + ",\n");
         // Let users delete the folder-scoped template only if it's been stored in the same folder they're in, and they're
         // not in the root where they'd be doing a site-level template
-        out.write("\t\"showFolderReset\":" + (c.equals(et.getContainer()) && !c.isRoot()) + ",\n");
+        out.print("\t\"showFolderReset\":" + (c.equals(et.getContainer()) && !c.isRoot()) + ",\n");
         // Let users delete a site-scoped template if they're in the root and the template is stored in the root
-        out.write("\t\"showSiteReset\":" + (c.isRoot() && c.equals(et.getContainer())) + ",\n");
-        out.write("\t\"hasMultipleContentTypes\":" + (et.getContentType() == ContentType.HTML) + ",\n");
-        out.write("\t\"replacements\":[\n");
+        out.print("\t\"showSiteReset\":" + (c.isRoot() && c.equals(et.getContainer())) + ",\n");
+        out.print("\t\"hasMultipleContentTypes\":" + (et.getContentType() == ContentType.HTML) + ",\n");
+        out.print("\t\"replacements\":[\n");
 
         String innerSep = "\t{";
         List<EmailTemplate.ReplacementParam> replacements = new ArrayList<>(et.getValidReplacements());
@@ -144,21 +144,21 @@
         Collections.sort(replacements);
         for (EmailTemplate.ReplacementParam param : replacements)
         {
-            out.write(innerSep);
-            out.write("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
-            out.write("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
-            out.write("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
+            out.print(innerSep);
+            out.print("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
+            out.print("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
+            out.print("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
             String formattedValue = param.getFormattedValue(c, null, ContentType.HTML);
-            out.write("\t\t\"paramValue\":" + PageFlowUtil.jsString(formattedValue) + "\n");
-            out.write("}");
+            out.print("\t\t\"paramValue\":" + PageFlowUtil.jsString(formattedValue) + "\n");
+            out.print("}");
 
             innerSep = "\t,{";
         }
-        out.write("]}");
+        out.print("]}");
 
         sep = ",{";
     }
-    out.write("];");
+    out.print("];");
 
 %>
     function changeEmailTemplate()

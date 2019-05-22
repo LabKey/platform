@@ -143,6 +143,7 @@ public class RExportScriptModel extends ExportScriptModel
         sb.append(indent).append("schemaName=").append(doubleQuote(getSchemaName())).append(", ").append(nl);
         sb.append(indent).append("queryName=").append(doubleQuote(getQueryName())).append(", ").append(nl);
         sb.append(indent).append("viewName=").append(doubleQuote(getViewName())).append(", ").append(nl);
+        sb.append(indent).append("colSelect=").append(doubleQuote(getColumns())).append(", ").append(nl);
 
         if (hasSort())
             sb.append(indent).append("colSort=").append(doubleQuote(getSort())).append(", ").append(nl);

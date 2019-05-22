@@ -19,7 +19,6 @@ package org.labkey.api.jsp.taglib;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -63,6 +62,7 @@ public class LinkTag extends SimpleTagBase
         _rel = rel;
     }
 
+    @Override
     public void doTag() throws IOException
     {
         Map<String, String> properties = new HashMap<>();
@@ -70,6 +70,6 @@ public class LinkTag extends SimpleTagBase
             properties.put("rel", _rel);
 
         JspWriter out = getOut();
-        out.write(PageFlowUtil.textLink(_text, _href, _onclick, _id, properties));
+        out.print(PageFlowUtil.textLink(_text, _href, _onclick, _id, properties));
     }
 }

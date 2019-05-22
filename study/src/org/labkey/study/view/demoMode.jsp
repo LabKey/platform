@@ -19,12 +19,13 @@
 <%@ page import="org.labkey.api.util.DemoMode" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     boolean demoMode = DemoMode.isDemoMode(getContainer(), getUser());
     Study study = StudyManager.getInstance().getStudy(getContainer());
-    _HtmlString subjectNameFiltered = new _HtmlString(study.getSubjectNounSingular().toLowerCase());
+    HtmlString subjectNameFiltered = HtmlString.of(study.getSubjectNounSingular().toLowerCase());
 %>
 <labkey:form action="" method="post">
     <table width="80%">

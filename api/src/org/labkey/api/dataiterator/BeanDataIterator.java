@@ -16,6 +16,7 @@
 package org.labkey.api.dataiterator;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.BatchValidationException;
@@ -46,7 +47,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
         super(context);
 
         _class = cls;
-        _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
+        _cols.add(new BaseColumnInfo("_rowNumber", JdbcType.INTEGER));
         _readMethods.add(null);
         K bean = rows.isEmpty() ? null : rows.get(0);
 
@@ -61,7 +62,7 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
                 if (readMethod != null && readMethod.getParameterTypes().length == 0)
                 {
                     _readMethods.add(readMethod);
-                    _cols.add(new ColumnInfo(name, JdbcType.OTHER));
+                    _cols.add(new BaseColumnInfo(name, JdbcType.OTHER));
                 }
             }
         }

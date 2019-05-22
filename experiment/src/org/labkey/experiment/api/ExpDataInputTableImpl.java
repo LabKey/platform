@@ -15,7 +15,9 @@
  */
 package org.labkey.experiment.api;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -33,25 +35,25 @@ import java.util.List;
  */
 public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.Column> implements ExpDataInputTable
 {
-    public ExpDataInputTableImpl(String name, UserSchema schema)
+    public ExpDataInputTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null);
+        super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null, cf);
     }
 
-    public ColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
+    public BaseColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
     {
         switch (column)
         {
             case Data:
             {
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("DataId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("DataId"));
                 result.setFk(getExpSchema().getDataIdForeignKey());
                 return result;
             }
             case Role:
                 return wrapColumn(alias, _rootTable.getColumn("Role"));
             case TargetProtocolApplication:
-                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
+                var result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
                 result.setFk(getExpSchema().getProtocolApplicationForeignKey());
                 return result;
 
@@ -65,7 +67,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
                                 "'.'",
                                 "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".targetApplicationId AS VARCHAR)"));
 
-                ColumnInfo col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
+                var col = new ExprColumn(this, alias, sql, JdbcType.VARCHAR);
                 col.setHidden(true);
                 col.setCalculated(true);
                 col.setUserEditable(false);
@@ -75,7 +77,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
 
             case ProtocolInput:
             {
-                ColumnInfo col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
+                var col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
                 col.setFk(getExpSchema().getDataProtocolInputForeignKey());
                 col.setHidden(true);
                 return col;

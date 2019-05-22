@@ -72,12 +72,12 @@
                 %><tr><%
                 if (links.getChildren().size() > 1)
                 {
-                    out.write("<td class=\"lk-menu-drop dropdown\"> ");
-                    out.write("<a href=\"#\" data-toggle=\"dropdown\" style=\"color:#333333;\" class=\"dropdown-toggle fa fa-caret-down\"> &nbsp; </a>");
-                    out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
+                    out.print("<td class=\"lk-menu-drop dropdown\"> ");
+                    out.print("<a href=\"#\" data-toggle=\"dropdown\" style=\"color:#333333;\" class=\"dropdown-toggle fa fa-caret-down\"> &nbsp; </a>");
+                    out.print("<ul class=\"dropdown-menu dropdown-menu-right\">");
                     PopupMenuView.renderTree(links, out);
-                    out.write("</ul>");
-                    out.write("</td>");
+                    out.print("</ul>");
+                    out.print("</td>");
                 }
                 %><td><a href="<%=h(list.urlShowData(c))%>"><%=h(list.getName())%></a></td></tr><%
             }

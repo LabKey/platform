@@ -41,6 +41,7 @@ import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
@@ -92,6 +93,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.unmodifiableCollection;
+
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
@@ -134,6 +137,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private DetailsURL _detailsURL;
     protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
     private FieldKey _auditRowPk;
+
+    private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     @NotNull
     public List<ColumnInfo> getPkColumns()
@@ -439,12 +444,36 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return ret;
     }
 
+    /* returns null or BaseColumnInfo, will throw if column exists and is locked */
+    public BaseColumnInfo getMutableColumn(@NotNull String colName)
+    {
+        checkLocked();
+        ColumnInfo col = getColumn(colName);
+        if (null == col)
+            return null;
+        // all columns extend BaseColumnInfo for now
+        ((BaseColumnInfo)col).checkLocked();
+        return (BaseColumnInfo) col;
+    }
+
     @Override
     public ColumnInfo getColumn(@NotNull FieldKey name)
     {
         if (null != name.getParent())
             return null;
         return getColumn(name.getName());
+    }
+
+    /* returns null or BaseColumnInfo, will throw if column exists and is locked */
+    public BaseColumnInfo getMutableColumn(@NotNull FieldKey name)
+    {
+        checkLocked();
+        ColumnInfo col = getColumn(name);
+        if (null == col)
+            return null;
+        // all columns extend BaseColumnInfo for now
+        ((BaseColumnInfo)col).checkLocked();
+        return (BaseColumnInfo) col;
     }
 
 
@@ -471,6 +500,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         return Collections.unmodifiableList(new ArrayList<>(_columnMap.values()));
     }
+
+    @NotNull
+    public List<BaseColumnInfo> getMutableColumns()
+    {
+        checkLocked();
+        return _columnMap.values().stream()
+                .map(c -> (BaseColumnInfo)c)
+                .peek(BaseColumnInfo::checkLocked)
+                .collect(Collectors.toList());
+    }
+
 
     public Set<String> getColumnNameSet()
     {
@@ -512,7 +552,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _columnMap.remove(column.getName()) != null;
     }
 
-    public ColumnInfo addColumn(ColumnInfo column)
+    public BaseColumnInfo addColumn(BaseColumnInfo column)
     {
         checkLocked();
         // Not true if this is a VirtualTableInfo
@@ -529,6 +569,44 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _resolvedColumns.clear();
         assert column.lockName();
         return column;
+    }
+
+    public void addCounterDefinition(@NotNull CounterDefinition counterDef)
+    {
+        boolean valid = true;
+
+        for (String columnName : counterDef.getPairedColumnNames())
+        {
+            ColumnInfo column = getColumn(columnName);
+            if (column == null)
+            {
+                valid = false;
+                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': paired column does not exist: " + columnName);
+            }
+        }
+
+        for (String columnName : counterDef.getAttachedColumnNames())
+        {
+            ColumnInfo column = getColumn(columnName);
+            if (column == null)
+            {
+                valid = false;
+                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': attached column does not exist: " + columnName);
+            }
+            else if (!column.getJdbcType().isInteger())
+            {
+                valid = false;
+                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': non-integer attached column: " + columnName);
+            }
+        }
+
+        if (valid)
+            _counterDefinitionMap.put(counterDef.getCounterName(), counterDef);
+    }
+
+    public Collection<CounterDefinition> getCounterDefinitions()
+    {
+        return unmodifiableCollection(_counterDefinitionMap.values());
     }
 
     public void addMethod(String name, MethodInfo method)
@@ -778,7 +856,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return Collections.unmodifiableMap(ret);
     }
 
-    public boolean safeAddColumn(ColumnInfo column)
+    public boolean safeAddColumn(BaseColumnInfo column)
     {
         checkLocked();
         if (getColumn(column.getName()) != null)
@@ -788,7 +866,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
 
-    public static ForeignKey makeForeignKey(QuerySchema fromSchema, ColumnType.Fk fk)
+    public static ForeignKey makeForeignKey(QuerySchema fromSchema, ContainerFilter cf, ColumnType.Fk fk)
     {
         ForeignKey ret = null;
 
@@ -819,7 +897,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !effectiveTargetContainer.equals(fromSchema.getContainer()))
             {
                 // Let the QueryForeignKey lazily create the schema on demand
-                ret = new QueryForeignKey(fk.getFkDbSchema(), effectiveTargetContainer, lookupContainer, fromSchema.getUser(), fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
+                ret = QueryForeignKey.from(fromSchema, cf)
+                        .schema(fk.getFkDbSchema(), effectiveTargetContainer)
+                        .container(lookupContainer)
+                        .to(fk.getFkTable(), fk.getFkColumnName(), displayColumnName)
+                        .raw(useRawFKValue)
+                        .build();
             }
         }
         else
@@ -830,7 +913,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (ret == null)
         {
             // We can reuse the same schema object
-            ret = new QueryForeignKey(fromSchema, lookupContainer, fk.getFkTable(), fk.getFkColumnName(), displayColumnName, useRawFKValue);
+            ret = QueryForeignKey.from(fromSchema, cf)
+                    .container(lookupContainer)
+                    .to(fk.getFkTable(), fk.getFkColumnName(), displayColumnName)
+                    .raw(useRawFKValue)
+                    .build();
         }
 
         if (fk.isSetFkMultiValued())
@@ -846,15 +933,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
 
-    protected void initColumnFromXml(QuerySchema schema, ColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
+    protected void initColumnFromXml(QuerySchema schema, BaseColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
     {
         checkLocked();
         column.loadFromXml(xbColumn, true);
-        
+
         if (xbColumn.getFk() != null)
         {
             ColumnType.Fk columnFk = xbColumn.getFk();
-            ForeignKey qfk = makeForeignKey(schema, columnFk);
+            ForeignKey qfk = makeForeignKey(schema, getContainerFilter(), columnFk);
             if (qfk == null)
             {
                 //noinspection ThrowableInstanceNeverThrown
@@ -1021,7 +1108,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 {
                     if (xmlColumn.getColumnName() != null && columnNames.contains(xmlColumn.getColumnName()))
                     {
-                        ColumnInfo column = getColumn(xmlColumn.getColumnName());
+                        var column = getMutableColumn(xmlColumn.getColumnName());
 
                         if (column != null)
                         {
@@ -1041,11 +1128,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
             for (ColumnType wrappedColumnXml : wrappedColumns)
             {
-                ColumnInfo column = getColumn(wrappedColumnXml.getWrappedColumnName());
+                var column = getMutableColumn(wrappedColumnXml.getWrappedColumnName());
 
                 if (column != null && !getColumnNameSet().contains(wrappedColumnXml.getColumnName()))
                 {
-                    ColumnInfo wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
+                    var wrappedColumn = new WrappedColumn(column, wrappedColumnXml.getColumnName());
                     initColumnFromXml(schema, wrappedColumn, wrappedColumnXml, errors);
                     addColumn(wrappedColumn);
                 }
@@ -1064,7 +1151,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
                 {
                     // Iterate through the ones in the XML and add them in the right order
-                    ColumnInfo column = originalColumns.remove(xmlColumn.getColumnName());
+                    BaseColumnInfo column = (BaseColumnInfo)originalColumns.remove(xmlColumn.getColumnName());
                     if (column != null)
                     {
                         addColumn(column);
@@ -1074,7 +1161,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 {
                     // Readd the rest of the columns that weren't in the XML. It's backed by a LinkedHashMap, so they'll
                     // be in the same order they were in originally
-                    addColumn(column);
+                    addColumn((BaseColumnInfo) column);
                 }
             }
         }
@@ -1186,8 +1273,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     private static void addAndLogError(Collection<QueryException> errors, String message, Exception e)
     {
-        errors.add(new QueryException(message, e));
-        LOG.warn(message + ((e == null || e.getMessage() == null) ? "" : e.getMessage()));
+        QueryException ex;
+        if (e instanceof QueryException)
+            ex = (QueryException)e;
+        else if (e.getCause() instanceof QueryException)
+            ex = (QueryException)e.getCause();
+        else
+            ex = new QueryException(message, e);
+        errors.add(ex);
+        LOG.warn(message + (e.getMessage() == null ? "" : e.getMessage()));
     }
 
     private void setAggregateRowConfig(TableType xmlTable)
@@ -1468,7 +1562,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
-    protected void checkLocked()
+    public void checkLocked()
     {
         if (_locked)
             throw new IllegalStateException("TableInfo is locked: " + getName());
@@ -1484,7 +1578,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _locked = b;
         // set columns in the column list as locked, lookup columns created later are not locked
         for (ColumnInfo c : getColumns())
-            c.setLocked(b);
+            ((BaseColumnInfo)c).setLocked(b);
     }
 
     @Override

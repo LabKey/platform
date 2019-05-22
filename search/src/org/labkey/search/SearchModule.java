@@ -141,7 +141,7 @@ public class SearchModule extends DefaultModule
         // add a container listener so we'll know when containers are deleted
         ContainerManager.addContainerListener(new SearchContainerListener());
 
-        FolderManagement.addTab("Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
+        FolderManagement.addTab(FolderManagement.TYPE.FolderManagement, "Search", "fullTextSearch", FolderManagement.NOT_ROOT, SearchController.SearchSettingsAction.class);
     }
 
 

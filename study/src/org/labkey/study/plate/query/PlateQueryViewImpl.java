@@ -70,7 +70,7 @@ public class PlateQueryViewImpl extends PlateQueryView
             view.getDataRegion().setButtonBar(bbar);
         }
         else
-            view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
+            view.getDataRegion().setButtonBar(new ButtonBar());
         return view;
     }
 

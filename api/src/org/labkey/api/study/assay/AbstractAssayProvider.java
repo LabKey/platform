@@ -24,7 +24,6 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
@@ -57,6 +56,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
@@ -189,8 +189,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey(), dataKeys.keySet());
 
             AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
-            ContainerFilterable dataTable = schema.createDataTable();
-            dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(user));
+            TableInfo dataTable = schema.createDataTable(new ContainerFilter.CurrentAndSubfolders(user));
 
             FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
             FieldKey runLSIDFK = new FieldKey(getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());
@@ -1087,19 +1086,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             if (!protApp.getApplicationType().equals(ExpProtocol.ApplicationType.ExperimentRunOutput))
             {
-                Map<ExpMaterial, String> newInputs = new LinkedHashMap<>();
-                newInputs.putAll(materialInputs);
+                Map<ExpMaterial, String> newInputs = new LinkedHashMap<>(materialInputs);
                 for (ExpMaterial material : protApp.getInputMaterials())
                     newInputs.remove(material);
-                int index = 1;
                 for (Map.Entry<ExpMaterial, String> entry : newInputs.entrySet())
                 {
                     ExpMaterial newInput = entry.getKey();
                     String role = entry.getValue();
                     if (role == null)
-                        role = "Sample" + (index == 1 ? "" : Integer.toString(index));
+                    {
+                        ExpSampleSet ss = newInput.getSampleSet();
+                        role = ss != null ? ss.getName() : "Sample";
+                    }
                     protApp.addMaterialInput(user, newInput, role);
-                    index++;
                 }
             }
         }

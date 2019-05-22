@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.reports.report.view.RReportBean"%>
+<%@ page import="org.labkey.api.reports.report.view.ScriptReportBean"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.Pair" %>
@@ -25,8 +25,8 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
-    JspView<RReportBean> me = (JspView<RReportBean>) HttpView.currentView();
-    RReportBean bean = me.getModelBean();
+    JspView<ScriptReportBean> me = (JspView<ScriptReportBean>) HttpView.currentView();
+    ScriptReportBean bean = me.getModelBean();
 
     String currentTab = StringUtils.defaultString(bean.getTabId(), ReportsController.TAB_VIEW);
     String nextTab = ReportsController.TAB_SOURCE.equals(currentTab) ? ReportsController.TAB_VIEW : ReportsController.TAB_SOURCE;
@@ -37,7 +37,7 @@
     if (ReportsController.TAB_SOURCE.equals(nextTab))
     {
         for (Pair<String, String> param : bean.getParameters())
-            out.write("<input type=\"hidden\" name=\"" + param.getKey() + "\" value=\"" + h(param.getValue()) + "\">");
+            out.print("<input type=\"hidden\" name=\"" + param.getKey() + "\" value=\"" + h(param.getValue()) + "\">");
     }
 %>
     <table class="labkey-tab-strip">

@@ -45,6 +45,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.TsvDataExchangeHandler;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
@@ -440,13 +441,20 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(key.getName()))
         {
             if (!getProvider().getParticipantVisitResolverTypes().isEmpty())
-                return AbstractAssayProvider.findType(value, getProvider().getParticipantVisitResolverTypes()).getDescription();
+            {
+                ParticipantVisitResolverType type = AbstractAssayProvider.findType(value, getProvider().getParticipantVisitResolverTypes());
+                if (type != null)
+                    return type.getDescription();
+            }
         }
 
         PdLookupForeignKey lookupKey = null;
         if (key.getLookupQuery() != null || key.getConceptURI() != null)
         {
-            lookupKey = new PdLookupForeignKey(getUser(), key, getContainer());
+            // TODO ContainerFilter
+            //  Does this look weird??  Yes, it is does. Usually one has a schema in hand which owns the FK
+            DefaultSchema schema = DefaultSchema.get(getUser(), getContainer());
+            lookupKey = PdLookupForeignKey.create(schema, key);
         }
 
         if (lookupKey != null)

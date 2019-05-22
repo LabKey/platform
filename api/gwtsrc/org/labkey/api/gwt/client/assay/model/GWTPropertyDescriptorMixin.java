@@ -16,7 +16,10 @@ import org.labkey.api.gwt.client.util.StringProperty;
         "setDimension",
         "setExcludeFromShifting",
         "lookupDescription",
-        "fileType"
+        "fileType",
+        "updatedField",
+        "newField",
+        "renderUpdate"
 })
 public abstract class GWTPropertyDescriptorMixin
 {

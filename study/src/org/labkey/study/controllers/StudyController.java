@@ -2457,7 +2457,7 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getUser();
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def);
+            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def, null);
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -2652,7 +2652,6 @@ public class StudyController extends BaseStudyController
                 }
             };
             dr.addDisplayColumn(dc);
-            dr.setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
 
             SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
             if (form.getId() != 0)
@@ -2914,7 +2913,7 @@ public class StudyController extends BaseStudyController
                     keys.add(Collections.singletonMap("lsid", lsid));
 
                 StudyQuerySchema schema = StudyQuerySchema.createSchema(study, getUser(), true);
-                TableInfo datasetTable = schema.createDatasetTableInternal((DatasetDefinition) dataset);
+                TableInfo datasetTable = schema.createDatasetTableInternal((DatasetDefinition) dataset, null);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
@@ -3112,7 +3111,7 @@ public class StudyController extends BaseStudyController
         return map;
     }
 
-    public static Map<String, Integer> getSortedColumnList(ViewContext context, Dataset dsd)
+    public static @NotNull Map<String, Integer> getSortedColumnList(ViewContext context, Dataset dsd)
     {
         Map<String, Map<String, Integer>> map = getDatasetSortColumnMap(context);
         Map<String, Integer> sortMap = map.get(dsd.getLabel());
@@ -6031,6 +6030,7 @@ public class StudyController extends BaseStudyController
             _report = report;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
@@ -6052,6 +6052,7 @@ public class StudyController extends BaseStudyController
     {
         public static final String TYPE = "Study.chartReport";
 
+        @Override
         public String getType()
         {
             return TYPE;

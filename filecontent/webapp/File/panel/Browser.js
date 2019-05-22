@@ -1021,7 +1021,8 @@ Ext4.define('File.panel.Browser', {
                 dataIndex: 'createdby',
                 sortable: true,
                 hidden: false,
-                height: 20
+                height: 20,
+                renderer: Ext4.htmlEncode
             },
             description: {
                 header: "Description",
@@ -2539,7 +2540,7 @@ Ext4.define('File.panel.Browser', {
                     '<tr><th>Modified:</th><td>{lastmodified:this.renderDate}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="createdby != undefined && createdby.length">' +
-                    '<tr><th>Created By:</th><td>{createdby}</td></tr>' +
+                    '<tr><th>Created By:</th><td>{createdby:htmlEncode}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="size != undefined && size">' +
                     '<tr><th>Size:</th><td>{size:this.renderSize}</td></tr>' +

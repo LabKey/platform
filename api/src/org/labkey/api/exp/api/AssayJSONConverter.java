@@ -85,7 +85,7 @@ public class AssayJSONConverter
             return new JSONArray();
         }
 
-        TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable();
+        TableInfo tableInfo = provider.createProtocolSchema(user, data.getContainer(), protocol, null).createDataTable(null);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fieldKeys);
         assert columns.size() == fieldKeys.size() : "Missing a column for at least one of the properties";
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), data.getRowId());
@@ -111,7 +111,7 @@ public class AssayJSONConverter
 
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null);
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null, user);
 
         JSONArray dataRows = new JSONArray();
         if (provider != null)

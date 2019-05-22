@@ -19,7 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -45,24 +46,24 @@ import java.util.Map;
  */
 public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 {
-    public AuditLogUnionTable(AuditQuerySchema schema)
+    public AuditLogUnionTable(AuditQuerySchema schema, ContainerFilter cf)
     {
-        super(createVirtualTable(schema), schema);
+        super(createVirtualTable(schema, cf), schema, null);
         wrapAllColumns(true);
     }
 
-    private static TableInfo createVirtualTable(AuditQuerySchema schema)
+    private static TableInfo createVirtualTable(AuditQuerySchema schema, ContainerFilter cf)
     {
-        return new AuditUnionTable(schema);
+        return new AuditUnionTable(schema, cf);
     }
 
     private static class AuditUnionTable extends VirtualTable
     {
         private SQLFragment _query;
 
-        public AuditUnionTable(@NotNull UserSchema schema)
+        public AuditUnionTable(@NotNull UserSchema schema, ContainerFilter cf)
         {
-            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema);
+            super(AuditSchema.getInstance().getSchema(), AuditQuerySchema.AUDIT_TABLE_NAME, schema, ContainerFilter.EVERYTHING);
 
             _query = new SQLFragment();
             _query.appendComment("<AuditUnionTableInfo>", getSchema().getSqlDialect());
@@ -77,7 +78,7 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
 
                 _query.append(union).append("\n");
 
-                TableInfo table = provider.createTableInfo(schema);
+                TableInfo table = provider.createTableInfo(schema, cf);
                 Map<FieldKey, String> legacyMap = provider.legacyNameMap();
 
                 _query.append("SELECT\n");
@@ -108,57 +109,57 @@ public class AuditLogUnionTable extends FilteredTable<AuditQuerySchema>
             }
             _query.appendComment("</AuditUnionTableInfo>", getSchema().getSqlDialect());
 
-            ColumnInfo createdByCol = new ColumnInfo("CreatedBy", this, JdbcType.INTEGER);
+            var createdByCol = new BaseColumnInfo("CreatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(createdByCol);
             addColumn(createdByCol);
 
-            ColumnInfo impersonatedByCol = new ColumnInfo("ImpersonatedBy", this, JdbcType.INTEGER);
+            var impersonatedByCol = new BaseColumnInfo("ImpersonatedBy", this, JdbcType.INTEGER);
             UserIdForeignKey.initColumn(impersonatedByCol);
             addColumn(impersonatedByCol);
 
-            ColumnInfo rowIdCol = new ColumnInfo("RowId", this, JdbcType.INTEGER);
+            var rowIdCol = new BaseColumnInfo("RowId", this, JdbcType.INTEGER);
             rowIdCol.setKeyField(true);
             addColumn(rowIdCol);
 
-            ColumnInfo dateCol = new ColumnInfo("Date", this, JdbcType.DATE);
+            var dateCol = new BaseColumnInfo("Date", this, JdbcType.DATE);
             addColumn(dateCol);
 
-            ColumnInfo eventTypeCol = new ColumnInfo("EventType", this, JdbcType.VARCHAR);
+            var eventTypeCol = new BaseColumnInfo("EventType", this, JdbcType.VARCHAR);
             addColumn(eventTypeCol);
 
-            ColumnInfo commentCol = new ColumnInfo("Comment", this, JdbcType.VARCHAR);
+            var commentCol = new BaseColumnInfo("Comment", this, JdbcType.VARCHAR);
             addColumn(commentCol);
 
-            ColumnInfo containerCol = new ColumnInfo("ContainerId", this, JdbcType.VARCHAR);
+            var containerCol = new BaseColumnInfo("ContainerId", this, JdbcType.VARCHAR);
             ContainerForeignKey.initColumn(containerCol, schema);
             addColumn(containerCol);
 
-            ColumnInfo projIdCol = new ColumnInfo("ProjectId", this, JdbcType.VARCHAR);
+            var projIdCol = new BaseColumnInfo("ProjectId", this, JdbcType.VARCHAR);
             ContainerForeignKey.initColumn(projIdCol, schema);
             addColumn(projIdCol);
 
-            ColumnInfo entityIdCol = new ColumnInfo("EntityId", this, JdbcType.VARCHAR);
+            var entityIdCol = new BaseColumnInfo("EntityId", this, JdbcType.VARCHAR);
             addColumn(entityIdCol);
 
-            ColumnInfo lsidCol = new ColumnInfo("Lsid", this, JdbcType.VARCHAR);
+            var lsidCol = new BaseColumnInfo("Lsid", this, JdbcType.VARCHAR);
             addColumn(lsidCol);
 
-            ColumnInfo key1Col = new ColumnInfo("Key1", this, JdbcType.VARCHAR);
+            var key1Col = new BaseColumnInfo("Key1", this, JdbcType.VARCHAR);
             addColumn(key1Col);
 
-            ColumnInfo key2Col = new ColumnInfo("Key2", this, JdbcType.VARCHAR);
+            var key2Col = new BaseColumnInfo("Key2", this, JdbcType.VARCHAR);
             addColumn(key2Col);
 
-            ColumnInfo key3Col = new ColumnInfo("Key3", this, JdbcType.VARCHAR);
+            var key3Col = new BaseColumnInfo("Key3", this, JdbcType.VARCHAR);
             addColumn(key3Col);
 
-            ColumnInfo intKey1Col = new ColumnInfo("IntKey1", this, JdbcType.INTEGER);
+            var intKey1Col = new BaseColumnInfo("IntKey1", this, JdbcType.INTEGER);
             addColumn(intKey1Col);
 
-            ColumnInfo intKey2Col = new ColumnInfo("IntKey2", this, JdbcType.INTEGER);
+            var intKey2Col = new BaseColumnInfo("IntKey2", this, JdbcType.INTEGER);
             addColumn(intKey2Col);
 
-            ColumnInfo intKey3Col = new ColumnInfo("IntKey3", this, JdbcType.INTEGER);
+            var intKey3Col = new BaseColumnInfo("IntKey3", this, JdbcType.INTEGER);
             addColumn(intKey3Col);
         }
 

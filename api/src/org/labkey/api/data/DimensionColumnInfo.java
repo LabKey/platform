@@ -24,7 +24,7 @@ import org.labkey.api.util.StringExpressionFactory;
  * Date: Jan 29, 2008
  * Time: 5:35:17 PM
  */
-public class DimensionColumnInfo extends ColumnInfo
+public class DimensionColumnInfo extends BaseColumnInfo
 {
     private CrosstabDimension _crosstabDimension = null;
 

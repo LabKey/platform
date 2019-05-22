@@ -43,7 +43,6 @@ public class ReportDataRegion extends DataRegion
 {
     private HttpView _reportView;
     private Report _report;
-    private ButtonBar _buttonBar;
 
     private HttpServletRequest _request;
     private HttpServletResponse _response;
@@ -112,18 +111,9 @@ public class ReportDataRegion extends DataRegion
     @Override
     protected void renderButtons(RenderContext ctx, Writer out) throws IOException
     {
-        if (_buttonBar != null)
-            _buttonBar.render(ctx, out);
-    }
-
-    public ButtonBar getButtonBar()
-    {
-        return _buttonBar;
-    }
-
-    public void setButtonBar(ButtonBar buttonBar)
-    {
-        _buttonBar = buttonBar;
+        ButtonBar buttonBar = getButtonBar(MODE_GRID);
+        if (buttonBar != null)
+            buttonBar.render(ctx, out);
     }
 
     @Override

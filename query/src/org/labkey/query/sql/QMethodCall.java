@@ -77,7 +77,7 @@ public class QMethodCall extends QExpr
         }
     }
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         MethodInfo method = getMethod(table.getSqlDialect());
         if (method == null)

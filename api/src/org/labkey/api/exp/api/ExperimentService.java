@@ -431,40 +431,45 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * These TableInfo's initially have no columns, but have methods to
      * add particular columns as needed by the client.
      */
-    ExpRunTable createRunTable(String name, UserSchema schema);
+    ExpRunTable createRunTable(String name, UserSchema schema, ContainerFilter cf);
 
     /**
      * Create a RunGroupMap junction table joining Runs and RunGroups.
      */
-    ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema);
+    ExpRunGroupMapTable createRunGroupMapTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataTable createDataTable(String name, UserSchema schema);
+    ExpDataTable createDataTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema);
+    ExpDataInputTable createDataInputTable(String name, ExpSchema expSchema, ContainerFilter cf);
 
-    ExpDataProtocolInputTable createDataProtocolInputTable(String name, ExpSchema schema);
+    ExpDataProtocolInputTable createDataProtocolInputTable(String name, ExpSchema schema, ContainerFilter cf);
 
-    ExpSampleSetTable createSampleSetTable(String name, UserSchema schema);
+    ExpSampleSetTable createSampleSetTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataClassTable createDataClassTable(String name, UserSchema schema);
+    ExpDataClassTable createDataClassTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, @NotNull ExpDataClass dataClass);
+    ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass);
 
-    ExpProtocolTable createProtocolTable(String name, UserSchema schema);
+    ExpProtocolTable createProtocolTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpExperimentTable createExperimentTable(String name, UserSchema schema);
+    ExpExperimentTable createExperimentTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpMaterialTable createMaterialTable(String name, UserSchema schema);
+    @Deprecated // TODO ContainerFilter
+    default ExpMaterialTable createMaterialTable(String name, UserSchema schema)
+    {
+        return createMaterialTable(name, schema, null);
+    }
+    ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema);
+    ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema, ContainerFilter cf);
 
-    ExpMaterialProtocolInputTable createMaterialProtocolInputTable(String name, ExpSchema schema);
+    ExpMaterialProtocolInputTable createMaterialProtocolInputTable(String name, ExpSchema schema, ContainerFilter cf);
 
-    ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema);
+    ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema);
+    ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataTable createFilesTable(String name, UserSchema schema);
+    ExpDataTable createFilesTable(String name, UserSchema schema, ContainerFilter cf);
 
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 

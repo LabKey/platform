@@ -735,7 +735,6 @@ public class Parameter implements AutoCloseable
                 {
                     if (null != _stmt)
                     {
-                        _stmt.clearParameters();
                         _stmt.close();
                     }
                 }
@@ -757,6 +756,8 @@ public class Parameter implements AutoCloseable
                     _closed = true;
                 }
             }
+            // Stop referring to the old values
+            _parameters = new Parameter[0];
         }
 
         public boolean isClosed()

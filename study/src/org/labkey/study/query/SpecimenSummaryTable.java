@@ -16,8 +16,10 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -54,11 +56,11 @@ public class SpecimenSummaryTable extends BaseStudyTable
 {
     final ColumnInfo _participantidColumn;
     final ColumnInfo _sequencenumColumn;
-    final ColumnInfo _participantSequenceNumColumn;
+    final BaseColumnInfo _participantSequenceNumColumn;
 
-    public SpecimenSummaryTable(StudyQuerySchema schema)
+    public SpecimenSummaryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimen(schema.getContainer()), cf,true);
         setName("SpecimenSummary");
 
         _participantidColumn = addWrapParticipantColumn("PTID");
@@ -68,11 +70,11 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceNum"));
-        _participantSequenceNumColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
+        _participantSequenceNumColumn.setFk(new LookupForeignKey(cf,"ParticipantSequenceNum", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_userSchema, false);
+                return new ParticipantVisitTable(_userSchema, getLookupContainerFilter(), false);
             }
         });
         _participantSequenceNumColumn.setIsUnselectable(true);
@@ -96,9 +98,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("AvailableCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("ExpectedAvailableCount")).setHidden(!enableSpecimenRequest);
         addWrapColumn(_rootTable.getColumn("DrawTimestamp"));
-        ColumnInfo columnDrawDate =  addWrapColumn(_rootTable.getColumn("DrawDate"));
+        var columnDrawDate =  addWrapColumn(_rootTable.getColumn("DrawDate"));
         columnDrawDate.setUserEditable(false);
-        ColumnInfo columnDrawTime = addWrapColumn(_rootTable.getColumn("DrawTime"));
+        var columnDrawTime = addWrapColumn(_rootTable.getColumn("DrawTime"));
         columnDrawTime.setUserEditable(false);
         addWrapColumn(_rootTable.getColumn("SalReceiptDate"));
         addWrapColumn(_rootTable.getColumn("ClassId"));
@@ -117,7 +119,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         //  Set this column type to string so that exports to excel correctly set the column type as string.
         // (We're using a custom display column to output the text of the comment in this col, even though
         // the SQL expression returns an integer.)
-        ColumnInfo commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFragComments, JdbcType.VARCHAR));
+        var commentsCol = addColumn(new ExprColumn(this, "Comments", sqlFragComments, JdbcType.VARCHAR));
         commentsCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.study.StudyService;
 
 import java.util.Map;
@@ -31,9 +32,9 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
     public static final String PIVOT_BY_REQUESTING_LOCATION = "Vial Counts by Requesting Location";
     private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s requested by %s";
 
-    public SpecimenPivotByRequestingLocation(final StudyQuerySchema schema)
+    public SpecimenPivotByRequestingLocation(final StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(SpecimenReportQuery.getPivotByRequestingLocation(schema.getContainer(), schema.getUser()), schema);
+        super(SpecimenReportQuery.getPivotByRequestingLocation(schema, cf), schema);
         setDescription("Contains up to one row of Specimen Derivative Type totals by Requesting Location for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 

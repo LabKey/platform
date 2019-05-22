@@ -15,7 +15,8 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.query.FieldKey;
@@ -23,9 +24,9 @@ import org.labkey.api.query.UserSchema;
 
 public class ExpDataProtocolInputTableImpl extends ExpProtocolInputTableImpl<ExpDataProtocolInputTable.Column> implements ExpDataProtocolInputTable
 {
-    protected ExpDataProtocolInputTableImpl(String name, UserSchema schema)
+    protected ExpDataProtocolInputTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoProtocolInput(), schema);
+        super(name, ExperimentServiceImpl.get().getTinfoProtocolInput(), schema, cf);
 
         getFilter().addCondition(FieldKey.fromParts("objectType"), ExpData.DEFAULT_CPAS_TYPE);
     }
@@ -45,7 +46,7 @@ public class ExpDataProtocolInputTableImpl extends ExpProtocolInputTableImpl<Exp
     }
 
     @Override
-    public ColumnInfo createColumn(String alias, Column column)
+    public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {

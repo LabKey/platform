@@ -26,10 +26,11 @@
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.NavTree"%>
+<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
@@ -182,14 +183,14 @@
                                 if (StringUtils.equals("Source Path", entry.getKey()))
                                 {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : new _HtmlString("")%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : HtmlString.EMPTY_STRING%></td>
                                 <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("Enlistment ID", entry.getKey()))
                         {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : new _HtmlString("")%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : HtmlString.EMPTY_STRING%></td>
                                 <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }

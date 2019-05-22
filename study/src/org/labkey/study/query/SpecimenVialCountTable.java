@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -30,7 +31,7 @@ import org.labkey.study.StudySchema;
  */
 public class SpecimenVialCountTable extends BaseStudyTable
 {
-    public SpecimenVialCountTable(StudyQuerySchema schema)
+    public SpecimenVialCountTable(StudyQuerySchema schema, ContainerFilter cf)
     {
 /*        super(schema, StudySchema.getInstance().getTableInfoSpecimenVialCount());
 
@@ -46,7 +47,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addColumn(new AliasedColumn(this, "Available", _rootTable.getColumn("AvailableCount"))).setHidden(!enableSpecimenRequest);
         addColumn(new AliasedColumn(this, "ExpectedAvailable", _rootTable.getColumn("ExpectedAvailableCount"))).setHidden(!enableSpecimenRequest);
 */
-        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()));
+        super(schema, StudySchema.getInstance().getTableInfoVial(schema.getContainer()), cf);
         setTitle("VialCounts");
 
         addContainerColumn(true).setHidden(true);

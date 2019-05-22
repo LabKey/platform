@@ -439,7 +439,7 @@ public class IssuesController extends SpringActionController
             page.setIssueListDef(getIssueListDef());
 
             IssuesQuerySchema schema = new IssuesQuerySchema(getUser(), getContainer());
-            TableInfo issueTable = schema.createTable(getIssueListDef().getName());
+            TableInfo issueTable = schema.createTable(getIssueListDef().getName(), null);
             page.setAdditionalDetailInfo(getIssueListDef().getDomainKind().getAdditionalDetailInfo(issueTable, issueId));
 
             // remove any notifications related to this user/objectid/type
@@ -757,6 +757,7 @@ public class IssuesController extends SpringActionController
 
             for (IssuesForm issuesForm : form.getIssueForms())
             {
+                IssueListDef formIssueListDef = issuesForm.getIssueListDef(getContainer());
                 IssuesApiForm.action action = getAction(issuesForm);
                 if (action == null)
                 {
@@ -764,7 +765,6 @@ public class IssuesController extends SpringActionController
                     continue;
                 }
 
-                Integer issueDefId;
                 Issue prevIssue = null;
                 if (action != IssuesApiForm.action.insert)
                 {
@@ -775,33 +775,29 @@ public class IssuesController extends SpringActionController
                         continue;
                     }
                     issuesForm.setOldValues(prevIssue);
-                    issueDefId = prevIssue.getIssueDefId();
+                    // if issue definition isn't provided get it from the issue being updated
+                    if (formIssueListDef == null)
+                        formIssueListDef = IssueManager.getIssueListDef(getContainer(), prevIssue.getIssueDefId());
                 }
                 else
                 {
-                    if (defaultIssueListDef == null && issuesForm.getIssueDefId() == null)
+                    if (formIssueListDef == null && defaultIssueListDef == null)
                     {
-                        errors.reject(ERROR_MSG, "IssueDefId is required when creating new issues");
+                        errors.reject(ERROR_MSG, "IssueDefName or IssueDefId is required when creating new issues");
                         continue;
                     }
-
-                    if (issuesForm.getIssueDefId() != null)
-                        issueDefId = Integer.valueOf(issuesForm.getIssueDefId());
-                    else
-                        issueDefId = defaultIssueListDef.getRowId();
                 }
 
-                IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefId);
-                if (issueListDef == null)
+                if (formIssueListDef == null && defaultIssueListDef == null)
                 {
-                    errors.reject(ERROR_MSG, "IssueListDef not found: " + issuesForm.getIssueDefId());
+                    errors.reject(ERROR_MSG, "No valid issue list def could be found");
                     continue;
                 }
 
-                // set the issueListDefId on the issue form if it wasn't explicitly specified
-                if (issuesForm.getIssueDefId() == null)
+                // set the issueListDefId on the issue form (from the default issue list) if it wasn't explicitly specified
+                if (formIssueListDef == null)
                 {
-                    issuesForm.set(IssuesListView.ISSUE_LIST_DEF_ID, String.valueOf(issueDefId));
+                    issuesForm.set(IssuesListView.ISSUE_LIST_DEF_ID, String.valueOf(defaultIssueListDef.getRowId()));
                 }
 
                 if (action == IssuesApiForm.action.reopen)
@@ -839,6 +835,7 @@ public class IssuesController extends SpringActionController
                     }
                 }
 
+                IssueListDef issueListDef = formIssueListDef != null ? formIssueListDef : defaultIssueListDef;
                 AbstractIssuesListDefDomainKind kind = issueListDef.getDomainKind();
                 if (kind != null)
                 {
@@ -873,7 +870,7 @@ public class IssuesController extends SpringActionController
             {
                 for (IssuesForm issuesForm : form.getIssueForms())
                 {
-                    IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), NumberUtils.toInt(issuesForm.getIssueDefId()));
+                    IssueListDef issueListDef = issuesForm.getIssueListDef(getContainer());
                     if (issueListDef != null)
                     {
                         CustomColumnConfiguration ccc = new CustomColumnConfigurationImpl(getContainer(), getUser(), issueListDef);
@@ -2438,14 +2435,30 @@ public class IssuesController extends SpringActionController
             return _stringValues.get("priority");
         }
 
-        public String getIssueDefName()
+        private String getIssueDefName()
         {
             return _stringValues.get(IssuesListView.ISSUE_LIST_DEF_NAME);
         }
 
-        public String getIssueDefId()
+        private String getIssueDefId()
         {
             return _stringValues.get(IssuesListView.ISSUE_LIST_DEF_ID);
+        }
+
+        @Nullable
+        public IssueListDef getIssueListDef(Container c)
+        {
+            if (getIssueDefId() != null && getIssueDefName() != null)
+                throw new IllegalStateException("Issue def name and id cannot be specified at the same time");
+
+            IssueListDef issueListDef = null;
+            if (getIssueDefName() != null)
+                issueListDef = IssueManager.getIssueListDef(c, getIssueDefName());
+
+            if (issueListDef == null && getIssueDefId() != null)
+                issueListDef = IssueManager.getIssueListDef(c, NumberUtils.toInt(getIssueDefId()));
+
+            return issueListDef;
         }
 
         public void setTable(TableInfo table)

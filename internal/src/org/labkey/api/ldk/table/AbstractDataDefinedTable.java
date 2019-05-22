@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -62,9 +63,9 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
     protected String _filterValue;
     protected String _valueColumn;
 
-    public AbstractDataDefinedTable(UserSchema schema, SchemaTableInfo table, String filterColumn, String valueColumn, String tableName, String filterValue)
+    public AbstractDataDefinedTable(UserSchema schema, SchemaTableInfo table, ContainerFilter cf, String filterColumn, String valueColumn, String tableName, String filterValue)
     {
-        super(schema, table);
+        super(schema, table, cf);
         _filterColumn = filterColumn;
         _filterValue = filterValue;
         _valueColumn = valueColumn;
@@ -84,12 +85,12 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
         assert pks.size() > 0;
         _pk = pks.get(0);
 
-        ColumnInfo valueCol = getColumn(_valueColumn);
+        var valueCol = getMutableColumn(_valueColumn);
         assert valueCol != null;
 
         valueCol.setKeyField(true);
         valueCol.setNullable(false);
-        getColumn(_pk).setKeyField(false);
+        getMutableColumn(_pk).setKeyField(false);
 
         ColumnInfo filterCol = getColumn(_filterColumn);
         assert filterCol != null;
@@ -99,6 +100,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
         return this;
     }
 
+    @Override
     protected void addTableURLs()
     {
         setInsertURL(LINK_DISABLER);
@@ -112,14 +114,11 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
      */
     protected Set<String> getDistinctValues()
     {
-        Set<String> distinctValues = new HashSet<>();
-
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString(_filterColumn), _filterValue, CompareType.EQUAL);
         TableSelector ts = new TableSelector(_rootTable, Collections.singleton(_valueColumn), filter, null);
         String[] existing = ts.getArray(String.class);
-        distinctValues.addAll(Arrays.asList(existing));
 
-        return distinctValues;
+        return new HashSet<>(Arrays.asList(existing));
     }
 
     @Override

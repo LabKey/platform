@@ -79,9 +79,12 @@ import org.labkey.experiment.api.ExpDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.LineagePerfTest;
+import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
+import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -130,7 +133,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 19.10;
+        return 19.11;
     }
 
     @Nullable
@@ -274,7 +277,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (data == null)
                         return null;
 
-                    return ExperimentJSONConverter.serializeData(data);
+                    return ExperimentJSONConverter.serializeData(data, user);
                 }
             });
             ss.addResourceResolver("material", new SearchService.ResourceResolver(){
@@ -435,9 +438,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 DomainPropertyImpl.TestCase.class,
                 ExpDataClassDataTestCase.class,
                 ExpSampleSetTestCase.class,
+                UniqueValueCounterTestCase.class,
                 ExperimentServiceImpl.TestCase.class,
                 ExpDataTableImpl.TestCase.class
-                /*,LineagePerfTest.class*/));
+                , LineagePerfTest.class));
     }
 
     @NotNull
@@ -447,7 +451,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new HashSet<>(Arrays.asList(
             Lsid.TestCase.class,
             LSIDRelativizer.TestCase.class,
-            LsidUtils.TestCase.class));
+            LsidUtils.TestCase.class,
+            GraphAlgorithms.TestCase.class
+        ));
     }
 
     @Override

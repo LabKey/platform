@@ -297,7 +297,7 @@
             <%
                 String hiddenInputs = template.getHiddenInputsHtml(ctx);
                 if (hiddenInputs != null)
-                    out.write(hiddenInputs);
+                    out.print(hiddenInputs);
             %>
         </labkey:form>
     </div>

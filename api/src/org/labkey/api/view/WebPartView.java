@@ -85,6 +85,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private static final Logger LOG = Logger.getLogger(WebPartView.class);
 
 
+    @Override
     public boolean isEmpty()
     {
         return _frameConfig._isEmpty;
@@ -380,6 +381,10 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
                     errorMessage = ExceptionUtil.getUnauthorizedMessage(getViewContext());
                 }
+                catch (NotFoundException x)
+                {
+                    errorMessage = "Not Found : " + x.getMessage();
+                }
                 catch (Throwable t)
                 {
                     exceptionToRender = ExceptionUtil.unwrapException(t);
@@ -502,11 +507,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             _id = id;
         }
 
+        @Override
         public void setCollapsed(boolean collapsed)
         {
             _collapsed = collapsed;
         }
 
+        @Override
         public boolean isCollapsed()
         {
             return _collapsed;
@@ -519,11 +526,13 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             return Collections.emptyList();
         }
 
+        @Override
         public Collapsible findSubtree(String path)
         {
             return null;
         }
 
+        @Override
         public String getId()
         {
             return _id;

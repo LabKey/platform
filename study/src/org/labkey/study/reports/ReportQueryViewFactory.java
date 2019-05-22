@@ -48,7 +48,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
-import javax.servlet.ServletException;
 import java.util.Map;
 
 /**
@@ -143,6 +142,7 @@ public class ReportQueryViewFactory
             super(schema, settings);
         }
 
+        @Override
         public MenuButton createViewButton(ReportService.ItemFilter filter)
         {
             MenuButton button = super.createViewButton(StudyReportUIProvider.getItemFilter());
@@ -153,6 +153,7 @@ public class ReportQueryViewFactory
             return button;
         }
 
+        @Override
         public void addCustomizeViewItems(MenuButton button)
         {
             NavTree customizeView = new NavTree("Customize Grid");

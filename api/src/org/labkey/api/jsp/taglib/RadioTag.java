@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp.taglib;
 
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Objects;
@@ -29,29 +28,32 @@ public class RadioTag extends SimpleTagBase
     protected Object _currentValue;
     protected boolean _disabled=false;
 
+    @Override
     public void doTag() throws IOException
     {
+        // TODO: HtmlString
+
         JspWriter out = getOut();
-        out.write("<input type=\"radio\" name=\"");
-        out.write(h(_name));
-        out.write("\" value=\"");
-        out.write(h(_value));
-        out.write("\"");
+        out.print("<input type=\"radio\" name=\"");
+        out.print(h(_name));
+        out.print("\" value=\"");
+        out.print(h(_value));
+        out.print("\"");
         if (isChecked())
         {
-            out.write(" checked");
+            out.print(" checked");
         }
         if (_id != null)
         {
-            out.write(" id=\"");
-            out.write(h(_id));
-            out.write("\"");
+            out.print(" id=\"");
+            out.print(h(_id));
+            out.print("\"");
         }
         if (_disabled)
         {
-            out.write(" disabled");
+            out.print(" disabled");
         }
-        out.write(">");
+        out.print(">");
     }
 
     public void setName(String name)

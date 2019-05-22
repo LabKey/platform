@@ -32,9 +32,9 @@ public class SpecimenWrapTable extends BaseStudyTable
     protected List<DomainProperty> _optionalSpecimenProperties = new ArrayList<>();
     protected List<DomainProperty> _optionalVialProperties = new ArrayList<>();
 
-    public SpecimenWrapTable(StudyQuerySchema schema)
+    public SpecimenWrapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), true, true);
+        super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail(schema.getContainer()), cf, true, true);
 
         addWrapTypeColumn("PrimaryTypeId", "PrimaryTypeId");
         addWrapTypeColumn("DerivativeTypeId", "DerivativeTypeId");
@@ -67,6 +67,7 @@ public class SpecimenWrapTable extends BaseStudyTable
         return SpecimenDetailTable.getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
     }
 
+    @Override
     public Path getNotificationKey()
     {
         return _notificationKey;

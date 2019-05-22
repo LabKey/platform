@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -43,9 +44,9 @@ import java.util.Collections;
  */
 public class ParticipantCategoryTable extends BaseStudyTable
 {
-    public ParticipantCategoryTable(StudyQuerySchema schema)
+    public ParticipantCategoryTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoParticipantCategory());
+        super(schema, StudySchema.getInstance().getTableInfoParticipantCategory(), cf);
         setName(StudyService.get().getSubjectCategoryTableName(schema.getContainer()));
         setDescription("This table contains one row for each study group category");
 
@@ -53,7 +54,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         if (schema.getContainer().isProject() && getContainerFilter() instanceof DataspaceContainerFilter)
             _setContainerFilter(((DataspaceContainerFilter)getContainerFilter()).getIncludeProjectDatasetContainerFilter());
 
-        ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
+        var rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
         rowIdColumn.setHidden(true);
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
@@ -63,7 +64,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("Created"));
         addWrapColumn(_rootTable.getColumn("OwnerId"));
 
-        ColumnInfo createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
+        var createdBy = wrapColumn("CreatedBy", getRealTable().getColumn("CreatedBy"));
         createdBy.setFk(new UserIdForeignKey(getUserSchema()));
         createdBy.setDisplayColumnFactory(new DisplayColumnFactory()
         {

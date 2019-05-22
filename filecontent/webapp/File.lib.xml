@@ -21,8 +21,6 @@
     </library>
     <dependencies>
         <dependency path="Ext4ClientApi"/> <!-- Needed for EditCustomFileProps.js -->
-        <dependency path="Dropzone"/>
         <dependency path="internal-FileDrop"/>
-        <dependency path="zipjs"/>
     </dependencies>
 </libraries>

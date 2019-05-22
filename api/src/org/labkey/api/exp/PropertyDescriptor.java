@@ -18,9 +18,10 @@ package org.labkey.api.exp;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
@@ -44,7 +45,7 @@ import java.util.Map;
  * User: migra
  * Date: Aug 15, 2005
  */
-public class PropertyDescriptor extends ColumnRenderProperties implements ParameterDescription, Serializable, Cloneable
+public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements ParameterDescription, Serializable, Cloneable
 {                           
     private String _name;
     private String _storageColumnName;
@@ -61,6 +62,12 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     private String _mvIndicatorStorageColumnName;        // only valid if mvEnabled
 
     private static final Logger LOG = Logger.getLogger(PropertyDescriptor.class);
+
+    @Override
+    public void checkLocked()
+    {
+        // pass
+    }
 
     /** Entity id for the lookup's target container */
     public String getLookupContainer()
@@ -356,13 +363,13 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     /** Need the string version of this method because it's called by reflection and must match by name */
     public String getImportAliases()
     {
-        return ColumnRenderProperties.convertToString(getImportAliasSet());
+        return ColumnRenderPropertiesImpl.convertToString(getImportAliasSet());
     }
 
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String importAliases)
     {
-        _importAliases = ColumnRenderProperties.convertToSet(importAliases);
+        _importAliases = ColumnRenderPropertiesImpl.convertToSet(importAliases);
     }
 
     @Override
@@ -378,11 +385,15 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         }
     }
 
-    public ColumnInfo createColumnInfo(TableInfo baseTable, String lsidCol, User user, Container container)
+    public BaseColumnInfo createColumnInfo(TableInfo baseTable, String lsidCol, User user, Container container)
     {
-        ColumnInfo info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
+        var info = new PropertyColumn(this, baseTable, lsidCol, container, user, false);
         if (getLookupQuery() != null || getConceptURI() != null)
-            info.setFk(new PdLookupForeignKey(user, this, container));
+        {
+            assert null==baseTable.getUserSchema() || baseTable.getUserSchema().getUser() == user;
+            assert null==baseTable.getUserSchema() || baseTable.getUserSchema().getContainer() == container;
+            info.setFk(PdLookupForeignKey.create(baseTable.getUserSchema(), user, container, this));
+        }
         return info;
     }
 
@@ -406,7 +417,7 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     }
 
     @Override
-    public void copyTo(ColumnRenderProperties to)
+    public void copyTo(ColumnRenderPropertiesImpl to)
     {
         super.copyTo(to);
         if (to instanceof PropertyDescriptor)

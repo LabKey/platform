@@ -22,7 +22,17 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -31,6 +41,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -40,7 +51,15 @@ import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * QueryUpdateService implementation that supports Query TableInfos that are backed by both a hard table and a Domain.
@@ -57,11 +76,17 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     private DomainUpdateHelper _helper = null;
     /** Map from DbTable column names to QueryTable column names, if they have been aliased */
     private Map<String, String> _columnMapping = Collections.emptyMap();
+    private ValidatorContext _validatorContext;
 
-    public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
+    public DefaultQueryUpdateService(@NotNull TableInfo queryTable, TableInfo dbTable)
     {
         super(queryTable);
         _dbTable = dbTable;
+
+        if( queryTable.getUserSchema() == null )
+            throw new RuntimeValidationException("User schema not defined for " + queryTable.getName());
+
+        _validatorContext = new ValidatorContext(queryTable.getUserSchema().getContainer(), queryTable.getUserSchema().getUser());
     }
 
     public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable, DomainUpdateHelper helper)
@@ -123,6 +148,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return _helper == null ? c : _helper.getDomainObjContainer(c);
     }
 
+    protected Set<String> getAutoPopulatedColumns()
+    {
+        return Table.AUTOPOPULATED_COLUMN_NAMES;
+    }
+
     public interface DomainUpdateHelper
     {
         Domain getDomain();
@@ -178,7 +208,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         aliasColumns(_columnMapping, keys);
-        Map<String,Object> row = _select(container, getKeys(keys));
+        Map<String,Object> row = _select(container, getKeys(keys, container));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
         //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
@@ -258,6 +288,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         aliasColumns(_columnMapping, row);
         convertTypes(container, row);
         setSpecialColumns(container, row, user, InsertPermission.class);
+        validateInsertRow(row);
         return _insert(user, container, row);
     }
 
@@ -356,6 +387,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         convertTypes(container, rowStripped);
         setSpecialColumns(container, row, user, UpdatePermission.class);
+        validateUpdateRow(rowStripped);
 
         if (row.get("container") != null)
         {
@@ -372,13 +404,61 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
         }
 
-        Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row) : getKeys(oldRow));
+        Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row, container) : getKeys(oldRow, container));
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
         //the primary key columns as well as those marked read-only. So we can't simply return the map returned
         //from Table.update(). Instead, we need to copy values from updatedRow into row and return that.
         row.putAll(updatedRow);
         return row;
+    }
+
+    protected void validateValue(ColumnInfo column, Object value) throws ValidationException
+    {
+        DomainProperty dp = getDomain() == null ? null : getDomain().getPropertyByName(column.getColumnName());
+        List<ColumnValidator> validators = ColumnValidators.create(column, dp);
+        for (ColumnValidator v : validators)
+        {
+            String msg = v.validate(-1, value, _validatorContext);
+            if (msg != null)
+                throw new ValidationException(msg, column.getName());
+        }
+    }
+
+    protected void validateInsertRow(Map<String, Object> row) throws ValidationException
+    {
+        for (ColumnInfo col : getQueryTable().getColumns())
+        {
+            Object value = row.get(col.getColumnName());
+
+            // Check required values aren't null or empty
+            if (null == value || value instanceof String && 0 == ((String) value).length())
+            {
+                if (!col.isAutoIncrement() && col.isRequired() &&
+                        !getAutoPopulatedColumns().contains(col.getName()) &&
+                        col.getJdbcDefaultValue() == null)
+                {
+                    throw new ValidationException("A value is required for field '" + col.getName() + "'", col.getName());
+                }
+            }
+            else
+            {
+                validateValue(col, value);
+            }
+        }
+    }
+
+    private void validateUpdateRow(Map<String, Object> row) throws ValidationException
+    {
+        for (ColumnInfo col : getQueryTable().getColumns())
+        {
+            // Only validate incoming values
+            if (row.keySet().contains(col.getColumnName()))
+            {
+                Object value = row.get(col.getColumnName());
+                validateValue(col, value);
+            }
+        }
     }
 
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys)
@@ -501,7 +581,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     OntologyManager.deleteProperties(c, oo.getObjectId());
             }
         }
-        Table.delete(getDbTable(), getKeys(row));
+        Table.delete(getDbTable(), getKeys(row, c));
     }
 
     // classes should override this method if they need to do more work than delete all the rows from the table
@@ -525,7 +605,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
        return Table.delete(getDbTable());
     }
 
-    protected Object[] getKeys(Map<String, Object> map) throws InvalidKeyException
+    protected Object[] getKeys(Map<String, Object> map, Container container) throws InvalidKeyException
     {
         //build an array of pk values based on the table info
         TableInfo table = getDbTable();
@@ -549,8 +629,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
             }
             pkVals[idx] = pkValue;
-            if (null == pkVals[idx])
+            if (null == pkVals[idx] && pk.getColumnName().equalsIgnoreCase("Container"))
+            {
+                pkVals[idx] = container;
+            }
+            if(null == pkVals[idx])
+            {
                 throw new InvalidKeyException("Value for key field '" + pk.getName() + "' was null or not supplied!", map);
+            }
         }
         return pkVals;
     }

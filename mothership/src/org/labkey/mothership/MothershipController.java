@@ -133,7 +133,13 @@ public class MothershipController extends SpringActionController
     {
         public ModelAndView getView(SoftwareReleaseForm form, BindException errors)
         {
-            return new UpdateView(form, errors);
+            UpdateView updateView = new UpdateView(form, errors);
+            ButtonBar buttonBar = new ButtonBar();
+            buttonBar.setStyle(ButtonBar.Style.separateButtons);
+            buttonBar.add(new ActionButton(UpdateAction.class, "Submit"));
+            buttonBar.add(new ActionButton(ShowReleasesAction.class, "Cancel", ActionButton.Action.LINK));
+            updateView.getDataRegion().setButtonBar(buttonBar);
+            return updateView;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -169,10 +175,9 @@ public class MothershipController extends SpringActionController
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn("-SVNRevision");
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("SVNRevision"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
-
             return new VBox(getLinkBar(), queryView);
         }
 
@@ -340,27 +345,6 @@ public class MothershipController extends SpringActionController
         return chart;
     }
 
-    @RequiresPermission(DeletePermission.class)
-    public class DeleteAction extends FormHandlerAction
-    {
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        public boolean handlePost(Object o, BindException errors)
-        {
-            Set<Integer> releaseIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
-            for (Integer releaseId : releaseIds)
-                MothershipManager.get().deleteSoftwareRelease(getContainer(), releaseId);
-            return true;
-        }
-
-        public ActionURL getSuccessURL(Object o)
-        {
-            return new ActionURL(ShowReleasesAction.class, getContainer());
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public class ShowExceptionsAction extends SimpleViewAction
     {
@@ -381,41 +365,6 @@ public class MothershipController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Exceptions");
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
-    public class ShowInsertAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            DataRegion region = new DataRegion();
-            region.addColumns(MothershipManager.get().getTableInfoSoftwareRelease(), "SVNRevision,Description");
-            return new InsertView(region, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Insert Software Release");
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
-    public class InsertAction extends FormHandlerAction<SoftwareReleaseForm>
-    {
-        public void validateCommand(SoftwareReleaseForm target, Errors errors)
-        {
-        }
-
-        public boolean handlePost(SoftwareReleaseForm form, BindException errors)
-        {
-            MothershipManager.get().insertSoftwareRelease(getContainer(), getUser(), form.getBean());
-            return true;
-        }
-
-        public ActionURL getSuccessURL(SoftwareReleaseForm softwareReleaseForm)
-        {
-            return new ActionURL(ShowReleasesAction.class, getContainer());
         }
     }
 
@@ -893,7 +842,6 @@ public class MothershipController extends SpringActionController
 
     /**
      * @return If this server is behind a load balancer, get the original request IP instead of the load balancer's address.
-     * @param serverGUID
      */
     private String getRemoteAddr(String serverGUID)
     {
@@ -942,7 +890,6 @@ public class MothershipController extends SpringActionController
             getDataRegion().setColumns(colInfos);
             getDataRegion().setSortable(false);
             getDataRegion().setShowFilters(false);
-            getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
             getDataRegion().setShowPagination(false);
         }
     }
@@ -1669,7 +1616,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form, errors);
 
-            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME);
+            TableInfo serverInstallationTable = new MothershipSchema(getViewContext().getUser(), getViewContext().getContainer()).getTable(MothershipSchema.SERVER_INSTALLATIONS_TABLE_NAME, null, true, true);
             getDataRegion().setTable(serverInstallationTable);
 
             Collection<FieldKey> requestedColumns = new ArrayList<>();
@@ -1710,7 +1657,7 @@ public class MothershipController extends SpringActionController
                 // incorrect for their usage on this page.
                 if (!("Note".equalsIgnoreCase(col.getColumnName()) || "IgnoreExceptions".equalsIgnoreCase(col.getColumnName())))
                 {
-                    col.setUserEditable(false);
+                    ((BaseColumnInfo)col).setUserEditable(false);
                 }
             }
 

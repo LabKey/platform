@@ -21,8 +21,10 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
@@ -30,6 +32,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Table;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
@@ -41,7 +44,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -62,7 +64,6 @@ import org.labkey.issue.model.IssueManager;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,9 +77,17 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
 {
     private static final Logger LOG = Logger.getLogger(IssuesListDefTable.class);
 
-    public IssuesListDefTable(IssuesQuerySchema schema)
+    private final static Set<String> _AUTOPOPULATED_COLUMN_NAMES;
+    static
     {
-        super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema);
+        Set<String> autoPopulatedCols = new CaseInsensitiveHashSet(Table.AUTOPOPULATED_COLUMN_NAMES);
+        autoPopulatedCols.add("Name");
+        _AUTOPOPULATED_COLUMN_NAMES = Collections.unmodifiableSet(autoPopulatedCols);
+    }
+
+    public IssuesListDefTable(IssuesQuerySchema schema, ContainerFilter cf)
+    {
+        super(IssuesSchema.getInstance().getTableInfoIssueListDef(), schema, cf);
 
         ActionURL url = new ActionURL(InsertIssueDefAction.class, getContainer()).
                 addParameter(QueryParam.schemaName, IssuesSchema.getInstance().getSchemaName()).
@@ -105,18 +114,18 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
 
         // don't show the name, it's derived from label
-        ColumnInfo nameCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Name")));
+        var nameCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Name")));
         nameCol.setHidden(true);
         nameCol.setShownInInsertView(false);
 
         setDeleteURL(new DetailsURL(new ActionURL(DeleteIssueListAction.class, _userSchema.getContainer())));
 
-        ColumnInfo labelCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Label")));
+        var labelCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Label")));
         DetailsURL url = new DetailsURL(new ActionURL(IssuesController.ListAction.class, getContainer()),
                 Collections.singletonMap("issueDefName", "name"));
         labelCol.setURL(url);
 
-        ColumnInfo containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
+        var containerCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Container")));
         ContainerForeignKey.initColumn(containerCol, getUserSchema());
 
         List<Pair<String, String>> inputValues = new ArrayList<>();
@@ -125,7 +134,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
             inputValues.add(new Pair<>(provider.getName(), provider.getLabel()));
         }
 
-        ColumnInfo kindCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Kind")));
+        var kindCol = addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("Kind")));
         kindCol.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override
@@ -135,7 +144,7 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
             }
         });
 
-        ColumnInfo domainContainer = new AliasedColumn(this, "DomainContainer", _rootTable.getColumn("RowId"));
+        var domainContainer = new AliasedColumn(this, "DomainContainer", _rootTable.getColumn("RowId"));
         domainContainer.setRequired(false);
         domainContainer.setKeyField(false);
         domainContainer.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -256,6 +265,12 @@ public class IssuesListDefTable extends FilteredTable<IssuesQuerySchema>
                 return null;
 
             return ObjectFactory.Registry.getFactory(IssueListDef.class).toMap(def, new CaseInsensitiveHashMap<>());
+        }
+
+        @Override
+        protected Set<String> getAutoPopulatedColumns()
+        {
+            return _AUTOPOPULATED_COLUMN_NAMES;
         }
 
         @Override

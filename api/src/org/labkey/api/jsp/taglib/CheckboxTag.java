@@ -18,7 +18,6 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.action.SpringActionController;
 
-import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Set;
@@ -31,30 +30,33 @@ public class CheckboxTag extends SimpleTagBase
     protected Boolean _checked;
     protected Set _checkedSet;
 
+    @Override
     public void doTag() throws IOException
     {
+        // TODO: HtmlString
+
         JspWriter out = getOut();
-        out.write("<input type=\"checkbox\" id=\"");
-        out.write(h(_id));
-        out.write("\" name=\"");
-        out.write(h(_name));
-        out.write("\" value=\"");
-        out.write(h(_value));
-        out.write("\"");
+        out.print("<input type=\"checkbox\" id=\"");
+        out.print(h(_id));
+        out.print("\" name=\"");
+        out.print(h(_name));
+        out.print("\" value=\"");
+        out.print(h(_value));
+        out.print("\"");
 
         if (_checked != null && _checked)
         {
-            out.write(" checked");
+            out.print(" checked");
         }
         else if (_checkedSet != null && _checkedSet.contains(_value))
         {
-            out.write(" checked");
+            out.print(" checked");
         }
-        out.write(">");
-        out.write("<input type=\"hidden\" name=\"");
-        out.write(SpringActionController.FIELD_MARKER);
-        out.write(h(_name));
-        out.write("\">");
+        out.print(">");
+        out.print("<input type=\"hidden\" name=\"");
+        out.print(SpringActionController.FIELD_MARKER);
+        out.print(h(_name));
+        out.print("\">");
     }
 
     public void setId(String id)

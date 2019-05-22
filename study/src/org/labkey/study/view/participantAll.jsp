@@ -44,6 +44,7 @@
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.ResultSetUtil" %>
@@ -433,7 +434,7 @@
         continue;
 
     // get the data for this dataset and group rows by SequenceNum/Key
-    TableInfo table = querySchema.createDatasetTableInternal(dataset);
+    TableInfo table = querySchema.createDatasetTableInternal(dataset, null);
     Map<Double, Map<Object, Map<String, Object>>> seqKeyRowMap = new HashMap<>();
     FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
     ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
@@ -498,7 +499,7 @@
 <%
 
     int row = 0;
-    _HtmlString className;
+    HtmlString className;
 
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
@@ -527,7 +528,7 @@
                         boolean hasDescription = state != null && state.getDescription() != null && state.getDescription().length() > 0;
     %>
     <td>
-        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : new _HtmlString("") %>
+        <%= h(state == null ? "Unspecified" : state.getLabel())%><%= hasDescription ? helpPopup("QC State: " + state.getLabel(), state.getDescription()) : HtmlString.EMPTY_STRING %>
     </td>
     <%
                 countTD++;
@@ -795,7 +796,7 @@
     List<ColumnInfo> sortColumns(Collection<ColumnInfo> cols, Dataset dsd, ViewContext context)
     {
         final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
-        if (sortMap != null && !sortMap.isEmpty())
+        if (!sortMap.isEmpty())
         {
             ArrayList<ColumnInfo> list = new ArrayList<>(sortMap.size());
             for (ColumnInfo col : cols)
@@ -851,15 +852,15 @@
     }
 
 
-    _HtmlString format(Object value)
+    HtmlString format(Object value)
     {
         if (value instanceof Date)
             return formatDate((Date)value);
 
         if (value instanceof Number)
-            return new _HtmlString(h(Formats.formatNumber(getContainer(), (Number) value)));
+            return HtmlString.of(Formats.formatNumber(getContainer(), (Number) value));
 
-        return new _HtmlString(null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
     }
 %>
 

@@ -91,6 +91,8 @@ public interface QueryDefinition
 
     /**
      * Return a tableInfo representing this query.
+     *
+     * CONSIDER remove setContainerFilter() and add parameter to getTable(UserSchema, ContainerFilter...)
      */
     @Nullable TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
     @Nullable TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);

@@ -29,8 +29,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.FileRootProp" %>
-<%@ page import="org.labkey.core.admin.AdminController.ProjectSettingsForm.MigrateFilesOption" %>
+<%@ page import="org.labkey.core.admin.AdminController.FileRootProp" %>
+<%@ page import="org.labkey.core.admin.AdminController.MigrateFilesOption" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -55,7 +55,7 @@
     boolean hasAdminPerm = getContainer().hasPermission(user, AdminPermission.class);
     boolean hasAdminOpsPerm = getContainer().hasPermission(user, AdminOperationsPermission.class);
     boolean canChangeFileSettings = hasAdminPerm || hasAdminOpsPerm;
-    if (AdminController.ProjectSettingsForm.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !hasAdminOpsPerm)
+    if (AdminController.FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) && !hasAdminOpsPerm)
     {
         canChangeFileSettings = false;
     }

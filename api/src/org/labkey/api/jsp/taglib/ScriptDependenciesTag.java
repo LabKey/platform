@@ -26,6 +26,7 @@ import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * User: klum
@@ -60,11 +61,10 @@ public class ScriptDependenciesTag extends SimpleTagBase
                     {
                         LinkedHashSet<String> includes = new LinkedHashSet<>();
                         LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-                        LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
                         ViewContext context = jspView.getViewContext();
 
                         PageFlowUtil.getJavaScriptFiles(context.getContainer(), dependencies, includes, implicitIncludes);
-                        cssScripts.addAll(PageFlowUtil.getExtJSStylesheets(context.getContainer(), dependencies));
+                        Set<String> cssScripts = new LinkedHashSet<>(PageFlowUtil.getExtJSStylesheets(context.getContainer(), dependencies));
 
                         for (ClientDependency d : dependencies)
                         {
@@ -109,7 +109,7 @@ public class ScriptDependenciesTag extends SimpleTagBase
                             sb.append("</script>\n");
 
                             JspWriter out = getOut();
-                            out.write(sb.toString());
+                            out.print(sb.toString());
                         }
                     }
                 }

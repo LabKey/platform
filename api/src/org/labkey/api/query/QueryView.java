@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.compliance.ComplianceService;
@@ -132,8 +131,8 @@ public class QueryView extends WebPartView<Object>
     private String _linkTarget;
 
     // Overrides for any URLs that might already be set on the TableInfo
-    private String _updateURL;
-    private String _detailsURL;
+    private DetailsURL _updateURL;
+    private DetailsURL _detailsURL;
     private String _insertURL;
     private String _importURL;
     private String _deleteURL;
@@ -476,7 +475,23 @@ public class QueryView extends WebPartView<Object>
 
     protected StringExpression urlExpr(QueryAction action)
     {
-        StringExpression expr = getQueryDef().urlExpr(action, _schema.getContainer());
+        StringExpression expr = null;
+
+        // NOTE: details/update URL may not get picked up from TableInfo if subclass overrides createTable()
+        // but that case should use QueryView.setDetailsURL/setUpdateURL() anyway
+        switch (action)
+        {
+            case detailsQueryRow:
+                expr = _detailsURL;
+                break;
+            case updateQueryRow:
+                expr = _updateURL;
+                break;
+        }
+
+        if (null == expr)
+            expr = getQueryDef().urlExpr(action, _schema.getContainer());
+
         if (expr == null)
             return null;
 
@@ -505,7 +520,35 @@ public class QueryView extends WebPartView<Object>
     @Nullable
     protected ActionURL urlFor(QueryAction action)
     {
-        ActionURL ret = _schema.urlFor(action, getQueryDef());
+        ActionURL ret = null;
+        switch (action)
+        {
+            case deleteQueryRows:
+                if (null != _deleteURL)
+                    ret = DetailsURL.fromString(_deleteURL).setContainerContext(_schema.getContainer()).getActionURL();
+                break;
+            case detailsQueryRow:
+                // TODO kinda suspect... since this is a per-row url
+                if (null != _detailsURL)
+                    ret = _detailsURL.getActionURL();
+                break;
+            case updateQueryRow:
+                // TODO also kinda suspect...
+                if (null != _updateURL)
+                    ret = _updateURL.getActionURL();
+                break;
+            case insertQueryRow:
+                if (null != _insertURL)
+                    ret = DetailsURL.fromString(_insertURL).setContainerContext(_schema.getContainer()).getActionURL();
+                break;
+            case importData:
+                if (null != _importURL)
+                    ret = DetailsURL.fromString(_importURL).setContainerContext(_schema.getContainer()).getActionURL();
+                break;
+        }
+
+        if (null == ret)
+            ret = _schema.urlFor(action, getQueryDef());
 
         if (ret == null)
         {
@@ -655,7 +698,6 @@ public class QueryView extends WebPartView<Object>
         if (parameterToAdd != null)
             url.addParameter(parameterToAdd, parameterValue);
         ActionButton actionButton = new ActionButton(label, url);
-        actionButton.setDisplayModes(DataRegion.MODE_ALL);
         return actionButton;
     }
 
@@ -913,7 +955,6 @@ public class QueryView extends WebPartView<Object>
         rstudio.setScript(script, false);
         rstudio.setVisible(showRStudioButton());
         rstudio.setEnabled(_hasExportRStudioPanel);
-        rstudio.setDisplayModes(DataRegion.MODE_GRID);
         rstudio.setDisplayPermission(ReadPermission.class);
         return rstudio;
     }
@@ -1260,7 +1301,7 @@ public class QueryView extends WebPartView<Object>
                 buttonText += " / Sign Data";
         }
 
-        PanelButton button = new PanelButton("export", buttonText, getDataRegionName(), 132);
+        PanelButton button = new PanelButton("export", buttonText, getDataRegionName());
         button.setActionName("export");     // #32594: API can set a buttonConfig including "export"; since the caption may differ, add action so BuiltinButtonConfig can figure it out
         ActionURL xlsURL = urlFor(QueryAction.exportRowsExcel);
         ActionURL xlsxURL = urlFor(QueryAction.exportRowsXLSX);
@@ -1612,7 +1653,7 @@ public class QueryView extends WebPartView<Object>
         {
             t = ((UnionTable) t).getComponentTable();   // check against a component table
         }
-        if (t instanceof ContainerFilterable && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
+        if (null != t && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId(getBaseMenuId() + ":GridViews:Folder Filter");
@@ -2139,15 +2180,15 @@ public class QueryView extends WebPartView<Object>
         DataRegion rgn = ret.getDataRegion();
         ret.setFrame(WebPartView.FrameType.NONE);
         rgn.setAllowAsync(true);
+        ButtonBar bb = new ButtonBar();
         if (!isPrintView() && !isExportView())
         {
-            ButtonBar bb = new ButtonBar();
             populateButtonBar(ret, bb);
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
             bb.add(createPrintButton());
 //            bb.add(populateMoreMenu(ret));
-            rgn.setButtonBar(bb);
         }
+        rgn.setButtonBar(bb);
 
         rgn.setButtonBarPosition(isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
 
@@ -2739,7 +2780,11 @@ public class QueryView extends WebPartView<Object>
 
     protected TableInfo createTable()
     {
-        return getQueryDef() != null ? getQueryDef().getTable(_schema, _parseErrors, true) : null;
+        QueryDefinition qdef = getQueryDef();
+        if (null == qdef)
+            return null;
+        qdef.setContainerFilter(getContainerFilter());
+        return qdef.getTable(_schema, _parseErrors, true);
     }
 
     final public TableInfo getTable()
@@ -2748,6 +2793,7 @@ public class QueryView extends WebPartView<Object>
             return _table;
         _table = createTable();
 
+        /* TODO ContainerFilter check that this is correct for hasUnionTable() */
         if (_table instanceof ContainerFilterable && _table.supportsContainerFilter())
         {
             ContainerFilter filter = getContainerFilter();
@@ -2774,57 +2820,27 @@ public class QueryView extends WebPartView<Object>
 
                     if (!containers.isEmpty())
                         _table = userSchema.getUnionTable(_table, containers);
-
                 }
-                else
-                {
-                    ContainerFilterable fTable = (ContainerFilterable) _table;
-                    fTable.setContainerFilter(filter);
-                }
-            }
-        }
-
-        if (_table instanceof AbstractTableInfo)
-        {
-            // Setting URLs is not supported on SchemaTableInfos, which are singletons anyway and therefore
-            // shouldn't be mutated by a request
-            AbstractTableInfo urlTableInfo = (AbstractTableInfo) _table;
-            try
-            {
-                if (_updateURL != null)
-                {
-                    urlTableInfo.setUpdateURL(DetailsURL.fromString(_updateURL));
-                }
-                if (_detailsURL != null)
-                {
-                    urlTableInfo.setDetailsURL(DetailsURL.fromString(_detailsURL));
-                }
-                if (_insertURL != null)
-                {
-                    urlTableInfo.setInsertURL(DetailsURL.fromString(_insertURL));
-                }
-                if (_importURL != null)
-                {
-                    urlTableInfo.setImportURL(DetailsURL.fromString(_importURL));
-                }
-                if (_deleteURL != null)
-                {
-                    urlTableInfo.setDeleteURL(DetailsURL.fromString(_deleteURL));
-                }
-            }
-            catch (IllegalArgumentException e)
-            {
-                // Don't report bad client API URLs to the mothership
-                throw new ApiUsageException(e);
             }
         }
 
         return _table;
     }
 
+    // This can be used to override the container filter that would otherwise be provided by the QuerySettings
+    ContainerFilter _overrideContainerFilter = null;
+
+    public void setContainerFilter(ContainerFilter cf)
+    {
+        _overrideContainerFilter = cf;
+    }
+
     @Nullable
     protected ContainerFilter getContainerFilter()
     {
+        if (null != _overrideContainerFilter)
+            return _overrideContainerFilter;
+
         String filterName = _settings.getContainerFilterName();
 
         if (filterName == null && _customView != null)
@@ -2872,7 +2888,7 @@ public class QueryView extends WebPartView<Object>
         if (isPrintView() || isExportView())
             return;
 
-        if (_showDetailsColumn && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
+        if (_showDetailsColumn && (null != _detailsURL || table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
@@ -2950,10 +2966,20 @@ public class QueryView extends WebPartView<Object>
 
     public void setUpdateURL(String updateURL)
     {
+        _updateURL = null==updateURL ? null : DetailsURL.fromString(updateURL);
+    }
+
+    public void setUpdateURL(DetailsURL updateURL)
+    {
         _updateURL = updateURL;
     }
 
     public void setDetailsURL(String detailsURL)
+    {
+        _detailsURL = null==detailsURL ? null : DetailsURL.fromString(detailsURL);
+    }
+
+    public void setDetailsURL(DetailsURL detailsURL)
     {
         _detailsURL = detailsURL;
     }
@@ -3134,7 +3160,11 @@ public class QueryView extends WebPartView<Object>
                 List<QueryException> errors = new ArrayList<>();
                 QueryDefinition queryDef = getQueryDef();
                 if (queryDef != null)
-                    ti = queryDef.getTable(errors, true);
+                {
+                    if (null != getContainerFilter())
+                        queryDef.setContainerFilter(getContainerFilter());
+                    ti = queryDef.getTable(getSchema(), errors, true, false, false);
+                }
             }
 
             if (ti != null)

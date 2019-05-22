@@ -489,6 +489,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             deleteRelatedListData(user, container);
             result = super.truncateRows(user, container);
+            ListManager.get().addAuditEvent(_list, user, "Deleted " + result + " rows from list.");
             transaction.commit();
         }
 

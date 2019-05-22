@@ -35,9 +35,9 @@ public class VisualizationVisitTagTable extends VirtualTable
     private final String _dayString;
     private final String _altQueryName;
 
-    public VisualizationVisitTagTable(StudyImpl study, User user, String visitTagName, boolean useProtocolDay, String altQueryName)
+    public VisualizationVisitTagTable(StudyQuerySchema schema, ContainerFilter cf, StudyImpl study, User user, String visitTagName, boolean useProtocolDay, String altQueryName)
     {
-        super(StudySchema.getInstance().getSchema(), "VizVisitTag");
+        super(schema.getDbSchema(), "VizVisitTag", schema, cf);
         _study = study;
         _user = user;
         _visitTagName = visitTagName;

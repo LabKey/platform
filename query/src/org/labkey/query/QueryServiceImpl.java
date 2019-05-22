@@ -1209,6 +1209,9 @@ public class QueryServiceImpl implements QueryService
             String name = key.getName();
             ColumnInfo ret = table.getColumn(name);
 
+            // TODO does this URL/TitleColumn behavior really belong here?  Should be moved to TableInfo.afterConstruct() or something
+            StringExpression titleURL = null;
+
             if (ret != null && key.getName().equals(table.getTitleColumn()) && ret.getEffectiveURL() == null)
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
@@ -1223,14 +1226,22 @@ public class QueryServiceImpl implements QueryService
                 for (ColumnInfo column : pkColumns)
                     pkColumnMap.add(new FieldKey(null, column.getAlias()));
 
-                StringExpression url = table.getDetailsURL(pkColumnMap, null);
-
-                if (url != null)
-                    ret.setURL(url);
+                titleURL = table.getDetailsURL(pkColumnMap, null);
             }
 
-            if (ret != null && !AliasManager.isLegalName(ret.getName()) && !ret.isAliasSet())
-                ret = new QAliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
+            if (ret == null)
+                return null;
+
+            boolean needsAlias = !AliasManager.isLegalName(ret.getName()) && !ret.isAliasSet();
+            if (null != titleURL || needsAlias)
+            {
+                if (needsAlias)
+                    ret = new QAliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
+                else
+                    ret = new QAliasedColumn(ret.getName(), ret.getAlias(), ret);
+                if (null != titleURL)
+                    ((QAliasedColumn)ret).setURL(titleURL);
+            }
 
             return ret;
         }
@@ -3112,7 +3123,7 @@ public class QueryServiceImpl implements QueryService
             {
                 assertEquals("Custom views from the simpletest module", 10, MODULE_CUSTOM_VIEW_CACHE.getResourceMap(simpleTest).size());
                 assertEquals("Queries from the simpletest module", 5, MODULE_QUERY_DEF_CACHE.getResourceMap(simpleTest).size());
-                assertEquals("Query metadata overrides from the simpletest module", 2, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
+                assertEquals("Query metadata overrides from the simpletest module", 3, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
             }
         }
     }

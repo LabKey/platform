@@ -19,6 +19,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 
+import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.io.Writer;
 
@@ -76,6 +77,8 @@ public abstract class AutoCompleteTag extends SimpleTagBase
     @Override
     public void doTag() throws IOException
     {
+        // TODO: HtmlString
+
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
         StringBuilder sb = new StringBuilder();
 
@@ -90,8 +93,9 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         sb.append("</script>\n");
         sb.append("<div id=\"").append(renderId).append("\"></div>");
 
-        Writer out = getWriter();
-        out.write(sb.toString());
+        JspWriter out = getOut();
+
+        out.print(sb.toString());
     }
 
     // Allow subclasses to override to provide a generic Writer (not a JspWriter)

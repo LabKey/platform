@@ -33,28 +33,17 @@ import java.util.Map;
  */
 public class PanelButton extends ActionButton
 {
-    // Height of the vertical tab strip item label in pixels.
-    private static final int VERTICAL_TAB_HEIGHT = 28;
-    private static final int MIN_HEIGHT = VERTICAL_TAB_HEIGHT * 4;
-
     private final String _panelName;
-    private int _height;
     private boolean _justified;
     private boolean _tabAlignTop;
     private Map<String, HttpView> _subpanels = new LinkedHashMap<>();
     private final String _dataRegionName;
 
-    public PanelButton(String caption, String dataRegionName)
+    public PanelButton(String panelName, String caption, String dataRegionName)
     {
-        this(caption.toLowerCase(), caption, dataRegionName, MIN_HEIGHT);
-    }
-
-    public PanelButton(String panelName, String caption, String dataRegionName, int minHeight)
-    {
-        super(caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        super(caption, ActionButton.Action.LINK);
         _panelName = panelName;
         _dataRegionName = dataRegionName;
-        _height = minHeight;
         setId("PanelButtonContent" + String.valueOf(System.identityHashCode(this)));
     }
 

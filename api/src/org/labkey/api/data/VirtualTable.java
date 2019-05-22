@@ -38,9 +38,15 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
      */
     public VirtualTable(DbSchema schema, String name, @Nullable SchemaType userSchema)
     {
+        this(schema, name, userSchema, null);
+    }
+
+    public VirtualTable(DbSchema schema, String name, @Nullable SchemaType userSchema, ContainerFilter cf)
+    {
         super(schema, name);
         _userSchema = userSchema;
         setName(name);
+        _setContainerFilter(cf);
     }
 
     /**
@@ -74,5 +80,13 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
     protected void _setContainerFilter(ContainerFilter filter)
     {
         _containerFilter = filter;
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        if (null != _userSchema)
+            return _userSchema.getDefaultContainerFilter();
+        return super.getDefaultContainerFilter();
     }
 }

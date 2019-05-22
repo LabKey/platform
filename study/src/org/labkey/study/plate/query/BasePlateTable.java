@@ -16,6 +16,7 @@
 
 package org.labkey.study.plate.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -31,9 +32,9 @@ import org.labkey.api.view.ActionURL;
  */
 public abstract class BasePlateTable extends FilteredTable<PlateSchema>
 {
-    public BasePlateTable(PlateSchema schema, TableInfo info)
+    public BasePlateTable(PlateSchema schema, TableInfo info, ContainerFilter cf)
     {
-        super(info, schema);
+        super(info, schema, cf);
 
         ActionURL url = PageFlowUtil.urlProvider(PlateUrls.class).getPlateDetailsURL(_userSchema.getContainer());
         setDetailsURL(new DetailsURL(url, "rowId", FieldKey.fromParts(getPlateIdColumnName())));

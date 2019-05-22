@@ -102,7 +102,7 @@
     {
         String viewLink = bean.showAll ? textLink("Show Default Datasets", basePage) :
                 textLink("Show All Datasets", basePage + "showAll=1");
-        out.write(viewLink);
+        out.print(viewLink);
     }
 %>
 <labkey:form action="<%=h(buildURL(StudyController.OverviewAction.class))%>" name="changeFilterForm" method="GET">

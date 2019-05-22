@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
@@ -166,7 +167,7 @@ public class QField extends QInternalExpr
     }
 
 
-    public ColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
+    public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(), getRelationColumn().getJdbcType());
         getRelationColumn().copyColumnAttributesTo(ret);
