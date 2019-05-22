@@ -17,7 +17,6 @@ package org.labkey.api.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -43,6 +42,7 @@ public class RunDataLinkDisplayColumn extends DataInputColumn
         _objectIdCol = objectIdCol;
     }
 
+    @Override
     protected Object calculateValue(RenderContext ctx)
     {
         if (_requiredColumn == null)

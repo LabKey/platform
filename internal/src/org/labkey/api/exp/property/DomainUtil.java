@@ -19,13 +19,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -57,14 +56,12 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.ConditionalFormatFilterType;
 import org.labkey.data.xml.ConditionalFormatType;
 
 import java.lang.reflect.InvocationTargetException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -683,13 +680,13 @@ public class DomainUtil
         if (from.isSetDimension())
             to.setDimension(from.isDimension());
         else
-            to.setDimension(ColumnRenderProperties.inferIsDimension(from.getName(), from.getLookupQuery() != null, from.isHidden()));
+            to.setDimension(ColumnRenderPropertiesImpl.inferIsDimension(from.getName(), from.getLookupQuery() != null, from.isHidden()));
         if (from.isSetMeasure())
             to.setMeasure(from.isMeasure());
         else
         {
             Type type = Type.getTypeByXsdType(from.getRangeURI());
-            to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
+            to.setMeasure(ColumnRenderPropertiesImpl.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
         }
 
@@ -773,5 +770,45 @@ public class DomainUtil
                 pv.setProperty(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    /**
+     * Validate domain property descriptors for things like duplicate names, missing names, and check against required fields.
+     * @param domain The updated domain to validate
+     * @return List of errors strings found during the validation
+     */
+    public static List<String> validateProperties(@NotNull Domain domain, @NotNull GWTDomain updates)
+    {
+        List<String> errors = new ArrayList<>();
+        Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
+        Set<String> names = new CaseInsensitiveHashSet();
+
+        for (Object f : updates.getFields())
+        {
+            GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
+
+            String name = field.getName();
+            if (null == name || name.length() == 0)
+            {
+                errors.add("Name field must not be blank.");
+                continue;
+            }
+
+            if (reservedNames.contains(name) && field.getPropertyId() <= 0)
+            {
+                errors.add("\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                continue;
+            }
+
+            if (names.contains(name))
+            {
+                errors.add("All property names must be unique. Duplicate found: " + name + ".");
+                continue;
+            }
+
+            names.add(name);
+        }
+
+        return errors;
     }
 }

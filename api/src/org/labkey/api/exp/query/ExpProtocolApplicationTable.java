@@ -16,7 +16,7 @@
 
 package org.labkey.api.exp.query;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.exp.api.ExpSampleSet;
 
 public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
@@ -32,6 +32,6 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
         Type
     }
 
-    public ColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);
-    public ColumnInfo createDataInputColumn(String alias, ExpSchema schema, String... roleNames);
+    BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);
+    BaseColumnInfo createDataInputColumn(String alias, ExpSchema schema, String... roleNames);
 }

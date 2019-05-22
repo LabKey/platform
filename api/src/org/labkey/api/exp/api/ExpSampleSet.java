@@ -36,6 +36,8 @@ import java.util.Set;
  */
 public interface ExpSampleSet extends ExpObject
 {
+    String SEQUENCE_PREFIX = "org.labkey.experiment.api.MaterialSource";
+
     String getMaterialLSIDPrefix();
 
 

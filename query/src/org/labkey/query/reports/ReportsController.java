@@ -1183,6 +1183,7 @@ public class ReportsController extends SpringActionController
             _report = report;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             if (_report != null)

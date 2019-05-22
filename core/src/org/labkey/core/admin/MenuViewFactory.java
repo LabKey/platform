@@ -17,7 +17,7 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
@@ -95,10 +95,8 @@ public class MenuViewFactory
                     TableInfo tableInfo = getTable();
                     if (null != tableInfo)
                     {
-                        ColumnInfo columnInfo = tableInfo.getColumn(form.getColumnName());
+                        var columnInfo = (BaseColumnInfo)tableInfo.getColumn(form.getColumnName());
                         String urlBase = form.getUrl();
-                        if (urlBase != null && !urlBase.contentEquals(""))
-                            columnInfo.setURL(StringExpressionFactory.createURL(form.getUrl()));
                         DataColumn dataColumn = new DataColumn(columnInfo, false)
                         {
                             @Override           // so we can use DetailsURL if no other URL can be used
@@ -114,6 +112,8 @@ public class MenuViewFactory
                                 return url;
                             }
                         };
+                        if (urlBase != null && !urlBase.contentEquals(""))
+                            dataColumn.setURLExpression(StringExpressionFactory.createURL(form.getUrl()));
 
                         RenderContext renderContext = new RenderContext(actualContext);
 

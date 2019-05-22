@@ -16,9 +16,9 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -38,14 +38,18 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DatasetDefinition;
@@ -73,11 +77,13 @@ public class DatasetDataWriter implements InternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(DatasetDataWriter.class);
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.DATASET_DATA;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         List<DatasetDefinition> datasets = ctx.getDatasets();
@@ -287,7 +293,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
                     continue;
 
-                if (null != qcStateColumn && in.equals(qcStateColumn))
+                if (in.equals(qcStateColumn))
                 {
                     // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label), but
                     // only if the dataset don't already have a property named "QCStateLabel"
@@ -322,7 +328,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                         {
                             // issue 31169
                             if (in.isMvEnabled())
-                                displayField.setNullable(true);
+                                ((BaseColumnInfo)displayField).setNullable(true);
                             outColumns.add(displayField);
                         }
                     }
@@ -406,8 +412,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         return false;
     }
 
-    @Nullable
-    private static Boolean allColumnsMatch(List<ColumnInfo> columnInfoList, PropertyStorageSpec.Index domainIndex)
+    private static boolean allColumnsMatch(List<ColumnInfo> columnInfoList, PropertyStorageSpec.Index domainIndex)
     {
         List<String> columnInfoListCaseInsensitive = new ArrayList<>();
         for (ColumnInfo columnInfo : columnInfoList)
@@ -446,20 +451,20 @@ public class DatasetDataWriter implements InternalStudyWriter
             List<ColumnInfo> columnInfoList = new ArrayList<>();
             Set<PropertyStorageSpec.Index> domainIndices = new HashSet<>();
 
-            columnInfoList.add(new ColumnInfo("objectId"));
+            columnInfoList.add(new BaseColumnInfo("objectId"));
             domainIndices.add(new PropertyStorageSpec.Index(true, "objectId"));
 
             Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
             columnInfoList.clear();
-            columnInfoList.add(new ColumnInfo("taskId"));
+            columnInfoList.add(new BaseColumnInfo("taskId"));
             Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
             columnInfoList.clear();
-            columnInfoList.add(new ColumnInfo("objectid"));
+            columnInfoList.add(new BaseColumnInfo("objectid"));
             Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
-            columnInfoList.add(new ColumnInfo("taskId"));
+            columnInfoList.add(new BaseColumnInfo("taskId"));
             Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
             domainIndices.clear();
@@ -483,16 +488,16 @@ public class DatasetDataWriter implements InternalStudyWriter
             Assert.assertFalse(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
             columnInfoList.clear();
-            columnInfoList.add(new ColumnInfo("taskId"));
-            columnInfoList.add(new ColumnInfo("objectid"));
+            columnInfoList.add(new BaseColumnInfo("taskId"));
+            columnInfoList.add(new BaseColumnInfo("objectid"));
             domainIndices.clear();
             domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid"));
             domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));
             Assert.assertTrue(columnInfoListMatchesDomainIndex(columnInfoList, domainIndices));
 
             columnInfoList.clear();
-            columnInfoList.add(new ColumnInfo("taskId"));
-            columnInfoList.add(new ColumnInfo("objectid"));
+            columnInfoList.add(new BaseColumnInfo("taskId"));
+            columnInfoList.add(new BaseColumnInfo("objectid"));
             domainIndices.clear();
             domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "fooId"));
             domainIndices.add(new PropertyStorageSpec.Index(true, "taskid", "objectid", "blahId"));
@@ -507,7 +512,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         public void testShouldExportColumn()
         {
             // true cases
-            ColumnInfo ci = new ColumnInfo("test", JdbcType.OTHER);
+            BaseColumnInfo ci = new BaseColumnInfo("test", JdbcType.OTHER);
             assertTrue(shouldExport(ci, true, PHI.NotPHI, true));
             assertTrue(shouldExport(ci, true, PHI.NotPHI, false));
             assertTrue(shouldExport(ci, false, PHI.NotPHI, true));
@@ -534,15 +539,16 @@ public class DatasetDataWriter implements InternalStudyWriter
             assertTrue(shouldExport(ci, false, PHI.Limited, true));
 
             // false cases
-            ci = new ColumnInfo("test", JdbcType.OTHER);
+            ci = new BaseColumnInfo("test", JdbcType.OTHER);
             ci.setUserEditable(false);
             assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
-            ci = new ColumnInfo("test", JdbcType.OTHER);
-            ci.setFk(new ContainerForeignKey(null, null));
+            ci = new BaseColumnInfo("test", JdbcType.OTHER);
+            UserSchema core =(UserSchema)DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            ci.setFk(new ContainerForeignKey(core));
             assertFalse(shouldExport(ci, true, PHI.NotPHI, false));
 
-            ci = new ColumnInfo("test", JdbcType.OTHER);
+            ci = new BaseColumnInfo("test", JdbcType.OTHER);
             ci.setPHI(PHI.Restricted);
             assertFalse(shouldExport(ci, false, PHI.PHI, false));
             assertFalse(shouldExport(ci, false, PHI.Limited, false));

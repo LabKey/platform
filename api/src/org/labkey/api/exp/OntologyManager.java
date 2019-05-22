@@ -2462,7 +2462,7 @@ public class OntologyManager
         // don't setContainer
         p.setDescription(pd.getDescription());
         p.setURL((pd.getURL() != null) ? pd.getURL().toString() : null);
-        p.setImportAliasSet(ColumnRenderProperties.convertToSet(pd.getImportAliases()));
+        p.setImportAliasSet(ColumnRenderPropertiesImpl.convertToSet(pd.getImportAliases()));
         p.setRequired(pd.isRequired());
         p.setHidden(pd.isHidden());
         p.setShownInInsertView(pd.isShownInInsertView());

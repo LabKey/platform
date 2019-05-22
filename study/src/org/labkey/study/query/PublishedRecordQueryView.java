@@ -16,7 +16,7 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -76,9 +76,9 @@ public class PublishedRecordQueryView extends DatasetQueryView
     protected TableInfo createTable()
     {
         TableInfo table = super.createTable();
-        ColumnInfo sourceLsidCol = table.getColumn("SourceLSID");
+        var sourceLsidCol = table.getColumn("SourceLSID");
         if (sourceLsidCol != null)
-            sourceLsidCol.setHidden(false);
+            ((BaseColumnInfo)sourceLsidCol).setHidden(false);
         return table;
     }
 

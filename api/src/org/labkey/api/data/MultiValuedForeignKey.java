@@ -44,9 +44,16 @@ public class MultiValuedForeignKey implements ForeignKey
      * @param junctionLookup the name of the column in the junction table that points to the table that has multiple
      * matches to this table
      */
+    // TODO ContainerFilter
     public MultiValuedForeignKey(ForeignKey fk, String junctionLookup)
     {
         this(fk, junctionLookup, null);
+    }
+
+    // TODO ContainerFilter
+    public MultiValuedForeignKey(Builder<ForeignKey> fk, String junctionLookup)
+    {
+        this(fk.build(), junctionLookup, null);
     }
 
     /**
@@ -55,6 +62,7 @@ public class MultiValuedForeignKey implements ForeignKey
      * matches to this table
      * @param displayField the name of the column in the value table to use as the display field.
      */
+    // TODO ContainerFilter
     public MultiValuedForeignKey(ForeignKey fk, String junctionLookup, @Nullable String displayField)
     {
         _fk = fk;
@@ -64,11 +72,18 @@ public class MultiValuedForeignKey implements ForeignKey
 
 
     /* this is to help subclasses implement remapFieldKeys() */
+    // TODO ContainerFilter
     protected MultiValuedForeignKey(MultiValuedForeignKey source, FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
         _fk = source._fk.remapFieldKeys(parent, mapping);
         _junctionLookup = source._junctionLookup;
         _displayField = source._displayField;
+    }
+
+    //TODO ContainerFilter
+    protected ContainerFilter getLookupContainerFilter()
+    {
+        return ContainerFilter.CURRENT;
     }
 
     // TODO: better name?
@@ -142,23 +157,24 @@ public class MultiValuedForeignKey implements ForeignKey
             displayField = _displayField;
         }
 
-        ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
+        BaseColumnInfo lookupColumn = (BaseColumnInfo)fk.createLookupColumn(junctionKey, displayField);
 
         if (lookupColumn == null)
         {
             return null;
         }
 
-        // Pass the container filter through the lookup
-        TableInfo lookupTable = lookupColumn.getParentTable();
-        if (parent.getParentTable() != null && parent.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
-        {
-            ContainerFilterable table = (ContainerFilterable) lookupTable;
-            if (table.hasDefaultContainerFilter())
-            {
-                table.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
-            }
-        }
+// TODO ContainerFilter _fk should already be holding onto it's ContainerFilter, verify this is the case
+//        // Pass the container filter through the lookup
+//        TableInfo lookupTable = lookupColumn.getParentTable();
+//        if (parent.getParentTable() != null && parent.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
+//        {
+//            ContainerFilterable table = (ContainerFilterable) lookupTable;
+//            if (table.hasDefaultContainerFilter())
+//            {
+//                table.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
+//            }
+//        }
 
         if (lookupColumn.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression)
         {

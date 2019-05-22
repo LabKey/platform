@@ -17,6 +17,7 @@ package org.labkey.query.reports.getdata;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.JdbcType;
@@ -120,7 +121,7 @@ public class FilterClauseBuilder
 
             SimpleFilter filter = new SimpleFilter();
             builder.append(filter);
-            ColumnInfo column = new ColumnInfo(builder._fieldKey, jdbcType);
+            ColumnInfo column = new BaseColumnInfo(builder._fieldKey, jdbcType);
 
             return filter.toLabKeySQL(Collections.singletonMap(builder._fieldKey, column));
         }

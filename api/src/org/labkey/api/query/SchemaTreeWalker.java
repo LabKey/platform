@@ -67,7 +67,7 @@ public class SchemaTreeWalker<R, P> extends SimpleSchemaTreeVisitor<R, P>
         {
             try
             {
-                TableInfo t = schema.getTable(name);
+                TableInfo t = schema.getTable(name, null);
                 r = visitAndReduce(t, path, param, r);
             }
             catch (Exception e)

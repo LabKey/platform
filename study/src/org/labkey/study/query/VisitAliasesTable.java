@@ -15,14 +15,15 @@
  */
 package org.labkey.study.query;
 
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.study.StudySchema;
 
 public class VisitAliasesTable extends BaseStudyTable
 {
-    public VisitAliasesTable(StudyQuerySchema schema)
+    public VisitAliasesTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisitAliases());
+        super(schema, StudySchema.getInstance().getTableInfoVisitAliases(), cf);
 
         addFolderColumn();
         addWrapColumn(getRealTable().getColumn(FieldKey.fromParts("RowId")));

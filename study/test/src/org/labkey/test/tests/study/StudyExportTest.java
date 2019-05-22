@@ -252,13 +252,15 @@ public class StudyExportTest extends StudyManualTest
         selectOptionByText(Locator.name("QCState"), "All data");
 
         waitAndClickAndWait(Locator.linkWithText("24"));
-        checkCheckbox(Locator.checkboxByName(".toggle"));
+        new DataRegionTable.DataRegionFinder(getDriver()).find()
+                .checkAllOnPage();
         clickButton("View Specimens");
         assertElementPresent(Locator.linkWithText("999320016"));
         assertElementPresent(Locator.linkWithText("999320518"));
         clickAndWait(Locator.linkWithText("Show individual vials"));
         assertElementPresent(Locator.linkWithText("999320016"));
-        checkCheckbox(Locator.checkboxByName(".toggle"));
+        new DataRegionTable.DataRegionFinder(getDriver()).find()
+                .checkAllOnPage();
         BootstrapMenu.find(getDriver(), "Request Options").clickSubMenu(true, "Create New Request");
         assertTextPresent("HAQ0003Y-09", "BAQ00051-09");
         assertTextNotPresent("KAQ0003Q-01");

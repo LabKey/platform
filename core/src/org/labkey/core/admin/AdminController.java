@@ -89,6 +89,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -393,11 +394,13 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowAdminAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/admin.jsp", new AdminBean(getUser()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
@@ -1485,7 +1488,7 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public final String helpLink;
+        public final HtmlString helpLink;
         public final boolean upgradeInProgress;
         public final boolean testInPage;
         public final boolean showSelfReportExceptions;
@@ -1498,7 +1501,7 @@ public class AdminController extends SpringActionController
             helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
         }
 
-        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage, String helpLink)
+        private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage, HtmlString helpLink)
         {
             this.upgradeInProgress = upgradeInProgress;
             this.testInPage = testInPage;
@@ -1516,6 +1519,7 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/sitevalidation/siteValidation.jsp");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
@@ -8889,19 +8893,30 @@ public class AdminController extends SpringActionController
                     QuerySchema q = def.getSchema(name);
                     if (null == q)
                         return;
-                    Collection<TableInfo> tables = q.getTables();
-                    if (null == tables)
+                    var tableNames = q.getTableNames();
+                    if (null == tableNames)
                         return;
-                    tables.forEach(t ->
+                    tableNames.forEach(table ->
                     {
-                        ActionURL grid = t.getGridURL(getContainer());
-                        if (null != grid)
-                            urls.add(grid.toString());
-                        else
-                            urls.add(new ActionURL("query", "executeQuery.view", getContainer())
-                                    .addParameter("schemaName", q.getSchemaName())
-                                    .addParameter("query.queryName", t.getName())
-                                    .toString());
+                        try
+                        {
+                            var t = q.getTable(table);
+                            if (null != t)
+                            {
+                                ActionURL grid = t.getGridURL(getContainer());
+                                if (null != grid)
+                                    urls.add(grid.toString());
+                                else
+                                    urls.add(new ActionURL("query", "executeQuery.view", getContainer())
+                                            .addParameter("schemaName", q.getSchemaName())
+                                            .addParameter("query.queryName", t.getName())
+                                            .toString());
+                            }
+                        }
+                        catch (Exception x)
+                        {
+                            // pass
+                        }
                     });
                 });
 
@@ -9358,7 +9373,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @SuppressWarnings("unused")  // Invoked by
+    @SuppressWarnings("unused")  // Invoked by test framework (BaseWebDriverTest.checkActionCoverage())
     @AdminConsoleAction
     public class ExportMutationWarningsAction extends ExportAction
     {
@@ -9410,6 +9425,9 @@ public class AdminController extends SpringActionController
             {
                 writer.write(response);
             }
+
+            // For now, also log the JspWriter statistics.
+            LabKeyJspWriter.logStatistics();
         }
     }
 
@@ -9883,9 +9901,9 @@ public class AdminController extends SpringActionController
 
     public static class LookAndFeelBean
     {
-        public final String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
-        public final String welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
-        public final String customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
+        public final HtmlString helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final HtmlString welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
+        public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
 

@@ -19,6 +19,7 @@ package org.labkey.audit.query;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
@@ -29,11 +30,9 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 import org.labkey.audit.AuditSchema;
-import org.labkey.audit.model.LogManager;
 import org.springframework.validation.BindException;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -82,15 +81,15 @@ public class AuditQuerySchema extends UserSchema
         return Collections.unmodifiableSet(tables);
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         // event specific audit views are implemented as queries on the audit schema
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(name);
         if (provider != null)
-            return provider.createTableInfo(this);
+            return provider.createTableInfo(this, cf);
 
         if (AUDIT_TABLE_NAME.equalsIgnoreCase(name))
-            return new AuditLogUnionTable(this);
+            return new AuditLogUnionTable(this, cf);
 
         return null;
     }

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -130,16 +131,19 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ParamReplacementSvc.get().registerHandler(new KnitrOutput());
     }
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getDescriptorType()
     {
         return RReportDescriptor.TYPE;
     }
 
+    @Override
     public ScriptEngine getScriptEngine(Container c)
     {
         String extension = getDescriptor().getProperty(ScriptReportDescriptor.Prop.scriptExtension);
@@ -148,6 +152,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return mgr.getEngineByExtension(c, extension);
     }
 
+    @Override
     public String getTypeDescription()
     {
         ScriptEngine engine = getScriptEngine(ContainerManager.getForId(getContainerId()));
@@ -167,6 +172,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return true;
     }
 
+    @Override
     public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
@@ -393,7 +399,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         for (int i = 0; i < md.getColumnCount(); i++)
         {
             int sqlColumn = i + 1;
-            dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new ColumnInfo(md, sqlColumn)));
+            dataColumns.add(new NADisplayColumn(outputColumnNames.get(i), new BaseColumnInfo(md, sqlColumn)));
         }
 
         TSVGridWriter tsv = new TSVGridWriter(r, dataColumns);
@@ -788,6 +794,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             return _name;
         }
 
+        @Override
         public String getTsvFormattedValue(RenderContext ctx)
         {
             String value = super.getTsvFormattedValue(ctx);
@@ -808,6 +815,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             _path = path;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             FileUtil.deleteDir(new File(_path));

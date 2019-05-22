@@ -414,11 +414,7 @@ public class PipelineEmailPreferences
                 filter.addCondition(FieldKey.fromParts("modified"), max, CompareType.LT);
 
                 PipelineStatusFileImpl[] files;
-                try (DbScope.Transaction transaction = PipelineStatusManager.getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusManager.PipelineStatusTransactionKind()))
-                {
-                    files = new TableSelector(PipelineStatusManager.getTableInfo(), filter, null).getArray(PipelineStatusFileImpl.class);
-                    transaction.commit();
-                }
+                files = new TableSelector(PipelineStatusManager.getTableInfo(), filter, null).getArray(PipelineStatusFileImpl.class);
 
                 if (files.length > 0)
                 {

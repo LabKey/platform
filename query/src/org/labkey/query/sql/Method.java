@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -556,7 +557,7 @@ public abstract class Method
         }
 
         @Override
-        public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        public BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
             SQLFragment[] fragments = getSQLFragments(arguments);
             JdbcType jdbcType = _jdbcType;
@@ -953,13 +954,13 @@ public abstract class Method
         }
 
         @Override
-        public ColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
+        public BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
-            ColumnInfo c = super.createColumnInfo(parentTable, arguments, alias);
+            var c = super.createColumnInfo(parentTable, arguments, alias);
             UserSchema schema = parentTable.getUserSchema();
             if (null == schema)
                 throw new NullPointerException();
-            c.setFk(new UserIdQueryForeignKey(schema.getUser(), schema.getContainer()));
+            c.setFk(new UserIdQueryForeignKey(schema));
             c.setDisplayColumnFactory(UserIdQueryForeignKey._factoryBlank);
             return c;
         }

@@ -40,7 +40,7 @@ public class ExperimentRunGroupsView extends VBox
         {
             protected TableInfo createTable()
             {
-                return ((ExpSchema)getSchema()).createExperimentsTableWithRunMemberships(run);
+                return ((ExpSchema)getSchema()).createExperimentsTableWithRunMemberships(run, getContainerFilter());
             }
 
             protected void populateButtonBar(DataView view, ButtonBar bar)

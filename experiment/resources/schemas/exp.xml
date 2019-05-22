@@ -1062,8 +1062,8 @@
     </table>
     <table tableName="Edge" tableDbType="TABLE">
         <columns>
-            <column columnName="fromLsid"/>
-            <column columnName="toLsid"/>
+            <column columnName="fromObjectId"/>
+            <column columnName="toObjectId"/>
             <column columnName="runId"/>
         </columns>
     </table>

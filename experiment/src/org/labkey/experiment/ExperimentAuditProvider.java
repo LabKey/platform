@@ -24,7 +24,9 @@ import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.data.RunGroupColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
@@ -117,12 +119,12 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(ColumnInfo col)
+            protected void initColumn(BaseColumnInfo col)
             {
                 if (COLUMN_NAME_PROTOCOL_LSID.equalsIgnoreCase(col.getName()))
                 {

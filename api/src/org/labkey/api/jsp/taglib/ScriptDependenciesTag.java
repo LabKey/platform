@@ -109,7 +109,7 @@ public class ScriptDependenciesTag extends SimpleTagBase
                             sb.append("</script>\n");
 
                             JspWriter out = getOut();
-                            out.write(sb.toString());
+                            out.print(sb.toString());
                         }
                     }
                 }

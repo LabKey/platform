@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -1298,7 +1299,7 @@ groupByLoop:
 
         for (SelectColumn col : _columns.values())
         {
-            ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col);
+            var aliasedColumn = new RelationColumnInfo(ret, col);
             ret.addColumn(aliasedColumn);
 
             if (StringUtils.equalsIgnoreCase(aliasedColumn.getName(),key))
@@ -2247,7 +2248,7 @@ groupByLoop:
 
 
         @Override
-        void copyColumnAttributesTo(ColumnInfo to)
+        void copyColumnAttributesTo(BaseColumnInfo to)
         {
             QExpr expr = getResolvedField();
             if (expr instanceof QField)

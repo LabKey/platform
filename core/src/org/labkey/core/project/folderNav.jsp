@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -37,18 +39,18 @@
         dependencies.add("internal/jQuery");
     }
 
-    public _HtmlString getTrailSeparator()
+    public HtmlString getTrailSeparator()
     {
-        return _hs("&nbsp;/&nbsp;");
+        return HtmlString.unsafe("&nbsp;/&nbsp;");
     }
 
-    public _HtmlString getTrailLink(Container c, User u)
+    public HtmlString getTrailLink(Container c, User u)
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getTitle()) + "</a>" + getTrailSeparator());
+            return HtmlStringBuilder.of(link(c.getTitle(), c.getStartURL(u))).append(getTrailSeparator()).getHtmlString();
         }
-        return _hs("<span>" + h(c.getTitle()) + "</span>" + getTrailSeparator());
+        return HtmlStringBuilder.of(HtmlString.unsafe("<span>")).append(c.getTitle()).append(HtmlString.unsafe("</span>")).append(getTrailSeparator()).getHtmlString();
     }
 %>
 <%

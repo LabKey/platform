@@ -161,18 +161,10 @@ public class Entity implements java.io.Serializable, Ownable
 
     public void setEntityId(String entityIdStr)
     {
-        // TODO: Check with Matt -- allow new GUID(null) instead?  Or disallow null?
-        if (null == entityIdStr)
-        {
-            this.entityId = null;
-        }
-        else
-        {
-            GUID entityId = new GUID(entityIdStr);
-            if (this.entityId != null && !this.entityId.equals(entityId))
-                throw new IllegalStateException("can't change entityid");
-            this.entityId = entityId;
-        }
+        GUID entityId = ConvertHelper.convert(entityIdStr, GUID.class);
+        if (this.entityId != null && !this.entityId.equals(entityId))
+            throw new IllegalStateException("can't change entityid");
+        this.entityId = entityId;
     }
 
     @Nullable

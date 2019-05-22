@@ -20,16 +20,15 @@
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.api.ExpSampleSetImpl" %>
-<%@ page import="org.labkey.experiment.api.ExperimentServiceImpl" %>
+<%@ page import="org.labkey.experiment.api.SampleSetServiceImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.experiment.api.SampleSetServiceImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container proj = getContainer().getProject();
     if (proj == null || proj.isRoot())
     {
-        out.write("No current project.");
+        out.print("No current project.");
     }
     else
     {

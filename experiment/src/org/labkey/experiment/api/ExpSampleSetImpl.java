@@ -66,8 +66,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     private Domain _domain;
     private NameGenerator _nameGen;
 
-    public static final String GENID_SEQUENCE_NAME = "org.labkey.experiment.api.MaterialSource";
-
     // For serialization
     protected ExpSampleSetImpl() {}
 

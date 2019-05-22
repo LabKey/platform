@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -35,7 +36,9 @@ public class VisitTagTable extends BaseStudyTable
 {
     public VisitTagTable(StudyQuerySchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisitTag(), true);
+        super(schema, StudySchema.getInstance().getTableInfoVisitTag(), null, true);
+
+        // NOTE: BaseStudyTable is maybe not the right base class for VisitTagTable? Its logic for CF doesn't quite work here
         if (null != containerFilter)
             _setContainerFilter(containerFilter);
 
@@ -49,23 +52,23 @@ public class VisitTagTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("SingleUse")));
 
         // setup lookups for the standard fields
-        ColumnInfo container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
+        var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
         ContainerForeignKey.initColumn(container, schema);
 
-        ColumnInfo created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
+        var created = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Created")));
         created.setFormat("DateTime");
         created.setHidden(true);
 
-        ColumnInfo createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
+        var createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
         createdBy.setLabel("Created By");
         createdBy.setHidden(true);
         UserIdForeignKey.initColumn(createdBy);
 
-        ColumnInfo modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
+        var modified = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Modified")));
         modified.setFormat("DateTime");
         modified.setHidden(true);
 
-        ColumnInfo modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
+        var modifiedBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
         modifiedBy.setLabel("Modified By");
         modifiedBy.setHidden(true);
         UserIdForeignKey.initColumn(modifiedBy);
@@ -93,5 +96,18 @@ public class VisitTagTable extends BaseStudyTable
     public QueryUpdateService getUpdateService()
     {
         return new DefaultQueryUpdateService(this, this.getRealTable());
+    }
+
+
+    @Override
+    protected void _setContainerFilter(@NotNull ContainerFilter filter)
+    {
+        super._setContainerFilter(filter);
+    }
+
+    @Override
+    public @NotNull SQLFragment getFromSQL(String alias, boolean skip)
+    {
+        return super.getFromSQL(alias, skip);
     }
 }

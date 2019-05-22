@@ -17,8 +17,10 @@ package org.labkey.query.olap.rolap;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -44,7 +46,7 @@ public class RolapTestSchema extends UserSchema
 
     @Nullable
     @Override
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         switch (name.toLowerCase())
         {
@@ -73,8 +75,8 @@ public class RolapTestSchema extends UserSchema
             super(getDbSchema(), name);
             for (ColumnInfo c : columns)
             {
-                c.setParentTable(this);
-                this.addColumn(c);
+                ((BaseColumnInfo)c).setParentTable(this);
+                this.addColumn((BaseColumnInfo)c);
             }
             SqlDialect d = getDbSchema().getSqlDialect();
             String union = "";
@@ -128,13 +130,13 @@ public class RolapTestSchema extends UserSchema
 
     TableInfo createFact()
     {
-        ColumnInfo[] cols = new ColumnInfo[]
+        BaseColumnInfo[] cols = new BaseColumnInfo[]
         {
-            new ColumnInfo("ptid", JdbcType.VARCHAR),
-            new ColumnInfo("studyid", JdbcType.VARCHAR),
-            new ColumnInfo("visitid", JdbcType.VARCHAR),
-            new ColumnInfo("assay", JdbcType.VARCHAR),
-            new ColumnInfo("positivity", JdbcType.INTEGER)
+            new BaseColumnInfo("ptid", JdbcType.VARCHAR),
+            new BaseColumnInfo("studyid", JdbcType.VARCHAR),
+            new BaseColumnInfo("visitid", JdbcType.VARCHAR),
+            new BaseColumnInfo("assay", JdbcType.VARCHAR),
+            new BaseColumnInfo("positivity", JdbcType.INTEGER)
         };
         cols[0].setFk(new LookupForeignKey("ptid")
         {
@@ -232,9 +234,9 @@ public class RolapTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
-            new ColumnInfo("studyid", JdbcType.VARCHAR),
-            new ColumnInfo("type", JdbcType.VARCHAR),
-            new ColumnInfo("condition", JdbcType.VARCHAR)
+            new BaseColumnInfo("studyid", JdbcType.VARCHAR),
+            new BaseColumnInfo("type", JdbcType.VARCHAR),
+            new BaseColumnInfo("condition", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
@@ -252,9 +254,9 @@ public class RolapTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
-            new ColumnInfo("ptid", JdbcType.VARCHAR),
-            new ColumnInfo("gender", JdbcType.VARCHAR),
-            new ColumnInfo("species", JdbcType.VARCHAR)
+            new BaseColumnInfo("ptid", JdbcType.VARCHAR),
+            new BaseColumnInfo("gender", JdbcType.VARCHAR),
+            new BaseColumnInfo("species", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
@@ -321,8 +323,8 @@ public class RolapTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
-            new ColumnInfo("visitid", JdbcType.VARCHAR),
-            new ColumnInfo("label", JdbcType.VARCHAR)
+            new BaseColumnInfo("visitid", JdbcType.VARCHAR),
+            new BaseColumnInfo("label", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {
@@ -339,8 +341,8 @@ public class RolapTestSchema extends UserSchema
     {
         ColumnInfo[] cols = new ColumnInfo[]
         {
-                new ColumnInfo("name", JdbcType.VARCHAR),
-                new ColumnInfo("label", JdbcType.VARCHAR)
+                new BaseColumnInfo("name", JdbcType.VARCHAR),
+                new BaseColumnInfo("label", JdbcType.VARCHAR)
         };
         Object[][] data = new Object[][]
         {

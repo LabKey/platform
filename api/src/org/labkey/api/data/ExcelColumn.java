@@ -148,7 +148,7 @@ public class ExcelColumn extends RenderColumn
             setName(dc.getColumnInfo().getName());
         }
         setCaption(dc.getCaptionExpr());
-        setSimpleType(dc);  //call this last so that setName() has already been called
+        setSimpleType(dc); //call after the call to setName()
 
         if (dc.getExcelFormatString() != null)
         {

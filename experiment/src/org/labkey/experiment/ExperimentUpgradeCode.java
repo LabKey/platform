@@ -128,7 +128,11 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (context.isNewInstall())
             return;
 
-        ExperimentServiceImpl.get().rebuildAllEdges();
+        // skip this invocation if we're not at latest version of exp.Edges
+        DbSchema schema = ExperimentServiceImpl.get().getSchema();
+        TableInfo edge = schema.getTable("Edge");
+        if (null != edge.getColumn("toObjectId") && null != edge.getColumn("fromObjectId"))
+            ExperimentServiceImpl.get().rebuildAllEdges();
     }
 
 
@@ -406,7 +410,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         SQLFragment frag = new SQLFragment("SELECT COUNT(*) FROM exp.material WHERE cpasType=?").add(domain.getTypeURI());
         int count = new SqlSelector(scope, frag).getObject(Integer.class);
 
-        DbSequence sequence = DbSequenceManager.get(ss.getContainer(), ExpSampleSetImpl.GENID_SEQUENCE_NAME, ss.getRowId());
+        DbSequence sequence = DbSequenceManager.get(ss.getContainer(), ExpSampleSetImpl.SEQUENCE_PREFIX, ss.getRowId());
         sequence.ensureMinimum(count);
         LOG.debug("SampleSet '" + ss.getName() + "' (" + ss.getRowId() + ") set counter for 'genId' column to " + count);
     }

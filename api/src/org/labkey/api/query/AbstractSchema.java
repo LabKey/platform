@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.NavTree;
 
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import java.util.Set;
 
 abstract public class AbstractSchema implements QuerySchema
 {
+    protected DefaultSchema _defaultSchema; // e.g. the (user/container) schema
     protected final DbSchema _dbSchema;
     protected final User _user;
     protected final Container _container;
@@ -42,6 +44,18 @@ abstract public class AbstractSchema implements QuerySchema
         _dbSchema = dbSchema;
         _user = user;
         _container = container;
+        MemTracker.get().put(this);
+    }
+
+    /**
+     * This can be used to resolve new objects (e.g. loookup tables) without calling DefaultSchema.get()
+     * This can be faster because DefaultSchema caches QuerySchemas and QuerySchemas may cache TableInfos.
+     */
+    public DefaultSchema getDefaultSchema()
+    {
+        if (null == _defaultSchema)
+            _defaultSchema = DefaultSchema.get(_user,_container);
+        return _defaultSchema;
     }
 
     public DbSchema getDbSchema()

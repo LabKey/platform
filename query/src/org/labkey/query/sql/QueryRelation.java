@@ -18,7 +18,7 @@ package org.labkey.query.sql;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -270,7 +270,7 @@ public abstract class QueryRelation
             return new SQLFragment(tableName + "." + columnName);
         }
 
-        abstract void copyColumnAttributesTo(ColumnInfo to);
+        abstract void copyColumnAttributesTo(BaseColumnInfo to);
 
         // the sql representing this column 'inside' its queryrelation (optional)
         SQLFragment getInternalSql()
@@ -334,7 +334,7 @@ public abstract class QueryRelation
 
 
     // like an AliasedColumnInfo
-    static public class RelationColumnInfo extends ColumnInfo
+    static public class RelationColumnInfo extends BaseColumnInfo
     {
         RelationColumn _column;
 

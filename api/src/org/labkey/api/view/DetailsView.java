@@ -56,11 +56,13 @@ public class DetailsView extends DataView
         _pk = pk;
     }
 
+    @Override
     protected boolean isColumnIncluded(ColumnInfo col)
     {
         return col.isShownInDetailsView();
     }
 
+    @Override
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         ctx.setMode(DataRegion.MODE_DETAILS);

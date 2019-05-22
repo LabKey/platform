@@ -54,18 +54,14 @@ import java.util.TreeMap;
  */
 public class ContainerTable extends FilteredTable<UserSchema>
 {
-    public ContainerTable(UserSchema schema)
+    public ContainerTable(UserSchema schema, ContainerFilter cf)
     {
-        this(schema, null);
+        this(schema, cf, null);
     }
 
-    public ContainerTable(UserSchema schema, ActionURL url)
+    public ContainerTable(UserSchema schema, ContainerFilter cf, ActionURL url)
     {
-        super(CoreSchema.getInstance().getTableInfoContainers(), schema);
-
-        // Call this after having a chance to set _schema's value. It's invoked in the superclass constructor,
-        // but that's too early for this scenario
-        applyContainerFilter(getContainerFilter());
+        super(CoreSchema.getInstance().getTableInfoContainers(), schema, cf);
         init(url);
     }
 
@@ -81,18 +77,18 @@ public class ContainerTable extends FilteredTable<UserSchema>
         setDescription("Contains one row for every folder, workbook, or project");
         
         wrapAllColumns(true);
-        getColumn("_ts").setHidden(true);
+        getMutableColumn("_ts").setHidden(true);
 
-        ColumnInfo entityIdColumn = getColumn("EntityId");
+        var entityIdColumn = getMutableColumn("EntityId");
         entityIdColumn.setHidden(true);
         entityIdColumn.setKeyField(true);
         entityIdColumn.setReadOnly(true);
 
-        getColumn("RowId").setHidden(true);
-        getColumn("RowId").setReadOnly(true);
-        getColumn("RowId").setUserEditable(true);
+        getMutableColumn("RowId").setHidden(true);
+        getMutableColumn("RowId").setReadOnly(true);
+        getMutableColumn("RowId").setUserEditable(true);
 
-        ColumnInfo parentColumn = getColumn("Parent");
+        var parentColumn = getMutableColumn("Parent");
         ContainerForeignKey.initColumn(parentColumn, _userSchema);
 
         if (url == null)
@@ -100,17 +96,17 @@ public class ContainerTable extends FilteredTable<UserSchema>
         DetailsURL detailsURL = new DetailsURL(url);
         setDetailsURL(detailsURL);
 
-        ColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
+        var col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
         col.setReadOnly(true);
         col.setURL(detailsURL);
         this.addColumn(col);
 
-        ColumnInfo name = getColumn("Name");
+        var name = getMutableColumn("Name");
         name.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, false));
         name.setURL(detailsURL);
         name.setReadOnly(true); // CONSIDER: allow renames via QueryUpdateService api
 
-        ColumnInfo sortOrderCol = getColumn("SortOrder");
+        var sortOrderCol = getMutableColumn("SortOrder");
         sortOrderCol.setReadOnly(true);
         sortOrderCol.setUserEditable(false);
 
@@ -132,13 +128,13 @@ public class ContainerTable extends FilteredTable<UserSchema>
         folderDisplayColumn.setReadOnly(true);
         setTitleColumn(folderDisplayColumn.getName());
 
-        final ColumnInfo folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
+        final var folderPathCol = this.wrapColumn("Path", getRealTable().getColumn("Name"));
         folderPathCol.setReadOnly(true);
         folderPathCol.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, true));
         addColumn(folderPathCol);
         folderPathCol.setURL(detailsURL);
 
-        ColumnInfo typeCol = getColumn("Type");
+        var typeCol = getMutableColumn("Type");
         typeCol.setReadOnly(true);
         typeCol.setUserEditable(false);
 
@@ -175,14 +171,14 @@ public class ContainerTable extends FilteredTable<UserSchema>
         containerDisplayColumn.setReadOnly(true);
         addColumn(containerDisplayColumn);
 
-        col = getColumn("CreatedBy");
+        col = getMutableColumn("CreatedBy");
         col.setReadOnly(true);
-        col.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer(), true));
+        col.setFk(new UserIdQueryForeignKey(_userSchema, true));
 
-        ColumnInfo title = getColumn("Title");
+        var title = getMutableColumn("Title");
         title.setURL(detailsURL);
 
-        ColumnInfo activeModules = new AliasedColumn("ActiveModules", getColumn("RowId"));
+        var activeModules = new AliasedColumn("ActiveModules", getColumn("RowId"));
         activeModules.setDisplayColumnFactory(rowIdCol -> new ActiveModulesDisplayColumn(rowIdCol));
         activeModules.setReadOnly(true);
         activeModules.setHidden(true);
@@ -193,6 +189,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         setImportURL(LINK_DISABLER);
     }
 
+    @Override
     protected String getContainerFilterColumn()
     {
         return "EntityId";
@@ -240,7 +237,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
     {
         if (StringUtils.equalsIgnoreCase("iconurl",name))
         {
-            ColumnInfo iconCol = new WrappedColumn(getColumn("entityid"), "iconurl");
+            var iconCol = new WrappedColumn(getColumn("entityid"), "iconurl");
             iconCol.setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 @Override

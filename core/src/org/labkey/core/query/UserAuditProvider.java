@@ -20,7 +20,8 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -92,12 +93,12 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
     }
 
     @Override
-    public TableInfo createTableInfo(UserSchema userSchema)
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
-        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, defaultVisibleColumns)
+        return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(ColumnInfo col)
+            protected void initColumn(BaseColumnInfo col)
             {
                 if (COLUMN_NAME_USER.equalsIgnoreCase(col.getName()))
                     UserIdForeignKey.initColumn(col);

@@ -1,5 +1,7 @@
 package org.labkey.api.jsp;
 
+import org.labkey.api.util.ShutdownListener;
+
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRequest;
@@ -9,7 +11,7 @@ import javax.servlet.jsp.JspEngineInfo;
 import javax.servlet.jsp.JspFactory;
 import javax.servlet.jsp.PageContext;
 
-public class LabKeyJspFactory extends JspFactory
+public class LabKeyJspFactory extends JspFactory implements ShutdownListener
 {
     private final JspFactory _factory;
 
@@ -42,5 +44,24 @@ public class LabKeyJspFactory extends JspFactory
     public JspApplicationContext getJspApplicationContext(ServletContext servletContext)
     {
         return _factory.getJspApplicationContext(servletContext);
+    }
+
+    @Override
+    public String getName()
+    {
+        return "LabKeyJspFactory";
+    }
+
+    @Override
+    public void shutdownPre()
+    {
+        LabKeyJspWriter.logStatistics();
+    }
+
+    @Override
+    public void shutdownStarted()
+    {
+        // Restore the default JspFactory so a Tomcat reload doesn't result in multiple wrappings
+        JspFactory.setDefaultFactory(_factory);
     }
 }

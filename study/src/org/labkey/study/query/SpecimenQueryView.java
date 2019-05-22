@@ -348,11 +348,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
             ActionURL updateActionURL = new ActionURL(SpecimenController.UpdateSpecimenQueryRowAction.class, getContainer());
             updateActionURL.addParameter("schemaName", "study");
             updateActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
-            tableInfo.setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
+            setUpdateURL(new DetailsURL(updateActionURL, Collections.singletonMap("RowId", "RowId")));
             ActionURL insertActionURL = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, getContainer());
             insertActionURL.addParameter("schemaName", "study");
             insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
-            tableInfo.setInsertURL(new DetailsURL(insertActionURL));
+            setInsertURL(insertActionURL.toLocalString(false));
         }
 
         setViewItemFilter(new ReportService.ItemFilter()
@@ -712,8 +712,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             rgn.setRecordSelectorValueColumns("RowId");
 
             // NOTE: Setting here instead of in table ctor because if set when SpecimenDetail is sub-query, we have too many columns in sub-query (Dave)
-            if (ViewType.VIALS.equals(_viewType))
-                getTable().getColumn("Container").setRequired(true);
+//            if (ViewType.VIALS.equals(_viewType))
+//                ((BaseColumnInfo)getTable().getColumn("Container")).setRequired(true);
         }
         else
         {

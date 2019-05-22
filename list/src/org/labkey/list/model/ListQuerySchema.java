@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.list.ListDefinition;
@@ -86,7 +87,7 @@ public class ListQuerySchema extends UserSchema
     }
 
     @Nullable
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         ListDefinition def = ListService.get().getList(getContainer(), name);
         if (def != null)

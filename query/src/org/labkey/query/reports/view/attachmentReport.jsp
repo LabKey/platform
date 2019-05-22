@@ -124,7 +124,7 @@
             xtype: 'displayfield',
             value: 'LabKey Server can extract a thumbnail image from some '
             + 'document types to provide a preview in the user interface. '
-            + 'Click <%=text(AttachmentReportForm.getHelpTopic().getSimpleLinkHtml("here"))%> for more details.'
+            + 'Click <%=AttachmentReportForm.getHelpTopic().getSimpleLinkHtml("here")%> for more details.'
         };
 
         <% if (canUseDiskFile) { %>
@@ -195,7 +195,7 @@
             <% } %>
 
             // now set the data.  If it is a server attachment type then set the serverFilePath
-            // outherwise just set the uploadFileName
+            // otherwise just set the uploadFileName
             if (attachmentType === <%=q(AttachmentReportForm.AttachmentReportType.server.toString())%>) {
                 serverFileTextField.setValue(serverFilePath);
             } else {

@@ -18,7 +18,6 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.List;
@@ -64,22 +63,6 @@ public class PerlExportScriptModel extends ExportScriptModel
     {
         return "[" + PageFlowUtil.jsString(name) + ", "
                 + operator.getPreferredUrlKey() + ", '" + PageFlowUtil.jsString(value) + "']";
-    }
-
-    public String getColumns()
-    {
-        StringBuilder ret = new StringBuilder();
-        String sep = "";
-        for (DisplayColumn dc : getQueryView().getDisplayColumns())
-        {
-            if (dc.isQueryColumn())
-            {
-                ret.append(sep);
-                ret.append(dc.getColumnInfo().getName());
-                sep = ",";
-            }
-        }
-        return ret.toString();
     }
 
     // Produce Perl code block containing all the standard query parameters.  Callers need to wrap this block in

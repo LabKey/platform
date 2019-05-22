@@ -17,7 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
@@ -33,11 +33,11 @@ import org.labkey.study.model.StudyManager;
 
 public class VisitTable extends BaseStudyTable
 {
-    public VisitTable(StudyQuerySchema schema)
+    public VisitTable(StudyQuerySchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoVisit());
+        super(schema, StudySchema.getInstance().getTableInfoVisit(), null);
 
-        ContainerFilter cf = schema.getDefaultContainerFilter();
+        cf = schema.getDefaultContainerFilter();
         Study study = schema.getStudy();
         if (null != study)
         {
@@ -73,7 +73,7 @@ public class VisitTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn("SequenceNumHandling"));
 
         boolean showCohorts = StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser());
-        ColumnInfo cohortColumn;
+        BaseColumnInfo cohortColumn;
         if (showCohorts)
         {
             cohortColumn = new AliasedColumn(this, "Cohort", _rootTable.getColumn("CohortId"));
@@ -82,7 +82,7 @@ public class VisitTable extends BaseStudyTable
         {
             cohortColumn = new NullColumnInfo(this, "Cohort", JdbcType.INTEGER);
         }
-        cohortColumn.setFk(new CohortForeignKey(schema, showCohorts, cohortColumn.getLabel()));
+        cohortColumn.setFk(new CohortForeignKey(schema, cf, showCohorts, cohortColumn.getLabel()));
         addColumn(cohortColumn);
         setTitleColumn("Label");
         setDeleteURL(LINK_DISABLER);

@@ -25,17 +25,20 @@ import java.io.IOException;
 public class HelpPopupTag extends BodyTagSupport
 {
     private String title;
+
+    @Override
     public int doStartTag()
     {
         return EVAL_BODY_BUFFERED;
     }
 
 
+    @Override
     public int doEndTag() throws JspException
     {
         try
         {
-            pageContext.getOut().write(PageFlowUtil.helpPopup(title, getBodyContent().getString(), true));
+            pageContext.getOut().print(PageFlowUtil.helpPopup(title, getBodyContent().getString(), true));
         }
         catch (IOException e)
         {
@@ -55,6 +58,7 @@ public class HelpPopupTag extends BodyTagSupport
     }
 
 
+    @Override
     public void release()
     {
         title = null;

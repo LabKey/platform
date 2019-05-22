@@ -18,6 +18,7 @@ package org.labkey.study.plate.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
@@ -40,9 +41,9 @@ import java.util.TreeMap;
  */
 public class PlateTable extends BasePlateTable
 {
-    public PlateTable(PlateSchema schema)
+    public PlateTable(PlateSchema schema, ContainerFilter cf)
     {
-        super(schema, StudySchema.getInstance().getTableInfoPlate());
+        super(schema, StudySchema.getInstance().getTableInfoPlate(), cf);
         setPublicSchemaName(PlateSchema.SCHEMA_NAME);
         final FieldKey keyProp = new FieldKey(null, "Property");
         final List<FieldKey> visibleColumns = new ArrayList<>();
@@ -61,7 +62,7 @@ public class PlateTable extends BasePlateTable
         //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
 
         //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-        ColumnInfo colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
+        var colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
         String propPrefix = new Lsid("PlateInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);
@@ -75,7 +76,7 @@ public class PlateTable extends BasePlateTable
 
         }, PropertyDescriptor.class);
 
-        colProperty.setFk(new PropertyForeignKey(map, schema));
+        colProperty.setFk(new PropertyForeignKey(schema, null, map));
         colProperty.setIsUnselectable(true);
         addColumn(colProperty);
         setDefaultVisibleColumns(visibleColumns);

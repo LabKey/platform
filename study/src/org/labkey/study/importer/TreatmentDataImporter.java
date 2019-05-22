@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -113,18 +114,18 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
 
                     for (String studyDesignTableName : studyDesignTableNames)
                     {
-                        StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
+                        StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName, null);
                         importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name", null, null));
                     }
 
                     // add the treatment specific tables
-                    StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
+                    StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME, null);
                     PreserveExistingProjectData productTransform = !isDataspaceProject ? null //Issue 28858
                             : new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap);
                     importTableData(ctx, vf, productTablePackage, _productTableMapBuilder, productTransform);
 
                     // product antigen table
-                    StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
+                    StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME, null);
                     List<TransformHelper> transformHelpers = new ArrayList<>();
                     TransformHelper transformHelperComp;
 
@@ -137,14 +138,14 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     // this table was added in 16.3, so any archive created prior to that will not have this tsv file to import
                     if (ctx.getArchiveVersion() >= 16.3)
                     {
-                        StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME);
+                        StudyQuerySchema.TablePackage doseAndRouteTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.DOSE_AND_ROUTE_TABLE_NAME, null);
                         importTableData(ctx, vf, doseAndRouteTablePackage, null, new TransformHelperComposition(Collections.singletonList(_productAntigenTableTransform)));
                     }
 
-                    StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME);
+                    StudyQuerySchema.TablePackage treatmentTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_TABLE_NAME, null);
                     importTableData(ctx, vf, treatmentTablePackage, _treatmentTableMapBuilder, null);
 
-                    StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                    StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME, null);
                     importTableData(ctx, vf, treatmentProductTablePackage, null, _treatmentProductTransform);
 
                     // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).

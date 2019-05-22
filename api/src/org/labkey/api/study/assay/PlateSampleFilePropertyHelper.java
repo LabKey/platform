@@ -113,6 +113,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     }
 
     // Returns a map from sample wellgroup name to the properties of that sample.
+    @Override
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
         Map<String, Map<DomainProperty, String>> result = new HashMap<>();
@@ -158,7 +159,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory);
             fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
             is = metadata.getInputStream();
-            byte data[] = new byte[BUFFER_SIZE];
+            byte[] data = new byte[BUFFER_SIZE];
             int bytes;
             while ((bytes = is.read(data, 0, BUFFER_SIZE)) != -1)
                 fos.write(data, 0, bytes);
@@ -183,10 +184,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             return false;
         if (first.size() != second.size())
             return false;
-        Set<DomainProperty> firstSet = new HashSet<>();
-        firstSet.addAll(first);
-        Set<DomainProperty> secondSet = new HashSet<>();
-        secondSet.addAll(second);
+        Set<DomainProperty> firstSet = new HashSet<>(first);
+        Set<DomainProperty> secondSet = new HashSet<>(second);
         return firstSet.equals(secondSet);
     }
 

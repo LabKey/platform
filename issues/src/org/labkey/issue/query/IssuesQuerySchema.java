@@ -77,11 +77,11 @@ public class IssuesQuerySchema extends UserSchema
         RelatedIssues
         {
             @Override
-            public TableInfo createTable(IssuesQuerySchema schema)
+            public TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf)
             {
                 SimpleUserSchema.SimpleTable<IssuesQuerySchema> table =
                         new SimpleUserSchema.SimpleTable<>(
-                                schema, IssuesSchema.getInstance().getTableInfoRelatedIssues()).init();
+                                schema, IssuesSchema.getInstance().getTableInfoRelatedIssues(), cf).init();
 
                 return table;
             }
@@ -89,21 +89,21 @@ public class IssuesQuerySchema extends UserSchema
         Comments
         {
             @Override
-            public TableInfo createTable(IssuesQuerySchema schema)
+            public TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf)
             {
-                return new CommentsTable(schema);
+                return new CommentsTable(schema, cf);
             }
         },
         IssueListDef
         {
             @Override
-            public TableInfo createTable(IssuesQuerySchema schema)
+            public TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf)
             {
-                return new IssuesListDefTable(schema);
+                return new IssuesListDefTable(schema, cf);
             }
         };
 
-        public abstract TableInfo createTable(IssuesQuerySchema schema);
+        public abstract TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf);
     }
     static private Set<String> tableNames;
     static private Set<String> visibleTableNames;
@@ -164,11 +164,11 @@ public class IssuesQuerySchema extends UserSchema
         return names;
     }
 
-    public TableInfo createTable(String name)
+    public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name != null)
         {
-            TableInfo issueTable = getIssueTable(name);
+            TableInfo issueTable = getIssueTable(name, cf);
             if (issueTable != null)
             {
                 return issueTable;
@@ -186,12 +186,12 @@ public class IssuesQuerySchema extends UserSchema
             }
             if (tableType != null)
             {
-                return tableType.createTable(this);
+                return tableType.createTable(this, cf);
             }
 
             if (name.equalsIgnoreCase(ALL_ISSUE_TABLE))
             {
-                return new AllIssuesTable(this).init();
+                return new AllIssuesTable(this, cf).init();
             }
         }
         return null;
@@ -231,13 +231,13 @@ public class IssuesQuerySchema extends UserSchema
     }
 
     @Nullable
-    protected TableInfo getIssueTable(String name)
+    protected TableInfo getIssueTable(String name, ContainerFilter cf)
     {
         IssueListDef issueDef = getIssueDefs().get(name);
         if (issueDef == null)
             return null;
 
-        return new IssuesTable(this, issueDef);
+        return new IssuesTable(this, cf, issueDef);
     }
 
     private Map<String, IssueListDef> getIssueDefs()

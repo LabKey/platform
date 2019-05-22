@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ColumnInfo;
@@ -39,8 +40,8 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     {
         _form = form;
         setCaption("Run Data");
-        _col = new ColumnInfo("Run Data");
-        _col.setInputType("file");
+        _col = new BaseColumnInfo("Run Data");
+        ((BaseColumnInfo)_col).setInputType("file");
     }
 
     @Override

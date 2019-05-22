@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -48,7 +47,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -1582,7 +1580,7 @@ public class Table
             new Object[] {3, "Three", 103, true, date, guid}
         };
 
-        private final static class _ColumnInfo extends ColumnInfo
+        private final static class _ColumnInfo extends BaseColumnInfo
         {
             _ColumnInfo(String name, JdbcType type)
             {

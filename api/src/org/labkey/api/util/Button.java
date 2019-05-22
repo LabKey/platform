@@ -27,7 +27,7 @@ import java.io.Writer;
  * Created by Nick Arnold on 2/27/14.
  * Testing of this class can be found in the Core module's TestController.ButtonAction
  */
-public class Button extends DisplayElement
+public class Button extends DisplayElement implements HasHtmlString
 {
     // Button constants
     private static final String CLS = "labkey-button";
@@ -182,8 +182,14 @@ public class Button extends DisplayElement
         out.write(toString());
     }
 
-    @Override
+    @Override // TODO: HtmlString - remove this
     public String toString()
+    {
+        return getHtmlString().toString();
+    }
+
+    @Override
+    public HtmlString getHtmlString()
     {
         boolean iconOnly = getIconCls() != null;
         StringBuilder sb = new StringBuilder();
@@ -243,15 +249,17 @@ public class Button extends DisplayElement
         if (iconOnly)
         {
             sb.append("<i class=\"fa fa-").append(getIconCls()).append("\"></i>");
-            return sb.append("</a>").toString(); // for now, just show icon w/o text
+            sb.append("</a>"); // for now, just show icon w/o text
+        }
+        else
+        {
+            sb.append("<span>");
+            if (text != null)
+                sb.append(text);
+            sb.append("</span></a>");
         }
 
-        sb.append("<span>");
-        if (text != null)
-            sb.append(text);
-        sb.append("</span></a>");
-
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
     }
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
@@ -327,6 +335,8 @@ public class Button extends DisplayElement
             throw new IllegalStateException("Not yet implemented for ButtonBuilder");
         }
 
+        @NotNull
+        @Override
         public Button build()
         {
             return new Button(this);
