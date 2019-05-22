@@ -85,6 +85,11 @@ class LineageForeignKey extends AbstractForeignKey
 
         var lookup = table.getColumn(displayField);
 
+        // We want to create a placeholder column here that DOES NOT add generate any joins
+        // so that's why we extend AbstractForeignKey instead of LookupForeignKey.
+        // I could "wrap" the lookup column and call its getValueSql() method, but I know what the expression is
+        // and this column is not selectable anyway, so I'm just constructing a new ExprColumn
+        // CONSIDER: we could consider adding a "really don't add any joins" flag to LookupForeignKey for this pattern
         SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
         var col = new ExprColumn(parent.getParentTable(), FieldKey.fromParts(displayField), sql, JdbcType.VARCHAR);
         col.setFk(lookup.getFk());
