@@ -406,7 +406,7 @@ public class DomainUtil
     }
 
 
-    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName)
+    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
         return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
     }
@@ -416,7 +416,7 @@ public class DomainUtil
             String kindName, GWTDomain domain, Map<String, Object> arguments,
             Container container, User user, @Nullable String domainName,
             @Nullable TemplateInfo templateInfo
-    )
+    ) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
         domain = new GWTDomain(domain);
@@ -432,6 +432,11 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
+        ValidationException ve = DomainUtil.validateProperties(null, domain, null);
+        if (ve.hasErrors())
+        {
+            throw new ValidationException(ve);
+        }
         Domain created = kind.createDomain(domain, arguments, container, user, templateInfo);
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
@@ -789,9 +794,9 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @NotNull DomainKind domainKind)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind)
     {
-        Set<String> reservedNames = (null != domain ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
+        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
 
