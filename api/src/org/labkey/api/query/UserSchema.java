@@ -817,11 +817,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         }
     }
 
-    // FOR USE BY SUBCLASSES
-    /* Eventually we want UserSchema.getTable() to implement support for caching TableInfo
-     * However, many ForeignKeys create tables w/o using getTable().  This can be used to optimize
-     * that scenario.  It is up to the caller to ensure propert caching when ContainerFilter may differ
-     * CONSIDER: add ContainerFilter as a second parameter in addition to String key
+    /**
+     * UserSchema.getTable() implements support for caching TableInfos.
+     * However, many ForeignKeys create tables w/o using getTable().  This method can be used to optimize
+     * those scenario.  It is up to the caller to ensure proper caching when ContainerFilter may differ.  The
+     * suggested way to do that is to call ContainerFilter.getCacheKey().
+     *
+     * Importantly, the key should reflect all the properties that affect who this table is created (e.g. additional filters, etc).
      */
     private Map<String,TableInfo> tableInfoCache = Collections.synchronizedMap(new CaseInsensitiveHashMap<TableInfo>());
 
