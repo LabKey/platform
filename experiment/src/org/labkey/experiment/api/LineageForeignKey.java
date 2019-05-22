@@ -31,11 +31,14 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static org.apache.commons.lang3.StringUtils.defaultString;
 
 /**
  * User: kevink
@@ -43,16 +46,16 @@ import java.util.function.Supplier;
  */
 class LineageForeignKey extends AbstractForeignKey
 {
-    private final ExpTableImpl _table;
+    private final ExpTableImpl _seedTable;
     private final UserSchema _schema;
     private final boolean _parents;
 
 
-    LineageForeignKey(ExpTableImpl expTable, boolean parents)
+    LineageForeignKey(UserSchema schema, ExpTableImpl seedTable, boolean parents)
     {
-        super(expTable.getUserSchema(), expTable.getContainerFilter());
-        _table = expTable;
-        _schema = _table.getUserSchema();
+        super(schema, null);
+        _seedTable = seedTable;
+        _schema = schema;
         _parents = parents;
     }
 
@@ -65,7 +68,44 @@ class LineageForeignKey extends AbstractForeignKey
     @Override
     public TableInfo getLookupTableInfo()
     {
-        return new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _schema).init();
+        Path cacheKey = new Path(this.getClass().getName(), _parents ? "Inputs" : "Outputs");
+        return _schema.getCachedLookupTableInfo(cacheKey.toString(), () ->
+        {
+            var ret = new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _schema, cacheKey).init();
+            ret.setLocked(true);
+            return ret;
+        });
+    }
+
+    enum LevelColumnType
+    {
+        Data("Data", "Data"),
+        Material("Materials", "Material"),
+        ExperimentRun("Runs", "ExperimentRun");
+
+        final String columnName;
+        final String expType;
+
+        LevelColumnType(String name, String expType)
+        {
+            this.columnName = name;
+            this.expType = expType;
+        }
+
+        List<? extends ExpObject> getItems(UserSchema s)
+        {
+            // hmm don't think enums can override a method.. so here's a switch
+            switch (this)
+            {
+                case Data:
+                    return ExperimentService.get().getDataClasses(s.getContainer(), s.getUser(), true);
+                case Material:
+                    return ExperimentService.get().getSampleSets(s.getContainer(), s.getUser(), true);
+                case ExperimentRun:
+                    return ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(s.getContainer());
+                default: return null;
+            }
+        }
     }
 
     public ColumnInfo _createLookupColumn(ColumnInfo parent, TableInfo table, String displayField)
@@ -84,6 +124,8 @@ class LineageForeignKey extends AbstractForeignKey
             return null;
 
         var lookup = table.getColumn(displayField);
+        if (null == lookup)
+            return null;
 
         // We want to create a placeholder column here that DOES NOT add generate any joins
         // so that's why we extend AbstractForeignKey instead of LookupForeignKey.
@@ -107,9 +149,12 @@ class LineageForeignKey extends AbstractForeignKey
 
     private class LineageForeignKeyLookupTable extends VirtualTable
     {
-        LineageForeignKeyLookupTable(String name, UserSchema schema)
+        final private Path cacheKeyPrefix;
+
+        LineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKeyPrefix)
         {
             super(schema.getDbSchema(), name, schema);
+            this.cacheKeyPrefix = cacheKeyPrefix;
         }
         
         protected TableInfo init()
@@ -117,31 +162,29 @@ class LineageForeignKey extends AbstractForeignKey
             addLineageColumn("All", _parents, null, null, null);
             //addLineageColumn("Nearest", _parents, null, null, null); // TODO: filter to the nearest parent.  Not sure if this is still needed
 
-            addLevelColumn("Data", "Data", () -> ExperimentService.get().getDataClasses(_userSchema.getContainer(), _userSchema.getUser(), true));
-            addLevelColumn("Materials", "Material", () -> ExperimentService.get().getSampleSets(_userSchema.getContainer(), _userSchema.getUser(), true));
-            addLevelColumn("Runs", "ExperimentRun", () -> ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(_userSchema.getContainer()));
+            addLevelColumn(LevelColumnType.Data);
+            addLevelColumn(LevelColumnType.Material);
+            addLevelColumn(LevelColumnType.ExperimentRun);
 
             return this;
         }
 
-        private ColumnInfo addLevelColumn(@NotNull String name, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
+        private ColumnInfo addLevelColumn(@NotNull LevelColumnType level)
         {
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
-            var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
-            col.setFk(new ByTypeLineageForeignKey( expType, items ));
+            var col = new ExprColumn(this, FieldKey.fromParts(level.columnName), sql, JdbcType.VARCHAR);
+            col.setFk(new ByTypeLineageForeignKey( getUserSchema(), level, cacheKeyPrefix ));
             col.setUserEditable(false);
             col.setReadOnly(true);
             col.setIsUnselectable(true);
             return addColumn(col);
-
         }
-
 
         ColumnInfo addLineageColumn(String name, boolean parents, Integer depth, String expType, String cpasType)
         {
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.VARCHAR);
-            col.setFk(new _MultiValuedForeignKey(parents, depth, expType, cpasType));
+            col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, parents, depth, expType, cpasType));
 
             return addColumn(col);
         }
@@ -154,15 +197,27 @@ class LineageForeignKey extends AbstractForeignKey
             final String expType;
             final String cpasType;
 
-            public _MultiValuedForeignKey(boolean parents, Integer depth, String expType, String cpasType)
+            public _MultiValuedForeignKey(Path cacheKeyPrefix, boolean parents, Integer depth, String expType, String cpasType)
             {
                 super(new LookupForeignKey("self_lsid", "Name")
                 {
+                    TableInfo _table = null;
+
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        SQLFragment lsids =  new SQLFragment("(SELECT lsid FROM ").append(_table.getFromSQL("qq")).append(")");
-                        return new LineageTableInfo("Foo", _table.getUserSchema(), lsids, parents, depth, expType, cpasType);
+                        if (null == _table)
+                        {
+                            Path cacheKey = cacheKeyPrefix.append(_MultiValuedForeignKey.class.getSimpleName(), String.valueOf(parents), null==depth?"-":String.valueOf(depth), defaultString(expType,"-"), defaultString(cpasType,"-"));
+                            _table = LineageForeignKey.this._schema.getCachedLookupTableInfo(cacheKey.toString(), () ->
+                            {
+                                SQLFragment lsids =  new SQLFragment("(SELECT lsid FROM ").append(_seedTable.getFromSQL("qq")).append(")");
+                                var ret = new LineageTableInfo("Foo", getUserSchema(), lsids, parents, depth, expType, cpasType);
+                                ret.setLocked(true);
+                                return ret;
+                            });
+                        }
+                        return _table;
                     }
 
                     @Override
@@ -212,14 +267,17 @@ class LineageForeignKey extends AbstractForeignKey
 
     private class ByTypeLineageForeignKey extends AbstractForeignKey
     {
-        private final @NotNull String _expType;
-        private final @NotNull Supplier<List<? extends ExpObject>> _items;
+        private final @NotNull LevelColumnType _level;
+        private final @NotNull UserSchema _schema;
+        private final Path _cacheKeyPrefix;
+        private TableInfo _table;
 
-        ByTypeLineageForeignKey(@NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKey( @NotNull UserSchema s, @NotNull LevelColumnType level, Path cacheKeyPrefix)
         {
-            super(_table.getUserSchema(), _table.getContainerFilter());
-            _expType = expType;
-            _items = items;
+            super(s, null);
+            _schema = s;
+            _level = level;
+            _cacheKeyPrefix = cacheKeyPrefix;
         }
 
         @Override
@@ -237,7 +295,17 @@ class LineageForeignKey extends AbstractForeignKey
         @Override
         public TableInfo getLookupTableInfo()
         {
-            return new ByTypeLineageForeignKeyLookupTable("Foo", _schema, _expType, _items).init();
+            if (null == _table)
+            {
+                Path cacheKey = _cacheKeyPrefix.append(getClass().getSimpleName(), _level.name());
+                _table = _schema.getCachedLookupTableInfo(cacheKey.toString(), () ->
+                {
+                    var ret = new ByTypeLineageForeignKeyLookupTable("Foo", _schema, cacheKey, _level.expType, ()->_level.getItems(_schema)).init();
+                    ret.setLocked(true);
+                    return ret;
+                });
+            }
+            return _table;
         }
     }
 
@@ -247,9 +315,9 @@ class LineageForeignKey extends AbstractForeignKey
         private final @NotNull String _expType;
         private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
-        ByTypeLineageForeignKeyLookupTable(String name, UserSchema schema, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
+        ByTypeLineageForeignKeyLookupTable(String name, UserSchema schema, Path cacheKey, @NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
-            super(name, schema);
+            super(name, schema, cacheKey);
             _expType = expType;
             _items = items;
         }
