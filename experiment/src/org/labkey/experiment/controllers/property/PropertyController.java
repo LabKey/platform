@@ -386,7 +386,20 @@ public class PropertyController extends SpringActionController
             ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
             updateErrors.setBindExceptionErrors(errors, ERROR_MSG);
 
-            return new ApiSimpleResponse("success", true);
+            Domain domain = PropertyService.get().getDomain(getContainer(), newDomain.getDomainURI());
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            if (domain != null)
+            {
+                Map<String, Object> map = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+                resp.putAll(map);
+            }
+            else
+            {
+                resp = new ApiSimpleResponse();
+            }
+
+            resp.put("success", true);
+            return resp;
         }
     }
 
