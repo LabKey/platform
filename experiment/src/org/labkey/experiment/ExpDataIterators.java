@@ -1,6 +1,7 @@
 package org.labkey.experiment;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.Sets;
@@ -11,7 +12,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -20,6 +23,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
@@ -42,6 +46,10 @@ import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -699,18 +707,21 @@ public class ExpDataIterators
         private final TableInfo _propertiesTable;
         private final Container _container;
         private final User _user;
+        private final Integer _ownerObjectId;
+
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
 
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user, @Nullable Integer ownerObjectId)
         {
             _in = in;
             _expTable = expTable;
             _propertiesTable = propsTable;
             _container = container;
             _user = user;
+            _ownerObjectId = ownerObjectId;
         }
 
         public PersistDataIteratorBuilder setIndexFunction(Function<List<String>, Runnable> indexFunction)
@@ -760,12 +771,15 @@ public class ExpDataIterators
             DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _propertiesTable, _container, context,
                 Collections.singleton("lsid"), null, null);
 
+            // Insert into exp.object
+            var ensureObjectStep = new EnsureExpObjectDataIteratorBuilder(_expTable.getSchema().getScope(), step3, _container, _ownerObjectId);
+
             boolean isSample = "Material".equalsIgnoreCase(_expTable.getName());
 
-            DataIteratorBuilder step4 = step3;
+            DataIteratorBuilder step4 = ensureObjectStep;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
             {
-                step4 = new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample);
+                step4 = new ExpDataIterators.FlagDataIteratorBuilder(ensureObjectStep, _user, isSample);
             }
 
             // Wire up derived parent/child data and materials
@@ -790,4 +804,67 @@ public class ExpDataIterators
             return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
     }
+
+    public static class EnsureExpObjectDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DbScope _scope;
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final Integer _ownerObjectId;
+
+        public EnsureExpObjectDataIteratorBuilder(DbScope scope, DataIteratorBuilder in, @NotNull Container container, Integer ownerObjectId)
+        {
+            _scope = scope;
+            _in = in;
+            _container = container;
+            _ownerObjectId = ownerObjectId;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            return new StatementDataIterator(_in.getDataIterator(context), context) {
+
+                private Connection _conn;
+                private boolean _closed = false;
+
+                @Override
+                protected void onFirst()
+                {
+                    PreparedStatement p;
+                    try
+                    {
+                        _conn = _scope.getConnection();
+
+                        if (_ownerObjectId != null)
+                            p = _conn.prepareStatement("INSERT INTO exp.object (objecturi, container, ownerobjectid) VALUES (?, '" + _container.getId() + "', " + _ownerObjectId + ")");
+                        else
+                            p = _conn.prepareStatement("INSERT INTO exp.object (objecturi, container) VALUES (?, '" + _container.getId() + "')");
+
+                        Parameter param = new Parameter("lsid", 1, JdbcType.VARCHAR);
+                        Parameter.ParameterMap map = new Parameter.ParameterMap(_scope, p, Arrays.asList(param));
+
+                        _stmts = new Parameter.ParameterMap[] { map };
+
+                        super.onFirst();
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
+
+                @Override
+                public void close() throws IOException
+                {
+                    if (_closed)
+                        return;
+                    _closed = true;
+                    super.close();
+                    _scope.releaseConnection(_conn);
+                }
+            };
+        }
+    }
+
 }

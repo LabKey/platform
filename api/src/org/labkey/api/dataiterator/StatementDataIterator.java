@@ -58,7 +58,7 @@ import java.util.function.Supplier;
 
 public class StatementDataIterator extends AbstractDataIterator
 {
-    ParameterMap[] _stmts;
+    protected ParameterMap[] _stmts;
     Triple[][] _bindings = null;
 
     ParameterMap _currentStmt;

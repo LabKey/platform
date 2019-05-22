@@ -37,6 +37,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -728,8 +729,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         TableInfo expTable = ExperimentService.get().getTinfoMaterial();
         TableInfo propertiesTable = _ss.getTinfo();
 
+        // TODO: move to ExpSampleSetImpl.save
+        int sampleSetObjectId = OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Integer) null);
+
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
-        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser())
+        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), sampleSetObjectId)
             .setFileLinkDirectory("sampleset")
             .setIndexFunction( lsids -> () ->
                 {
