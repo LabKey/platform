@@ -98,6 +98,7 @@ public class ApiModule extends CodeOnlyModule
             SqlScanner.TestCase.class,
             FieldKey.TestCase.class,
             SchemaKey.TestCase.class,
+            ExcelColumn.TestCase.class,
             Pair.TestCase.class
         );
     }
