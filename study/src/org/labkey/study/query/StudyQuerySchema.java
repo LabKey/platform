@@ -247,30 +247,6 @@ public class StudyQuerySchema extends UserSchema
     }
 
 
-    // TODO remove this when UserSchema implements caching
-    // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=14369
-    // we're not quite ready for general table caching, so just cache BaseSpecimenPivotTable
-    Map<Pair<String,Boolean>,Object> pivotCache = new HashMap<>();
-
-    @Override
-    public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
-    {
-        if (null == name)
-            return null;
-        Pair<String, Boolean> key = new Pair<>(name.toLowerCase(),includeExtraMetadata);
-        Object torq = forWrite && cf==null ? pivotCache.get(key) : null;
-        if (null != torq)
-            return torq;
-        Object o = super._getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
-        if (o instanceof BaseSpecimenPivotTable && errors.isEmpty() && !forWrite)
-        {
-            ((TableInfo)o).setLocked(true);
-            pivotCache.put(key, o);
-        }
-        return o;
-    }
-
-
     @Override
     protected boolean canReadSchema()
     {

@@ -2087,6 +2087,12 @@ public class Query
             ContainerFilter custom = new ContainerFilter()
             {
                 @Override
+                public String getCacheKey(Container c)
+                {
+                    return " ~~CONTAINERFILTER~~ ";
+                }
+
+                @Override
                 public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean allowNulls)
                 {
                     return new SQLFragment(" ~~CONTAINERFILTER~~ ");
