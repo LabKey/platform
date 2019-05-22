@@ -201,7 +201,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
+                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema, cf);
                 return expSchema.setupTable(result);
             }
         };
