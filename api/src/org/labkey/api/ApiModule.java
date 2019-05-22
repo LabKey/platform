@@ -36,9 +36,9 @@ import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AvatarType;
-import org.labkey.api.util.Pair;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
@@ -98,7 +98,6 @@ public class ApiModule extends CodeOnlyModule
             SqlScanner.TestCase.class,
             FieldKey.TestCase.class,
             SchemaKey.TestCase.class,
-            ExcelColumn.TestCase.class,
             Pair.TestCase.class
         );
     }
