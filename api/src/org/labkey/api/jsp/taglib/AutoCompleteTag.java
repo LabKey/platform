@@ -21,6 +21,7 @@ import org.labkey.api.view.HttpView;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.io.Writer;
 
 /**
  * User: klum
@@ -95,6 +96,12 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         JspWriter out = getOut();
 
         out.print(sb.toString());
+    }
+
+    // Allow subclasses to override to provide a generic Writer (not a JspWriter)
+    protected Writer getWriter()
+    {
+        return getOut();
     }
 
     protected abstract String getTagConfig();

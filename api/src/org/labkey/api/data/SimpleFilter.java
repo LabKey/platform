@@ -27,6 +27,7 @@ import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -233,7 +234,7 @@ public class SimpleFilter implements Filter
         public List<String> getColumnNames()
         {
             return getFieldKeys().stream()
-                .map(fk->fk.toString())
+                .map(QueryKey::toString)
                 .collect(Collectors.toList());
         }
 
@@ -245,12 +246,12 @@ public class SimpleFilter implements Filter
             return false;
         }
 
-        protected String escapeLabKeySqlValue(Object value, JdbcType type)
+        public static String escapeLabKeySqlValue(Object value, JdbcType type)
         {
             return escapeLabKeySqlValue(value, type, false);
         }
 
-        protected String escapeLabKeySqlValue(Object value, JdbcType type, boolean suppressQuotes)
+        protected static String escapeLabKeySqlValue(Object value, JdbcType type, boolean suppressQuotes)
         {
             if (type == null)
                 throw new IllegalArgumentException("Column type must be provided.");
