@@ -53,7 +53,6 @@ import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
@@ -75,6 +74,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jgarms
@@ -185,24 +185,43 @@ public class DomainUtil
 
         Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(container, domain);
 
+        DomainKind domainKind = domain.getDomainKind();
+        if (domainKind == null)
+        {
+            throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
+        }
+
+        //get PK columns
+        TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
+        Map<String, Object> pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+
         for (DomainProperty prop : properties)
         {
             GWTPropertyDescriptor p = getPropertyDescriptor(prop);
+
             Object defaultValue = defaultValues.get(prop);
             String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
             p.setDefaultDisplayValue(formattedDefaultValue);
             p.setDefaultValue(ConvertUtils.convert(defaultValue));
+
+            //set property as PK
+            if (pkColMap.containsKey(p.getName()))
+            {
+                p.setPrimaryKey(true);
+            }
+
+            //lock shared columns or columns not in the same container
+            if (!p.getContainer().equalsIgnoreCase(container.getId()))
+            {
+                p.setLocked(true);
+            }
+
             list.add(p);
         }
 
         d.setFields(list);
 
         // Handle reserved property names
-        DomainKind domainKind = domain.getDomainKind();
-        if (domainKind == null)
-        {
-            throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
-        }
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new HashSet<>(reservedProperties));
         d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));

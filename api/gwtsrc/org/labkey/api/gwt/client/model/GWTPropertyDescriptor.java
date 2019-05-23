@@ -76,6 +76,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
+    private BooleanProperty isPrimaryKey = new BooleanProperty();
+    private BooleanProperty isLocked = new BooleanProperty();
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -134,6 +136,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDisableEditing(s.getDisableEditing());
         setScale(s.getScale());
         setRedactedText(s.getRedactedText());
+        setPrimaryKey(s.isPrimaryKey());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -525,6 +528,26 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setRedactedText(String redactedText)
     {
         this.redactedText.set(redactedText);
+    }
+
+    public boolean isPrimaryKey()
+    {
+        return isPrimaryKey.booleanValue();
+    }
+
+    public void setPrimaryKey(boolean isPrimaryKey)
+    {
+        this.isPrimaryKey.setBool(isPrimaryKey);
+    }
+
+    public void setLocked(boolean locked)
+    {
+        this.isLocked.setBool(locked);
+    }
+
+    public boolean isLocked()
+    {
+        return isLocked.booleanValue();
     }
 
     public String debugString()
