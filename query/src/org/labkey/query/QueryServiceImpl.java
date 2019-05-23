@@ -2302,7 +2302,16 @@ public class QueryServiceImpl implements QueryService
         {
             for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
             {
-                ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
+                ColumnInfo loggingColumn = columnMap.get(fieldKey);                 // Look in columnMap
+                if (null == loggingColumn)
+                    loggingColumn = getColumnForDataLogging(table, fieldKey);       // Look in table columns
+
+                if (null == loggingColumn)
+                {
+                    AliasManager manager = new AliasManager(table, allColumns);     // Try to construct column for fieldKey
+                    loggingColumn = getColumn(manager, table, columnMap, fieldKey);
+                }
+
                 if (null != loggingColumn)
                 {
                     // For the case where we had to add the MRN column in Visualization, that column is in the table.columnMap, but not the local columnMap.
@@ -2312,6 +2321,8 @@ public class QueryServiceImpl implements QueryService
                         allColumns.add(loggingColumn);
                         extraSelectDataLoggingColumns.add(loggingColumn);
                     }
+                    if (!columnMap.containsKey(fieldKey))
+                        columnMap.put(fieldKey, loggingColumn);
                     dataLoggingColumns.add(loggingColumn);
                 }
                 else
