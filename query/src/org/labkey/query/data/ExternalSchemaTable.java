@@ -39,17 +39,19 @@ import java.util.List;
 
 public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSchema> implements UpdateableTableInfo
 {
-    private Container _container;
     private static final Logger _logger = Logger.getLogger(ExternalSchemaTable.class);
 
+    private Container _container;
     protected TableType _metadata;
 
-    public ExternalSchemaTable(ExternalSchema schema, TableInfo table, TableType metadata, ContainerFilter cf)
+    public ExternalSchemaTable(ExternalSchema schema, TableInfo table, TableType metadata)
     {
-        super(schema, table, cf);
+        // External schema tables don't support container filters (see below), so always pass null
+        super(schema, table, null);
         _metadata = metadata;
     }
 
+    @Override
     public SimpleUserSchema.SimpleTable<ExternalSchema> init()
     {
         super.init();
