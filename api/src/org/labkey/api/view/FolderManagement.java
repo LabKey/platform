@@ -29,7 +29,11 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -44,20 +48,6 @@ public class FolderManagement
     {
         FolderManagement
         {
-            private final List<TabProvider> FOLDER_TAB_PROVIDERS = new CopyOnWriteArrayList<>();
-
-            @Override
-            void validateContainer(Container c)
-            {
-                // Allow all containers for now
-            }
-
-            @Override
-            List<TabProvider> getTabProviders()
-            {
-                return FOLDER_TAB_PROVIDERS;
-            }
-
             @Override
             NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
@@ -66,21 +56,6 @@ public class FolderManagement
         },
         ProjectSettings
         {
-            private final List<TabProvider> PROJECT_TAB_PROVIDERS = new CopyOnWriteArrayList<>();
-
-            @Override
-            void validateContainer(Container c)
-            {
-                if (!c.isRoot() && !c.isProject())
-                    throw new NotFoundException("Valid only from root or project");
-            }
-
-            @Override
-            List<TabProvider> getTabProviders()
-            {
-                return PROJECT_TAB_PROVIDERS;
-            }
-
             @Override
             NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
@@ -94,9 +69,19 @@ public class FolderManagement
             }
         };
 
-        abstract void validateContainer(Container c);
-        abstract List<TabProvider> getTabProviders();
         abstract NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user);
+    }
+
+    // Using two data structures let us maintain the list of tab providers in registration order AND look up container filters quickly, with reasonable concurrency behavior
+    private static final Map<TYPE, List<TabProvider>> TYPE_TAB_PROVIDER = new HashMap<>();
+    private static final Map<TYPE, Map<Class<? extends ManagementAction>, TabProvider>> TYPE_ACTION_TAB_PROVIDER = new HashMap<>();
+
+    static
+    {
+        // Initialize map to hold type -> Collection<TabProvider>
+        Arrays.stream(TYPE.values()).forEach(type->TYPE_TAB_PROVIDER.put(type, new CopyOnWriteArrayList<>()));
+        // Initialize map to hold type -> action class -> container predicate
+        Arrays.stream(TYPE.values()).forEach(type->TYPE_ACTION_TAB_PROVIDER.put(type, new ConcurrentHashMap<>()));
     }
 
     /**
@@ -112,7 +97,9 @@ public class FolderManagement
      */
     public static void addTab(TYPE type, String text, String id, Predicate<Container> filter, Class<? extends ManagementAction> actionClass)
     {
-        type.getTabProviders().add(new TabProvider(text, id, filter, actionClass));
+        TabProvider provider = new TabProvider(text, id, filter, actionClass);
+        TYPE_TAB_PROVIDER.get(type).add(provider);
+        TYPE_ACTION_TAB_PROVIDER.get(type).put(actionClass, provider);
     }
 
     public static final Predicate<Container> EVERY_CONTAINER = container -> true;
@@ -160,6 +147,12 @@ public class FolderManagement
     }
 
 
+    private static void validateContainer(TYPE type, Class<? extends ManagementAction> actionClass, Container c)
+    {
+        if (!TYPE_ACTION_TAB_PROVIDER.get(type).get(actionClass).shouldRender(c))
+            throw new NotFoundException("This action is not allowed in this " + c.getContainerNoun());
+    }
+
     /**
      * Base action class for management actions that only need to display a view (no post handling).
      */
@@ -168,7 +161,7 @@ public class FolderManagement
         @Override
         public ModelAndView handleRequest() throws Exception
         {
-            getType().validateContainer(getContainer());
+            validateContainer(getType(), this.getClass(), getContainer());
 
             return super.handleRequest();
         }
@@ -187,7 +180,7 @@ public class FolderManagement
                 @Override
                 protected List<TabProvider> getTabProviders()
                 {
-                    return getType().getTabProviders();
+                    return TYPE_TAB_PROVIDER.get(getType());
                 }
             };
         }
@@ -222,7 +215,7 @@ public class FolderManagement
                 @Override
                 protected List<TabProvider> getTabProviders()
                 {
-                    return getType().getTabProviders();
+                    return TYPE_TAB_PROVIDER.get(getType());
                 }
             };
         }
@@ -230,7 +223,7 @@ public class FolderManagement
         @Override
         public ModelAndView handleRequest(FORM form, BindException errors) throws Exception
         {
-            getType().validateContainer(getContainer());
+            validateContainer(getType(), this.getClass(), getContainer());
 
             return super.handleRequest(form, errors);
         }
