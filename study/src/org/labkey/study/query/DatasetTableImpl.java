@@ -693,6 +693,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
 
+    @Override
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
     {
         checkLocked();

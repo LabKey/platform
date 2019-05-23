@@ -72,11 +72,15 @@
                     {
                         WellData data = dataList.get(dataIndex);
                         double dilution = summary.getDilution(data);
-                        DecimalFormat shortDecFormat;
-                        if (summary.getMethod() == SampleInfoMethod.Concentration || (dilution > -1 && dilution < 1))
+                        DecimalFormat shortDecFormat = summary.getMethod() == SampleInfoMethod.Concentration
+                                ? new DecimalFormat("0.###")
+                                : new DecimalFormat("0");
+
+                        if (Math.abs(dilution) < 0.001)
+                            shortDecFormat = new DecimalFormat("0.#####");
+                        else if (Math.abs(dilution) < 1)
                             shortDecFormat = new DecimalFormat("0.###");
-                        else
-                            shortDecFormat = new DecimalFormat("0");
+
                 %>
                 <tr>
                     <td align="right" style="padding-right: 10px;"><%= shortDecFormat.format(dilution) %></td>

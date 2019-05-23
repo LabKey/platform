@@ -352,6 +352,8 @@ public class SpecimenQueryView extends BaseStudyQueryView
             ActionURL insertActionURL = new ActionURL(SpecimenController.InsertSpecimenQueryRowAction.class, getContainer());
             insertActionURL.addParameter("schemaName", "study");
             insertActionURL.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, tableInfo.getName());
+            // we want a DetailsURL-like string so clear the container
+            insertActionURL.setContainer(ContainerManager.getRoot());
             setInsertURL(insertActionURL.toLocalString(false));
         }
 

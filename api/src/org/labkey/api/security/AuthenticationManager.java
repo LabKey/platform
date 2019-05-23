@@ -93,6 +93,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.AuthenticationProvider.FailureReason.complexity;
+import static org.labkey.api.security.AuthenticationProvider.FailureReason.expired;
 
 /**
  * User: adam
@@ -842,7 +844,10 @@ public class AuthenticationManager
                         user = UserManager.getUser(email);
                 }
 
-                String message = " failed to login: " + firstFailure.getFailureReason().getMessage();
+                String ipAddress = request.getHeader("X-FORWARDED-FOR");
+                if (ipAddress == null)
+                    ipAddress = request.getRemoteAddr();
+                String message = " failed to login: " + firstFailure.getFailureReason().getMessage() + " (" + ipAddress + ")";
 
                 if (null != user)
                 {
@@ -851,15 +856,15 @@ public class AuthenticationManager
                 }
                 else if (null != emailAddress)
                 {
-                    // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
+                    // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
                     addAuditEvent(User.guest, request, emailAddress + message);
                     _log.warn(emailAddress + message);
                 }
                 else
                 {
-                    // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
+                    // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
                     addAuditEvent(User.guest, request, message);
-                    _log.warn("Unknown user " + message);
+                    _log.warn("Unknown user" + message);
                 }
 
                 // For now, redirectURL is only checked in the failure case, see #19778 for some history on redirect handling
@@ -868,11 +873,12 @@ public class AuthenticationManager
                 if (null != redirectURL)
                 {
                     // if labkey db authenticate determines password has expired or that password does not meet complexity requirements then return url to redirect user
-                    if (null != firstFailure.getFailureReason().name() && firstFailure.getFailureReason().name().equals("expired"))
+                    firstFailure.getFailureReason();
+                    if (firstFailure.getFailureReason() == expired)
                     {
                         return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.PasswordExpired);
                     }
-                    else if (null != firstFailure.getFailureReason().name() && firstFailure.getFailureReason().name().equals("complexity"))
+                    else if (firstFailure.getFailureReason() == complexity)
                     {
                         return new PrimaryAuthenticationResult(redirectURL, AuthenticationStatus.Complexity);
                     }

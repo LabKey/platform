@@ -1437,8 +1437,11 @@ public class Table
                 bad++;
 //            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
 //                bad++;
-            if (enforceUnique && null != (prev=mapAlias.put(column.getAlias(),column)) && prev != column)
+            if (enforceUnique && null != (prev = mapAlias.put(column.getAlias(), column)) && prev != column)
+            {
+                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;
+            }
         }
 
         // Check all the columns in the TableInfo to determine if the TableInfo is corrupt
