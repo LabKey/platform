@@ -99,12 +99,6 @@ public class FolderManagement
         abstract NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user);
     }
 
-    @Deprecated // Left behind for backward compatibility  TODO: Migrate callers and delete this!
-    public static void addTab(String text, String id, Predicate<Container> filter, Class<? extends ManagementAction> actionClass)
-    {
-        addTab(TYPE.FolderManagement, text, id, filter, actionClass);
-    }
-
     /**
      * Register a tab that can appear on the folder management or project settings page. Implement a ManagementAction
      * (by subclassing FolderManagementViewAction, FolderManagementViewPostAction, ProjectSettingsViewAction, or
@@ -142,6 +136,7 @@ public class FolderManagement
                 setSelectedTabId(tabId);
         }
 
+        @Override
         public List<NavTree> getTabList()
         {
             return getTabProviders().stream()
@@ -151,6 +146,8 @@ public class FolderManagement
         }
 
         protected abstract List<TabProvider> getTabProviders();
+
+        @Override
         public abstract HttpView getTabView(String tabId) throws Exception;
     }
 
@@ -246,17 +243,7 @@ public class FolderManagement
 
         protected abstract TYPE getType();
 
-        // TODO: Make this abstract, once every subclass overrides this method
-        protected HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception
-        {
-            return getTabView(form, errors);
-        }
-
-        @Deprecated // Remove this in favor of the "reshow" variant above...
-        protected HttpView getTabView(FORM form, BindException errors) throws Exception
-        {
-            return null;
-        }
+        protected abstract HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception;
 
         @Override
         public NavTree appendNavTrail(NavTree root)
