@@ -29,6 +29,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
@@ -115,7 +116,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * and encoding it.
      *
      * @param path Relative path to a resource in the webapp directory. Supports both "/"-prefixed and not prefixed paths.
-     * @return Properly encoded URL in an _HtmlString
+     * @return Properly encoded URL in an HtmlString
      */
     public HtmlString getWebappURL(String path)
     {
@@ -129,6 +130,34 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String text(String s)
     {
         return null==s ? "" : s;
+    }
+
+
+    /**
+     * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
+     * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
+     * TODO: Eventually, remove this method and all usages.
+     * @param s An HtmlString
+     * @return The HtmlString
+     */
+    @Deprecated
+    public HtmlString text(HtmlString s)
+    {
+        return s;
+    }
+
+
+    /**
+     * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
+     * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
+     * TODO: Eventually, remove this method and all usages.
+     * @param s A HasHtmlString
+     * @return The parameter's HtmlString
+     */
+    @Deprecated
+    public HtmlString text(HasHtmlString s)
+    {
+        return s.getHtmlString();
     }
 
 
@@ -344,9 +373,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return link(text).href(url).build().toString();
     }
 
-    public String iconLink(String iconCls, String tooltip, URLHelper url)
+    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
     {
-        return PageFlowUtil.iconLink(iconCls, tooltip, url.getLocalURIString(), null, null, null);
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }
 
     /**
@@ -427,6 +456,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
+    }
+
+    public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
+    {
+        return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)

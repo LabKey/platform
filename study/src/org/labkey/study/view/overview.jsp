@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -41,15 +41,14 @@
 <%@ page import="org.labkey.study.model.VisitMapKey" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistic" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
+<%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.text.NumberFormat" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
     StudyController.OverviewBean bean = me.getModelBean();
-    String contextPath = request.getContextPath();
     StudyImpl study = bean.study;
     Container container = study.getContainer();
     User user = (User) request.getUserPrincipal();
@@ -186,7 +185,7 @@
         %>
         <td class="labkey-column-header" align="center" valign="top">
             <%= h(label) %>
-            <%= visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "" %>
+            <%= visit.getDescription() != null ? helpPopup("Visit Description", visit.getDescription()) : HtmlString.EMPTY_STRING %>
         </td>
         <%
             }
@@ -245,7 +244,7 @@
         <td align="center" style="font-weight:bold;" category="<%= h(dataset.getCategory()) %>"><%= h(datasetLabel) %><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
-        %><%=PageFlowUtil.helpPopup(datasetLabel, dataset.getDescription())%><%
+        %><%=helpPopup(datasetLabel, dataset.getDescription())%><%
             }
         %></td>
         <td style="font-weight:bold;" align="center" nowrap="true"><%

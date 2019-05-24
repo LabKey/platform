@@ -116,7 +116,7 @@
 %>
 <tr>
     <td class="labkey-form-label">Enable Object-Level Discussions
-        <%=PageFlowUtil.helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
+        <%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
     <td><input type="checkbox" name="enableDiscussion" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
 <tr>
@@ -140,7 +140,7 @@
 <tr>
     <td class="labkey-form-label">
         System email address (<i>from</i> address for system notification emails)
-        <%=PageFlowUtil.helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
+        <%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
     <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>
@@ -211,7 +211,7 @@
                 "parsing mode that matches your users' expectations.";
 %>
 <tr>
-    <td class="labkey-form-label">Date parsing mode<%=PageFlowUtil.helpPopup("Date parsing", dateParsingHelp, false)%></td>
+    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing", dateParsingHelp, false)%></td>
     <td>
         <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%><br>
         <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%><br>
@@ -220,15 +220,15 @@
     }
 %>
 <tr>
-    <td class="labkey-form-label">Default display format for dates<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true, 300)%></td>
+    <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for date-times<%=PageFlowUtil.helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
+    <td class="labkey-form-label">Default display format for date-times<%=helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateTimeFormat" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for numbers<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
+    <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
     <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
@@ -256,7 +256,7 @@
     <td colspan=2>Provide a custom login page (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, true)%></td>
+    <td class="labkey-form-label">Alternative login page<%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
     <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>
 <tr>
@@ -276,7 +276,7 @@
     <td colspan=2>Provide a custom site welcome page (<%=bean.welcomeLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Alternative site welcome page<%=PageFlowUtil.helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
+    <td class="labkey-form-label">Alternative site welcome page<%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
     <td><input type="text" name="customWelcome" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
 </tr>
 <tr>
