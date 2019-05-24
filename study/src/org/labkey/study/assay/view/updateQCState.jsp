@@ -1,13 +1,12 @@
+<%@ page import="org.labkey.api.assay.AssayQCService" %>
+<%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.qc.QCState" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="org.labkey.api.assay.AssayQCService" %>
-<%@ page import="org.labkey.api.exp.api.ExpRun" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
-<%@ page import="org.labkey.api.qc.QCState" %>
 <%
     /*
      * Copyright (c) 2018 LabKey Corporation
@@ -51,8 +50,7 @@
 
             if (data && data.rows){
 
-                var qcSelect = $("select[id='stateInput']");
-
+                let qcSelect = $("select[id='stateInput']");
                 qcSelect.empty().append($('<option>'));
                 $.each(data.rows, function (i, row) {
                     qcSelect.append($('<option>', { value: row.RowId,  text: row.Label,  selected: false}));
@@ -68,16 +66,6 @@
         $(document).ready(function () {
 
             // qc states
-            LABKEY.Query.selectRows({
-                schemaName  : 'core',
-                queryName   : 'qcstate',
-                scope       : this,
-                columns     : 'rowid, label',
-                success     : function(data){setQCStates(data);},
-                failure     : function(){LABKEY.Utils.alert('Error', 'Unable to read the core.QCState table')}
-            });
-
-            // runs qcflag info
             LABKEY.Query.selectRows({
                 schemaName  : 'core',
                 queryName   : 'qcstate',

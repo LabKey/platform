@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.assay;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -28,6 +29,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
@@ -1694,6 +1696,32 @@ public class AssayController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Change QC State");
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetQCStateAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors) throws Exception
+        {
+            String run = getViewContext().getRequest().getParameter("run");
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            if (run != null)
+            {
+                ExpRun expRun = ExperimentService.get().getExpRun(NumberUtils.toInt(run));
+                if (expRun != null)
+                {
+                    response.put("success", true);
+                    QCState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
+                    if (state != null)
+                    {
+                        response.put("qcState", PageFlowUtil.map("label", state.getLabel(), "rowId", state.getRowId()));
+                    }
+                }
+            }
+            return response;
         }
     }
 }
