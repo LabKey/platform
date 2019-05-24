@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 
@@ -36,11 +37,13 @@ public class QNull extends QExpr implements IConstant
         builder.append("NULL");
     }
 
+    @Override
     public String getValueString()
     {
         return " NULL ";
     }
 
+    @NotNull
     @Override
     public JdbcType getJdbcType()
     {

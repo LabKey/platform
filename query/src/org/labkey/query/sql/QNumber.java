@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
@@ -101,11 +102,14 @@ public class QNumber extends QExpr implements IConstant
         builder.append(getValueString());
     }
 
-    public JdbcType getJdbcType()
+    @NotNull
+	@Override
+	public JdbcType getJdbcType()
     {
         return _sqlType;
     }
 
+    @Override
     public String getValueString()
     {
         return _value == null ? getTokenText() : _value.toString();
