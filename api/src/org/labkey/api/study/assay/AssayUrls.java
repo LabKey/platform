@@ -78,4 +78,10 @@ public interface AssayUrls extends UrlProvider
      * @param files the files to import into the assay definition once it has been created.
      */
     ActionURL getImportURL(Container container, String providerName, String path, File[] files);
+
+    /**
+     * Returns the URL to update the assay QC state for the runs query grid. The provider must support
+     * QC and the protocol must be configured to include the QC workflow.
+     */
+    ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol);
 }

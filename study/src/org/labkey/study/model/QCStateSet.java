@@ -16,8 +16,14 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 /*
  * User: brittp
  * Date: Jul 16, 2008
@@ -88,7 +94,7 @@ public class QCStateSet
         List<QCState> stateSet = new ArrayList<>();
         for (int stateRowId : stateRowIds)
         {
-            QCState state = StudyManager.getInstance().getQCStateForRowId(container, stateRowId);
+            QCState state = QCStateManager.getInstance().getQCStateForRowId(container, stateRowId);
             if (state != null)
                 stateSet.add(state);
         }
@@ -190,7 +196,7 @@ public class QCStateSet
 
     public static QCStateSet getAllStates(Container container)
     {
-        List<QCState> states = StudyManager.getInstance().getQCStates(container);
+        List<QCState> states = QCStateManager.getInstance().getQCStates(container);
         return new QCStateSet(container, states, true, ALL_STATES_LABEL);
     }
 
@@ -198,7 +204,7 @@ public class QCStateSet
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         List<QCState> selectedStates = new ArrayList<>();
-        for (QCState state : StudyManager.getInstance().getQCStates(container))
+        for (QCState state : QCStateManager.getInstance().getQCStates(container))
         {
             if (state.isPublicData())
                 selectedStates.add(state);
@@ -212,7 +218,7 @@ public class QCStateSet
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         List<QCState> selectedStates = new ArrayList<>();
-        for (QCState state : StudyManager.getInstance().getQCStates(container))
+        for (QCState state : QCStateManager.getInstance().getQCStates(container))
         {
             if (!state.isPublicData())
                 selectedStates.add(state);
@@ -285,7 +291,7 @@ public class QCStateSet
     
         set.add(QCStateSet.getAllStates(container));
 
-        for (QCState state : StudyManager.getInstance().getQCStates(container))
+        for (QCState state : QCStateManager.getInstance().getQCStates(container))
             set.add(QCStateSet.getSingletonSet(container, state));
         return set;
     }

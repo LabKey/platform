@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -75,7 +76,7 @@
         </td>
     </tr>
     <%
-        if (StudyManager.getInstance().showQCStates(c))
+        if (QCStateManager.getInstance().showQCStates(c))
         {
     %>
     <tr>

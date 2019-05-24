@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -231,6 +232,11 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             if (!prop.isHidden())
                 visibleColumns.add(FieldKey.fromParts("Run", AssayService.BATCH_COLUMN_NAME, prop.getName()));
         }
+
+        // add any QC filter conditions if applicable
+        AssayQCService qcService = AssayQCService.getProvider();
+        SQLFragment qcFragment = qcService.getDataTableCondition(_protocol, getContainer(), getUserSchema().getUser());
+        addCondition(qcFragment);
 
         if (includeCopiedToStudyColumns)
         {
