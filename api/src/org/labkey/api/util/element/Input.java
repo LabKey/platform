@@ -18,6 +18,8 @@ package org.labkey.api.util.element;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DisplayElement;
 
@@ -26,7 +28,7 @@ import java.io.Writer;
 import java.text.Format;
 
 // TODO: Need handling for checkbox, file, and radio types
-public class Input extends DisplayElement
+public class Input extends DisplayElement implements HasHtmlString
 {
     public enum Layout
     {
@@ -379,6 +381,13 @@ public class Input extends DisplayElement
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         out.write(toString());
+    }
+
+    // TODO reverse toString() and getHtmlString() (that is toString() should call getHtmlString())
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return HtmlString.unsafe(toString());
     }
 
     @Override

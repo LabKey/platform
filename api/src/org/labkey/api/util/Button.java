@@ -15,12 +15,19 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+
+import static org.labkey.api.util.HtmlStringBuilder.Attribute;
+import static org.labkey.api.util.HtmlStringBuilder.DOM.*;
+import static org.labkey.api.util.HtmlStringBuilder.DOMx.*;
+import static org.labkey.api.util.HtmlStringBuilder.Attribute.*;
+
 
 /**
  * Basic button UI element. Might be a simple link, have a JavaScript handler, etc.
@@ -192,74 +199,31 @@ public class Button extends DisplayElement implements HasHtmlString
     public HtmlString getHtmlString()
     {
         boolean iconOnly = getIconCls() != null;
-        StringBuilder sb = new StringBuilder();
         String submitId = GUID.makeGUID();
         final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
+        final String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
 
-        if (isSubmit())
-        {
-            sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position:absolute;left:-9999px;width:1px;height:1px;\" ");
-            sb.append("id=\"").append(submitId).append("\"/>");
-        }
+        var attrs = at(PageFlowUtil.mapFromQueryString(StringUtils.trimToEmpty(attributes))).putAll(
+                Attribute.id, getId(),
+                Attribute.href, getHref(),
+                title, tip,
+                onclick, generateOnClick(submitId));
+        attrs.data("tt", (null!=tip ? "tooltip" : null));
+        attrs.data("placement","top");
 
-        sb.append("<a class=\"").append(CLS);
-        if (!isEnabled())
-            sb.append(" ").append(DISABLEDCLS);
+        var cls = cl(CLS, typeCls, getCssClass())
+            .add(!isEnabled(),DISABLEDCLS)
+            .add(isSubmit(),PRIMARY_CLS)
+            .add(isDropdown(),"labkey-down-arrow")
+            .add(iconOnly,"icon-only");
 
-        if (typeCls != null)
-            sb.append(" ").append(PageFlowUtil.filter(typeCls));
-        else if (isSubmit())
-            sb.append(" ").append(PRIMARY_CLS);
-
-        if (isDropdown())
-            sb.append(" labkey-down-arrow");
-        if (getCssClass() != null)
-            sb.append(" ").append(PageFlowUtil.filter(getCssClass()));
-        if (iconOnly)
-            sb.append(" icon-only");
-        sb.append("\" ");
-        //-- enabled
-
-        // id
-        if (getId() != null)
-            sb.append("id=\"").append(PageFlowUtil.filter(getId())).append("\" ");
-        // -- id
-
-        // href
-        if (getHref() != null)
-            sb.append("href=\"").append(PageFlowUtil.filter(getHref())).append("\" ");
-        //-- href
-
-        // onclick
-        sb.append("onclick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
-        //-- onclick
-
-        // attributes -- expected to be pre-filtered
-        sb.append(getAttributes() == null ? "" : getAttributes());
-        //-- attributes
-
-        String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
-        if (tip != null)
-        {
-            sb.append("data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\" ");
-        }
-
-        sb.append(">");
-
-        if (iconOnly)
-        {
-            sb.append("<i class=\"fa fa-").append(getIconCls()).append("\"></i>");
-            sb.append("</a>"); // for now, just show icon w/o text
-        }
-        else
-        {
-            sb.append("<span>");
-            if (text != null)
-                sb.append(text);
-            sb.append("</span></a>");
-        }
-
-        return HtmlString.unsafe(sb.toString());
+        HtmlString ret;
+        ret = createHtmlFragment(
+            isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId),NOCLASS) : null,
+            A(attrs, cls,
+                    iconOnly ? FA(getIconCls()) : SPAN(null,null,text))
+        );
+        return ret;
     }
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
