@@ -72,15 +72,15 @@ public class FolderManagement
         abstract NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user);
     }
 
-    // Using two data structures let us maintain the list of tab providers in registration order AND look up container filters quickly, with reasonable concurrency behavior
+    // Using two data structures lets us maintain the list of tab providers in registration order AND look up container predicates quickly, with reasonable concurrency behavior
     private static final Map<TYPE, List<TabProvider>> TYPE_TAB_PROVIDER = new HashMap<>();
     private static final Map<TYPE, Map<Class<? extends ManagementAction>, TabProvider>> TYPE_ACTION_TAB_PROVIDER = new HashMap<>();
 
     static
     {
-        // Initialize map to hold type -> Collection<TabProvider>
+        // Initialize map to hold type -> List<TabProvider>
         Arrays.stream(TYPE.values()).forEach(type->TYPE_TAB_PROVIDER.put(type, new CopyOnWriteArrayList<>()));
-        // Initialize map to hold type -> action class -> container predicate
+        // Initialize map to hold type -> action class -> tab provider
         Arrays.stream(TYPE.values()).forEach(type->TYPE_ACTION_TAB_PROVIDER.put(type, new ConcurrentHashMap<>()));
     }
 
