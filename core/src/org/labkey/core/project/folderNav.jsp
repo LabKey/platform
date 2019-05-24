@@ -104,7 +104,7 @@
 <div class="folder-menu-buttons">
     <% if (getUser().hasRootAdminPermission()) { %>
     <span class="folder-menu-button-icon">
-        <a href="<%=createProjectURL%>" title="New Project">
+        <a href="<%=h(createProjectURL)%>" title="New Project">
             <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
                 <span class="fa fa-folder-open-o fa-stack-2x labkey-main-menu-icon" alt="New Project"></span>
                 <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
@@ -113,7 +113,7 @@
     </span>
     <% } if (c.hasPermission(getUser(), AdminPermission.class)) {%>
     <span class="folder-menu-button-icon" style="margin-left: 2px">
-        <a href="<%=createFolderURL%>" title="New Subfolder">
+        <a href="<%=h(createFolderURL)%>" title="New Subfolder">
             <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
                 <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
                 <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
@@ -121,7 +121,7 @@
         </a>
     </span>
     <span class="folder-menu-button-icon" style="margin-left: 6px;">
-        <a href="<%=folderManagementURL%>" title="Folder Management">
+        <a href="<%=h(folderManagementURL)%>" title="Folder Management">
             <span class="fa fa-gear" alt="Folder Management"></span>
         </a>
     </span>

@@ -214,7 +214,7 @@
 
         <tr>
             <td style="padding-left: 20px">
-                <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL())%>"><%=h(fatp.getDescription())%></a></p>
+                <p><%=link(fatp.getDescription(), urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL()))%></p>
             </td>
         </tr>
         <%
@@ -227,7 +227,7 @@
             <td>
                 <p>
                     <%=
-                    button("Manage file watcher triggers").href(PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")).build()
+                    button("Manage file watcher triggers").href(PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations"))
                     %>
                 </p>
             </td>

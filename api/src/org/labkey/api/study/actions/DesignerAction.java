@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.actions;
 
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -86,6 +87,11 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         properties.put("osName", System.getProperty("os.name").toLowerCase());
         properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
         properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
+
+        // if the provider supports QC and if there is a valid QC service registered
+        if (AssayQCService.getProvider().supportsQC())
+            properties.put("supportsQC", Boolean.toString(provider.supportsQC()));
+
         if (form.getReturnURLHelper() != null)
         {
             properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());

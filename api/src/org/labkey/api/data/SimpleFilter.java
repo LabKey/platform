@@ -27,6 +27,7 @@ import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -233,7 +234,7 @@ public class SimpleFilter implements Filter
         public List<String> getColumnNames()
         {
             return getFieldKeys().stream()
-                .map(fk->fk.toString())
+                .map(QueryKey::toString)
                 .collect(Collectors.toList());
         }
 
@@ -245,12 +246,12 @@ public class SimpleFilter implements Filter
             return false;
         }
 
-        protected String escapeLabKeySqlValue(Object value, JdbcType type)
+        public static String escapeLabKeySqlValue(Object value, JdbcType type)
         {
             return escapeLabKeySqlValue(value, type, false);
         }
 
-        protected String escapeLabKeySqlValue(Object value, JdbcType type, boolean suppressQuotes)
+        protected static String escapeLabKeySqlValue(Object value, JdbcType type, boolean suppressQuotes)
         {
             if (type == null)
                 throw new IllegalArgumentException("Column type must be provided.");
@@ -1602,10 +1603,18 @@ public class SimpleFilter implements Filter
             filter.addClause(new CompareClause(FieldKey.fromParts("Field1"), CompareType.EQUAL, 1));
             filter.addClause(new ContainsOneOfClause(FieldKey.fromParts("Field2"), Arrays.asList("x", "y"), true));
 
-            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By", filter.toQueryString("query"));
+            FilterClause containsClause = new CompareType.ContainsClause(FieldKey.fromParts("Field3"), "o_O");
+            // Issue 37524: QueryWebPart with CONTAINS filter and value that includes an underscore will generate incorrect filter on the "select all" url
+            // LikeClause escapes SQL wildcards in the the parameter value, but it shouldn't ent up on the URL
+            assertArrayEquals(new Object[] { "o!_O" }, containsClause.getParamVals());
+            assertEquals("o_O", containsClause.toURLParam("query").getValue());
+            filter.addClause(containsClause);
+
+            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By&query.Field3%7Econtains=o_O", filter.toQueryString("query"));
             URLHelper url = new URLHelper("http://labkey.com");
+
             filter.applyToURL(url, "query");
-            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By", url.getQueryString());
+            assertEquals("query.Field1%7Eeq=1&query.Field2%7Econtainsoneof=x%3By&query.Field3%7Econtains=o_O", url.getQueryString());
         }
     }
 

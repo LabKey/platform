@@ -114,7 +114,7 @@
             </a><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
-        %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
+        %><%=helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
             }
         %></th>
     </tr>

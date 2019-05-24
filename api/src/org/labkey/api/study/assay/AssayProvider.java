@@ -244,6 +244,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** Whether the provider can exclude rows of data */
     boolean isExclusionSupported();
 
+    /** Does the provider support QC'ing of it's runs using QCState */
+    boolean supportsQC();
+    void setQCEnabled(ExpProtocol protocol, boolean qcEnabled);
+    boolean isQCEnabled(ExpProtocol protocol);
+
     /**
      * @return the data type that this run creates for its analyzed results
      */

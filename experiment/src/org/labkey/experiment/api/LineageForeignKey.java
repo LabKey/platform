@@ -16,12 +16,10 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.SQLFragment;
@@ -33,7 +31,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 
 import java.util.List;
@@ -44,7 +41,7 @@ import java.util.function.Supplier;
  * User: kevink
  * Date: 3/22/16
  */
-class LineageForeignKey extends LookupForeignKey
+class LineageForeignKey extends AbstractForeignKey
 {
     private final ExpTableImpl _table;
     private final UserSchema _schema;
@@ -53,21 +50,61 @@ class LineageForeignKey extends LookupForeignKey
 
     LineageForeignKey(ExpTableImpl expTable, boolean parents)
     {
-        super("lsid", "Name");
+        super(expTable.getUserSchema(), expTable.getContainerFilter());
         _table = expTable;
         _schema = _table.getUserSchema();
         _parents = parents;
     }
 
-    protected ColumnInfo getPkColumn(TableInfo table)
+    @Override
+    public StringExpression getURL(ColumnInfo parent)
     {
-        return _table.getLSIDColumn();
+        return null;
     }
 
     @Override
     public TableInfo getLookupTableInfo()
     {
         return new LineageForeignKeyLookupTable(_parents ? "Inputs" : "Outputs", _schema).init();
+    }
+
+    public ColumnInfo _createLookupColumn(ColumnInfo parent, TableInfo table, String displayField)
+    {
+        if (table == null)
+        {
+            return null;
+        }
+        if (displayField == null)
+        {
+            displayField = _displayColumnName;
+            if (displayField == null)
+                displayField = table.getTitleColumn();
+        }
+        if (displayField == null)
+            return null;
+
+        var lookup = table.getColumn(displayField);
+        if (null == lookup)
+            return null;
+
+        // We want to create a placeholder column here that DOES NOT add generate any joins
+        // so that's why we extend AbstractForeignKey instead of LookupForeignKey.
+        // I could "wrap" the lookup column and call its getValueSql() method, but I know what the expression is
+        // and this column is not selectable anyway, so I'm just constructing a new ExprColumn
+        // CONSIDER: we could consider adding a "really don't add any joins" flag to LookupForeignKey for this pattern
+        SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".lsid");
+        var col = new ExprColumn(parent.getParentTable(), FieldKey.fromParts(displayField), sql, JdbcType.VARCHAR);
+        col.setFk(lookup.getFk());
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setIsUnselectable(true);
+        return col;
+    }
+
+    @Override
+    public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+    {
+        return _createLookupColumn(parent, getLookupTableInfo(), displayField);
     }
 
     private class LineageForeignKeyLookupTable extends VirtualTable
@@ -174,24 +211,29 @@ class LineageForeignKey extends LookupForeignKey
         }
     }
 
-    static Cache<Path,MaterializedQueryHelper> materializedLineageQueries = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.HOUR, "lineage queries", null);
 
-
-    private class ByTypeLineageForeignKey extends LookupForeignKey
+    private class ByTypeLineageForeignKey extends AbstractForeignKey
     {
         private final @NotNull String _expType;
         private final @NotNull Supplier<List<? extends ExpObject>> _items;
 
         ByTypeLineageForeignKey(@NotNull String expType, @NotNull Supplier<List<? extends ExpObject>> items)
         {
-            super("lsid", "Name");
+            super(_table.getUserSchema(), _table.getContainerFilter());
             _expType = expType;
             _items = items;
         }
 
-        protected ColumnInfo getPkColumn(TableInfo table)
+        @Override
+        public StringExpression getURL(ColumnInfo parent)
         {
-            return _table.getLSIDColumn();
+            return null;
+        }
+
+        @Override
+        public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+        {
+            return _createLookupColumn(parent, getLookupTableInfo(), displayField);
         }
 
         @Override
@@ -214,6 +256,7 @@ class LineageForeignKey extends LookupForeignKey
             _items = items;
         }
 
+        @Override
         protected TableInfo init()
         {
             addLineageColumn("All", _parents, null, _expType, null);

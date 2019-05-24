@@ -39,7 +39,7 @@
             </td>
         </tr>
         <tr>
-            <td class=labkey-form-label>Import from File <%=PageFlowUtil.helpPopup("Import from File", "Use this option if you have a spreadsheet that you would like uploaded as a dataset.")%></td>
+            <td class=labkey-form-label>Import from File <%=helpPopup("Import from File", "Use this option if you have a spreadsheet that you would like uploaded as a dataset.")%></td>
             <td><input type="checkbox" name="fileImport" <%=checked(form.isFileImport())%>></td>
         </tr>
         <tr>

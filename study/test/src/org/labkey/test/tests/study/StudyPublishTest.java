@@ -875,7 +875,6 @@ public class StudyPublishTest extends StudyPHIExportTest
         //goToProjectHome();
     }
 
-    private static final String TEST_DATA_API_PATH = "server/test/data/api";
     // Starting at an existing data grid
     private void createTimeChart(String name, String[]... datasetMeasurePairs)
     {
@@ -913,7 +912,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         // Add point click function
         LookAndFeelTimeChart lookAndFeelDialog = timeChartWizard.clickChartLayoutButton();
         lookAndFeelDialog.clickDeveloperEnable()
-                .setDeveloperSourceContent(TestFileUtils.getFileContents(TEST_DATA_API_PATH + "/timeChartPointClickTestFn.js"))
+                .setDeveloperSourceContent(TestFileUtils.getFileContents(TestFileUtils.getSampleData("api/timeChartPointClickTestFn.js")))
                 .clickApply();
         waitForElement(Locator.css("svg text").containing("Days Since Contact Date"));
 

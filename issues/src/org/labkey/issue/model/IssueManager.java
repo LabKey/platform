@@ -346,6 +346,7 @@ public class IssueManager
                     {
                         assert results.size() == 1;
                         issue.setIssueId((int)results.get(0).get("IssueId"));
+                        issue.setIssueDefId((Integer)results.get(0).get("issueDefId"));
                     }
                     else
                         throw batchErrors;

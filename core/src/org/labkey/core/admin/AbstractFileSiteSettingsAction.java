@@ -62,6 +62,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         super(commandClass);
     }
 
+    @Override
     public void validateCommand(FormType form, Errors errors)
     {
         String webRoot = StringUtils.trimToNull(form.getRootPath());
@@ -145,6 +146,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         return !current.getCanonicalPath().equals(prevRoot);
     }
 
+    @Override
     public boolean handlePost(FormType form, BindException errors) throws Exception
     {
         File prev = _svc.getSiteDefaultRoot();
@@ -333,7 +335,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         }
         catch (Exception e)
         {
-            _log.error("error occured upgrading existing file sets", e);
+            _log.error("error occurred upgrading existing file sets", e);
         }
     }
 

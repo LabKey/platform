@@ -1446,7 +1446,7 @@ public class PageFlowUtil
 
     public static String unstyledTextLink(String text, URLHelper url)
     {
-        return unstyledTextLink(text, url.toString(), null, null);
+        return link(text).href(url).clearClasses().toString();
     }
 
 

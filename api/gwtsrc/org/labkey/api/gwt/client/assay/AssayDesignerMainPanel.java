@@ -95,6 +95,7 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
     private BooleanProperty _editableRuns = new BooleanProperty(false);
     private BooleanProperty _editableResults = new BooleanProperty(false);
     private BooleanProperty _backgroundUpload = new BooleanProperty(false);
+    private BooleanProperty _qcEnabled = new BooleanProperty(false);
     private FlexTable _transformScriptTable;
     private boolean _allowSpacesInPath;
 
@@ -712,6 +713,18 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
             table.setWidget(row++, 1, new BoundCheckBox("id_background_upload_properties", "backgroundUpload", _backgroundUpload, this));
         }
 
+        _qcEnabled.setBool(assay.isQcEnabled());
+        if ("true".equals(PropertyUtil.getServerProperty("supportsQC")))
+        {
+            FlowPanel panel = new FlowPanel();
+            panel.add(new InlineHTML("QC States"));
+            panel.add(new HelpPopup("QC States", "If enabled, QC states can be configured and assigned on a per run basis to control the visibility of imported run data. " +
+                    "Users not in the QC Analyst role will not be able to view non-public data."));
+            table.setWidget(row, 0, panel);
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+            table.setWidget(row++, 1, new BoundCheckBox("id_qc_enabled_properties", "qcEnabled", _qcEnabled, this));
+        }
+
         return table;
     }
 
@@ -926,6 +939,7 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
             _assay.setEditableRuns(_editableRuns.booleanValue());
             _assay.setEditableResults(_editableResults.booleanValue());
             _assay.setBackgroundUpload(_backgroundUpload.booleanValue());
+            _assay.setQcEnabled(_qcEnabled.booleanValue());
             _saveInProgress = true;
             getService().saveChanges(_assay, true, callback);
         }
