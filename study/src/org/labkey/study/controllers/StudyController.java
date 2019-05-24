@@ -64,6 +64,14 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.qc.AbstractDeleteQCStateAction;
+import org.labkey.api.qc.AbstractManageQCStatesAction;
+import org.labkey.api.qc.AbstractManageQCStatesBean;
+import org.labkey.api.qc.AbstractManageQCStatesForm;
+import org.labkey.api.qc.DeleteQCStateForm;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateHandler;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
@@ -174,6 +182,7 @@ import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
 import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.LocationTable;
@@ -261,7 +270,7 @@ public class StudyController extends BaseStudyController
         {
             ActionURL url = new ActionURL(StudyController.DatasetAction.class, container);
             url.addParameter(DatasetDefinition.DATASETKEY, datasetId);
-            if (StudyManager.getInstance().showQCStates(container))
+            if (QCStateManager.getInstance().showQCStates(container))
             {
                 QCStateSet allStates = QCStateSet.getAllStates(container);
                 if (allStates != null)
@@ -600,7 +609,7 @@ public class StudyController extends BaseStudyController
             bean.showCohorts = StudyManager.getInstance().showCohorts(getContainer(), getUser());
             bean.stats = form.getVisitStatistics();
 
-            if (StudyManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
                 bean.qcStates = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
             if (!bean.showCohorts)
@@ -856,7 +865,7 @@ public class StudyController extends BaseStudyController
             Study study = getStudyRedirectIfNull();
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
-            if (StudyManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
                 qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
             ViewContext context = getViewContext();
 
@@ -2519,7 +2528,7 @@ public class StudyController extends BaseStudyController
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-            if (StudyManager.getInstance().showQCStates(getContainer()))
+            if (QCStateManager.getInstance().showQCStates(getContainer()))
                 url.addParameter(SharedFormParameters.QCState, QCStateSet.getAllStates(getContainer()).getFormValue());
             return url;
         }
@@ -3111,7 +3120,7 @@ public class StudyController extends BaseStudyController
         return map;
     }
 
-    public static Map<String, Integer> getSortedColumnList(ViewContext context, Dataset dsd)
+    public static @NotNull Map<String, Integer> getSortedColumnList(ViewContext context, Dataset dsd)
     {
         Map<String, Map<String, Integer>> map = getDatasetSortColumnMap(context);
         Map<String, Integer> sortMap = map.get(dsd.getLabel());
@@ -3298,132 +3307,25 @@ public class StudyController extends BaseStudyController
         return Collections.emptyList();
     }
 
-    public static class ManageQCStatesBean
+    public class ManageQCStatesBean extends AbstractManageQCStatesBean
     {
-        private StudyImpl _study;
-        private List<QCState> _states;
-        private String _returnUrl;
-
-        public ManageQCStatesBean(StudyImpl study, String returnUrl)
+        ManageQCStatesBean(String returnUrl)
         {
-            _study = study;
-            _returnUrl = returnUrl;
-        }
-
-        public List<QCState> getQCStates()
-        {
-            if (_states == null)
-                _states = StudyManager.getInstance().getQCStates(_study.getContainer());
-            return _states;
-        }
-
-        public StudyImpl getStudy()
-        {
-            return _study;
-        }
-
-        public String getReturnUrl()
-        {
-            return _returnUrl;
+            super(returnUrl);
+            _qcStateHandler = new StudyQCStateHandler();
+            _manageAction = new ManageQCStatesAction();
+            _deleteAction = DeleteQCStateAction.class;
+            _noun = "dataset";
+            _dataNoun = "study";
         }
     }
 
-    public static class ManageQCStatesForm extends ReturnUrlForm
+    public static class ManageQCStatesForm extends AbstractManageQCStatesForm
     {
-        private int[] _ids;
-        private String[] _labels;
-        private String[] _descriptions;
-        private int[] _publicData;
-        private String _newLabel;
-        private String _newDescription;
-        private boolean _newPublicData;
-        private boolean _reshowPage;
         private Integer _defaultPipelineQCState;
         private Integer _defaultAssayQCState;
         private Integer _defaultDirectEntryQCState;
         private boolean _showPrivateDataByDefault;
-        private boolean _blankQCStatePublic;
-        private String _returnUrl;
-
-        public int[] getIds()
-        {
-            return _ids;
-        }
-
-        public void setIds(int[] ids)
-        {
-            _ids = ids;
-        }
-
-        public String[] getLabels()
-        {
-            return _labels;
-        }
-
-        public void setLabels(String[] labels)
-        {
-            _labels = labels;
-        }
-
-        public String[] getDescriptions()
-        {
-            return _descriptions;
-        }
-
-        public void setDescriptions(String[] descriptions)
-        {
-            _descriptions = descriptions;
-        }
-
-        public int[] getPublicData()
-        {
-            return _publicData;
-        }
-
-        public void setPublicData(int[] publicData)
-        {
-            _publicData = publicData;
-        }
-
-        public String getNewLabel()
-        {
-            return _newLabel;
-        }
-
-        public void setNewLabel(String newLabel)
-        {
-            _newLabel = newLabel;
-        }
-
-        public String getNewDescription()
-        {
-            return _newDescription;
-        }
-
-        public void setNewDescription(String newDescription)
-        {
-            _newDescription = newDescription;
-        }
-
-        public boolean isNewPublicData()
-        {
-            return _newPublicData;
-        }
-
-        public void setNewPublicData(boolean newPublicData)
-        {
-            _newPublicData = newPublicData;
-        }
-
-        public boolean isReshowPage()
-        {
-            return _reshowPage;
-        }
-
-        public void setReshowPage(boolean reshowPage)
-        {
-            _reshowPage = reshowPage;
-        }
 
         public Integer getDefaultPipelineQCState()
         {
@@ -3464,184 +3366,115 @@ public class StudyController extends BaseStudyController
         {
             _showPrivateDataByDefault = showPrivateDataByDefault;
         }
-
-        public boolean isBlankQCStatePublic()
-        {
-            return _blankQCStatePublic;
-        }
-
-        public void setBlankQCStatePublic(boolean blankQCStatePublic)
-        {
-            _blankQCStatePublic = blankQCStatePublic;
-        }
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ManageQCStatesAction extends FormViewAction<ManageQCStatesForm>
+    public class ManageQCStatesAction extends AbstractManageQCStatesAction<ManageQCStatesForm>
     {
-        public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
+        public ManageQCStatesAction()
         {
-            return new JspView<>("/org/labkey/study/view/manageQCStates.jsp",
-                    new ManageQCStatesBean(getStudyRedirectIfNull(), manageQCStatesForm.getReturnUrl()), errors);
+            super(new StudyQCStateHandler(), ManageQCStatesForm.class);
         }
 
-        public void validateCommand(ManageQCStatesForm form, Errors errors)
+        @Override
+        public boolean hasQcStateDefaultsPanel()
         {
-            Set<String> labels = new HashSet<>();
-            if (form.getLabels() != null)
-            {
-                for (String label : form.getLabels())
-                {
-                    if (labels.contains(label))
-                    {
-                        errors.reject(null, "QC state \"" + label + "\" is defined more than once.");
-                        return;
-                    }
-                    else
-                        labels.add(label);
-                }
-            }
-            if (labels.contains(form.getNewLabel()))
-                errors.reject(null, "QC state \"" + form.getNewLabel() + "\" is defined more than once.");
-        }
-
-        public boolean handlePost(ManageQCStatesForm form, BindException errors)
-        {
-            if (form.getNewLabel() != null && form.getNewLabel().length() > 0)
-            {
-                QCState newState = new QCState();
-                newState.setContainer(getContainer());
-                newState.setLabel(form.getNewLabel());
-                newState.setDescription(form.getNewDescription());
-                newState.setPublicData(form.isNewPublicData());
-                StudyManager.getInstance().insertQCState(getUser(), newState);
-            }
-            if (form.getIds() != null)
-            {
-                // use a map to store the IDs of the public QC states; since checkboxes are
-                // omitted from the request entirely if they aren't checked, we use a different
-                // method for keeping track of the checked values (by posting the rowid of the item as the
-                // checkbox value).
-                Set<Integer> set = new HashSet<>();
-                if (form.getPublicData() != null)
-                {
-                    for (int i = 0; i < form.getPublicData().length; i++)
-                        set.add(form.getPublicData()[i]);
-                }
-
-                for (int i = 0; i < form.getIds().length; i++)
-                {
-                    int rowId = form.getIds()[i];
-                    QCState state = new QCState();
-                    state.setRowId(rowId);
-                    state.setLabel(form.getLabels()[i]);
-                    if (form.getDescriptions() != null)
-                        state.setDescription(form.getDescriptions()[i]);
-                    state.setPublicData(set.contains(state.getRowId()));
-                    state.setContainer(getContainer());
-                    StudyManager.getInstance().updateQCState(getUser(), state);
-                }
-            }
-
-            updateQcState(getStudyThrowIfNull(), getUser(), form);
-
             return true;
         }
 
-        public ActionURL getSuccessURL(ManageQCStatesForm manageQCStatesForm)
+        @Override
+        public boolean hasDataVisibilityPanel()
         {
-            if (manageQCStatesForm.isReshowPage())
-            {
-                ActionURL url = new ActionURL(ManageQCStatesAction.class, getContainer());
-                if (manageQCStatesForm.getReturnUrl() != null)
-                    url.addParameter(ActionURL.Param.returnUrl, manageQCStatesForm.getReturnUrl());
-                return url;
-            }
-            else if (manageQCStatesForm.getReturnUrl() != null)
-                return new ActionURL(manageQCStatesForm.getReturnUrl());
-            else
-                return new ActionURL(ManageStudyAction.class, getContainer());
+            return true;
         }
 
+        @Override
+        public ModelAndView getView(ManageQCStatesForm manageQCStatesForm, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/api/qc/view/manageQCStates.jsp",
+                    new ManageQCStatesBean(manageQCStatesForm.getReturnUrl()), errors);
+        }
+
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
             _appendManageStudy(root);
             return root.addChild("Manage Dataset QC States");
         }
-    }
 
-    // TODO: Move to StudyManager?
-    public static void updateQcState(StudyImpl study, User user, ManageQCStatesForm form)
-    {
-        if (!nullSafeEqual(study.getDefaultAssayQCState(), form.getDefaultAssayQCState()) ||
-            !nullSafeEqual(study.getDefaultPipelineQCState(), form.getDefaultPipelineQCState()) ||
-            !nullSafeEqual(study.getDefaultDirectEntryQCState(), form.getDefaultDirectEntryQCState()) ||
-            !nullSafeEqual(study.isBlankQCStatePublic(), form.isBlankQCStatePublic()) ||
-            study.isShowPrivateDataByDefault() != form.isShowPrivateDataByDefault())
+        @Override
+        public URLHelper getSuccessURL(ManageQCStatesForm manageQCStatesForm)
         {
-            study = study.createMutable();
-            study.setDefaultAssayQCState(form.getDefaultAssayQCState());
-            study.setDefaultPipelineQCState(form.getDefaultPipelineQCState());
-            study.setDefaultDirectEntryQCState(form.getDefaultDirectEntryQCState());
-            study.setShowPrivateDataByDefault(form.isShowPrivateDataByDefault());
-            study.setBlankQCStatePublic(form.isBlankQCStatePublic());
-            StudyManager.getInstance().updateStudy(user, study);
-        }
-    }
-
-    public static class DeleteQCStateForm extends IdForm
-    {
-        private boolean _all = false;
-        private String _manageReturnUrl;
-
-        public boolean isAll()
-        {
-            return _all;
+            return getSuccessURL(manageQCStatesForm, ManageQCStatesAction.class, ManageStudyAction.class);
         }
 
-        public void setAll(boolean all)
+        @Override
+        public String getQcStateDefaultsPanel(Container container, QCStateHandler qcStateHandler)
         {
-            _all = all;
+            _study = StudyController.getStudyThrowIfNull(container);
+
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
+            panelHtml.append("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Pipeline imported datasets:</th>");
+            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPipelineQCState", _study.getDefaultPipelineQCState()));
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Assay data copied to this study:</th>");
+            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultAssayQCState", _study.getDefaultAssayQCState()));
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Directly inserted/updated dataset data:</th>");
+            panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultDirectEntryQCState", _study.getDefaultDirectEntryQCState()));
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
+
+            return panelHtml.toString();
         }
 
-        public String getManageReturnUrl()
+        @Override
+        public String getDataVisibilityPanel(Container container, QCStateHandler qcStateHandler)
         {
-            return _manageReturnUrl;
-        }
+            StringBuilder panelHtml = new StringBuilder();
+            panelHtml.append("  <table class=\"lk-fields-table\">");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <td colspan=\"2\">This setting determines whether users see non-public data by default.");
+            panelHtml.append("              Users can always explicitly choose to see data in any QC state.</td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("      <tr>");
+            panelHtml.append("          <th align=\"right\" width=\"300px\">Default visibility:</th>");
+            panelHtml.append("          <td>");
+            panelHtml.append("              <select name=\"showPrivateDataByDefault\">");
+            panelHtml.append("                  <option value=\"false\">Public data</option>");
+            String selectedText = (_study.isShowPrivateDataByDefault()) ? " selected" : "";
+            panelHtml.append("                  <option value=\"true\"").append(selectedText).append(">All data</option>");
+            panelHtml.append("              </select>");
+            panelHtml.append("          </td>");
+            panelHtml.append("      </tr>");
+            panelHtml.append("  </table>");
 
-        public void setManageReturnUrl(String manageReturnUrl)
-        {
-            _manageReturnUrl = manageReturnUrl;
+            return panelHtml.toString();
         }
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
+    public class DeleteQCStateAction extends AbstractDeleteQCStateAction
     {
-        @Override
-        public void validateCommand(DeleteQCStateForm target, Errors errors)
+        public DeleteQCStateAction()
         {
+            super();
+            _qcStateHandler = new StudyQCStateHandler();
         }
 
         @Override
-        public boolean handlePost(DeleteQCStateForm form, BindException errors) throws Exception
+        public QCStateHandler getQCStateHandler()
         {
-            if (form.isAll())
-            {
-                for (QCState state : StudyManager.getInstance().getQCStates(getContainer()))
-                {
-                    if (!StudyManager.getInstance().isQCStateInUse(state))
-                        StudyManager.getInstance().deleteQCState(state);
-                }
-            }
-            else
-            {
-                QCState state = StudyManager.getInstance().getQCStateForRowId(getContainer(), form.getId());
-                if (state != null)
-                    StudyManager.getInstance().deleteQCState(state);
-            }
-            return true;
+            return _qcStateHandler;
         }
 
         public ActionURL getSuccessURL(DeleteQCStateForm form)
@@ -3797,7 +3630,7 @@ public class StudyController extends BaseStudyController
             QCState newState = null;
             if (updateQCForm.getNewState() != null)
             {
-                newState = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
+                newState = QCStateManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
                     errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
@@ -5712,7 +5545,7 @@ public class StudyController extends BaseStudyController
 
         public QCStateSet getQCStateSet()
         {
-            if (_qcState != null && StudyManager.getInstance().showQCStates(getContainer()))
+            if (_qcState != null && QCStateManager.getInstance().showQCStates(getContainer()))
                 return QCStateSet.getSelectedStates(getContainer(), getQCState());
             return null;
         }
@@ -6030,6 +5863,7 @@ public class StudyController extends BaseStudyController
             _report = report;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             if (!StringUtils.isEmpty(_report.getDescriptor().getReportDescription()))
@@ -6051,6 +5885,7 @@ public class StudyController extends BaseStudyController
     {
         public static final String TYPE = "Study.chartReport";
 
+        @Override
         public String getType()
         {
             return TYPE;
@@ -6069,18 +5904,18 @@ public class StudyController extends BaseStudyController
         private String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentPartitipantId, String encodedQCState, String display)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState, String display)
         {
             _prevURL = prevURL;
             _nextURL = nextURL;
             _display = display;
-            _currentParticipantId = currentPartitipantId;
+            _currentParticipantId = currentParticipantId;
             _encodedQcState = encodedQCState;
         }
 
-        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentPartitipantId, String encodedQCState)
+        public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState)
         {
-            this(prevURL, nextURL, currentPartitipantId,  encodedQCState, null);
+            this(prevURL, nextURL, currentParticipantId,  encodedQCState, null);
         }
 
         @Override
@@ -6108,7 +5943,7 @@ public class StudyController extends BaseStudyController
             if (null != _currentParticipantId && null != ss)
             {
                 ActionURL search = PageFlowUtil.urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
-                out.print(PageFlowUtil.textLink("Search for '" + PageFlowUtil.filter(id(_currentParticipantId, c, user)) + "'", search));
+                out.print(PageFlowUtil.textLink("Search for '" + id(_currentParticipantId, c, user) + "'", search));
                 out.print("&nbsp;");
             }
 

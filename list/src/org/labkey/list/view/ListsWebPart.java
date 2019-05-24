@@ -76,6 +76,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
         }
     }
 
+    @Override
     protected void renderView(ViewContext model, PrintWriter out) throws Exception
     {
         if (_narrow)

@@ -66,6 +66,7 @@ public class ReportsWebPart extends WebPartView
     }
 
 
+    @Override
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         Map<String, String> properties = _webPart.getPropertyMap();

@@ -16,7 +16,6 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.BaseColumnInfo;
@@ -78,11 +77,13 @@ public class DatasetDataWriter implements InternalStudyWriter
 {
     private static final Logger LOG = Logger.getLogger(DatasetDataWriter.class);
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.DATASET_DATA;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         List<DatasetDefinition> datasets = ctx.getDatasets();
@@ -292,7 +293,7 @@ public class DatasetDataWriter implements InternalStudyWriter
                 if ("ptid".equalsIgnoreCase(in.getName()) && !in.equals(ptidColumn))
                     continue;
 
-                if (null != qcStateColumn && in.equals(qcStateColumn))
+                if (in.equals(qcStateColumn))
                 {
                     // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label), but
                     // only if the dataset don't already have a property named "QCStateLabel"
@@ -411,8 +412,7 @@ public class DatasetDataWriter implements InternalStudyWriter
         return false;
     }
 
-    @Nullable
-    private static Boolean allColumnsMatch(List<ColumnInfo> columnInfoList, PropertyStorageSpec.Index domainIndex)
+    private static boolean allColumnsMatch(List<ColumnInfo> columnInfoList, PropertyStorageSpec.Index domainIndex)
     {
         List<String> columnInfoListCaseInsensitive = new ArrayList<>();
         for (ColumnInfo columnInfo : columnInfoList)

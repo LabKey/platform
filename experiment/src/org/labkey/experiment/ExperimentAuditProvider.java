@@ -27,6 +27,7 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
@@ -35,6 +36,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
@@ -57,6 +59,8 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     public static final String COLUMN_NAME_RUN_LSID = "RunLsid";
     public static final String COLUMN_NAME_PROTOCOL_RUN = "ProtocolRun";
     public static final String COLUMN_NAME_RUN_GROUP = "RunGroup";
+    public static final String COLUMN_NAME_MESSAGE = "Message";
+    public static final String COLUMN_NAME_QCSTATE = "QCState";
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -69,6 +73,8 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROTOCOL_LSID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_RUN_LSID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_RUN_GROUP));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_MESSAGE));
+        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_QCSTATE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -168,6 +174,10 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                         }
                     });
                 }
+                else if (COLUMN_NAME_QCSTATE.equalsIgnoreCase(col.getName()))
+                {
+                    col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoQCState(), null, "RowId", "Label"));
+                }
             }
         };
 
@@ -186,6 +196,8 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         private String _runLsid;
         private String _protocolRun;
         private int _runGroup;
+        private String _message;
+        private Integer _qcState;
 
         public ExperimentAuditEvent()
         {
@@ -237,6 +249,26 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             _runGroup = runGroup;
         }
 
+        public String getMessage()
+        {
+            return _message;
+        }
+
+        public void setMessage(String message)
+        {
+            _message = message;
+        }
+
+        public Integer getQcState()
+        {
+            return _qcState;
+        }
+
+        public void setQcState(Integer qcState)
+        {
+            _qcState = qcState;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -245,6 +277,8 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             elements.put("protocolRun", getProtocolRun());
             elements.put("runGroup", getRunGroup());
             elements.put("runLsid", getRunLsid());
+            elements.put("message", getMessage());
+            elements.put("qcState", getQcState());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -266,6 +300,9 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
             fields.add(createPropertyDescriptor(COLUMN_NAME_RUN_LSID, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL_RUN, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_RUN_GROUP, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_MESSAGE, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_QCSTATE, PropertyType.INTEGER));
+
             _fields = Collections.unmodifiableSet(fields);
         }
 

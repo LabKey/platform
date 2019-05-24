@@ -43,7 +43,7 @@ Any user with READ access to this folder may view some summary data.  However, a
     <labkey:form id="groupUpdateForm" action="<%=h(buildURL(SecurityController.SaveStudyPermissionsAction.class))%>" method="post">
 <%
     if (returnUrl != null)
-        out.write("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
+        out.print("<input type=\"hidden\" name=\"returnUrl\" value=\"" + h(returnUrl) + "\">");
 %>
     <table class="lk-fields-table">
 
@@ -51,12 +51,12 @@ Any user with READ access to this folder may view some summary data.  However, a
             <th>&nbsp;</th>
             <% if (includeEditOption)
             {
-            %><th width=100>EDIT&nbsp;ALL<%=PageFlowUtil.helpPopup("EDIT ALL", "user/group may view and edit all rows in all datasets")%></th><%
+            %><th width=100>EDIT&nbsp;ALL<%=helpPopup("EDIT ALL", "user/group may view and edit all rows in all datasets")%></th><%
             }
             %>
-            <th width=100>READ&nbsp;ALL<%=PageFlowUtil.helpPopup("READ ALL", "user/group may view all rows in all datasets")%></th>
-            <th width=100>PER&nbsp;DATASET<%=PageFlowUtil.helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
-            <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE", "user/group may not view or edit any detail data")%></th></tr>
+            <th width=100>READ&nbsp;ALL<%=helpPopup("READ ALL", "user/group may view all rows in all datasets")%></th>
+            <th width=100>PER&nbsp;DATASET<%=helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
+            <th width=100>NONE<%=helpPopup("NONE", "user/group may not view or edit any detail data")%></th></tr>
     <%
     SecurityPolicy folderPolicy = getContainer().getPolicy();
     SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);

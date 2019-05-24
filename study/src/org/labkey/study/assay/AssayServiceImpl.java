@@ -244,6 +244,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         result.setEditableResults(provider.isEditableResults(protocol));
         result.setEditableRuns(provider.isEditableRuns(protocol));
         result.setBackgroundUpload(provider.isBackgroundUpload(protocol));
+        result.setQcEnabled(provider.isQCEnabled(protocol));
 
         // data transform scripts
         List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
@@ -458,6 +459,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     provider.setEditableResults(protocol, assay.isEditableResults());
                     provider.setEditableRuns(protocol, assay.isEditableRuns());
                     provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
+                    provider.setQCEnabled(protocol, assay.isQcEnabled());
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
                     String autoCopyTargetContainerId = null;

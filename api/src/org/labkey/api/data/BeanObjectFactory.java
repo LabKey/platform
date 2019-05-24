@@ -148,9 +148,9 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             {
                 throw new UnexpectedException(x);
             }
-            catch (IllegalArgumentException x)
+            catch (IllegalArgumentException | ConversionException x)
             {
-                _log.error("could not set property: " + prop + "=" + String.valueOf(value), x);
+                _log.warn("Bean [" + bean.getClass().getName() + "] could not set property: " + prop + "=" + String.valueOf(value) + ": " + x.getMessage());
             }
         }
 

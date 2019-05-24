@@ -67,6 +67,7 @@ public class SpecimenWrapTable extends BaseStudyTable
         return SpecimenDetailTable.getSpecimenAndVialFromSQL(alias, getSchema(), getContainer(), _optionalSpecimenProperties, _optionalVialProperties);
     }
 
+    @Override
     public Path getNotificationKey()
     {
         return _notificationKey;

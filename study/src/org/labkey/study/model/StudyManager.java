@@ -73,6 +73,8 @@ import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -1997,76 +1999,19 @@ public class StudyManager
         return _visitHelper.get(visitStudy.getContainer(), rowId, "RowId");
     }
 
-    private final DatabaseCache<List<QCState>> _qcStateCache = new DatabaseCache<>(StudySchema.getInstance().getScope(), 1000, "QCStates");
-
-    @NotNull
-    public List<QCState> getQCStates(Container container)
-    {
-        return _qcStateCache.get(container.getId(), container, new CacheLoader<String, List<QCState>>()
-        {
-            @Override
-            public List<QCState> load(String key, @Nullable Object argument)
-            {
-                Container container = (Container) argument;
-                SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-                return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoQCState(), filter, new Sort("Label")).getArrayList(QCState.class));
-            }
-        });
-    }
-
-    public boolean showQCStates(Container container)
-    {
-        return !getQCStates(container).isEmpty();
-    }
-
-    public boolean isQCStateInUse(QCState state)
-    {
-        StudyImpl study = getStudy(state.getContainer());
-        if (safeIntegersEqual(study.getDefaultAssayQCState(), state.getRowId()) ||
-                safeIntegersEqual(study.getDefaultDirectEntryQCState(), state.getRowId()) ||
-                safeIntegersEqual(study.getDefaultPipelineQCState(), state.getRowId()))
-        {
-            return true;
-        }
-        SQLFragment f = new SQLFragment();
-        f.append("SELECT * FROM ").append(
-                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
-                " WHERE QCState = ? AND Container = ?");
-        f.add(state.getRowId());
-        f.add(state.getContainer());
-
-        return new SqlSelector(StudySchema.getInstance().getSchema(), f).exists();
-    }
-
+    /**
+     * Helper to insert a new QCState and manage some study specific behavior
+     */
     public QCState insertQCState(User user, QCState state)
     {
-        List<QCState> preInsertStates = getQCStates(state.getContainer());
-        _qcStateCache.remove(state.getContainer().getId());
-        QCState newState = Table.insert(user, StudySchema.getInstance().getTableInfoQCState(), state);
-        // switching from zero to more than zero QC states affects the columns in our materialized datasets
-        // (adding a QC State column), so we unmaterialize them here:
-        if (preInsertStates.isEmpty())
-            clearCaches(state.getContainer(), true);
+        boolean isFirst = QCStateManager.getInstance().getQCStates(state.getContainer()).isEmpty();
+        QCState newState = QCStateManager.getInstance().insertQCState(user, state);
+        if (isFirst)
+            // switching from zero to more than zero QC states affects the columns in our materialized datasets
+            // (adding a QC State column), so we unmaterialize them here:
+            StudyManager.getInstance().clearCaches(state.getContainer(), true);
+
         return newState;
-    }
-
-    public QCState updateQCState(User user, QCState state)
-    {
-        _qcStateCache.remove(state.getContainer().getId());
-        return Table.update(user, StudySchema.getInstance().getTableInfoQCState(), state, state.getRowId());
-    }
-
-    public void deleteQCState(QCState state)
-    {
-        List<QCState> preDeleteStates = getQCStates(state.getContainer());
-        _qcStateCache.remove(state.getContainer().getId());
-        Table.delete(StudySchema.getInstance().getTableInfoQCState(), state.getRowId());
-
-        // removing our last QC state affects the columns in our materialized datasets
-        // (removing a QC State column), so we unmaterialize them here:
-        if (preDeleteStates.size() == 1)
-            clearCaches(state.getContainer(), true);
-
     }
 
     @Nullable
@@ -2075,19 +2020,9 @@ public class StudyManager
         Integer defaultQcStateId = study.getDefaultDirectEntryQCState();
         QCState defaultQCState = null;
         if (defaultQcStateId != null)
-            defaultQCState = StudyManager.getInstance().getQCStateForRowId(
+            defaultQCState = QCStateManager.getInstance().getQCStateForRowId(
                     study.getContainer(), defaultQcStateId);
         return defaultQCState;
-    }
-
-    public QCState getQCStateForRowId(Container container, int rowId)
-    {
-        for (QCState state : getQCStates(container))
-        {
-            if (state.getRowId() == rowId && state.getContainer().equals(container))
-                return state;
-        }
-        return null;
     }
 
     private Map<String, VisitImpl> getVisitsForDataRows(DatasetDefinition def, Collection<String> dataLsids)
@@ -2199,7 +2134,7 @@ public class StudyManager
             Integer oldStateId = (Integer) row.get(DatasetTableImpl.QCSTATE_ID_COLNAME);
             QCState oldState = null;
             if (oldStateId != null)
-                oldState = getQCStateForRowId(container, oldStateId);
+                oldState = QCStateManager.getInstance().getQCStateForRowId(container, oldStateId);
 
             // check to see if we're actually changing state.  If not, no-op:
             if (safeIntegersEqual(newState != null ? newState.getRowId() : null, oldStateId))
@@ -2264,7 +2199,7 @@ public class StudyManager
         }
     }
 
-    private boolean safeIntegersEqual(Integer first, Integer second)
+    public static boolean safeIntegersEqual(Integer first, Integer second)
     {
         if (first == null && second == null)
             return true;
@@ -2936,7 +2871,6 @@ public class StudyManager
                 uncache(def);
         _datasetHelper.clearCache(c);
 
-        _qcStateCache.remove(c.getId());
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
 
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))
@@ -5345,11 +5279,11 @@ public class StudyManager
             // QCStateLabel
             rows.clear(); errors.clear();
             rows.add(PageFlowUtil.mapInsensitive("QCStateLabel", "dirty", "SubjectId", "A1", "Date", Jan1, "Measure", "Test" + (++counterRow), "Value", 1, "Number", 5));
-            List<QCState> qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
+            List<QCState> qcstates = QCStateManager.getInstance().getQCStates(study.getContainer());
             assertEquals(0, qcstates.size());
             qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null, null);
             assertFalse(errors.hasErrors());
-            qcstates = StudyManager.getInstance().getQCStates(study.getContainer());
+            qcstates = QCStateManager.getInstance().getQCStates(study.getContainer());
             assertEquals(1, qcstates.size());
             assertEquals("dirty" , qcstates.get(0).getLabel());
 

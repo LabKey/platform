@@ -158,6 +158,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String EDITABLE_RUNS_PROPERTY_SUFFIX = "EditableRuns";
     public static final String EDITABLE_RESULTS_PROPERTY_SUFFIX = "EditableResults";
     public static final String BACKGROUND_UPLOAD_PROPERTY_SUFFIX = "BackgroundUpload";
+    public static final String QC_ENABLED_PROPERTY_SUFFIX = "QCEnabled";
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
@@ -1485,5 +1486,24 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Set<Module> getRequiredModules()
     {
         return Collections.unmodifiableSet(_requiredModules);
+    }
+
+    @Override
+    public boolean supportsQC()
+    {
+        return false;
+    }
+
+    @Override
+    public void setQCEnabled(ExpProtocol protocol, boolean qcEnabled)
+    {
+        if (supportsQC())
+            setBooleanProperty(protocol, QC_ENABLED_PROPERTY_SUFFIX, qcEnabled);
+    }
+
+    @Override
+    public boolean isQCEnabled(ExpProtocol protocol)
+    {
+        return supportsQC() && Boolean.TRUE.equals(getBooleanProperty(protocol, QC_ENABLED_PROPERTY_SUFFIX));
     }
 }

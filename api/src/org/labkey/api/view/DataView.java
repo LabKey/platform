@@ -29,7 +29,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
@@ -263,6 +262,7 @@ public abstract class DataView extends WebPartView<RenderContext>
                 out.write("<br>");
             }
         }
+        // TODO: HtmlString. HtmlStringWriter?
         writer.write(out.toString());
     }
 

@@ -46,7 +46,7 @@
 </style>
 
 <labkey:panel title="Installed primary authentication providers">
-    <% appendProviders(out, primary, urls, canEdit, this); %>
+    <% appendProviders(out, primary, urls, canEdit); %>
 </labkey:panel>
 
 <%
@@ -54,7 +54,7 @@
     {
 %>
         <labkey:panel title="Installed secondary authentication providers">
-            <% appendProviders(out, secondary, urls, canEdit, this); %>
+            <% appendProviders(out, secondary, urls, canEdit); %>
         </labkey:panel>
 <%
     }
@@ -75,7 +75,7 @@
             if (canEdit)
             {
                 ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
-                out.write(link("Disable").href(url).usePost().toString());
+                out.print(link("Disable").href(url).usePost());
             }
             else
             {
@@ -89,7 +89,7 @@
             if (canEdit)
             {
                 ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
-                out.write(link("Enable").href(url).usePost().toString());
+                out.print(link("Enable").href(url).usePost());
             }
             else
             {
@@ -107,14 +107,14 @@
         <td>
             <% if (!isExternalProviderEnabled)
             {
-                out.write("&nbsp;");
+                out.print("&nbsp;");
             }
             else if (AuthenticationManager.isAutoCreateAccountsEnabled())
             {
                 if (canEdit)
                 {
                     ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
-                    out.write(link("Disable").href(url).usePost().toString());
+                    out.print(link("Disable").href(url).usePost());
                 }
                 else
                 {
@@ -128,7 +128,7 @@
                 if (canEdit)
                 {
                     ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
-                    out.write(link("Enable").href(url).usePost().toString());
+                    out.print(link("Enable").href(url).usePost());
                 }
                 else
                 {
@@ -150,7 +150,7 @@
                     if (canEdit)
                     {
                         ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
-                        out.write(link("Disable").href(url).usePost().toString());
+                        out.print(link("Disable").href(url).usePost());
                     }
                     else
                     {
@@ -164,7 +164,7 @@
                     if (canEdit)
                     {
                         ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
-                        out.write(link("Enable").href(url).usePost().toString());
+                        out.print(link("Enable").href(url).usePost());
                     }
                     else
                     {
@@ -183,11 +183,11 @@
 <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
 
 <%!
-    private static void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, Boolean canEdit, JspBase jspBase) throws IOException
+    private void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, boolean canEdit) throws IOException
     {
-        out.write("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
+        out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
-        out.write("<tr>\n" +
+        out.print("<tr>\n" +
                 "    <td class=\"labkey-column-header\">Name</td>\n" +
                 "    <td class=\"labkey-column-header\">Status</td>\n" +
                 "    <td class=\"labkey-column-header\">Configuration</td>\n" +
@@ -198,71 +198,71 @@
         int rowIndex = 0;
         for (AuthenticationProvider authProvider : providers)
         {
-            out.write("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
-            out.write(PageFlowUtil.filter(authProvider.getName()));
-            out.write("</td>");
+            out.print("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
+            out.print(PageFlowUtil.filter(authProvider.getName()));
+            out.print("</td>");
 
             if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
-                out.write("<td style='opacity:0.5;'>");
+                out.print("<td style='opacity:0.5;'>");
             else
-                out.write("<td>");
+                out.print("<td>");
 
             if (authProvider.isPermanent())
             {
-                out.write("&nbsp;");
+                out.print("&nbsp;");
             }
             else
             {
                 if (AuthenticationManager.isActive(authProvider))
                 {
                     if (canEdit)
-                        out.write(jspBase.link("disable").href(urls.getDisableProviderURL(authProvider)).usePost().toString());
+                        out.print(link("disable").href(urls.getDisableProviderURL(authProvider)).usePost());
                     else
-                        out.write("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
+                        out.print("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
                 }
                 else if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
                 {
-                      out.write("Not Available");
-                      out.write(PageFlowUtil.helpPopup("Not Available",
-                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the Compliance Settings page to disable this control " + jspBase.helpLink("complianceSettings#3rd", "(more info)") + ".",
+                      out.print("Not Available");
+                      out.print(helpPopup("Not Available",
+                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the Compliance Settings page to disable this control " + helpLink("complianceSettings#3rd", "(more info)") + ".",
                               true, 500));
                 }
                 else
                 {
                     if (canEdit)
-                        out.write(jspBase.link("enable").href(urls.getEnableProviderURL(authProvider)).usePost().toString());
+                        out.print(link("enable").href(urls.getEnableProviderURL(authProvider)).usePost());
                     else
-                        out.write("<div class=\"labkey-disabled-text-link\">Disabled</div>");
+                        out.print("<div class=\"labkey-disabled-text-link\">Disabled</div>");
                 }
             }
-            out.write("</td>");
+            out.print("</td>");
 
             ActionURL url = authProvider.getConfigurationLink();
 
-            out.write("<td>");
+            out.print("<td>");
             if (null == url || !canEdit)
-                out.write("&nbsp;");
+                out.print("&nbsp;");
             else
-                out.write(jspBase.link("configure").href(url).toString());
-            out.write("</td>");
+                out.print(link("configure").href(url));
+            out.print("</td>");
 
-            out.write("<td>");
+            out.print("<td>");
             if (canEdit && authProvider instanceof SSOAuthenticationProvider)
             {
                 ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
-                out.write(jspBase.link("pick logos").href(pickLogoURL).toString());
+                out.print(link("pick logos").href(pickLogoURL));
             };
-            out.write("</td>");
+            out.print("</td>");
 
-            out.write("<td>");
-            out.write(authProvider.getDescription());
-            out.write("</td>");
+            out.print("<td>");
+            out.print(authProvider.getDescription());
+            out.print("</td>");
 
-            out.write("</tr>\n");
+            out.print("</tr>\n");
 
             rowIndex++;
         }
 
-        out.write("</table>");
+        out.print("</table>");
     }
 %>

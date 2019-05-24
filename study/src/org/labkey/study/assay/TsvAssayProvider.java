@@ -241,6 +241,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    public boolean supportsQC()
+    {
+        return true;
+    }
+
+    @Override
     public ReRunSupport getReRunSupport()
     {
         return ReRunSupport.ReRunAndReplace;

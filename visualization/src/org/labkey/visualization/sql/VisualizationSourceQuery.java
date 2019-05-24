@@ -48,10 +48,12 @@ import java.util.Set;
  */
 public class VisualizationSourceQuery implements IVisualizationSourceQuery
 {
-    private Container _container;
-    private UserSchema _schema;
-    private String _queryName;
+    private final Container _container;
+    private final UserSchema _schema;
+    private final String _queryName;
     private final int _uniq;
+
+    private IVisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private String _alias = null;
     private TableInfo _tinfo;
     private boolean _requireLeftJoin;
@@ -61,7 +63,6 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private Set<VisualizationSourceColumn> _allSelects = null;
     private Set<VisualizationAggregateColumn> _aggregates = new LinkedHashSet<>();
     private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<>();
-    private IVisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
     private List<SimpleFilter> _filters = new ArrayList<>();
     private boolean _skipVisitJoin;
@@ -100,11 +101,13 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         _joinConditions = joinConditions;
     }
 
+    @Override
     public List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinConditions()
     {
         return _joinConditions;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
@@ -128,11 +131,13 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return false;
     }
 
+    @Override
     public boolean isVisitTagQuery()
     {
         return _queryName.startsWith("VisualizationVisitTag");
     }
 
+    @Override
     public boolean isRequireLeftJoin()
     {
         return _requireLeftJoin;
@@ -144,6 +149,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         _requireLeftJoin = requireLeftJoin;
     }
 
+    @Override
     public void addSelect(VisualizationSourceColumn select, boolean measure)
     {
         ensureSameQuery(select);
@@ -186,6 +192,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         }
     }
 
+    @Override
     public Set<VisualizationAggregateColumn> getAggregates()
     {
         return _aggregates;
@@ -206,12 +213,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     private static void addToColMap(Map<String, Set<VisualizationSourceColumn>> colMap, String name, VisualizationSourceColumn alias)
     {
-        Set<VisualizationSourceColumn> aliases = colMap.get(name);
-        if (aliases == null)
-        {
-            aliases = new LinkedHashSet<>();
-            colMap.put(name, aliases);
-        }
+        Set<VisualizationSourceColumn> aliases = colMap.computeIfAbsent(name, k -> new LinkedHashSet<>());
         aliases.add(alias);
     }
 
@@ -327,6 +329,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         _sorts.add(sort);
     }
 
+    @Override
     public Set<VisualizationSourceColumn> getSorts()
     {
         return _sorts;
@@ -432,7 +435,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             return "";
     }
 
-    private String appendValueList(StringBuilder sql, VisualizationSourceColumn col) throws org.labkey.api.visualization.SQLGenerationException
+    private void appendValueList(StringBuilder sql, VisualizationSourceColumn col) throws org.labkey.api.visualization.SQLGenerationException
     {
         if (col.getValues() != null && col.getValues().size() > 0)
         {
@@ -447,16 +450,12 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                 for (Object value : col.getValues())
                 {
                     sql.append(sep);
-                    if (col.getType().isNumeric() || col.getType() == JdbcType.BOOLEAN)
-                        sql.append(value);
-                    else
-                        sql.append("'").append(value).append("'");
+                    sql.append(SimpleFilter.FilterClause.escapeLabKeySqlValue(value, JdbcType.VARCHAR));
                     sep = ", ";
                 }
             }
             sql.append(")");
         }
-        return sql.toString();
     }
 
     public String getPivotClause() throws org.labkey.api.visualization.SQLGenerationException
@@ -625,11 +624,13 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return _schema.getSchemaName();
     }
 
+    @Override
     public UserSchema getSchema()
     {
         return _schema;
     }
 
+    @Override
     public String getQueryName()
     {
         return _queryName;
@@ -646,6 +647,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return _filters.toArray(new SimpleFilter[_filters.size()]);
     }
 
+    @Override
     public boolean isSkipVisitJoin()
     {
         return _skipVisitJoin;

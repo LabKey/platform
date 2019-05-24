@@ -160,12 +160,6 @@ public abstract class ClientDependency
         return set;
     }
 
-    @Deprecated  // TODO: Migrate caller(s) to fromPath(String) and delete this
-    public static ClientDependency fromFilePath(String path)
-    {
-        return ClientDependency.fromPath(path);
-    }
-
     @Nullable
     public static ClientDependency fromXML(DependencyType type)
     {

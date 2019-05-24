@@ -70,7 +70,7 @@
                                    onclick="updatePipelineSelection();">
 <%                      if (hasInheritedOverride) { %>
                             <span class="labkey-disabled">Use a default based on the file root</span><%=
-                            PageFlowUtil.helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
+                            helpPopup("Pipeline root", "Setting a default pipeline root for this folder is not supported because a pipeline " +
                                     "override has been set in a parent folder.")%><span class="labkey-disabled">: <%=h(projectDefaultRoot)%></span><%
                         } else { %>
                             Use a default based on the file root: <%=h(projectDefaultRoot)%><%

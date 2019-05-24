@@ -37,7 +37,7 @@
 
 <table>
     <tr class="labkey-wp-header">
-        <th colspan="3" align="left">Default<%=PageFlowUtil.helpPopup("Default", "Select the default Chart or Report that will display from the Study Datasets Web Part")%></th>
+        <th colspan="3" align="left">Default<%=helpPopup("Default", "Select the default Chart or Report that will display from the Study Datasets Web Part")%></th>
     </tr>
 <%
     if (bean.getViews().size() > 1)

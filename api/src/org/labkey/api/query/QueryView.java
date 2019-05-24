@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.compliance.ComplianceService;
@@ -128,6 +127,7 @@ public class QueryView extends WebPartView<Object>
     private ButtonBarConfig _buttonBarConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
+    private DataRegion.MessageSupplier _messageSupplier;
 
     private String _linkTarget;
 
@@ -522,15 +522,14 @@ public class QueryView extends WebPartView<Object>
     protected ActionURL urlFor(QueryAction action)
     {
         ActionURL ret = null;
-
         switch (action)
         {
             case deleteQueryRows:
                 if (null != _deleteURL)
-                    ret = DetailsURL.fromString(_deleteURL).getActionURL();
+                    ret = DetailsURL.fromString(_deleteURL).setContainerContext(_schema.getContainer()).getActionURL();
                 break;
             case detailsQueryRow:
-                // TODO kinda suspect...
+                // TODO kinda suspect... since this is a per-row url
                 if (null != _detailsURL)
                     ret = _detailsURL.getActionURL();
                 break;
@@ -541,11 +540,11 @@ public class QueryView extends WebPartView<Object>
                 break;
             case insertQueryRow:
                 if (null != _insertURL)
-                    ret = new ActionURL(_insertURL);
+                    ret = DetailsURL.fromString(_insertURL).setContainerContext(_schema.getContainer()).getActionURL();
                 break;
             case importData:
                 if (null != _importURL)
-                    ret = DetailsURL.fromString(_importURL).getActionURL();
+                    ret = DetailsURL.fromString(_importURL).setContainerContext(_schema.getContainer()).getActionURL();
                 break;
         }
 
@@ -2086,9 +2085,13 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPagination(isShowPagination());
         rgn.setShowPaginationCount(isShowPaginationCount());
 
+        if (_messageSupplier != null)
+            rgn.addMessageSupplier(_messageSupplier);
+
         if (_customView != null && _customView.getErrors() != null)
         {
-            _customView.getErrors().forEach(rgn::adViewErrorMessage);
+            rgn.addMessageSupplier(dataRegion -> _customView.getErrors().stream().map(e -> new DataRegion.Message(PageFlowUtil.filter(e), DataRegion.MessageType.ERROR, DataRegion.MessagePart.view))
+                    .collect(Collectors.toList()));
         }
 
         // Allow region to specify header lock, optionally override
@@ -3192,5 +3195,10 @@ public class QueryView extends WebPartView<Object>
         }
 
         return resources;
+    }
+
+    public void setMessageSupplier(DataRegion.MessageSupplier messageSupplier)
+    {
+        _messageSupplier = messageSupplier;
     }
 }

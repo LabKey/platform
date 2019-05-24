@@ -161,7 +161,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set site administrators (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Set site administrators (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -181,7 +181,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Set default domain for user sign in and base server url (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Set default domain for user sign in and base server url (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -203,7 +203,7 @@ Click the Save button at any time to accept the current settings and continue.</
 
 <tr>
     <td colspan=2>Automatically check for updates to LabKey Server and
-        report usage statistics to LabKey. (<%=text(bean.helpLink)%>)</td>
+        report usage statistics to LabKey. (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -235,7 +235,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Automatically report exceptions (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Automatically report exceptions (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -279,7 +279,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Customize LabKey system properties (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize LabKey system properties (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -303,7 +303,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Configure Security (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Configure Security (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -319,7 +319,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure API Keys (<%=text(new HelpTopic("configAdmin#apiKey").getSimpleLinkHtml("more info..."))%>)</td>
+    <td colspan=2>Configure API Keys (<%=new HelpTopic("configAdmin#apiKey").getSimpleLinkHtml("more info...")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -353,7 +353,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure pipeline settings (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Configure pipeline settings (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -365,7 +365,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Ribbon Bar Message (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Ribbon Bar Message (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -381,7 +381,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Put web site in administrative mode (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Put web site in administrative mode (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>

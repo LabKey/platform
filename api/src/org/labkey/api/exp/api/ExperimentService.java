@@ -469,7 +469,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataTable createFilesTable(String name, UserSchema schema, ContainerFilter cf);
+    ExpDataTable createFilesTable(String name, UserSchema schema);
 
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 
