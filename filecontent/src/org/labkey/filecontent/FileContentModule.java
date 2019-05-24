@@ -52,16 +52,19 @@ import java.util.stream.Stream;
 
 public class FileContentModule extends DefaultModule
 {
+    @Override
     public String getName()
     {
         return "FileContent";
     }
 
+    @Override
     public double getVersion()
     {
         return 19.10;
     }
 
+    @Override
     protected void init()
     {
         addController("filecontent", FileContentController.class);
@@ -70,6 +73,7 @@ public class FileContentModule extends DefaultModule
         AttachmentService.get().registerAttachmentType(FileSystemAttachmentType.get());
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -78,6 +82,7 @@ public class FileContentModule extends DefaultModule
         ));
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
@@ -147,6 +152,7 @@ public class FileContentModule extends DefaultModule
     }
 
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         WebdavService.get().addProvider(new FileWebdavProvider());
