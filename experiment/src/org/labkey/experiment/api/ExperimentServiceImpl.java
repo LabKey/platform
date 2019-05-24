@@ -229,7 +229,6 @@ import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
-import static org.labkey.api.data.DbScope.CommitTaskOption.PRECOMMIT;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
@@ -2657,8 +2656,9 @@ public class ExperimentServiceImpl implements ExperimentService
         DbScope scope = getExpSchema().getScope();
         if (scope.isTransactionActive())
         {
+            LOG.debug("queueing syncRunEdges for run: " + runId);
             DbScope.Transaction tx = scope.getCurrentTransaction();
-            tx.addCommitTask(new SyncRunEdgesTask(runId), PRECOMMIT);
+            tx.addCommitTask(new SyncRunEdgesTask(runId), POSTCOMMIT);
         }
         else
         {
@@ -2672,8 +2672,9 @@ public class ExperimentServiceImpl implements ExperimentService
         DbScope scope = getExpSchema().getScope();
         if (scope.isTransactionActive())
         {
+            LOG.debug("queueing syncRunEdges for run: " + run.getRowId() + " - " + run.getName());
             DbScope.Transaction tx = scope.getCurrentTransaction();
-            tx.addCommitTask(new SyncRunEdgesTask(run.getRowId(), run.getLSID(), run.getContainer()), PRECOMMIT);
+            tx.addCommitTask(new SyncRunEdgesTask(run.getRowId(), run.getLSID(), run.getContainer()), POSTCOMMIT);
         }
         else
         {
@@ -2913,6 +2914,7 @@ public class ExperimentServiceImpl implements ExperimentService
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
         run.deleteProtocolApplications(datasToDelete, user);
+        removeEdgesForRun(runId);
 
         //delete run properties and all children
         OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
