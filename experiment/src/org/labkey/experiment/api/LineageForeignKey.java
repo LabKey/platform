@@ -79,9 +79,30 @@ class LineageForeignKey extends AbstractForeignKey
 
     enum LevelColumnType
     {
-        Data("Data", "Data"),
-        Material("Materials", "Material"),
-        ExperimentRun("Runs", "ExperimentRun");
+        Data("Data", "Data")
+        {
+            @Override
+            List<? extends ExpObject> getItems(UserSchema s)
+            {
+                return ExperimentService.get().getDataClasses(s.getContainer(), s.getUser(), true);
+            }
+        },
+        Material("Materials", "Material")
+        {
+            @Override
+            List<? extends ExpObject> getItems(UserSchema s)
+            {
+                return ExperimentService.get().getSampleSets(s.getContainer(), s.getUser(), true);
+            }
+        },
+        ExperimentRun("Runs", "ExperimentRun")
+        {
+            @Override
+            List<? extends ExpObject> getItems(UserSchema s)
+            {
+                return ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(s.getContainer());
+            }
+        };
 
         final String columnName;
         final String expType;
@@ -92,20 +113,7 @@ class LineageForeignKey extends AbstractForeignKey
             this.expType = expType;
         }
 
-        List<? extends ExpObject> getItems(UserSchema s)
-        {
-            // hmm don't think enums can override a method.. so here's a switch
-            switch (this)
-            {
-                case Data:
-                    return ExperimentService.get().getDataClasses(s.getContainer(), s.getUser(), true);
-                case Material:
-                    return ExperimentService.get().getSampleSets(s.getContainer(), s.getUser(), true);
-                case ExperimentRun:
-                    return ExperimentServiceImpl.get().getExpProtocolsForRunsInContainer(s.getContainer());
-                default: return null;
-            }
-        }
+        abstract List<? extends ExpObject> getItems(UserSchema s);
     }
 
     public ColumnInfo _createLookupColumn(ColumnInfo parent, TableInfo table, String displayField)

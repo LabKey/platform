@@ -33,7 +33,6 @@ import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
@@ -113,6 +112,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static java.util.Objects.requireNonNull;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.LabkeySQL;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QueryName;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
@@ -1056,6 +1056,7 @@ public class Query
             setScrollable(true);
         }
 
+        @Override
         public String[][] getFirstNLines(int n)
         {
             return data;
@@ -1063,6 +1064,7 @@ public class Query
 
         int i=1;
 
+        @Override
         @NotNull
         public CloseableIterator<Map<String, Object>> iterator()
         {
@@ -1071,26 +1073,31 @@ public class Query
 
         class _Iterator implements CloseableIterator<Map<String, Object>>
         {
+            @Override
             public boolean hasNext()
             {
                 return i < data.length;
             }
 
+            @Override
             public Map<String, Object> next()
             {
                 return new ArrayListMap<>(templateRow, Arrays.asList((Object[])data[i++]));
             }
 
+            @Override
             public void remove()
             {
                 throw new UnsupportedOperationException();
             }
 
+            @Override
             public void close()
             {
             }
         }
 
+        @Override
         public void close()
         {
         }
@@ -1768,7 +1775,7 @@ public class Query
 
         private void addProperties(ListDefinition l)
         {
-            Domain d = l.getDomain();
+            Domain d = requireNonNull(l.getDomain());
             for (int i=0 ; i<TestDataLoader.COLUMNS.length ; i++)
             {
                 DomainProperty p = d.addProperty();
@@ -1804,14 +1811,15 @@ public class Query
 			Container qtest = getSubfolder();
             ListService s = ListService.get();
             QueryUpdateService qus;
+            UserSchema lists = requireNonNull((UserSchema)DefaultSchema.get(user, c).getSchema("lists"));
 
             ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-            TableInfo rTableInfo = DefaultSchema.get(user, c).getSchema("lists").getTable("R");
+            TableInfo rTableInfo = lists.getTable("R", null);
             DataIteratorContext context = new DataIteratorContext();
-            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
+            requireNonNull(rTableInfo.getUpdateService()).importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
@@ -1819,9 +1827,9 @@ public class Query
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            TableInfo sTableInfo = DefaultSchema.get(user, qtest).getSchema("lists").getTable("S");
+            TableInfo sTableInfo = lists.getTable("S", null);
             context = new DataIteratorContext();
-            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
+            requireNonNull(sTableInfo.getUpdateService()).importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
