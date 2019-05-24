@@ -111,13 +111,6 @@ public class SimpleUserSchema extends UserSchema
             _visible.removeAll(hiddenTables);
     }
 
-//    @Override
-//    @Deprecated
-//    public TableInfo createTable(String name)
-//    {
-//        throw new IllegalStateException();
-//    }
-//
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
@@ -155,13 +148,6 @@ public class SimpleUserSchema extends UserSchema
     {
         return new SimpleTable<>(this, sourceTable, cf).init();
     }
-
-    // TODO ContainerFilter - remove
-//    @Deprecated
-//    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
-//    {
-//        return createWrappedTable(name, sourceTable, null);
-//    }
 
     @Override
     public Set<String> getTableNames()
