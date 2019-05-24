@@ -175,7 +175,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
            setCpasType(dataClass.getLSID());
 
         boolean isNew = getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoData());
+        save(user, ExperimentServiceImpl.get().getTinfoData(), true);
 
         if (isNew)
         {

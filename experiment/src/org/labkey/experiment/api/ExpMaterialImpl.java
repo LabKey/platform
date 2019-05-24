@@ -158,6 +158,17 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return Collections.unmodifiableList(aliases);
     }
 
+    /** Get the ObjectId of the ExpSampleSet that this ExpMaterial belongs to. */
+    @Nullable
+    public Integer getParentObjectId()
+    {
+        ExpSampleSet ss = getSampleSet();
+        if (ss == null)
+            return null;
+
+        return ss.getObjectId();
+    }
+
     public void save(User user)
     {
         save(user, (ExpSampleSetImpl)getSampleSet());
@@ -165,12 +176,14 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void save(User user, ExpSampleSetImpl ss)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoMaterial());
+        save(user, ExperimentServiceImpl.get().getTinfoMaterial(), true);
         if (null != ss)
         {
             TableInfo ti = ss.getTinfo();
             if (null != ti)
+            {
                 new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+            }
         }
         index(null);
     }
@@ -482,7 +495,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), ss.getContainer());
             if (null != pd)
-            super.setProperty(user, pd, entry.getValue());
+                super.setProperty(user, pd, entry.getValue());
         }
     }
 }

@@ -16,10 +16,12 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
 
 /**
@@ -71,6 +73,15 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         _object.setName(name);
     }
 
+    /**
+     * Get the objectId used as the value in the exp.object.ownerObjectId column
+     * e.g., for Material in a SampleSet, this value is the SampleSet's objectId.
+     */
+    public @Nullable Integer getParentObjectId()
+    {
+        return null;
+    }
+
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -89,11 +100,17 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         return result;
     }
 
-    protected void save(User user, TableInfo table)
+    protected void save(User user, TableInfo table, boolean ensureObject)
     {
         if (getRowId() == 0)
         {
             _object = Table.insert(user, table, _object);
+            if (ensureObject)
+            {
+                assert _objectId == 0;
+                _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
+                // TODO: set the objectId on the table
+            }
         }
         else
         {

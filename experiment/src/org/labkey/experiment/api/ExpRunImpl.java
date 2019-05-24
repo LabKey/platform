@@ -42,7 +42,6 @@ import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
@@ -280,7 +279,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             boolean newRun = getRowId() == 0;
             ExperimentService.get().onBeforeRunSaved(getProtocol(), this, getContainer(), user);
-            save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
+            save(user, ExperimentServiceImpl.get().getTinfoExperimentRun(), true);
             if (newRun)
                 ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
             t.commit();

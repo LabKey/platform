@@ -2525,7 +2525,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
             if (!missingObjectLsids.isEmpty())
             {
-                LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes:\n" + StringUtils.join(missingObjectLsids));
+                if (LOG.isDebugEnabled())
+                    LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes:\n" + StringUtils.join(missingObjectLsids));
                 missingObjectLsids.forEach(missingObjectLsid -> {
                     Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
                     Container container = ContainerManager.getForId((String) missingObjectRow.get("container"));
@@ -2758,11 +2759,11 @@ public class ExperimentServiceImpl implements ExperimentService
             if (edgeCount > 0)
             {
                 // ensure the run has an exp.object
-                // if asserts enabled....
-                OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
-                if (runObj == null)
+                if (LOG.isDebugEnabled())
                 {
-                    LOG.error("run exp.object is null, creating...");
+                    OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
+                    if (runObj == null)
+                        LOG.debug("  run exp.object is null, creating: " + runLsid);
                 }
                 OntologyManager.ensureObject(runContainer, runLsid, (Integer)null);
 
@@ -5473,8 +5474,14 @@ public class ExperimentServiceImpl implements ExperimentService
             Table.batchExecute(getExpSchema(), sql.toString(), params);
 
             // insert into exp.object
+            List<List<?>> expObjectParams = params.stream().map(
+                    runParams -> List.of(/* LSID */ runParams.get(0), c.getId())
+            ).collect(toList());
+            StringBuilder expObjectSql = new StringBuilder("INSERT INTO ").append(OntologyManager.getTinfoObject())
+                    .append(" (ObjectUri, Container) VALUES (?, ?)");
+            Table.batchExecute(getExpSchema(), expObjectSql.toString(), expObjectParams);
 
-            List<String> runLsids = _runParams.stream().map(p -> (String) p.get(0)).collect(toList());
+            List<String> runLsids = params.stream().map(p -> (String) p.get(0)).collect(toList());
             SimpleFilter filter = new SimpleFilter("LSID", runLsids, IN);
             return new TableSelector(getTinfoExperimentRun(), getTinfoExperimentRun().getColumns("LSID", "RowId"), filter, null).getValueMap();
         }

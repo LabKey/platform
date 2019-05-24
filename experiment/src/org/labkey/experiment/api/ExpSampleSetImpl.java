@@ -511,7 +511,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
+        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());

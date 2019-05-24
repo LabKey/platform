@@ -151,7 +151,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public void save(User user)
     {
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoDataClass());
+        save(user, ExperimentServiceImpl.get().getTinfoDataClass(), true);
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());

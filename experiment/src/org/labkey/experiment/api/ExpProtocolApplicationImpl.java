@@ -271,7 +271,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
     public void save(User user)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoProtocolApplication());
+        save(user, ExperimentServiceImpl.get().getTinfoProtocolApplication(), false);
     }
 
     public void delete(User user)
