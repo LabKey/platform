@@ -64,10 +64,10 @@
         %>
                 <labkey:input
                     type="password"
-                    id="<%=h(input.getObject().toString())%>"
-                    name="<%=h(input.getObject().toString())%>"
-                    label="<%=h(input.getName())%>"
-                    contextContent="<%=text(contextContent)%>"
+                    id="<%=input.getObject().toString()%>"
+                    name="<%=input.getObject().toString()%>"
+                    label="<%=input.getName()%>"
+                    contextContent="<%=contextContent%>"
                 />
         <%
         }

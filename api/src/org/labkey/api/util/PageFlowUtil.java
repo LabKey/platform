@@ -379,6 +379,11 @@ public class PageFlowUtil
     }
 
 
+    static public HtmlString jsString(HtmlString hs)
+    {
+        return HtmlString.unsafe(jsString(hs.toString()));
+    }
+
     static public String jsString(String s)
     {
         if (s == null)

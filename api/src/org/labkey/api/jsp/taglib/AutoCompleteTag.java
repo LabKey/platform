@@ -17,6 +17,7 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.jsp.JspWriter;
@@ -62,6 +63,11 @@ public abstract class AutoCompleteTag extends SimpleTagBase
     public void setUrl(String url)
     {
         _url = url;
+    }
+
+    public void setUrl(ActionURL url)
+    {
+        _url = url.getLocalURIString();
     }
 
     public String getValue()

@@ -15,39 +15,39 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.search.SearchController.SearchConfiguration" %>
-<%@ page import="org.labkey.search.SearchController.SearchForm" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.api.search.SearchService.SearchResult" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
 <%@ page import="org.labkey.api.search.SearchResultTemplate" %>
 <%@ page import="org.labkey.api.search.SearchScope" %>
-<%@ page import="java.io.IOException" %>
-<%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchService.SearchResult" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
-<%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.search.SearchController.SearchConfiguration" %>
+<%@ page import="org.labkey.search.SearchController.SearchForm" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -487,7 +487,7 @@
                     {
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
-                            %><%=h(summary, false).replace("&lt;br&gt;", "<br>")%><%
+                            %><%=h(summary, false).toString().replace("&lt;br&gt;", "<br>")%><%
                     }
                 %>
                 </div>

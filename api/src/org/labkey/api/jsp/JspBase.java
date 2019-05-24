@@ -126,17 +126,19 @@ abstract public class JspBase extends JspContext implements HasViewContext
     /**
      * No-op encoding
      * Indicate that you explicitly want to include a string in the page WITHOUT encoding
+     * TODO: HtmlString - Eventually, remove this method and all usages.
      */
-    public String text(String s)
+    public HtmlString text(String s)
     {
-        return null==s ? "" : s;
+        // TODO: HtmlString - Move this null handling into HtmlString?
+        return HtmlString.unsafe(null==s ? "" : s);
     }
 
 
     /**
      * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
      * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
-     * TODO: Eventually, remove this method and all usages.
+     * TODO: HtmlString - Eventually, remove this method and all usages.
      * @param s An HtmlString
      * @return The HtmlString
      */
@@ -150,8 +152,8 @@ abstract public class JspBase extends JspContext implements HasViewContext
     /**
      * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
      * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
-     * TODO: Eventually, remove this method and all usages.
-     * @param s A HasHtmlString
+     * TODO: HtmlString - Eventually, remove this method and all usages.
+     * @param s Any object that implements HasHtmlString
      * @return The parameter's HtmlString
      */
     @Deprecated
@@ -165,9 +167,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * Html escape an object.toString().
      * The name comes from Embedded Ruby.
      */
-    public String h(Object o)
+    public HtmlString h(Object o)
     {
-        return PageFlowUtil.filter(o);
+        return HtmlString.of(o == null ? null : o.toString());
     }
 
     /**
@@ -183,14 +185,14 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * Html escape a string.
      * The name comes from Embedded Ruby.
      */
-    public String h(String str, boolean encodeSpace)
+    public HtmlString h(String str, boolean encodeSpace)
     {
-        return PageFlowUtil.filter(str, encodeSpace);
+        return HtmlString.unsafe(PageFlowUtil.filter(str, encodeSpace));
     }
 
-    public String h(URLHelper url)
+    public HtmlString h(URLHelper url)
     {
-        return PageFlowUtil.filter(url);
+        return HtmlString.of(url == null ? null : url.toString());
     }
 
     /**

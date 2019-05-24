@@ -37,7 +37,6 @@
 <%@ page import="org.labkey.api.util.ExceptionUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -258,6 +257,6 @@
         if (value instanceof Number)
             return HtmlString.of(Formats.formatNumber(getContainer(), (Number)value));
 
-        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : h(ConvertUtils.convert(value), true);
     }
 %>

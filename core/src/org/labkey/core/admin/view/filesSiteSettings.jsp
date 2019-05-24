@@ -124,7 +124,7 @@
     {
 %>
 <br><h4>Map Network Drive (Windows Only)</h4>
-<labkey:link href="<%=h(new ActionURL(AdminController.MapNetworkDriveAction.class, getContainer()))%>" text="Configure"/>
+<%=link("Configure", AdminController.MapNetworkDriveAction.class)%>
 <%
     }
 %>

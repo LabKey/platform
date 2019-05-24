@@ -861,7 +861,7 @@
         if (value instanceof Number)
             return HtmlString.of(Formats.formatNumber(getContainer(), (Number) value));
 
-        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : h(ConvertUtils.convert(value), true);
     }
 %>
 
