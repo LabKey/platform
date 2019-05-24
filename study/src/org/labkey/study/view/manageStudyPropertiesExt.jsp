@@ -388,7 +388,7 @@ function renderFormPanel(data, editable){
     if (editableFormPanel) {
         items.push({
             xtype : 'combo',
-            fieldLabel : 'Render Type: <%=PageFlowUtil.helpPopup(null, "The render type format for the description when displayed on the Overview tab.")%>',
+            fieldLabel : 'Render Type: <%=helpPopup(null, "The render type format for the description when displayed on the Overview tab.")%>',
             labelSeparator: '',
             labelWidth : 160,
             height : 30,

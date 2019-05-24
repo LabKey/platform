@@ -371,7 +371,7 @@
     %>
     <td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>">
         <%= h(visit.getDisplayString()) %>
-        <%= text(visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "") %>
+        <%= visit.getDescription() != null ? helpPopup("Visit Description", visit.getDescription()) : HtmlString.EMPTY_STRING %>
     </td>
     <%
         }
@@ -469,7 +469,7 @@
         </a><%
         if (null != StringUtils.trimToNull(dataset.getDescription()))
         {
-    %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
+    %><%=helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
         }
     %></th>
     <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%></td>
