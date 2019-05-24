@@ -49,9 +49,9 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 {
     protected FileContentService _svc = FileContentService.get();
 
-    public ExpFilesTableImpl(String name, UserSchema schema, ContainerFilter cf)
+    public ExpFilesTableImpl(String name, UserSchema schema)
     {
-        super(name, schema, cf);
+        super(name, schema, null);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
         _svc.ensureFileData(getUpdateService(), schema.getUser(), schema.getContainer());
     }

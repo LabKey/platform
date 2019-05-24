@@ -95,6 +95,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _userSchema = userSchema;
 
         // TODO ContainerFilter -- for some subclasses it is too early to call supportsContainerFilter() (e.g. DatasetTableImpl)
+        // NOTE: Tables that don't support container filters are required to pass containerFilter == null
 //        if (supportsContainerFilter())
         {
             if (containerFilter != null)
@@ -548,6 +549,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
      * ignores supportsContainerFilter(), allows subclasses to set container filter w/o supporting
      * external, "public" setting of filter.
      */
+    @Override
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
     {
         checkLocked();

@@ -182,6 +182,15 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         }
 
         @Override
+        public boolean renderPopupImage()
+        {
+            if (_popupIconUrl != null)
+                return _popupIconUrl.trim().length() > 0;
+            else
+                return super.renderPopupImage();
+        }
+
+        @Override
         public String createPopupImage()
         {
             if (_url != null || _fileIconUrl != null)

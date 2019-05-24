@@ -84,6 +84,8 @@ class LineageForeignKey extends AbstractForeignKey
             return null;
 
         var lookup = table.getColumn(displayField);
+        if (null == lookup)
+            return null;
 
         // We want to create a placeholder column here that DOES NOT add generate any joins
         // so that's why we extend AbstractForeignKey instead of LookupForeignKey.

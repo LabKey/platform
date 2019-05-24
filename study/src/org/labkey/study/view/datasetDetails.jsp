@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
@@ -44,7 +45,6 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -252,19 +252,17 @@ if (!pipelineSet)
 <script type="text/javascript">
     function truncateTable()
     {
-                var msg = "Are you sure you wish to delete all rows for the dataset "+ '<%=h(dataset.getName())%>' + "?<br>";
-                <% if (dataset.isShared() && !isDatasetInherited)
-                {
-                        %>msg +="<b>This will delete data in sub-folders that use this dataset.</b><br>";<%
-                } %>
-                msg += "This action cannot be undone and will result in an empty dataset.";
-                Ext4.Msg.confirm("Confirm Deletion", msg,
-                function(button){
-                    if (button === 'yes') {
-                        truncate();
-                    }
-                }
-        );
+        var msg = "Are you sure you wish to delete all rows for the dataset "+ '<%=h(dataset.getName())%>' + "?<br>";
+        <% if (dataset.isShared() && !isDatasetInherited)
+        {
+                %>msg +="<b>This will delete data in sub-folders that use this dataset.</b><br>";<%
+        } %>
+        msg += "This action cannot be undone and will result in an empty dataset.";
+        Ext4.Msg.confirm("Confirm Deletion", msg, function(button){
+            if (button === 'yes') {
+                truncate();
+            }
+        });
 
         function truncate()
         {
@@ -287,8 +285,8 @@ if (!pipelineSet)
                 scope : this
             });
         }
-
     }
+
     function showLinkDialog(){
         Ext4.onReady(function(){
             var datasets = [

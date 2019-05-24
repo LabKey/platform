@@ -312,7 +312,7 @@ public class PageTemplate extends JspView<PageConfig>
     public ActionURL getPermaLink()
     {
         ActionURL url = getViewContext().cloneActionURL();
-        return url.setExtraPath("__r" + Integer.toString(getViewContext().getContainer().getRowId()));
+        return url.setExtraPath("__r" + getViewContext().getContainer().getRowId());
     }
 
     public static HtmlView getTemplateResource(TemplateProperties prop)

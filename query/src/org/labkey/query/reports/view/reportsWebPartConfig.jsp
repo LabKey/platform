@@ -103,12 +103,12 @@
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Show Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
+            <td class="labkey-form-label">Show Tabs:<%=helpPopup("Show tabs",
                     "Some reports/charts may be rendered with multiple tabs showing. Select this option to only show the primary one.")%></td>
             <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%> onclick="onShowTabs(this.checked);"></td>
         </tr>
         <tr id="visibleSections">
-            <td class="labkey-form-label">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",
+            <td class="labkey-form-label">Visible Report Sections:<%=helpPopup("Show Report sections",
                     "Some reports/charts contain multiple sections such as: images, text, console output. For these types of report, you can select which section(s) to " +
                             "display by selecting them from the list.")%></td>
             <td><select id="showSection" multiple="true" onchange="selectSection()"></select></td>

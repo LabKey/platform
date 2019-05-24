@@ -42,7 +42,7 @@
     <% if (flag.isRequiresRestart()) { %>
     <div>Restart required after toggling feature.</div>
     <% } %>
-    <%= PageFlowUtil.textLink(
+    <%= textLink(
             flag.isEnabled() ? "Disable" : "Enable",
             "javascript:void(0);", null, null, Collections.singletonMap("data-exp-flag", h(flag.getFlag()))) %>
 </div>

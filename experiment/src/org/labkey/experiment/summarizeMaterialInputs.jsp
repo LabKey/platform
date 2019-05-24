@@ -50,7 +50,7 @@
 <table>
     <tr>
         <td valign="bottom" class="labkey-form-label"><strong>Sample Name</strong></td>
-        <td valign="bottom" class="labkey-form-label"><strong>Role</strong><%= PageFlowUtil.helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
+        <td valign="bottom" class="labkey-form-label"><strong>Role</strong><%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
         <% if (!sameTypeInputs.isEmpty()) { %>
             <td valign="bottom" class="labkey-form-label"><strong>Copy properties to...</strong></td>
         <% } %>

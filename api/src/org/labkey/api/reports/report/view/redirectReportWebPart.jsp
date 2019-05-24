@@ -67,7 +67,7 @@
     <% if (type != null) { %> <tr><td><b>Type:</b></td><td><%=h(type)%></td></tr> <% } %>
     <% if (description != null) { %> <tr><td><b>Description:</b></td><td><%=h(description)%></td></tr> <% } %>
     <tr><td colspan=2>
-        <%=PageFlowUtil.textLink("view report", url, null, null, reportURLAttributes)%>
+        <%=textLink("view report", url, null, null, reportURLAttributes)%>
     </td></tr>
 </table>
 <div style='clear: both;'></div>

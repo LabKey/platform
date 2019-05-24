@@ -239,15 +239,6 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public List<String> getColumnNames()
-        {
-            return getFieldKeys().stream()
-                .filter(f -> null==f.getParent())
-                .map(f -> f.getName())
-                .collect(Collectors.toList());
-        }
-
-        @Override
         public List<FieldKey> getFieldKeys()
         {
             if (null == expr)
@@ -2564,7 +2555,7 @@ public class QueryServiceImpl implements QueryService
         Set<String> activeModuleNames = c.getActiveModules().stream().map(Module::getName).collect(Collectors.toSet());
 
         Map<ActionURL, String> schemaLinks = new HashMap<>();
-        for (Class actionClass : _schemaLinkActions.keySet())
+        for (Class<? extends Controller> actionClass : _schemaLinkActions.keySet())
         {
             Pair<Module, String> actionInfo = _schemaLinkActions.get(actionClass);
             if (!activeModuleNames.contains(actionInfo.first.getName()))

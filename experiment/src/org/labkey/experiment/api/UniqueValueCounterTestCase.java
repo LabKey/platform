@@ -156,7 +156,8 @@ public class UniqueValueCounterTestCase
         errors = new BatchValidationException();
         inserted = svc.insertRows(user, c, rows, errors, null, null);
         assertTrue(errors.hasErrors());
-        assertTrue("Expected duplicate key violation", errors.getMessage().contains("ERROR: duplicate key value violates unique constraint"));
+        assertTrue("Expected duplicate key violation: " + errors.getMessage(),
+               errors.getMessage().contains("duplicate key"));
 
 
         // NOTE: This test case doesn't repro for SampleSet because the CoerceDataIterator is run before the CounterDataIteratorBuilder and will include null values for any missing columns
