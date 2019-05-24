@@ -22,6 +22,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -186,4 +187,30 @@ public interface AssayService
      * @return AssayColumnInfoRenderer
      */
     AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
+
+    /**
+     * Saves a ExpQCFlag instance for the specified run.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    <FlagType extends ExpQCFlag> void saveFlag(Container container, User user, AssayProvider provider, FlagType flag);
+
+    /**
+     * Delete the flags for the run.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     *
+     * @return the count of flags deleted
+     */
+    int deleteFlagsForRun(Container container, User user, AssayProvider provider, int runId);
+
+    /**
+     * Delete the specified flag.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    <FlagType extends ExpQCFlag> void deleteFlag(Container container, User user, AssayProvider provider, FlagType flag);
+
+    /**
+     * Returns the flags for the specified run.
+     * The assay provider must implement an instance of the AssayFlagHandler interface
+     */
+    <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
 }

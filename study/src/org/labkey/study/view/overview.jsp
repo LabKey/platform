@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
@@ -66,7 +67,7 @@
         cohorts = manager.getCohorts(container, user);
     }
 
-    boolean showQCStates = manager.showQCStates(container);
+    boolean showQCStates = QCStateManager.getInstance().showQCStates(container);
     QCStateSet selectedQCStateSet = null;
     List<QCStateSet> qcStateSetOptions = null;
 
