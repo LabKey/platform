@@ -76,8 +76,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
-    private BooleanProperty isPrimaryKey = new BooleanProperty();
-    private BooleanProperty isLocked = new BooleanProperty();
+    private BooleanProperty isPrimaryKey = new BooleanProperty(false);
+    private BooleanProperty isLocked = new BooleanProperty(false);
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;

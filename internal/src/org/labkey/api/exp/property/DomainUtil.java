@@ -191,9 +191,19 @@ public class DomainUtil
             throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
         }
 
+        Set<String> mandatoryProperties = domainKind.getMandatoryPropertyNames(domain);
+
         //get PK columns
         TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
-        Map<String, Object> pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+        Map<String, Object> pkColMap;
+        if (null != tableInfo && null != tableInfo.getPkColumns())
+        {
+            pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+        }
+        else
+        {
+            pkColMap = new HashMap<>();
+        }
 
         for (DomainProperty prop : properties)
         {
@@ -210,8 +220,9 @@ public class DomainUtil
                 p.setPrimaryKey(true);
             }
 
-            //lock shared columns or columns not in the same container
-            if (!p.getContainer().equalsIgnoreCase(container.getId()))
+            //lock shared columns or columns not in the same container (dataset)
+            //lock mandatory properties (issues, specimen)
+            if (!p.getContainer().equalsIgnoreCase(container.getId()) || mandatoryProperties.contains(p.getName()))
             {
                 p.setLocked(true);
             }
@@ -224,7 +235,7 @@ public class DomainUtil
         // Handle reserved property names
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new HashSet<>(reservedProperties));
-        d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));
+        d.setMandatoryFieldNames(new HashSet<>(mandatoryProperties));
         d.setExcludeFromExportFieldNames(new HashSet<>(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
 
