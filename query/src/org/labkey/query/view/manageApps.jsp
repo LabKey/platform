@@ -221,13 +221,13 @@
 </br>
 <h3>Application contexts defined in this folder:</h3>
 <p>
-<%=textLink("create new", new ActionURL(OlapController.EditAppAction.class, getContainer()), "create-app-context")%>
+<%=link("create new", OlapController.EditAppAction.class).id("create-app-context")%>
 </p>
 <table id="app-contexts">
 <% for (String contextName : bean.getAllContextNames()) { %>
     <tr data-name="<%=h(contextName)%>">
         <td><%=h(contextName)%></td>
-        <td><%=textLink("edit", new ActionURL(OlapController.EditAppAction.class, getContainer()).addParameter("contextName", contextName))%></td>
+        <td><%=link("edit", new ActionURL(OlapController.EditAppAction.class, getContainer()).addParameter("contextName", contextName))%></td>
         <td><%=textLink("delete", "#", "confirmDeleteApp(" + PageFlowUtil.jsString(contextName) + ");return false;", null)%></td>
     </tr>
 <% } %>
@@ -235,7 +235,7 @@
 </br>
 <h3>OLAP Cube definitions in this folder:</h3>
 <p>
-<%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()), "create-cube-definition")%>
+<%=link("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone())).id("create-cube-definition")%>
 </p>
 <%
     Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
@@ -245,8 +245,8 @@
         %><tr data-name="<%=h(sd.getName())%>">
             <td style="font-weight: bold;"><%=h(sd.getName())%></td>
             <% if (sd.isEditable()) { %>
-                <td><%=textLink("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnURL(getActionURL().clone()))%></td>
-                <td><%=textLink("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete().addReturnURL(getActionURL().clone()))%></td>
+                <td><%=link("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnURL(getActionURL().clone()))%></td>
+                <td><%=link("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete().addReturnURL(getActionURL().clone()))%></td>
             <% } %>
         </tr><%
 

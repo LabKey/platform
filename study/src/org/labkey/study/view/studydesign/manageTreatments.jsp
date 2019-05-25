@@ -130,7 +130,7 @@ Enter treatment information in the grids below.
                 ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
                 manageStudyProductsURL.addReturnURL(getActionURL());
             %>
-            <%=textLink("Manage Study Products", manageStudyProductsURL)%>
+            <%=link("Manage Study Products", manageStudyProductsURL)%>
         </li>
         <li>
             Each cohort label must be unique. Enter the number of <%=h(study.getSubjectNounPlural().toLowerCase())%> for
@@ -152,7 +152,7 @@ Enter treatment information in the grids below.
         {
 %>
             <li>Use the change visit order page to adjust the display order of visits in the treatment schedule table.
-            <%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(getActionURL())) %>
+            <%= link("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(getActionURL())) %>
             </li>
 <%
         }

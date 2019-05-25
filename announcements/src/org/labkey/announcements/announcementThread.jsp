@@ -64,7 +64,7 @@ if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 
 if (!bean.print && null != discussionSrc)
 {
-    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=link("view page").href(discussionSrc)%><%
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=link("view page", discussionSrc)%><%
 }
 
 if (announcementModel.isSpam())

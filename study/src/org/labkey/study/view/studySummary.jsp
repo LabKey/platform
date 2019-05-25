@@ -137,13 +137,13 @@
         <td style="vertical-align:top;border-left:solid #DDDDDD 1px;padding-left:1em">
                 <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a>
             <%out.print("<p>");%>
-            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
+            <%=link("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
             <%out.print("</p>");%>
             <%
                 if (isAdmin)
                 {
                     out.print("<p>");
-                    out.print(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.print(link("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
                     out.print("</p>");
 
                     // if there is a pipeline override, show the pipeline view, else show the file browser
@@ -155,20 +155,20 @@
                         pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
 
                     out.print("<p>");
-                    out.print(textLink("Manage Files", pipelineUrl));
+                    out.print(link("Manage Files", pipelineUrl));
                     out.print("</p>");
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
                         bean.getStudy().getRepositorySettings().isEnableRequests())
                 {
                     out.print("<p>");
-                    out.print(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.print(link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
                     out.print("</p>");
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class))
                 {
                     out.print("<p>");
-                    out.print(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.print(link("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
                     out.print("</p>");
                 }
             %>

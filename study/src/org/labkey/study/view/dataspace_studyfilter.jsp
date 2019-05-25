@@ -119,5 +119,5 @@
 <div id="summaryData"></div>
 
 <br>
-<% if (finderURL != null) { %><%=this.textLink("data finder", finderURL)%><% } %>
+<% if (finderURL != null) { %><%=link("data finder", finderURL)%><% } %>
 

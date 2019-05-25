@@ -59,7 +59,7 @@
                 editUrl.addParameter("useAlternateLookupFields", true);
             editUrl.addReturnURL(getActionURL());
 %>
-            <%=textLink("Manage Assay Schedule", editUrl)%><br/>
+            <%=link("Manage Assay Schedule", editUrl)%><br/>
 <%
         }
 

@@ -47,7 +47,7 @@
 %>
             <tr><td><%=text(getLabel(view, defaultView))%></td>
                 <td>&nbsp;</td>
-                <td><%=textLink("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue()))%></td>
+                <td><%=link("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue()))%></td>
             </tr>
 <%
         }

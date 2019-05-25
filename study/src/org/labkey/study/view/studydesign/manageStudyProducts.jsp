@@ -69,7 +69,7 @@ Vaccine design information is defined at the project level for Dataspace project
     <ul>
         <li>
             Use the manage study products page at the project level to make changes to the information listed below.
-            <%=textLink("Manage Study Products", projectManageProductsURL)%>
+            <%=link("Manage Study Products", projectManageProductsURL)%>
         </li>
 <%
 }
@@ -88,7 +88,7 @@ Enter vaccine design information in the grids below.
                 ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
                 manageTreatmentsURL.addReturnURL(getActionURL());
             %>
-            <%=textLink("Manage Treatments", manageTreatmentsURL)%>
+            <%=link("Manage Treatments", manageTreatmentsURL)%>
         </li>
 <%
 }

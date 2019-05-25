@@ -110,7 +110,7 @@ This study was created from a vaccine study protocol with the following descript
     ActionURL url = new ActionURL(DesignerController.DesignerAction.class, info.getContainer());
     url.replaceParameter("studyId", String.valueOf(info.getStudyId()));
 %>
-<%=textLink("View Complete Protocol", url)%>
+<%=link("View Complete Protocol", url)%>
 <%
     }
     else
@@ -186,7 +186,7 @@ This study was created from a vaccine study protocol with the following descript
 <%
       if (isAdmin)
       { %>
-<%=textLink("Edit", editMetadataURL)%>
+<%=link("Edit", editMetadataURL)%>
 <%    }
   }
 %>

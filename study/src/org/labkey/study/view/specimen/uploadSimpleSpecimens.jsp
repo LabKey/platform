@@ -35,7 +35,7 @@
 %>
 <labkey:errors/>
 Use this form to insert or update specimens in the repository.<br>
-<%=textLink("Download a template workbook", new ActionURL(SpecimenController.GetSpecimenExcelAction.class, c))%><br>
+<%=link("Download a template workbook", SpecimenController.GetSpecimenExcelAction.class)%><br>
 
 <div id="showExpectedDataFieldsDiv"><%= textLink("Show Expected Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
 

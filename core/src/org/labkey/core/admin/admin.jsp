@@ -132,7 +132,7 @@
 
                 for (AdminLink link : links)
                 { %>
-                <div><%=textLink(link.getText(), link.getUrl())%></div><%
+                <div><%=link(link.getText(), link.getUrl())%></div><%
                 }%>
             </div><%
                 }

@@ -28,8 +28,8 @@
     SpecimenController.ViewRequestsHeaderBean bean = me.getModelBean();
     ActionURL userLink = context.cloneActionURL();
 %>
-<%= textLink("All User Requests", userLink.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
-<%= textLink("My Requests", userLink.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
+<%= link("All User Requests", userLink.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
+<%= link("My Requests", userLink.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_CREATEDBY,
         getUser().getDisplayName(getUser()))) %>
 Filter by status: <select onChange="document.location=options[selectedIndex].value;">
 <%

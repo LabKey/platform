@@ -336,68 +336,64 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.urlProvider(inter);
     }
 
-    // Link to a different action in the current container (no params)
     @Deprecated // Use link() builder pattern
     public String textLink(String text, Class<? extends Controller> action)
     {
-        return link(text).href(urlFor(action)).build().toString();
+        return link(text, action).build().toString();
     }
 
+    @Deprecated // Use link() builder pattern
     public String textLink(String text, URLHelper url)
     {
-        return link(text).href(url).build().toString();
+        return link(text, url).build().toString();
     }
 
-    @Deprecated  // Use textLink(text, actionClass) or textLink(text, url) instead
+    @Deprecated // Use link() builder pattern
+    public String textLink(String text, URLHelper url, String id)
+    {
+        return link(text, url).id(id).build().toString();
+    }
+
+    @Deprecated // Use link() builder pattern
+    public String textLink(String text, URLHelper url, String onClickScript, String id)
+    {
+        return link(text, url).onClick(onClickScript).id(id).build().toString();
+    }
+
+    @Deprecated // Use link() builder pattern
+    public String textLink(String text, URLHelper url, String onClickScript, @Nullable String id, Map<String, String> props)
+    {
+        return link(text, url).onClick(onClickScript).id(id).attributes(props).build().toString();
+    }
+
+    @Deprecated // Use link() builder pattern
     public String textLink(String text, String href)
     {
         return link(text).href(href).build().toString();
     }
 
-    @Deprecated  // Use URLHelper version instead
+    @Deprecated // Use link() builder pattern
     public String textLink(String text, String href, String onClickScript, String id)
     {
         return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
-    public String textLink(String text, URLHelper url, String onClickScript, String id)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated  // Use URLHelper version instead
+    @Deprecated // Use link() builder pattern
     public String textLink(String text, String href, String onClickScript, @Nullable String id, Map<String, String> props)
     {
         return link(text).href(href).onClick(onClickScript).id(id).attributes(props).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
-    public String textLink(String text, URLHelper url, String onClickScript, @Nullable String id, Map<String, String> props)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).attributes(props).build().toString();
-    }
-
-    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
-    {
-        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
-    }
-
-    /**
-     * Add textlink that opens in new tab/window
-     * @param text to display
-     * @param url to link to
-     * @param targetBlank True to open in new tab/window
-     * @return Link that targets _blank
-     */
     public String textLink(String text, URLHelper url, boolean targetBlank)
     {
         return textLink(text, url, null, null,
                 targetBlank ? Collections.singletonMap("target", "_blank") : Collections.emptyMap());
     }
 
-    public String textLink(String text, URLHelper url, String id)
+    public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
     {
-        return link(text).href(url).id(id).build().toString();
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
     }
 
     public LinkBuilder link(String text)

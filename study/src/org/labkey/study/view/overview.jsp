@@ -90,8 +90,8 @@
         basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
 %><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
-&nbsp;<%= textLink("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
-&nbsp;<%= textLink("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
+&nbsp;<%= link("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
+&nbsp;<%= link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.size() && !hasHiddenData; i++)

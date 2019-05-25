@@ -184,7 +184,7 @@
                 addAction.addParameter("quf_ParticipantId", bean.getParticipantId());
 
     %>
-    <td colspan="2" class="labkey-alternate-row"><%=textLink("add", addAction)%>
+    <td colspan="2" class="labkey-alternate-row"><%=link("add", addAction)%>
     </td>
     <%
             }
@@ -202,7 +202,7 @@
             editAction.addParameter("datasetId", datasetId);
             editAction.addParameter("lsid", lsid);
 
-        %><%=textLink("edit data", editAction)%>
+        %><%=link("edit data", editAction)%>
         </td>
     </tr>
     <%

@@ -65,12 +65,11 @@
     if (getContainer().hasPermission(getUser(), AdminPermission.class))
     {
 %>
-<%=textLink("Manage Study",
-        new ActionURL(ManageStudyAction.class, getContainer()))%>&nbsp;
+<%=link("Manage Study", ManageStudyAction.class)%>&nbsp;
 <%
     }
 %>
-<%=textLink(vialLinkText, bean.getOtherViewURL())%>&nbsp;
+<%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
 <%=textLink("Search", buildURL(ShowSearchAction.class, "showVials=" + (bean.isShowingVials() ? "true" : "false")))%>&nbsp;
 <%=link("Reports", AutoReportListAction.class) %>
 <%
@@ -114,7 +113,7 @@
             <tr><td><%= filterString %></td></tr>
         </table>
     </p>
-<%= textLink("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl )%><%
+<%= link("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl)%><%
     }
 %>
 <div id="specimen-request-div" class="x-hidden">

@@ -147,7 +147,7 @@
         <table>
             <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
-            <%=textLink("Manage Views", urlProvider(ReportUrls.class).urlManageViews(c))%>
+            <%=link("Manage Views", urlProvider(ReportUrls.class).urlManageViews(c))%>
             </td></tr>
         </table>
 <%

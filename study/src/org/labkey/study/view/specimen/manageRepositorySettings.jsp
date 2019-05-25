@@ -67,7 +67,7 @@
                 <div>
                     <input type="radio" name="specimenDataEditable" value="true"<%=checked(settings.isSpecimenDataEditable())%>><em>Editable</em>:
                     Specimen data is editable. Note: Vials may be deleted only from the query view:
-                    <%=textLink("Specimen Detail", urlProvider(QueryUrls.class).urlExecuteQuery(specimenDetailURL))%>
+                    <%=link("Specimen Detail", urlProvider(QueryUrls.class).urlExecuteQuery(specimenDetailURL))%>
                 </div>
             </td></tr>
             <tr><td class="labkey-announcement-title" align="left"><span>Specimen Requests</span></td></tr>

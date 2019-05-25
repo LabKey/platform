@@ -52,7 +52,7 @@
 </div>
 <% if (PipelineDataCollector.getFileQueue(bean).isEmpty())
 { %>
-    <%= textLink("download spreadsheet template",
+    <%= link("download spreadsheet template",
         urlProvider(AssayUrls.class).getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
     <br>After downloading and editing the spreadsheet template, paste it into the text area below or save the spreadsheet and upload it as a file.
 <% }%>

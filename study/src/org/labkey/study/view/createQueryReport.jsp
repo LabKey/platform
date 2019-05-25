@@ -126,7 +126,7 @@
                         }
                     }
                 %>
-            </select>&nbsp;<%= textLink("Modify Dataset List (Advanced)", bean.getQueryCustomizeURL()) %>
+            </select>&nbsp;<%= link("Modify Dataset List (Advanced)", bean.getQueryCustomizeURL()) %>
 
         </td>
     </tr>

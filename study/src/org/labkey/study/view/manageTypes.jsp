@@ -115,7 +115,7 @@
             ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, c);
             createURL.addParameter("autoDatasetId", "true");
         %>
-        <td><%= textLink("Create New Dataset", createURL)%></td>
+        <td><%= link("Create New Dataset", createURL)%></td>
     </tr>
 </table>
 <%
@@ -131,7 +131,7 @@
     <table class="lk-fields-table">
         <tr><td>Default date-time format:</td><td><%=h(StringUtils.trimToEmpty(dateTimeFormat))%></td></tr>
         <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
-        <tr><td colspan="2"><br>Default formats can be changed via the <%=textLink(name + " settings page", url)%></td></tr>
+        <tr><td colspan="2"><br>Default formats can be changed via the <%=link(name + " settings page", url)%></td></tr>
     </table>
 </labkey:form>
 <%
@@ -180,7 +180,7 @@
     }
 %></table>
 <br>
-<%= textLink("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class,c).addParameter("autoDatasetId","true"))%>
+<%= link("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class, c).addParameter("autoDatasetId","true"))%>
 <% if (!shadowed.isEmpty())
 {
     %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%

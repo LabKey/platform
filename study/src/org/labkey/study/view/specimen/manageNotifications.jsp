@@ -117,7 +117,7 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td colspan="2" class="local-text-block">Specimen request emails have a configurable template, which controls
                 the subject line and body of the email.
-                <% if (getContainer().hasPermission(getUser(), AdminPermission.class)) { %><%= textLink("Edit Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), SpecimenRequestNotificationEmailTemplate.class, getActionURL()))%><% }
+                <% if (getContainer().hasPermission(getUser(), AdminPermission.class)) { %><%= link("Edit Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), SpecimenRequestNotificationEmailTemplate.class, getActionURL()))%><% }
                 else { %>You must have administrator permissions to edit the template.<% } %>
             </td>
         </tr>

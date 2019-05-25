@@ -66,7 +66,7 @@
         <td>
             <%= h(comment != null ? comment.getComment() : null) %>
             <% if (vial.getContainer().hasPermission(getUser(), SetSpecimenCommentsPermission.class)) { %>
-                <%= textLink("update", commentsLink) %>
+                <%= link("update", commentsLink) %>
             <% } %>
         </td>
     </tr>

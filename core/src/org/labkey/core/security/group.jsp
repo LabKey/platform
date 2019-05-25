@@ -254,11 +254,11 @@ else
             <td>
                 <% if (!isGroup)
                    {
-                    %><%= textLink("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId).addReturnURL(returnURL)) %><%
+                    %><%= link("permissions", urlProvider(UserUrls.class).getUserAccessURL(c, userId).addReturnURL(returnURL)) %><%
                    }
                    else
                    {
-                    %><%= textLink("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId).addReturnURL(returnURL)) %><%
+                    %><%= link("permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, userId).addReturnURL(returnURL)) %><%
                    }
                 %>
             </td>

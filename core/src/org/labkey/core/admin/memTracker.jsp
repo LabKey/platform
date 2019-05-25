@@ -41,9 +41,9 @@
 %>
 <% if (hasAdminPerm) { %>
 <p>
-    <%=textLink("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
-    <%=textLink("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
-    <%=textLink("Refresh", AdminController.getMemTrackerURL(false, false))%>
+    <%=link("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
+    <%=link("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
+    <%=link("Refresh", AdminController.getMemTrackerURL(false, false))%>
 </p>
 <% } %>
 <table class="labkey-wp">
