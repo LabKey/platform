@@ -64,7 +64,7 @@ if (!bean.embedded && null != announcementModel.getDiscussionSrcURL())
 
 if (!bean.print && null != discussionSrc)
 {
-    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=textLink("view page", discussionSrc.getLocalURIString())%><%
+    %><p></p><img src="<%=getWebappURL("_images/exclaim.gif")%>">&nbsp;This is a <%=h(settings.getConversationName().toLowerCase())%> about another page. <%=link("view page").href(discussionSrc)%><%
 }
 
 if (announcementModel.isSpam())
@@ -85,13 +85,13 @@ else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminP
 
 if (false && !bean.print && null != discussionSrc)
 {
-    %><%=textLink("view in context", discussionSrc)%>&nbsp;<%
+    %><%=link("view in context", discussionSrc)%>&nbsp;<%
 }
 
 if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 {
     ActionURL update = AnnouncementsController.getUpdateURL(c, announcementModel.getEntityId(), bean.currentURL);
-    %><%=textLink("edit", update)%><%
+    %><%=link("edit", update)%><%
 }
 %>&nbsp;<%=formatDateTime(announcementModel.getCreated())%></td>
 </tr>
@@ -176,12 +176,12 @@ if (!announcementModel.getResponses().isEmpty())
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {
                     ActionURL update = AnnouncementsController.getUpdateURL(c, r.getEntityId(), bean.currentURL);
-                    %><%=textLink("edit", update)%><%
+                    %><%=link("edit", update)%><%
                     }
                     if (bean.perm.allowDeleteMessage(r) && !bean.print)
                     {
                         ActionURL deleteResponse = AnnouncementsController.getDeleteResponseURL(c, r.getEntityId(), bean.currentURL);
-                %>&nbsp;<%=textLink("delete", deleteResponse)%><%
+                %>&nbsp;<%=link("delete", deleteResponse)%><%
                 }
                 %>&nbsp;<%=formatDateTime(r.getCreated())%></td>
             </tr><%

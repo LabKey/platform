@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -188,7 +187,7 @@
             Enable or disable the available cloud stores within this folder using the checkboxes below.
             The cloud module must be enabled within this folder and
             cloud accounts and stores must be first configured in the
-            <a href="<%=PageFlowUtil.urlProvider(CloudUrls.class).urlAdmin()%>">site admin preferences</a>
+            <a href="<%=urlProvider(CloudUrls.class).urlAdmin()%>">site admin preferences</a>
             prior to enabling them within a folder.
             <br>
             <em>Cloud stores disabled at the site-level cannot be enabled within a folder.</em>

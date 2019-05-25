@@ -16,13 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.query.QueryParam"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.query.QueryUrls"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.NewQueryForm" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -57,7 +56,7 @@
         <% } %>
     </labkey:select>
     <%= button("Create and Edit Source").disableOnClick(true).submit(true) %>
-    <%= button("Cancel").href(PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
+    <%= button("Cancel").href(urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
 </labkey:form>
 <% } %>
 

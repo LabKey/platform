@@ -337,9 +337,15 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     // Link to a different action in the current container (no params)
+    @Deprecated // Use link() builder pattern
     public String textLink(String text, Class<? extends Controller> action)
     {
         return link(text).href(urlFor(action)).build().toString();
+    }
+
+    public String textLink(String text, URLHelper url)
+    {
+        return link(text).href(url).build().toString();
     }
 
     @Deprecated  // Use textLink(text, actionClass) or textLink(text, url) instead
@@ -365,14 +371,10 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return link(text).href(href).onClick(onClickScript).id(id).attributes(props).build().toString();
     }
 
+    @Deprecated // Use link() builder pattern
     public String textLink(String text, URLHelper url, String onClickScript, @Nullable String id, Map<String, String> props)
     {
         return link(text).href(url).onClick(onClickScript).id(id).attributes(props).build().toString();
-    }
-
-    public String textLink(String text, URLHelper url)
-    {
-        return link(text).href(url).build().toString();
     }
 
     public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)

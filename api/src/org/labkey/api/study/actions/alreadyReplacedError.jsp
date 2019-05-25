@@ -1,12 +1,11 @@
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.exp.api.ExpRun" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%
 /*
  * Copyright (c) 2012 LabKey Corporation
@@ -37,8 +36,8 @@
 %>
 <span class="labkey-error">
     Error: The run
-    '<a href="<%= h(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(replacedRun.getContainer(), protocol, replacedRun.getRowId())) %>"><%= h(replacedRun.getName()) %></a>'
+    '<a href="<%= h(urlProvider(AssayUrls.class).getAssayResultsURL(replacedRun.getContainer(), protocol, replacedRun.getRowId())) %>"><%= h(replacedRun.getName()) %></a>'
     has already been replaced by the run
-    '<a href="<%= h(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(replacedByRun.getContainer(), protocol, replacedByRun.getRowId())) %>"><%= h(replacedByRun.getName()) %></a>'.
+    '<a href="<%= h(urlProvider(AssayUrls.class).getAssayResultsURL(replacedByRun.getContainer(), protocol, replacedByRun.getRowId())) %>"><%= h(replacedByRun.getName()) %></a>'.
     You may wish to <a href="<%= h(reimportURL)%>">re-import the replacement run</a> instead.
 </span>

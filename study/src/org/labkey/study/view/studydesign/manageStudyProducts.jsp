@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 %>
-
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.action.ReturnUrlForm" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.study.view.studydesign.StudyDesignConfigureMenuItem" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
+<%@ page import="org.labkey.study.view.studydesign.StudyDesignConfigureMenuItem" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -46,7 +44,7 @@
     // study products are editable at the project level for Dataspace projects
     boolean isDataspaceProject = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
 
-    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
+    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
 <script type="text/javascript">
@@ -87,7 +85,7 @@ Enter vaccine design information in the grids below.
         <li>
             Use the manage treatments page to describe the schedule of treatments and combinations of study products administered at each timepoint.
             <%
-                ActionURL manageTreatmentsURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
+                ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
                 manageTreatmentsURL.addReturnURL(getActionURL());
             %>
             <%=textLink("Manage Treatments", manageTreatmentsURL)%>

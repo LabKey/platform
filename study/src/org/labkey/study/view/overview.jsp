@@ -89,7 +89,7 @@
     if (selectedQCStateSet != null)
         basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
-%><%= text(bean.canManage ? textLink("Manage Study", ManageStudyAction.class) : "") %>
+%><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
 &nbsp;<%= textLink("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
 &nbsp;<%= textLink("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%

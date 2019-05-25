@@ -16,8 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.compliance.ComplianceService" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.PHI" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
@@ -28,12 +30,12 @@
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page import="org.labkey.api.study.StudyReloadSource" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
@@ -55,9 +57,6 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.compliance.ComplianceService" %>
-<%@ page import="org.labkey.api.data.PHI" %>
-<%@ page import="org.labkey.api.study.StudyManagementOption" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -153,7 +152,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Study Properties</td>
                         <td class="lk-study-prop-desc">Study label, investigator, grant, description, etc.</td>
-                        <td><%= textLink("Change Study Properties", ManageStudyPropertiesAction.class) %></td>
+                        <td><%= link("Change Study Properties", ManageStudyPropertiesAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Additional Properties</td>
@@ -180,7 +179,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Reloading</td>
                         <td class="lk-study-prop-desc">Manage reloading from external repositories</td>
-                        <td><%= textLink("Manage External Reloading", StudyController.ManageExternalReloadAction.class) %></td>
+                        <td><%= link("Manage External Reloading", StudyController.ManageExternalReloadAction.class) %></td>
                     </tr>
                     <%
                         }
@@ -189,7 +188,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Datasets</td>
                         <td class="lk-study-prop-desc">This study defines <%= numDatasets %> datasets</td>
-                        <td><%= textLink("Manage Datasets", ManageTypesAction.class) %></td>
+                        <td><%= link("Manage Datasets", ManageTypesAction.class) %></td>
                     </tr>
                     <% if (study.getTimepointType() != TimepointType.CONTINUOUS) { %>
                     <tr>
@@ -197,7 +196,7 @@
                         <td class="lk-study-prop-desc">This study defines <%= getVisits(Visit.Order.DISPLAY).size()%> <%=h(visitLabel.toLowerCase())%>
                             <% if (sharedVisits) { %>(shared)<% } %>
                         </td>
-                        <td><%= textLink("Manage " + (sharedVisits ? "shared " : "") + visitLabel, ManageVisitsAction.class) %></td>
+                        <td><%= link("Manage " + (sharedVisits ? "shared " : "") + visitLabel, ManageVisitsAction.class) %></td>
                     </tr>
                     <% } %>
                      <tr>
@@ -207,17 +206,17 @@
                              and <%= getVisits(Visit.Order.DISPLAY).size() %> <%=h(visitLabel.toLowerCase())%>
                              <% } %>
                          </td>
-                        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+                        <td><%= link("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Locations</td>
                         <td class="lk-study-prop-desc">This study references <%= getLocations().size() %> locations (labs/sites/repositories)</td>
-                        <td><%= textLink("Manage Locations", StudyController.ManageLocationsAction.class) %></td>
+                        <td><%= link("Manage Locations", StudyController.ManageLocationsAction.class) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Location Types</td>
                         <td class="lk-study-prop-desc">Configure which location types are allowed to be requesting locations</td>
-                        <td><%= textLink("Manage Location Types", StudyController.ManageLocationTypesAction.class) %></td>
+                        <td><%= link("Manage Location Types", StudyController.ManageLocationTypesAction.class) %></td>
                     </tr>
 
                     <tr>
@@ -244,7 +243,7 @@
                     <tr>
                         <td class="lk-study-prop-label">Reports/Views</td>
                         <td class="lk-study-prop-desc">Manage views for this Study</td>
-                        <td><%=textLink("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c)) %></td>
+                        <td><%=textLink("Manage Views", urlProvider(ReportUrls.class).urlManageViews(c)) %></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Quality Control States</td>
@@ -270,7 +269,7 @@
                         <td class="lk-study-prop-label">Treatments</td>
                         <td class="lk-study-prop-desc">This study defines <%= getStudyTreatments(user).size() %> treatments</td>
                         <%
-                            ActionURL manageTreatmentsURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false);
+                            ActionURL manageTreatmentsURL = urlProvider(StudyUrls.class).getManageTreatmentsURL(getContainer(), false);
                             manageTreatmentsURL.addReturnURL(getActionURL());
                         %>
                         <td><%= textLink("Manage Treatments", manageTreatmentsURL) %></td>
@@ -280,7 +279,7 @@
                         <td class="lk-study-prop-desc">This study defines <%= getAssaySpecimenConfigs().size() %> assay configurations</td>
                         <%
                             boolean hasRhoModule = getContainer().getActiveModules().contains(ModuleLoader.getInstance().getModule("rho"));
-                            ActionURL assayScheduleURL = PageFlowUtil.urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule);
+                            ActionURL assayScheduleURL = urlProvider(StudyUrls.class).getManageAssayScheduleURL(getContainer(), hasRhoModule);
                             assayScheduleURL.addReturnURL(getActionURL());
                         %>
                         <td><%= textLink("Manage Assay Schedule", assayScheduleURL) %></td>

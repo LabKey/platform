@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.util.Button" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -43,7 +42,7 @@
 %>
 <%
     AnalysisController.ProtocolDetailsForm form = ((HttpView<AnalysisController.ProtocolDetailsForm>) HttpView.currentView()).getModelBean();
-    ActionURL returnUrl = form.getReturnActionURL(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getContainer()));
+    ActionURL returnUrl = form.getReturnActionURL(urlProvider(ProjectUrls.class).getBeginURL(getContainer()));
     Button.ButtonBuilder cancelButton = button("Cancel").href(returnUrl);
 %>
 

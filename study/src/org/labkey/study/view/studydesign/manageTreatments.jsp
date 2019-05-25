@@ -15,23 +15,21 @@
  * limitations under the License.
  */
 %>
-
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -62,7 +60,7 @@
     if (study != null)
         subjectNoun = study.getSubjectNounSingular();
 
-    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
+    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
 <script type="text/javascript">
@@ -139,13 +137,13 @@ Enter treatment information in the grids below.
             the cohort in the count column.</li>
         <li>
             Use the manage cohorts page to further configuration information about the cohorts for this study.
-            <%=textLink("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
+            <%=link("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
         </li>
         <li>
             Use the manage <%=h(visitNoun.toLowerCase())%>s page to further configure
             information about the <%=h(visitNoun.toLowerCase())%>s for this study or to change
             the <%=h(visitNoun.toLowerCase())%> display order.
-            <%=textLink("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
+            <%=link("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
         </li>
 <%
     if (canManageStudy)

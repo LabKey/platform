@@ -23,12 +23,10 @@
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
@@ -149,7 +147,7 @@
         <table>
             <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
-            <%=textLink("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c))%>
+            <%=textLink("Manage Views", urlProvider(ReportUrls.class).urlManageViews(c))%>
             </td></tr>
         </table>
 <%

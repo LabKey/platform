@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

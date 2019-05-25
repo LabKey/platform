@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -110,7 +108,7 @@
                     {
                 %>
                 <tr>
-                    <td colspan=2 valign="top"><%=textLink("Moderator Review page", new ActionURL(ModeratorReviewAction.class, getContainer()))%></td>
+                    <td colspan=2 valign="top"><%=link("Moderator Review page", ModeratorReviewAction.class)%></td>
                 </tr>
                 <%
                     }
@@ -149,8 +147,8 @@
     <tr>
         <td class="labkey-form-label">Email templates</td>
         <td>
-            <% if (me.getViewContext().getUser().hasRootAdminPermission()) { %><%= textLink("Customize site-wide template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
-            <%= textLink("Customize template for this " + getContainer().getContainerNoun(), PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%>
+            <% if (me.getViewContext().getUser().hasRootAdminPermission()) { %><%= link("Customize site-wide template", urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
+            <%= link("Customize template for this " + getContainer().getContainerNoun(), urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%>
         </td>
     </tr>
     <tr>

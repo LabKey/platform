@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
 <%@ page import="org.labkey.api.util.NetworkDrive" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -52,7 +51,7 @@
         sb.append("<li style='padding-bottom:0.5em;'>");
 
         Container c = file.lookupContainer();
-        PipelineStatusUrls provider = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+        PipelineStatusUrls provider = urlProvider(PipelineStatusUrls.class);
         ActionURL detailsURL = null != provider ? provider.urlDetails(c, file.getRowId()) : null;
         sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
 
