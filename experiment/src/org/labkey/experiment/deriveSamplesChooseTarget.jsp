@@ -24,7 +24,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
-<%@ taglib prefix="labke" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
