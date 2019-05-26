@@ -23,6 +23,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.annotations.RemoveIn19_3;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -337,54 +338,63 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, Class<? extends Controller> action)
     {
         return link(text, action).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, URLHelper url)
     {
         return link(text, url).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, URLHelper url, String id)
     {
         return link(text, url).id(id).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, URLHelper url, String onClickScript, String id)
     {
         return link(text, url).onClick(onClickScript).id(id).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, URLHelper url, String onClickScript, @Nullable String id, Map<String, String> props)
     {
         return link(text, url).onClick(onClickScript).id(id).attributes(props).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, String href)
     {
         return link(text).href(href).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, String href, String onClickScript, String id)
     {
         return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, String href, String onClickScript, @Nullable String id, Map<String, String> props)
     {
         return link(text).href(href).onClick(onClickScript).id(id).attributes(props).build().toString();
     }
 
     @Deprecated // Use link() builder pattern
+    @RemoveIn19_3
     public String textLink(String text, URLHelper url, boolean targetBlank)
     {
         return textLink(text, url, null, null,
