@@ -56,7 +56,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
             {
                 OBJECT_INVOCATIONS.incrementAndGet();
                 if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
-                    LOG.info("A JSP is rendering an object", new Throwable());
+                    LOG.info("A JSP is rendering an object of class " + obj.getClass().getSimpleName(), new Throwable());
             }
         }
 
