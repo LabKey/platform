@@ -70,7 +70,7 @@
     }
 %>
 <%=link(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=textLink("Search", buildURL(ShowSearchAction.class, "showVials=" + (bean.isShowingVials() ? "true" : "false")))%>&nbsp;
+<%=link("Search").href(buildURL(ShowSearchAction.class, "showVials=" + (bean.isShowingVials() ? "true" : "false")))%>&nbsp;
 <%=link("Reports", AutoReportListAction.class) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())
@@ -100,7 +100,7 @@
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 Pair<String, String> ptidVisit = it.next();
-                filterString.append(ptidVisit.getKey()).append("/").append(ptidVisit.getValue()).append("");
+                filterString.append(ptidVisit.getKey()).append("/").append(ptidVisit.getValue());
                 if (it.hasNext())
                     filterString.append(", ");
             }
@@ -124,7 +124,7 @@
                     <tr>
                         <td>Select request:</td>
                         <td style="width:12em" ><span id="sample-request-list"></span></td>
-                        <td><%= textLink("Create new request", "#", "createRequest(); return false;", "sample-request-create-link")%></td>
+                        <td><%=link("Create new request").href("#").onClick("createRequest(); return false;").id("sample-request-create-link")%></td>
                     </tr>
                 </table>
             </td>

@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
@@ -25,15 +26,13 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
+<%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.DataspaceQuerySchema" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.List" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.regex.Pattern" %>
-<%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.api.data.ContainerFilter" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.defaultString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -44,7 +43,7 @@
     }
 %>
 <%
-    Study study = StudyManager.getInstance().getStudy(getViewContext().getContainer());
+    Study study = StudyManager.getInstance().getStudy(getContainer());
 
     boolean hasStudy = study != null;
     boolean isSharedStudy = study != null && study.isDataspaceStudy();

@@ -362,9 +362,9 @@
                         if (!user.isGuest())
                         {
                             if (bean.isInsert())
-                                notify += textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class));
+                                notify += link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class)).toString();
                             else
-                                notify += textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()));
+                                notify += link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId())).toString();
                         }
                     %>
                     <%=text(bean.renderLabel(notify))%>

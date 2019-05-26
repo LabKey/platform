@@ -112,7 +112,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="padding-right: 10px;"><%= h(factory.getLabel())%></td>
                         <td style="text-align: right;">
-                            <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
+                            <%=link("show options").href("#").onClick("return showOrHide('" + showHideSuffix + "')").id("showOptionsLink" + showHideSuffix)%>
                             <%= button("View").submit(true) %>
                         </td>
                     </tr>

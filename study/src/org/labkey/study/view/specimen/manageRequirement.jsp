@@ -46,7 +46,7 @@
 <labkey:errors />
 <table class="labkey-manage-display">
     <tr>
-        <td align="left"><%= textLink("View Request", buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId())%></td>
+        <td align="left"><%= link("View Request").href(buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId())%></td>
     </tr>
 <%
     if (bean.isRequestManager() && bean.isFinalState())

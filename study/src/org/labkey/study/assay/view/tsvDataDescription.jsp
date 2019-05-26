@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.study.actions.TemplateAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.study.assay.PipelineDataCollector" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm<AssayProvider> bean = me.getModelBean();
 %>
-<div id="showExpectedDataFieldsDiv"><%= textLink("Show Expected Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
+<div id="showExpectedDataFieldsDiv"><%= link("Show Expected Data Fields").onClick("document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;").id("showExpectedDataFieldsLink") %></div>
 <div id="expectedDataFields" style="display: none">
     <strong>Expected Data Fields</strong>
     <table class="labkey-show-borders" cellpadding="3" cellspacing="0">

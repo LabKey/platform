@@ -37,7 +37,7 @@
 Use this form to insert or update specimens in the repository.<br>
 <%=link("Download a template workbook", SpecimenController.GetSpecimenExcelAction.class)%><br>
 
-<div id="showExpectedDataFieldsDiv"><%= textLink("Show Expected Data Fields", (URLHelper)null, "document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;", "showExpectedDataFieldsLink") %></div>
+<div id="showExpectedDataFieldsDiv"><%=link("Show Expected Data Fields").onClick("document.getElementById('expectedDataFields').style.display = 'block'; document.getElementById('showExpectedDataFieldsDiv').style.display = 'none'; return false;").id("showExpectedDataFieldsLink") %></div>
 
 <div id="expectedDataFields" style="display: none">
     <br>

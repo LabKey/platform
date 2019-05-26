@@ -85,7 +85,7 @@
         </labkey:panel>
 
 <%
-    if (!bean.isPrintView() && writer && LookAndFeelProperties.getInstance(me.getViewContext().getContainer()).isDiscussionEnabled())
+    if (!bean.isPrintView() && writer && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled())
     {
 %>
         <labkey:panel title="Discussions">

@@ -46,7 +46,7 @@
             String url = link.getHref();
             boolean active = current.getLocalURIString().equals(url);
 %>
-            <%= text(active ? "<strong>" : "") %><%= textLink(link.getText(), url) %><%= text(active ? "</strong>" : "") %>
+            <%= text(active ? "<strong>" : "") %><%= link(link.getText()).href(url) %><%= text(active ? "</strong>" : "") %>
 <%
         }
         else

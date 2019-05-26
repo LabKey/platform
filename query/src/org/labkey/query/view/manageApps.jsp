@@ -227,8 +227,8 @@
 <% for (String contextName : bean.getAllContextNames()) { %>
     <tr data-name="<%=h(contextName)%>">
         <td><%=h(contextName)%></td>
-        <td><%=link("edit", new ActionURL(OlapController.EditAppAction.class, getContainer()).addParameter("contextName", contextName))%></td>
-        <td><%=textLink("delete", "#", "confirmDeleteApp(" + PageFlowUtil.jsString(contextName) + ");return false;", null)%></td>
+        <td><%=link("edit", urlFor(OlapController.EditAppAction.class).addParameter("contextName", contextName))%></td>
+        <td><%=link("delete").href("#").onClick("confirmDeleteApp(" + PageFlowUtil.jsString(contextName) + ");return false;")%></td>
     </tr>
 <% } %>
 </table>

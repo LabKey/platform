@@ -45,6 +45,7 @@
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HasHtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -100,8 +101,8 @@
         hasHiddenData = !datasets.get(i).isShowByDefault();
     if (hasHiddenData)
     {
-        String viewLink = bean.showAll ? textLink("Show Default Datasets", basePage) :
-                textLink("Show All Datasets", basePage + "showAll=1");
+        HasHtmlString viewLink = bean.showAll ? link("Show Default Datasets").href(basePage) :
+                link("Show All Datasets").href(basePage + "showAll=1");
         out.print(viewLink);
     }
 %>

@@ -74,7 +74,7 @@
     <%=cancelButton%>
 <% } else { %>
     <% if (getContainer().hasPermission(getUser(), DeletePermission.class)) {
-            ActionURL urlBase = new ActionURL(AnalysisController.ProtocolManagementAction.class, getViewContext().getContainer());
+            ActionURL urlBase = urlFor(AnalysisController.ProtocolManagementAction.class);
             urlBase.addParameter("taskId", form.getTaskId());
             urlBase.addParameter("name", form.getName());
             urlBase.addReturnURL(returnUrl);

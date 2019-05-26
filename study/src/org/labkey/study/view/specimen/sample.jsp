@@ -98,7 +98,7 @@ if (comment != null)
 if (bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0)
 {
 %>
-<br><%= textLink("return to vial view", bean.getReturnUrl() )%>
+<br><%=link("return to vial view").href(bean.getReturnUrl() )%>
 <%
     }
 %>
