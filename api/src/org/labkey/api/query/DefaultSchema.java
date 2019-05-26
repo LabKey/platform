@@ -242,6 +242,10 @@ final public class DefaultSchema extends AbstractSchema
         {
             // If QuerySchema had getSchemaKey(), it would be nice to cache under a canonical name
             cache.put(skey,ret);
+            if (ret.getContainer().equals(getContainer()))
+            {
+                ret.setDefaultSchema(this);
+            }
         }
         return ret;
     }

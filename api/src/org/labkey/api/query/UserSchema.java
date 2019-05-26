@@ -287,7 +287,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         }
         else
         {
-            QueryDefinition def = getQueryDefs().get(name);
+            QueryDefinition def = getQueryDef(name);
             if (def == null)
                 return null;
             if (!includeExtraMetadata && def.isMetadataEditable())
@@ -381,7 +381,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         if (_restricted)
             return null;
-        return DefaultSchema.get(_user, _container).getSchema(name);
+        return getDefaultSchema().getSchema(name);
     }
 
     public boolean canCreate()
@@ -520,13 +520,23 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @NotNull
     public Map<String, QueryDefinition> getQueryDefs()
     {
-        return new CaseInsensitiveHashMap<>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));
+        Map<String, QueryDefinition> queryDefs = QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName());
+        for (QueryDefinition value : queryDefs.values())
+        {
+            value.setSchema(this);
+        }
+        return new CaseInsensitiveHashMap<>(queryDefs);
     }
 
     @Nullable
     public QueryDefinition getQueryDef(@NotNull String queryName)
     {
-        return QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), queryName);
+        QueryDefinition queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), queryName);
+        if (queryDef != null)
+        {
+            queryDef.setSchema(this);
+        }
+        return queryDef;
     }
 
     /** override this method to return schema specific QuerySettings object */
