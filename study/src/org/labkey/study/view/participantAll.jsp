@@ -102,8 +102,6 @@
     if (currentUrl == null)
         currentUrl = getActionURL().getLocalURIString();
 
-    ActionURL oldChartDesignerURL = null;
-
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
 
@@ -462,7 +460,7 @@
 <tr class="labkey-header">
     <th nowrap align="left" class="labkey-expandable-row-header">
         <a title="Click to expand/collapse"
-            href="<%=new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
+            href="<%=h(new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>"
             onclick="return LABKEY.ParticipantViewToggleIfReady(this, true, <%=datasetId%>);">
             <img src="<%=getWebappURL("_images/" + (expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
@@ -720,7 +718,7 @@
                             if (ptidLegacyReportIds.contains(reportId))
                             {
 %>
-                                <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId).toString())%>">Remove Chart</a>
+                                <a class="labkey-text-link" href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId).toString()))%>">Remove Chart</a>
                                 <%
                             }
                             else

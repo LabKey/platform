@@ -106,7 +106,7 @@
     <tr class="labkey-header">
         <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header">
             <a title="Click to expand/collapse"
-               href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
+               href="<%=h(new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>"
                onclick="return LABKEY.Utils.toggleLink(this, true);">
                 <img src="<%=getWebappURL("_images/" + text(expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
                 <%=h(dataset.getDisplayString())%>
@@ -126,7 +126,7 @@
     %>
     <tr style="<%=text(expanded ? "" : "display:none")%>">
         <td>
-            <a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a>
+            <a href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">[remove]</a>
         </td>
     </tr>
     <%
@@ -134,7 +134,7 @@
     %>
     <tr style="<%=text(expanded ? "" : "display:none")%>">
         <td><img
-                src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">
+                src="<%=h(new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">
         </td>
     </tr>
     <%

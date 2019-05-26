@@ -55,7 +55,8 @@ public class LabKeyJspWriter extends JspWriterWrapper
             else if (!(obj instanceof Number))
             {
                 OBJECT_INVOCATIONS.incrementAndGet();
-                UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
+                if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
+                    LOG.info("A JSP is rendering an object", new Throwable());
             }
         }
 
