@@ -16,7 +16,8 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.ColumnInfo"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
@@ -37,13 +38,12 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override

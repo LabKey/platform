@@ -229,7 +229,7 @@
     }
     %>
     <labkey:button text="Save"/>
-    <labkey:button text="<%=h(cancelButtonText)%>" href="<%=h(cancelButtonUrl)%>"/>
+    <labkey:button text="<%=cancelButtonText%>" href="<%=cancelButtonUrl%>"/>
     <input type="hidden" value="true">
 </labkey:form>
 

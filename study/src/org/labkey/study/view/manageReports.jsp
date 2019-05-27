@@ -32,7 +32,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%@ page extends="org.labkey.api.jsp.OldJspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%

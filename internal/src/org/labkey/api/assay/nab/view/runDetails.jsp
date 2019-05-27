@@ -55,7 +55,7 @@
     String runSummarySectionTitle = "Run Summary" + (assay.getRunName() != null ? ": " + assay.getRunName() : "");
     String sampleInformationSectionTitle = bean.getSampleNoun() + " Information";
 %>
-        <labkey:panel title="<%=h(runSummarySectionTitle)%>">
+        <labkey:panel title="<%=runSummarySectionTitle%>">
             <% me.include(bean.getRunPropertiesView(), out); %>
             <br/>
             <table>
@@ -76,7 +76,7 @@
             <% me.include(bean.getSamplePropertiesView(), out); %>
         </labkey:panel>
 
-        <labkey:panel title="<%=h(sampleInformationSectionTitle)%>">
+        <labkey:panel title="<%=sampleInformationSectionTitle%>">
             <% me.include(bean.getSampleDilutionsView(), out); %>
         </labkey:panel>
 

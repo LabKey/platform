@@ -210,7 +210,7 @@ else
             Group g = (Group)member;
             if (g.isProjectGroup())
             {
-                %><a href="<%=h(urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + h(memberName)))%>">
+                %><a href="<%=h(urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + memberName))%>">
                 <span style="font-weight:bold;">
                     <%= h(memberName) %>
                 </span>
@@ -218,7 +218,7 @@ else
             }
             else
             {
-                %><a href="<%=h(urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), h(memberName)))%>">
+                %><a href="<%=h(urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), memberName))%>">
                 <span style="font-weight:bold;">
                   Site: <%= h(memberName) %>
                 </span>
@@ -294,7 +294,7 @@ else
 %><br>
 <div id="add-members">
 <span style="font-weight:bold">Add New Members</span> (enter one email address or group per line):<br>
-    <labkey:autoCompleteTextArea name="names" url="<%=h(completionUrl.getLocalURIString())%>" rows="8" cols="70"/>
+    <labkey:autoCompleteTextArea name="names" url="<%=completionUrl%>" rows="8" cols="70"/>
     <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.ldapDomain))
 {

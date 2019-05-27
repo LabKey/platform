@@ -41,7 +41,7 @@
     <% if (flag.isRequiresRestart()) { %>
     <div>Restart required after toggling feature.</div>
     <% } %>
-    <%=link(flag.isEnabled() ? "Disable" : "Enable").href("javascript:void(0);").attributes(Collections.singletonMap("data-exp-flag", h(flag.getFlag())))%>
+    <%=link(flag.isEnabled() ? "Disable" : "Enable").href("javascript:void(0);").attributes(Collections.singletonMap("data-exp-flag", flag.getFlag()))%>
 </div>
 <% } %>
 </div>

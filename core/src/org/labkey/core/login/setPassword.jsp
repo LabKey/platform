@@ -17,11 +17,11 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.collections.NamedObject" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -49,10 +49,10 @@
         %>
                 <labkey:input
                     type="text"
-                    id="<%=h(input.getObject().toString())%>"
-                    name="<%=h(input.getObject().toString())%>"
-                    label="<%=h(input.getName())%>"
-                    value="<%=h(input.getDefaultValue())%>"
+                    id="<%=input.getObject().toString()%>"
+                    name="<%=input.getObject().toString()%>"
+                    label="<%=input.getName()%>"
+                    value="<%=input.getDefaultValue()%>"
                 />
         <%
         }

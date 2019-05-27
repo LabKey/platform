@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
 SearchService ss = SearchService.get();
 

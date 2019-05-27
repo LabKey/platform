@@ -29,7 +29,7 @@
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 

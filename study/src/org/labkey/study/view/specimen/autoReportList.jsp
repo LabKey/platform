@@ -38,7 +38,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
     SpecimenController.ReportConfigurationBean bean = me.getModelBean();

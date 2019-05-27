@@ -385,7 +385,7 @@
                     </tr>
                     <tr>
                         <th valign="top" align="right">Description</th>
-                        <td><%= h(comments).replaceAll("\\n", "<br>\n") %></td>
+                        <td><%=HtmlString.unsafe(h(comments).toString().replaceAll("\\n", "<br>\n"))%></td>
                     </tr>
                     <tr>
                         <th valign="top" align="right">Status</th>
@@ -456,7 +456,7 @@
                             <tr>
                                 <td><%= h(requirement.getActor().getLabel()) %></td>
                                 <td><%= h(siteLabel) %></td>
-                                <td><%= text(requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;") %></td>
+                                <td><%= requirement.getDescription() != null ? h(requirement.getDescription()) : HtmlString.NBSP %></td>
                                 <td>
                                     <span class="<%= text(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
                                         <%= text(requirement.isComplete() ? "Complete" : "Incomplete") %>

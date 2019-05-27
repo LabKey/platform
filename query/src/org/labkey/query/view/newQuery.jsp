@@ -35,7 +35,7 @@
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
 <labkey:form id="createQueryForm" className="col-md-6 col-lg-5" action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
-    <labkey:input type="hidden" name="<%=h(QueryParam.schemaName.toString())%>" value="<%=h(form.getSchemaName())%>"/>
+    <labkey:input type="hidden" name="<%=QueryParam.schemaName.toString()%>" value="<%=form.getSchemaName()%>"/>
     <labkey:input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
     <labkey:input label="What do you want to call the new query?"
                   type="text"

@@ -59,7 +59,7 @@
 %>
 
 <labkey:errors/>
-<labkey:form id="<%=h(importFormId)%>" action="<%=h(buildURL(PipelineController.StartFolderImportAction.class))%>" method="post">
+<labkey:form id="<%=importFormId%>" action="<%=buildURL(PipelineController.StartFolderImportAction.class)%>" method="post">
     <input type="hidden" name="fromZip" value=<%=bean.isFromZip()%>>
     <input type="hidden" name="asStudy" value=<%=bean.isAsStudy()%>>
     <input type="hidden" name="filePath" value=<%=q(bean.getFilePath())%>>

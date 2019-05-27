@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.reports.report.ReportUrls"%>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
     StudyController.CustomizeParticipantViewForm bean = me.getModelBean();
