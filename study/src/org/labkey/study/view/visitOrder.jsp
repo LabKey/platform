@@ -150,8 +150,8 @@ function orderModule(listName, hiddenElName, down)
                 <input type="hidden" name="displayOrder" value="<%= orderedList %>">
             </td>
             <td align="center" valign="center">
-                <%= PageFlowUtil.button("Move Up").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 0);") %><br><br>
-                <%= PageFlowUtil.button("Move Down").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 1);") %>
+                <%= button("Move Up").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 0);") %><br><br>
+                <%= button("Move Down").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 1);") %>
             </td>
 
             <td>
@@ -183,8 +183,8 @@ function orderModule(listName, hiddenElName, down)
                 <input type="hidden" name="returnUrl" value="<%= returnURL %>">
             </td>
             <td align="center" valign="center">
-                <%= PageFlowUtil.button("Move Up").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br><br>
-                <%= PageFlowUtil.button("Move Down").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 1)") %>
+                <%= button("Move Up").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 0)") %><br><br>
+                <%= button("Move Down").href("#").onClick("return orderModule('chronologicalOrderItems', 'chronologicalOrder', 1)") %>
             </td>
         </tr>
     </table>

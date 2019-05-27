@@ -140,7 +140,7 @@
                         %>
                         <tr>
                             <td>&nbsp;</td>
-                            <td><%= PageFlowUtil.button("Add").href("#").onClick("addRowToTable();") %>
+                            <td><%= button("Add").href("#").onClick("addRowToTable();") %>
                             </td>
                             <td>&nbsp;</td>
                         </tr>

@@ -111,7 +111,7 @@ else
 			<tr><th valign=top align=right nowrap>Parent Concept</th><td><%=h(row.get("ConceptURI"))%></td></tr>
 			<tr><th valign=top align=right nowrap>Description</th><td><%=h(description)%></td></tr>
 		</table>
-        <%=PageFlowUtil.button("select").onClick("javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
+        <%=button("select").onClick("javascript:select(" + PageFlowUtil.jsString(uri) + ")")%><%
 		}
 
 	%><p/><b>Search Results</b><hr size=1><%
