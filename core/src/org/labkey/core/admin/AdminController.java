@@ -5195,7 +5195,9 @@ public class AdminController extends SpringActionController
         {
             // If we need to copy/move files based on the FileRoot change, we need to check children that use the default and move them, too.
             // And we need to capture the source roots for each of those, because changing this parent file root changes the child source roots.
-            MigrateFilesOption migrateFilesOption = MigrateFilesOption.valueOf(form.getMigrateFilesOption());
+            MigrateFilesOption migrateFilesOption = null != form.getMigrateFilesOption() ?
+                    MigrateFilesOption.valueOf(form.getMigrateFilesOption()) :
+                    MigrateFilesOption.leave;
             List<Pair<Container, String>> sourceInfos =
                     ((MigrateFilesOption.leave.equals(migrateFilesOption) && !form.isFolderSetup()) || form.isDisableFileSharing()) ?
                             Collections.emptyList() :
