@@ -97,7 +97,7 @@
 </script>
 
 <labkey:form action="<%=new ActionURL(ReportsController.SaveReportAction.class, container)%>" method="POST">
-<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyQueryReport.TYPE)%>">
+<input type="hidden" name="<%=h(ReportDescriptor.Prop.reportType)%>" value="<%=h(StudyQueryReport.TYPE)%>">
 <input type="hidden" id="redirectToReport" name="redirectToReport" value="true">
 <input type="hidden" id="redirectToDataset" name="redirectToDataset" value="-1">
 <input type="hidden" id="showWithDataset" name="showWithDataset" value="0">

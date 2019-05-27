@@ -210,7 +210,7 @@ else
             Group g = (Group)member;
             if (g.isProjectGroup())
             {
-                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + h(memberName)) %>">
+                %><a href="<%=h(urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + h(memberName)))%>">
                 <span style="font-weight:bold;">
                     <%= h(memberName) %>
                 </span>
@@ -218,7 +218,7 @@ else
             }
             else
             {
-                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), h(memberName)) %>">
+                %><a href="<%=h(urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), h(memberName)))%>">
                 <span style="font-weight:bold;">
                   Site: <%= h(memberName) %>
                 </span>

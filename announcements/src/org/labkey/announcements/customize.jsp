@@ -52,11 +52,11 @@
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.CreationDate%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.CreationDate.getIndex())%>></td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=h(DiscussionService.Settings.SortOrder.CreationDate)%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.CreationDate.getIndex())%>></td>
                     <td><b>Initial Post</b> - Sort lists of conversations by date of the first posting.  This is appropriate for announcements and blogs.</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.LatestResponseDate%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.LatestResponseDate.getIndex())%>></td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=h(DiscussionService.Settings.SortOrder.LatestResponseDate)%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.LatestResponseDate.getIndex())%>></td>
                     <td><b>Most Recent Post</b> - Sort lists of conversations by date of the most recent post.  This is often preferred for discussion boards.</td>
                 </tr>
             </table>

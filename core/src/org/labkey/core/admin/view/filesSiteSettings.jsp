@@ -277,7 +277,7 @@
             manage files in a directory, double click on a row or click on the 'Browse Selected' button. To configure an
             @file or an @pipeline directory, select the directory and click on the 'Configure Selected' button in the toolbar.
         </td></tr>
-        <tr><td>For a complete list of all file paths referenced in the LabKey database, please use the <a href="<%=new ActionURL(FileListAction.class, ContainerManager.getRoot())%>">Files List</a>.
+        <tr><td>For a complete list of all file paths referenced in the LabKey database, please use the <a href="<%=h(new ActionURL(FileListAction.class, ContainerManager.getRoot()))%>">Files List</a>.
         </td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td><div id="viewsGrid" class="extContainer"></div></td></tr>
