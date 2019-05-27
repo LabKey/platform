@@ -131,8 +131,7 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
      */
     public HtmlString text(String s)
     {
-        // TODO: HtmlString - Move this null handling into HtmlString?
-        return HtmlString.unsafe(null==s ? "" : s);
+        return HtmlString.unsafe(s);
     }
 
 
@@ -456,12 +455,12 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
 
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
     {
-        return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
     }
 
     public HtmlString helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
-        return new HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
+        return HtmlString.unsafe(PageFlowUtil.helpPopup(title, helpText, htmlHelpText, width));
     }
 
     public HtmlString helpLink(String helpTopic, String displayText)
@@ -582,7 +581,7 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
 
     public HtmlString formatErrorsForPath(String path)
     {
-        return new HtmlString(formatErrorsForPathStr(path));
+        return HtmlString.unsafe(formatErrorsForPathStr(path));
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
@@ -617,16 +616,16 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
 
     protected HtmlString formatMissedErrors(String bean)
     {
-        return new HtmlString(formatMissedErrorsStr(bean));
+        return HtmlString.unsafe(formatMissedErrorsStr(bean));
     }
 
     protected HtmlString formatMissedErrors(String bean, String prefix, String suffix)
     {
         String str = formatMissedErrorsStr(bean);
         if (StringUtils.isEmpty(str))
-            return new HtmlString(str);
+            return HtmlString.of(str);
         else
-            return new HtmlString(prefix + str + suffix);
+            return HtmlString.unsafe(prefix + str + suffix);
     }
 
     // If errors exist, returns formatted errors in a <tr> with the specified colspan (or no colspan, for 0 or 1) followed by a blank line
@@ -636,9 +635,9 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
         String errorHTML = formatMissedErrorsStr(bean);
 
         if (StringUtils.isEmpty(errorHTML))
-            return new HtmlString(errorHTML);
+            return HtmlString.of(errorHTML);
         else
-            return new HtmlString("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
+            return HtmlString.unsafe("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
     }
 
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
@@ -687,7 +686,7 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
 
     protected HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return new HtmlString("action=\"" + buildURL(actionClass,method) + "\" method=\"" + method.getMethod() + "\"");
+        return HtmlString.unsafe("action=\"" + buildURL(actionClass, method) + "\" method=\"" + method.getMethod() + "\"");
     }
 
     // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
