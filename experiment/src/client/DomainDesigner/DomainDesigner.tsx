@@ -65,7 +65,7 @@ export class App extends React.PureComponent<any, StateProps> {
         if (this.state.dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
-    }
+    };
 
     componentWillUnmount() {
         window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
@@ -130,7 +130,9 @@ export class App extends React.PureComponent<any, StateProps> {
 
     onConfirm = () => {
         const { returnUrl } = this.state;
-        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+        this.setState(() => ({dirty: false}), () => {
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+        });
     };
 
     hideConfirm = () => {
