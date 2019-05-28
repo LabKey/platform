@@ -85,7 +85,7 @@
             <td class="labkey-form-label">Target sample set:</td>
             <td colspan="2">
                 <labkey:select name="tagetSampleSetId">
-                    <labke:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleSetOptions%>"/>
+                    <labkey:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleSetOptions%>"/>
                 </labkey:select>
             </td>
         </tr>
