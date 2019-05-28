@@ -39,7 +39,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize the logo, icon, and stylesheets used <%=text(c.isRoot() ? "throughout the site" : "in this project")%> (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize the logo, icon, and stylesheets used <%=text(c.isRoot() ? "throughout the site" : "in this project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>

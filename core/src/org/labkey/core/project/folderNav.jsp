@@ -22,6 +22,8 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -37,18 +39,18 @@
         dependencies.add("internal/jQuery");
     }
 
-    public _HtmlString getTrailSeparator()
+    public HtmlString getTrailSeparator()
     {
-        return _hs("&nbsp;/&nbsp;");
+        return HtmlString.unsafe("&nbsp;/&nbsp;");
     }
 
-    public _HtmlString getTrailLink(Container c, User u)
+    public HtmlString getTrailLink(Container c, User u)
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return _hs("<a href=\"" + h(c.getStartURL(u)) +"\">" + h(c.getTitle()) + "</a>" + getTrailSeparator());
+            return HtmlStringBuilder.of(link(c.getTitle(), c.getStartURL(u))).append(getTrailSeparator()).getHtmlString();
         }
-        return _hs("<span>" + h(c.getTitle()) + "</span>" + getTrailSeparator());
+        return HtmlStringBuilder.of(HtmlString.unsafe("<span>")).append(c.getTitle()).append(HtmlString.unsafe("</span>")).append(getTrailSeparator()).getHtmlString();
     }
 %>
 <%
@@ -102,7 +104,7 @@
 <div class="folder-menu-buttons">
     <% if (getUser().hasRootAdminPermission()) { %>
     <span class="folder-menu-button-icon">
-        <a href="<%=createProjectURL%>" title="New Project">
+        <a href="<%=h(createProjectURL)%>" title="New Project">
             <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
                 <span class="fa fa-folder-open-o fa-stack-2x labkey-main-menu-icon" alt="New Project"></span>
                 <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
@@ -111,7 +113,7 @@
     </span>
     <% } if (c.hasPermission(getUser(), AdminPermission.class)) {%>
     <span class="folder-menu-button-icon" style="margin-left: 2px">
-        <a href="<%=createFolderURL%>" title="New Subfolder">
+        <a href="<%=h(createFolderURL)%>" title="New Subfolder">
             <span class="fa-stack fa-1x labkey-fa-stacked-wrapper">
                 <span class="fa fa-folder-o fa-stack-2x labkey-main-menu-icon" alt="New Subfolder"></span>
                 <span class="fa fa-plus-circle fa-stack-1x" style="left: 10px; top: -7px;"></span>
@@ -119,7 +121,7 @@
         </a>
     </span>
     <span class="folder-menu-button-icon" style="margin-left: 6px;">
-        <a href="<%=folderManagementURL%>" title="Folder Management">
+        <a href="<%=h(folderManagementURL)%>" title="Folder Management">
             <span class="fa fa-gear" alt="Folder Management"></span>
         </a>
     </span>

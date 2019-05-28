@@ -44,8 +44,11 @@ import java.util.Collection;
  */
 public interface DiscussionService
 {
-    String ACTIVE = "Active";
-    String CLOSED = "Closed";
+    public enum StatusOption
+    {
+        Active,
+        Closed
+    }
 
     /* CONSIDER: provide for resolvers rather than (or in addition to) hardcoded url back links
     public interface Resolver
@@ -135,8 +138,6 @@ public interface DiscussionService
         boolean _includeGroups = false;
         SortOrder _sortOrder = SortOrder.getDefaultSortOrder();
         String _moderatorReview = "None";
-
-        String _statusOptions = ACTIVE + ";" + CLOSED;
 
         public enum SortOrder
         {
@@ -320,16 +321,6 @@ public interface DiscussionService
         public void setTitleEditable(boolean titleEditable)
         {
             _titleEditable = titleEditable;
-        }
-
-        public String getStatusOptions()
-        {
-            return _statusOptions;
-        }
-
-        public void setStatusOptions(String options)
-        {
-            _statusOptions = options;
         }
 
         public boolean includeGroups()

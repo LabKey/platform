@@ -15,11 +15,13 @@
  */
 package org.labkey.announcements.model;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
+import org.labkey.api.announcements.DiscussionService.StatusOption;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -60,7 +62,7 @@ public class AnnouncementModel extends Entity implements Serializable
 
     private Date _expires = null;
     private Integer _assignedTo = null;
-    private String _status = null;
+    private StatusOption _status = null;
     private String _title = null;
 
     // for discussions
@@ -291,12 +293,12 @@ public class AnnouncementModel extends Entity implements Serializable
 
     public String getStatus()
     {
-        return _status;
+        return null == _status ? null : _status.name();
     }
 
     public void setStatus(String status)
     {
-        _status = status;
+        _status = EnumUtils.getEnum(StatusOption.class, status);
     }
 
     public Integer getAssignedTo()

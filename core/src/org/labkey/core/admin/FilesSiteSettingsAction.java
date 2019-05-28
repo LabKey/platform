@@ -51,6 +51,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
         super(FileSettingsForm.class);
     }
 
+    @Override
     public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors)
     {
         if (form.isUpgrade())
@@ -77,6 +78,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
         return new JspView<>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);
     }
 
+    @Override
     public ActionURL getSuccessURL(FileSettingsForm form)
     {
         if (form.isUpgrade())
@@ -85,6 +87,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
             return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Configure File System Access", null);
@@ -92,6 +95,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
 
     public static class TestCase extends AbstractActionPermissionTest
     {
+        @Override
         @Test
         public void testActionPermissions()
         {

@@ -36,6 +36,7 @@ import java.util.Enumeration;
 
 public class ErrorsTag extends TagSupport
 {
+    @Override
     public int doStartTag() throws JspException
     {
         ViewContext context = HttpView.currentContext();

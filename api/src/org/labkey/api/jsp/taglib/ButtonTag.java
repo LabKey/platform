@@ -20,7 +20,6 @@ import org.labkey.api.util.Button;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
-import javax.servlet.jsp.JspException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +38,7 @@ public class ButtonTag extends SimpleTagBase
     String _target;
     Boolean _submit = true;
 
+    @Override
     public void doTag() throws IOException
     {
         Map<String, String> attributes = new HashMap<>();
@@ -74,7 +74,8 @@ public class ButtonTag extends SimpleTagBase
         if (null != _disableOnClick)
             button.disableOnClick(_disableOnClick);
 
-        getOut().write(button.toString());
+        // TODO: HtmlString
+        getOut().print(button.toString());
     }
 
     public void setDisableOnClick(Boolean disableOnClick)

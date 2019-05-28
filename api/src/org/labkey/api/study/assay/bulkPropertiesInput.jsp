@@ -64,7 +64,7 @@
             onclick="toggleBulkProperties()" name="<%= BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME %>">
         </td>
         <td>
-            Specify run properties for all runs at once with tab-separated values (TSV)<%= PageFlowUtil.helpPopup("Bulk Properties", form.getHelpPopupHTML(), true)%>
+            Specify run properties for all runs at once with tab-separated values (TSV)<%=helpPopup("Bulk Properties", form.getHelpPopupHTML(), true)%>
         </td>
     </tr>
     <tr>

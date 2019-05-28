@@ -86,8 +86,8 @@
             if (first)
                 first = false;
             else
-                out.write(", ");
-            out.write("" + actor.getRowId());
+                out.print(", ");
+            out.print("" + actor.getRowId());
         }
     }
 %>];

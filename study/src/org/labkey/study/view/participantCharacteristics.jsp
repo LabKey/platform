@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.util.ExceptionUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -113,7 +114,7 @@
             </a><%
             if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
-        %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
+        %><%=helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
             }
         %></th>
     </tr>
@@ -236,7 +237,7 @@
     List<PropertyDescriptor> sortProperties(List<PropertyDescriptor> pds, Dataset dsd, ViewContext context)
     {
         final Map<String, Integer> sortMap = StudyController.getSortedColumnList(context, dsd);
-        if (sortMap != null && !sortMap.isEmpty())
+        if (!sortMap.isEmpty())
         {
             final PropertyDescriptor[] props = new PropertyDescriptor[sortMap.size()];
             for (PropertyDescriptor p : pds)
@@ -249,14 +250,14 @@
         return pds;
     }
 
-    _HtmlString format(Object value)
+    HtmlString format(Object value)
     {
         if (value instanceof Date)
             return formatDate((Date)value);
 
         if (value instanceof Number)
-            return new _HtmlString(h(Formats.formatNumber(getContainer(), (Number)value)));
+            return HtmlString.of(Formats.formatNumber(getContainer(), (Number)value));
 
-        return new _HtmlString(null == value ? "&nbsp;" : h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
     }
 %>

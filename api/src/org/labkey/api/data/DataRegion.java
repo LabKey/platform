@@ -155,6 +155,7 @@ public class DataRegion extends DisplayElement
     private List<ContextAction> _contextActions = new ArrayList<>();
     private List<ContextAction> _viewActions = new ArrayList<>();
     private List<Message> _messages;
+    private List<MessageSupplier> _messageSuppliers = new ArrayList<>();
 
     private class GroupTable
     {
@@ -179,7 +180,7 @@ public class DataRegion extends DisplayElement
     private List<GroupTable> _groupTables = new ArrayList<>();
 
     /** HTML message to show the user attached to the region. Caller is responsible for HTML encoding as needed */
-    protected class Message
+    public static class Message
     {
         private String _area;
         private String _content;
@@ -227,6 +228,16 @@ public class DataRegion extends DisplayElement
         WARNING
     }
 
+    /**
+     * Interface to allow late bound addition of messages to this data region, the supplier
+     * will be invoked at render time when the result set (if any) has been created. A supplier can
+     * be added using the addMessageSupplier method
+     */
+    public interface MessageSupplier
+    {
+        List<Message> getMessages(DataRegion dataRegion);
+    }
+
     protected void addMessage(Message message)
     {
         if (_messages == null)
@@ -236,9 +247,9 @@ public class DataRegion extends DisplayElement
             _messages.add(message);
     }
 
-    public void adViewErrorMessage(String errorMsg)
+    public void addMessageSupplier(MessageSupplier supplier)
     {
-        addMessage(new Message("<span class=\"labkey-error\">" + PageFlowUtil.filter(errorMsg) + "</span><br>", MessageType.ERROR, MessagePart.view));
+        _messageSuppliers.add(supplier);
     }
 
     public void addDisplayColumn(DisplayColumn col)
@@ -2708,6 +2719,16 @@ public class DataRegion extends DisplayElement
     protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException
     {
         StringBuilder headerMsg = new StringBuilder();
+
+        // add any externally supplied messages
+        for (MessageSupplier supplier : _messageSuppliers)
+        {
+            for (Message msg : supplier.getMessages(this))
+            {
+                if (msg != null)
+                    addMessage(msg);
+            }
+        }
 
         addHeaderMessage(headerMsg, ctx);
         if (headerMsg.length() > 0)

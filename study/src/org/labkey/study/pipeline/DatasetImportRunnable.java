@@ -24,6 +24,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
@@ -36,7 +37,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -135,7 +136,7 @@ public class DatasetImportRunnable implements Runnable
         DbSchema schema  = StudySchema.getInstance().getSchema();
         DbScope scope = schema.getScope();
         QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
-                StudyManager.getInstance().getQCStateForRowId(_studyImportContext.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
+                QCStateManager.getInstance().getQCStateForRowId(_studyImportContext.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
         List<String> errors = new ArrayList<>();
         validate(errors);

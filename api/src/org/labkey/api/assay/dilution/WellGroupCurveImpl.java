@@ -63,6 +63,10 @@ public abstract class WellGroupCurveImpl implements DilutionCurve
 
     public CurveFit.Parameters getParameters() throws FitFailedException
     {
+        if (!isValid())
+        {
+            return () -> Collections.emptyMap();
+        }
         return _curveFit.getParameters();
     }
 

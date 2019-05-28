@@ -1624,6 +1624,13 @@ public abstract class CompareType
             sb.replace(i, i + 1, _unescapedValue);
         }
 
+        // Issue 37524: QueryWebPart with CONTAINS filter and value that includes an underscore will generate incorrect filter on the "select all" url
+        @Override
+        protected String toURLParamValue()
+        {
+            return _unescapedValue;
+        }
+
         abstract String toWhereClause(SqlDialect dialect, String alias);
     }
 

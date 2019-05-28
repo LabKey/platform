@@ -37,6 +37,7 @@ public class GridView extends DataView
         super(dataRegion, errors);
     }
 
+    @Override
     protected boolean isColumnIncluded(ColumnInfo col)
     {
         return !col.isHidden();
@@ -57,6 +58,7 @@ public class GridView extends DataView
         getRenderContext().setBaseSort(sort);
     }
 
+    @Override
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         ctx.setMode(DataRegion.MODE_GRID);

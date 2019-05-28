@@ -169,6 +169,7 @@ public class TestController extends SpringActionController
 
     public class ActionListView extends HttpView
     {
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());

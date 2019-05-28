@@ -78,7 +78,7 @@ if (!mr.isApproved(c, user))
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class="labkey-form-label">Title * <%= PageFlowUtil.helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type="text" size="60" maxLength="255" name="title" value='<%=h(form.get("title"))%>' onChange="LABKEY.setDirty(true);"/></td></tr><%
+    %><tr><td class="labkey-form-label">Title * <%=helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type="text" size="60" maxLength="255" name="title" value='<%=h(form.get("title"))%>' onChange="LABKEY.setDirty(true);"/></td></tr><%
 }
 else
 {

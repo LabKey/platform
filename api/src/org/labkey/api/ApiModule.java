@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
+import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.dataiterator.DataIteratorUtil;
@@ -35,7 +36,9 @@ import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AvatarType;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
@@ -65,9 +68,12 @@ public class ApiModule extends CodeOnlyModule
             AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
 
         // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
-        LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
-        JspFactory.setDefaultFactory(factory);
-        ContextListener.addShutdownListener(factory);
+        if (AppProps.getInstance().isDevMode())
+        {
+            LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
+            JspFactory.setDefaultFactory(factory);
+            ContextListener.addShutdownListener(factory);
+        }
     }
 
     @NotNull
@@ -91,7 +97,8 @@ public class ApiModule extends CodeOnlyModule
             DataIteratorUtil.TestCase.class,
             SqlScanner.TestCase.class,
             FieldKey.TestCase.class,
-            SchemaKey.TestCase.class
+            SchemaKey.TestCase.class,
+            Pair.TestCase.class
         );
     }
 
@@ -100,7 +107,8 @@ public class ApiModule extends CodeOnlyModule
     {
         return ImmutableSet.of(
             ApiKeyManager.TestCase.class,
-            WorkbookContainerType.TestCase.class
+            WorkbookContainerType.TestCase.class,
+            ExcelColumn.TestCase.class
         );
     }
 }

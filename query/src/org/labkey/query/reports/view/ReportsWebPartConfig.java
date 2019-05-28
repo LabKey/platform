@@ -28,13 +28,14 @@ import java.io.PrintWriter;
  */
 public class ReportsWebPartConfig extends HttpView
 {
-    private Portal.WebPart _webPart;
+    private final Portal.WebPart _webPart;
 
     public ReportsWebPartConfig(Portal.WebPart webPart)
     {
         _webPart = webPart;
     }
 
+    @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         JspView view = new JspView<>("/org/labkey/query/reports/view/reportsWebPartConfig.jsp", _webPart);

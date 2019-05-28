@@ -34,6 +34,8 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -762,7 +764,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
                 _defaultQCState = defaultQCState;
 
                 _qcLabels = new CaseInsensitiveHashMap<>();
-                for (QCState state : StudyManager.getInstance().getQCStates(_datasetDefinition.getContainer()))
+                for (QCState state : QCStateManager.getInstance().getQCStates(_datasetDefinition.getContainer()))
                     _qcLabels.put(state.getLabel(), state);
             }
 

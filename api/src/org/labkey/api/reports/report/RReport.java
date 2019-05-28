@@ -95,16 +95,19 @@ public class RReport extends ExternalScriptEngineReport
 
     private boolean _useDefaultOutputOptions = true;
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "R Report";
     }
 
+    @Override
     public String getDescriptorType()
     {
         return RReportDescriptor.TYPE;
@@ -119,6 +122,7 @@ public class RReport extends ExternalScriptEngineReport
     //
     // For R reports honor the 'remote' metadata for scriptEngines if provided
     //
+    @Override
     public ScriptEngine getScriptEngine(Container c)
     {
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
@@ -175,6 +179,7 @@ public class RReport extends ExternalScriptEngineReport
         return externalEditor;
     }
 
+    @Override
     public void saveFromExternalEditor(ContainerUser context, String script)
     {
         getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, this.stripScriptProlog(script));
@@ -593,11 +598,13 @@ public class RReport extends ExternalScriptEngineReport
         return ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements, isRStudio);
     }
 
+    @Override
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws Exception
     {
         return createScript(engine, context, outputSubst, inputDataTsv, inputParameters, false);
     }
 
+    @Override
     public String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
         String script = super.createScript(engine, context, outputSubst, inputDataTsv, inputParameters, isRStudio);
@@ -785,6 +792,7 @@ public class RReport extends ExternalScriptEngineReport
         return c;
     }
 
+    @Override
     public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean)
     {
         List<Report> scripts = new ArrayList<>();
@@ -806,11 +814,13 @@ public class RReport extends ExternalScriptEngineReport
         return scripts;
     }
 
+    @Override
     public String getDownloadDataHelpMessage()
     {
         return "LabKey Server automatically exports query data into a data frame called \"labkey.data\". You can download the data via this link to help with the development of your R script.";
     }
 
+    @Override
     public @NotNull String getDesignerHelpHtml()
     {
         try

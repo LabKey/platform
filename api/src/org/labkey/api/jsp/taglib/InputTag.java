@@ -234,6 +234,7 @@ public class InputTag extends SimpleTagBase
         this.maxLength = maxLength;
     }
 
+    @Override
     public void doTag() throws IOException
     {
         Input.InputBuilder input;
@@ -318,6 +319,7 @@ public class InputTag extends SimpleTagBase
             input.layout(Input.Layout.get(form.getLayout()));
         }
 
-        getOut().write(input.toString());
+        // TODO: HtmlString
+        getOut().print(input.toString());
     }
 }

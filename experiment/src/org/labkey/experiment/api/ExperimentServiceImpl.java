@@ -1069,9 +1069,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpDataTable createFilesTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
-        return new ExpFilesTableImpl(name, schema, cf);
+        return new ExpFilesTableImpl(name, schema);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)
@@ -4433,8 +4433,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            DbSequenceManager.delete(c, ExpDataClassImpl.GENID_SEQUENCE_NAME, dataClass.getRowId());
-
             truncateDataClass(dataClass, user, null);
 
             d.delete(user);
@@ -4448,6 +4446,9 @@ public class ExperimentServiceImpl implements ExperimentService
             transaction.addCommitTask(() -> clearDataClassCache(dcContainer), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
+
+        // Delete sequences (genId and the unique counters)
+        DbSequenceManager.deleteLike(c, ExpDataClassImpl.SEQUENCE_PREFIX, dataClass.getRowId(), getExpSchema().getSqlDialect());
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, singleton(dataClass.getName()));

@@ -9,7 +9,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Map;
 
-public abstract class DisplayElementBuilder<T extends DisplayElement, BUILDER extends DisplayElementBuilder<T, BUILDER>>
+public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlString, BUILDER extends DisplayElementBuilder<T, BUILDER>> implements HasHtmlString
 {
     String text;
     String href;
@@ -107,11 +107,17 @@ public abstract class DisplayElementBuilder<T extends DisplayElement, BUILDER ex
         return getThis();
     }
 
-    abstract public T build();
+    abstract public @NotNull T build();
 
     @Override
+    public HtmlString getHtmlString()
+    {
+        return build().getHtmlString();
+    }
+
+    @Override // TODO: HtmlString - remove
     public String toString()
     {
-        return build().toString();
+        return getHtmlString().toString();
     }
 }

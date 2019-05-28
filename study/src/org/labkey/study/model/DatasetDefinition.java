@@ -58,6 +58,8 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
@@ -2450,7 +2452,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         QCState defaultQCState = null;
         Integer defaultQcStateId = getStudy().getDefaultDirectEntryQCState();
         if (defaultQcStateId != null)
-             defaultQCState = StudyManager.getInstance().getQCStateForRowId(getContainer(), defaultQcStateId.intValue());
+             defaultQCState = QCStateManager.getInstance().getQCStateForRowId(getContainer(), defaultQcStateId.intValue());
 
         String managedKey = null;
         if (getKeyType() == Dataset.KeyType.SUBJECT_VISIT_OTHER && getKeyManagementType() != Dataset.KeyManagementType.None)

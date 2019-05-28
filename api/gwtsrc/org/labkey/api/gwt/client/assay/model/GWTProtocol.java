@@ -64,6 +64,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _editableRuns;
     private boolean _editableResults;
     private boolean _backgroundUpload;
+    private boolean _qcEnabled;
 
     public GWTProtocol()
     {
@@ -282,5 +283,15 @@ public class GWTProtocol implements IsSerializable
     public void setSelectedMetadataInputFormat(String selectedMetadataInputFormat)
     {
         _selectedMetadataInputFormat = selectedMetadataInputFormat;
+    }
+
+    public boolean isQcEnabled()
+    {
+        return _qcEnabled;
+    }
+
+    public void setQcEnabled(boolean qcEnabled)
+    {
+        _qcEnabled = qcEnabled;
     }
 }

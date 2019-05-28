@@ -67,6 +67,7 @@ public class InsertView extends DataView
         getDataRegion().setColumns(cols);
     }
 
+    @Override
     protected boolean isColumnIncluded(ColumnInfo col)
     {
         return col.isShownInInsertView();
@@ -89,6 +90,7 @@ public class InsertView extends DataView
         _initialValues.put(inputName, value);
     }
 
+    @Override
     protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
     {
         TableInfo tableInfo = getTable();

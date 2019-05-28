@@ -45,11 +45,12 @@
     boolean canSetPipelineRoot = c.hasPermission(user, AdminOperationsPermission.class);
 %>
 
-<% if (!hasAssayProtocols) { %>
+<%
+    if (!hasAssayProtocols) { %>
 <p>
     <div>
         <em>No assay designs are available in this folder. </em>
-        <%=text(new HelpTopic("defineAssaySchema").getLinkHtml("Assay Help"))%>
+        <%=new HelpTopic("defineAssaySchema").getLinkHtml("Assay Help")%>
     </div>
 </p>
 <% } %>
