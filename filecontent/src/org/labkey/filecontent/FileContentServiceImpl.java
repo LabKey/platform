@@ -1674,7 +1674,7 @@ public class FileContentServiceImpl implements FileContentService
             // call the method that makes use of the test startup properties to change the Site Root File settings on the server
             populateSiteRootFileWithStartupProps();
 
-            // now check that the expected changes occured to the Site Root File settings on the server
+            // now check that the expected changes occurred to the Site Root File settings on the server
             File newSiteRootFile = FileContentService.get().getSiteDefaultRoot();
             Assert.assertEquals("The expected change in Site Root File was not found", testSiteRootFile.getAbsolutePath(), newSiteRootFile.getAbsolutePath());
 
