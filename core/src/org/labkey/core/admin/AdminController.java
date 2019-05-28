@@ -320,7 +320,7 @@ public class AdminController extends SpringActionController
 
     public static void registerManagementTabs()
     {
-        addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
+        addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", EVERY_CONTAINER, ManageFoldersAction.class);
         addTab(TYPE.FolderManagement,"Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
         addTab(TYPE.FolderManagement,"Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
         addTab(TYPE.FolderManagement,"Module Properties", "props", c -> {
