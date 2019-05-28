@@ -70,20 +70,11 @@ abstract public class AbstractTableCustomizer implements TableCustomizer
     public TableInfo getTableInfo(AbstractTableInfo ti, String schemaName, String queryName, Container targetContainer)
     {
         assert targetContainer != null : "No container provided";
-
-        String key = targetContainer.getEntityId() + "||" + schemaName + "||" + queryName;
-        //NOTE: dont cache tableinfos for now.  consider revisiting
-        //if (_tableInfos.containsKey(key))
-        //      return _tableInfos.get(key);
-
         UserSchema us = getUserSchema(ti, schemaName, targetContainer);
         if (us == null)
             return null;
 
-        TableInfo table = us.getTable(queryName);
-        //_tableInfos.put(key, table);
-
-        return table;
+        return us.getTable(queryName);
     }
 
     protected String getChr(TableInfo ti)
