@@ -43,7 +43,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
@@ -369,7 +369,7 @@
                     %>
                     <%=text(bean.renderLabel(notify))%>
                     <td>
-                        <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="4" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+                        <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=completionUrl%>" rows="4" tabindex="20" cols="40" value="<%=bean.getNotifyListString(false)%>"/>
                     </td>
                 </tr><%
             }

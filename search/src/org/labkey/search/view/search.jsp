@@ -49,7 +49,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -271,8 +271,8 @@
 %>
 <div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
-        <labkey:form id="<%=h(searchFormId)%>" className="lk-search-form" action="<%=h(searchConfig.getPostURL(c))%>">
-            <labkey:input type="text" name="q" placeholder="<%=h(form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c))%>" formGroup="false" value="<%=h(value)%>"/>
+        <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
+            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=h(value)%>"/>
             <a class="search-overlay fa fa-search"></a>
             <% if (showAdvancedUI) { %>
             <small>
@@ -305,7 +305,7 @@
 <div id="<%=h(advFormCt)%>" class="col-md-12" <%=text(form.isShowAdvanced() ? "" : "style=\"display:none;\"")%>>
     <div class="panel panel-default">
         <div class="panel-body">
-            <labkey:form id="<%=h(advFormId)%>">
+            <labkey:form id="<%=advFormId%>">
                 <div class="form-group">
                     <div class="col-sm-4">
                         <h5>
