@@ -969,6 +969,8 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());
+                if (ss != null)
+                    deriveURL.addParameter("targetSampleSetId", ss.getRowId());
 
                 updateLinks.append(PageFlowUtil.textLink("derive samples from this sample", deriveURL) + " ");
             }
