@@ -64,7 +64,6 @@ import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySchemaWrapper;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -1810,16 +1809,17 @@ public class Query
             Container c = JunitUtil.getTestContainer();
 			Container qtest = getSubfolder();
             ListService s = ListService.get();
-            QueryUpdateService qus;
-            UserSchema lists = requireNonNull((UserSchema)DefaultSchema.get(user, c).getSchema("lists"));
+            UserSchema lists = (UserSchema)DefaultSchema.get(user, c).getSchema("lists");
+            assertNotNull(lists);
 
             ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
             TableInfo rTableInfo = lists.getTable("R", null);
+            assertNotNull(rTableInfo);
             DataIteratorContext context = new DataIteratorContext();
-            requireNonNull(rTableInfo.getUpdateService()).importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
+            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize), context.getErrors(), null, null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
@@ -1827,9 +1827,10 @@ public class Query
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            TableInfo sTableInfo = lists.getTable("S", null);
+            TableInfo sTableInfo = DefaultSchema.get(user, qtest).getSchema("lists").getTable("S", null);
+            assertNotNull(sTableInfo);
             context = new DataIteratorContext();
-            requireNonNull(sTableInfo.getUpdateService()).importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
+            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize), context.getErrors(), null, null);
             if (context.getErrors().hasErrors())
                 fail(context.getErrors().getRowErrors().get(0).toString());
 
