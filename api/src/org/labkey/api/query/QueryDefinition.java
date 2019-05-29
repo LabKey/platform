@@ -144,6 +144,7 @@ public interface QueryDefinition
     @Nullable ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pkValues);
     @Nullable StringExpression urlExpr(QueryAction action, Container container);
     @NotNull UserSchema getSchema();
+    void setSchema(@NotNull UserSchema schema);
 
     /**
      * Returns whether this is a table-based query definition (versus a custom query).

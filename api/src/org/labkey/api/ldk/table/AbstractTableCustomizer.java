@@ -16,16 +16,19 @@
 package org.labkey.api.ldk.table;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.DatasetTable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * User: bimber
@@ -35,9 +38,12 @@ import java.util.Map;
 abstract public class AbstractTableCustomizer implements TableCustomizer
 {
     protected static final Logger _log = Logger.getLogger(AbstractTableCustomizer.class);
-    private Map<String, UserSchema> _userSchemas = new HashMap<>();
-    private Map<String, TableInfo> _tableInfos = new HashMap<>();
 
+    /**
+     * Rely on DefaultSchema's caching of schema creation, and just track the minimum number of DefaultSchemas to
+     * resolve the requested collection of target containers
+     */
+    private Map<Container, DefaultSchema> _defaultSchemas = new HashMap<>();
 
     public UserSchema getUserSchema(AbstractTableInfo ti, String name)
     {
@@ -49,29 +55,11 @@ abstract public class AbstractTableCustomizer implements TableCustomizer
     {
         assert targetContainer != null : "No container provided";
 
-        String key = targetContainer.getEntityId() + "||" + name;
-        if (_userSchemas.containsKey(key))
-            return _userSchemas.get(key);
+        // Stash the DefaultSchema for the current table if we don't already have it
+        _defaultSchemas.computeIfAbsent(ti.getUserSchema().getContainer(), (key) -> ti.getUserSchema().getDefaultSchema());
+        DefaultSchema targetedDefaultSchema = _defaultSchemas.computeIfAbsent(targetContainer, (key) -> DefaultSchema.get(ti.getUserSchema().getUser(), targetContainer));
 
-        UserSchema originalUserSchema = ti.getUserSchema();
-        if (originalUserSchema != null)
-        {
-            //cache the original UserSchema anyway
-            String origTableKey = originalUserSchema.getContainer().getEntityId() + "||" + originalUserSchema.getName();
-            _userSchemas.put(origTableKey, originalUserSchema);
-
-            if (origTableKey.equalsIgnoreCase(key))
-                return originalUserSchema;
-
-            //if container differs, look up the schema
-            UserSchema us2 = QueryService.get().getUserSchema(originalUserSchema.getUser(), targetContainer, name);
-            if (us2 != null)
-                _userSchemas.put(key, us2);
-
-            return us2;
-        }
-
-        return null;
+        return targetedDefaultSchema.getUserSchema(name);
     }
 
     public TableInfo getTableInfo(AbstractTableInfo ti, String schemaName, String queryName)
@@ -82,20 +70,11 @@ abstract public class AbstractTableCustomizer implements TableCustomizer
     public TableInfo getTableInfo(AbstractTableInfo ti, String schemaName, String queryName, Container targetContainer)
     {
         assert targetContainer != null : "No container provided";
-
-        String key = targetContainer.getEntityId() + "||" + schemaName + "||" + queryName;
-        //NOTE: dont cache tableinfos for now.  consider revisiting
-        //if (_tableInfos.containsKey(key))
-        //      return _tableInfos.get(key);
-
         UserSchema us = getUserSchema(ti, schemaName, targetContainer);
         if (us == null)
             return null;
 
-        TableInfo table = us.getTable(queryName);
-        //_tableInfos.put(key, table);
-
-        return table;
+        return us.getTable(queryName);
     }
 
     protected String getChr(TableInfo ti)

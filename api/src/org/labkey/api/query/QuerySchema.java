@@ -35,6 +35,8 @@ public interface QuerySchema extends SchemaTreeNode
 
     Container getContainer();
 
+    void setDefaultSchema(DefaultSchema schema);
+
     DefaultSchema getDefaultSchema();
 
     DbSchema getDbSchema();

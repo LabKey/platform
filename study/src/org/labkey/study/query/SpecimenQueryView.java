@@ -32,7 +32,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SpecimenManager;
@@ -55,6 +54,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * User: brittp
  * Date: Aug 23, 2006
@@ -70,7 +71,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
     }
 
     private boolean _requireSequenceNum;
-    private boolean _enableRequests;
 
     private static class SpecimenDataRegion extends DataRegion
     {
@@ -132,6 +132,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     private static class VialRestrictedDataRegion extends SpecimenDataRegion
     {
+        @Override
         protected boolean isRecordSelectorEnabled(RenderContext ctx)
         {
             return isAvailable(ctx);
@@ -153,6 +154,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             return "check_" + getRequiredColumnValue(ctx, "GlobalUniqueId");
         }
 
+        @Override
         protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
         {
             if (!isAvailable(ctx))
@@ -190,6 +192,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
     private class SpecimenRestrictedDataRegion extends SpecimenDataRegion
     {
+        @Override
         protected boolean isRecordSelectorEnabled(RenderContext ctx)
         {
             return isAvailable(ctx);
@@ -210,6 +213,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             return "check_" + getRequiredColumnValue(ctx, "SpecimenHash");
         }
 
+        @Override
         protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
         {
             if (!isAvailable(ctx))
@@ -244,28 +248,32 @@ public class SpecimenQueryView extends BaseStudyQueryView
     private Map<String, String> _hiddenFormFields;
     // key of _availableSpecimenCounts is a specimen hash, which includes ptid, type, etc.
     private Map<String, Integer> _availableSpecimenCounts;
-    private boolean _participantVisitFiltered = false;
+    private final boolean _participantVisitFiltered;
 
 
     public enum ViewType
     {
         SUMMARY()
                 {
+                    @Override
                     public String getQueryName()
                     {
                         return "SpecimenSummary";
                     }
 
+                    @Override
                     public String getViewName()
                     {
                         return null;
                     }
 
+                    @Override
                     public boolean isVialView()
                     {
                         return false;
                     }
 
+                    @Override
                     public boolean isForExport()
                     {
                         return false;
@@ -273,21 +281,25 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 },
         VIALS()
                 {
+                    @Override
                     public String getQueryName()
                     {
                         return "SpecimenDetail";
                     }
 
+                    @Override
                     public String getViewName()
                     {
                         return null;
                     }
 
+                    @Override
                     public boolean isVialView()
                     {
                         return true;
                     }
 
+                    @Override
                     public boolean isForExport()
                     {
                         return false;
@@ -295,21 +307,25 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 },
         VIALS_EMAIL()
                 {
+                    @Override
                     public String getQueryName()
                     {
                         return "SpecimenDetail";
                     }
 
+                    @Override
                     public String getViewName()
                     {
                         return "SpecimenEmail";
                     }
 
+                    @Override
                     public boolean isVialView()
                     {
                         return true;
                     }
 
+                    @Override
                     public boolean isForExport()
                     {
                         return true;
@@ -335,7 +351,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _requireSequenceNum = requireSequenceNum;
 
         RepositorySettings repositorySettings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
-        _enableRequests = repositorySettings.isEnableRequests();
         boolean isEditable = ViewType.VIALS == viewType && repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
         setShowUpdateColumn(isEditable);
 
@@ -357,14 +372,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
             setInsertURL(insertActionURL.toLocalString(false));
         }
 
-        setViewItemFilter(new ReportService.ItemFilter()
-        {
-            public boolean accept(String type, String label)
-            {
-                if (StudyCrosstabReport.TYPE.equals(type)) return true;
-                return DEFAULT_ITEM_FILTER.accept(type, label);
-            }
-        });
+        setViewItemFilter((type, label) ->
+            StudyCrosstabReport.TYPE.equals(type) || DEFAULT_ITEM_FILTER.accept(type, label)
+        );
     }
 
     public static SpecimenQueryView createView(ViewContext context, ViewType viewType)
@@ -396,7 +406,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     {
         SimpleFilter filter = new SimpleFilter();
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
-        addFilterClause(study, filter, participantDatasets);
+        addFilterClause(requireNonNull(study), filter, participantDatasets);
         return createView(context, filter, createDefaultSort(viewType), viewType, true, null, true);
     }
 
@@ -536,7 +546,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         if (viewType.isVialView())
             return new Sort("GlobalUniqueId");
         else
-            return new Sort(StudyService.get().getSubjectColumnName(getContextContainer()) + ",Visit,PrimaryType,DerivativeType,AdditiveType");
+            return new Sort(requireNonNull(StudyService.get()).getSubjectColumnName(getContextContainer()) + ",Visit,PrimaryType,DerivativeType,AdditiveType");
     }
 
     protected static SimpleFilter addFilterClause(SimpleFilter filter, List<Vial> vials, ViewType viewType)
@@ -587,7 +597,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     whereClause.append(StudySchema.getInstance().getSqlDialect().getDateTimeToDateCast("?")).append(" AND ");
                     params.add(pd.getVisitDate());
                 }
-                whereClause.append(StudyService.get().getSubjectColumnName(getContextContainer())).append(" = ?)");
+                whereClause.append(requireNonNull(StudyService.get()).getSubjectColumnName(getContextContainer())).append(" = ?)");
                 params.add(pd.getParticipantId());
                 sep = " OR ";
             }
@@ -599,8 +609,6 @@ public class SpecimenQueryView extends BaseStudyQueryView
     protected static SimpleFilter addNotPreviouslyRequestedClause(SimpleFilter filter, Container container, int locationId)
     {
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
-        if (null == tableInfoVial)
-            throw new IllegalStateException("Vial table not found.");
         SQLFragment sql = new SQLFragment("SpecimenHash NOT IN (" +
                 "SELECT v.SpecimenHash from study.SampleRequestSpecimen rs join study.SampleRequest r on rs.SamplerequestId=r.RowId "
                 + "join ");
@@ -702,6 +710,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return filter;
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         SpecimenDataRegion rgn;
@@ -826,7 +835,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         Long specimenId = (Long) ctx.getRow().get("RowId");
                         url.append(getHistoryLinkBase(ctx.getViewContext(), containerId))
                            .append(specimenId.toString()).append("&selected=")
-                           .append(Boolean.toString(_participantVisitFiltered));
+                           .append(_participantVisitFiltered);
                         return url.toString();
                     }
                 });
@@ -966,7 +975,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
     @Override
     public void addManageViewItems(MenuButton button, Map<String, String> params)
     {
-        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getViewContext().getContainer());
+        ActionURL url = requireNonNull(PageFlowUtil.urlProvider(ReportUrls.class)).urlManageViews(getViewContext().getContainer());
         for (Map.Entry<String, String> entry : params.entrySet())
             url.addParameter(entry.getKey(), entry.getValue());
 
