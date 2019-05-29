@@ -90,7 +90,9 @@ public class HtmlStringBuilder implements HtmlStream, HasHtmlString
             @Override
             HtmlStream render(HtmlStream builder, Object value)
             {
-                return builder.append(HtmlString.unsafe(" checked"));
+                if (value != Boolean.FALSE)
+                    builder.append(HtmlString.unsafe(" checked"));
+                return builder;
             }
         },
         cite,
@@ -242,7 +244,9 @@ public class HtmlStringBuilder implements HtmlStream, HasHtmlString
             @Override
             HtmlStream render(HtmlStream builder, Object value)
             {
-                return builder.append(HtmlString.unsafe(" selected"));
+                if (value != Boolean.FALSE)
+                    builder.append(HtmlString.unsafe(" selected"));
+                return builder;
             }
         },
         shape,
