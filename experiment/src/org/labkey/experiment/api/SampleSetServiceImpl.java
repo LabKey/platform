@@ -712,7 +712,7 @@ public class SampleSetServiceImpl implements SampleSetService
             return "org.labkey.api.exp.api.ExpMaterial:" + name() + ":" + suffix;
         }
 
-        public int next(Date date)
+        public long next(Date date)
         {
             String seqName = getSequenceName(date);
             DbSequence seq = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), seqName);
@@ -721,9 +721,9 @@ public class SampleSetServiceImpl implements SampleSetService
     }
 
     @Override
-    public Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate)
+    public Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
     {
-        Map<String, Integer> counts = new HashMap<>();
+        Map<String, Long> counts = new HashMap<>();
         counts.put("dailySampleCount",   SampleSequenceType.DAILY.next(counterDate));
         counts.put("weeklySampleCount",  SampleSequenceType.WEEKLY.next(counterDate));
         counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
