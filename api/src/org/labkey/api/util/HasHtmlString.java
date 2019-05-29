@@ -2,14 +2,14 @@ package org.labkey.api.util;
 
 import java.util.function.Function;
 
-public interface HasHtmlString extends Function<HtmlStringBuilder,HtmlStringBuilder>
+public interface HasHtmlString extends Function<HtmlStream,HtmlStream>
 {
     HtmlString getHtmlString();
 
     @Override
-    default HtmlStringBuilder apply(HtmlStringBuilder builder)
+    default HtmlStream apply(HtmlStream builder)
     {
-        builder.append(this);
+        builder.append(this.getHtmlString());
         return builder;
     }
 }

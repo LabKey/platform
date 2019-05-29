@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 
-public class HtmlStringBuilder implements HasHtmlString
+public class HtmlStringBuilder implements HtmlStream, HasHtmlString
 {
     private final StringBuilder _sb = new StringBuilder();
 
@@ -38,18 +38,21 @@ public class HtmlStringBuilder implements HasHtmlString
         return new HtmlStringBuilder().append(hhs);
     }
 
+    @Override
     public HtmlStringBuilder append(String s)
     {
         _sb.append(h(s));
         return this;
     }
 
+    @Override
     public HtmlStringBuilder append(HtmlString hs)
     {
         _sb.append(hs.toString());
         return this;
     }
 
+    @Override
     public HtmlStringBuilder append(HasHtmlString hhs)
     {
         _sb.append(hhs.getHtmlString());
@@ -242,7 +245,7 @@ public class HtmlStringBuilder implements HasHtmlString
         style
         {
             @Override
-            HtmlStringBuilder render(HtmlStringBuilder builder, Object value)
+            HtmlStream render(HtmlStream builder, Object value)
             {
                 if (value instanceof Map)
                 {
@@ -261,7 +264,7 @@ public class HtmlStringBuilder implements HasHtmlString
         width,
         wrap;
 
-        HtmlStringBuilder render(HtmlStringBuilder builder, Object value)
+        HtmlStream render(HtmlStream builder, Object value)
         {
             return appendAttribute(builder, name(), value);
         }
@@ -343,9 +346,10 @@ public class HtmlStringBuilder implements HasHtmlString
                 return element(name(), attrs, classNames);
             }
             @Override
-            HtmlStringBuilder render(HtmlStringBuilder builder, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object... body)
+            <H extends HtmlStream>
+            H render(H builder, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object... body)
             {
-                return element(builder, name(), attrs, classNames, null);
+                return (H)element(builder, name(), attrs, classNames, null);
             }
         },
         ins,
@@ -415,33 +419,31 @@ public class HtmlStringBuilder implements HasHtmlString
             return element(name(), attrs, classNames, body);
         }
 
-        HtmlStringBuilder render(HtmlStringBuilder builder, Iterable<Map.Entry<Object,Object>> attrs, DOM.ClassNames classNames, Object...body)
+        <H extends HtmlStream>
+        H render(H builder, Iterable<Map.Entry<Object,Object>> attrs, DOM.ClassNames classNames, Object...body)
         {
-            return element(builder, name(), attrs, classNames, body);
+            return (H)element(builder, name(), attrs, classNames, body);
         }
     };
 
 
-    private static HtmlStringBuilder appendAttribute(HtmlStringBuilder html, String key, Object value)
+    private static HtmlStream appendAttribute(HtmlStream html, String key, Object value)
     {
         if (null==value)
             return html;
-        StringBuilder sb = html._sb;
-        if (sb.length() > 0 && sb.charAt(sb.length() - 1) != ' ')
-            sb.append(' ');
-        String encodedKey = h(key);
-        if (!encodedKey.equals(key) || StringUtils.containsAny(key," \t\"\'<>"))
+        html.append(HtmlString.unsafe(" "));
+        if (StringUtils.containsAny(key," \t\"\'<>"))
             throw new IllegalArgumentException(key);
-        sb.append(encodedKey);
-        sb.append("=\"");
-        String s = null == value ? null : String.valueOf(value);
+        html.append(key);
+        html.append(HtmlString.unsafe("=\""));
+        String s = String.valueOf(value);
         if (StringUtils.isNotBlank(s))
-            sb.append(h(s));
-        sb.append("\"");
+            html.append(s);
+        html.append(HtmlString.unsafe("\""));
         return html;
     }
 
-    private static HtmlStringBuilder appendBody(HtmlStringBuilder builder, Object body)
+    private static HtmlStream appendBody(HtmlStream builder, Object body)
     {
         if (null == body)
             return builder;
@@ -450,7 +452,7 @@ public class HtmlStringBuilder implements HasHtmlString
         else if (body instanceof CharSequence)
             builder.append(body.toString());
         else if (body instanceof Function)
-            ((Function<HtmlStringBuilder, HtmlStringBuilder>) body).apply(builder);
+            ((Function<HtmlStream, HtmlStream>) body).apply(builder);
         else if (body instanceof Array)
             for (var i : (Object[]) body)
                 appendBody(builder, i);
@@ -463,15 +465,17 @@ public class HtmlStringBuilder implements HasHtmlString
 
     private static HtmlString element(String tagName, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object... body)
     {
-        return element(new HtmlStringBuilder(), tagName, attrs, classNames, body).getHtmlString();
+        HtmlStringBuilder builder = new HtmlStringBuilder();
+        element(builder, tagName, attrs, classNames, body);
+        return builder.getHtmlString();
     }
 
-    private static HtmlStringBuilder element(HtmlStringBuilder builder, String tagName, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object[] body)
+    private static HtmlStream element(HtmlStream builder, String tagName, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object[] body)
     {
         if (null != tagName)
         {
             assert (h(tagName).equals(tagName));
-            builder._sb.append('<').append(tagName);
+            builder.append(HtmlString.unsafe("<")).append(tagName);
             if (null != attrs)
             {
                 attrs.forEach(entry ->
@@ -495,7 +499,7 @@ public class HtmlStringBuilder implements HasHtmlString
                 if (!isBlank(clsValue))
                 appendAttribute(builder, "class", clsValue);
             }
-            builder._sb.append('>');
+            builder.append(HtmlString.unsafe(">"));
         }
         /* NOTE: we could have lots of overrides for different bodies, but it would get out of hand! */
         if (null != body)
@@ -503,7 +507,7 @@ public class HtmlStringBuilder implements HasHtmlString
                 appendBody(builder, item);
         if (null != tagName)
         {
-            builder._sb.append("</").append(tagName).append('>');
+            builder.append(HtmlString.unsafe("</")).append(tagName).append(HtmlString.unsafe(">"));
         }
         return builder;
     }
@@ -674,9 +678,20 @@ public class HtmlStringBuilder implements HasHtmlString
             return fn.apply(new HtmlStringBuilder()).getHtmlString();
         }
 
+        public static HtmlStream createHtml(HtmlStream html, Function<HtmlStream,HtmlStream> fn)
+        {
+            fn.apply(html);
+            return html;
+        }
+
         public static HtmlString createHtmlFragment(Object... body)
         {
             return element(null, null, null, body);
+        }
+
+        public static HtmlStream createHtmlFragment(HtmlStream html, Object... body)
+        {
+            return element(html, null, null, null, body);
         }
     }
 
