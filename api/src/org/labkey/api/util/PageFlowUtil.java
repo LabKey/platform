@@ -1446,7 +1446,7 @@ public class PageFlowUtil
 
     public static String unstyledTextLink(String text, URLHelper url)
     {
-        return unstyledTextLink(text, url.toString(), null, null);
+        return link(text).href(url).clearClasses().toString();
     }
 
 
@@ -2704,7 +2704,9 @@ public class PageFlowUtil
 
             for (ClientDependency cd : resources)
             {
-                modules.addAll(cd.getRequiredModuleContexts(c));
+                // resources can be null if they are somehow not found in the system when being added to the resources set
+                if (cd != null)
+                    modules.addAll(cd.getRequiredModuleContexts(c));
             }
 
             modules.addAll(c.getActiveModules(u));

@@ -113,7 +113,7 @@
         <td style="vertical-align:top;width:99%">
             <table class="lk-fields-table" style="width:99%">
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>name">Name * <%= PageFlowUtil.helpPopup("Name", "This field is required") %></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>name">Name * <%= helpPopup("Name", "This field is required") %></label></td>
                     <td width="99%">
                         <input type="text" name="name" id="<%=h(ID_PREFIX)%>name" size="80" maxlength="255"/>
                     </td>
@@ -125,7 +125,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>shouldIndex">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></label></td>
+                    <td class="labkey-form-label-nowrap"><label for="<%=h(ID_PREFIX)%>shouldIndex">Index <%= helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></label></td>
                     <td width="99%">
                         <input type="checkbox" name="shouldIndex" id="<%=h(ID_PREFIX)%>shouldIndex"/>
                     </td>

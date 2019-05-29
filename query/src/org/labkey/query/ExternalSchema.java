@@ -305,7 +305,7 @@ public class ExternalSchema extends SimpleUserSchema
     @Override
     protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable, ContainerFilter cf)
     {
-        ExternalSchemaTable ret = new ExternalSchemaTable(this, sourceTable, getXbTable(name), cf);
+        ExternalSchemaTable ret = new ExternalSchemaTable(this, sourceTable, getXbTable(name));
         ret.init();
         ret.setContainer(_def.getContainerId());
         return ret;

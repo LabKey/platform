@@ -312,21 +312,8 @@ public class TableUpdaterFileListener implements FileListener
 
             if (srcPath.startsWith("file:"))
             {
-                // Consider paths file:/... and file:///...
-                String srcCore = srcPath.replaceFirst("^file:/+", "/");
-
-                // Do one update for file:/
-                String srcPath1 = "file:" + srcCore;
-                SQLFragment whereClause1 = new SQLFragment(" WHERE ");
-                whereClause1.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath1), new SQLFragment(dbColumnName))).append(" = 1");
-                SQLFragment childPathsSQL1 = new SQLFragment(sharedSQL);
-                childPathsSQL1.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath1.length() + 1), "5000"))));
-                childPathsSQL1.append(whereClause1);
-
-                childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL1);
-
-                // And a second update for file:///
-                String srcPath2 = "file://" + srcCore;
+                // Consider paths with file:///...
+                String srcPath2 = "file://" + srcPath.replaceFirst("^file:/+", "/");;
                 SQLFragment whereClause2 = new SQLFragment(" WHERE ");
                 whereClause2.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath2), new SQLFragment(dbColumnName))).append(" = 1");
                 SQLFragment childPathsSQL2 = new SQLFragment(sharedSQL);
@@ -469,10 +456,6 @@ public class TableUpdaterFileListener implements FileListener
 
             if (!FileUtil.hasCloudScheme(path))
             {
-                srcPath = path.toFile().toURI().toString();      // Legacy URI format (file:/users/...)
-                if (pathExists(srcPath, container))
-                    return srcPath;
-
                 srcPath = path.toFile().getPath();               // File path format (/users/...)
                 if (pathExists(srcPath, container))
                     return srcPath;

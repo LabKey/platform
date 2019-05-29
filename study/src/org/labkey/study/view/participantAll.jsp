@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
+<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
@@ -60,7 +62,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ExpandStateNotifyAction" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
@@ -370,7 +371,7 @@
     %>
     <td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>">
         <%= h(visit.getDisplayString()) %>
-        <%= text(visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "") %>
+        <%= visit.getDescription() != null ? helpPopup("Visit Description", visit.getDescription()) : HtmlString.EMPTY_STRING %>
     </td>
     <%
         }
@@ -468,7 +469,7 @@
         </a><%
         if (null != StringUtils.trimToNull(dataset.getDescription()))
         {
-    %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
+    %><%=helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
         }
     %></th>
     <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%></td>
@@ -504,7 +505,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (StudyManager.getInstance().showQCStates(getContainer()))
+    if (QCStateManager.getInstance().showQCStates(getContainer()))
     {
         row++;
         className = getShadeRowClass(row);
@@ -766,7 +767,7 @@
     {
         if (null == qcstates)
         {
-            List<QCState> states = StudyManager.getInstance().getQCStates(study.getContainer());
+            List<QCState> states = QCStateManager.getInstance().getQCStates(study.getContainer());
             qcstates = new HashMap<>(2 * states.size());
             for (QCState state : states)
                 qcstates.put(state.getRowId(), state);

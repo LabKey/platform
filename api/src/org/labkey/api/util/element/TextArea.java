@@ -43,8 +43,7 @@ public class TextArea extends Input
     @Override
     protected void doInput(StringBuilder sb)
     {
-        sb.append("<textarea")
-                .append(" name=\"").append(getName()).append("\"");
+        sb.append("<textarea name=\"").append(getName()).append("\"");
 
         if (getColumns() != -1)
             sb.append(" cols=\"").append(getColumns()).append("\"");
@@ -96,6 +95,7 @@ public class TextArea extends Input
             return this;
         }
 
+        @Override
         public TextArea build()
         {
             return new TextArea(this);

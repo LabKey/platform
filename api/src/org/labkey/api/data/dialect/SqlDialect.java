@@ -31,6 +31,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
@@ -798,10 +799,10 @@ public abstract class SqlDialect
         }
 
         if (!shouldAdd.isEmpty())
-            throw new IllegalStateException("Need to add " + shouldAdd.size() + " keywords to " + getProductName() + " reserved word list: " + shouldAdd);
+            throw new IllegalStateException("Need to add " + StringUtilsLabKey.pluralize(shouldAdd.size(), "keyword") + " to " + getProductName() + " reserved word list: " + shouldAdd);
 
         if (!shouldRemove.isEmpty())
-            LOG.info("Should remove " + shouldRemove.size() + " keywords from " + getClass().getName() + " reserved word list: " + shouldRemove);
+            LOG.info("Should remove " + StringUtilsLabKey.pluralize(shouldRemove.size(), "keyword") + " from " + getClass().getName() + " reserved word list: " + shouldRemove);
     }
 
 

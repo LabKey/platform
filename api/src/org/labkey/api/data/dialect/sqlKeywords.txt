@@ -479,6 +479,7 @@ issuer
 iterate
 join
 json
+json_table
 k
 key
 key_block_size
@@ -1028,6 +1029,7 @@ successful
 sum
 super
 superuser
+support
 suspend
 swaps
 switches

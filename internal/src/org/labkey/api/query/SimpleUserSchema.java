@@ -214,18 +214,6 @@ public class SimpleUserSchema extends UserSchema
         /**
          * Create the simple table.
          * SimpleTable doesn't add columns until .init() has been called to allow derived classes to fully initialize themselves before adding columns.
-         *
-         * TODO classes that use this constructor should be migrated to SimpleTable(SchemaType schema, TableInfo table, ContainerFilter cf)
-         */
-        @Deprecated
-        public SimpleTable(SchemaType schema, TableInfo table)
-        {
-            super(table, schema, schema.getDefaultContainerFilter());
-        }
-
-        /**
-         * Create the simple table.
-         * SimpleTable doesn't add columns until .init() has been called to allow derived classes to fully initialize themselves before adding columns.
          */
         public SimpleTable(SchemaType schema, TableInfo table, ContainerFilter cf)
         {
@@ -331,7 +319,7 @@ public class SimpleUserSchema extends UserSchema
                     wrap.setLabel("Modified By");
             }
             // also add FK to container field
-            else if ((col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class) &&
+            else if ((col.getJdbcType().getJavaClass() == String.class) &&
                "container".equalsIgnoreCase(colName) &&
                (_userSchema.getDbSchema().getScope().isLabKeyScope()))
             {
@@ -459,6 +447,7 @@ public class SimpleUserSchema extends UserSchema
             return _domain;
         }
 
+        @Override
         public SimpleTableDomainKind getDomainKind()
         {
             if (_objectUriCol == null)

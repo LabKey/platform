@@ -320,7 +320,7 @@ public class AdminController extends SpringActionController
 
     public static void registerManagementTabs()
     {
-        addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", NOT_ROOT, ManageFoldersAction.class);
+        addTab(TYPE.FolderManagement,"Folder Tree", "folderTree", EVERY_CONTAINER, ManageFoldersAction.class);
         addTab(TYPE.FolderManagement,"Folder Type", "folderType", NOT_ROOT, FolderTypeAction.class);
         addTab(TYPE.FolderManagement,"Missing Values", "mvIndicators", EVERY_CONTAINER, MissingValuesAction.class);
         addTab(TYPE.FolderManagement,"Module Properties", "props", c -> {
@@ -344,7 +344,7 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
         addTab(TYPE.FolderManagement,"Formats", "settings", FOLDERS_ONLY, FolderSettingsAction.class);
         addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
-        addTab(TYPE.FolderManagement,"R Config", "rConfig", EVERY_CONTAINER, RConfigurationAction.class);
+        addTab(TYPE.FolderManagement,"R Config", "rConfig", NOT_ROOT, RConfigurationAction.class);
 
         addTab(TYPE.ProjectSettings, "Properties", "properties", ROOT_AND_PROJECTS, ProjectSettingsAction.class);
         addTab(TYPE.ProjectSettings, "Resources", "resources", ROOT_AND_PROJECTS, ResourcesAction.class);
@@ -360,6 +360,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     public class BeginAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             return getShowAdminURL();
