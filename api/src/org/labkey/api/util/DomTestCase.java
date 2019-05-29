@@ -45,10 +45,10 @@ public class DomTestCase extends Assert
         h = createHtml(
             SELECT(at(id,"element"), NOCLASS,
                     Arrays.stream(HtmlStringBuilder.Element.values()).map(el -> OPTION(NOAT, NOCLASS, el.name())),
-                    OPTION(NOAT, NOCLASS, "A&W"))
+                    OPTION(at(selected,true), NOCLASS, "A&W"))
         );
         assertTrue(h.toString().startsWith("<select id=\"element\"><option>a</option>"));
-        assertTrue(h.toString().endsWith("<option>A&amp;W</option></select>"));
+        assertTrue(h.toString().endsWith("<option selected>A&amp;W</option></select>"));
 
         h = createHtml(
                 DIV(NOAT, NOCLASS, new Button.ButtonBuilder("button").build())

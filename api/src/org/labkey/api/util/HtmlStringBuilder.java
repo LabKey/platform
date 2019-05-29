@@ -85,7 +85,14 @@ public class HtmlStringBuilder implements HtmlStream, HasHtmlString
         bgcolor,
         border,
         charset,
-        checked,
+        checked
+        {
+            @Override
+            HtmlStream render(HtmlStream builder, Object value)
+            {
+                return builder.append(HtmlString.unsafe(" checked"));
+            }
+        },
         cite,
 //        className
 //        {
@@ -230,7 +237,14 @@ public class HtmlStringBuilder implements HtmlStream, HasHtmlString
         rowspan,
         sandbox,
         scope,
-        selected,
+        selected
+        {
+            @Override
+            HtmlStream render(HtmlStream builder, Object value)
+            {
+                return builder.append(HtmlString.unsafe(" selected"));
+            }
+        },
         shape,
         size,
         sizes,
