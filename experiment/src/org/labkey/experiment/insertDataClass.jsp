@@ -121,7 +121,7 @@
 <br/>
 <br/>
 <div style="display: <%=h(bean.getXmlParseErrors().isEmpty()?"none":"block")%>;">
-<%=textLink("Show Template Parse Errors", (URLHelper)null, "document.getElementById('warnings').style.display = 'block'; return false;", "showParseErrorsId")%>
+<%=link("Show Template Parse Errors").onClick("document.getElementById('warnings').style.display = 'block'; return false;").id("showParseErrorsId")%>
 </div>
 <br/>
 <div id="warnings" class="labkey-error" style="display: none;">

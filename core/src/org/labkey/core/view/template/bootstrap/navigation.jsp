@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 --%>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate.NavigationModel" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.view.Portal" %>
-<%@ page import="org.labkey.api.view.WebPartFactory" %>
-<%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.WebPartFactory" %>
+<%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate.NavigationModel" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -174,7 +174,7 @@
                             {
                 %>
                 <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
-                    <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText()).replace(" ", "")%>Tab">
+                    <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText().replace(" ", ""))%>Tab">
                         <% if (tab.isDisabled()) { %>
                         <i class="fa fa-eye-slash"></i>
                         <% } %>

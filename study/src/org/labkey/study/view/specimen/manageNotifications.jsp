@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -30,7 +29,7 @@
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
@@ -118,7 +117,7 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td colspan="2" class="local-text-block">Specimen request emails have a configurable template, which controls
                 the subject line and body of the email.
-                <% if (getContainer().hasPermission(getUser(), AdminPermission.class)) { %><%= textLink("Edit Email Template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), SpecimenRequestNotificationEmailTemplate.class, getActionURL()))%><% }
+                <% if (getContainer().hasPermission(getUser(), AdminPermission.class)) { %><%= link("Edit Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), SpecimenRequestNotificationEmailTemplate.class, getActionURL()))%><% }
                 else { %>You must have administrator permissions to edit the template.<% } %>
             </td>
         </tr>

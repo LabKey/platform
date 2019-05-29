@@ -129,7 +129,7 @@
     {
         if (dataset.getTypeURI() == null)
         {
-            %><br/><%=textLink("Bulk import dataset schemas", BulkImportDataTypesAction.class)%><%
+            %><br/><%=link("Bulk import dataset schemas", BulkImportDataTypesAction.class)%><%
         }
     }
 %>

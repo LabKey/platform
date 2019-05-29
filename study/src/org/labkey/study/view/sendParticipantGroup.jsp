@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 %>
-
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.study.controllers.StudyController.SendParticipantGroupForm" %>
-<%@ page import="org.labkey.study.controllers.StudyController.SendParticipantGroupAction" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController.SendParticipantGroupAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.SendParticipantGroupForm" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<SendParticipantGroupForm> me = (JspView<SendParticipantGroupForm>) HttpView.currentView();
     SendParticipantGroupForm bean = me.getModelBean();

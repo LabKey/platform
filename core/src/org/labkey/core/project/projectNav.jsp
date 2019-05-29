@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="java.util.HashSet" %>
@@ -27,7 +26,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     // Create Project URL
-    ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(getContainer().getStartURL(getUser()));
+    ActionURL createProjectURL = urlProvider(AdminUrls.class).getCreateProjectURL(getContainer().getStartURL(getUser()));
 
     NavTree projects = ContainerManager.getProjectList(getViewContext(), false);
     Container currentProject = getContainer().getProject();

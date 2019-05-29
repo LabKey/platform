@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
 <%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -45,7 +44,7 @@
             %>
                             <tr>
                                 <td>
-                                    <p><a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL())%>">Create a trigger to <%=h(fatp.getDescription())%></a></p>
+                                    <p><a href="<%=urlProvider(PipelineUrls.class).urlCreatePipelineTrigger(getContainer(), fatp.getId().getName(), getActionURL())%>">Create a trigger to <%=h(fatp.getDescription())%></a></p>
                                 </td>
                             </tr>
             <%
@@ -58,7 +57,7 @@
             <td>
                 <p>
                     <%=
-                        button("Manage file watcher triggers").href(PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")).build()
+                        button("Manage file watcher triggers").href(urlProvider(QueryUrls.class).urlExecuteQuery(getContainer(), "pipeline", "TriggerConfigurations")).build()
                     %>
                 </p>
             </td>

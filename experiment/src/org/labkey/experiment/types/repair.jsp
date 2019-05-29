@@ -19,26 +19,26 @@
 <%@ page import="org.labkey.api.exp.api.StorageProvisioner" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page import="org.labkey.api.exp.property.DomainKind" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-
 <%
-TypesController.RepairForm form = (TypesController.RepairForm) HttpView.currentModel();
-Domain domain = form.domain;
-DomainKind kind = domain ==null ? null : domain.getDomainKind();
-StorageProvisioner.ProvisioningReport.DomainReport report = form.report;
-ActionURL edit = null==kind ? null : kind.urlEditDefinition(domain, getViewContext());
-ActionURL show = null==kind ? null : kind.urlShowData(domain, getViewContext());
-boolean hasFix = false;
-if (report != null)
-{
-for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
-    if (!StringUtils.isEmpty(st.fix))
-        hasFix = true;
-}
+    TypesController.RepairForm form = (TypesController.RepairForm) HttpView.currentModel();
+    Domain domain = form.domain;
+    DomainKind kind = domain ==null ? null : domain.getDomainKind();
+    StorageProvisioner.ProvisioningReport.DomainReport report = form.report;
+    ActionURL edit = null==kind ? null : kind.urlEditDefinition(domain, getViewContext());
+    ActionURL show = null==kind ? null : kind.urlShowData(domain, getViewContext());
+    boolean hasFix = false;
+    if (report != null)
+    {
+        for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
+            if (!StringUtils.isEmpty(st.fix))
+                hasFix = true;
+    }
 %><table>
         <tr><th align=right>DomainKind</th><td><%=toCell(null==kind?"":kind.getKindName())%></td></tr>
         <tr><th align=right>DomainURI</th><td><%=toCell(form.uri)%></td></tr>
@@ -67,7 +67,6 @@ if (null == report)
 }
 else
 {
-
     %><table><tr style="background-color:#cccccc;"><th>&nbsp;</th><th align=left>Property</th><th align=left>mv</th><th align=left>Column</th><th align=left>mv Column</th><th>Proposed fix</th></tr><%
     for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
     {
@@ -108,10 +107,10 @@ if (!report.getErrors().isEmpty())
 }
 %>
 <%!
-    String toCell(String s)
+    HtmlString toCell(String s)
     {
         if (StringUtils.isEmpty(s))
-            return "&nbsp;";
+            return HtmlString.NBSP;
         return h(s);
     }
 %>

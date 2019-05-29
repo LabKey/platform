@@ -68,10 +68,10 @@
         <td>
             <table>
                 <tr>
-                    <td><%= textLink("Export to Excel", downloadURLPrefix + "xls") %></td>
+                    <td><%=link("Export to Excel").href(downloadURLPrefix + "xls") %></td>
                 </tr>
                 <tr>
-                    <td><%= textLink("Export to text file", downloadURLPrefix + "tsv") %></td>
+                    <td><%=link("Export to text file").href(downloadURLPrefix + "tsv") %></td>
                 </tr>
             </table>
             <br>

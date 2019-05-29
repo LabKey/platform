@@ -46,7 +46,7 @@
 <table style="margin-bottom: 20px;">
     <tr>
         <td>View study schedule.</td>
-        <td><%= textLink("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
+        <td><%= link("Study Schedule", StudyController.StudyScheduleAction.class) %></td>
     </tr>
     <tr>
         <td>Assign data to the correct timepoint</td>
@@ -55,12 +55,12 @@
 <% if (timepoints.size() > 0) { %>
     <tr>
         <td>Timepoints may be deleted by an administrator</td>
-        <td><%= textLink("Delete Multiple Timepoints", StudyController.BulkDeleteVisitsAction.class) %></td>
+        <td><%= link("Delete Multiple Timepoints", StudyController.BulkDeleteVisitsAction.class) %></td>
     </tr>
 <% } %>
     <tr>
         <td>New visits can be defined for this study at any time.</td>
-        <td><%= textLink("Create New Timepoint", CreateVisitAction.class)%></td>
+        <td><%= link("Create New Timepoint", CreateVisitAction.class)%></td>
     </tr>
 </table>
 

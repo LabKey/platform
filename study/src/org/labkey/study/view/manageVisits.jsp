@@ -37,7 +37,7 @@
 <table class="lk-fields-table">
     <tr>
         <td>View study schedule</td>
-        <td><%= textLink("Study Schedule", StudyScheduleAction.class) %></td>
+        <td><%= link("Study Schedule", StudyScheduleAction.class) %></td>
     </tr>
 <%
     if (allVisits.size() > 0)
@@ -45,38 +45,38 @@
 %>
     <tr>
         <td>Visit ordering affects the study view, reports, and cohort determinations</td>
-        <td><%= textLink("Change Visit Order", VisitOrderAction.class)%></td>
+        <td><%= link("Change Visit Order", VisitOrderAction.class)%></td>
     </tr>
     <tr>
         <td>Visit visibility and label can be changed</td>
-        <td><%= textLink("Change Properties", VisitVisibilityAction.class)%></td>
+        <td><%= link("Change Properties", VisitVisibilityAction.class)%></td>
     </tr>
     <tr>
         <td>Visits may be deleted by an administrator</td>
-        <td><%= textLink("Delete Multiple Visits", BulkDeleteVisitsAction.class) %></td>
+        <td><%= link("Delete Multiple Visits", BulkDeleteVisitsAction.class) %></td>
     </tr>
     <tr>
         <td>Delete unused visits</td>
-        <td><%= textLink("Delete Unused Visits", DeleteUnusedVisitsAction.class) %></td>
+        <td><%= link("Delete Unused Visits", DeleteUnusedVisitsAction.class) %></td>
     </tr>
 <%
     }
 %>
     <tr>
         <td>Recalculate visit dates</td>
-        <td><%= textLink("Recalculate Visit Dates", UpdateParticipantVisitsAction.class)%></td>
+        <td><%= link("Recalculate Visit Dates", UpdateParticipantVisitsAction.class)%></td>
     </tr>
     <tr>
         <td>Import a visit map to quickly define a study</td>
-        <td><%= textLink("Import Visit Map", ImportVisitMapAction.class) %></td>
+        <td><%= link("Import Visit Map", ImportVisitMapAction.class) %></td>
     </tr>
     <tr>
         <td>Visit import mapping allows data containing visit names instead of numbers</td>
-        <td><%= textLink("Visit Import Mapping", ShowVisitImportMappingAction.class) %></td>
+        <td><%= link("Visit Import Mapping", ShowVisitImportMappingAction.class) %></td>
     </tr>
     <tr>
         <td>New visits can be defined for this study at any time</td>
-        <td><%= textLink("Create New Visit", CreateVisitAction.class)%></td>
+        <td><%= link("Create New Visit", CreateVisitAction.class)%></td>
     </tr>
 </table>
 

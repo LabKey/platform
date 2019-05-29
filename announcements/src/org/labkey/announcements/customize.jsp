@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.announcements.AnnouncementsController.ModeratorReviewAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -54,11 +52,11 @@
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.CreationDate%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.CreationDate.getIndex())%>></td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=h(DiscussionService.Settings.SortOrder.CreationDate)%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.CreationDate.getIndex())%>></td>
                     <td><b>Initial Post</b> - Sort lists of conversations by date of the first posting.  This is appropriate for announcements and blogs.</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.LatestResponseDate%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.LatestResponseDate.getIndex())%>></td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=h(DiscussionService.Settings.SortOrder.LatestResponseDate)%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.LatestResponseDate.getIndex())%>></td>
                     <td><b>Most Recent Post</b> - Sort lists of conversations by date of the most recent post.  This is often preferred for discussion boards.</td>
                 </tr>
             </table>
@@ -110,7 +108,7 @@
                     {
                 %>
                 <tr>
-                    <td colspan=2 valign="top"><%=textLink("Moderator Review page", new ActionURL(ModeratorReviewAction.class, getContainer()))%></td>
+                    <td colspan=2 valign="top"><%=link("Moderator Review page", ModeratorReviewAction.class)%></td>
                 </tr>
                 <%
                     }
@@ -149,8 +147,8 @@
     <tr>
         <td class="labkey-form-label">Email templates</td>
         <td>
-            <% if (me.getViewContext().getUser().hasRootAdminPermission()) { %><%= textLink("Customize site-wide template", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
-            <%= textLink("Customize template for this " + getContainer().getContainerNoun(), PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%>
+            <% if (me.getViewContext().getUser().hasRootAdminPermission()) { %><%= link("Customize site-wide template", urlProvider(AdminUrls.class).getCustomizeEmailURL(ContainerManager.getRoot(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%><br /><% } %>
+            <%= link("Customize template for this " + getContainer().getContainerNoun(), urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), AnnouncementManager.NotificationEmailTemplate.class, getViewContext().getActionURL()))%>
         </td>
     </tr>
     <tr>

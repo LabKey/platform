@@ -19,11 +19,10 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.issue.view.IssuesListView" %>
-<%@ page import="org.labkey.issue.view.IssuesSummaryWebPartFactory" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="java.util.HashSet" %>
+<%@ page import="org.labkey.issue.view.IssuesListView" %>
+<%@ page import="org.labkey.issue.view.IssuesSummaryWebPartFactory" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
@@ -36,8 +35,7 @@
     ViewContext context = getViewContext();
     Map<String, String> pm = webPart.getPropertyMap();
 
-    Set<String> issueDefs = new HashSet<>();
-    issueDefs.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toSet()));
+    Set<String> issueDefs = IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toSet());
     String selected = pm.get(IssuesListView.ISSUE_LIST_DEF_NAME);
     String title = pm.get("title");
     String titleLabel = "Optional title for the Issues List web part.";
@@ -59,7 +57,7 @@
         <tr>
             <td class="labkey-form-label"><%=h(titleLabel)%>&nbsp<%=helpPopup("Enter the web part title. If omitted. a default title will be generated from the plural items name.")%></td>
             <td>
-                <input name="title" size="25" type="text" value="<%=text(null == title ? null : h(title) )%>">
+                <input name="title" size="25" type="text" value="<%=h(title)%>">
             </td>
         </tr>
     </table>

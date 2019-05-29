@@ -122,7 +122,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
                     <%--<%= button("Reset to Default"). %>&nbsp;--%>
                 <%= button("Save").submit(true) %>
                 <%= button("Reset").onClick(PageFlowUtil.postOnClickJavaScript(buildURL(MiniProfilerController.ResetAction.class))) %>
-                <%= button("Cancel").href(PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
+                <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
             </td>
         </tr>
     </table>

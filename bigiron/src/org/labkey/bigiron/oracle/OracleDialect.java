@@ -302,6 +302,7 @@ abstract class OracleDialect extends SimpleSqlDialect
         return true;
     }
 
+    @Override
     public boolean isOracle()
     {
         return true;
@@ -356,6 +357,7 @@ abstract class OracleDialect extends SimpleSqlDialect
         // Since there is no autoincrement field in oracle, I have set this to false
         // Auto incrementing in Oracle is usually done through combination of a sequence and a before insert trigger
 
+        @Override
         public boolean isAutoIncrement()
         {
             return false;

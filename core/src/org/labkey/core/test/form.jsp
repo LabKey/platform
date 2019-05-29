@@ -45,7 +45,7 @@
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 <%=formatErrorsForPath("form")%>
-<labkey:form enctype="<%=text(enctype)%>" method="POST">
+<labkey:form enctype="<%=enctype%>" method="POST">
     <table>
         <%errorRow(out,"form.a");%>
         <tr><td>a</td><td><input type=checkbox name="a" <%=checked(form.getA())%>><input type=hidden name="<%=h(SpringActionController.FIELD_MARKER)%>a"></td></tr>

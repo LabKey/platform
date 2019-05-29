@@ -31,10 +31,10 @@ directory where uploaded data will be stored.<br><br>
     {
         ActionURL pipelineUrl = urlProvider(PipelineUrls.class).urlSetup(getContainer());
         pipelineUrl.addParameter("referer", getActionURL().getLocalURIString());
-        out.print(textLink("Pipeline Setup", pipelineUrl));
+        out.print(link("Pipeline Setup", pipelineUrl));
         out.print(" ");
     }
 
     if (null == HttpView.currentModel() || (Boolean) HttpView.currentModel())
-        out.print(textLink("Go Back", "#", "window.history.back();return false;", "goback"));
+        out.print(link("Go Back").href("#").onClick("window.history.back();return false;").id("goback"));
 %>
