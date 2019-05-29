@@ -85,7 +85,7 @@
         <li>Schema Name: <%=h(lookup.getSchemaName())%></li>
         <li>Query Name: <%=h(lookup.getQueryName())%></li>
     </ul>
-    <%=textLink("remove", (URLHelper) null, "removeConceptMapping(" + q(uri) + "); return false;", "removeConceptId")%>
+    <%=link("remove").onClick("removeConceptMapping(" + q(uri) + "); return false;").id("removeConceptId")%>
 </div>
 <%
         }

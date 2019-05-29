@@ -27,7 +27,7 @@ import org.labkey.api.util.ShutdownListener;
 public class DbSequence
 {
     private final Container _c;
-    private final int _rowId;
+    private final long _rowId;
     private final String _name;
 
     DbSequence(Container c, String name, int rowId)
@@ -42,7 +42,7 @@ public class DbSequence
         return _name;
     }
 
-    public int getRowId()
+    public long getRowId()
     {
         return _rowId;
     }
@@ -52,17 +52,17 @@ public class DbSequence
         return _c;
     }
 
-    public int current()
+    public long current()
     {
         return DbSequenceManager.current(this);
     }
 
-    public int next()
+    public long next()
     {
         return DbSequenceManager.next(this);
     }
 
-    public void ensureMinimum(int minimum)
+    public void ensureMinimum(long minimum)
     {
         DbSequenceManager.ensureMinimum(this, minimum);
     }
@@ -84,8 +84,8 @@ public class DbSequence
     protected static class Preallocate extends DbSequence implements ShutdownListener
     {
         private final int _batchSize;
-        private Integer _currentValue = null;
-        private Integer _lastReservedValue = null;
+        private Long _currentValue = null;
+        private Long _lastReservedValue = null;
 
         // CONSIDER use a Lock instead of synchronization?  I don't think DbSequenceManager ever deadlocks...
         // private Lock _lock = new ReentrantLock();
@@ -103,18 +103,18 @@ public class DbSequence
             ContextListener.removeShutdownListener(this);
         }
 
-        public synchronized int current()
+        public synchronized long current()
         {
             if (null != _currentValue)
                 return _currentValue;
             return DbSequenceManager.current(this);
         }
 
-        public synchronized int next()
+        public synchronized long next()
         {
             if (null == _lastReservedValue || _currentValue >= _lastReservedValue)
             {
-                Pair<Integer, Integer> reserved = DbSequenceManager.reserve(this, _batchSize);
+                Pair<Long, Long> reserved = DbSequenceManager.reserve(this, _batchSize);
                 _currentValue = reserved.first;
                 _lastReservedValue = reserved.second;
             }
@@ -122,7 +122,7 @@ public class DbSequence
             return _currentValue;
         }
 
-        public synchronized void ensureMinimum(int minimum)
+        public synchronized void ensureMinimum(long minimum)
         {
             if (null != _lastReservedValue && minimum <= _lastReservedValue)
             {

@@ -66,7 +66,7 @@
                                 <li>
                                     <%=h(result.getMessage())%>
                                     <% if (null != result.getLink()) { %>
-                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
                                     <% } %>
                                 </li>
                                 <% } %>
@@ -78,7 +78,7 @@
                                 <li>
                                     <span class="labkey-error"><%=h(result.getMessage())%></span>
                                     <% if (null != result.getLink()) { %>
-                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
                                     <% } %>
                                 </li>
                                 <% } %></ul>
@@ -91,7 +91,7 @@
                                 <li>
                                     <%=h(result.getMessage())%>
                                     <% if (null != result.getLink()) { %>
-                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
                                     <% } %>
                                 </li>
                                 <% } %></ul></li>
@@ -138,7 +138,7 @@
                                 for (SiteValidationResult result : containerInfos) { %>
                                 <li><%=h(result.getMessage())%>
                                     <% if (null != result.getLink()) { %>
-                                    <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                    <span><%=link(LINK_HEADING, result.getLink())%></span>
                                     <% } %>
                                 </li>
                                 <% } %>
@@ -148,7 +148,7 @@
                                     <% for (SiteValidationResult result : containerErrors) { %>
                                         <li><span class="labkey-error"><%=h(result.getMessage())%></span>
                                         <% if (null != result.getLink()) { %>
-                                        <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                        <span><%=link(LINK_HEADING, result.getLink())%></span>
                                         <% } %>
                                     </li>
                                     <% } %></ul></li>
@@ -159,7 +159,7 @@
                                         <% for (SiteValidationResult result : containerWarnings) { %>
                                         <li><%=h(result.getMessage())%>
                                             <% if (null != result.getLink()) { %>
-                                            <span><%=textLink(LINK_HEADING, result.getLink())%></span>
+                                            <span><%=link(LINK_HEADING, result.getLink())%></span>
                                             <% } %>
                                         </li>
                                     <% } %></ul></li>

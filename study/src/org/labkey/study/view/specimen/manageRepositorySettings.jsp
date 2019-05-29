@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.specimen.settings.RepositorySettings" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.specimen.settings.RepositorySettings" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -68,7 +67,7 @@
                 <div>
                     <input type="radio" name="specimenDataEditable" value="true"<%=checked(settings.isSpecimenDataEditable())%>><em>Editable</em>:
                     Specimen data is editable. Note: Vials may be deleted only from the query view:
-                    <%=textLink("Specimen Detail", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(specimenDetailURL))%>
+                    <%=link("Specimen Detail", urlProvider(QueryUrls.class).urlExecuteQuery(specimenDetailURL))%>
                 </div>
             </td></tr>
             <tr><td class="labkey-announcement-title" align="left"><span>Specimen Requests</span></td></tr>

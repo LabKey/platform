@@ -19,6 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityLogger;
@@ -30,6 +32,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -77,6 +81,16 @@ public abstract class ContainerFilter
      */
     @Nullable
     public abstract Type getType();
+
+
+    public String getDefaultCacheKey(Container c)
+    {
+        return getClass().getName() + "/" + c.getId();
+    }
+
+    // return a string such that a.getCacheKey().equals(b.getCacheKey()) => a.equals(b)
+    // This is purposefully abstract, to force the implementer to consider if getDefaultCacheKey() is appropriate
+    abstract public String getCacheKey(Container c);
 
     /**
      * If we can't find the name, we default to CURRENT
@@ -151,17 +165,6 @@ public abstract class ContainerFilter
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container)
     {
         return getSQLFragment(schema, containerColumnSQL, container, true);
-    }
-
-    /**
-     * Create an expression for a WHERE clause
-     * Generally parameters are preferred, but can cause perf problems in certain cases
-     * @param allowNulls - if looking at ALL rows, whether to allow nulls in the Container column
-     */
-    @Deprecated
-    public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
-    {
-        return getSQLFragment(schema, containerColumnSQL, container, allowNulls);
     }
 
     /**
@@ -415,6 +418,12 @@ public abstract class ContainerFilter
 
     public static final ContainerFilter CURRENT = new ContainerFilter()
     {
+        @Override
+        public String getCacheKey(Container c)
+        {
+            return "CURRENT/" + c.getEntityId();
+        }
+
         public Collection<GUID> getIds(Container currentContainer)
         {
             return Collections.singleton(currentContainer.getEntityId());
@@ -436,6 +445,11 @@ public abstract class ContainerFilter
     /** Use this with extreme caution - it doesn't check permissions */
     public static final ContainerFilter EVERYTHING = new ContainerFilter()
     {
+        @Override
+        public String getCacheKey(Container c)
+        {
+            return "EVERYTHING";
+        }
         public Collection<GUID> getIds(Container currentContainer)
         {
             return null;
@@ -454,6 +468,12 @@ public abstract class ContainerFilter
         public ContainerFilterWithUser(User user)
         {
             _user = user;
+        }
+
+        @Override
+        public String getCacheKey(Container c)
+        {
+            return super.getDefaultCacheKey(c) + "/" + _user.getUserId() + "/";
         }
 
         public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container, Class<? extends Permission> permission, Set<Role> roles)
@@ -502,6 +522,13 @@ public abstract class ContainerFilter
             _ids = toIds(containers);
         }
 
+        @Override
+        public String getCacheKey(Container c)
+        {
+            // container is ignored
+            return getClass().getName() + "/" + StringUtils.join(_ids, ";");
+        }
+
         public Collection<GUID> getIds(Container currentContainer)
         {
             return _ids;
@@ -528,9 +555,18 @@ public abstract class ContainerFilter
             _ids = toIds(containers);
         }
 
+        @Override
+        public String getCacheKey(Container c)
+        {
+            // container is ignored
+            return getClass().getName() + "/" + _user.getUserId() + "/" + StringUtils.join(_ids, ";");
+        }
+
+        @Override
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
-            Set<GUID> result = _ids.stream()
+            Set<GUID> result;
+            result = _ids.stream()
                     .map(ContainerManager::getForId)
                     .filter(Objects::nonNull)
                     .filter(c -> c.hasPermission(_user, permission, roles))
@@ -556,6 +592,14 @@ public abstract class ContainerFilter
             //Note: dont force upstream code to consider this
             _extraContainers = new ArrayList<>(Arrays.asList(extraContainers));
             _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
+        }
+
+        @Override
+        public String getCacheKey(Container c)
+        {
+            StringBuilder sb = new StringBuilder(super.getCacheKey(c));
+            _extraContainers.stream().map(Container::getEntityId).forEach(id -> sb.append(id).append("/"));
+            return sb.toString();
         }
 
         @Override
@@ -830,6 +874,12 @@ public abstract class ContainerFilter
         }
 
         @Override
+        public String getCacheKey(Container c)
+        {
+            return super.getCacheKey(c) + _skipPermissionChecks;
+        }
+
+        @Override
         public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<GUID> result = new HashSet<>();
@@ -971,6 +1021,7 @@ public abstract class ContainerFilter
             return ids;
         }
 
+        @Override
         public Type getType()
         {
             return Type.AllFolders;
@@ -983,6 +1034,12 @@ public abstract class ContainerFilter
         public InternalNoContainerFilter(User user)
         {
             super(user);
+        }
+
+        @Override
+        public String getCacheKey(Container c)
+        {
+            return "EVERYTHING";
         }
 
         @Override
@@ -1090,5 +1147,53 @@ public abstract class ContainerFilter
         if (!_log.isDebugEnabled())
             return;
         _log.debug("setContainerFilter( " + StringUtils.join(parts, " ") + ", " + String.valueOf(cf) + " )");
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testCacheKey()
+        {
+            Container home = ContainerManager.getHomeContainer();
+            Container root = ContainerManager.getRoot();
+            Container shared = ContainerManager.getSharedContainer();
+            Container test = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            assertNotEquals(home, test);
+
+            assertEquals(CURRENT.getCacheKey(home), CURRENT.getCacheKey(home));
+            assertNotEquals(CURRENT.getCacheKey(home), CURRENT.getCacheKey(test));
+
+            // SimpleContainerFilter ignores argument to getCacheKey() in container
+            assertEquals(new SimpleContainerFilterWithUser(user, test).getCacheKey(home), new SimpleContainerFilterWithUser(user, test).getCacheKey(test));
+            assertNotEquals(new SimpleContainerFilterWithUser(user, home).getCacheKey(home), new SimpleContainerFilterWithUser(user, test).getCacheKey(home));
+
+            assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter(null).getCacheKey(null));
+            assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter(user).getCacheKey(home));
+
+            assertEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, shared).getCacheKey(home));
+            assertNotEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, shared).getCacheKey(test));
+            assertNotEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, test).getCacheKey(home));
+            assertNotEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, home).getCacheKey(shared));
+
+            for (var type : Type.values())
+            {
+                assertEquals(type.name(), type.create(user).getCacheKey(home), type.create(user).getCacheKey(home));
+                assertNotEquals(type.name(), type.create(user).getCacheKey(home), type.create(user).getCacheKey(shared));
+            }
+
+            for (var outer : Type.values())
+            {
+                String outerKey = outer.create(user).getCacheKey(home);
+                for (var inner : Type.values())
+                {
+                    if (outer == inner)
+                        continue;
+                    assertNotEquals(outerKey, inner.create(user).getCacheKey(home));
+                }
+            }
+        }
     }
 }

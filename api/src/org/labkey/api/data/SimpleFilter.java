@@ -27,7 +27,6 @@ import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -51,7 +50,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
@@ -210,7 +208,7 @@ public class SimpleFilter implements Filter
         /** @return non-URL encoded name/value pair. Value may be null if there's none to be used (for IS BLANK or similar clauses).
          * The whole return value may be null if this clause can't be represented on the URL */
         @Nullable
-        public  Map.Entry<String, String> toURLParam(String dataRegionPrefix)
+        public Map.Entry<String, String> toURLParam(String dataRegionPrefix)
         {
             return null;
         }
@@ -225,17 +223,6 @@ public class SimpleFilter implements Filter
             else
                 sb.append(sqlf);
             return result;
-        }
-
-        /**
-         * @deprecated Use {@link #getFieldKeys()}
-         */
-        @Deprecated
-        public List<String> getColumnNames()
-        {
-            return getFieldKeys().stream()
-                .map(QueryKey::toString)
-                .collect(Collectors.toList());
         }
 
         abstract public List<FieldKey> getFieldKeys();
@@ -372,11 +359,13 @@ public class SimpleFilter implements Filter
             _fieldKeys = Arrays.asList(fieldKeys);
         }
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return _fragment;
         }
 
+        @Override
         public List<FieldKey> getFieldKeys()
         {
             return Collections.unmodifiableList(_fieldKeys);
@@ -410,6 +399,7 @@ public class SimpleFilter implements Filter
             _clauses = new ArrayList<>(Arrays.asList(clauses));
         }
 
+        @Override
         public List<FieldKey> getFieldKeys()
         {
             List<FieldKey> result = new ArrayList<>();
@@ -425,6 +415,7 @@ public class SimpleFilter implements Filter
             _clauses.add(clause);
         }
 
+        @Override
         public Object[] getParamVals()
         {
             List<Object> result = new ArrayList<>();
@@ -436,6 +427,7 @@ public class SimpleFilter implements Filter
             return result.toArray(new Object[result.size()]);
         }
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
@@ -538,16 +530,19 @@ public class SimpleFilter implements Filter
             _clause = clause;
         }
 
+        @Override
         public List<FieldKey> getFieldKeys()
         {
             return _clause.getFieldKeys();
         }
 
+        @Override
         public Object[] getParamVals()
         {
             return _clause.getParamVals();
         }
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
@@ -729,14 +724,14 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 if (isNegated())
-                    in.append(") AND " + alias + " IS NOT NULL)");
+                    in.append(") AND ").append(alias).append(" IS NOT NULL)");
                 else
-                    in.append(") OR " + alias + " IS NULL)");
+                    in.append(") OR ").append(alias).append(" IS NULL)");
             }
             else
             {
                 if (isNegated())
-                    in.append(") OR " + alias + " IS NULL)");
+                    in.append(") OR ").append(alias).append(" IS NULL)");
                 else
                     in.append("))");
             }
@@ -745,6 +740,7 @@ public class SimpleFilter implements Filter
         }
 
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             Object[] params = getParamVals();
@@ -794,14 +790,14 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 if (isNegated())
-                    in.append(") AND " + alias + " IS NOT NULL)");
+                    in.append(") AND ").append(alias).append(" IS NOT NULL)");
                 else
-                    in.append(") OR " + alias + " IS NULL)");
+                    in.append(") OR ").append(alias).append(" IS NULL)");
             }
             else
             {
                 if (isNegated())
-                    in.append(") OR " + alias + " IS NULL)");
+                    in.append(") OR ").append(alias).append(" IS NULL)");
                 else
                     in.append("))");
             }
@@ -902,6 +898,7 @@ public class SimpleFilter implements Filter
         }
 
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
@@ -1199,7 +1196,7 @@ public class SimpleFilter implements Filter
 
     public SimpleFilter addBetween(FieldKey fieldKey, Comparable value1, Comparable value2)
     {
-        if (value1 != null && value2 != null && value1.equals(value2))
+        if (value1 != null && value1.equals(value2))
             addCondition(fieldKey, value1);  // Equal
         else if (value1 != null && value2 != null && value1.compareTo(value2) > 0)
         {
@@ -1289,6 +1286,7 @@ public class SimpleFilter implements Filter
         return false;
     }
 
+    @Override
     public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos)
     {
         if (null == _clauses || 0 == _clauses.size())
@@ -1308,6 +1306,7 @@ public class SimpleFilter implements Filter
         return getSQLFragment(dialect, Collections.emptyMap());
     }
 
+    @Override
     public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
         SQLFragment ret = new SQLFragment();
@@ -1358,6 +1357,7 @@ public class SimpleFilter implements Filter
     }
 
 
+    @Override
     public Set<FieldKey> getWhereParamFieldKeys()
     {
         Set<FieldKey> paramNames = new HashSet<>(_clauses.size());
@@ -1427,6 +1427,7 @@ public class SimpleFilter implements Filter
         return result.toString();
     }
 
+    @Override
     public String toSQLString(SqlDialect dialect)
     {
         SQLFragment fragment = getSQLFragment(dialect);

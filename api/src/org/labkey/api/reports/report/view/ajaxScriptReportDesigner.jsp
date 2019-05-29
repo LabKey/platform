@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -41,11 +42,11 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.LinkedList" %>
+<%@ page import="static java.lang.Boolean.TRUE" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
-<%@ page import="static java.lang.Boolean.TRUE" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -108,7 +109,7 @@
         Map<String, Object> script = new HashMap<>();
         ReportDescriptor desc = r.getDescriptor();
 
-        script.put("name", desc.getReportName());
+        script.put("name", PageFlowUtil.filter(desc.getReportName()));
         script.put("reportId", String.valueOf(desc.getReportId()));
         script.put("included", includedReports.contains(desc.getReportId().toString()));
 
@@ -118,11 +119,12 @@
     // TODO, add an action to get this information
     Map<String, Object> reportConfig = new HashMap<>();
 
-    // Since we are writing to the JS object via HTML these user-defined props need to be escaped
-    reportConfig.put("schemaName", h(bean.getSchemaName()));
-    reportConfig.put("queryName", h(bean.getQueryName()));
-    reportConfig.put("viewName", h(bean.getViewName()));
-    reportConfig.put("dataRegionName", h(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
+    // Since we are writing to the JS object via HTML these user-defined props need to be escaped. But these need to be
+    // Strings, not HtmlStrings, so use PageFlowUtil.filter().
+    reportConfig.put("schemaName", PageFlowUtil.filter(bean.getSchemaName()));
+    reportConfig.put("queryName", PageFlowUtil.filter(bean.getQueryName()));
+    reportConfig.put("viewName", PageFlowUtil.filter(bean.getViewName()));
+    reportConfig.put("dataRegionName", PageFlowUtil.filter(StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT)));
     reportConfig.put("reportType", bean.getReportType());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
     reportConfig.put("reportAccess", bean.getReportAccess());

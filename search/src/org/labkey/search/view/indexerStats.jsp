@@ -43,7 +43,7 @@ else
     %></table><%
 }
 %>
-<%=textLink("Export index contents", SearchController.IndexContentsAction.class)%>
+<%=link("Export index contents", SearchController.IndexContentsAction.class)%>
 <%!
     private void renderMap(JspWriter out, Map<String, Object> m) throws IOException
     {

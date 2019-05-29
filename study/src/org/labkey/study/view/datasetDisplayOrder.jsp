@@ -108,7 +108,7 @@ function orderModule(down)
                         first = false;
                     }
                     %>
-                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString()) + text(padding.toString())%></option>
+                    <option value="<%= def.getDatasetId() %>"><%=h(desc.toString())%><%=text(padding.toString())%></option>
                     <%
                 }
                 %>

@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -33,7 +32,7 @@
     // TODO: wrap javascript in anonymous function
     // TOOD: disable start button?
     // TODO: Fix these URLs
-    ActionURL startReportURL = PageFlowUtil.urlProvider(QueryUrls.class).urlStartBackgroundRReport(context.cloneActionURL(), String.valueOf(bean.getReportId()));
+    ActionURL startReportURL = urlProvider(QueryUrls.class).urlStartBackgroundRReport(context.cloneActionURL(), String.valueOf(bean.getReportId()));
 %>
 <script type="text/javascript">
     function startJob()
@@ -92,13 +91,13 @@
 <table>
     <tr class="labkey-wp-header"><th colspan="2" align="left">R Background Job Status</th></tr>
     <tr><td colspan="2"><i>Your R script is configured to run in the background as a pipeline job. You can check status
-        on a running job <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer())%>">here</a> or start a new background job. If the job has been completed, the results will be shown on this
+        on a running job <a href="<%=h(urlProvider(PipelineUrls.class).urlBegin(getContainer()))%>">here</a> or start a new background job. If the job has been completed, the results will be shown on this
         page. You can also view the report results from the pipeline job status page by clicking on the 'data' button. When you click on the start button, a new background job will be launched.
     </i></td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr><td><%= button("Start Job").href("javascript:void(0)").onClick("javascript:startJob()") %></td></tr>
     <tr><td colspan="2">&nbsp;</td></tr>
-    <tr><td colspan="2"><div class="start-job-success" style="display: none">The pipeline job has been successfully queued, to view the status <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer())%>">click here</a>.
+    <tr><td colspan="2"><div class="start-job-success" style="display: none">The pipeline job has been successfully queued, to view the status <a href="<%=h(urlProvider(PipelineUrls.class).urlBegin(getContainer()))%>">click here</a>.
         </div></td></tr>
 </table>

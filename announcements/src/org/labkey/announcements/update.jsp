@@ -59,14 +59,14 @@
 
 <labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="rowId" value="<%=ann.getRowId()%>"/>
-<labkey:input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>"/>
+<labkey:input type="hidden" name="entityId" value="<%=ann.getEntityId()%>"/>
 <labkey:input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>"/>
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table><%
 
 if (settings.isTitleEditable())
 {
-    %><tr><td class='labkey-form-label'>Title * <%= helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input name="title" size="60" maxLength="255" value="<%=h(ann.getTitle())%>" onChange="LABKEY.setDirty(true);"/></td></tr><%
+    %><tr><td class='labkey-form-label'>Title * <%= helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input name="title" size="60" maxLength="255" value="<%=ann.getTitle()%>" onChange="LABKEY.setDirty(true);"/></td></tr><%
 }
 
 if (settings.hasStatus())
@@ -83,7 +83,7 @@ if (settings.hasMemberList())
 {
     %><tr>
         <td class="labkey-form-label">Members</td>
-        <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=h(completeUserUrl)%>" value="<%=h(bean.memberList)%>"/></td>
+        <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
         <td><i><%
     if (settings.isSecure())
     {

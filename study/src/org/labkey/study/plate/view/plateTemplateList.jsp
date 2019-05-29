@@ -102,7 +102,7 @@
             if (isAssayDesigner || c.hasPermission(getUser(), UpdatePermission.class))
             {
         %>
-            <%= textLink("edit", new ActionURL(PlateController.DesignerAction.class, getContainer()).
+            <%= link("edit", new ActionURL(PlateController.DesignerAction.class, getContainer()).
                 addParameter("templateName", template.getName()).
                 addParameter("plateId", template.getRowId())) %>
         <%
@@ -110,7 +110,7 @@
             if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
-            <%= textLink("edit a copy", new ActionURL(PlateController.DesignerAction.class, getContainer()).
+            <%= link("edit a copy", new ActionURL(PlateController.DesignerAction.class, getContainer()).
                 addParameter("copy", true).
                 addParameter("templateName", template.getName()).
                 addParameter("plateId", template.getRowId())) %>
@@ -119,7 +119,7 @@
             if (c.hasPermission(getUser(), InsertPermission.class))
             {
         %>
-            <%= textLink("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
+            <%= link("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
                 addParameter("templateName", template.getName()).
                 addParameter("plateId", template.getRowId())) %>
         <%
@@ -177,14 +177,14 @@
             if (types == null || types.isEmpty())
             {
         %>
-                <%= textLink("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%><br/>
+                <%= link("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%><br/>
         <%
             }
             for (String template : types)
             {
                 designerURL.replaceParameter("templateType", template);
             %>
-                <%= textLink("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%><br/>
+                <%= link("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%><br/>
         <%  }
         }
     }%>

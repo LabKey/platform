@@ -266,22 +266,24 @@ public abstract class Method
         labkeyMethod.put("log", new JdbcMethod("log", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("log10", new JdbcMethod("log10", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("locate", new Method("locate", JdbcType.INTEGER, 2, 3)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
             {
-                public MethodInfo getMethodInfo()
+                return new AbstractQueryMethodInfo(_jdbcType)
                 {
-                    return new AbstractQueryMethodInfo(_jdbcType)
+                    @Override
+                    public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
                     {
-                        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
-                        {
-                            assert arguments.length == 2 || arguments.length == 3;
-                            if (arguments.length == 2)
-                                return  dialect.sqlLocate(arguments[0], arguments[1]);
-                            else
-                                return dialect.sqlLocate(arguments[0], arguments[1], arguments[2]);
-                        }
-                    };
-                }
-            });
+                        assert arguments.length == 2 || arguments.length == 3;
+                        if (arguments.length == 2)
+                            return  dialect.sqlLocate(arguments[0], arguments[1]);
+                        else
+                            return dialect.sqlLocate(arguments[0], arguments[1], arguments[2]);
+                    }
+                };
+            }
+        });
         labkeyMethod.put("lower", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("ltrim", new JdbcMethod("ltrim", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
@@ -489,6 +491,7 @@ public abstract class Method
             _name = name;
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             return dialect.formatJdbcFunction(_name, arguments);
@@ -503,6 +506,7 @@ public abstract class Method
             super(method._name, method._jdbcType);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] argumentsIN)
         {
             SQLFragment[] arguments = argumentsIN.clone();
@@ -576,6 +580,7 @@ public abstract class Method
             return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema().getSqlDialect(), fragments), jdbcType);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] fragments)
         {
             JdbcType jdbcType = null;
@@ -690,6 +695,7 @@ public abstract class Method
             return jdbcType;
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
@@ -721,7 +727,8 @@ public abstract class Method
 		// https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=7078
         // Even though we are generating {fn ROUND()}, SQL Server requires 2 arguments
         // while Postgres requires 1 argument (for doubles)
-		public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
+		@Override
+        public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
 		{
             boolean supportsRoundDouble = dialect.supportsRoundDouble();
             boolean unitRound = arguments.length == 1 || (arguments.length==2 && arguments[1].getSQL().equals("0"));
@@ -766,6 +773,7 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             if (arguments.length == 2)
@@ -790,6 +798,7 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             MethodInfo year = labkeyMethod.get("year").getMethodInfo();
@@ -903,6 +912,7 @@ public abstract class Method
             super(JdbcType.BOOLEAN);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
@@ -926,6 +936,7 @@ public abstract class Method
             super(JdbcType.DECIMAL);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             return new SQLFragment("CAST(" + (new DecimalFormat("0.0###")).format(ModuleLoader.getInstance().getCoreModule().getVersion()) + " AS NUMERIC(15,4))");
@@ -939,6 +950,7 @@ public abstract class Method
             super(JdbcType.INTEGER);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
@@ -973,6 +985,7 @@ public abstract class Method
             super(JdbcType.VARCHAR);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
@@ -1001,6 +1014,7 @@ public abstract class Method
             this.path = path;
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             String v;
@@ -1024,6 +1038,7 @@ public abstract class Method
             super(JdbcType.VARCHAR);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             String moduleName = toSimpleString(arguments[0]);
@@ -1128,6 +1143,7 @@ public abstract class Method
             super(JdbcType.VARCHAR);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
@@ -1144,6 +1160,7 @@ public abstract class Method
             super(JdbcType.BOOLEAN);
         }
 
+        @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment groupArg = arguments[0];

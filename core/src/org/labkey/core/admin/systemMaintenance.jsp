@@ -18,6 +18,9 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
+<%@ page import="org.labkey.api.util.HasHtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.MaintenanceTask" %>
 <%@ page import="org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties" %>
@@ -63,7 +66,7 @@
             {
         %>
         <tr>
-            <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenance tasks now: <%=textLink("Run all tasks", "javascript:submitSystemMaintenance()")%></td>
+            <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenance tasks now: <%=link("Run all tasks").href("javascript:submitSystemMaintenance()")%></td>
         </tr>
 
         <tr>
@@ -84,11 +87,14 @@
                     {
                         if (!task.hideFromAdminPage())
                         {
-                            String description;
+                            HasHtmlString description;
                             if (hasAdminOpsPerms)
-                                description = textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
+                                description = link(task.getDescription()).href("javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
                             else
-                                description = "<span class=\"labkey-disabled-text-link labkey-enabled-option\">" + h(task.getDescription()) + "</span>";
+                                description = HtmlStringBuilder
+                                    .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))
+                                    .append(task.getDescription())
+                                    .append(HtmlString.unsafe("</span>"));
                             if (!task.canDisable())
                             {
                 %><tr><td><input type="checkbox" disabled checked/><%=text(description)%></td></tr><%

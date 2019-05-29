@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ShortURLRecord" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -32,7 +31,7 @@
         They are similar to TinyURL or bit.ly links. Users can access a short URL using a link like <%= h(exampleURL) %>
     </p>
     <p>
-        If the server or port number are incorrect, you can correct the Base Server URL in <a href="<%= h(PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL()) %>">Site Settings</a>
+        If the server or port number are incorrect, you can correct the Base Server URL in <a href="<%= h(urlProvider(AdminUrls.class).getCustomizeSiteURL()) %>">Site Settings</a>
     </p>
 </div>
 

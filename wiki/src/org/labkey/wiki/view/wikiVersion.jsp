@@ -78,7 +78,7 @@ else
        <tr><td colspan=2>&nbsp;</td></tr>
        <tr>
            <td align="left">
-               <%=textLink("page", bean.pageURL)%>&nbsp;<%=textLink("history", bean.versionsURL)%>&nbsp;<%=textLink("source", bean.sourceURL)%>
+               <%=link("page", bean.pageURL)%>&nbsp;<%=link("history", bean.versionsURL)%>&nbsp;<%=link("source", bean.sourceURL)%>
            </td>
            <td align="right">
 <%

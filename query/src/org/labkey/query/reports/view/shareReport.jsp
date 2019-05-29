@@ -18,14 +18,14 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.Report" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.query.reports.ReportsController.ShareReportAction" %>
 <%@ page import="org.labkey.query.reports.ReportsController.ShareReportForm" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ShareReportForm> me = (JspView<ShareReportForm>) HttpView.currentView();
@@ -67,7 +67,7 @@
             <b>Recipients (one per line):</b>
             <labkey:autoCompleteTextArea
                 name="recipientList" id="recipientList" rows="6" cols="95"
-                url="<%=h(completionUrl)%>" value="<%=h(bean.getRecipientList())%>"
+                url="<%=completionUrl%>" value="<%=bean.getRecipientList()%>"
             />
             <br/>
 

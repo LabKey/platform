@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.reports.report.ReportUrls"%>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
     StudyController.CustomizeParticipantViewForm bean = me.getModelBean();
@@ -81,7 +81,7 @@
                 <%= button("Save and Finish").submit(true).onClick("document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;") %>
                 <%= text(bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ?
                         button("Cancel").href(bean.getReturnUrl()).toString() :
-                        button("Cancel").href(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer())).toString() ) %>
+                        button("Cancel").href(urlProvider(ReportUrls.class).urlManageViews(getContainer())).toString() ) %>
                 <%= button("Restore default script").submit(true).onClick("if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
             </td>
         </tr>

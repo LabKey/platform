@@ -50,9 +50,9 @@
     The assay type defines things like how the data is parsed and what kinds of analysis tools are provided.
 </p>
 <p>If you want to import an existing assay design in the <a href="<%= h(new HelpTopic("XarTutorial").getHelpTopicHref()) %>">XAR file format</a> (a .xar or .xar.xml file), you can
-    <%= textLink("upload", urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer())) %>it directly
+    <%= link("upload", urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer())) %>it directly
     or upload the file into this folder's pipeline directory and import using the
-    <%= textLink("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL())) %>
+    <%= link("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL())) %>
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.
