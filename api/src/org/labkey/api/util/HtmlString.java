@@ -3,7 +3,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class HtmlString
+public final class HtmlString
 {
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
