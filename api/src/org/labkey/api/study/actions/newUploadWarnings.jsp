@@ -77,7 +77,7 @@
 
         <%-- Used by button handlers --%>
         window.getRegionForm = function() {
-            var form = $('form[lk-region-form="ExperimentRun"]');
+            var form = $('form[lk-region-form="Runs"]');
             if (form.length == 1) {
                 return form[0];
             }
