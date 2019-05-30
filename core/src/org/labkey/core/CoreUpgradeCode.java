@@ -24,11 +24,15 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.security.Encryption;
@@ -36,13 +40,17 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -252,5 +260,64 @@ public class CoreUpgradeCode implements UpgradeCode
                 }
             }
         }
+    }
+
+    /**
+     * Invoked from 18.35-18.36 to encrypt RServe configuration passwords
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void encryptRServeConfigPassword(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+            if (svc != null)
+            {
+                try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("type"), ExternalScriptEngineDefinition.Type.R);
+                    new TableSelector(CoreSchema.getInstance().getTableInfoReportEngines(),
+                            PageFlowUtil.set("rowid", "configuration"),
+                            filter, null).forEachMap(map -> {
+
+                                Integer rowId = (Integer)map.get("rowid");
+                                String config = (String)map.get("configuration");
+                                encryptPassword(rowId, config);
+                    });
+                    transaction.commit();
+                }
+            }
+        }
+    }
+
+    private boolean encryptPassword(Integer rowId, String configuration)
+    {
+        if (rowId != null && configuration != null)
+        {
+            ExternalScriptEngineDefinitionImpl def = new ExternalScriptEngineDefinitionImpl();
+            try
+            {
+                // parse the JSON string but don't attempt to decrypt the password
+                def.setConfiguration(configuration, false);
+                if (def.isRemote() && def.getPassword() != null)
+                {
+                    def.setChangePassword(true);
+                    def.updateConfiguration();
+
+                    User user = UserManager.getUser(def.getModifiedBy());
+                    if (user == null || !user.isActive())
+                        user = User.getSearchUser();
+
+                    Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), PageFlowUtil.map("configuration", def.getConfiguration()), rowId);
+                    return true;
+                }
+            }
+            catch (IOException e)
+            {
+                LOG.error("unable to encrypt saved remote R engine password", e);
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
     }
 }
