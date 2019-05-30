@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@labkey/dependencies": "0.0.4",
-    "@glass/base": "0.2.0",
-    "@glass/domainproperties": "0.0.9",
+    "@glass/base": "0.3.0-fb-package-updates.1",
+    "@glass/domainproperties": "0.0.10-fb-package-updates.1",
     "classnames": "2.2.6"
   },
   "devDependencies": {
