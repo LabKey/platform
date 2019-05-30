@@ -1668,6 +1668,8 @@ public class PageFlowUtil
         if (extraResources != null)
             resources.addAll(extraResources);
 
+        resources.removeIf(Objects::isNull);
+
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, config, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
