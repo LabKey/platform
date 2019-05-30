@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)

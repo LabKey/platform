@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.announcements.EmailOption" %>
+<%@ page import="org.labkey.api.audit.provider.FileSystemAuditProvider" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.api.webdav.WebdavService" %>
+<%@ page import="org.labkey.filecontent.message.FileContentDigestProvider" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.filecontent.message.FileContentDigestProvider" %>
-<%@ page import="org.labkey.api.audit.provider.FileSystemAuditProvider" %>
-<%@ page import="org.labkey.api.announcements.EmailOption" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -38,7 +37,7 @@
     FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
     EmailOption pref = EmailOption.NOT_SET;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
-    ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
+    ActionURL emailPrefs = urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
 //    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 

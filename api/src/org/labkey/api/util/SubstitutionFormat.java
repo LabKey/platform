@@ -341,7 +341,7 @@ public class SubstitutionFormat
 
             // Increment sample counters for the given date or today's date if null
             // TODO: How can we check if we have incremented sample counters for this same date within the current context/row?
-            Map<String, Integer> counts = ExperimentService.get().incrementSampleCounts(date);
+            Map<String, Long> counts = ExperimentService.get().incrementSampleCounts(date);
             return counts.get(_name);
         }
     }

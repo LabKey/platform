@@ -271,7 +271,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
         }
         catch (Exception e)
         {
-            _log.error("Error occured serializing report properties.", e);
+            _log.error("Error occurred serializing report properties.", e);
         }
     }
 
@@ -296,7 +296,7 @@ public class ReportPropsManager extends ContainerManager.AbstractContainerListen
             }
             catch (Exception e)
             {
-                _log.error("Error occured importing report properties.", e);
+                _log.error("Error occurred importing report properties.", e);
             }
         }
     }

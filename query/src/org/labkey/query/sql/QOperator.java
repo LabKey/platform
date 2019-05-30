@@ -65,6 +65,7 @@ final public class QOperator extends QExpr
         return _op.needsParentheses(child, child == getFirstChild());
     }
 
+    @Override
     public String getValueString()
     {
         StringBuilder ret = new StringBuilder(_op.getPrefix());

@@ -34,6 +34,7 @@ abstract public class QFieldKey extends QExpr
         return new QDot(parent, new QIdentifier(key.getName()));
     }
 
+    @Override
     abstract public FieldKey getFieldKey();
 
     public void appendSql(SqlBuilder builder, Query query)

@@ -43,7 +43,7 @@
 <labkey:form action="<%=h(buildURL(manageAction.getClass()))%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
-    <labkey:panel title="<%=h(currentQCPanelTitle)%>">
+    <labkey:panel title="<%=currentQCPanelTitle%>">
         <table id="qcStatesTable" class="lk-fields-table">
             <tr>
                 <th><b>State Name</b></th>
@@ -107,7 +107,7 @@
         if (manageAction.hasQcStateDefaultsPanel())
         {
     %>
-    <labkey:panel title="<%=h(defaultStatesPanelTitle)%>">
+    <labkey:panel title="<%=defaultStatesPanelTitle%>">
         <%= text(manageAction.getQcStateDefaultsPanel(container, qcStateHandler)) %>
     </labkey:panel>
     <%

@@ -28,11 +28,52 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.PanelButton;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -70,7 +111,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -157,7 +197,30 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.*;
+import org.labkey.experiment.ChooseExperimentTypeBean;
+import org.labkey.experiment.ConfirmDeleteView;
+import org.labkey.experiment.CustomPropertiesView;
+import org.labkey.experiment.DataClassWebPart;
+import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExpDataFileListener;
+import org.labkey.experiment.ExperimentRunDisplayColumn;
+import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.LineageGraphDisplayColumn;
+import org.labkey.experiment.MoveRunsBean;
+import org.labkey.experiment.NoPipelineRootSetView;
+import org.labkey.experiment.ParentChildView;
+import org.labkey.experiment.ProtocolApplicationDisplayColumn;
+import org.labkey.experiment.ProtocolDisplayColumn;
+import org.labkey.experiment.ProtocolWebPart;
+import org.labkey.experiment.RunGroupWebPart;
+import org.labkey.experiment.SampleSetDisplayColumn;
+import org.labkey.experiment.SampleSetWebPart;
+import org.labkey.experiment.StandardAndCustomPropertiesView;
+import org.labkey.experiment.XarExportPipelineJob;
+import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -335,7 +398,9 @@ public class ExperimentController extends SpringActionController
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
+            String selectionKey = form.getJsonObject().optString("selectionKey", null);
             List<ExpRun> runs = new ArrayList<>();
+
             // Accept either an explicit list of run IDs
             if (form.getJsonObject().has("runIds"))
             {
@@ -350,21 +415,15 @@ public class ExperimentController extends SpringActionController
                 }
             }
             // Or a reference to a DataRegion selection key
-            else if (form.getJsonObject().has("selectionKey"))
+            else if (selectionKey != null)
             {
-                Set<String> ids = DataRegionSelection.getSelected(getViewContext(), form.getJsonObject().getString("selectionKey"), true, true);
-                for (String id : ids)
+                Set<Integer> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, true, false);
+                for (Integer id : ids)
                 {
-                    try
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(id);
+                    if (run != null)
                     {
-                        ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(Integer.parseInt(id));
-                        if (run != null)
-                        {
-                            runs.add(run);
-                        }
-                    }
-                    catch (NumberFormatException ignored)
-                    {
+                        runs.add(run);
                     }
                 }
             }
@@ -372,7 +431,11 @@ public class ExperimentController extends SpringActionController
             {
                 throw new NotFoundException();
             }
+
             ExpExperiment group = ExperimentService.get().createHiddenRunGroup(getContainer(), getUser(), runs.toArray(new ExpRun[runs.size()]));
+            if (selectionKey != null)
+                DataRegionSelection.clearAll(getViewContext(), selectionKey);
+
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.putBean(group, "rowId", "LSID", "name", "hidden");
             return response;
@@ -565,7 +628,7 @@ public class ExperimentController extends SpringActionController
                 {
                     super.populateButtonBar(view, bar);
 
-                    bar.add(getDeriveSamplesButton());
+                    bar.add(getDeriveSamplesButton(_source.getRowId()));
                 }
 
                 @Override
@@ -732,7 +795,7 @@ public class ExperimentController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    bar.add(getDeriveSamplesButton());
+                    bar.add(getDeriveSamplesButton(null));
                 }
             };
             view.setShowDetailsColumn(false);
@@ -906,6 +969,8 @@ public class ExperimentController extends SpringActionController
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());
+                if (ss != null)
+                    deriveURL.addParameter("targetSampleSetId", ss.getRowId());
 
                 updateLinks.append(PageFlowUtil.textLink("derive samples from this sample", deriveURL) + " ");
             }
@@ -4069,7 +4134,7 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false);
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4099,6 +4164,7 @@ public class ExperimentController extends SpringActionController
                 selection.addRunIds(runIds);
 
                 _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4141,7 +4207,7 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false);
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4167,6 +4233,7 @@ public class ExperimentController extends SpringActionController
                 selection.addRunIds(runIds);
 
                 _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4245,9 +4312,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private void addSelectedRunsToExperiment(ExpExperiment exp)
+    private void addSelectedRunsToExperiment(ExpExperiment exp, String dataRegionSelectionKey)
     {
-        Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+        Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, false, true);
         List<ExpRun> runs = new ArrayList<>();
         for (int runId : runIds)
         {
@@ -4270,7 +4337,7 @@ public class ExperimentController extends SpringActionController
 
         public boolean handlePost(ExperimentRunListForm form, BindException errors)
         {
-            addSelectedRunsToExperiment(form.lookupExperiment());
+            addSelectedRunsToExperiment(form.lookupExperiment(), form.getDataRegionSelectionKey());
             return true;
         }
 
@@ -4295,7 +4362,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
             }
 
-            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
+            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -4304,6 +4371,7 @@ public class ExperimentController extends SpringActionController
                 }
                 exp.removeRun(getUser(), run);
             }
+            DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             return true;
         }
 
@@ -4527,7 +4595,7 @@ public class ExperimentController extends SpringActionController
 
                 List<ExpSampleSet> sampleSets = getUploadableSampleSets();
 
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
+                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getTargetSampleSetId(), sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
             return view;
@@ -4536,6 +4604,7 @@ public class ExperimentController extends SpringActionController
 
     public static class DeriveSamplesChooseTargetBean
     {
+        private Integer _targetSampleSetId;
         private List<ExpSampleSet> _sampleSets;
         private Map<ExpMaterial, String> _sourceMaterials;
         private final int _sampleCount;
@@ -4544,13 +4613,19 @@ public class ExperimentController extends SpringActionController
 
         public static final String CUSTOM_ROLE = "--CUSTOM--";
 
-        public DeriveSamplesChooseTargetBean(List<ExpSampleSet> sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
+        public DeriveSamplesChooseTargetBean(Integer targetSampleSetId, List<ExpSampleSet> sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
         {
+            _targetSampleSetId = targetSampleSetId;
             _sampleSets = sampleSets;
             _sourceMaterials = sourceMaterials;
             _sampleCount = sampleCount;
             _inputRoles = inputRoles;
             _propertyHelper = helper;
+        }
+
+        public Integer getTargetSampleSetId()
+        {
+            return _targetSampleSetId;
         }
 
         public DerivedSamplePropertyHelper getPropertyHelper()
@@ -4579,9 +4654,11 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private ActionButton getDeriveSamplesButton()
+    private ActionButton getDeriveSamplesButton(@Nullable Integer targetSampleSetId)
     {
         ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
+        if (targetSampleSetId != null)
+            urlDeriveSamples.addParameter("targetSampleSetId", targetSampleSetId);
         ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
         deriveButton.setActionType(ActionButton.Action.POST);
         deriveButton.setDisplayPermission(InsertPermission.class);
@@ -4664,7 +4741,7 @@ public class ExperimentController extends SpringActionController
                 materialsWithRoles.put(materials.get(i), form.determineLabel(i));
             }
 
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
+            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getTargetSampleSetId(), getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
             JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 
@@ -4763,6 +4840,8 @@ public class ExperimentController extends SpringActionController
 
             _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
 
+            DataRegionSelection.clearAll(getViewContext());
+
             return true;
         }
 
@@ -4832,7 +4911,7 @@ public class ExperimentController extends SpringActionController
         {
             if (_rowIds == null)
             {
-                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), true));
+                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), null, true, false));
             }
             return _rowIds;
         }
@@ -5336,7 +5415,7 @@ public class ExperimentController extends SpringActionController
 
                     if (form.isAddSelectedRuns())
                     {
-                        addSelectedRunsToExperiment(wrapper);
+                        addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
                     }
 
                     if (form.getReturnUrl() != null)
@@ -5468,20 +5547,14 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false);
             List<ExpRun> runs = new ArrayList<>();
-            for (String runId : runIds)
+            for (Integer runId : runIds)
             {
-                try
+                ExpRun run = ExperimentService.get().getExpRun(runId);
+                if (run != null)
                 {
-                    ExpRun run = ExperimentService.get().getExpRun(Integer.parseInt(runId));
-                    if (run != null)
-                    {
-                        runs.add(run);
-                    }
-                }
-                catch (NumberFormatException ignored)
-                {
+                    runs.add(run);
                 }
             }
 
@@ -5491,6 +5564,7 @@ public class ExperimentController extends SpringActionController
             try
             {
                 ExperimentService.get().moveRuns(info, getContainer(), runs);
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             }
             catch (IOException e)
             {

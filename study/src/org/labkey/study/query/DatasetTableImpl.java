@@ -337,7 +337,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             getMutableColumn("dsrowid").setHidden(true);
         }
 
-        if (null != _userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container"))
+        if (null != _userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container", false))
             addContainerColumn(true);
 
         var autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
@@ -515,7 +515,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     protected ColumnInfo addFolderColumn()
     {
         // Workaround to prevent IllegalArgumentException for assay tables
-        if (getColumn("Folder") == null)
+        if (getColumn("Folder", false) == null)
         {
             var ci = _rootTable.getColumn("Container");
             if (null == ci)

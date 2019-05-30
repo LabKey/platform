@@ -37,7 +37,7 @@
 <%
     }
 %>
-<%= textLink("Bulk Import Schemas", BulkImportDataTypesAction.class)%>&nbsp;
+<%= link("Bulk Import Schemas", BulkImportDataTypesAction.class)%>&nbsp;
 
 <%
     if (!undefined.isEmpty())

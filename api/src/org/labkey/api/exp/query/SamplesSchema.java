@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -49,6 +50,7 @@ public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "samples";
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
+    static final Logger log = Logger.getLogger(SamplesSchema.class);
 
     static private Map<String, ExpSampleSet> getSampleSetMap(Container container, User user)
     {
@@ -145,6 +147,10 @@ public class SamplesSchema extends AbstractExpSchema
     /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
     public ExpMaterialTable getSampleTable(ExpSampleSet ss, ContainerFilter cf)
     {
+        if (log.isTraceEnabled())
+        {
+            log.trace("CREATE TABLE: " + (null==ss ? "null" : ss.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
+        }
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
         ret.populate(ss, true);
         ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());

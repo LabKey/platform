@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.HasHtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -89,9 +90,9 @@
     if (selectedQCStateSet != null)
         basePage += "QCState=" + selectedQCStateSet.getFormValue() + "&";
 
-%><%= text(bean.canManage ? textLink("Manage Study", ManageStudyAction.class) : "") %>
-&nbsp;<%= textLink("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
-&nbsp;<%= textLink("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
+%><%=bean.canManage ? link("Manage Study", ManageStudyAction.class) : HtmlString.EMPTY_STRING%>
+&nbsp;<%= link("Views", new ActionURL(ReportsController.BeginAction.class, container))%>&nbsp;
+&nbsp;<%= link("Specimens", new ActionURL(SpecimenController.BeginAction.class, container))%>&nbsp;
 <%
     boolean hasHiddenData = false;
     for (int i = 0; i < visits.size() && !hasHiddenData; i++)
@@ -100,8 +101,8 @@
         hasHiddenData = !datasets.get(i).isShowByDefault();
     if (hasHiddenData)
     {
-        String viewLink = bean.showAll ? textLink("Show Default Datasets", basePage) :
-                textLink("Show All Datasets", basePage + "showAll=1");
+        HasHtmlString viewLink = bean.showAll ? link("Show Default Datasets").href(basePage) :
+                link("Show All Datasets").href(basePage + "showAll=1");
         out.print(viewLink);
     }
 %>

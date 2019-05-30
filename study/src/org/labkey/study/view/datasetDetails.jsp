@@ -45,7 +45,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     public void addClientDependencies(ClientDependencies dependencies)

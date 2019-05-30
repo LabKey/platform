@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -42,9 +41,7 @@
     <% if (flag.isRequiresRestart()) { %>
     <div>Restart required after toggling feature.</div>
     <% } %>
-    <%= textLink(
-            flag.isEnabled() ? "Disable" : "Enable",
-            "javascript:void(0);", null, null, Collections.singletonMap("data-exp-flag", h(flag.getFlag()))) %>
+    <%=link(flag.isEnabled() ? "Disable" : "Enable").href("javascript:void(0);").attributes(Collections.singletonMap("data-exp-flag", flag.getFlag()))%>
 </div>
 <% } %>
 </div>

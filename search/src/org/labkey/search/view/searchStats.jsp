@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.search.model.AbstractSearchService" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -42,7 +43,7 @@ else
 
         for (Map.Entry<String, Double> e : m.entrySet())
         {
-            String label = h(ColumnInfo.labelFromName(e.getKey())).replaceAll(" ", "&nbsp;");
+            HtmlString label = HtmlString.unsafe(h(ColumnInfo.labelFromName(e.getKey())).toString().replaceAll(" ", "&nbsp;"));
             String v = Formats.f2.format(e.getValue());
             %>
         <tr><td valign="top"><%=label%></td><td align="right">&nbsp;&nbsp;<%=v%></td><td width="100%" align="right">&nbsp;</td></tr><%

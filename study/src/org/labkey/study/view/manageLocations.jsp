@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();

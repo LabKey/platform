@@ -83,7 +83,7 @@ if (!view.hasContent)
         if (!view.folderHasWikis && null != view.insertURL)
         {%>
             This Wiki currently does not contain any pages.<br><br>
-            <%=textLink("add a new page", view.insertURL)%>
+            <%=link("add a new page", view.insertURL)%>
         <%}
         else
         {
@@ -93,7 +93,7 @@ if (!view.hasContent)
 
             if (null != view.insertURL)
             {%>
-                <%=textLink("add content", view.insertURL)%>
+                <%=link("add content", view.insertURL)%>
             <%}
         }
     }

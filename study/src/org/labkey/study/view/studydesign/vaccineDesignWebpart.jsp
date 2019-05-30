@@ -45,7 +45,7 @@
             ActionURL editUrl = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
             editUrl.addReturnURL(getActionURL());
 %>
-            <%=textLink("Manage Study Products", editUrl)%><br/>
+            <%=link("Manage Study Products", editUrl)%><br/>
 <%
         }
 %>
