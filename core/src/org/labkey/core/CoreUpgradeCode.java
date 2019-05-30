@@ -263,7 +263,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked from 18.35-18.36 to encrypt RServe configuration passwords
+     * Invoked from 19.10-19.11 to encrypt RServe configuration passwords
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void encryptRServeConfigPassword(final ModuleContext context)
