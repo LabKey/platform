@@ -47,8 +47,8 @@
             ActionURL editType = kind.urlEditDefinition(type, getViewContext());
             %>
     <td><small><%=h(kind.getKindName())%></small></td>
-    <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
-    <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
+    <td><% if (showData != null) { %><%=link("view data", showData)%><% } %></td>
+    <td><% if (editType != null) { %><%=link("edit type", editType)%><% } %></td>
             <%
         }
     %>
@@ -69,8 +69,8 @@
                 ActionURL editType = kind.urlEditDefinition(type, getViewContext());
         %>
         <td><small><%=h(kind.getKindName())%></small></td>
-        <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
-        <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
+        <td><% if (showData != null) { %><%=link("view data", showData)%><% } %></td>
+        <td><% if (editType != null) { %><%=link("edit type", editType)%><% } %></td>
         <%
             }
         %>
@@ -91,8 +91,8 @@
                 ActionURL editType = kind.urlEditDefinition(type, getViewContext());
         %>
         <td><small><%=h(kind.getKindName())%></small></td>
-        <td><% if (showData != null) { %> <labkey:link text="view data" href="<%=showData%>"/><% } %></td>
-        <td><% if (editType != null) { %> <labkey:link text="edit type" href="<%=editType%>"/><% } %></td>
+        <td><% if (showData != null) { %><%=link("view data", showData)%><% } %></td>
+        <td><% if (editType != null) { %><%=link("edit type", editType)%><% } %></td>
         <%
             }
         %>

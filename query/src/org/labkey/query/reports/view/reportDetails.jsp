@@ -19,11 +19,10 @@
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
 <%@ page import="org.labkey.api.reports.report.ModuleReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -50,7 +49,7 @@
 
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
-    ActionURL shareReportURL = PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
+    ActionURL shareReportURL = urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
     String reportURLAttributes = report.getRunReportTarget() != null ? "target=\"" + report.getRunReportTarget() + "\"": "";
 
     String type = report.getTypeDescription();

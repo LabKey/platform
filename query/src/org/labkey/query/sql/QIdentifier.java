@@ -69,6 +69,7 @@ public class QIdentifier extends QFieldKey
         setTokenText(quote(str));
     }
 
+    @Override
     public FieldKey getFieldKey()
     {
         return new FieldKey(null, getIdentifier());
@@ -103,6 +104,7 @@ public class QIdentifier extends QFieldKey
         builder.append(getTokenText());
     }
 
+    @Override
     public String getValueString()
     {
         return getTokenText();

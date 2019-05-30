@@ -40,7 +40,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -55,7 +54,6 @@ import org.springframework.validation.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -171,25 +169,30 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     /**
-     * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is not ContainerFilter
+     * @param cf null means to use the default for this schema/table (often schema.getDefaultContainerFilter()). It does not mean there is no ContainerFilter
      * @param forWrite true means do not return a cached version
      */
     @Nullable
     public TableInfo getTable(String name, @Nullable ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
     {
+        TableInfo table = null;
+        String cacheKey = cacheKey(name,cf,includeExtraMetadata,forWrite);
+
+        // NOTE: _getTableOrQuery() does not cache TableInfo for QueryDefinition, so check here before calling
+        if (null != cacheKey)
+            table = tableInfoCache.get(cacheKey);
+        if (null != table)
+            return table;
+
         ArrayList<QueryException> errors = new ArrayList<>();
-        /* NOTE: ContainerFilter is only applied to TableInfo not QueryDef */
         Object o = _getTableOrQuery(name, cf, includeExtraMetadata, forWrite, errors);
         if (o instanceof TableInfo)
         {
-            if (!forWrite)
-                ((TableInfo)o).setLocked(true);
-            assert validateTableInfo((TableInfo)o);
-            return (TableInfo)o;
+            table = (TableInfo)o;
         }
-        if (o instanceof QueryDefinition)
+        else if (o instanceof QueryDefinition)
         {
-            TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
+            table = ((QueryDefinition)o).getTable(this, errors, true);
             // throw if there are any non-warning errors
             for (QueryException ex : errors)
             {
@@ -197,12 +200,18 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                     continue;
                 throw ex;
             }
-            assert validateTableInfo(t);
-            if (null != t && !forWrite)
-                t.setLocked(true);
-            return t;
+            if (null != table && !forWrite)
+                table.setLocked(true);
+            if (null != table && null != cacheKey)
+                tableInfoCache.put(cacheKey, table);
         }
-        return null;
+        if (null == table)
+            return null;
+
+        assert validateTableInfo(table);
+        assert forWrite || table.isLocked();
+        assert null==cacheKey || table.isLocked();
+        return table;
     }
 
 
@@ -217,8 +226,30 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
-    Map<Pair<String, Boolean>, Object> cache = new HashMap<>();
+    final String cacheKey(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite)
+    {
+        if (includeExtraMetadata && !forWrite)
+            return cacheKey(name, cf);
+        return null;
+    }
 
+
+    // A schema can override this to make caching more efficient.  For instance, the schema implementation
+    // may know which ContainerFilter is _actually_ going to be returned for a given requested ContainerFilter
+    protected String cacheKey(String name, ContainerFilter cf)
+    {
+        String cfKey = null == cf ? "~defaultCF~" : cf.getCacheKey(getContainer());
+        if (cfKey == null)
+            return null;
+        return getClass().getSimpleName() + "/" + name.toUpperCase() + "/" + cfKey;
+    }
+
+
+    /*
+     * NOTE: there are two code paths that look somewhat redundant.  The Query parser uses this method, and still wants
+     * to benefit from caching of calls to UserSchema.createTable().  Everyone else uses getTable() and want to benefit
+     * from caching of UserSchema.createTable() AND QueryDefinition)o).getTable().  So both methods check the table cache
+     */
     public Object _getTableOrQuery(String name, ContainerFilter cf, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
         if (name == null)
@@ -227,7 +258,16 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (!canReadSchema())
             return null; // See #21014
 
-        TableInfo table = createTable(name, cf);
+        TableInfo table = null;
+        String cacheKey = cacheKey(name,cf,includeExtraMetadata,forWrite);
+        if (null != cacheKey)
+        {
+            table = tableInfoCache.get(cacheKey);
+            if (null != table)
+                return table;
+        }
+        if (null == table)
+            table = createTable(name, cf);
         Object torq;
 
         if (table != null)
@@ -241,11 +281,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             if (!forWrite)
                 table.setLocked(true);
             fireAfterConstruct(table);
+            if (null != cacheKey)
+                tableInfoCache.put(cacheKey, table);
             torq = table;
         }
         else
         {
-            QueryDefinition def = getQueryDefs().get(name);
+            QueryDefinition def = getQueryDef(name);
             if (def == null)
                 return null;
             if (!includeExtraMetadata && def.isMetadataEditable())
@@ -277,15 +319,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         return createTable(name, null);
     }
-//
-//
-//    // TODO ContainerFilter - make abstract. Schemas that do not override this method have not been converted yet.
-//    public @Nullable TableInfo createTable(String name, ContainerFilter cf)
-//    {
-//        return createTable(name);
-//    }
-//
-//
+
     public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
 
 
@@ -339,7 +373,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     {
         if (_restricted)
             return null;
-        return DefaultSchema.get(_user, _container).getSchema(name);
+        return getDefaultSchema().getSchema(name);
     }
 
     public boolean canCreate()
@@ -478,13 +512,23 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @NotNull
     public Map<String, QueryDefinition> getQueryDefs()
     {
-        return new CaseInsensitiveHashMap<>(QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName()));
+        Map<String, QueryDefinition> queryDefs = QueryService.get().getQueryDefs(getUser(), getContainer(), getSchemaName());
+        for (QueryDefinition value : queryDefs.values())
+        {
+            value.setSchema(this);
+        }
+        return new CaseInsensitiveHashMap<>(queryDefs);
     }
 
     @Nullable
     public QueryDefinition getQueryDef(@NotNull String queryName)
     {
-        return QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), queryName);
+        QueryDefinition queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), queryName);
+        if (queryDef != null)
+        {
+            queryDef.setSchema(this);
+        }
+        return queryDef;
     }
 
     /** override this method to return schema specific QuerySettings object */
@@ -775,22 +819,28 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         }
     }
 
-    // FOR USE BY SUBCLASSES
-    /* Eventually we want UserSchema.getTable() to implement support for caching TableInfo
-     * However, many ForeignKeys create tables w/o using getTable().  This can be used to optimize
-     * that scenario.  It is up to the caller to ensure propert caching when ContainerFilter may differ
-     * CONSIDER: add ContainerFilter as a second parameter in addition to String key
+    /**
+     * UserSchema.getTable() implements support for caching TableInfos.
+     * However, many ForeignKeys create tables w/o using getTable().  This method can be used to optimize
+     * those scenario.  It is up to the caller to ensure proper caching when ContainerFilter may differ.  The
+     * suggested way to do that is to call ContainerFilter.getCacheKey().
+     *
+     * Importantly, the key should reflect all the properties that affect how this table is created (e.g. additional filters, etc).
      */
     private Map<String,TableInfo> tableInfoCache = Collections.synchronizedMap(new CaseInsensitiveHashMap<TableInfo>());
 
-    public TableInfo getCachedTableInfo(String key, Callable<TableInfo> call)
+    public TableInfo getCachedLookupTableInfo(String key, Callable<TableInfo> call)
     {
-        TableInfo ret = tableInfoCache.get(key);
+        TableInfo ret = null;
+        if (null != key)
+            ret = tableInfoCache.get(key);
         if (null == ret)
         {
             try
             {
                 ret = call.call();
+                if (null == ret)
+                    return null;
             }
             catch (RuntimeException rex)
             {
@@ -801,6 +851,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 throw new RuntimeException(x);
             }
             assert ret.isLocked();
+            ret.setLocked(true);
             tableInfoCache.put(key,ret);
         }
         return ret;

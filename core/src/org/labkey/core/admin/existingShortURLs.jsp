@@ -1,9 +1,3 @@
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ShortURLRecord" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.Collections" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%
 /*
  * Copyright (c) 2014-2017 LabKey Corporation
@@ -21,6 +15,11 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.ShortURLRecord" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -49,9 +48,9 @@
             index++; %>
         <tr>
             <td><%= h(shortURLRecord.getShortURL())%></td>
-            <td><%= textLink("test", shortURLRecord.renderShortURL()) %></td>
+            <td><%= link("test").href(shortURLRecord.renderShortURL()) %></td>
             <td>
-                <%= textLink("copy to clipboard", (URLHelper)null, "return false;", "copyToClipboardId" + index, Collections.singletonMap("data-clipboard-text", shortURLRecord.renderShortURL())) %>
+                <%= link("copy to clipboard").onClick("return false;").id("copyToClipboardId" + index).attributes(Collections.singletonMap("data-clipboard-text", shortURLRecord.renderShortURL())) %>
                 <script>new Clipboard('#copyToClipboardId' + <%= index %>)</script>
             </td>
             <td><labkey:form method="post"><input type="text" name="fullURL" value="<%= h(shortURLRecord.getFullURL())%>" size="40"/> <%= button("Update").submit(true) %><input type="hidden" name="shortURL" value="<%= h(shortURLRecord.getShortURL())%>" /></labkey:form></td>

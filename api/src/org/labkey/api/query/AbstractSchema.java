@@ -58,6 +58,12 @@ abstract public class AbstractSchema implements QuerySchema
         return _defaultSchema;
     }
 
+    @Override
+    public void setDefaultSchema(DefaultSchema schema)
+    {
+        _defaultSchema = schema;
+    }
+
     public DbSchema getDbSchema()
     {
         return _dbSchema;

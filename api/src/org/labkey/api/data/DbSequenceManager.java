@@ -50,6 +50,11 @@ public class DbSequenceManager
         rs.next();
         return rs.getInt(1);
     };
+    // This handler expects to always return a single long integer value
+    private static final ResultSetHandler<Long> LONG_RETURNING_RESULTSET_HANDLER = (rs, conn) -> {
+        rs.next();
+        return rs.getLong(1);
+    };
 
     public static DbSequence get(Container c, String name)
     {
@@ -216,9 +221,9 @@ public class DbSequenceManager
     }
 
 
-    static int next(DbSequence sequence)
+    static long next(DbSequence sequence)
     {
-        Pair<Integer,Integer> p = reserve(sequence, 1);
+        Pair<Long,Long> p = reserve(sequence, 1);
         return p.second;
     }
 
@@ -226,7 +231,7 @@ public class DbSequenceManager
     // .first value returned is 'current', call to next() should return current+1
     // .second value is reserved for use by caller
     // in other words, next() should return values [pair.first+1, pair.second] inclusive
-    static Pair<Integer,Integer> reserve(DbSequence sequence, int count)
+    static Pair<Long,Long> reserve(DbSequence sequence, int count)
     {
         TableInfo tinfo = getTableInfo();
 
@@ -246,8 +251,8 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        int last = executeAndReturnInt(tinfo, sql, Level.WARN);
-        int first = last - count;
+        long last = executeAndReturnLong(tinfo, sql, Level.WARN);
+        long first = last - count;
         return new Pair<>(first,last);
     }
 
@@ -279,18 +284,14 @@ public class DbSequenceManager
 
 
     // Sets the sequence value to requested minimum, if it's currently less than this value
-    static void ensureMinimum(DbSequence sequence, int minimum)
+    static void ensureMinimum(DbSequence sequence, long minimum)
     {
         TableInfo tinfo = getTableInfo();
 
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND ");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND Value < ?");
         sql.add(minimum);
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
-
-        addValueSql(sql, tinfo, sequence);
-
-        sql.append(" < ?");
         sql.add(minimum);
 
         // Add locking appropriate to this dialect
@@ -300,7 +301,7 @@ public class DbSequenceManager
     }
 
     // Explicitly sets the sequence value, only used at shutdown!
-    static void setSequenceValue(DbSequence sequence, int value)
+    static void setSequenceValue(DbSequence sequence, long value)
     {
         TableInfo tinfo = getTableInfo();
 
@@ -362,6 +363,21 @@ public class DbSequenceManager
         try (Connection conn = scope.getPooledConnection())
         {
             return new SqlExecutor(scope, conn).setLogLevel(level).executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    // Executes in a separate connection that does NOT participate in the current transaction. Always returns an long.
+    private static long executeAndReturnLong(TableInfo tinfo, SQLFragment sql, Level level)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlExecutor(scope, conn).setLogLevel(level).executeWithResults(sql, LONG_RETURNING_RESULTSET_HANDLER);
         }
         catch (SQLException e)
         {
@@ -463,12 +479,12 @@ public class DbSequenceManager
             final int threads = 5;
             final int n = 1000;
             final int totalCount = threads * n;
-            final Set<Integer> values = new ConcurrentHashSet<>();
-            final Set<Integer> duplicateValues = new ConcurrentHashSet<>();
+            final Set<Long> values = new ConcurrentHashSet<>();
+            final Set<Long> duplicateValues = new ConcurrentHashSet<>();
             final long start = System.currentTimeMillis();
 
             JunitUtil.createRaces(() -> {
-                int next = seq.next();
+                long next = seq.next();
                 if (!values.add(next))
                     duplicateValues.add(next);
             }, threads, n, 60);
@@ -479,7 +495,7 @@ public class DbSequenceManager
             assertEquals(duplicateValues.size() + " duplicate values were detected: " + duplicateValues.toString(), 0, duplicateValues.size());
             assertEquals(totalCount, values.size());
 
-            for (int i = 0; i < threads * n; i++)
+            for (long i = 0; i < threads * n; i++)
                 assertTrue(values.contains(i + 1));
 
             assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
@@ -510,18 +526,16 @@ public class DbSequenceManager
             final int threads = 5;
             final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 
-            JunitUtil.createRaces(() -> {
-                DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
-            }, threads, 1, 60);
+            JunitUtil.createRaces(() -> DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0), threads, 1, 60);
         }
 
         @Test
-        public void testShutdown() throws Throwable
+        public void testShutdown()
         {
-            int first = _sequenceBulk.next();
+            long first = _sequenceBulk.next();
             _sequenceBulk.shutdownPre();
             _sequenceBulk.shutdownStarted();
-            int after = _sequenceBulk.next();
+            long after = _sequenceBulk.next();
             assertEquals(first+1, after);
         }
 

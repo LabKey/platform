@@ -413,6 +413,7 @@ public class QAggregate extends QExpr
         return JdbcType.OTHER;
     }
 
+    @Override
     public boolean isAggregate()
     {
         return true;

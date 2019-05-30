@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.security.roles.ReaderRole" %>
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -68,12 +69,14 @@ These permissions control whether pipeline files can be downloaded and updated v
             continue;
         List<Role> assignedRoles = policy.getAssignedRoles(g);
         Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : null;
-        String name = h(g.getName());
+        final HtmlString name;
         if (g.isAdministrators())
-            name = "Site&nbsp;Administrators";
+            name = HtmlString.unsafe("Site&nbsp;Administrators");
         else if (g.isUsers())
-            name = "All Users";
-        %><tr><td><%=text(name)%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
+            name = HtmlString.of("All Users");
+        else
+            name = h(g.getName());
+        %><tr><td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
         <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole))%>
         </select></td></tr><%
         i++;

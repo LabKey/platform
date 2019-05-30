@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -23,11 +24,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
-<%@ page import="org.labkey.api.qc.QCStateManager" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();

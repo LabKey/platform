@@ -59,7 +59,7 @@
 <p>
     <em>Pipeline root has not been set.</em>
     <% if (canSetPipelineRoot) { %>
-        <labkey:link href="<%=urlProvider(PipelineUrls.class).urlSetup(c).getLocalURIString()%>" text="setup pipeline"/>
+        <%=link("setup pipeline", urlProvider(PipelineUrls.class).urlSetup(c))%>
     <% } else { %>
         Please ask an administrator for assistance.
     <% } %>

@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -63,13 +62,13 @@
 
     ActionURL startURL = c.getStartURL(getUser()); // 30975: Return to startURL due to async view context
 
-    ActionURL createProjectURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateProjectURL(null);
+    ActionURL createProjectURL = urlProvider(AdminUrls.class).getCreateProjectURL(null);
     createProjectURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
 
-    ActionURL createFolderURL = PageFlowUtil.urlProvider(AdminUrls.class).getCreateFolderURL(c, null);
+    ActionURL createFolderURL = urlProvider(AdminUrls.class).getCreateFolderURL(c, null);
     createFolderURL.addParameter(ActionURL.Param.returnUrl, startURL.toString());
 
-    ActionURL folderManagementURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
+    ActionURL folderManagementURL = urlProvider(AdminUrls.class).getManageFoldersURL(c);
     if (size > 1) { // Only show the nav trail if subfolders exist
 %>
     <div class="folder-trail">

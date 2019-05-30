@@ -18,14 +18,14 @@
 <%@ page import="org.labkey.api.exp.ExperimentException"%>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.study.assay.AssayDataCollector" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<AssayRunUploadForm<? extends AssayProvider>> me = (JspView<AssayRunUploadForm<? extends AssayProvider>>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();

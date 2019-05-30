@@ -58,7 +58,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,6 +92,8 @@ public class LinkedSchema extends ExternalSchema
 
     private final UserSchema _sourceSchema;
     private final Collection<String> _availableQueries;
+    private final Map<String, QueryDefinition> _resolvedQueries = new CaseInsensitiveHashMap<>();
+    private boolean _resolvedAllQueries = false;
 
 
     public static LinkedSchema get(User user, Container container, LinkedSchemaDef def)
@@ -202,18 +203,50 @@ public class LinkedSchema extends ExternalSchema
     }
 
     @Override
+    public @Nullable QueryDefinition getQueryDef(@NotNull String queryName)
+    {
+        return getQueryDefs(queryName).get(queryName);
+    }
+
+    @Override
     @NotNull
     public Map<String, QueryDefinition> getQueryDefs()
+    {
+        return getQueryDefs(null);
+    }
+
+    /** @param nameFilter if non-null, only create the QueryDefinition for the requested name, to avoid needing
+     * to create them for a bunch of queries the caller doesn't care about */
+    @NotNull
+    public Map<String, QueryDefinition> getQueryDefs(@Nullable String nameFilter)
     {
         if (_availableQueries.size() == 0)
             return super.getQueryDefs();
 
-        Map<String, QueryDefinition> queries =_sourceSchema.getQueryDefs();
+        if (nameFilter == null && _resolvedAllQueries)
+        {
+            return _resolvedQueries;
+        }
+        if (nameFilter != null && _resolvedQueries.containsKey(nameFilter))
+        {
+            return _resolvedQueries;
+        }
+
+        Map<String, QueryDefinition> queries = new HashMap<>();
+        if (nameFilter == null)
+        {
+            queries.putAll(_sourceSchema.getQueryDefs());
+        }
+        else
+        {
+            queries.put(nameFilter, _sourceSchema.getQueryDef(nameFilter));
+        }
+
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>(queries.size());
 
         for (String key : queries.keySet())
         {
-            if (_availableQueries.contains(key))
+            if (_availableQueries.contains(key) && (nameFilter == null || nameFilter.equalsIgnoreCase(key)))
             {
                 QueryDefinition queryDef = queries.get(key);
                 TableInfo table = queryDef.getTable(new ArrayList<>(), true);
@@ -231,6 +264,12 @@ public class LinkedSchema extends ExternalSchema
 
         // Get all the custom queries from the standard locations
         ret.putAll(super.getQueryDefs());
+
+        _resolvedQueries.putAll(ret);
+        if (nameFilter == null)
+        {
+            _resolvedAllQueries = true;
+        }
 
         return ret;
     }

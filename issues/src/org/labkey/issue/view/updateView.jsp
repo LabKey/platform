@@ -16,7 +16,8 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.ColumnInfo"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
@@ -37,12 +38,11 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -362,14 +362,14 @@
                         if (!user.isGuest())
                         {
                             if (bean.isInsert())
-                                notify += textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class));
+                                notify += link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class)).toString();
                             else
-                                notify += textLink("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId()));
+                                notify += link("email prefs", IssuesController.issueURL(c, IssuesController.EmailPrefsAction.class).addParameter("issueId", issue.getIssueId())).toString();
                         }
                     %>
                     <%=text(bean.renderLabel(notify))%>
                     <td>
-                        <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=h(completionUrl)%>" rows="4" tabindex="20" cols="40" value="<%=h(bean.getNotifyListString(false))%>"/>
+                        <labkey:autoCompleteTextArea name="notifyList" id="notifyList" url="<%=completionUrl%>" rows="4" tabindex="20" cols="40" value="<%=bean.getNotifyListString(false)%>"/>
                     </td>
                 </tr><%
             }

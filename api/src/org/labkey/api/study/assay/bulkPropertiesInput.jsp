@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.study.actions.BulkPropertiesDisplayColumn" %>
 <%@ page import="org.labkey.api.study.actions.BulkPropertiesUploadForm" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -70,7 +69,7 @@
     <tr>
         <td/>
         <td id="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>" <%= !useBulk ? "style=\"display: none;\"" : "" %>>
-            <% if (form.getTemplateURL() != null) { %><%=textLink("download Excel template", form.getTemplateURL())%><br/><% } %>
+            <% if (form.getTemplateURL() != null) { %><%=link("download Excel template", form.getTemplateURL())%><br/><% } %>
             <textarea style="width: 100%"
                     rows="5" cols="80"
                     name="<%= BulkPropertiesDisplayColumn.PROPERTIES_FIELD_NAME %>"><%=h(existingValue) %></textarea>

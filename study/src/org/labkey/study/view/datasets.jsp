@@ -39,7 +39,7 @@
         out.print(text("No datasets defined<br><br>"));
         if (container.hasPermission(user, AdminPermission.class))
         {
-            out.print(textLink("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
+            out.print(link("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
         }
         return;
     }
@@ -68,7 +68,10 @@
 </table>
 <%
     if (container.hasPermission(user, AdminPermission.class))
-        out.print("<br>" + textLink("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
+    {
+        out.print("<br>");
+        out.print(link("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));
+    }
 %>
 <%!
     String renderDatasets(List<DatasetDefinition> datasets, int startIndex, int endIndex)

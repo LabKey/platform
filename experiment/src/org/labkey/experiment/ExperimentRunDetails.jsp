@@ -19,8 +19,6 @@
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
@@ -46,7 +44,7 @@
     <tr>
         <td class="labkey-form-label">Job Id</td>
         <% if(run.getJobId() != null) { %>
-            <td><a href="<%=h(PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(run.getContainer(), run.getJobId()))%>"><%= h(run.getJobId()) %></a></td>
+            <td><a href="<%=h(urlProvider(PipelineStatusUrls.class).urlDetails(run.getContainer(), run.getJobId()))%>"><%= h(run.getJobId()) %></a></td>
         <% } %>
     </tr>
     <tr>
@@ -64,13 +62,13 @@
     <tr>
         <td class="labkey-form-label">Replaced By</td>
         <% if(replacedByRun != null) { %>
-            <td><a href="<%= h(PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(replacedByRun)) %>"><%= h(replacedByRun.getName()) %></a></td>
+            <td><a href="<%= h(urlProvider(ExperimentUrls.class).getRunGraphURL(replacedByRun)) %>"><%= h(replacedByRun.getName()) %></a></td>
         <% } %>
     </tr>
     <tr>
         <td class="labkey-form-label">Replaces</td>
         <% for (ExpRun replacesRun : replacesRuns) { %>
-            <td><a href="<%= h(PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(replacesRun)) %>"><%= h(replacesRun.getName()) %></a></td>
+            <td><a href="<%= h(urlProvider(ExperimentUrls.class).getRunGraphURL(replacesRun)) %>"><%= h(replacesRun.getName()) %></a></td>
         <% } %>
     </tr>
 </table>

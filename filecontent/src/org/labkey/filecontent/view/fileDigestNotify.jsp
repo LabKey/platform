@@ -35,8 +35,8 @@
     org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
     EmailOption pref = EmailOption.NOT_SET;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
 
-    ActionURL emailPrefs = PageFlowUtil.urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
-    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
+    ActionURL emailPrefs = urlProvider(FileUrls.class).urlFileEmailPreference(form.getContainer());
+    ActionURL fileBrowser = urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 <html>
 <head>

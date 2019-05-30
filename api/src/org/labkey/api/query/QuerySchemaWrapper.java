@@ -63,6 +63,11 @@ public class QuerySchemaWrapper implements QuerySchema
         throw new IllegalStateException();
     }
 
+    @Override
+    public void setDefaultSchema(DefaultSchema schema)
+    {
+    }
+
     public DbSchema getDbSchema()
     {
         return _schema;

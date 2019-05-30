@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exceptions;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 
@@ -39,6 +40,7 @@ public class OptimisticConflictException extends RuntimeSQLException
         return true;
     }
 
+    @NotNull
     public static OptimisticConflictException create(int error)
     {
         switch (error)
@@ -57,6 +59,6 @@ public class OptimisticConflictException extends RuntimeSQLException
                         error);
         }
         assert false : "unexpected error code";
-        return null;
+        throw new IllegalArgumentException();
     }
 }

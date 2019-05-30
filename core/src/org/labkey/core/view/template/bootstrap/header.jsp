@@ -125,7 +125,7 @@
 <%
     HttpSession httpSession = getViewContext().getRequest().getSession();
     if (httpSession.getAttribute(SESSION_WARNINGS_BANNER_KEY) != null && !(boolean) httpSession.getAttribute(SESSION_WARNINGS_BANNER_KEY)) {
-        CoreUrls coreUrls = PageFlowUtil.urlProvider(CoreUrls.class);
+        CoreUrls coreUrls = urlProvider(CoreUrls.class);
     %>
         <li class="dropdown dropdown-rollup" id="headerWarningIcon">
             <a href="#" class="" id="headerWarningLink" data-tt="tooltip" data-placement="bottom" title data-original-title="Click to show important notification.">
