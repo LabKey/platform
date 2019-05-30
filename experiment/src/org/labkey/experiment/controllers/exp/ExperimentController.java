@@ -4134,7 +4134,7 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false);
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4164,7 +4164,8 @@ public class ExperimentController extends SpringActionController
                 selection.addRunIds(runIds);
 
                 _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
-                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+                if (form.getDataRegionSelectionKey() != null)
+                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4207,7 +4208,7 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false);
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4233,7 +4234,8 @@ public class ExperimentController extends SpringActionController
                 selection.addRunIds(runIds);
 
                 _resultURL = exportXAR(selection, null, null, form.getZipFileName());
-                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+                if (form.getDataRegionSelectionKey() != null)
+                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4362,7 +4364,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
             }
 
-            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false))
+            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -4371,7 +4373,8 @@ public class ExperimentController extends SpringActionController
                 }
                 exp.removeRun(getUser(), run);
             }
-            DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+            if (form.getDataRegionSelectionKey() != null)
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             return true;
         }
 
@@ -4595,15 +4598,16 @@ public class ExperimentController extends SpringActionController
 
                 List<ExpSampleSet> sampleSets = getUploadableSampleSets();
 
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getTargetSampleSetId(), sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
+                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), sampleSets, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
                 view = new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
             }
             return view;
         }
     }
 
-    public static class DeriveSamplesChooseTargetBean
+    public static class DeriveSamplesChooseTargetBean implements DataRegionSelection.DataSelectionKeyForm
     {
+        private String _dataRegionSelectionKey;
         private Integer _targetSampleSetId;
         private List<ExpSampleSet> _sampleSets;
         private Map<ExpMaterial, String> _sourceMaterials;
@@ -4613,8 +4617,9 @@ public class ExperimentController extends SpringActionController
 
         public static final String CUSTOM_ROLE = "--CUSTOM--";
 
-        public DeriveSamplesChooseTargetBean(Integer targetSampleSetId, List<ExpSampleSet> sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
+        public DeriveSamplesChooseTargetBean(String dataRegionSelectionKey, Integer targetSampleSetId, List<ExpSampleSet> sampleSets, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
         {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
             _targetSampleSetId = targetSampleSetId;
             _sampleSets = sampleSets;
             _sourceMaterials = sourceMaterials;
@@ -4651,6 +4656,18 @@ public class ExperimentController extends SpringActionController
         public Collection<String> getInputRoles()
         {
             return _inputRoles;
+        }
+
+        @Override
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        @Override
+        public void setDataRegionSelectionKey(String key)
+        {
+            _dataRegionSelectionKey = key;
         }
     }
 
@@ -4725,6 +4742,8 @@ public class ExperimentController extends SpringActionController
 
             insertView.getDataRegion().addHiddenFormField("targetSampleSetId", Integer.toString(form.getTargetSampleSetId()));
             insertView.getDataRegion().addHiddenFormField("outputCount", Integer.toString(form.getOutputCount()));
+            if (form.getDataRegionSelectionKey() != null)
+                insertView.getDataRegion().addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
             insertView.setInitialValues(ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap()));
             ButtonBar bar = new ButtonBar();
             bar.setStyle(ButtonBar.Style.separateButtons);
@@ -4741,7 +4760,7 @@ public class ExperimentController extends SpringActionController
                 materialsWithRoles.put(materials.get(i), form.determineLabel(i));
             }
 
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getTargetSampleSetId(), getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
+            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleSetId(), getUploadableSampleSets(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
             JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
             view.setTitle("Input Samples");
 
@@ -4805,7 +4824,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (DuplicateMaterialException e)
             {
-                errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, ERROR_MSG + " " + e.getMessage()));
+                errors.addError(new ObjectError(ColumnInfo.propNameFromName(e.getColName()), null, null, e.getMessage()));
                 return false;
             }
             catch (ExperimentException e)
@@ -4840,7 +4859,8 @@ public class ExperimentController extends SpringActionController
 
             _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
 
-            DataRegionSelection.clearAll(getViewContext());
+            if (form.getDataRegionSelectionKey() != null)
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
 
             return true;
         }
@@ -4852,8 +4872,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class DeriveMaterialForm implements HasViewContext
+    public static class DeriveMaterialForm implements HasViewContext, DataRegionSelection.DataSelectionKeyForm
     {
+        private String _dataRegionSelectionKey;
         private int _outputCount = 1;
         private int _targetSampleSetId;
         private int[] _rowIds;
@@ -4907,11 +4928,23 @@ public class ExperimentController extends SpringActionController
             _name = name;
         }
 
+        @Override
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        @Override
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
         public int[] getRowIds()
         {
             if (_rowIds == null)
             {
-                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), null, true, false));
+                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), getDataRegionSelectionKey(), getDataRegionSelectionKey() != null, false));
             }
             return _rowIds;
         }
@@ -5547,7 +5580,7 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true, false);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false);
             List<ExpRun> runs = new ArrayList<>();
             for (Integer runId : runIds)
             {
@@ -5564,7 +5597,8 @@ public class ExperimentController extends SpringActionController
             try
             {
                 ExperimentService.get().moveRuns(info, getContainer(), runs);
-                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+                if (form.getDataRegionSelectionKey() != null)
+                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             }
             catch (IOException e)
             {
