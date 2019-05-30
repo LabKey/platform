@@ -2711,9 +2711,7 @@ public class PageFlowUtil
 
             for (ClientDependency cd : resources)
             {
-                // resources can be null if they are somehow not found in the system when being added to the resources set
-                if (cd != null)
-                    modules.addAll(cd.getRequiredModuleContexts(c));
+                modules.addAll(cd.getRequiredModuleContexts(c));
             }
 
             modules.addAll(c.getActiveModules(u));
