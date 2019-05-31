@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -75,7 +74,7 @@
     <%
             if (c.hasPermission(user, DeletePermission.class))
             {
-                ActionURL deleteUrl = PageFlowUtil.urlProvider(NabUrls.class).urlDeleteRun(c);
+                ActionURL deleteUrl = urlProvider(NabUrls.class).urlDeleteRun(c);
                 deleteUrl.addParameter("rowId", bean.getRunId());
     %>
     <%= button("Delete Run").href(deleteUrl).onClick("return confirm('Permanently delete this run?')") %>

@@ -38,7 +38,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
     SpecimenController.ReportConfigurationBean bean = me.getModelBean();
@@ -112,7 +112,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="padding-right: 10px;"><%= h(factory.getLabel())%></td>
                         <td style="text-align: right;">
-                            <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
+                            <%=link("show options").href("#").onClick("return showOrHide('" + showHideSuffix + "')").id("showOptionsLink" + showHideSuffix)%>
                             <%= button("View").submit(true) %>
                         </td>
                     </tr>

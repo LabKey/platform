@@ -36,7 +36,7 @@ public abstract class AbstractQueryMethodInfo extends AbstractMethodInfo
     @Override
     final public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
     {
-        return getSQL((Query)null, dialect, arguments);
+        return getSQL(null, dialect, arguments);
     }
 
     @Override

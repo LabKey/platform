@@ -37,7 +37,6 @@
 <%@ page import="org.labkey.api.util.ExceptionUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -107,7 +106,7 @@
     <tr class="labkey-header">
         <th nowrap colspan="<%=2%>" align="left" class="labkey-expandable-row-header">
             <a title="Click to expand/collapse"
-               href="<%=new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
+               href="<%=h(new ActionURL(StudyController.ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>"
                onclick="return LABKEY.Utils.toggleLink(this, true);">
                 <img src="<%=getWebappURL("_images/" + text(expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
                 <%=h(dataset.getDisplayString())%>
@@ -127,7 +126,7 @@
     %>
     <tr style="<%=text(expanded ? "" : "display:none")%>">
         <td>
-            <a href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">[remove]</a>
+            <a href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">[remove]</a>
         </td>
     </tr>
     <%
@@ -135,7 +134,7 @@
     %>
     <tr style="<%=text(expanded ? "" : "display:none")%>">
         <td><img
-                src="<%=new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString())%>">
+                src="<%=h(new ActionURL(ReportsController.PlotChartAction.class, study.getContainer()).addParameter("participantId", bean.getParticipantId()).addParameter(ReportDescriptor.Prop.reportId.name(), report.getDescriptor().getReportId().toString()))%>">
         </td>
     </tr>
     <%
@@ -185,7 +184,7 @@
                 addAction.addParameter("quf_ParticipantId", bean.getParticipantId());
 
     %>
-    <td colspan="2" class="labkey-alternate-row"><%=textLink("add", addAction)%>
+    <td colspan="2" class="labkey-alternate-row"><%=link("add", addAction)%>
     </td>
     <%
             }
@@ -203,7 +202,7 @@
             editAction.addParameter("datasetId", datasetId);
             editAction.addParameter("lsid", lsid);
 
-        %><%=textLink("edit data", editAction)%>
+        %><%=link("edit data", editAction)%>
         </td>
     </tr>
     <%
@@ -258,6 +257,6 @@
         if (value instanceof Number)
             return HtmlString.of(Formats.formatNumber(getContainer(), (Number)value));
 
-        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : h(ConvertUtils.convert(value), true);
     }
 %>

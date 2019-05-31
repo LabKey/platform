@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
@@ -52,6 +53,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     private String _queryName;
     private QueryDefinition _queryDef;
+    private QueryView _queryView;
 
     private String _viewName;
     private CustomView _customView;
@@ -72,6 +74,21 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private boolean _bindViewName = true;
     private BindState _bindState = BindState.UNBOUND;
     private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
+
+    public QueryView getQueryView(BindException errors)
+    {
+        if (_queryView == null)
+        {
+            UserSchema schema = getSchema();
+            if (schema == null)
+            {
+                throw new NotFoundException("Could not find schema: " + getSchemaName());
+            }
+
+            _queryView = schema.createView(this, errors);
+        }
+        return _queryView;
+    }
 
     private enum BindState { UNBOUND, BINDING, BOUND }
 
@@ -212,17 +229,17 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         }
 
         QuerySettings settings = createQuerySettings(baseSchema);
-        QueryView view = baseSchema.createView(getViewContext(), settings);
+        _queryView = baseSchema.createView(getViewContext(), settings);
         // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
         // on some other schema or query name. Therefore, remember the correct names so that we're using them
         // consistently within this request
-        _schemaName = view.getSchema().getSchemaPath();
+        _schemaName = _queryView.getSchema().getSchemaPath();
         // Will be null in the case of executing LabKey SQL directly without a saved custom query
-        if (view.getQueryDef() != null)
+        if (_queryView.getQueryDef() != null)
         {
-            _queryName = view.getQueryDef().getName();
+            _queryName = _queryView.getQueryDef().getName();
         }
-        return view.getSchema();
+        return _queryView.getSchema();
     }
 
 

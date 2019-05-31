@@ -57,7 +57,7 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
         for (ColumnLogging logging : sortedLoggings)
         {
             loggedColumns.append(sep).append(logging.getOriginalTableName())
-                    .append(".").append(logging.getOriginalColumnFieldKey());
+                    .append(".").append(logging.getOriginalColumnFieldKey().toDisplayString());
             sep = ", ";
         }
 

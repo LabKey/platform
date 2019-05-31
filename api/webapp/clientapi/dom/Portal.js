@@ -650,7 +650,7 @@
                                 if (jsonResp.errors)
                                     errorMsg = jsonResp.errors[0].message;
                                 else
-                                    errorMsg = 'An unknown error occured. Please contact your administrator.';
+                                    errorMsg = 'An unknown error occurred. Please contact your administrator.';
                                 Ext4.Msg.alert('Oops', errorMsg);
                             }
                         });

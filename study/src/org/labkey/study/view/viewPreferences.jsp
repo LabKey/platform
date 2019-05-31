@@ -18,14 +18,13 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%@ page extends="org.labkey.api.jsp.OldJspBase"%>
 <%
     JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
     StudyController.ViewPrefsBean bean = me.getModelBean();
@@ -47,7 +46,7 @@
 %>
             <tr><td><%=text(getLabel(view, defaultView))%></td>
                 <td>&nbsp;</td>
-                <td><%=textLink("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue()))%></td>
+                <td><%=link("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue()))%></td>
             </tr>
 <%
         }

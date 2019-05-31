@@ -16,18 +16,17 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
-<%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.controllers.StudyDesignController" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.view.studydesign.StudyDesignConfigureMenuItem" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -52,7 +51,7 @@
     if (study != null && study.getTimepointType() == TimepointType.DATE)
         visitNoun = "Timepoint";
 
-    String returnUrl = form.getReturnUrl() != null ? form.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
+    String returnUrl = form.getReturnUrl() != null ? form.getReturnUrl() : urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
 <script type="text/javascript">
@@ -112,13 +111,13 @@ Enter assay schedule information in the grids below.
         </li>
         <li <%=!form.isUseAlternateLookupFields() ? "style='display:none;'" : ""%>>
             Use the manage locationss page to further configure information about the locations for this study.
-            <%= textLink("Manage Locations", StudyController.ManageLocationsAction.class) %>
+            <%= link("Manage Locations", StudyController.ManageLocationsAction.class) %>
         </li>
         <li>
             Use the manage <%=h(visitNoun.toLowerCase())%>s page to further configure
             information about the <%=h(visitNoun.toLowerCase())%>s for this study or to change
             the <%=h(visitNoun.toLowerCase())%> display order.
-            <%=textLink("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
+            <%=link("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
         </li>
     </ul>
 </div>

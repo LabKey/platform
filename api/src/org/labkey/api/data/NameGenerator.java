@@ -327,7 +327,7 @@ public class NameGenerator
             // Otherwise, update the sample counters for today's date immediately even if the expression doesn't contain a counter replacement token
             // and put the sample counts into the context so that any sample counters not bound to a column will be replaced; e.g, "${dailySampleCount}".
             // It is important to do this even if a "name" is explicitly provided so the sample counts are accurate.
-            Map<String, Integer> sampleCounts = null;
+            Map<String, Long> sampleCounts = null;
             if (_incrementSampleCounts && !_exprHasSampleCounterFormats)
             {
                 Date now = (Date)_batchExpressionContext.get("now");
@@ -354,7 +354,7 @@ public class NameGenerator
                 @NotNull Map<String, Object> rowMap,
                 Set<ExpData> parentDatas,
                 Set<ExpMaterial> parentSamples,
-                @Nullable Map<String, Integer> sampleCounts)
+                @Nullable Map<String, Long> sampleCounts)
         {
             Map<String, Object> ctx = new CaseInsensitiveHashMap<>();
             ctx.putAll(_batchExpressionContext);

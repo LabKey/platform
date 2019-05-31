@@ -27,17 +27,17 @@
     Container c = getContainer();
 %>
 <div>
-    <%= textLink("View Exceptions", new ActionURL(MothershipController.ShowExceptionsAction.class, c).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %>
-    <%= textLink("View All Installations", new ActionURL(MothershipController.ShowInstallationsAction.class, c)) %>
-    <%= textLink("Configure Mothership", new ActionURL(MothershipController.EditUpgradeMessageAction.class, c)) %>
-    <%= textLink("List of Releases", new ActionURL(MothershipController.ShowReleasesAction.class, c)) %>
-    <%= textLink("Reports", new ActionURL(MothershipController.ReportsAction.class, c)) %>
+    <%= link("View Exceptions", new ActionURL(MothershipController.ShowExceptionsAction.class, c).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %>
+    <%= link("View All Installations", new ActionURL(MothershipController.ShowInstallationsAction.class, c)) %>
+    <%= link("Configure Mothership", new ActionURL(MothershipController.EditUpgradeMessageAction.class, c)) %>
+    <%= link("List of Releases", new ActionURL(MothershipController.ShowReleasesAction.class, c)) %>
+    <%= link("Reports", new ActionURL(MothershipController.ReportsAction.class, c)) %>
     <% if (getUser() != null && !getUser().isGuest()) {
             ActionURL myExceptions = new ActionURL(MothershipController.ShowExceptionsAction.class, c);
             myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("BugNumber"), CompareType.ISBLANK, null);
             myExceptions.addFilter("ExceptionSummary", FieldKey.fromParts("AssignedTo", "DisplayName"), CompareType.EQUAL, getUser().getDisplayName(getUser()));
         %>
-        <%= textLink("My Exceptions", myExceptions)%>
+        <%= link("My Exceptions", myExceptions)%>
     <%}%>
     <labkey:form name="jumpToErrorCode" action="<%= new ActionURL(MothershipController.JumpToErrorCodeAction.class, c) %>" layout="inline" style="display:inline-block;margin-left:20px;margin-bottom:10px;">
         <div class="input-group">

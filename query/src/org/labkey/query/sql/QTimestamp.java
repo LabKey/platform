@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.util.DateUtil;
 import java.sql.Timestamp;
@@ -51,11 +52,14 @@ public class QTimestamp extends QExpr implements IConstant
         builder.append("{ts " + getTokenText() + "}");
     }
 
+    @NotNull
+    @Override
     public JdbcType getJdbcType()
     {
         return JdbcType.TIMESTAMP;
     }
 
+    @Override
     public String getValueString()
     {
         return"{ts " + QString.quote(getTokenText()) + "}";

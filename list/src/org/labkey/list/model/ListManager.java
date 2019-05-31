@@ -211,7 +211,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         // If none of the preferred IDs is available then use the next sequence value
         if (builder.getListId() == -1)
-            builder.setListId(sequence.next());
+            builder.setListId((int)sequence.next());
 
         ListDef ret = Table.insert(user, tinfo, builder.build());
         _listDefCache.remove(c.getId());

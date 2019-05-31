@@ -1329,7 +1329,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             DbSequence sequence = getSequence();
             if (null != sequence)
             {
-                int currentValue = sequence.current();
+                long currentValue = sequence.current();
                 Object valueObj = _columnIndex != null ? _data.get(_columnIndex) : null;
                 if (null != valueObj)
                 {

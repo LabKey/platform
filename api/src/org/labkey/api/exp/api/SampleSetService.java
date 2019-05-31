@@ -117,7 +117,7 @@ public interface SampleSetService
      * Increment and get the sample counters for the given date, or the current date if no date is supplied.
      * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
      */
-    Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate);
+    Map<String, Long> incrementSampleCounts(@Nullable Date counterDate);
 
     void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException;
 

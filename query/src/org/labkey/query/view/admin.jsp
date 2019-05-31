@@ -191,9 +191,9 @@ else
                 <%=h(linkedSchema.getSourceSchemaName())%>
                 <% } %>
             </td>
-            <td class="labkey-noborder"><labkey:link text="view schema" href="<%=h(urlView)%>" /></td>
-            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="edit" href="<%=h(urlEdit)%>" /></td><%}%>
-            <% if (isAdmin) {%><td class="labkey-noborder"><labkey:link text="delete" href="<%=h(urlDelete)%>" /></td><%}%>
+            <td class="labkey-noborder"><%=link("view schema", urlView)%></td>
+            <% if (isAdmin) {%><td class="labkey-noborder"><%=link("edit", urlEdit)%></td><%}%>
+            <% if (isAdmin) {%><td class="labkey-noborder"><%=link("delete", urlDelete)%></td><%}%>
         </tr><%
         i++;
     } %>
@@ -202,5 +202,5 @@ else
 %>
 <br>
 <% if (isAdmin) { %>
-<labkey:link href="<%= new ActionURL(QueryController.InsertLinkedSchemaAction.class, c)%>" text="new linked schema"/>
+<%=link("new linked schema", QueryController.InsertLinkedSchemaAction.class)%>
 <% } %>

@@ -200,8 +200,8 @@
     <br/>
     <%= button("Save").submit(true) %>
     <span id="selectionButtons">
-        <%= PageFlowUtil.button("Select All").href("#").onClick("setSelection(true); return false;") %>
-        <%= PageFlowUtil.button("Select None").href("#").onClick("setSelection(false); return false;") %>
+        <%= button("Select All").href("#").onClick("setSelection(true); return false;") %>
+        <%= button("Select None").href("#").onClick("setSelection(false); return false;") %>
     </span>
     </labkey:form>&nbsp;
 
@@ -216,7 +216,7 @@
     <p>
         This report type allows for sharing with individual users. Any users that this report has already been shared with
         will be listed in the "Specific Users" section above. To add additional users, click the button below.<br/>
-        <%= button("Share Report").href(PageFlowUtil.urlProvider(ReportUrls.class).urlShareReport(getContainer(), bean)) %>
+        <%= button("Share Report").href(urlProvider(ReportUrls.class).urlShareReport(getContainer(), bean)) %>
     </p>
     <% } %>
 

@@ -29,6 +29,7 @@ public class QDot extends QFieldKey
         appendChildren(left, right);
     }
 
+    @Override
     public FieldKey getFieldKey()
     {
         FieldKey left = ((QExpr)getFirstChild()).getFieldKey();
@@ -49,6 +50,7 @@ public class QDot extends QFieldKey
         builder.popPrefix();
     }
 
+    @Override
     public String getValueString()
     {
         StringBuilder ret = new StringBuilder();

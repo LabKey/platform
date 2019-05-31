@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -1681,7 +1680,7 @@ public class QueryServiceImpl implements QueryService
 
     /**
      * Get list of available schema template XML files for the Container's active modules.
-     * @returns Map of template name -> (template name, template xml)
+     * @return Map of template name -> (template name, template xml)
      */
     public Map<String, TemplateSchemaType> getSchemaTemplates(Container c)
     {
@@ -1801,33 +1800,29 @@ public class QueryServiceImpl implements QueryService
 
         Collection<TableType> tableTypes = new ArrayList<>();
         for (QueryDef queryDef : queryDefs)
-            tableTypes.add(parseMetadata(queryDef.getMetaData(), errors));
+        {
+            TablesDocument doc = queryDef.getParsedMetadata().getTablesDocument(errors);
+            if (doc != null)
+            {
+                TablesType tables = doc.getTables();
+                if (tables != null && tables.sizeOfTableArray() > 0)
+                    tableTypes.add(tables.getTableArray(0));
+            }
+        }
 
         return tableTypes;
     }
 
     public TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
     {
-        if (metadataXML == null || StringUtils.isBlank(metadataXML))
-            return null;
-
-        XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-        List<XmlError> xmlErrors = new ArrayList<>();
-        options.setErrorListener(xmlErrors);
-        try
+        QueryDef def = new QueryDef();
+        def.setMetaData(metadataXML);
+        TablesDocument doc = def.getParsedMetadata().getTablesDocument(errors);
+        if (doc != null)
         {
-            TablesDocument doc = TablesDocument.Factory.parse(metadataXML, options);
             TablesType tables = doc.getTables();
             if (tables != null && tables.sizeOfTableArray() > 0)
                 return tables.getTableArray(0);
-        }
-        catch (XmlException e)
-        {
-            errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(e)));
-        }
-        for (XmlError xmle : xmlErrors)
-        {
-            errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle)));
         }
 
         return null;
@@ -2293,7 +2288,16 @@ public class QueryServiceImpl implements QueryService
         {
             for (FieldKey fieldKey : shouldLogNameToDataLoggingMapEntry.getValue())
             {
-                ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
+                ColumnInfo loggingColumn = columnMap.get(fieldKey);                 // Look in columnMap
+                if (null == loggingColumn)
+                    loggingColumn = getColumnForDataLogging(table, fieldKey);       // Look in table columns
+
+                if (null == loggingColumn)
+                {
+                    AliasManager manager = new AliasManager(table, allColumns);     // Try to construct column for fieldKey
+                    loggingColumn = getColumn(manager, table, columnMap, fieldKey);
+                }
+
                 if (null != loggingColumn)
                 {
                     // For the case where we had to add the MRN column in Visualization, that column is in the table.columnMap, but not the local columnMap.
@@ -2303,6 +2307,8 @@ public class QueryServiceImpl implements QueryService
                         allColumns.add(loggingColumn);
                         extraSelectDataLoggingColumns.add(loggingColumn);
                     }
+                    if (!columnMap.containsKey(fieldKey))
+                        columnMap.put(fieldKey, loggingColumn);
                     dataLoggingColumns.add(loggingColumn);
                 }
                 else

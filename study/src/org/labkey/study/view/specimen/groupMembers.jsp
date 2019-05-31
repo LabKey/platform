@@ -51,7 +51,7 @@
             %>
             <tr>
                 <td align="center"><input type="checkbox" name="delete" value="<%= member %>"></td>
-                <td><%= text(member.isActive() ? "" : "<del>") + h(member.getAutocompleteName(getContainer(), getUser())) + text(member.isActive() ? "" : "</del> (inactive)") %></td>
+                <td><%= text(member.isActive() ? "" : "<del>")%><%=h(member.getAutocompleteName(getContainer(), getUser()))%><%=text(member.isActive() ? "" : "</del> (inactive)") %></td>
             </tr>
             <%
                 }
@@ -66,7 +66,7 @@
     <div id="add-members">
         Add New Members (enter one email address per line):<br>
         <labkey:autoCompleteTextArea name="names"
-                                     url="<%=h(bean.getCompleteUsersPrefix())%>"
+                                     url="<%=bean.getCompleteUsersPrefix()%>"
                                      rows="8" cols="30"/><br>
         <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all
         new<%

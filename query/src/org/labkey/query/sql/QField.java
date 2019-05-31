@@ -156,6 +156,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public @NotNull JdbcType getJdbcType()
     {
         if (_column != null)
@@ -167,6 +168,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         ExprColumn ret = new ExprColumn(table, alias, getRelationColumn().getValueSql(), getRelationColumn().getJdbcType());
@@ -196,6 +198,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {
         if (parent instanceof QMethodCall)

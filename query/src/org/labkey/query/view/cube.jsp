@@ -41,7 +41,7 @@
         dependencies.add("Ext4");
     }
 %>
-<%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()))%>
+<%=link("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()))%>
 <%
     Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
     for (OlapSchemaDescriptor sd : list)
@@ -49,8 +49,8 @@
         %><h3><%=h(sd.getName())%></h3><%
         if (sd.isEditable())
         {
-            %><%=textLink("edit", ((CustomOlapSchemaDescriptor)sd).urlEdit())%>
-              <%=textLink("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete())%><%
+            %><%=link("edit", ((CustomOlapSchemaDescriptor)sd).urlEdit())%>
+              <%=link("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete())%><%
         }
 
 //        try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
@@ -64,7 +64,7 @@
                     url.addParameter("configId",sd.getId());
                     url.addParameter("schemaName",c.getSchemaName());
                     url.addParameter("cubeName",c.getName());
-                    %><li><%=textLink(c.getName(),url)%>&nbsp;<%=textLink("mdx",url.setAction(OlapController.TestMdxAction.class))%>&nbsp;<%=textLink("json",url.setAction(OlapController.TestJsonAction.class))%></li><%
+                    %><li><%=link(c.getName(), url)%>&nbsp;<%=link("mdx", url.setAction(OlapController.TestMdxAction.class))%>&nbsp;<%=link("json", url.setAction(OlapController.TestJsonAction.class))%></li><%
                 }
                 %></ul><%
 //            }

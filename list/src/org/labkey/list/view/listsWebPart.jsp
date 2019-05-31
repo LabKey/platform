@@ -22,11 +22,9 @@
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="org.labkey.api.view.PopupMenuView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.list.controllers.ListController" %>
@@ -88,7 +86,7 @@
     if (c.hasPermission(user, DesignListPermission.class))
     {
 %>
-    <%=PageFlowUtil.textLink("manage lists", ListController.getBeginURL(c))%>
+    <%=link("manage lists", ListController.getBeginURL(c))%>
 <%
     }
 %>

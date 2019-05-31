@@ -26,7 +26,7 @@
     HttpView me = HttpView.currentView();
     ActionURL refreshURL = urlProvider(AdminUrls.class).getProjectSettingsMenuURL(getContainer());
     boolean isAdminMode = PageFlowUtil.isPageAdminMode(getViewContext());
-    String toggleUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(getContainer(), getViewContext().getActionURL()).toString();
+    String toggleUrl = urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(getContainer(), getViewContext().getActionURL()).toString();
 %>
 <div style="padding-bottom: 40px;">
     <p>The menu bar can be customized to provide quick access to LabKey features. It is populated by webparts, which can be added or removed here.</p>

@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 %>
-
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -59,12 +59,12 @@
                 editUrl.addParameter("useAlternateLookupFields", true);
             editUrl.addReturnURL(getActionURL());
 %>
-            <%=textLink("Manage Assay Schedule", editUrl)%><br/>
+            <%=link("Manage Assay Schedule", editUrl)%><br/>
 <%
         }
 
 %>
-        <p data-index="AssayPlan"><%=h(assayPlan).replaceAll("\n", "<br/>")%></p>
+        <p data-index="AssayPlan"><%=HtmlString.unsafe(h(assayPlan).toString().replaceAll("\n", "<br/>"))%></p>
         <div id="assay-configurations-panel"></div>
 <%
     }

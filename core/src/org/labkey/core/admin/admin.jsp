@@ -28,9 +28,8 @@
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.NavTree"%>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Date" %>
@@ -133,7 +132,7 @@
 
                 for (AdminLink link : links)
                 { %>
-                <div><%=textLink(link.getText(), link.getUrl())%></div><%
+                <div><%=link(link.getText(), link.getUrl())%></div><%
                 }%>
             </div><%
                 }
@@ -141,7 +140,7 @@
         </labkey:panel>
         <labkey:panel id="modules" className="lk-admin-section">
             <h3 class="labkey-page-section-header">Module Information</h3>
-            <%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%>
+            <%=link("Module Details", AdminController.ModulesAction.class)%>
             <br/><br/>
             <table><%
 
@@ -204,7 +203,7 @@
                             <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%></td>
                                 <% if (url != null) { %>
-                                <td nowrap="true"><%=textLink(entry.getValue(), url)%></td>
+                                <td nowrap="true"><%=link(entry.getValue()).href(url)%></td>
                                 <% } else { %>
                                 <td nowrap="true"><%=h(entry.getValue())%></td>
                                 <% } %>
