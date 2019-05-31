@@ -77,11 +77,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     public QueryView getQueryView(BindException errors)
     {
-        if (StringUtils.isEmpty(getQueryName()))
-        {
-            throw new NotFoundException("Query not specified");
-        }
-
         if (_queryView == null)
         {
             UserSchema schema = getSchema();
