@@ -2421,21 +2421,25 @@ public class PageFlowUtil
 
         /* our big crawlers are... */
         // Google
-        if (userAgent.contains("googlebot"))
-            return true;
+//        if (userAgent.contains("googlebot"))
+//            return true;
         // Yahoo
         if (userAgent.contains("yahoo! slurp"))
             return true;
         // Microsoft
-        if (userAgent.contains("bingbot") || userAgent.contains("msnbot"))
-            return true;
+//        if (userAgent.contains("bingbot") || userAgent.contains("msnbot"))
+//            return true;
         if (userAgent.contains("msiecrawler"))  // client site-crawler
             return false;
         // Pingdom
-        if (userAgent.contains("pingdom.com_bot"))
-            return true;
+//        if (userAgent.contains("pingdom.com_bot"))
+//            return true;
         // a bot
         if (userAgent.contains("rpt-httpclient"))
+            return true;
+        if (userAgent.contains("qwantify"))
+            return true;
+        if (userAgent.contains("elb-healthchecker"))
             return true;
 
         // just about every bot contains "bot", "crawler" or "spider"
