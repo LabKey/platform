@@ -162,7 +162,7 @@ public class QueryPivot extends QueryRelation
         else if (inList instanceof QSelect)
         {
             // simple in list
-            CaseInsensitiveMapWrapper<IConstant> pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String,IConstant>());
+            CaseInsensitiveMapWrapper<IConstant> pivotValues = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
             for (QNode node : inList.childList())
             {
                 IConstant constant;
@@ -487,7 +487,7 @@ public class QueryPivot extends QueryRelation
                 pivotValues = Collections.EMPTY_MAP;
             }
 
-            _columns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, RelationColumn>(_select.size()*2));
+            _columns = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>(_select.size()*2));
             List<Map.Entry<String,RelationColumn>> aggs = new ArrayList<>(_aggregates.size());
             for (Map.Entry<String,RelationColumn> entry : _select.entrySet())
             {
@@ -826,21 +826,24 @@ public class QueryPivot extends QueryRelation
         @Override
         public SQLFragment getFromSQL(String pivotTableAlias)
         {
-            if (null != _sqlPivot)
-                return _sqlPivot;
-            SQLFragment f = new SQLFragment();
-            SQLFragment fromSql = getSql();
-            if (null == fromSql)
+            if (null == _sqlPivot)
             {
-                if (!getParseErrors().isEmpty())
-                    throw getParseErrors().get(0);
-                QueryParseException qpe = new QueryParseException("Error compiling query" + (null!=_query._name?": " + _query._name:""), null, 0, 0);
-                _query.decorateException(qpe);
-                throw qpe;
+                SQLFragment f = new SQLFragment();
+                SQLFragment fromSql = getSql();
+                if (null == fromSql)
+                {
+                    if (!getParseErrors().isEmpty())
+                        throw getParseErrors().get(0);
+                    QueryParseException qpe = new QueryParseException("Error compiling query" + (null != _query._name ? ": " + _query._name : ""), null, 0, 0);
+                    _query.decorateException(qpe);
+                    throw qpe;
+                }
+                f.append("(").append(fromSql).append(") ");
+                _sqlPivot = f;
             }
-            f.append("(").append(fromSql).append(") ").append(pivotTableAlias);
-            _sqlPivot = f;
-            return _sqlPivot;
+            SQLFragment ret = new SQLFragment(_sqlPivot);
+            ret.append(pivotTableAlias);
+            return ret;
         }
 
 
