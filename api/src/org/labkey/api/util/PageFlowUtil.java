@@ -1668,6 +1668,8 @@ public class PageFlowUtil
         if (extraResources != null)
             resources.addAll(extraResources);
 
+        resources.removeIf(Objects::isNull);
+
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, config, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
@@ -2713,9 +2715,7 @@ public class PageFlowUtil
 
             for (ClientDependency cd : resources)
             {
-                // resources can be null if they are somehow not found in the system when being added to the resources set
-                if (cd != null)
-                    modules.addAll(cd.getRequiredModuleContexts(c));
+                modules.addAll(cd.getRequiredModuleContexts(c));
             }
 
             modules.addAll(c.getActiveModules(u));
