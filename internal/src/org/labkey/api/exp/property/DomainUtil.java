@@ -71,6 +71,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -522,6 +523,9 @@ public class DomainUtil
             s.remove(pd.getPropertyId());
         }
 
+        //replace update's locked fields with the orig for the same propertyId regardless of what we get from client
+        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getFields());
+
         int deletedCount = 0;
         for (int id : s)
         {
@@ -626,6 +630,49 @@ public class DomainUtil
         }
 
         return validationException;
+    }
+
+    private static Set<GWTPropertyDescriptor> getLockedFields(List<? extends GWTPropertyDescriptor> origFields)
+    {
+        Set<GWTPropertyDescriptor> locked = new HashSet<>();
+        for (GWTPropertyDescriptor pd : origFields)
+        {
+            if (pd.isLocked())
+            {
+                locked.add(pd);
+            }
+        }
+        return locked;
+    }
+
+    private static void replaceLockedFields(Set<GWTPropertyDescriptor> lockedFields, List<GWTPropertyDescriptor> updateFields)
+    {
+        Map<Integer, GWTPropertyDescriptor> origLockedFieldMap = getLockedPropertyIdMap(lockedFields);
+        Iterator<GWTPropertyDescriptor> updateFieldsIterator = updateFields.iterator(); //using an iterator to avoid ConcurrentModificationException
+
+        //remove locked field that came from the client
+        while (updateFieldsIterator.hasNext())
+        {
+            GWTPropertyDescriptor pd = updateFieldsIterator.next();
+            int propertyId = pd.getPropertyId();
+            if (origLockedFieldMap.containsKey(propertyId))
+            {
+                updateFieldsIterator.remove();
+            }
+        }
+
+        //replace with original locked fields
+        updateFields.addAll(origLockedFieldMap.values());
+    }
+
+    private static Map<Integer, GWTPropertyDescriptor> getLockedPropertyIdMap(Set<? extends GWTPropertyDescriptor> lockedFields)
+    {
+        Map<Integer, GWTPropertyDescriptor> lockedFieldMap = new HashMap<>();
+        for (GWTPropertyDescriptor lockedField : lockedFields)
+        {
+            lockedFieldMap.put(lockedField.getPropertyId(), lockedField);
+        }
+        return lockedFieldMap;
     }
 
     public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, ValidationException errors)
