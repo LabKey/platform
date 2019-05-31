@@ -59,6 +59,7 @@ import java.util.Map;
  */
 public class DiscussionServiceImpl implements DiscussionService
 {
+    @Override
     public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions)
     {
         if (!allowMultipleDiscussions)

@@ -34,7 +34,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
         <td>
             <select name="lsidOutputType">
                 <% for(LSIDRelativizer lsidOutputType : LSIDRelativizer.values()) { %>
-                    <option value="<%= lsidOutputType %>" <% if (lsidOutputType == bean.getSelectedRelativizer()) { %>selected<% } %>><%= lsidOutputType.getDescription() %></option>
+                    <option value="<%=h(lsidOutputType)%>" <% if (lsidOutputType == bean.getSelectedRelativizer()) { %>selected<% } %>><%=h(lsidOutputType.getDescription())%></option>
                 <% } %>
             </select>
         </td>
@@ -44,7 +44,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
         <td>
             <select name="exportType">
                 <% for(XarExportType exportType : XarExportType.values()) { %>
-                    <option value="<%= exportType %>" <% if (exportType == bean.getSelectedExportType()) { %>selected<% } %>><%= exportType.getDescription() %></option>
+                    <option value="<%=h(exportType)%>" <% if (exportType == bean.getSelectedExportType()) { %>selected<% } %>><%=h(exportType.getDescription())%></option>
                 <% } %>
             </select>
         </td>

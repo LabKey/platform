@@ -18,7 +18,9 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ProductImpl" %>
@@ -31,8 +33,6 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -73,10 +73,10 @@
 
         if (canEdit)
         {
-            ActionURL editUrl = PageFlowUtil.urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
+            ActionURL editUrl = urlProvider(StudyUrls.class).getManageTreatmentsURL(c, c.hasActiveModuleByName("viscstudies"));
             editUrl.addReturnURL(getActionURL());
 %>
-            <%=textLink("Manage Treatments", editUrl)%><br/>
+            <%=link("Manage Treatments", editUrl)%><br/>
 <%
         }
 
@@ -95,7 +95,7 @@
 %>
                         <td class="cell-display">
                             <%=h(visit.getDisplayString())%>
-                            <%=(visit.getDescription() != null ? PageFlowUtil.helpPopup("Description", visit.getDescription()) : "")%>
+                            <%=(visit.getDescription() != null ? helpPopup("Description", visit.getDescription()) : HtmlString.EMPTY_STRING)%>
                         </td>
 <%
                     }
@@ -152,7 +152,7 @@
 %>
                         <td class="cell-display " data-index="<%=h(visit.getLabel())%>">
                             <%=h(treatment != null ? treatment.getLabel() : "")%>
-                            <%=(productHover.length() > 0 ? PageFlowUtil.helpPopup("Treatment Products", productHover, true, 500) : "")%>
+                            <%=(productHover.length() > 0 ? helpPopup("Treatment Products", productHover, true, 500) : HtmlString.EMPTY_STRING)%>
                         </td>
 <%
                     }

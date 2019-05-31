@@ -16,10 +16,25 @@
 
 package org.labkey.query.persist;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Entity;
+import org.labkey.api.query.MetadataParseException;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.data.xml.TablesDocument;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class QueryDef extends Entity implements Cloneable
 {
@@ -30,7 +45,9 @@ public class QueryDef extends Entity implements Cloneable
 
     private int _queryDefId;
     private String _sql;
-    private String _metadata;
+    // Hold the ParsedMetadata reference here so that it can be shared across wrappers of this QueryDef
+    @NotNull
+    private ParsedMetadata _parsedMetadata = EMPTY_METADATA;
     private double _schemaVersion;
     private int _flags;
     private String _name;
@@ -57,11 +74,11 @@ public class QueryDef extends Entity implements Cloneable
     }
     public String getMetaData()
     {
-        return _metadata;
+        return _parsedMetadata._xml;
     }
     public void setMetaData(String tableInfo)
     {
-        _metadata = tableInfo;
+        _parsedMetadata = new ParsedMetadata(tableInfo);
     }
     public double getSchemaVersion()
     {
@@ -136,4 +153,72 @@ public class QueryDef extends Entity implements Cloneable
             throw UnexpectedException.wrap(cnse);
         }
     }
+
+    @NotNull
+    public ParsedMetadata getParsedMetadata()
+    {
+        return _parsedMetadata;
+    }
+
+    public void setParsedMetadata(@NotNull ParsedMetadata parsedMetadata)
+    {
+        _parsedMetadata = parsedMetadata;
+    }
+
+    private static final ParsedMetadata EMPTY_METADATA = new ParsedMetadata(null);
+
+    public static ParsedMetadata createParsedMetadata(String xml)
+    {
+        return StringUtils.trimToNull(xml) == null ? EMPTY_METADATA : new ParsedMetadata(xml);
+    }
+
+    /** Wrapper around the XML metadata. Lazily parses into an XML Bean and caches the result */
+    public static class ParsedMetadata
+    {
+        @Nullable
+        private final String _xml;
+        @Nullable
+        private TablesDocument _doc;
+        private List<QueryException> _errors = Collections.emptyList();
+
+        public ParsedMetadata(@Nullable String xml)
+        {
+            _xml = StringUtils.trimToNull(xml);
+        }
+
+        @Nullable
+        public String getXml()
+        {
+            return _xml;
+        }
+
+        @Nullable
+        public TablesDocument getTablesDocument(Collection<QueryException> errors)
+        {
+            if (_doc == null && _xml != null)
+            {
+                XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+                List<XmlError> xmlErrors = new ArrayList<>();
+                List<QueryException> localErrors = new ArrayList<>();
+                options.setErrorListener(xmlErrors);
+                try
+                {
+                    _doc = TablesDocument.Factory.parse(_xml, options);
+                }
+                catch (XmlException e)
+                {
+                    localErrors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(e)));
+                }
+                for (XmlError xmle : xmlErrors)
+                {
+                    localErrors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle)));
+                }
+                _errors = Collections.unmodifiableList(localErrors);
+            }
+
+            errors.addAll(_errors);
+            return _doc;
+        }
+    }
+
 }

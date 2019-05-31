@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.reports.report.RedirectReport" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
@@ -67,7 +66,7 @@
     <% if (type != null) { %> <tr><td><b>Type:</b></td><td><%=h(type)%></td></tr> <% } %>
     <% if (description != null) { %> <tr><td><b>Description:</b></td><td><%=h(description)%></td></tr> <% } %>
     <tr><td colspan=2>
-        <%=PageFlowUtil.textLink("view report", url, null, null, reportURLAttributes)%>
+        <%=link("view report").href(url).attributes(reportURLAttributes)%>
     </td></tr>
 </table>
 <div style='clear: both;'></div>

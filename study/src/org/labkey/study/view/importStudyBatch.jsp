@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ page import="org.labkey.api.study.Dataset"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>

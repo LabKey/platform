@@ -123,7 +123,7 @@
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                             <% ExperimentDataHandler handler = data.findDataHandler();
                                 ActionURL url = handler == null ? null : handler.getContentURL(data);
-                                if (url != null) { %><%=textLink("view", url)%><% } %>
+                                if (url != null) { %><%=link("view", url)%><% } %>
                         </td>
                         <td width="40px"><%= h(dataRunInput.getRole()) %></td>
                         <td width="200px"><%= h(dataRunInput.getLSID()) %></td>
@@ -163,7 +163,7 @@
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                             <% ExperimentDataHandler handler = data.findDataHandler();
                                 ActionURL url = handler == null ? null : handler.getContentURL(data);
-                                if (url != null) { %><%=textLink("view", url)%><% } %>
+                                if (url != null) { %><%=link("view", url)%><% } %>
                         </td>
                         <td width="40px"><%= h(dataRunInput.getRole()) %></td>
                         <td width="200px"><%= h(dataRunInput.getLSID()) %></td>
@@ -207,7 +207,7 @@
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(data);
-                    if (url != null) { %><%=textLink("view", url)%><% } %><br/>
+                    if (url != null) { %><%=link("view", url)%><% } %><br/>
                 <% } %>
             </td>
             <td valign="top">
@@ -219,7 +219,7 @@
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(data);
-                    if (url != null) { %><%=textLink("view", url)%><% } %><br/>
+                    if (url != null) { %><%=link("view", url)%><% } %><br/>
                 <% } %>
             </td>
         </tr>

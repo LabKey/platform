@@ -52,10 +52,16 @@ public class LabKeyJspWriter extends JspWriterWrapper
             {
                 obj = ((HasHtmlString) obj).getHtmlString();
             }
-            else
+            else if (!(obj instanceof Number))
             {
                 OBJECT_INVOCATIONS.incrementAndGet();
-                UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
+                if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
+                {
+                    if (null == obj)
+                        LOG.info("A JSP is attempting to render a null object!", new Throwable());
+                    else
+                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getSimpleName(), new Throwable());
+                }
             }
         }
 

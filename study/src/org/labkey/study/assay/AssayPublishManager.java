@@ -47,6 +47,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -83,7 +84,7 @@ import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
@@ -326,7 +327,7 @@ public class AssayPublishManager implements AssayPublishService
         Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
         QCState defaultQCState = null;
         if (defaultQCStateId != null)
-            defaultQCState = StudyManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+            defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
         // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
         // IllegalStateException in ContainerManager.ensureContainer.
@@ -712,7 +713,7 @@ public class AssayPublishManager implements AssayPublishService
                 Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
                 QCState defaultQCState = null;
                 if (defaultQCStateId != null)
-                    defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                    defaultQCState = QCStateManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
                         defaultQCState, QueryUpdateService.InsertOption.IMPORT, null, null, importLookupByAlternateKey);
                 if (!errors.hasErrors())

@@ -61,7 +61,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     protected BaseColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
     {
         var ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
-        ret.setFk(new LineageForeignKey(table, inputs));
+        ret.setFk(new LineageForeignKey(table.getUserSchema(), table, inputs));
         ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);

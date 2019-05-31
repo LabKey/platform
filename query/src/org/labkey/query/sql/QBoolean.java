@@ -50,11 +50,13 @@ public class QBoolean extends QExpr implements IConstant
         builder.append(getValue().toString());
     }
 
+    @Override
     public @NotNull JdbcType getJdbcType()
     {
         return JdbcType.BOOLEAN;
     }
 
+    @Override
     public String getValueString()
     {
         return getValue().toString();

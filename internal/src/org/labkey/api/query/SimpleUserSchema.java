@@ -111,13 +111,6 @@ public class SimpleUserSchema extends UserSchema
             _visible.removeAll(hiddenTables);
     }
 
-//    @Override
-//    @Deprecated
-//    public TableInfo createTable(String name)
-//    {
-//        throw new IllegalStateException();
-//    }
-//
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
@@ -155,13 +148,6 @@ public class SimpleUserSchema extends UserSchema
     {
         return new SimpleTable<>(this, sourceTable, cf).init();
     }
-
-    // TODO ContainerFilter - remove
-//    @Deprecated
-//    protected TableInfo createWrappedTable(String name, @NotNull TableInfo sourceTable)
-//    {
-//        return createWrappedTable(name, sourceTable, null);
-//    }
 
     @Override
     public Set<String> getTableNames()
@@ -332,9 +318,13 @@ public class SimpleUserSchema extends UserSchema
                 //get the column name in the target FK table that it would have joined against.
                 ForeignKey fk = col.getFk();
                 String pkColName = fk.getLookupColumnName();
-                TableInfo fkTable = col.getFkTableInfo();
-                if (null == pkColName && fkTable != null && fkTable.getPkColumnNames().size() == 1)
-                    pkColName = fkTable.getPkColumnNames().get(0);
+                if (null == pkColName)
+                {
+                    // Only create this TableInfo if we don't already know the pkColName since it might be expensive
+                    TableInfo fkTable = col.getFkTableInfo();
+                    if (fkTable != null && fkTable.getPkColumnNames().size() == 1)
+                        pkColName = fkTable.getPkColumnNames().get(0);
+                }
 
                 if (null != pkColName)
                 {

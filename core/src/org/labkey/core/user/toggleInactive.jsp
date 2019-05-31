@@ -55,7 +55,7 @@
 <table>
     <tr>
         <td>
-            <%=textLink(inactiveCaption, inactiveUrl)%>
+            <%=link(inactiveCaption, inactiveUrl)%>
         </td>
     </tr>
 
@@ -64,7 +64,7 @@
     %>
     <tr>
         <td>
-            <%=textLink(temporaryCaption, temporaryUrl)%>
+            <%=link(temporaryCaption, temporaryUrl)%>
         </td>
     </tr>
     <%

@@ -1,53 +1,53 @@
 <%
-    /*
-     * Copyright (c) 2009-2018 LabKey Corporation
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (c) 2009-2018 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
-<%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.search.SearchController.SearchConfiguration" %>
-<%@ page import="org.labkey.search.SearchController.SearchForm" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.List" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.search.SearchService" %>
-<%@ page import="org.labkey.api.search.SearchService.SearchResult" %>
+<%@ page import="org.jetbrains.annotations.NotNull" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
 <%@ page import="org.labkey.api.search.SearchResultTemplate" %>
 <%@ page import="org.labkey.api.search.SearchScope" %>
-<%@ page import="java.io.IOException" %>
-<%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.util.Path" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.json.JSONArray" %>
-<%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
+<%@ page import="org.labkey.api.search.SearchService.SearchResult" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.search.SearchUtils.HtmlParseException" %>
-<%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.Path" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.webdav.WebdavResource" %>
+<%@ page import="org.labkey.search.SearchController.SearchConfiguration" %>
+<%@ page import="org.labkey.search.SearchController.SearchForm" %>
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -271,8 +271,8 @@
 %>
 <div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
-        <labkey:form id="<%=h(searchFormId)%>" className="lk-search-form" action="<%=h(searchConfig.getPostURL(c))%>">
-            <labkey:input type="text" name="q" placeholder="<%=h(form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c))%>" formGroup="false" value="<%=h(value)%>"/>
+        <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
+            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=h(value)%>"/>
             <a class="search-overlay fa fa-search"></a>
             <% if (showAdvancedUI) { %>
             <small>
@@ -305,7 +305,7 @@
 <div id="<%=h(advFormCt)%>" class="col-md-12" <%=text(form.isShowAdvanced() ? "" : "style=\"display:none;\"")%>>
     <div class="panel panel-default">
         <div class="panel-body">
-            <labkey:form id="<%=h(advFormId)%>">
+            <labkey:form id="<%=advFormId%>">
                 <div class="form-group">
                     <div class="col-sm-4">
                         <h5>
@@ -487,7 +487,7 @@
                     {
                         String summary = StringUtils.trimToNull(hit.summary);
                         if (null != summary)
-                            %><%=h(summary, false).replace("&lt;br&gt;", "<br>")%><%
+                            %><%=h(summary, false).toString().replace("&lt;br&gt;", "<br>")%><%
                     }
                 %>
                 </div>

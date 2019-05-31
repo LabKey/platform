@@ -27,6 +27,7 @@ public class QRowStar extends QFieldKey
         builder.append("*");
     }
 
+    @Override
     public FieldKey getFieldKey()
     {
         return _starFieldKey;

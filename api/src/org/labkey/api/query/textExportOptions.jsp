@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.TSVWriter" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.LinkedHashMap" %>
@@ -90,7 +91,7 @@
         </td>
     </tr>
     <tr>
-        <td><label>Column headers:<%= PageFlowUtil.helpPopup("Column Header Options", sb.toString(), true) %></label></td>
+        <td><label>Column headers:<%=helpPopup("Column Header Options", sb.toString(), true)%></label></td>
         <td>
             <select id="<%=text(headerGUID)%>" name="<%=text(headerType)%>">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
@@ -111,7 +112,7 @@
     <tr>
         <td colspan="2">
             <%= button(exportButtonText).primary(true).id(exportButtonId) %>
-            <%= model.isIncludeSignButton() ? button(signButtonText).id(signButtonId) : " "%>
+            <%= model.isIncludeSignButton() ? button(signButtonText).id(signButtonId) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 </table>

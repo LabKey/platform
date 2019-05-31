@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,6 +38,14 @@ public class UnionContainerFilter extends ContainerFilter
         _filters = filters;
     }
 
+    @Override
+    public String getCacheKey(Container c)
+    {
+        StringBuilder sb = new StringBuilder(getClass().getName()).append("/").append(c.getId()).append("/");
+        for (var cf : _filters)
+            sb.append(cf.getCacheKey(c)).append("/");
+        return sb.toString();
+    }
 
     @Override @Nullable
     public Collection<GUID> getIds(Container currentContainer)

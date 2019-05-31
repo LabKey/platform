@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
@@ -31,6 +32,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.MenuButton;
+import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -888,6 +890,48 @@ public class AssayManager implements AssayService
     public void clearProtocolCache()
     {
         PROTOCOL_CACHE.clear();
+    }
+
+    @Override
+    public <FlagType extends ExpQCFlag> void saveFlag(Container container, User user, AssayProvider provider, FlagType flag)
+    {
+        AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
+        if (handler != null)
+        {
+            handler.saveFlag(container, user, flag);
+        }
+    }
+
+    @Override
+    public <FlagType extends ExpQCFlag> void deleteFlag(Container container, User user, AssayProvider provider, FlagType flag)
+    {
+        AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
+        if (handler != null)
+        {
+            handler.deleteFlag(container, user, flag);
+        }
+    }
+
+    @Override
+    public int deleteFlagsForRun(Container container, User user, AssayProvider provider, int runId)
+    {
+        AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
+        if (handler != null)
+        {
+            return handler.deleteFlagsForRun(container, user, runId);
+        }
+        return 0;
+    }
+
+    @Override
+    public <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls)
+    {
+        AssayFlagHandler handler = AssayFlagHandler.getHandler(provider);
+        if (handler != null)
+        {
+            return handler.getFlags(runId, cls);
+        }
+        return Collections.emptyList();
     }
 
     public static class TestCase extends Assert

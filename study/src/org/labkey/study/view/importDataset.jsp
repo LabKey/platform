@@ -42,7 +42,7 @@
     <tr><td class=labkey-form-label width=150>Type URI</td><td><%=h(form.getTypeURI())%><input type=hidden name="typeURI" value="<%=h(form.getTypeURI())%>"></td></tr>
     <tr><td class=labkey-form-label width=150>Key Fields</td><td><%=h(form.getKeys())%><input type=hidden name="keys" value="<%=h(form.getKeys())%>"></td></tr>
         <tr><td class=labkey-form-label width=150 >Tab delimited data (TSV)</td>
-        <td><%=textLink("template spreadsheet", buildURL(StudyController.TemplateAction.class, "datasetId=" + form.getDatasetId()))%>
+        <td><%=link("template spreadsheet").href(buildURL(StudyController.TemplateAction.class, "datasetId=" + form.getDatasetId()))%>
         </td></tr>
         <tr><td colspan=2 width="100%">
             <textarea id=tsv name=tsv rows=25 cols=80 wrap=off style="width:100%;"><%=h(form.getTsv())%></textarea>

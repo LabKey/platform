@@ -219,7 +219,7 @@ for (AnnouncementModel a : bean.announcementModels)
     }
     if (!bean.isPrint)
     {
-        %><tr><td style="padding-bottom:4px;" colspan=3 align="left"><%=textLink("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : ""), a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr><%
+        %><tr><td style="padding-bottom:4px;" colspan=3 align="left"><%=link("view " + bean.settings.getConversationName().toLowerCase() + (null != bean.insertURL ? " or respond" : "")).href(a.getThreadURL(c) + "rowId=" + a.getRowId())%></td></tr><%
     }
 }
 %></table>

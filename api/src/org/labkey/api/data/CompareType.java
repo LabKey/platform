@@ -76,632 +76,659 @@ public abstract class CompareType
     //
 
     public static final CompareType EQUAL = new CompareType("Equals", "eq", "EQUAL", true, " = ?", OperatorType.EQ)
+    {
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new EqualsCompareClause(fieldKey, this, value);
-            }
+            return new EqualsCompareClause(fieldKey, this, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            if (value == null)
             {
-                if (value == null)
-                {
-                    return filterValues[0] == null;
-                }
-                // First try with no type conversion
-                if (value.equals(filterValues[0]))
-                {
-                    return true;
-                }
-                // Then try converting to the same type
-                return value.equals(convert(filterValues[0], value.getClass()));
+                return filterValues[0] == null;
             }
-        };
+            // First try with no type conversion
+            if (value.equals(filterValues[0]))
+            {
+                return true;
+            }
+            // Then try converting to the same type
+            return value.equals(convert(filterValues[0], value.getClass()));
+        }
+    };
 
     public static final CompareType DATE_EQUAL = new CompareType("(Date) Equals", "dateeq", "DATE_EQUAL", true, null, OperatorType.DATEEQ)
+    {
+        @Override
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                //Use the IsBlank
-                if (value == null || "".equals(value))
-                    return ISBLANK.createFilterClause(fieldKey, value);
+            //Use the IsBlank
+            if (value == null || "".equals(value))
+                return ISBLANK.createFilterClause(fieldKey, value);
 
-                return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
+            return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-                return clause.meetsCriteria(value);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+            return clause.meetsCriteria(value);
+        }
+    };
 
     public static final CompareType NEQ = new CompareType("Does Not Equal", "neq", "NOT_EQUAL", true, " <> ?", OperatorType.NEQ)
+    {
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new NotEqualsCompareClause(fieldKey, this, value);
-            }
+            return new NotEqualsCompareClause(fieldKey, this, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return !CompareType.EQUAL.meetsCriteria(value, filterValues);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return !CompareType.EQUAL.meetsCriteria(value, filterValues);
+        }
+    };
+
     public static final CompareType DATE_NOT_EQUAL = new CompareType("(Date) Does Not Equal", "dateneq", "DATE_NOT_EQUAL", true, null, OperatorType.DATENEQ)
+    {
+        @Override
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                //Use the non-blank
-                if (value == null || "".equals(value))
-                    return NONBLANK.createFilterClause(fieldKey, value);
+            //Use the non-blank
+            if (value == null || "".equals(value))
+                return NONBLANK.createFilterClause(fieldKey, value);
 
-                return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
+            return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-                return clause.meetsCriteria(value);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+            return clause.meetsCriteria(value);
+        }
+    };
 
     public static final CompareType NEQ_OR_NULL = new CompareType("Does Not Equal", "neqornull", "NOT_EQUAL_OR_MISSING", true, " <> ?", OperatorType.NEQORNULL)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new NotEqualOrNullClause(fieldKey, value);
-            }
+            return new NotEqualOrNullClause(fieldKey, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
+        }
+    };
 
     public static final CompareType GT = new CompareType("Is Greater Than", "gt", "GREATER_THAN", true, " > ?", OperatorType.GT)
+    {
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
         {
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+            if (!(value instanceof Comparable))
             {
-                if (value == null || !(value instanceof Comparable))
-                {
-                    return false;
-                }
-                Object filterValue = convert(filterValues[0], value.getClass());
-                if (filterValue == null)
-                {
-                    return false;
-                }
-                return ((Comparable)value).compareTo(filterValue) > 0;
+                return false;
             }
-        };
+            Object filterValue = convert(filterValues[0], value.getClass());
+            if (filterValue == null)
+            {
+                return false;
+            }
+            return ((Comparable)value).compareTo(filterValue) > 0;
+        }
+    };
 
     public static final CompareType DATE_GT = new CompareType("(Date) Is Greater Than", "dategt", "DATE_GREATER_THAN", true, " >= ?", OperatorType.GTE) // GT --> >= roundup(date)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
+            return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-                return clause.meetsCriteria(value);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+            return clause.meetsCriteria(value);
+        }
+    };
 
     public static final CompareType LT = new CompareType("Is Less Than", "lt", "LESS_THAN", true, " < ?", OperatorType.LT)
+    {
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
         {
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+            if (!(value instanceof Comparable))
             {
-                if (value == null || !(value instanceof Comparable))
-                {
-                    return false;
-                }
-                Object filterValue = convert(filterValues[0], value.getClass());
-                if (filterValue == null)
-                {
-                    return false;
-                }
-                return ((Comparable)value).compareTo(filterValue) < 0;
+                return false;
             }
-        };
+            Object filterValue = convert(filterValues[0], value.getClass());
+            if (filterValue == null)
+            {
+                return false;
+            }
+            return ((Comparable)value).compareTo(filterValue) < 0;
+        }
+    };
 
     public static final CompareType DATE_LT = new CompareType("(Date) Is Less Than", "datelt", "DATE_LESS_THAN", true, " < ?", OperatorType.LT)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
+            return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-                return clause.meetsCriteria(value);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+            return clause.meetsCriteria(value);
+        }
+    };
 
     public static final CompareType GTE = new CompareType("Is Greater Than or Equal To", "gte", "GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
+    {
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
         {
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+            if (!(value instanceof Comparable))
             {
-                if (value == null || !(value instanceof Comparable))
-                {
-                    return false;
-                }
-                Object filterValue = convert(filterValues[0], value.getClass());
-                if (filterValue == null)
-                {
-                    return false;
-                }
-                return ((Comparable)value).compareTo(filterValue) >= 0;
+                return false;
             }
-        };
+            Object filterValue = convert(filterValues[0], value.getClass());
+            if (filterValue == null)
+            {
+                return false;
+            }
+            return ((Comparable)value).compareTo(filterValue) >= 0;
+        }
+    };
 
     public static final CompareType DATE_GTE = new CompareType("(Date) Is Greater Than or Equal To", "dategte", "DATE_GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
+            return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-                return clause.meetsCriteria(value);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+            return clause.meetsCriteria(value);
+        }
+    };
 
     public static final CompareType LTE = new CompareType("Is Less Than or Equal To", "lte", "LESS_THAN_OR_EQUAL", true, " <= ?", OperatorType.LTE)
+    {
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
         {
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+            if (!(value instanceof Comparable))
             {
-                if (value == null || !(value instanceof Comparable))
-                {
-                    return false;
-                }
-                Object filterValue = convert(filterValues[0], value.getClass());
-                if (filterValue == null)
-                {
-                    return false;
-                }
-                return ((Comparable)value).compareTo(filterValue) <= 0;
+                return false;
             }
-        };
+            Object filterValue = convert(filterValues[0], value.getClass());
+            if (filterValue == null)
+            {
+                return false;
+            }
+            return ((Comparable)value).compareTo(filterValue) <= 0;
+        }
+    };
 
     public static final CompareType DATE_LTE = new CompareType("(Date) Is Less Than or Equal To", "datelte", "DATE_LESS_THAN_OR_EQUAL", true, " < ?", OperatorType.LT)  // LTE --> < roundup(date)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
+            return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-                return clause.meetsCriteria(value);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
+            return clause.meetsCriteria(value);
+        }
+    };
 
     public static final CompareType STARTS_WITH = new CompareType("Starts With", "startswith", "STARTS_WITH", true, null, OperatorType.STARTSWITH)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new StartsWithClause(fieldKey, value);
-            }
+            return new StartsWithClause(fieldKey, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value != null && value.toString().startsWith((String)filterValues[0]);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value != null && value.toString().startsWith((String)filterValues[0]);
+        }
+    };
 
     public static final CompareType DOES_NOT_START_WITH = new CompareType("Does Not Start With", "doesnotstartwith", "DOES_NOT_START_WITH", true, null, OperatorType.DOESNOTSTARTWITH)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DoesNotStartWithClause(fieldKey, value);
-            }
+            return new DoesNotStartWithClause(fieldKey, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value == null || !value.toString().startsWith((String)filterValues[0]);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value == null || !value.toString().startsWith((String)filterValues[0]);
+        }
+    };
 
     public static final CompareType CONTAINS = new CompareType("Contains", "contains", "CONTAINS", true, null, OperatorType.CONTAINS)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new ContainsClause(fieldKey, value);
-            }
+            return new ContainsClause(fieldKey, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value != null && value.toString().contains((String) filterValues[0]);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value != null && value.toString().contains((String) filterValues[0]);
+        }
+    };
 
     public static final CompareType DOES_NOT_CONTAIN = new CompareType("Does Not Contain", "doesnotcontain", "DOES_NOT_CONTAIN", true, null, OperatorType.DOESNOTCONTAIN)
+    {
+        @Override
+        public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DoesNotContainClause(fieldKey, value);
-            }
+            return new DoesNotContainClause(fieldKey, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value == null || !value.toString().contains((String) filterValues[0]);
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value == null || !value.toString().contains((String) filterValues[0]);
+        }
+    };
 
     public static final CompareType CONTAINS_ONE_OF = new CompareType("Contains One Of (example usage: a;b;c)", "containsoneof", "CONTAINS_ONE_OF", true, null, OperatorType.CONTAINSONEOF)
+    {
+        // Each compare type uses CompareClause by default
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            // Each compare type uses CompareClause by default
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            if (value instanceof Collection)
             {
-                if (value instanceof Collection)
+                return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
+            }
+            else
+            {
+                List<String> values = new ArrayList<>();
+                if (value != null && !value.toString().trim().equals(""))
                 {
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
+                    values.addAll(parseParams(value, getValueSeparator()));
                 }
-                else
+                return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
+            }
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+            return clause.meetsCriteria(value);
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return SimpleFilter.InClause.SEPARATOR;
+        }
+    };
+
+    public static final CompareType CONTAINS_NONE_OF = new CompareType("Does Not Contain Any Of (example usage: a;b;c)", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
+    {
+        // Each compare type uses CompareClause by default
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            if (value instanceof Collection)
+            {
+                return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
+            }
+            else
+            {
+                Set<String> values = parseParams(value, getValueSeparator());
+
+                return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
+            }
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+            return !clause.meetsCriteria(value);
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return SimpleFilter.InClause.SEPARATOR;
+        }
+    };
+
+    public static final CompareType IN = new CompareType("Equals One Of (example usage: a;b;c)", "in", "IN", true, null, OperatorType.IN)
+    {
+        // Each compare type uses CompareClause by default
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            if (value instanceof Collection)
+            {
+                return new SimpleFilter.InClause(fieldKey, (Collection<?>)value, false);
+            }
+            else
+            {
+                List<String> values = new ArrayList<>();
+                if (value != null)
                 {
-                    List<String> values = new ArrayList<>();
-                    if (value != null && !value.toString().trim().equals(""))
+                    if (value.toString().trim().equals(""))
+                    {
+                        values.add(null);
+                    }
+                    else
                     {
                         values.addAll(parseParams(value, getValueSeparator()));
                     }
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
                 }
+                return new SimpleFilter.InClause(fieldKey, values, true);
             }
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-                return clause.meetsCriteria(value);
-            }
-
-            @Override
-            public String getValueSeparator()
-            {
-                return SimpleFilter.InClause.SEPARATOR;
-            }
-        };
-    public static final CompareType CONTAINS_NONE_OF = new CompareType("Does Not Contain Any Of (example usage: a;b;c)", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
         {
-            // Each compare type uses CompareClause by default
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                if (value instanceof Collection)
-                {
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
-                }
-                else
-                {
-                    Set<String> values = parseParams(value, getValueSeparator());
+            FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+            return clause.meetsCriteria(value);
+        }
 
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
-                }
-            }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-                return !clause.meetsCriteria(value);
-            }
-
-            @Override
-            public String getValueSeparator()
-            {
-                return SimpleFilter.InClause.SEPARATOR;
-            }
-        };
-
-    public static final CompareType IN = new CompareType("Equals One Of (example usage: a;b;c)", "in", "IN", true, null, OperatorType.IN)
+        @Override
+        public String getValueSeparator()
         {
-            // Each compare type uses CompareClause by default
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                if (value instanceof Collection)
-                {
-                    return new SimpleFilter.InClause(fieldKey, (Collection<?>)value, false);
-                }
-                else
-                {
-                    List<String> values = new ArrayList<>();
-                    if (value != null)
-                    {
-                        if (value.toString().trim().equals(""))
-                        {
-                            values.add(null);
-                        }
-                        else
-                        {
-                            values.addAll(parseParams(value, getValueSeparator()));
-                        }
-                    }
-                    return new SimpleFilter.InClause(fieldKey, values, true);
-                }
-            }
+            return SimpleFilter.InClause.SEPARATOR;
+        }
+    };
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-                return clause.meetsCriteria(value);
-            }
-
-            @Override
-            public String getValueSeparator()
-            {
-                return SimpleFilter.InClause.SEPARATOR;
-            }
-        };
     public static final CompareType NOT_IN = new CompareType("Does Not Equal Any Of (example usage: a;b;c)", "notin", "NOT_IN", true, null, OperatorType.NOTIN)
+    {
+        // Each compare type uses CompareClause by default
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            // Each compare type uses CompareClause by default
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            if (value instanceof Collection)
             {
-                if (value instanceof Collection)
+                return new SimpleFilter.InClause(fieldKey, (Collection)value, false, true);
+            }
+            else
+            {
+                List<String> values = new ArrayList<>();
+                if (value != null)
                 {
-                    return new SimpleFilter.InClause(fieldKey, (Collection)value, false, true);
-                }
-                else
-                {
-                    List<String> values = new ArrayList<>();
-                    if (value != null)
+                    if (value.toString().trim().equals(""))
                     {
-                        if (value.toString().trim().equals(""))
-                        {
-                            values.add(null);
-                        }
-                        else
-                        {
-                            values.addAll(parseParams(value, getValueSeparator()));
-                        }
+                        values.add(null);
                     }
-                    return new SimpleFilter.InClause(fieldKey, values, true, true);
+                    else
+                    {
+                        values.addAll(parseParams(value, getValueSeparator()));
+                    }
                 }
+                return new SimpleFilter.InClause(fieldKey, values, true, true);
             }
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-                return !clause.meetsCriteria(value);
-            }
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
+            return !clause.meetsCriteria(value);
+        }
 
-            @Override
-            public String getValueSeparator()
-            {
-                return SimpleFilter.InClause.SEPARATOR;
-            }
-        };
+        @Override
+        public String getValueSeparator()
+        {
+            return SimpleFilter.InClause.SEPARATOR;
+        }
+    };
+
     public static final CompareType IN_NS = new CompareType("Equals One Of A Member Of A Named Set", "inns", "IN", true, null, OperatorType.IN)
-            {
-                // Each compare type uses CompareClause by default
-                protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-                {
-                    String namedSet = null;
-                    if (value != null && StringUtils.isNotBlank(value.toString()))
-                        namedSet = value.toString();
-                    return new SimpleFilter.InClause(fieldKey, namedSet, true);
-                }
+    {
+        // Each compare type uses CompareClause by default
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            String namedSet = null;
+            if (value != null && StringUtils.isNotBlank(value.toString()))
+                namedSet = value.toString();
+            return new SimpleFilter.InClause(fieldKey, namedSet, true);
+        }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-                }
-            };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+        }
+    };
+
     public static final CompareType NOT_IN_NS = new CompareType("Does Not Equal Any Members Of A Named Set", "notinns", "NOT IN", true, null, OperatorType.NOTIN)
-            {
-                // Each compare type uses CompareClause by default
-                protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-                {
-                    String namedSet = null;
-                    if (value != null && StringUtils.isNotBlank(value.toString()))
-                        namedSet = value.toString();
-                    return new SimpleFilter.InClause(fieldKey, namedSet, true);
-                }
+    {
+        // Each compare type uses CompareClause by default
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            String namedSet = null;
+            if (value != null && StringUtils.isNotBlank(value.toString()))
+                namedSet = value.toString();
+            return new SimpleFilter.InClause(fieldKey, namedSet, true);
+        }
 
-                @Override
-                public boolean meetsCriteria(Object value, Object[] paramVals)
-                {
-                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-                }
-            };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+        }
+    };
+
     public static final CompareType BETWEEN = new CompareType("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
+    {
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            if (value instanceof Collection)
             {
-                if (value instanceof Collection)
-                {
-                    Object[] values = ((Collection)value).toArray();
-                    if (values.length != 2)
-                        return new BetweenClause(fieldKey, values[0], values[0], false);
+                Object[] values = ((Collection)value).toArray();
+                if (values.length != 2)
+                    return new BetweenClause(fieldKey, values[0], values[0], false);
 
-                    return new BetweenClause(fieldKey, values[0], values[1], false);
-                }
-                else
-                {
-                    String s = Objects.toString(value, "");
-                    String[] values = s.split(getValueSeparator());
-                    if (values.length != 2)
-                        return new BetweenClause(fieldKey, values[0], values[0], false);
-
-                    return new BetweenClause(fieldKey, values[0], values[1], false);
-                }
+                return new BetweenClause(fieldKey, values[0], values[1], false);
             }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
+            else
             {
-                FieldKey fieldKey = FieldKey.fromParts("unused");
-                FilterClause clause = new SimpleFilter.AndClause(
-                        GTE.createFilterClause(fieldKey, paramVals[0]),
-                        LTE.createFilterClause(fieldKey, paramVals[1]));
-                return clause.meetsCriteria(value);
-            }
+                String s = Objects.toString(value, "");
+                String[] values = s.split(getValueSeparator());
+                if (values.length != 2)
+                    return new BetweenClause(fieldKey, values[0], values[0], false);
 
-            @Override
-            public String getValueSeparator()
-            {
-                return BetweenClause.SEPARATOR;
+                return new BetweenClause(fieldKey, values[0], values[1], false);
             }
-        };
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FieldKey fieldKey = FieldKey.fromParts("unused");
+            FilterClause clause = new SimpleFilter.AndClause(
+                    GTE.createFilterClause(fieldKey, paramVals[0]),
+                    LTE.createFilterClause(fieldKey, paramVals[1]));
+            return clause.meetsCriteria(value);
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return BetweenClause.SEPARATOR;
+        }
+    };
+
     public static final CompareType NOT_BETWEEN = new CompareType("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
+    {
+        @Override
+        protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            if (value instanceof Collection)
             {
-                if (value instanceof Collection)
-                {
-                    Object[] values = ((Collection)value).toArray();
-                    if (values.length != 2)
-                        return new BetweenClause(fieldKey, values[0], values[0], true);
+                Object[] values = ((Collection)value).toArray();
+                if (values.length != 2)
+                    return new BetweenClause(fieldKey, values[0], values[0], true);
 
-                    return new BetweenClause(fieldKey, values[0], values[1], true);
-                }
-                else
-                {
-                    String s = Objects.toString(value, "");
-                    String[] values = s.split(getValueSeparator());
-                    if (values.length != 2)
-                        return new BetweenClause(fieldKey, values[0], values[0], true);
-
-                    return new BetweenClause(fieldKey, values[0], values[1], true);
-                }
+                return new BetweenClause(fieldKey, values[0], values[1], true);
             }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
+            else
             {
-                FieldKey fieldKey = FieldKey.fromParts("unused");
-                FilterClause clause = new SimpleFilter.OrClause(
-                        LT.createFilterClause(fieldKey, paramVals[0]),
-                        GT.createFilterClause(fieldKey, paramVals[1]));
-                return clause.meetsCriteria(value);
-            }
+                String s = Objects.toString(value, "");
+                String[] values = s.split(getValueSeparator());
+                if (values.length != 2)
+                    return new BetweenClause(fieldKey, values[0], values[0], true);
 
-            @Override
-            public String getValueSeparator()
-            {
-                return BetweenClause.SEPARATOR;
+                return new BetweenClause(fieldKey, values[0], values[1], true);
             }
-        };
+        }
+
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            FieldKey fieldKey = FieldKey.fromParts("unused");
+            FilterClause clause = new SimpleFilter.OrClause(
+                    LT.createFilterClause(fieldKey, paramVals[0]),
+                    GT.createFilterClause(fieldKey, paramVals[1]));
+            return clause.meetsCriteria(value);
+        }
+
+        @Override
+        public String getValueSeparator()
+        {
+            return BetweenClause.SEPARATOR;
+        }
+    };
 
     public static final CompareType MEMBER_OF = new CompareType("Is Member Of", "memberof", "MEMBER_OF", true, " is member of", OperatorType.MEMBEROF)
+    {
+        @Override
+        protected MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new MemberOfClause(fieldKey, value);
-            }
+            return new MemberOfClause(fieldKey, value);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for MEMBER_OF");
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for MEMBER_OF");
+        }
+    };
 
     //
     // These are the "no data value" operators
     //
 
     public static final CompareType ISBLANK = new CompareType("Is Blank", "isblank", "MISSING", false, " IS NULL", OperatorType.ISBLANK)
+    {
+        @Override
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return super.createFilterClause(fieldKey, null);
-            }
+            return super.createFilterClause(fieldKey, null);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value == null;
-            }
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value == null;
+        }
 
-            // For display purposes, we want this to say blank not null
-            @Override
-            public String getFilterValueText()
-            {
-                return " " + getDisplayValue().toLowerCase();
-            }
-        };
+        // For display purposes, we want this to say blank not null
+        @Override
+        public String getFilterValueText()
+        {
+            return " " + getDisplayValue().toLowerCase();
+        }
+    };
+
     public static final CompareType NONBLANK = new CompareType("Is Not Blank", "isnonblank", "NOT_MISSING", false, " IS NOT NULL", OperatorType.ISNONBLANK)
+    {
+        @Override
+        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return super.createFilterClause(fieldKey, null);
-            }
+            return super.createFilterClause(fieldKey, null);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value != null;
-            }
+        @Override
+        public boolean meetsCriteria(Object value, Object[] filterValues)
+        {
+            return value != null;
+        }
 
-            // For display purposes, we want this to say blank not null
-            @Override
-            public String getFilterValueText()
-            {
-                return " " + getDisplayValue().toLowerCase();
-            }
-        };
+        // For display purposes, we want this to say blank not null
+        @Override
+        public String getFilterValueText()
+        {
+            return " " + getDisplayValue().toLowerCase();
+        }
+    };
 
     public static final CompareType MV_INDICATOR = new CompareType("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
+    {
+        @Override
+        protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new MvClause(fieldKey, false);
-            }
+            return new MvClause(fieldKey, false);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+        }
+    };
+
     public static final CompareType NO_MV_INDICATOR = new CompareType("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
+    {
+        @Override
+        protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            @Override
-            protected MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new MvClause(fieldKey, true);
-            }
+            return new MvClause(fieldKey, true);
+        }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
-            }
-        };
+        @Override
+        public boolean meetsCriteria(Object value, Object[] paramVals)
+        {
+            throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
+        }
+    };
 
 
     //
@@ -996,6 +1023,7 @@ public abstract class CompareType
             return _fieldKey;
         }
 
+        @Override
         public List<FieldKey> getFieldKeys()
         {
             return Arrays.asList(getFieldKey());
@@ -1069,6 +1097,7 @@ public abstract class CompareType
             return col != null ? col.getJdbcType() : defaultType;
         }
 
+        @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             String comparisonSql = _comparison.getSql();
@@ -1121,6 +1150,7 @@ public abstract class CompareType
             return null;
         }
 
+        @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
@@ -1631,6 +1661,7 @@ public abstract class CompareType
             return _unescapedValue;
         }
 
+        @Override
         abstract String toWhereClause(SqlDialect dialect, String alias);
     }
 
@@ -1641,6 +1672,7 @@ public abstract class CompareType
             super(fieldKey, CompareType.STARTS_WITH, value);
         }
 
+        @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape();
@@ -1670,6 +1702,7 @@ public abstract class CompareType
             super(fieldKey, CompareType.DOES_NOT_START_WITH, value);
         }
 
+        @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("?", "'%'") + sqlEscape() + ")";
@@ -1748,6 +1781,7 @@ public abstract class CompareType
             super(fieldKey, CompareType.CONTAINS, value);
         }
 
+        @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return dialect.getColumnSelectName(alias) + " " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape(); 
@@ -1777,6 +1811,7 @@ public abstract class CompareType
             super(fieldKey, CompareType.DOES_NOT_CONTAIN, value);
         }
 
+        @Override
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")"; 

@@ -293,12 +293,6 @@ public class ExpSchema extends AbstractExpSchema
             }
         }
 
-        // Support "Experiments" as a legacy name for the RunGroups table
-        if ("Experiments".equalsIgnoreCase(name))
-        {
-            ExpExperimentTable ret = ExperimentService.get().createExperimentTable(name, this, cf);
-            return setupTable(ret);
-        }
         if ("Experiments".equalsIgnoreCase(name))
         {
             // Support "Experiments" as a legacy name for the RunGroups table

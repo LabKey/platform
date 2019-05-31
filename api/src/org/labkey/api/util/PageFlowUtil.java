@@ -379,6 +379,11 @@ public class PageFlowUtil
     }
 
 
+    static public HtmlString jsString(HtmlString hs)
+    {
+        return HtmlString.unsafe(jsString(hs.toString()));
+    }
+
     static public String jsString(String s)
     {
         if (s == null)
@@ -1344,6 +1349,25 @@ public class PageFlowUtil
                 "><span id=\"" + imageId + "\" title=\"" + filter(text) + "\" class=\"" + imageCls + "\"></span></a>";
     }
 
+    // TODO: Why no HTML filtering?
+    private static String getAttributes(Map<String, String> properties)
+    {
+        if (properties == null || properties.isEmpty())
+            return "";
+
+        StringBuilder attributes = new StringBuilder();
+
+        for (Map.Entry<String, String> entry : properties.entrySet())
+        {
+            attributes.append(entry.getKey());
+            attributes.append("=\"");
+            attributes.append(entry.getValue());
+            attributes.append("\" ");
+        }
+
+        return attributes.toString();
+    }
+
     public static String generateDisabledButton(String text)
     {
         return button(text).enabled(false).toString();
@@ -1373,6 +1397,26 @@ public class PageFlowUtil
         return '"';
     }
 
+    public static String textLink(String text, URLHelper url)
+    {
+        return link(text).href(url).build().toString();
+    }
+
+    public static String textLink(String text, URLHelper url, String id)
+    {
+        return link(text).href(url).id(id).build().toString();
+    }
+
+    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
+    {
+        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
+    }
+
+    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    {
+        return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
+    }
+
     public static String textLink(String text, String href, String id)
     {
         return link(text).href(href).id(id).build().toString();
@@ -1389,54 +1433,10 @@ public class PageFlowUtil
         return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
-    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
-    }
-
     @Deprecated
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    // TODO: Why no HTML filtering?
-    private static String getAttributes(Map<String, String> properties)
-    {
-        if (properties == null || properties.isEmpty())
-            return "";
-
-        StringBuilder attributes = new StringBuilder();
-
-        for (Map.Entry<String, String> entry : properties.entrySet())
-        {
-            attributes.append(entry.getKey());
-            attributes.append("=\"");
-            attributes.append(entry.getValue());
-            attributes.append("\" ");
-        }
-
-        return attributes.toString();
-    }
-
-    public static String textLink(String text, URLHelper url)
-    {
-        return link(text).href(url).build().toString();
-    }
-
-    public static String textLink(String text, URLHelper url, String id)
-    {
-        return link(text).href(url).id(id).build().toString();
     }
 
     public static String unstyledTextLink(String text, String href, String onClickScript, String id)
@@ -1446,9 +1446,14 @@ public class PageFlowUtil
 
     public static String unstyledTextLink(String text, URLHelper url)
     {
-        return unstyledTextLink(text, url.toString(), null, null);
+        return link(text).href(url).clearClasses().toString();
     }
 
+
+    public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    {
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
+    }
 
     public static String helpPopup(String title, String helpText)
     {
@@ -1662,6 +1667,8 @@ public class PageFlowUtil
 
         if (extraResources != null)
             resources.addAll(extraResources);
+
+        resources.removeIf(Objects::isNull);
 
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, config, resources, includePostParameters));
@@ -2416,21 +2423,25 @@ public class PageFlowUtil
 
         /* our big crawlers are... */
         // Google
-        if (userAgent.contains("googlebot"))
-            return true;
+//        if (userAgent.contains("googlebot"))
+//            return true;
         // Yahoo
         if (userAgent.contains("yahoo! slurp"))
             return true;
         // Microsoft
-        if (userAgent.contains("bingbot") || userAgent.contains("msnbot"))
-            return true;
+//        if (userAgent.contains("bingbot") || userAgent.contains("msnbot"))
+//            return true;
         if (userAgent.contains("msiecrawler"))  // client site-crawler
             return false;
         // Pingdom
-        if (userAgent.contains("pingdom.com_bot"))
-            return true;
+//        if (userAgent.contains("pingdom.com_bot"))
+//            return true;
         // a bot
         if (userAgent.contains("rpt-httpclient"))
+            return true;
+        if (userAgent.contains("qwantify"))
+            return true;
+        if (userAgent.contains("elb-healthchecker"))
             return true;
 
         // just about every bot contains "bot", "crawler" or "spider"

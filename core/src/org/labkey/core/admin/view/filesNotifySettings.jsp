@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <table class="lk-fields-table">
@@ -29,7 +28,7 @@
                         <option value="individual">Individual</option>
                         <option value="none">None</option>
                     </select></td>
-                    <td><%= PageFlowUtil.button("Set folder default").href("javascript:void(0)").onClick("alert('on set folder default');") %></td>
+                    <td><%= button("Set folder default").href("javascript:void(0)").onClick("alert('on set folder default');") %></td>
                 </tr>
                 <tr>
                     <td><span class="labkey-strong">Configure Selected Users</span></td>

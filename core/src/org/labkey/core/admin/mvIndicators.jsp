@@ -104,9 +104,7 @@
                                 needComma = true;
                             }
 
-                            String popupText = h(label);
-
-                            out.print(PageFlowUtil.helpPopup(indicator, popupText, true, indicator, 0));
+                            out.print(PageFlowUtil.helpPopup(indicator, label, false, indicator, 0));
                         }
                     }
                 %>
@@ -142,7 +140,7 @@
                         %>
                         <tr>
                             <td>&nbsp;</td>
-                            <td><%= PageFlowUtil.button("Add").href("#").onClick("addRowToTable();") %>
+                            <td><%= button("Add").href("#").onClick("addRowToTable();") %>
                             </td>
                             <td>&nbsp;</td>
                         </tr>

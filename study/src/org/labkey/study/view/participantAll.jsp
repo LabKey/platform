@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.exp.LsidManager" %>
+<%@ page import="org.labkey.api.qc.QCState" %>
+<%@ page import="org.labkey.api.qc.QCStateManager" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryService" %>
 <%@ page import="org.labkey.api.reports.Report" %>
@@ -60,7 +62,6 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ExpandStateNotifyAction" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
@@ -100,8 +101,6 @@
     String currentUrl = bean.getRedirectUrl();
     if (currentUrl == null)
         currentUrl = getActionURL().getLocalURIString();
-
-    ActionURL oldChartDesignerURL = null;
 
     StudyManager manager = StudyManager.getInstance();
     StudyImpl study = manager.getStudy(getContainer());
@@ -370,7 +369,7 @@
     %>
     <td class="labkey-participant-view-header" colspan="<%=seqKeyCount%>">
         <%= h(visit.getDisplayString()) %>
-        <%= text(visit.getDescription() != null ? PageFlowUtil.helpPopup("Visit Description", visit.getDescription()) : "") %>
+        <%= visit.getDescription() != null ? helpPopup("Visit Description", visit.getDescription()) : HtmlString.EMPTY_STRING %>
     </td>
     <%
         }
@@ -461,14 +460,14 @@
 <tr class="labkey-header">
     <th nowrap align="left" class="labkey-expandable-row-header">
         <a title="Click to expand/collapse"
-            href="<%=new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId()))%>"
+            href="<%=h(new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>"
             onclick="return LABKEY.ParticipantViewToggleIfReady(this, true, <%=datasetId%>);">
             <img src="<%=getWebappURL("_images/" + (expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
         </a><%
         if (null != StringUtils.trimToNull(dataset.getDescription()))
         {
-    %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
+    %><%=helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
         }
     %></th>
     <td class="labkey-expandable-row-header" style="text-align:right;"><%=rowCount%></td>
@@ -504,7 +503,7 @@
     // display details link(s) only if we have a source lsid in at least one of the rows
     boolean hasSourceLsid = false;
 
-    if (StudyManager.getInstance().showQCStates(getContainer()))
+    if (QCStateManager.getInstance().showQCStates(getContainer()))
     {
         row++;
         className = getShadeRowClass(row);
@@ -719,7 +718,7 @@
                             if (ptidLegacyReportIds.contains(reportId))
                             {
 %>
-                                <a class="labkey-text-link" href="<%=new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId).toString())%>">Remove Chart</a>
+                                <a class="labkey-text-link" href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId).toString()))%>">Remove Chart</a>
                                 <%
                             }
                             else
@@ -766,7 +765,7 @@
     {
         if (null == qcstates)
         {
-            List<QCState> states = StudyManager.getInstance().getQCStates(study.getContainer());
+            List<QCState> states = QCStateManager.getInstance().getQCStates(study.getContainer());
             qcstates = new HashMap<>(2 * states.size());
             for (QCState state : states)
                 qcstates.put(state.getRowId(), state);
@@ -860,7 +859,7 @@
         if (value instanceof Number)
             return HtmlString.of(Formats.formatNumber(getContainer(), (Number) value));
 
-        return null == value ? HtmlString.NBSP : HtmlString.unsafe(h(ConvertUtils.convert(value), true));
+        return null == value ? HtmlString.NBSP : h(ConvertUtils.convert(value), true);
     }
 %>
 

@@ -50,7 +50,7 @@
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 
-<labkey:form enctype="<%=text(enctype)%>" method="POST">
+<labkey:form enctype="<%=enctype%>" method="POST">
 
     <%=formatErrorsForPath("form")%>
 

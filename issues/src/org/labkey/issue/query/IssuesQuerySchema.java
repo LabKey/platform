@@ -54,7 +54,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,11 +78,8 @@ public class IssuesQuerySchema extends UserSchema
             @Override
             public TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf)
             {
-                SimpleUserSchema.SimpleTable<IssuesQuerySchema> table =
-                        new SimpleUserSchema.SimpleTable<>(
-                                schema, IssuesSchema.getInstance().getTableInfoRelatedIssues(), cf).init();
-
-                return table;
+                return new SimpleUserSchema.SimpleTable<>(
+                        schema, IssuesSchema.getInstance().getTableInfoRelatedIssues(), cf).init();
             }
         },
         Comments
@@ -105,8 +101,10 @@ public class IssuesQuerySchema extends UserSchema
 
         public abstract TableInfo createTable(IssuesQuerySchema schema, ContainerFilter cf);
     }
-    static private Set<String> tableNames;
-    static private Set<String> visibleTableNames;
+
+    private static final Set<String> tableNames;
+    private static final Set<String> visibleTableNames;
+
     static
     {
         tableNames = Collections.unmodifiableSet(
@@ -131,6 +129,7 @@ public class IssuesQuerySchema extends UserSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new IssuesQuerySchema(schema.getUser(), schema.getContainer());
@@ -143,27 +142,27 @@ public class IssuesQuerySchema extends UserSchema
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, IssuesSchema.getInstance().getSchema());
     }
 
+    @Override
     public Set<String> getTableNames()
     {
-        Set<String> names = new HashSet<>();
-
-        names.addAll(tableNames);
+        Set<String> names = new HashSet<>(tableNames);
         names.add(TableType.IssueListDef.name());
         names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
+
         return names;
     }
 
     @Override
     public Set<String> getVisibleTableNames()
     {
-        Set<String> names = new HashSet<>();
-
-        names.addAll(visibleTableNames);
+        Set<String> names = new HashSet<>(visibleTableNames);
         names.add(TableType.IssueListDef.name());
         names.addAll(IssueManager.getIssueListDefs(getContainer()).stream().map(IssueListDef::getName).collect(Collectors.toList()));
+
         return names;
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name != null)
@@ -561,7 +560,7 @@ public class IssuesQuerySchema extends UserSchema
             if (_columns == null)
             {
                 _columns = new ArrayList<>();
-                TableInfo table = _queryDef.getTable(new ArrayList<QueryException>(), true);
+                TableInfo table = _queryDef.getTable(new ArrayList<>(), true);
                 if (table != null)
                 {
                     _columns = table.getDefaultVisibleColumns();
