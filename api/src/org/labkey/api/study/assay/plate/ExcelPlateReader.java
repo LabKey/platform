@@ -81,7 +81,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
         {
             for (Cell cell : sheetRow)
             {
-                if (cell.getCellTypeEnum() == CellType.STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
+                if (cell.getCellType() == CellType.STRING && StringUtils.equalsIgnoreCase(cell.getStringCellValue(), "A"))
                 {
                     int col = cell.getColumnIndex();
                     char start = 'B';
@@ -92,7 +92,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
                         if (r != null)
                         {
                             Cell c = r.getCell(col);
-                            if (c == null || cell.getCellTypeEnum() == CellType.STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
+                            if (c == null || cell.getCellType() == CellType.STRING || !StringUtils.equalsIgnoreCase(c.getStringCellValue(), val))
                                 return false;
                         }
                         else

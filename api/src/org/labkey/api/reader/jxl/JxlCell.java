@@ -220,7 +220,7 @@ public class JxlCell implements Cell
     @Override
     public RichTextString getRichStringCellValue()
     {
-        switch(getCellTypeEnum()) {
+        switch(getCellType()) {
             case BLANK:
                 return new JxlRichTextString("");
             case STRING:
