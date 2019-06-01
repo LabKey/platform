@@ -12,3 +12,4 @@ sourceSets {
 }
 
 BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "assay"), depProjectConfig: "apiCompile")
+BuildUtils.addLabKeyDependency(project: project, config: "jspCompile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "assay"), depProjectConfig: "apiCompile")
