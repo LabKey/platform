@@ -46,7 +46,6 @@ import org.labkey.api.exp.property.AssayBatchDomainKind;
 import org.labkey.api.exp.property.AssayResultDomainKind;
 import org.labkey.api.exp.property.AssayRunDomainKind;
 import org.labkey.api.exp.property.DefaultAssayDomainKind;
-import org.labkey.api.exp.property.PlateBasedAssaySampleSetDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -284,7 +283,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
         PropertyService.get().registerDomainKind(new AssayRunDomainKind());
         PropertyService.get().registerDomainKind(new AssayResultDomainKind());
-        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());

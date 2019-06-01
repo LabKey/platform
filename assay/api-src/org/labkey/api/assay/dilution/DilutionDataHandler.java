@@ -51,7 +51,7 @@ import org.labkey.api.study.Position;
 import org.labkey.api.study.Well;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
-import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
+import org.labkey.api.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;

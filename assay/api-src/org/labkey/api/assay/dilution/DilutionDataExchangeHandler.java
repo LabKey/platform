@@ -23,7 +23,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.PlateBasedDataExchangeHandler;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroup;
-import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
+import org.labkey.api.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;

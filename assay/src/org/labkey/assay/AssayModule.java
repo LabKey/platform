@@ -19,6 +19,7 @@ package org.labkey.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
@@ -60,6 +61,7 @@ public class AssayModule extends DefaultModule
     protected void init()
     {
         addController(AssayController.NAME, AssayController.class);
+        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
     }
 
     @Override

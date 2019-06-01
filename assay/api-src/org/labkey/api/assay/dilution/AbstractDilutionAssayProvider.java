@@ -27,7 +27,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
+import org.labkey.api.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayDataType;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayTableMetadata;
