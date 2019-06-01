@@ -78,7 +78,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -172,7 +171,7 @@ public class ListController extends SpringActionController
 
     public static NavTree appendRootNavTrail(NavTree root, Container c, User user)
     {
-        if (c.hasOneOf(user, AdminPermission.class, PlatformDeveloperPermission.class))
+        if (c.hasOneOf(user, DesignListPermission.class, PlatformDeveloperPermission.class))
         {
             root.addChild("Lists", getBeginURL(c));
         }
@@ -221,7 +220,7 @@ public class ListController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(DesignListPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
@@ -271,7 +270,7 @@ public class ListController extends SpringActionController
             props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
             props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
             // Why is this different than DesignListPermission???
-            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), AdminPermission.class) ? "true":"false");
+            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
             props.put("loading", "Loading...");
 
             return new GWTView("org.labkey.list.Designer", props);
@@ -288,7 +287,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(DesignListPermission.class)
     @Action(ActionType.SelectMetaData.class)
     public class ListEditorServiceAction extends GWTServiceAction
     {
@@ -299,7 +298,7 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(DesignListPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
         private ArrayList<Integer> _listIDs = new ArrayList<>();
@@ -315,7 +314,7 @@ public class ListController extends SpringActionController
                 {
                     String[] parts = s.split(",");
                     Container c = ContainerManager.getForId(parts[1]);
-                    if(c.hasPermission(getUser(), AdminPermission.class)){
+                    if(c.hasPermission(getUser(), DesignListPermission.class)){
                         _listIDs.add(Integer.parseInt(parts[0]));
                         _containers.add(c);
                     }
