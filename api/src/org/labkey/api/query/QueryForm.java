@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -34,7 +35,6 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
-
 /**
  * QueryForm is basically a wrapper for QuerySettings and related helper for the query subsystem.
  *
@@ -45,14 +45,12 @@ import org.springframework.validation.BindException;
  */
 public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindParameters
 {
-    public static final String PARAMVAL_NOFILTER = "NONE";
     private ViewContext _context;
 
     private SchemaKey _schemaName = null;
     private UserSchema _schema;
 
     private String _queryName;
-    private QueryDefinition _queryDef;
     private QueryView _queryView;
 
     private String _viewName;
@@ -70,23 +68,37 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     // form-binding parts from the createSchema() and createQuerySettings() parts into two classes.
     private boolean _bindQueryName = true;
     private boolean _bindSchemaName = true;
-    private boolean _bindDataRegionName = true;
     private boolean _bindViewName = true;
     private BindState _bindState = BindState.UNBOUND;
     private QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.IMPORT;
 
+
+    /**
+     * @throws NotFoundException if the query/table does not exist.
+     */
+    @NotNull
     public QueryView getQueryView(BindException errors)
     {
+        UserSchema schema = getSchema();
+        if (schema == null)
+        {
+            throw new NotFoundException("Could not find schema: " + getSchemaName());
+        }
+
+        if (StringUtils.isEmpty(getQueryName()))
+        {
+            throw new NotFoundException("Query not specified");
+        }
+
         if (_queryView == null)
         {
-            UserSchema schema = getSchema();
-            if (schema == null)
-            {
-                throw new NotFoundException("Could not find schema: " + getSchemaName());
-            }
-
-            _queryView = schema.createView(this, errors);
+            throw new IllegalStateException("Expected _queryView to be initialized in call to getSchema()");
         }
+        if (_queryView.getTable() == null)
+        {
+            throw new NotFoundException("Query '" + getQueryName() + "' in schema '" + getSchemaName() + "' doesn't exist.");
+        }
+
         return _queryView;
     }
 
@@ -123,11 +135,13 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         assert MemTracker.getInstance().put(this);
     }
 
+    @Override
     public void setViewContext(ViewContext context)
     {
         _context = context;
     }
 
+    @Override
     public ViewContext getViewContext()
     {
         return _context;
@@ -144,12 +158,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return getViewContext().getContainer();
     }
 
-
+    @Override
     public @NotNull BindException bindParameters(PropertyValues params)
     {
         return doBindParameters(params);
     }
-
 
     protected @NotNull BindException doBindParameters(PropertyValues params)
     {
@@ -159,8 +172,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
         // Delete parameters we don't want to bind or that we want QuerySettings.init() to handle
         MutablePropertyValues bindParams = new MutablePropertyValues(params);
-        if (!_bindDataRegionName)
-            bindParams.removePropertyValue(QueryParam.dataRegionName.name());
         if (!_bindQueryName)
             bindParams.removePropertyValue(QueryParam.queryName.name());
         if (!_bindViewName)
@@ -175,7 +186,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         BindException errors = BaseViewAction.springBindParameters(this, commandName, bindParams);
         _bindState = BindState.BOUND;
 
-        if (schemaName != null && schemaName.getName() != null && !schemaName.getName().isEmpty())
+        if (schemaName != null && !schemaName.getName().isEmpty())
             _schemaName = schemaName;
 
         return errors;
@@ -313,7 +324,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     public void setQueryName(String name)
     {
-        if (_queryDef != null)
+        if (_queryView != null)
             throw new IllegalStateException();
         _queryName = name;
     }
@@ -329,17 +340,15 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     @Nullable
     public QueryDefinition getQueryDef()
     {
-        if (getQueryName() == null)
-            return null;
-        if (_queryDef == null)
+        try
         {
-            UserSchema schema = getSchema();
-            if (null != schema)
-                _queryDef = schema.getQueryDef(getQueryName());
-            if (null == _queryDef && null != schema && null != schema.getTable(getQueryName()))
-                _queryDef = schema.getQueryDefForTable(getQueryName());
+            QueryView view = getQueryView(new NullSafeBindException(this, "QueryForm"));
+            return view.getQueryDef();
         }
-        return _queryDef;
+        catch (NotFoundException e)
+        {
+            return null;
+        }
     }
 
     public @Nullable ActionURL urlFor(QueryAction action)
@@ -401,20 +410,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void reset()
     {
         _customView = null;
-        _queryDef = null;
+        _queryView = null;
         _schema = null;
-    }
-
-    public boolean canEditSql()
-    {
-        QueryDefinition q = getQueryDef();
-        return null != q && q.canEdit(getUser()) && getQueryDef().isSqlEditable();
-    }
-
-    public boolean canEditMetaData()
-    {
-        QueryDefinition q = getQueryDef();
-        return null != q && q.canEdit(getUser()) && getQueryDef().isMetadataEditable();
     }
 
     public boolean canEdit()
