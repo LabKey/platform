@@ -8,11 +8,8 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
@@ -60,7 +57,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.pow;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
 public class ExpDataIterators
@@ -750,9 +746,7 @@ public class ExpDataIterators
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
-            step0.setDebugName("drop alias/add objectid");
-            initObjectIdSequence();
-            step0.addColumn(new BaseColumnInfo("objectid", JdbcType.BIGINT), (Supplier) () -> _objectidSequence.next());
+            step0.setDebugName("drop alias");
 
             // Insert into exp.data then the provisioned table
             // Temporary work around for Issue 26082 (row at a time, reselect rowid)
@@ -795,24 +789,5 @@ public class ExpDataIterators
 
             return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
-    }
-
-
-    // CREATE the "objectid" counter for objects created through this code path
-    static DbSequence _objectidSequence;
-
-    static void initObjectIdSequence()
-    {
-        if (null == _objectidSequence)
-        {
-            _objectidSequence = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), "exp.object.objectid", 0, 1000);
-            // 10e18 is more readable than 2L<<62
-            _objectidSequence.ensureMinimum(1_000_000_000_000_000_000L);
-        }
-    }
-
-    long getNextObjectId()
-    {
-        return _objectidSequence.next();
     }
 }
