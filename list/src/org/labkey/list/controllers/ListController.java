@@ -78,6 +78,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -214,6 +215,7 @@ public class ListController extends SpringActionController
             return schema.createView(getViewContext(), settings, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Available Lists");
@@ -223,6 +225,7 @@ public class ListController extends SpringActionController
     @RequiresPermission(DesignListPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService()
         {
             return new ListImportServiceImpl(getViewContext());
@@ -250,6 +253,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
+        @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = null;
@@ -270,12 +274,13 @@ public class ListController extends SpringActionController
             props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
             props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
             // Why is this different than DesignListPermission???
-            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DeletePermission.class) ? "true":"false");
             props.put("loading", "Loading...");
 
             return new GWTView("org.labkey.list.Designer", props);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (null == _list)
@@ -298,12 +303,13 @@ public class ListController extends SpringActionController
     }
 
 
-    @RequiresPermission(DesignListPermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
         private ArrayList<Integer> _listIDs = new ArrayList<>();
         private ArrayList<Container> _containers = new ArrayList<>();
 
+        @Override
         public void validateCommand(ListDefinitionForm form, Errors errors)
         {
             if (form.getListId() == null)
@@ -314,7 +320,7 @@ public class ListController extends SpringActionController
                 {
                     String[] parts = s.split(",");
                     Container c = ContainerManager.getForId(parts[1]);
-                    if(c.hasPermission(getUser(), DesignListPermission.class)){
+                    if(c.hasPermission(getUser(), DeletePermission.class)){
                         _listIDs.add(Integer.parseInt(parts[0]));
                         _containers.add(c);
                     }
@@ -340,6 +346,7 @@ public class ListController extends SpringActionController
             return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(ListDefinitionForm form, BindException errors)
         {
             for(int i = 0; i < _listIDs.size(); i++)
@@ -357,12 +364,10 @@ public class ListController extends SpringActionController
                     }
                 }
             }
-            if (errors.hasErrors())
-                return false;
-            return true;
+            return !errors.hasErrors();
         }
 
-        @NotNull
+        @Override @NotNull
         public URLHelper getSuccessURL(ListDefinitionForm form)
         {
             return form.getReturnURLHelper(getBeginURL(getContainer()));
@@ -376,6 +381,7 @@ public class ListController extends SpringActionController
         private ListDefinition _list;
         private String _title;
 
+        @Override
         public ModelAndView getView(ListQueryForm form, BindException errors)
         {
             _list = form.getList();
@@ -393,6 +399,7 @@ public class ListController extends SpringActionController
             return view;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendListNavTrail(root, _list, _title);
@@ -596,6 +603,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
+        @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = form.getList();
@@ -690,6 +698,7 @@ public class ListController extends SpringActionController
             return view;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendListNavTrail(root, _list, "View List Item");
@@ -708,6 +717,7 @@ public class ListController extends SpringActionController
             _list = list;
         }
 
+        @Override
         public Object[] getPkVals()
         {
             Object[] pks = super.getPkVals();
@@ -729,6 +739,7 @@ public class ListController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ResolveAction extends SimpleRedirectAction<ListDefinitionForm>
     {
+        @Override
         public ActionURL getRedirectURL(ListDefinitionForm form)
         {
             ListDefinition list = form.getList();
@@ -789,6 +800,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
+        @Override
         public ModelAndView getView(ListQueryForm form, BindException errors)
         {
             _list = form.getList();
@@ -832,6 +844,7 @@ public class ListController extends SpringActionController
                 return new HtmlView("Unable to find the specified List");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (_list != null)
@@ -854,6 +867,7 @@ public class ListController extends SpringActionController
     {
         private ListDefinition _list;
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             int id = NumberUtils.toInt((String)getViewContext().get("rowId"));
@@ -898,6 +912,7 @@ public class ListController extends SpringActionController
                 return new HtmlView("No details available for this event.");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (_list != null)
@@ -956,6 +971,7 @@ public class ListController extends SpringActionController
     @RequiresPermission(DesignListPermission.class)
     public class ExportListArchiveAction extends ExportAction<ListDefinitionForm>
     {
+        @Override
         public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
@@ -983,15 +999,18 @@ public class ListController extends SpringActionController
     @RequiresPermission(DesignListPermission.class)
     public class ImportListArchiveAction extends FormViewAction<ListDefinitionForm>
     {
+        @Override
         public void validateCommand(ListDefinitionForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/list/view/importLists.jsp", null, errors);
         }
 
+        @Override
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
             Map<String, MultipartFile> map = getFileMap();
@@ -1021,11 +1040,13 @@ public class ListController extends SpringActionController
             return !errors.hasErrors();
         }
 
+        @Override
         public ActionURL getSuccessURL(ListDefinitionForm form)
         {
             return form.getReturnActionURL( getBeginURL(getContainer()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Import List Archive");
@@ -1035,6 +1056,7 @@ public class ListController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BrowseListsAction extends ReadOnlyApiAction<Object>
     {
+        @Override
         public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
