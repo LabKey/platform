@@ -301,6 +301,13 @@ public class CoreUpgradeCode implements UpgradeCode
                 def.setConfiguration(configuration, false);
                 if (def.isRemote() && def.getPassword() != null)
                 {
+                    if (!Encryption.isMasterEncryptionPassPhraseSpecified())
+                    {
+                        // if we can't encrypt the password, we will just blank out that field and force the user to set it manually through the UI
+                        // once the encryption key is configured
+                        LOG.warn("Master encryption key not specified, unable to migrate saved remote R engine password");
+                        def.setPassword(null);
+                    }
                     def.setChangePassword(true);
                     def.updateConfiguration();
 
