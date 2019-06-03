@@ -63,6 +63,26 @@
             }
         };
 
+        saveState = function(){
+
+            let form = document.querySelector('#qc_form');
+            if (form){
+                LABKEY.Ajax.request({
+                    method  : 'POST',
+                    url     : LABKEY.ActionURL.buildURL("assay", "updateQCState.api"),
+                    form    : new FormData(form),
+                    success : LABKEY.Utils.getCallbackWrapper(function(response)
+                    {
+                        if (response.success) {
+                            window.onbeforeunload = null;
+                            window.location = <%=q(form.getReturnUrl())%>;
+                        }
+                    }),
+                    failure : LABKEY.Utils.displayAjaxErrorResponse
+                });
+            }
+        };
+
         $(document).ready(function () {
 
             // qc states
@@ -82,7 +102,7 @@
 
 
 <labkey:errors/>
-<labkey:form method="POST" layout="horizontal" onsubmit="LABKEY.setSubmit(true);">
+<labkey:form method="POST" layout="horizontal" onsubmit="LABKEY.setSubmit(true);" id="qc_form">
 
     <%
         if (currentState != null)
@@ -118,5 +138,6 @@
         }
     %>
     <labkey:input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
-    <labkey:button text="update" submit="true"/>
+    <labkey:button text="update" submit="false" onclick="saveState();"/>
+    <labkey:button text="cancel" href="<%=h(form.getReturnUrl())%>" onclick="LABKEY.setSubmit(true);"/>
 </labkey:form>

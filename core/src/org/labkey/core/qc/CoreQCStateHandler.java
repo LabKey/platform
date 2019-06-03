@@ -40,7 +40,11 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
         props.put(IS_BLANK_QC_STATE_PUBLIC_KEY, Boolean.toString(isBlankQCStatePublic));
         props.save();
 
-        AssayQCService.getProvider().setDefaultDataImportState(container, QCStateManager.getInstance().getQCStateForRowId(container, defaultQCState));
+        QCState state = null;
+        if (defaultQCState != null)
+            state = QCStateManager.getInstance().getQCStateForRowId(container, defaultQCState);
+
+        AssayQCService.getProvider().setDefaultDataImportState(container, state);
     }
 
     @Override
