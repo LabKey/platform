@@ -150,7 +150,7 @@
  *          <li><strong>brush:</strong> Callback function during the brush event.</li>
  *          <li><strong>brushclear:</strong> Callback function for when the brush event is cleared.</li>
  *          <li><strong>brushend:</strong> Callback function for when the brush event ends.</li>
- *          <li><strong>brushstart:</strong> Callback function for when the brush even starts.</li>
+ *          <li><strong>brushstart:</strong> Callback function for when the brush event starts.</li>
  *      </ul>
  * @param {Array} [config.legendData] (Optional) An array of objects to be used for the plot legend. Each object can
  *      include the legend item text, color, and shape.
