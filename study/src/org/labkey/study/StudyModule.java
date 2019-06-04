@@ -240,16 +240,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
     public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
 
+    @Override
     public String getName()
     {
         return MODULE_NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.10;
     }
 
+    @Override
     protected void init()
     {
         addController("study", StudyController.class);
@@ -326,11 +329,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -346,6 +351,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 new SharedStudyController.StudyFilterWebPartFactory()));
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -587,6 +593,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             addLegacyNames("Reports", "Reports and Views");
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
@@ -724,7 +731,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Datasets", DatasetsWebPartView.class);
         }
 
-
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
@@ -744,6 +751,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Vaccine Study Protocols");
             addLegacyNames("Study Designs");
         }
+
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             return new StudyDesignsWebPart(portalCtx, true);
@@ -757,6 +766,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Study Protocol Summary");
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             JspView view = new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
@@ -809,12 +819,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return new StudyUpgradeCode();
     }
 
+    @Override
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         StudyManager._enumerateDocuments(task, c);
     }
     
-
+    @Override
     public void indexDeleted()
     {
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.Participant SET LastIndexed = NULL");

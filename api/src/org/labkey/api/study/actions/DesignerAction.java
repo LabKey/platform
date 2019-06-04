@@ -64,6 +64,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     private DesignerForm _form;
     private ExpProtocol _protocol;
 
+    @Override
     public ModelAndView getView(DesignerForm form, BindException errors)
     {
         _form = form;
@@ -115,6 +116,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         return AssayService.get().createAssayDesignerView(properties);
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         NavTree result = super.appendNavTrail(root);

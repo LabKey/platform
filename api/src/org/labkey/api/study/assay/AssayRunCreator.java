@@ -40,12 +40,12 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
      * @param batchId if not null, the run group that's already created for this batch. If null, a new one will be created.
      * @return Pair of batch and run that were inserted.  ExpBatch will not be null, but ExpRun may be null when inserting the run async.
      */
-    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId)
+    Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId)
             throws ExperimentException, ValidationException;
 
     /**
      * @return the batch to which the run has been assigned
      */
-    public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps)
+    ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps)
         throws ExperimentException, ValidationException;
 }

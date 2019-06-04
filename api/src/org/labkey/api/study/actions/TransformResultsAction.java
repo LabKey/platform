@@ -34,7 +34,6 @@ import java.io.File;
 @RequiresPermission(InsertPermission.class)
 public class TransformResultsAction extends BaseAssayAction<TransformResultsAction.TransformResultsForm>
 {
-
     @Override
     public ModelAndView getView(TransformResultsForm form, BindException errors) throws Exception
     {
@@ -67,11 +66,13 @@ public class TransformResultsAction extends BaseAssayAction<TransformResultsActi
             _name = name;
         }
 
+        @Override
         public String getUploadAttemptID()
         {
             return _uploadAttemptID;
         }
 
+        @Override
         public void setUploadAttemptID(String uploadAttemptId)
         {
             _uploadAttemptID = uploadAttemptId;
