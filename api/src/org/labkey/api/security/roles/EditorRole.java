@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.security.SecurableResource;
@@ -50,6 +51,6 @@ public class EditorRole extends AbstractRole
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return super.isApplicable(policy,resource) || resource instanceof Study || resource instanceof Dataset;
+        return super.isApplicable(policy,resource) || resource instanceof PipeRoot || resource instanceof Study || resource instanceof Dataset;
     }
 }

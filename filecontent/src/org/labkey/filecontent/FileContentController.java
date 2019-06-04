@@ -1358,7 +1358,7 @@ public class FileContentController extends SpringActionController
                             if (null != column)
                             {
                                 Map<String, Object> map = new HashMap<>();
-                                map.put("value", data.get(property));
+                                map.put("value", data.get(column.getAlias()));
                                 StringExpression url = column.getEffectiveURL();
                                 if (null != url)
                                     map.put("url", url.eval(data));
