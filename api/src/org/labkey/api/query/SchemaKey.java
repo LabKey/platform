@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class SchemaKey extends QueryKey<SchemaKey>
 {
-    private static final String DIVIDER = ".";
+    public static final String DIVIDER = ".";
 
     private static final QueryKey.Factory<SchemaKey> FACTORY = SchemaKey::new;
 

@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 
@@ -33,6 +34,8 @@ public class QString extends QExpr implements IConstant
         return str;
     }
 
+    @NotNull
+    @Override
     public JdbcType getJdbcType()
     {
         return JdbcType.VARCHAR;
@@ -69,6 +72,7 @@ public class QString extends QExpr implements IConstant
         builder.append(getTokenText());
     }
 
+    @Override
     public String getValueString()
     {
         return getTokenText();

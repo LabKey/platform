@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -72,7 +71,7 @@
         selectedFileNames = LABKEY.ActionURL.getParameterArray("file");
         if (!selectedFileNames || selectedFileNames.length == 0) {
             alert("No files have been selected for analysis. Return to the pipeline to select them.");
-            window.location = "<%= cancelURL %>";
+            window.location = "<%=h(cancelURL)%>";
         }
         else {
             analyzeFormCmp = Ext4.create('LABKEY.pipeline.AnalyzeForm', {
@@ -100,5 +99,5 @@ Choose an existing protocol or define a new one.<br />
 <labkey:form id="analysis_form">
     <div id="pipeline-analyze-form"></div>
     <labkey:button text="Analyze" id="submitButton" onclick="startAnalysis(); return false;" />
-    <labkey:button text="Cancel" href="<%= cancelURL %>"/>
+    <%=button("Cancel").href(cancelURL)%>
 </labkey:form>

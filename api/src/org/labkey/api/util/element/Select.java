@@ -34,6 +34,7 @@ public class Select extends Input
         _options = builder._options;
     }
 
+    @Override
     public boolean isMultiple()
     {
         return _multiple;
@@ -122,6 +123,7 @@ public class Select extends Input
             return this;
         }
 
+        @Override
         public Select build()
         {
             return new Select(this);

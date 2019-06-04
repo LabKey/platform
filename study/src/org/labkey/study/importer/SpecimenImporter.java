@@ -3710,7 +3710,7 @@ public class SpecimenImporter
         {
             while (true)
             {
-                String id = ((Integer)sequence.next()).toString();
+                String id = String.valueOf(sequence.next());
 
                 if (!currentIds.contains(id))
                 {

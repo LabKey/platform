@@ -41,6 +41,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -82,7 +83,7 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroup;
-import org.labkey.study.model.QCState;
+import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
@@ -243,7 +244,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 addColumn(qcStateColumn);
                 // Hide the QCState column if the study doesn't have QC states defined. Otherwise, don't hide it
                 // but don't include it in the default set of columns either
-                if (!StudyManager.getInstance().showQCStates(_userSchema.getContainer()))
+                if (!QCStateManager.getInstance().showQCStates(_userSchema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
             else if ("ParticipantSequenceNum".equalsIgnoreCase(name))
@@ -336,7 +337,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             getMutableColumn("dsrowid").setHidden(true);
         }
 
-        if (null != _userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container"))
+        if (null != _userSchema.getStudy() && !_userSchema.getStudy().isDataspaceStudy() && null == getColumn("container", false))
             addContainerColumn(true);
 
         var autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
@@ -514,7 +515,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     protected ColumnInfo addFolderColumn()
     {
         // Workaround to prevent IllegalArgumentException for assay tables
-        if (getColumn("Folder") == null)
+        if (getColumn("Folder", false) == null)
         {
             var ci = _rootTable.getColumn("Container");
             if (null == ci)
@@ -692,6 +693,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
 
+    @Override
     protected void _setContainerFilter(@NotNull ContainerFilter filter)
     {
         checkLocked();
@@ -976,7 +978,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             if (_qcStateCache == null)
             {
                 _qcStateCache = new HashMap<>();
-                for (QCState state : StudyManager.getInstance().getQCStates(ctx.getContainer()))
+                for (QCState state : QCStateManager.getInstance().getQCStates(ctx.getContainer()))
                     _qcStateCache.put(state.getRowId(), state);
             }
             return _qcStateCache;

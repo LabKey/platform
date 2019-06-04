@@ -16,6 +16,7 @@
 package org.labkey.study.specimen.report;
 
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
@@ -24,9 +25,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
@@ -40,6 +39,9 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -87,7 +89,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
     }
 
-    private CohortFilter _cohortFilter = null;
+    private CohortFilter _cohortFilter;
     private Status _statusFilter = Status.ALL;
     private String _baseCustomViewName;
     private boolean _viewVialCount = false;
@@ -432,35 +434,32 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
         else
         {
-            String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
             String completionUrl = new ActionURL(SpecimenController.CompleteSpecimenAction.class, getContainer()).addParameter("type", "ParticipantId").getLocalURIString();
             String initValue = selectedParticipantId != null ? selectedParticipantId : participants.iterator().next().getParticipantId();
 
-            StringBuilder sb = new StringBuilder();
+            StringWriter writer = new StringWriter();
+            AutoCompleteTextTag tag = new AutoCompleteTextTag()
+            {
+                @Override
+                protected Writer getWriter()
+                {
+                    return writer;
+                }
+            };
+            tag.setUrl(completionUrl);
+            tag.setName(inputName);
+            tag.setValue(initValue);
 
-            // TODO: Use the same code as AutoCompleteTag.java
-            sb.append("<script type=\"text/javascript\">");
-            sb.append("LABKEY.requiresScript('completion',function(){\n");
+            try
+            {
+                tag.doTag();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
 
-            sb.append("Ext4.onReady(function(){\n" +
-                "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                "            completionUrl   : " + PageFlowUtil.jsString(completionUrl) + ",\n" +
-                "            sharedStore     : true,\n" +
-                "            tagConfig   : {\n" +
-                "                tag     : 'input',\n" +
-                "                type    : 'text',\n" +
-                "                name    : " + PageFlowUtil.jsString(inputName) + ",\n" +
-                "                size    : 25,\n" +
-                "                value   : " + PageFlowUtil.jsString(initValue) + ",\n" +
-                "                autocomplete : 'off'\n" +
-                "            }\n" +
-                "        });\n" +
-                "      })});\n");
-            sb.append("</script>\n");
-            sb.append("<div id=\"").append(renderId).append("\"></div>");
-
-            builder.append(sb.toString());
+            builder.append(writer.toString());
         }
 
         return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());

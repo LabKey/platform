@@ -66,7 +66,7 @@
         <td>
             <%= h(comment != null ? comment.getComment() : null) %>
             <% if (vial.getContainer().hasPermission(getUser(), SetSpecimenCommentsPermission.class)) { %>
-                <%= textLink("update", commentsLink) %>
+                <%= link("update", commentsLink) %>
             <% } %>
         </td>
     </tr>
@@ -98,7 +98,7 @@ if (comment != null)
 if (bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0)
 {
 %>
-<br><%= textLink("return to vial view", bean.getReturnUrl() )%>
+<br><%=link("return to vial view").href(bean.getReturnUrl() )%>
 <%
     }
 %>

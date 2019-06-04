@@ -1069,9 +1069,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpDataTable createFilesTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpDataTable createFilesTable(String name, UserSchema schema)
     {
-        return new ExpFilesTableImpl(name, schema, cf);
+        return new ExpFilesTableImpl(name, schema);
     }
 
     private String getNamespacePrefix(Class<? extends ExpObject> clazz)

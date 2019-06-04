@@ -101,6 +101,7 @@ public class PopupMenu extends DisplayElement
         _singletonMenu = singletonMenu;
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         render(out);

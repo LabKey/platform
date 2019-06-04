@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -114,14 +113,21 @@ public class LineageTableInfo extends VirtualTable
         if (fk != null)
             return fk;
 
-        return new LookupForeignKey("lsid") {
+        return new LookupForeignKey("lsid")
+        {
+            TableInfo _table = null;
+
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return new NodesTableInfo(_userSchema);
-//                return getUserSchema().getCachedTableInfo(
-//                    this.getClass().getName()+"/NodesTable",
-//                    () -> { var t = new NodesTableInfo(_userSchema); t.setLocked(true); return t; });
+                if (null == _table)
+                    _table = getUserSchema().getCachedLookupTableInfo( this.getClass().getName()+"/NodesTable", () ->
+                    {
+                        var t = new NodesTableInfo(_userSchema);
+                        t.setLocked(true);
+                        return t;
+                    });
+                return _table;
             }
         };
     }
@@ -149,15 +155,20 @@ public class LineageTableInfo extends VirtualTable
         {
             return new LookupForeignKey("lsid", "Name")
             {
+                TableInfo _table = null;
+
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-//                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Samples/" + ss.getName(), () ->
-//                    {
-                        // TODO don't call new SamplesSchema
-                        SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
-                        return samplesSchema.getSampleTable(ss, null);
-//                    });
+                    if (null == _table)
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + ss.getRowId() + "/" + ss.getName(), () ->
+                        {
+                            SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
+                            var ret = samplesSchema.getSampleTable(ss, null);
+                            ret.setLocked(true);
+                            return ret;
+                        });
+                    return _table;
                 }
 
                 @Override
@@ -175,15 +186,20 @@ public class LineageTableInfo extends VirtualTable
         {
             return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
             {
+                TableInfo _table = null;
+
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-//                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/DataClass", () ->
-//                    {
-                        // TODO don't call new DataClassUserSchema
-                        DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
-                        return dcus.createTable(dc, getLookupContainerFilter());
-//                    });
+                    if (null == _table)
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass/" + dc.getRowId() + "/" + dc.getName(), () ->
+                        {
+                            DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
+                            var ret = dcus.createTable(dc, getLookupContainerFilter());
+                            ret.setLocked(true);
+                            return ret;
+                        });
+                    return _table;
                 }
 
                 @Override
@@ -201,19 +217,26 @@ public class LineageTableInfo extends VirtualTable
             AssayProvider provider = AssayService.get().getProvider(protocol);
             return new LookupForeignKey("lsid", "Name")
             {
+                TableInfo _table;
+
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-//                    return getUserSchema().getCachedTableInfo(getClass().getName() + "/Runs", () ->
-//                    {
-                        if (provider != null)
+                    if (null == _table)
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Runs/" + protocol.getRowId() + "/" + protocol.getName(), () ->
                         {
-                            AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
-                            if (schema != null)
-                                return schema.createRunsTable(null);
-                        }
-                        return new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString());
-//                    });
+                            if (provider != null)
+                            {
+                                AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
+                                if (schema != null)
+                                    return schema.createRunsTable(null);
+                            }
+                            var ret = new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString(), null);
+                            assert null != ret;
+                            ret.setLocked(true);
+                            return ret;
+                        });
+                    return _table;
                 }
 
                 @Override

@@ -60,7 +60,6 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -133,7 +132,7 @@ public class RenderAssayBean extends RenderAssayForm
             }
 
             // if any well exclusions have been made, add an entry for modified and modified by
-            Collection<ExpQCFlag> qcFlags = new TableSelector(ExperimentService.get().getTinfoAssayQCFlag(), new SimpleFilter(FieldKey.fromParts("runId"), getRunId()), null).getCollection(ExpQCFlag.class);
+            List<ExpQCFlag> qcFlags = AssayService.get().getFlags(_assay.getProvider(), getRunId(), ExpQCFlag.class);
             if (!qcFlags.isEmpty())
             {
                 ExpQCFlag flag = qcFlags.iterator().next();

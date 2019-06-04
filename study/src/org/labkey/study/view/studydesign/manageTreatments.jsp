@@ -15,23 +15,21 @@
  * limitations under the License.
  */
 %>
-
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -62,7 +60,7 @@
     if (study != null)
         subjectNoun = study.getSubjectNounSingular();
 
-    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c).toString();
+    String returnUrl = bean.getReturnUrl() != null ? bean.getReturnUrl() : urlProvider(ProjectUrls.class).getBeginURL(c).toString();
 %>
 
 <script type="text/javascript">
@@ -132,20 +130,20 @@ Enter treatment information in the grids below.
                 ActionURL manageStudyProductsURL = new ActionURL(StudyDesignController.ManageStudyProductsAction.class, getContainer());
                 manageStudyProductsURL.addReturnURL(getActionURL());
             %>
-            <%=textLink("Manage Study Products", manageStudyProductsURL)%>
+            <%=link("Manage Study Products", manageStudyProductsURL)%>
         </li>
         <li>
             Each cohort label must be unique. Enter the number of <%=h(study.getSubjectNounPlural().toLowerCase())%> for
             the cohort in the count column.</li>
         <li>
             Use the manage cohorts page to further configuration information about the cohorts for this study.
-            <%=textLink("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
+            <%=link("Manage Cohorts", CohortController.ManageCohortsAction.class)%>
         </li>
         <li>
             Use the manage <%=h(visitNoun.toLowerCase())%>s page to further configure
             information about the <%=h(visitNoun.toLowerCase())%>s for this study or to change
             the <%=h(visitNoun.toLowerCase())%> display order.
-            <%=textLink("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
+            <%=link("Manage " + visitNoun + "s", StudyController.ManageVisitsAction.class)%>
         </li>
 <%
     if (canManageStudy)
@@ -154,7 +152,7 @@ Enter treatment information in the grids below.
         {
 %>
             <li>Use the change visit order page to adjust the display order of visits in the treatment schedule table.
-            <%= textLink("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(getActionURL())) %>
+            <%= link("Change Visit Order", new ActionURL(StudyController.VisitOrderAction.class, c).addReturnURL(getActionURL())) %>
             </li>
 <%
         }

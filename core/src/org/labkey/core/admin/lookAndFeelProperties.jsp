@@ -70,7 +70,7 @@
    {
 %>
 <tr>
-    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">System description (used in emails)</td>
@@ -116,7 +116,7 @@
 %>
 <tr>
     <td class="labkey-form-label">Enable Object-Level Discussions
-        <%=PageFlowUtil.helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
+        <%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
     <td><input type="checkbox" name="enableDiscussion" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
 <tr>
@@ -135,12 +135,12 @@
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Customize settings used in system emails (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">
         System email address (<i>from</i> address for system notification emails)
-        <%=PageFlowUtil.helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
+        <%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
     <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>
@@ -198,7 +198,7 @@
     String dateTimeFormatHelp = "This format is applied when displaying columns that are defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey columns use this format." + simpleDateFormatDocs;
 %>
 <tr>
-    <td colspan=2>Customize date and number formats (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Customize date and number formats (<%=bean.helpLink%>)</td>
 </tr>
 <%
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
@@ -211,7 +211,7 @@
                 "parsing mode that matches your users' expectations.";
 %>
 <tr>
-    <td class="labkey-form-label">Date parsing mode<%=PageFlowUtil.helpPopup("Date parsing", dateParsingHelp, false)%></td>
+    <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing", dateParsingHelp, false)%></td>
     <td>
         <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%><br>
         <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%><br>
@@ -220,15 +220,15 @@
     }
 %>
 <tr>
-    <td class="labkey-form-label">Default display format for dates<%=PageFlowUtil.helpPopup("Date format", dateFormatHelp, true, 300)%></td>
+    <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateFormat" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for date-times<%=PageFlowUtil.helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
+    <td class="labkey-form-label">Default display format for date-times<%=helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
     <td><input type="text" name="defaultDateTimeFormat" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for numbers<%=PageFlowUtil.helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
+    <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
     <td><input type="text" name="defaultNumberFormat" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
@@ -236,7 +236,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize column restrictions (<%=text(bean.customColumnRestrictionHelpLink)%>)</td>
+    <td colspan=2>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Restrict charting columns by measure and dimension flags</td>
@@ -253,10 +253,10 @@
             "<br/><br/>Requires AdminOperationsPermission to update.";
 %>
 <tr>
-    <td colspan=2>Provide a custom login page (<%=text(bean.helpLink)%>)</td>
+    <td colspan=2>Provide a custom login page (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Alternative login page<%=PageFlowUtil.helpPopup("Custom Login Page", customLoginHelp, true)%></td>
+    <td class="labkey-form-label">Alternative login page<%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
     <td><input type="text" name="customLogin" size="50" value="<%= h(laf.getCustomLogin()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>
 <tr>
@@ -273,10 +273,10 @@
             " For example: /myModule/welcome.view to select a view within a module, or /myModule/welcome.html for a simple HTML page in the web directory of your module.";
 %>
 <tr>
-    <td colspan=2>Provide a custom site welcome page (<%=text(bean.welcomeLink)%>)</td>
+    <td colspan=2>Provide a custom site welcome page (<%=bean.welcomeLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Alternative site welcome page<%=PageFlowUtil.helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
+    <td class="labkey-form-label">Alternative site welcome page<%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
     <td><input type="text" name="customWelcome" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
 </tr>
 <tr>

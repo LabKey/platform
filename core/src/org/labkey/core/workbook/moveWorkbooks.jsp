@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.workbook.MoveWorkbooksBean" %>
 <%@ page import="java.util.List" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
     MoveWorkbooksBean bean = (MoveWorkbooksBean)me.getModelBean();
@@ -35,8 +36,8 @@
 to the selected folder:</div>
 
 <div id="mwb-container-tree" class="extContainer"></div>
-<div style="width:600px;text-align:right;"><%=PageFlowUtil.generateBackButton("Cancel")%>
-<%= PageFlowUtil.button(buttonCaption).href("#").onClick("onMoveWorkbooks();") %></div>
+<div style="width:600px;text-align:right;"><%=generateBackButton("Cancel")%>
+<%= button(buttonCaption).href("#").onClick("onMoveWorkbooks();") %></div>
 <div id="mwb-status"></div>
 
 <script type="text/javascript">

@@ -16,13 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.query.QueryParam"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.query.QueryUrls"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.NewQueryForm" %>
 <%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -36,7 +35,7 @@
     Cannot create a new query: no tables/queries exist in the current schema to base the new query on.
 <% } else { %>
 <labkey:form id="createQueryForm" className="col-md-6 col-lg-5" action="<%=urlFor(QueryController.NewQueryAction.class)%>" method="POST">
-    <labkey:input type="hidden" name="<%=h(QueryParam.schemaName.toString())%>" value="<%=h(form.getSchemaName())%>"/>
+    <labkey:input type="hidden" name="<%=QueryParam.schemaName.toString()%>" value="<%=form.getSchemaName()%>"/>
     <labkey:input type="hidden" name="ff_redirect" id="ff_redirect" value="sourceQuery" />
     <labkey:input label="What do you want to call the new query?"
                   type="text"
@@ -57,7 +56,7 @@
         <% } %>
     </labkey:select>
     <%= button("Create and Edit Source").disableOnClick(true).submit(true) %>
-    <%= button("Cancel").href(PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
+    <%= button("Cancel").href(urlProvider(QueryUrls.class).urlSchemaBrowser(getContainer(), form.getSchemaName())) %>
 </labkey:form>
 <% } %>
 

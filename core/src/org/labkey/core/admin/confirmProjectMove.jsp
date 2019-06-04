@@ -17,19 +17,18 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
     ManageFoldersForm f = view.getModelBean();
     Container c = getContainer();
-    ActionURL cancelURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
+    ActionURL cancelURL = urlProvider(AdminUrls.class).getManageFoldersURL(c);
 %>
 
 <labkey:form action="<%=h(buildURL(AdminController.MoveFolderAction.class))%>" method="post">

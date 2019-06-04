@@ -111,7 +111,7 @@
             ActionURL containerPermissionsLink = urlProvider(SecurityUrls.class).getPermissionsURL(row.getContainer(), returnURL);
             ActionURL folderAccessLink = urlProvider(SecurityUrls.class).getFolderAccessURL(row.getContainer());
 %>
-            <td><%= textLink("permissions", containerPermissionsLink) %></td>
+            <td><%= link("permissions", containerPermissionsLink) %></td>
             <td style="padding-left:<%= cellPadding + (10 * row.getDepth()) %>px;">
                 <a href="<%=h(folderAccessLink)%>"><%= h(row.getContainer().getName()) %></a>
             </td>
@@ -119,7 +119,7 @@
         }
         else
         {
-            %><td><%= textLink("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), returnURL)) %></td>
+            %><td><%= link("details", urlProvider(UserUrls.class).getUserDetailsURL(c, row.getUser().getUserId(), returnURL)) %></td>
             <td style='padding-left:"<%=cellPadding%>px;'><%
             if (isUser)
             {

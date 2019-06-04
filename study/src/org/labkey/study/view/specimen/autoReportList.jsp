@@ -20,10 +20,12 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
@@ -35,9 +37,8 @@
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.template.FrameFactoryClassic" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
     SpecimenController.ReportConfigurationBean bean = me.getModelBean();
@@ -93,7 +94,7 @@ This folder does not contain a study.
 <table cellspacing="0" cellpadding="3">
 <%
         int formRowIndex = 0;
-        _HtmlString rowClass;
+        HtmlString rowClass;
         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
         {
             rowClass = getShadeRowClass(formRowIndex++);
@@ -111,7 +112,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="padding-right: 10px;"><%= h(factory.getLabel())%></td>
                         <td style="text-align: right;">
-                            <%=textLink("show options", "#", "return showOrHide('" + showHideSuffix + "')", "showOptionsLink" + showHideSuffix)%>
+                            <%=link("show options").href("#").onClick("return showOrHide('" + showHideSuffix + "')").id("showOptionsLink" + showHideSuffix)%>
                             <%= button("View").submit(true) %>
                         </td>
                     </tr>

@@ -77,19 +77,19 @@
                 <%
                         if (hasLinkPermission)
                         {
-                            out.write("<a href=\"" + inheritURL.getLocalURIString() + "\">");
+                            out.print("<a href=\"" + inheritURL.getLocalURIString() + "\">");
                         }
 
                         // Always write out what we inherit from
-                        out.write(containerLabel);
+                        out.print(containerLabel);
 
                         if (hasLinkPermission)
                         {
-                            out.write("</a>)");
+                            out.print("</a>)");
                         }
 
                         // Now write out what those settings are
-                        out.write(": ");
+                        out.print(": ");
                         boolean needComma = false;
                         for (Entry<String, String> mvEntry : MvUtil.getIndicatorsAndLabels(linkContainer).entrySet())
                         {
@@ -97,16 +97,14 @@
                             String label = mvEntry.getValue();
                             if (needComma)
                             {
-                                out.write(", ");
+                                out.print(", ");
                             }
                             else
                             {
                                 needComma = true;
                             }
 
-                            String popupText = h(label);
-
-                            out.write(PageFlowUtil.helpPopup(indicator, popupText, true, indicator, 0));
+                            out.print(PageFlowUtil.helpPopup(indicator, label, false, indicator, 0));
                         }
                     }
                 %>
@@ -142,7 +140,7 @@
                         %>
                         <tr>
                             <td>&nbsp;</td>
-                            <td><%= PageFlowUtil.button("Add").href("#").onClick("addRowToTable();") %>
+                            <td><%= button("Add").href("#").onClick("addRowToTable();") %>
                             </td>
                             <td>&nbsp;</td>
                         </tr>

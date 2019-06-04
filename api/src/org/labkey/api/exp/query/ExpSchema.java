@@ -201,7 +201,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema, cf);
+                ExpDataTable result = ExperimentService.get().createFilesTable(Files.toString(), expSchema);
                 return expSchema.setupTable(result);
             }
         };
@@ -293,12 +293,6 @@ public class ExpSchema extends AbstractExpSchema
             }
         }
 
-        // Support "Experiments" as a legacy name for the RunGroups table
-        if ("Experiments".equalsIgnoreCase(name))
-        {
-            ExpExperimentTable ret = ExperimentService.get().createExperimentTable(name, this, cf);
-            return setupTable(ret);
-        }
         if ("Experiments".equalsIgnoreCase(name))
         {
             // Support "Experiments" as a legacy name for the RunGroups table

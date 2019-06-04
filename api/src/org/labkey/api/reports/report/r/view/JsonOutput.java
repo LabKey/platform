@@ -16,7 +16,6 @@
 
 package org.labkey.api.reports.report.r.view;
 
-import org.json.JSONObject;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
@@ -54,6 +53,7 @@ public class JsonOutput extends AbstractParamReplacement
         return file;
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         return new JsonOutputView(this);
@@ -88,6 +88,7 @@ public class JsonOutput extends AbstractParamReplacement
             return null;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out)
         {
             for (File file : getFiles())

@@ -233,7 +233,7 @@ public class ContainerManager
 //        if (CORE.getSchema().getScope().isTransactionActive())
 //            throw new IllegalStateException("Transaction should not be active");
 
-        int sortOrder;
+        long sortOrder;
 
         String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);

@@ -176,7 +176,7 @@
                             type : 'hbox'
                         },
                         items: [createAliasCB, aliasSourceField,
-                            {html: '<%=PageFlowUtil.helpPopup("Alias source","The source organization name for which this alias corresponds")%>', xtype: "box"}]
+                            {html: '<%=helpPopup("Alias source","The source organization name for which this alias corresponds")%>', xtype: "box"}]
                     }
                 ],
                 dockedItems: [{

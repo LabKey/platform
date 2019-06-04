@@ -469,7 +469,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpQCFlagTable createQCFlagsTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpDataTable createFilesTable(String name, UserSchema schema, ContainerFilter cf);
+    ExpDataTable createFilesTable(String name, UserSchema schema);
 
     String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
 
@@ -581,7 +581,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * The resulting map has keys "dailySampleCount", "weeklySampleCount", "monthlySampleCount", and "yearlySampleCount".
      */
     @Deprecated
-    default Map<String, Integer> incrementSampleCounts(@Nullable Date counterDate)
+    default Map<String, Long> incrementSampleCounts(@Nullable Date counterDate)
     {
         return SampleSetService.get().incrementSampleCounts(counterDate);
     }

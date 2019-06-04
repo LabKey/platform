@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -48,7 +47,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -1439,8 +1437,11 @@ public class Table
                 bad++;
 //            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
 //                bad++;
-            if (enforceUnique && null != (prev=mapAlias.put(column.getAlias(),column)) && prev != column)
+            if (enforceUnique && null != (prev = mapAlias.put(column.getAlias(), column)) && prev != column)
+            {
+                _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;
+            }
         }
 
         // Check all the columns in the TableInfo to determine if the TableInfo is corrupt

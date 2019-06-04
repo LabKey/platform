@@ -464,16 +464,21 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         }
         if (includeMetadata)
         {
-            TablesDocument doc = getTablesDocument(errors);
-            query.setTablesDocument(doc);
+            query.setTablesDocument(_queryDef.getParsedMetadata().getTablesDocument(errors));
         }
         return query;
     }
 
+    @Override
+    public void setSchema(@NotNull UserSchema schema)
+    {
+        _schema = schema;
+    }
 
     @NotNull
     public UserSchema getSchema()
     {
+//        assert _schema != null : "Schema not set post-construction";
         if (null == _schema)
             _schema = QueryService.get().getUserSchema(getUser(), getContainer(), getSchemaPath());
         if (_schema == null)
@@ -496,24 +501,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getSchemaPath();
     }
 
-
-    @Nullable
-    protected TablesDocument getTablesDocument(List<QueryException> errors)
-    {
-        String xml = getMetadataXml();
-        if (xml != null)
-        {
-            try
-            {
-                return TablesDocument.Factory.parse(xml);
-            }
-            catch (XmlException xmlException)
-            {
-                errors.add(new QueryParseException("Error in XML", xmlException, 0, 0));
-            }
-        }
-        return null;
-    }
 
     @Nullable
     public TableInfo getTable(@Nullable List<QueryException> errors, boolean includeMetadata)

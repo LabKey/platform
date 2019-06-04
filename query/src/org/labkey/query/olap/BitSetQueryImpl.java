@@ -790,8 +790,11 @@ public class BitSetQueryImpl
 
     Result processExpr(QubeQuery.QubeExpr expr) throws SQLException
     {
-        while (null != expr.arguments && expr.arguments.size() == 1 && expr.op != QubeQuery.OP.MEMBERS)
+        while (null != expr && null != expr.arguments && expr.arguments.size() == 1 && expr.op != QubeQuery.OP.MEMBERS)
             expr = expr.arguments.get(0);
+
+        if (null == expr)
+            throw new IllegalArgumentException("Missing/malformed expression");
 
         if (expr.op == QubeQuery.OP.MEMBERS)
         {

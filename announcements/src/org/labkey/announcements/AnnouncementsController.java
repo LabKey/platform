@@ -51,6 +51,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
+import org.labkey.api.announcements.DiscussionService.StatusOption;
 import org.labkey.api.announcements.EmailOption;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -134,7 +135,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -227,6 +227,7 @@ public class AnnouncementsController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Settings settings = getSettings();
@@ -243,6 +244,7 @@ public class AnnouncementsController extends SpringActionController
             return v;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
@@ -259,6 +261,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ListAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             AnnouncementListView view = new AnnouncementListView(getViewContext());
@@ -269,6 +272,7 @@ public class AnnouncementsController extends SpringActionController
             return view;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
@@ -310,6 +314,7 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(Object o)
         {
             return getListURL(getContainer());
@@ -321,6 +326,7 @@ public class AnnouncementsController extends SpringActionController
     {
         protected URLHelper _cancelUrl;
 
+        @Override
         public ModelAndView getConfirmView(AnnouncementDeleteForm form, BindException errors)
         {
             Permissions perm = getPermissions();
@@ -345,11 +351,13 @@ public class AnnouncementsController extends SpringActionController
             return new ConfirmDeleteView(ann, getWhat(), getSettings(getContainer()));
         }
 
+        @Override
         public @NotNull URLHelper getSuccessURL(AnnouncementDeleteForm form)
         {
             return form.getReturnURLHelper(new ActionURL(BeginAction.class, getContainer()));
         }
 
+        @Override
         public boolean handlePost(AnnouncementDeleteForm form, BindException errors)
         {
             Permissions perm = getPermissions();
@@ -373,6 +381,7 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(AnnouncementDeleteForm announcementDeleteForm, Errors errors)
         {
         }
@@ -413,6 +422,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresNoPermission  // Custom permission checking in base class to handle owner-delete
     public class DeleteThreadAction extends DeleteMessageAction
     {
+        @Override
         String getWhat()
         {
             return "entire";
@@ -433,11 +443,13 @@ public class AnnouncementsController extends SpringActionController
     @RequiresNoPermission  // Custom permission checking in base class to handle owner-delete
     public class DeleteResponseAction extends DeleteMessageAction
     {
+        @Override
         String getWhat()
         {
             return "response from the";
         }
 
+        @Override
         public URLHelper getCancelUrl()
         {
             return _cancelUrl;
@@ -448,6 +460,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresLogin @ActionNames("removeFromMemberList, confirmRemove")
     public class RemoveFromMemberListAction extends ConfirmAction<MemberListRemovalForm>
     {
+        @Override
         public ModelAndView getConfirmView(MemberListRemovalForm form, BindException errors)
         {
             AnnouncementModel ann = validateAndGetAnnouncement(form, errors);
@@ -464,6 +477,7 @@ public class AnnouncementsController extends SpringActionController
             return "Remove";
         }
 
+        @NotNull
         public ActionURL getSuccessURL(MemberListRemovalForm memberListRemovalForm)
         {
             return getBeginURL(getContainer());
@@ -475,6 +489,7 @@ public class AnnouncementsController extends SpringActionController
             return getBeginURL(getContainer());
         }
 
+        @Override
         public boolean handlePost(MemberListRemovalForm form, BindException errors)
         {
             if (form.getUserId() != getUser().getUserId())
@@ -488,6 +503,7 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(MemberListRemovalForm form, Errors errors)
         {
             validateAndGetAnnouncement(form, errors);
@@ -726,6 +742,7 @@ public class AnnouncementsController extends SpringActionController
 
         protected abstract ModelAndView getInsertUpdateView(AnnouncementForm announcementForm, boolean reshow, BindException errors);
 
+        @Override
         public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             if (null != _attachmentErrorView)
@@ -737,11 +754,13 @@ public class AnnouncementsController extends SpringActionController
             return getInsertUpdateView(form, reshow, errors);
         }
 
+        @Override
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
             form.validate(errors);
         }
 
+        @Override
         public boolean handlePost(AnnouncementForm form, BindException errors)
         {
             if (!getPermissions().allowInsert())
@@ -809,6 +828,7 @@ public class AnnouncementsController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(AnnouncementForm announcementForm)
         {
             throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
@@ -825,6 +845,7 @@ public class AnnouncementsController extends SpringActionController
     @RequiresAnyOf({InsertMessagePermission.class, InsertPermission.class})
     public class InsertAction extends BaseInsertAction
     {
+        @Override
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
             super.validateCommand(form, errors);
@@ -856,6 +877,7 @@ public class AnnouncementsController extends SpringActionController
             return insertView;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root).addChild("New " + getSettings().getConversationName());
@@ -885,6 +907,7 @@ public class AnnouncementsController extends SpringActionController
             return super.bindParameters(m);
         }
 
+        @Override
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             Permissions perm = getPermissions();
@@ -916,6 +939,7 @@ public class AnnouncementsController extends SpringActionController
         }
 
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root)
@@ -926,22 +950,20 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static String getStatusSelect(Settings settings, String currentValue)
+    private static String getStatusSelect(String currentValue)
     {
-        List<String> options = Arrays.asList(settings.getStatusOptions().split(";"));
-
-        StringBuilder sb = new StringBuilder(options.size() * 30);
+        StringBuilder sb = new StringBuilder();
         sb.append("    <select name=\"status\">\n");
 
-        for (String word : options)
+        for (StatusOption option : StatusOption.values())
         {
             sb.append("      <option");
 
-            if (word.equals(currentValue))
+            if (option.name().equals(currentValue))
                 sb.append(" selected");
 
             sb.append(">");
-            sb.append(PageFlowUtil.filter(word));
+            sb.append(PageFlowUtil.filter(option.name()));
             sb.append("</option>\n");
         }
         sb.append("    </select>");
@@ -1106,7 +1128,7 @@ public class AnnouncementsController extends SpringActionController
 
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
             bean.settings = settings;
-            bean.statusSelect = getStatusSelect(settings, (String)form.get("status"));
+            bean.statusSelect = getStatusSelect((String)form.get("status"));
 
             User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
             bean.memberList = getMemberList(u, c, latestPost, (String) (reshow ? form.get("memberList") : null));
@@ -2749,7 +2771,7 @@ public class AnnouncementsController extends SpringActionController
                 currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
                 renderers = WikiRendererType.values();
                 memberList = getMemberList(form.getUser(), c, ann, null != reshowMemberList ? reshowMemberList : null);
-                statusSelect = getStatusSelect(settings, ann.getStatus());
+                statusSelect = getStatusSelect(ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
                 returnURL = form.getReturnURLHelper();
             }

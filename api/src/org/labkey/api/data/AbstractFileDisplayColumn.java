@@ -96,13 +96,21 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
             if ((url != null || fileIconUrl != null) && thumbnail && isImage)
             {
-                out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                // controls whether to render a popup image on hover, otherwise just render an image with a click handler
+                // to navigate to the url
+                if (renderHelper.renderPopupImage())
+                    out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                else
+                    out.write(PageFlowUtil.helpPopup(null, displayName, false, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
             }
             else
             {
                 if (url != null && thumbnail && _map.isInlineImageFor(new File(filename)) )
                 {
-                    out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                    if (renderHelper.renderPopupImage())
+                        out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                    else
+                        out.write(PageFlowUtil.helpPopup(null, displayName, false, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
                 }
                 else
                     out.write(renderHelper.createThumbnailImage());
@@ -172,6 +180,11 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                         append("/>&nbsp;").append(PageFlowUtil.filter(_displayName));
             }
             return sb.toString();
+        }
+
+        public boolean renderPopupImage()
+        {
+            return true;
         }
 
         // render the popup image to display on hover

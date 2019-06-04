@@ -90,9 +90,9 @@
 <div id="<%=h(toggleId)%>" class="lk-menu-drop dropdown discussion-toggle">
     <a class="labkey-link labkey-text-link" data-toggle="dropdown">Discussions</a>
 <%
-    out.write("<ul class=\"dropdown-menu dropdown-menu-right\">");
+    out.print("<ul class=\"dropdown-menu dropdown-menu-right\">");
     PopupMenuView.renderTree(menu, out);
-    out.write("</ul>");
+    out.print("</ul>");
 %>
 </div>
 

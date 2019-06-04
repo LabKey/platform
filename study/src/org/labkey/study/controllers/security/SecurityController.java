@@ -760,6 +760,7 @@ public class SecurityController extends SpringActionController
         }
 
 
+        @Override
         protected void renderView(Object model, PrintWriter out) throws Exception
         {
             include(_vbox, out);

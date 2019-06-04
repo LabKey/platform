@@ -107,6 +107,6 @@
 %>
 <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
 <!-- <%= h(request.getHeader("User-Agent")) %> -->
-<a href="<%= me.getPermaLink() %>" id="permalink" name="permalink" style="display: none;"></a>
+<a href="<%=h(me.getPermaLink())%>" id="permalink" name="permalink" style="display: none;"></a>
 </body>
 </html>

@@ -26,8 +26,8 @@
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.NavTree"%>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -132,7 +132,7 @@
 
                 for (AdminLink link : links)
                 { %>
-                <div><%=textLink(link.getText(), link.getUrl())%></div><%
+                <div><%=link(link.getText(), link.getUrl())%></div><%
                 }%>
             </div><%
                 }
@@ -140,7 +140,7 @@
         </labkey:panel>
         <labkey:panel id="modules" className="lk-admin-section">
             <h3 class="labkey-page-section-header">Module Information</h3>
-            <%=textLink("Module Details", new ActionURL(AdminController.ModulesAction.class, c))%>
+            <%=link("Module Details", AdminController.ModulesAction.class)%>
             <br/><br/>
             <table><%
 
@@ -182,14 +182,14 @@
                                 if (StringUtils.equals("Source Path", entry.getKey()))
                                 {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : new _HtmlString("")%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : HtmlString.EMPTY_STRING%></td>
                                 <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("Enlistment ID", entry.getKey()))
                         {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : new _HtmlString("")%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && sourcePathMatched && !enlistmentIdMatched) ? helpPopup("enlistment id does not match") : HtmlString.EMPTY_STRING%></td>
                                 <td nowrap="true" style="color:<%=h( (!devMode||!sourcePathMatched)?"":enlistmentIdMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
@@ -203,7 +203,7 @@
                             <tr class="<%=getShadeRowClass(count)%>">
                                 <td nowrap="true"><%=h(entry.getKey())%></td>
                                 <% if (url != null) { %>
-                                <td nowrap="true"><%=textLink(entry.getValue(), url)%></td>
+                                <td nowrap="true"><%=link(entry.getValue()).href(url)%></td>
                                 <% } else { %>
                                 <td nowrap="true"><%=h(entry.getValue())%></td>
                                 <% } %>

@@ -89,6 +89,7 @@ public class CrosstabView extends QueryView
         return groupedByMember;
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         if (getTable() instanceof CrosstabTableInfo)
@@ -109,6 +110,7 @@ public class CrosstabView extends QueryView
         return super.createDataRegion();
     }
 
+    @Override
     public List<DisplayColumn> getDisplayColumns()
     {
         assert getTable() instanceof CrosstabTableInfo;
@@ -142,9 +144,7 @@ public class CrosstabView extends QueryView
                 measureFieldKeys.add(col);
             else if (column != null && column.getCrosstabColumnMember() != null)
             {
-                List<FieldKey> fieldKeys = measureFieldKeysByMember.get(column.getCrosstabColumnMember());
-                if (fieldKeys == null)
-                    measureFieldKeysByMember.put(column.getCrosstabColumnMember(), fieldKeys = new ArrayList<>());
+                List<FieldKey> fieldKeys = measureFieldKeysByMember.computeIfAbsent(column.getCrosstabColumnMember(), k -> new ArrayList<>());
                 fieldKeys.add(col);
             }
             else
@@ -167,9 +167,7 @@ public class CrosstabView extends QueryView
                         parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
 
                         FieldKey measureMemberFieldKey = FieldKey.fromParts(parts);
-                        List<FieldKey> fieldKeys = measureFieldKeysByMember.get(member);
-                        if (fieldKeys == null)
-                            measureFieldKeysByMember.put(member, fieldKeys = new ArrayList<>());
+                        List<FieldKey> fieldKeys = measureFieldKeysByMember.computeIfAbsent(member, k -> new ArrayList<>());
                         fieldKeys.add(measureMemberFieldKey);
                     }
                 }
@@ -200,6 +198,7 @@ public class CrosstabView extends QueryView
         return displayColumns;
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
@@ -230,8 +229,8 @@ public class CrosstabView extends QueryView
             for (SimpleFilter.FilterClause clause : ((SimpleFilter)(view.getRenderContext().getBaseFilter())).getClauses())
             {
                 boolean aggClause = false;
-                for (String colName : clause.getColumnNames())
-                    aggClause |= colName.startsWith(AggregateColumnInfo.NAME_PREFIX);
+                for (FieldKey fieldKey : clause.getFieldKeys())
+                    aggClause |= fieldKey.toString().startsWith(AggregateColumnInfo.NAME_PREFIX);
 
                 if (aggClause)
                     aggFilter.addClause(clause);
@@ -247,6 +246,7 @@ public class CrosstabView extends QueryView
         return view;
     }
 
+    @Override
     public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
     {
         DataView view = createDataView();

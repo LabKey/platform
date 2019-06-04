@@ -75,6 +75,7 @@ public class HtmlOutput extends AbstractParamReplacement
         return null;
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         return new HtmlOutputView(this, getLabel());
@@ -88,6 +89,7 @@ public class HtmlOutput extends AbstractParamReplacement
             setLabel(label);
         }
 
+        @Override
         protected String renderInternalAsString(File file) throws Exception
         {
             if (exists(file))
@@ -96,6 +98,7 @@ public class HtmlOutput extends AbstractParamReplacement
             return null;
         }
 
+        @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
             for (File file : getFiles())

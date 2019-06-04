@@ -23,18 +23,16 @@
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.reports.StudyManageReportsBean" %>
-<%@ page import="java.io.Writer" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%@ page extends="org.labkey.api.jsp.OldJspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
@@ -149,7 +147,7 @@
         <table>
             <tr><td>&nbsp;</td></tr>
             <tr><td colspan="4">
-            <%=textLink("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c))%>
+            <%=link("Manage Views", urlProvider(ReportUrls.class).urlManageViews(c))%>
             </td></tr>
         </table>
 <%
@@ -160,27 +158,27 @@
 <%!
     int countSection = 0;
 
-    void startReportSection(Writer out, String title, StudyManageReportsBean bean) throws Exception
+    void startReportSection(JspWriter out, String title, StudyManageReportsBean bean) throws Exception
     {
         if (!bean.getAdminView())
         {
-            out.write("<table class=\"lk-fields-table\">");
+            out.print("<table class=\"lk-fields-table\">");
         }
         else
         {
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
-            out.write(h(title) + " " + countSection);
-            out.write("</span></td></tr>");
-            out.write("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
+            out.print("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-announcement-title\" align=left><span>");
+            out.print(h(title) + " " + countSection);
+            out.print("</span></td></tr>");
+            out.print("<tr width=\"100%\"><td colspan=\"7\" class=\"labkey-title-area-line\"></td></tr>");
         }
         countSection++;
     }
 
-    void endReportSection(Writer out, StudyManageReportsBean bean) throws Exception
+    void endReportSection(JspWriter out, StudyManageReportsBean bean) throws Exception
     {
         if (!bean.getAdminView())
         {
-            out.write("</table>");
+            out.print("</table>");
         }
     }
 %>

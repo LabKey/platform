@@ -346,11 +346,6 @@ public class StudySchema
         return getSchema().getTable("Cohort");
     }
 
-    public TableInfo getTableInfoQCState()
-    {
-        return CoreSchema.getInstance().getTableInfoQCState();
-    }
-
     public TableInfo getTableInfoParticipantView()
     {
         return getSchema().getTable("ParticipantView");

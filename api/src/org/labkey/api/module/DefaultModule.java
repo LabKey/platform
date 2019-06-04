@@ -121,6 +121,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
+    private Set<Module> _resolvedModuleDependencies;
     private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
     private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
@@ -776,6 +777,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (!dependency.isEmpty())
                 _moduleDependencies.add(dependency.toLowerCase());
         }
+        _resolvedModuleDependencies = null;
     }
 
     public final String getModuleDependencies()
@@ -1532,18 +1534,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public Set<Module> getResolvedModuleDependencies()
     {
-        Set<Module> modules = new HashSet<>();
-        Module module;
-        for(String m : getModuleDependenciesAsSet())
+        if (_resolvedModuleDependencies == null)
         {
-            module = ModuleLoader.getInstance().getModule(m);
-            if(module != null)
+            Set<Module> modules = new HashSet<>();
+            Module module;
+            for(String m : getModuleDependenciesAsSet())
             {
-                modules.add(module);
-                modules.addAll(module.getResolvedModuleDependencies());
+                module = ModuleLoader.getInstance().getModule(m);
+                if (module != null)
+                {
+                    modules.add(module);
+                    modules.addAll(module.getResolvedModuleDependencies());
+                }
             }
+            _resolvedModuleDependencies = modules;
         }
-        return modules;
+        return _resolvedModuleDependencies;
     }
 
     @Override

@@ -136,15 +136,15 @@
 
         <td style="vertical-align:top;border-left:solid #DDDDDD 1px;padding-left:1em">
                 <a href="<%=h(BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>"><img src="<%=request.getContextPath()%>/_images/studyNavigator.gif" alt="Study Navigator"> </a>
-            <%out.write("<p>");%>
-            <%=textLink("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
-            <%out.write("</p>");%>
+            <%out.print("<p>");%>
+            <%=link("Study Navigator", BaseStudyController.getStudyOverviewURL(bean.getStudy().getContainer()))%>
+            <%out.print("</p>");%>
             <%
                 if (isAdmin)
                 {
-                    out.write("<p>");
-                    out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
-                    out.write("</p>");
+                    out.print("<p>");
+                    out.print(link("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.print("</p>");
 
                     // if there is a pipeline override, show the pipeline view, else show the file browser
                     ActionURL pipelineUrl;
@@ -154,22 +154,22 @@
                     else
                         pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
 
-                    out.write("<p>");
-                    out.write(textLink("Manage Files", pipelineUrl));
-                    out.write("</p>");
+                    out.print("<p>");
+                    out.print(link("Manage Files", pipelineUrl));
+                    out.print("</p>");
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
                         bean.getStudy().getRepositorySettings().isEnableRequests())
                 {
-                    out.write("<p>");
-                    out.write(textLink("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
-                    out.write("</p>");
+                    out.print("<p>");
+                    out.print(link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.print("</p>");
                 }
                 else if (c.hasPermission(user, ManageRequestSettingsPermission.class))
                 {
-                    out.write("<p>");
-                    out.write(textLink("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
-                    out.write("</p>");
+                    out.print("<p>");
+                    out.print(link("Manage Study", url.setAction(StudyController.ManageStudyAction.class)));
+                    out.print("</p>");
                 }
             %>
         </td>

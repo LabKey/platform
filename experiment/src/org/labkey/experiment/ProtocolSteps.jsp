@@ -15,29 +15,28 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.experiment.api.ExpProtocolImpl" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
+<%@ page import="org.labkey.api.exp.ProtocolParameter" %>
+<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
+<%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocolInputCriteria" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.experiment.api.ExpMaterialProtocolInputImpl" %>
-<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.api.ExpDataProtocolInputImpl" %>
+<%@ page import="org.labkey.experiment.api.ExpMaterialProtocolInputImpl" %>
 <%@ page import="org.labkey.experiment.api.ExpProtocolActionImpl" %>
-<%@ page import="java.util.stream.Collectors" %>
-<%@ page import="org.labkey.api.exp.ProtocolParameter" %>
+<%@ page import="org.labkey.experiment.api.ExpProtocolImpl" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocolInputCriteria" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.stream.Collectors" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -48,7 +47,7 @@
     final ActionURL ppURL = new ActionURL(ExperimentController.ProtocolPredecessorsAction.class, c);
     ppURL.addParameter("ParentLSID", protocol.getLSID());
 
-    ExperimentUrls urls = PageFlowUtil.urlProvider(ExperimentUrls.class);
+    ExperimentUrls urls = urlProvider(ExperimentUrls.class);
     assert urls != null;
 
     List<ExpProtocolActionImpl> steps = protocol.getSteps();
@@ -126,7 +125,7 @@
             <%=h(predecessorNames)%>
         </td>
         <td valign="top">
-            <% if (!props.isEmpty()) out.write(h(new JSONObject(props).toString(2))); %>
+            <% if (!props.isEmpty()) out.print(h(new JSONObject(props).toString(2))); %>
         </td>
         <% } %>
     </tr>
@@ -176,7 +175,7 @@
                     <td width="20px"><%=h(mpi.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                     </td>
                 </tr>
                 <% } %>
@@ -197,7 +196,7 @@
                     <td width="20px"><%=h(dpi.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpi).getProperties(); %>
-                        <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                     </td>
                 </tr>
                 <% } %>
@@ -223,7 +222,7 @@
                     <td width="20px"><%=h(mpo.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpMaterialProtocolInputImpl)mpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                     </td>
                 </tr>
                 <% } %>
@@ -244,7 +243,7 @@
                     <td width="20px"><%=h(dpo.getMaxOccurs())%></td>
                     <td>
                         <% Map<String, Object> map = ((ExpDataProtocolInputImpl)dpo).getProperties(); %>
-                        <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                        <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                     </td>
                 </tr>
                 <% } %>

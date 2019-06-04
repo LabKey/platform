@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
@@ -130,7 +129,7 @@ Each study needs specimen ids for the specimens included in the study. To upload
     specimens, follow the instructions below.<br>
 <ol>
     <li>Download the specimen spreadsheet
-        <%=textLink("Download Excel Workbook", "#downloadSpecimens", "sendFormTo('getSpecimenExcel.view')", "")%><br>
+        <%=link("Download Excel Workbook").href("#downloadSpecimens").onClick("sendFormTo('getSpecimenExcel.view')")%><br>
 </li>
     <li>Save the spreadsheet to your computer</li>
     <li>Fill in the specimen spreadsheet. The following columns must be filled in

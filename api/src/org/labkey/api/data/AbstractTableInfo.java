@@ -428,7 +428,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _hasDefaultTitleColumn = defaultTitleColumn;
     }
 
-    public ColumnInfo getColumn(@NotNull String name)
+    /**
+     * @param resolveIfNeeded false if only the already-added columns should be checked, and resolveColumn() should
+     *                        not be called. Useful because some implementations may have expensive checks they
+     *                        perform in resolveColumn() for backwards compatibility
+     */
+    @Nullable
+    public ColumnInfo getColumn(@NotNull String name, boolean resolveIfNeeded)
     {
         ColumnInfo ret = _columnMap.get(name);
         if (ret != null)
@@ -437,18 +443,38 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             ret = _resolvedColumns.get(name);
         else
         {
-            ret = resolveColumn(name);
-            // Remember both hits and misses and reuse the same ColumnInfo if requested again
-            _resolvedColumns.put(name, ret);
+            if (resolveIfNeeded)
+            {
+                ret = resolveColumn(name);
+                // Remember both hits and misses and reuse the same ColumnInfo if requested again
+                _resolvedColumns.put(name, ret);
+            }
         }
         return ret;
     }
 
-    /* returns null or BaseColumnInfo, will throw if column exists and is locked */
+    public ColumnInfo getColumn(@NotNull String name)
+    {
+        return getColumn(name, true);
+    }
+
+    /** @return null or BaseColumnInfo, will throw if column exists and is locked */
+    @Nullable
     public BaseColumnInfo getMutableColumn(@NotNull String colName)
     {
+        return getMutableColumn(colName, true);
+    }
+
+    /**
+     * @param resolveIfNeeded false if only the already-added columns should be checked, and resolveColumn() should
+     *                        not be called. Useful because some implementations may have expensive checks they
+     *                        perform in resolveColumn() for backwards compatibility
+     */
+    @Nullable
+    public BaseColumnInfo getMutableColumn(@NotNull String colName, boolean resolveIfNeeded)
+    {
         checkLocked();
-        ColumnInfo col = getColumn(colName);
+        ColumnInfo col = getColumn(colName, resolveIfNeeded);
         if (null == col)
             return null;
         // all columns extend BaseColumnInfo for now

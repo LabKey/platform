@@ -15,7 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
-import org.labkey.api.jsp.JspBase;
+import org.labkey.api.jsp.AbstractJspBase;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
@@ -52,9 +52,9 @@ public class ScriptDependenciesTag extends SimpleTagBase
             if (getDependencies)
             {
                 Object page = this.getJspContext().getAttribute(PageContext.PAGE);
-                if (page instanceof JspBase)
+                if (page instanceof AbstractJspBase)
                 {
-                    JspBase jspView = (JspBase)page;
+                    AbstractJspBase jspView = (AbstractJspBase)page;
                     LinkedHashSet<ClientDependency> dependencies = jspView.getClientDependencies();
 
                     if (dependencies.size() > 0)
@@ -109,7 +109,7 @@ public class ScriptDependenciesTag extends SimpleTagBase
                             sb.append("</script>\n");
 
                             JspWriter out = getOut();
-                            out.write(sb.toString());
+                            out.print(sb.toString());
                         }
                     }
                 }

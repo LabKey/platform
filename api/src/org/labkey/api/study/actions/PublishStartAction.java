@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.actions;
 
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -26,6 +27,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
@@ -42,6 +44,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -229,6 +232,13 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             ids = getCheckboxIds(getViewContext());
         }
 
+        // if QC is enabled for this protocol, verify that the selected data has been approved, otherwise show an error
+        if (!validateQCState(runIds, ids))
+        {
+            return new HtmlView("<span class='labkey-error'>QC checks failed. There are unapproved rows of data in the copy to study selection, " +
+                    "please change your selection or request a QC Analyst to approve the run data.</span>");
+        }
+
         // If the TargetStudy column is on the result domain, redirect past the choose target study page directly to the confirm page.
         Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = provider.findTargetStudyProperty(_protocol);
         if (pair != null && pair.first == ExpProtocol.AssayDomainTypes.Result)
@@ -289,5 +299,36 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to Study: Choose Target");
         return result;
+    }
+
+    /**
+     * Determines whether any of the runs or data rows passed in have an unapproved QC state.
+     * The protocol must support QC and have been configured for QC, otherwise it will always return
+     * true.
+     *
+     * @return true if all runs or data are approved, else false
+     */
+    private boolean validateQCState(List<Integer> runIds, List<Integer> dataIds)
+    {
+        if (AssayQCService.getProvider().supportsQC())
+        {
+            try
+            {
+                if (!runIds.isEmpty())
+                {
+                    return AssayQCService.getProvider().getUnapprovedRuns(_protocol, runIds).isEmpty();
+                }
+                else
+                {
+                    return AssayQCService.getProvider().getUnapprovedData(_protocol, dataIds).isEmpty();
+                }
+
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        return true;
     }
 }

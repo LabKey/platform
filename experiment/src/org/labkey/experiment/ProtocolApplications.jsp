@@ -86,7 +86,10 @@
             <td valign="top"><%=formatDate(protocolApplication.getEndTime())%></td>
             <td valign="top"><%=h(Objects.toString(protocolApplication.getRecordCount(), " "))%></td>
             <td valign="top">
-                <% if (!props.isEmpty()) out.write(h(new JSONObject(props).toString(2))); %>
+                <%
+                    if (!props.isEmpty())
+                        out.print(h(new JSONObject(props).toString(2)));
+                %>
             </td>
         </tr>
 
@@ -107,7 +110,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -120,14 +123,14 @@
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                             <% ExperimentDataHandler handler = data.findDataHandler();
                                 ActionURL url = handler == null ? null : handler.getContentURL(data);
-                                if (url != null) { %><%=textLink("view", url)%><% } %>
+                                if (url != null) { %><%=link("view", url)%><% } %>
                         </td>
                         <td width="40px"><%= h(dataRunInput.getRole()) %></td>
                         <td width="200px"><%= h(dataRunInput.getLSID()) %></td>
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -147,7 +150,7 @@
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpMaterialRunInputImpl)materialRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -160,14 +163,14 @@
                             <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                             <% ExperimentDataHandler handler = data.findDataHandler();
                                 ActionURL url = handler == null ? null : handler.getContentURL(data);
-                                if (url != null) { %><%=textLink("view", url)%><% } %>
+                                if (url != null) { %><%=link("view", url)%><% } %>
                         </td>
                         <td width="40px"><%= h(dataRunInput.getRole()) %></td>
                         <td width="200px"><%= h(dataRunInput.getLSID()) %></td>
                         <td width="200px"><%= h(protocolInput != null ? protocolInput.getName() : null)%></td>
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
-                            <% if (!map.isEmpty()) out.write(h(new JSONObject(map).toString(2))); %>
+                            <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
                         </td>
                     </tr>
                     <% } %>
@@ -204,7 +207,7 @@
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(data);
-                    if (url != null) { %><%=textLink("view", url)%><% } %><br/>
+                    if (url != null) { %><%=link("view", url)%><% } %><br/>
                 <% } %>
             </td>
             <td valign="top">
@@ -216,7 +219,7 @@
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
                     ActionURL url = handler == null ? null : handler.getContentURL(data);
-                    if (url != null) { %><%=textLink("view", url)%><% } %><br/>
+                    if (url != null) { %><%=link("view", url)%><% } %><br/>
                 <% } %>
             </td>
         </tr>

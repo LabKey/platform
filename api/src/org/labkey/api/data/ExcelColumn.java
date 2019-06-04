@@ -27,6 +27,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.ClientAnchor.AnchorType;
 import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
@@ -40,12 +41,33 @@ import org.apache.poi.util.Units;
 import org.apache.poi.xssf.usermodel.XSSFAnchor;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFPicture;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.ExcelFactory;
+import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ViewContext;
+import org.springframework.validation.BindException;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,9 +75,13 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.Format;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Representation of a column to be rendered into an Excel file. Wraps a
@@ -122,6 +148,7 @@ public class ExcelColumn extends RenderColumn
         }
         setCaption(dc.getCaptionExpr());
         setSimpleType(dc); //call after the call to setName()
+
         if (dc.getExcelFormatString() != null)
         {
             setFormatString(dc.getExcelFormatString());
@@ -130,7 +157,6 @@ public class ExcelColumn extends RenderColumn
         {
             setFormatString(dc.getFormatString());
         }
-
     }
 
     public DisplayColumn getDisplayColumn()
@@ -799,5 +825,163 @@ public class ExcelColumn extends RenderColumn
     public void render(RenderContext ctx, Writer out)
     {
         throw new UnsupportedOperationException();
+    }
+
+    public static class TestCase extends Assert
+    {
+        public static final String PROJECT_NAME = "ExcelColumnIntegrationTest";
+        private static final String LISTNAME = "List1";
+
+        @BeforeClass
+        public static void initialSetUp() throws Exception
+        {
+            doInitialSetUp(PROJECT_NAME);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            doCleanup(PROJECT_NAME);
+        }
+
+        @Test
+        public void testExportFormatting() throws Exception
+        {
+            UserSchema us = QueryService.get().getUserSchema(getUser(), getProject(), "lists");
+
+            //insert data:
+            List<Map<String, Object>> toInsert = new ArrayList<>();
+            Arrays.stream(DATA).forEach(r -> {
+                Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                for (int i=0;i<r.length;i++)
+                {
+                    row.put(FIELDS[i][0].toString(), r[i]);
+                }
+
+                toInsert.add(row);
+            });
+
+            TableInfo ti = us.getTable(LISTNAME);
+            BatchValidationException bve = new BatchValidationException();
+            ti.getUpdateService().insertRows(getUser(), getProject(), toInsert, bve, null, null);
+            if (bve.hasErrors())
+            {
+                throw bve;
+            }
+
+            //download as excel:
+            QueryForm qf = new QueryForm();
+            qf.setSchemaName("lists");
+            qf.setQueryName(LISTNAME);
+            qf.setViewContext(ViewContext.getMockViewContext(TestContext.get().getUser(), getProject(), getProject().getStartURL(TestContext.get().getUser()), false));
+            List<FieldKey> fields = Arrays.stream(FIELDS).map(x -> {
+                return FieldKey.fromString(x[0].toString());
+            }).collect(Collectors.toList());
+            qf.getQuerySettings().setFieldKeys(fields);
+
+            BindException errors = new NullSafeBindException(new Object(), "command");
+            QueryView view = us.createView(qf, errors);
+            try (ExcelWriter excel = view.getExcelWriter(ExcelWriter.ExcelDocumentType.xlsx))
+            {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream())
+                {
+                    excel.write(baos);
+                    Sheet wb = ExcelFactory.create(new ByteArrayInputStream(baos.toByteArray())).getSheetAt(0);
+                    DataFormatter formatter = new DataFormatter();
+                    for (int rowIdx = 0; rowIdx < DATA.length; rowIdx++)
+                    {
+                        Object[] expectedData = DATA[rowIdx];
+                        Row excelRow = wb.getRow(rowIdx + 1);
+                        for (int fieldIdx = 0; fieldIdx < FIELDS.length; fieldIdx++)
+                        {
+                            Object[] fieldDef = FIELDS[fieldIdx];
+                            ColumnInfo ci = ti.getColumn((String) fieldDef[0]);
+
+                            String expected = parseAndFormatExpected(expectedData[fieldIdx], ci);
+                            Cell cell = excelRow.getCell(fieldIdx);
+                            String actual = formatter.formatCellValue(cell);
+                            assertEquals("Incorrect Excel Value", expected, actual);
+
+                            Object expectedObj = ConvertHelper.convert(expected, ci.getJavaClass());
+                            Object actualObj = ConvertHelper.convert(actual, ci.getJavaClass());
+                            assertEquals("Incorrect Parsed Excel Value", expectedObj, actualObj);
+                        }
+                    }
+                }
+            }
+        }
+
+        private String parseAndFormatExpected(Object value, ColumnInfo ci)
+        {
+            Format fmt = ci.getDisplayColumnFactory().createRenderer(ci).getFormat();
+            if (fmt != null)
+            {
+                value = ConvertHelper.convert(value, ci.getJavaClass());
+                return fmt.format(value);
+            }
+
+            return value.toString();
+        }
+
+        private static final Object[][] FIELDS = new Object[][]{
+                {"PKField", JdbcType.VARCHAR},
+                {"DateField", JdbcType.DATE, "yyyy-MM-dd"},
+                {"DateTimeField", JdbcType.TIMESTAMP, "yyyy-MM-dd hh:mm"},
+                {"TextField", JdbcType.VARCHAR},
+                {"MultiLineTextField", JdbcType.VARCHAR},
+                {"IntField", JdbcType.INTEGER},
+                {"DoubleField", JdbcType.DOUBLE, "##.##"},
+                {"DoubleField2", JdbcType.DOUBLE, "##.000"}
+        };
+
+        private static final Object[][] DATA = new Object[][]{
+                {"1", "2019-01-01", "2019-02-01 10:20", "Text1", "Line1\nLine2", 1, 1.0, 2.0},
+                {"2", "1/1/2004", "2000/04/04 11:00", "Text12", "Line1\nLine3", 200, 4.5, 3.1}
+        };
+
+        protected static void doInitialSetUp(String projectName) throws Exception
+        {
+            //pre-clean
+            doCleanup(projectName);
+
+            Container project = ContainerManager.getForPath(projectName);
+            if (project == null)
+            {
+                project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
+            }
+
+            //create list:
+            ListDefinition ld1 = ListService.get().createList(project, LISTNAME, ListDefinition.KeyType.Varchar);
+            Arrays.stream(FIELDS).forEach(x -> {
+                DomainProperty dp = ld1.getDomain().addProperty(new PropertyStorageSpec((String)x[0], (JdbcType)x[1]));
+                dp.setLabel((String)x[0]);  //to simplify parsing excel headers
+                if (x.length > 2)
+                {
+                    dp.setFormat(x[2].toString());
+                }
+            });
+
+            ld1.setKeyName("PKField");
+            ld1.save(TestContext.get().getUser());
+        }
+
+        protected static void doCleanup(String projectName)
+        {
+            Container project = ContainerManager.getForPath(projectName);
+            if (project != null)
+            {
+                ContainerManager.delete(project, getUser());
+            }
+        }
+
+        protected static User getUser()
+        {
+            return TestContext.get().getUser();
+        }
+
+        protected Container getProject()
+        {
+            return ContainerManager.getForPath(PROJECT_NAME);
+        }
     }
 }

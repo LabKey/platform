@@ -633,12 +633,13 @@ public class Input extends DisplayElement
             else
                 stringValue = ConvertUtils.convert(getValue());
 
+            // TODO: HtmlString - should always filter, or else take an HtmlString value as an option
             sb.append(" value=\"").append(isUnsafeValue() ? stringValue : PageFlowUtil.filter(stringValue)).append("\"");
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static class InputBuilder<T extends InputBuilder<T>>
+    public static class InputBuilder<T extends InputBuilder<T>> // TODO: extends DisplayElementBuilder? HtmlString?
     {
         private String _autoComplete;
         private Boolean _autoFocus;

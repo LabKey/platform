@@ -45,11 +45,12 @@
     boolean canSetPipelineRoot = c.hasPermission(user, AdminOperationsPermission.class);
 %>
 
-<% if (!hasAssayProtocols) { %>
+<%
+    if (!hasAssayProtocols) { %>
 <p>
     <div>
         <em>No assay designs are available in this folder. </em>
-        <%=text(new HelpTopic("defineAssaySchema").getLinkHtml("Assay Help"))%>
+        <%=new HelpTopic("defineAssaySchema").getLinkHtml("Assay Help")%>
     </div>
 </p>
 <% } %>
@@ -58,7 +59,7 @@
 <p>
     <em>Pipeline root has not been set.</em>
     <% if (canSetPipelineRoot) { %>
-        <labkey:link href="<%=urlProvider(PipelineUrls.class).urlSetup(c).getLocalURIString()%>" text="setup pipeline"/>
+        <%=link("setup pipeline", urlProvider(PipelineUrls.class).urlSetup(c))%>
     <% } else { %>
         Please ask an administrator for assistance.
     <% } %>

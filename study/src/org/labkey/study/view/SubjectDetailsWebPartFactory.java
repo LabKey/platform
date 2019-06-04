@@ -17,6 +17,7 @@ package org.labkey.study.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -191,7 +192,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
 
             public QCStateSet getQCStateSet()
             {
-                if (StudyManager.getInstance().showQCStates(container))
+                if (QCStateManager.getInstance().showQCStates(container))
                     return QCStateSet.getSelectedStates(container, encodedQCState);
                 return null;
             }

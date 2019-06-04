@@ -51,6 +51,6 @@
     <br/><br/>
     <%=helpLink("configLdap", "More information about LDAP authentication")%>
     <br/>
-    <%=textLink("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(getActionURL()))%>
+    <%=link("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(getActionURL()))%>
 </labkey:form>
 

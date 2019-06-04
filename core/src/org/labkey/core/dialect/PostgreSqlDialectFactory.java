@@ -54,7 +54,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 10.x is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 11.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
@@ -128,13 +128,14 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (logWarnings)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
-            return new PostgreSql_11_Dialect();
+            return new PostgreSql_12_Dialect();
         }
 
         throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
     }
 
 
+    @Override
     public Collection<? extends Class> getJUnitTests()
     {
         return Arrays.<Class>asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
@@ -152,6 +153,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
     {
+        @Override
         public void testDialectRetrieval()
         {
             final String connectionUrl = "jdbc:postgresql:";
@@ -168,7 +170,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 9.6, 9.7, "", connectionUrl, null, PostgreSql96Dialect.class);
             good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
             good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
-            good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
+            good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
+            good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
         }
     }
 

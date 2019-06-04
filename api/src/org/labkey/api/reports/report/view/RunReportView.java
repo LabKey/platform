@@ -41,6 +41,7 @@ public abstract class RunReportView extends TabStripView
 
     protected BindException _errors;
 
+    @Override
     protected void renderInternal(TabStripView model, PrintWriter out) throws Exception
     {
         final Report report = getReport();
@@ -94,6 +95,7 @@ public abstract class RunReportView extends TabStripView
             sb.append("</table>");
             include(new HttpView() {
 
+                @Override
                 protected void renderInternal(Object model, PrintWriter out)
                 {
                     out.write("<table width=\"100%\"><tr class=\"labkey-wp-header\"><td align=\"left\">" + sb + "</td></tr><tr><td></td>&nbsp;</tr></table>");
@@ -107,6 +109,7 @@ public abstract class RunReportView extends TabStripView
         return ReportUtil.isReportInherited(getViewContext().getContainer(), report);
     }
 
+    @Override
     public BindException getErrors()
     {
         if (_errors == null)

@@ -54,7 +54,7 @@
         </a></td>
 <%
         if (++graphCount % bean.getGraphsPerRow() == 0)
-            out.write("</tr><tr>");
+            out.print("</tr><tr>");
     }
 %>
 </tr></table>

@@ -59,6 +59,7 @@ import java.util.Map;
  */
 public class DiscussionServiceImpl implements DiscussionService
 {
+    @Override
     public WebPartView startDiscussion(Container c, User user, String identifier, ActionURL pageURL, URLHelper cancelURL, String title, String summary, boolean allowMultipleDiscussions)
     {
         if (!allowMultipleDiscussions)
@@ -360,6 +361,7 @@ public class DiscussionServiceImpl implements DiscussionService
             return _id;
         }
 
+        @Override
         protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
         {
             _vbox.render(request, response);
