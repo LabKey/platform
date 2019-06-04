@@ -264,6 +264,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             UserSchema schema = getSchema();
             if (schema != null)
                 _querySettings = createQuerySettings(schema);
+            else
+                throw new NotFoundException("Could not find schema: " + getSchemaName());
         }
         return _querySettings;
     }
