@@ -911,6 +911,9 @@ public class PropertyController extends SpringActionController
             if (dom == null)
                 throw new NotFoundException("Could not find domain for " + domainId);
 
+            if (dom.getContainer() != container)
+                throw new NotFoundException("Could not find domain for " + domainId + " in container " + container.getName() + ".");
+
             domain = DomainUtil.getDomainDescriptor(user, dom);
         }
         else
