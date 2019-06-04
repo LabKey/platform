@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -34,6 +35,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -47,27 +49,48 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.search.SearchResultTemplate;
+import org.labkey.api.search.SearchScope;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
+    private static final String categoryName = "materialSource";
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
+
     private Domain _domain;
     private NameGenerator _nameGen;
 
     // For serialization
     protected ExpSampleSetImpl() {}
+
+    static public Collection<ExpSampleSetImpl> fromMaterialSources(List<MaterialSource> materialSources)
+    {
+        return materialSources.stream().map(ExpSampleSetImpl::new).collect(Collectors.toList());
+    }
 
     public ExpSampleSetImpl(MaterialSource ms)
     {
@@ -568,5 +591,71 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public String toString()
     {
         return "SampleSet " + getName() + " in " + getContainer().getPath();
+    }
+
+    public void index(SearchService.IndexTask task)
+    {
+        // Big hack to prevent study specimens from being indexed as
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
+        {
+            return;
+        }
+        if (task == null)
+        {
+            SearchService ss = SearchService.get();
+            if (null == ss)
+                return;
+            task = ss.defaultTask();
+        }
+
+        // do the least possible amount of work here
+        final SearchService.IndexTask indexTask = task;
+        final ExpSampleSet me = this;
+        indexTask.addRunnable(
+                () -> {
+                    ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(me);
+                    url.setExtraPath(getContainer().getId());
+
+                    Map<String, Object> props = new HashMap<>();
+                    Set<String> identifiersHi = new HashSet<>();
+
+                    // Name is identifier with highest weight
+                    identifiersHi.add(getName());
+
+                    // Add aliases in parenthesis in the title
+                    StringBuilder title = new StringBuilder("Sample source - " + getName());
+
+                    props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+                    props.put(SearchService.PROPERTY.title.toString(), title.toString());
+                    props.put(SearchService.PROPERTY.keywordsLo.toString(), "SampleSet");      // Treat the word "Sample" a low priority keyword
+                    props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+
+                    StringBuilder body = new StringBuilder();
+                    if (StringUtils.isNotBlank(getDescription()))
+                        body.append(getDescription());
+
+                    SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                            getContainer().getId(), "text/plain",
+                            body.toString(), url,
+                            getCreatedBy(), getCreated(),
+                            getModifiedBy(), getModified(),
+                            props)
+                    {
+                        @Override
+                        public void setLastIndexed(long ms, long modified)
+                        {
+                            ExperimentServiceImpl.get().setMaterialSourceLastIndexed(getRowId(), ms);
+                        }
+                    };
+
+                    indexTask.addResource(sdr, SearchService.PRIORITY.item);
+                }
+                , SearchService.PRIORITY.bulk
+        );
+    }
+
+    public String getDocumentId()
+    {
+        return categoryName + ":" + getRowId();
     }
 }
