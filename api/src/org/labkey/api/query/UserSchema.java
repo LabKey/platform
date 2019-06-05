@@ -427,6 +427,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     /** Override this method to return a schema specific QueryView for the given QuerySettings. */
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         QueryDefinition qdef = settings.getQueryDef(this);
@@ -440,6 +441,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return new QueryView(this, settings, errors);
     }
 
+    @NotNull
     public final QueryView createView(QueryForm form, BindException errors)
     {
         return createView(form.getViewContext(), form.getQuerySettings(), errors);
