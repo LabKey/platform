@@ -1236,7 +1236,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
-            QueryView queryView = form.getQueryView(errors);
+            QueryView queryView = form.getQueryView();
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -1280,7 +1280,7 @@ public class QueryController extends SpringActionController
         {
             _form = form;
 
-            QueryView queryView = form.getQueryView(errors);
+            QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
 
@@ -1485,7 +1485,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(K form, BindException errors) throws Exception
         {
-            QueryView view = form.getQueryView(errors);
+            QueryView view = form.getQueryView();
             getPageConfig().setTemplate(PageConfig.Template.None);
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
@@ -1532,7 +1532,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors)
         {
-            QueryView view = form.getQueryView(errors);
+            QueryView view = form.getQueryView();
 
             return ExportScriptModel.getExportScriptView(QueryView.create(form, errors), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
@@ -1734,7 +1734,7 @@ public class QueryController extends SpringActionController
             // Set the headers to allow the client to cache, but not proxies
             ResponseHelper.setPrivate(response);
 
-            QueryView view = form.getQueryView(errors);
+            QueryView view = form.getQueryView();
             getPageConfig().setTemplate(PageConfig.Template.None);
             view.exportToExcelWebQuery(getViewContext().getResponse());
             return null;
@@ -1749,7 +1749,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
-            form.getQueryView(errors);
+            form.getQueryView();
             String queryViewActionURL = form.getQueryViewActionURL();
             ActionURL url;
             if (queryViewActionURL != null)
@@ -2242,7 +2242,7 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            TableInfo table = form.getQueryView(errors).getTable();
+            TableInfo table = form.getQueryView().getTable();
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
@@ -2673,6 +2673,9 @@ public class QueryController extends SpringActionController
         {
             // Issue 12233: add implicit maxRows=100k when using client API
             HttpServletRequest request = getViewContext().getRequest();
+
+            QueryView view = form.getQueryView();
+
             boolean missingShowRows = null == request.getParameter(form.getDataRegionName() + "." + QueryParam.showRows);
             if (null == form.getLimit() && !form.getQuerySettings().isMaxRowsSet() && missingShowRows)
             {
@@ -2694,8 +2697,6 @@ public class QueryController extends SpringActionController
                     ContainerFilter.Type.valueOf(form.getContainerFilter());
                 form.getQuerySettings().setContainerFilterName(containerFilterType.name());
             }
-
-            QueryView view = form.getQueryView(errors);
 
             view.setShowPagination(form.isIncludeTotalCount());
 
@@ -2991,7 +2992,7 @@ public class QueryController extends SpringActionController
                 cf = ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), getUser());
             }
 
-            TableInfo table = form.getQueryView(errors).getTable();
+            TableInfo table = form.getQueryView().getTable();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
@@ -3149,7 +3150,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(QueryForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            QueryView view = form.getQueryView(errors);
+            QueryView view = form.getQueryView();
             DisplayColumn displayColumn = null;
 
             for (DisplayColumn dc : view.getDisplayColumns())
