@@ -55,7 +55,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -472,7 +471,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials) throws SQLException
+    public void onSamplesChanged(User user, List<Material> materials)
     {
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length == 0)

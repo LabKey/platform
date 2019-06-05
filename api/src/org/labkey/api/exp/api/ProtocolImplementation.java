@@ -19,7 +19,6 @@ package org.labkey.api.exp.api;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public class ProtocolImplementation
@@ -42,9 +41,8 @@ public class ProtocolImplementation
      * is the sampleset that these samples came from.
      * @param materials materials that were modified.
      */
-    public void onSamplesChanged(User user, ExpProtocol protocol, List<? extends ExpMaterial> materials) throws SQLException
+    public void onSamplesChanged(User user, ExpProtocol protocol, List<? extends ExpMaterial> materials)
     {
-
     }
 
     public boolean deleteRunWhenInputDeleted()
