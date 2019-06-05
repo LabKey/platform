@@ -1,27 +1,55 @@
 import * as React from 'react';
 import {Panel} from "react-bootstrap";
 import {Map} from 'immutable';
-import {FileAttachmentForm} from "@glass/base";
+import {Alert, FileAttachmentForm} from "@glass/base";
 
-export class App extends React.Component<any, any> {
+interface Props {}
 
-    handleFileSubmit = (files: Map<string, File>) => {
-        console.log('handleFileSubmit', files.toJS());
-    };
+interface State {
+    error: string
+}
+
+export class App extends React.Component<Props, State> {
+
+    constructor(props: Props) {
+        super(props);
+
+        this.state = {
+            error: undefined
+        }
+    }
+
+    setErrorMsg(error: string) {
+        this.setState(() => ({error}));
+    }
 
     handleFileChange = (files: Map<string, File>) => {
         console.log('handleFileChange', files.toJS());
+        this.setErrorMsg(undefined);
     };
 
     handleFileRemoval = (attachmentName: string) => {
         console.log('handleFileRemoval', attachmentName);
+        this.setErrorMsg(undefined);
     };
+
+    handleCancel = () => {
+        window.history.back();
+    };
+
+    renderError() {
+        const { error } = this.state;
+        if (error) {
+            return <Alert>{error}</Alert>
+        }
+    }
 
     render() {
         return (
             <>
+                {this.renderError()}
                 <Panel>
-                    <Panel.Heading>File Upload and Preview</Panel.Heading>
+                    <Panel.Heading>Data Upload</Panel.Heading>
                     <Panel.Body>
                         <FileAttachmentForm
                             acceptedFormats={".csv, .tsv, .txt, .xls, .xlsx"}
@@ -29,12 +57,11 @@ export class App extends React.Component<any, any> {
                             allowDirectories={false}
                             allowMultiple={false}
                             label={"Upload a file:"}
-                            showButtons={true}
                             showPreviewGrid={true}
                             previewRowCount={3}
                             onFileChange={this.handleFileChange}
                             onFileRemoval={this.handleFileRemoval}
-                            onSubmit={this.handleFileSubmit}
+                            onCancel={this.handleCancel}
                         />
                     </Panel.Body>
                 </Panel>

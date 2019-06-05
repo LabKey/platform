@@ -18,5 +18,10 @@ module.exports = {
         title: 'File Upload Preview',
         permission: 'insert',
         path: './src/client/FileUploadPreview'
+    },{
+        name: 'assayDataImport',
+        title: 'Assay Data Import',
+        permission: 'insert',
+        path: './src/client/AssayDataImport'
     }]
 };
