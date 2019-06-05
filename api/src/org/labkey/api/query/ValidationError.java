@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
 /**
@@ -29,4 +30,6 @@ public interface ValidationError
     String getMessage();
 
     ObjectError getObjectError();
+
+    void addToBindException(BindException be, String errorCode);
 }

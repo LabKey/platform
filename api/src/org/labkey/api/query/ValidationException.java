@@ -67,14 +67,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
     {
         for (ValidationError ve : this.getErrors())
         {
-            if (null != ve.getObjectError())
-            {
-                errors.addError(ve.getObjectError());
-            }
-            else
-            {
-                errors.reject(errorCode, ve.getMessage());
-            }
+            ve.addToBindException(errors, errorCode);
         }
     }
 
