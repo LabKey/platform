@@ -535,19 +535,25 @@ public class GWTPropertyDescriptor implements IsSerializable
         return isPrimaryKey.booleanValue();
     }
 
+    /** This method is for informational purpose only so that the client can identify column as a PK column.
+     * Setting PK on a column via this method will not get preserved in the domain's table.
+     */
     public void setPrimaryKey(boolean isPrimaryKey)
     {
         this.isPrimaryKey.setBool(isPrimaryKey);
     }
 
-    public void setLocked(boolean locked)
-    {
-        this.isLocked.setBool(locked);
-    }
-
     public boolean isLocked()
     {
         return isLocked.booleanValue();
+    }
+
+    /** This method is for informational purpose only so that the client can identify this column as a locked column.
+     * Setting lock on a column via this method will not get preserved in the domain's table.
+     */
+    public void setLocked(boolean locked)
+    {
+        this.isLocked.setBool(locked);
     }
 
     public String debugString()

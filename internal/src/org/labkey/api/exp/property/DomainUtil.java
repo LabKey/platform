@@ -71,8 +71,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -192,7 +192,7 @@ public class DomainUtil
             throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
         }
 
-        Set<String> mandatoryProperties = domainKind.getMandatoryPropertyNames(domain);
+        Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
 
         //get PK columns
         TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
@@ -235,9 +235,9 @@ public class DomainUtil
 
         // Handle reserved property names
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
-        d.setReservedFieldNames(new HashSet<>(reservedProperties));
-        d.setMandatoryFieldNames(new HashSet<>(mandatoryProperties));
-        d.setExcludeFromExportFieldNames(new HashSet<>(domainKind.getAdditionalProtectedPropertyNames(domain)));
+        d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
+        d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
+        d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
@@ -648,21 +648,18 @@ public class DomainUtil
     private static void replaceLockedFields(Set<GWTPropertyDescriptor> lockedFields, List<GWTPropertyDescriptor> updateFields)
     {
         Map<Integer, GWTPropertyDescriptor> origLockedFieldMap = getLockedPropertyIdMap(lockedFields);
-        Iterator<GWTPropertyDescriptor> updateFieldsIterator = updateFields.iterator(); //using an iterator to avoid ConcurrentModificationException
+        ListIterator<GWTPropertyDescriptor> updateFieldsIterator = updateFields.listIterator(); //using an iterator to avoid ConcurrentModificationException
 
-        //remove locked field that came from the client
+        //replace locked field that came from the client
         while (updateFieldsIterator.hasNext())
         {
             GWTPropertyDescriptor pd = updateFieldsIterator.next();
             int propertyId = pd.getPropertyId();
             if (origLockedFieldMap.containsKey(propertyId))
             {
-                updateFieldsIterator.remove();
+                updateFieldsIterator.set(origLockedFieldMap.get(propertyId));
             }
         }
-
-        //replace with original locked fields
-        updateFields.addAll(origLockedFieldMap.values());
     }
 
     private static Map<Integer, GWTPropertyDescriptor> getLockedPropertyIdMap(Set<? extends GWTPropertyDescriptor> lockedFields)

@@ -24,18 +24,19 @@ package org.labkey.api.query;
 import org.springframework.validation.ObjectError;
 
 /**
- * Represents a validation error for a given property name. Use this when a property of a bean or form is not valid, as
+ * Represents a validation error for a given property name and/or propertyId. Use this when a property of a bean or form is not valid, as
  * the client will be able to display the error message next to the relevant user interface control.
  */
 public class PropertyValidationError extends SimpleValidationError
 {
     private final String _property; //name
-    private Integer _propertyId; //propertyId
+    private final Integer _propertyId; //PropertyId from exp.PropertyDescriptor
 
     public PropertyValidationError(String message, String property)
     {
         super(message);
         _property = property;
+        _propertyId = null;
     }
 
     public PropertyValidationError(String message, String property, Integer propertyId)

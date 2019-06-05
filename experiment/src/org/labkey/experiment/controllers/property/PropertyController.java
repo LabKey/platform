@@ -215,7 +215,7 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
@@ -360,7 +360,7 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
