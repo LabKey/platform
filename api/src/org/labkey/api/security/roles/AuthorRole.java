@@ -15,7 +15,10 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.reports.permissions.ShareReportPermission;
+import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
@@ -35,5 +38,11 @@ public class AuthorRole extends AbstractRole
                 ReadSomePermission.class,
                 InsertPermission.class,
                 ShareReportPermission.class);
+    }
+
+    @Override
+    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    {
+        return super.isApplicable(policy,resource) || resource instanceof PipeRoot;
     }
 }

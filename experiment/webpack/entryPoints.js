@@ -4,11 +4,11 @@
  */
 module.exports = {
     apps: [{
-        name: 'assayDesigner',
-        title: 'Assay Designer',
-        permission: 'admin',
-        path: './src/client/AssayDesigner'
-    },{
+    //     name: 'assayDesigner',
+    //     title: 'Assay Designer',
+    //     permission: 'admin',
+    //     path: './src/client/AssayDesigner'
+    // },{
         name: 'domainDesigner',
         title: 'Domain Designer',
         permission: 'admin',
