@@ -24,8 +24,10 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.util.Pair;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A {@link org.labkey.api.data.ColumnInfo} that is part of a lookup target. This implementation knows
@@ -76,6 +78,21 @@ public class LookupColumn extends BaseColumnInfo
             return null;
         LookupColumn ret = new LookupColumn(foreignKey, lookupKey, lookupColumn, joinType);
         ret.copyAttributesFrom(lookupColumn);
+
+        // ColumnLogging: make fieldkeys include the lookup
+        if (!lookupColumn.getColumnLogging().getDataLoggingColumns().isEmpty())
+        {
+            ColumnLogging columnLogging = lookupColumn.getColumnLogging();
+            Set<FieldKey> dataLoggingFieldKeys = new HashSet<>();
+            columnLogging.getDataLoggingColumns().forEach(fieldKey -> {
+                dataLoggingFieldKeys.add(FieldKey.fromParts(foreignKey.getFieldKey(), fieldKey));
+            });
+
+            ret.setColumnLogging(new ColumnLogging(columnLogging.shouldLogName(), FieldKey.fromParts(foreignKey.getFieldKey(), lookupColumn.getFieldKey()),
+                            foreignKey.getParentTable(), dataLoggingFieldKeys, columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider()));
+        }
+
+
         // Copy the URL but don't reparent the FieldKey
         ret.copyURLFrom(lookupColumn, null, null);
         // Reparent all column FieldKeys including the URL just copied and DisplayColumnFactories
