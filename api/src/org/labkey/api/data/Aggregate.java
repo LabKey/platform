@@ -73,20 +73,20 @@ public class Aggregate
          * @param jdbcType The column type
          * @param distinct Boolean indicating if this SQL should use 'DISTINCT' in the generated query
          * @param tableInnerSql SQLFragment for the FROM clause in the case where the aggregate needs to do a "subselect"
-         * @return String generated SQL
+         * @return SQLFragment generated SQL
          */
-        default String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+        default SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
         {
             if (jdbcType != null && !isLegal(jdbcType))
                 return null;
 
-            StringBuilder sb = new StringBuilder();
+            SQLFragment sb = new SQLFragment();
             sb.append(getSQLFunctionName(dialect)).append("(");
             if (distinct)
                 sb.append("DISTINCT ");
             sb.append(dialect.getColumnSelectName(columnName));
             sb.append(") AS ").append(asName);
-            return sb.toString();
+            return sb;
         }
 
         /**
@@ -133,14 +133,14 @@ public class Aggregate
     {
         SUM("Sum")
                 {
-                    public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+                    public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
                     {
                         if (jdbcType != null && !isLegal(jdbcType))
                             return null;
 
                         if (jdbcType != null)
                         {
-                            StringBuilder sb = new StringBuilder();
+                            SQLFragment sb = new SQLFragment();
                             sb.append("SUM(");
                             if (distinct)
                                 sb.append("DISTINCT ");
@@ -154,7 +154,7 @@ public class Aggregate
                                 sb.append(dialect.getColumnSelectName(columnName));
                             }
                             sb.append(") AS ").append(asName);
-                            return sb.toString();
+                            return sb;
                         }
                         else
                         {
@@ -210,7 +210,7 @@ public class Aggregate
                     }
 
                     @Override
-                    public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
+                    public SQLFragment getSQLColumnFragment(SqlDialect dialect, String columnName, String asName, @Nullable JdbcType jdbcType, boolean distinct, SQLFragment tableInnerSql)
                     {
                         if (jdbcType != null && !isLegal(jdbcType))
                             return null;
@@ -218,13 +218,13 @@ public class Aggregate
                         // special case for casting INTEGER to FLOAT
                         if (jdbcType != null && (jdbcType.equals(JdbcType.INTEGER) || jdbcType.equals(JdbcType.BIGINT) || jdbcType.equals(JdbcType.SMALLINT)))
                         {
-                            StringBuilder sb = new StringBuilder();
+                            SQLFragment sb = new SQLFragment();
                             sb.append(getSQLFunctionName(dialect)).append("(");
                             if (distinct)
                                 sb.append("DISTINCT ");
                             sb.append("CAST(").append(dialect.getColumnSelectName(columnName)).append(" AS FLOAT)");
                             sb.append(") AS ").append(asName);
-                            return sb.toString();
+                            return sb;
                         }
                         else
                         {
@@ -441,7 +441,7 @@ public class Aggregate
         return _distinct;
     }
 
-    public String toLabKeySQL(SQLFragment tableInnerSql)
+    public SQLFragment toLabKeySQL(SQLFragment tableInnerSql)
     {
         String alias = _label == null ? getAggregateName(getFieldKey().toString()) : _label;
         alias = alias.replace("\"", "\\\"");
@@ -450,17 +450,17 @@ public class Aggregate
         if (_type.getSQLFunctionName(null) == null)
             return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct, tableInnerSql);
 
-        StringBuilder sb = new StringBuilder();
+        SQLFragment sb = new SQLFragment();
         sb.append(_type.getSQLFunctionName(null)).append("(");
         if (_distinct)
             sb.append("DISTINCT ");
         sb.append(getFieldKey().toSQLString());
         sb.append(") AS \"").append(alias).append("\"");
-        return sb.toString();
+        return sb;
     }
 
     @Nullable
-    public String getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns, SQLFragment tableInnerSql)
+    public SQLFragment getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns, SQLFragment tableInnerSql)
     {
         ColumnInfo col = columns.get(getFieldKey());
         String alias = getAliasName(col);
