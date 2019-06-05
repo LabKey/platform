@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.10-fb-package-updates.4"
+    "@glass/domainproperties": "0.0.13-fb-package-updates.3"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
