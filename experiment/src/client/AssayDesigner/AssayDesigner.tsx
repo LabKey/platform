@@ -6,10 +6,7 @@ import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {DomainFieldsDisplay} from "@glass/domainproperties";
-import {Alert, LoadingSpinner} from "@glass/base";
-
-import {fetchProtocol} from "./actions";
-import {AssayProtocolModel} from "./models";
+import {Alert, AssayProtocolModel, fetchProtocol, LoadingSpinner} from "@glass/base";
 
 type State = {
     protocolId: number,

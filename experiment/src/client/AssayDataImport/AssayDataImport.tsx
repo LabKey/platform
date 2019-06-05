@@ -1,10 +1,8 @@
 import * as React from 'react';
 import {Panel} from "react-bootstrap";
 import {Map} from 'immutable';
-import {Alert, FileAttachmentForm, LoadingSpinner} from "@glass/base";
+import {Alert, FileAttachmentForm, LoadingSpinner, AssayProtocolModel, fetchProtocol} from "@glass/base";
 import {ActionURL, AssayDOM} from '@labkey/api'
-import {fetchProtocol} from "../AssayDesigner/actions";
-import {AssayProtocolModel} from "../AssayDesigner/models";
 
 interface Props {}
 
