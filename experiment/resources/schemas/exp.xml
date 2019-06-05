@@ -372,6 +372,8 @@
       </column>
       <column columnName="LastIndexed">
         <description>Contains the time this material source was last updated in the search index</description>
+        <isUserEditable>false</isUserEditable>
+        <isHidden>true</isHidden>
       </column>
     </columns>
     <description>Contains a row per sample set, a collection of samples.</description>
