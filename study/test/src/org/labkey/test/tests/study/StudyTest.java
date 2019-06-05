@@ -640,25 +640,13 @@ public class StudyTest extends StudyBaseTest
             clickAndWait(Locator.linkWithText("Manage Study"));
             ManageStudyPage studyPage = new ManageStudyPage(getDriver());
             studyPage.manageDatasetQCStates()
-                    .setStateRow("unknown QC", "Unknown data is neither clean nor dirty.", false)
-                    .clickSave()
-                    .manageDatasetQCStates()
+                    .addStateRow("unknown QC", "Unknown data is neither clean nor dirty.", false)
                     .setStatePublic("dirty_public", true)
-                    .clickSave()
+                    .clickSave()                    // have to save the form here; default entry qc state needs a page cycle to be selectable below
                     .manageDatasetQCStates()
                     .setDefaultDirectEntryQCState("unknown QC")
                     .showPrivateDataByDefault("Public data")
                     .clickSave();
-
-//            clickAndWait(Locator.linkWithText("Manage Dataset QC States"));
-//            setFormElement(Locator.name("newLabel"), "unknown QC");
-//            setFormElement(Locator.name("newDescription"), "Unknown data is neither clean nor dirty.");
-//            click(Locator.checkboxById("dirty_public"));
-//            click(Locator.checkboxByName("newPublicData"));
-//            clickButton("Save");
-//            selectOptionByText(Locator.name("defaultDirectEntryQCState"), "unknown QC");
-//            selectOptionByText(Locator.name("showPrivateDataByDefault"), "Public data");
-//            clickButton("Save");
 
             // return to dataset import page
             clickFolder(getFolderName());

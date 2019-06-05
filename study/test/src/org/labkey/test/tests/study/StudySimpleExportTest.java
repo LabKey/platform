@@ -179,13 +179,9 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("QC States: create 3 new QC states (one for each default state type)");
         ManageDatasetQCStatesPage qcStatesPage = new ManageDatasetQCStatesPage(getDriver());
-        qcStatesPage.setStateRow("First QC State", "The first qc state description", false)
-                .clickSave()
-                .manageDatasetQCStates()
-                .setStateRow("Second QC State", "The second qc state description", false)
-                .clickSave()
-                .manageDatasetQCStates()
-                .setStateRow("Third QC State", "The third qc state description", false)
+        qcStatesPage.addStateRow("First QC State", "The first qc state description", false)
+                .addStateRow("Second QC State", "The second qc state description", false)
+                .addStateRow("Third QC State", "The third qc state description", false)
                 .clickSave();
 
         log("QC States: set the default states for dataset data and visibility state");
