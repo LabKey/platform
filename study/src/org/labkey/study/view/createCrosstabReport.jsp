@@ -36,14 +36,14 @@
     ActionURL returnURL = urlProvider(ReportUrls.class).urlManageViews(getContainer());
 %>
 <labkey:form action="<%=h(buildURL(ReportsController.ParticipantCrosstabAction.class))%>" method="GET">
-<input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
-<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
+<input type="hidden" name="<%=h(QueryParam.schemaName)%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
+<input type="hidden" name="<%=h(ReportDescriptor.Prop.reportType)%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
 <input type="hidden" name="redirectUrl" value="<%=h(returnURL)%>">
 <table>
     <tr>
         <td>Dataset</td>
         <td>
-            <select name="<%=QueryParam.queryName%>">
+            <select name="<%=h(QueryParam.queryName)%>">
                 <%
                     for (DatasetDefinition dataset : bean.getDatasets())
                     {

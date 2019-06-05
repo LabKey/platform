@@ -201,7 +201,7 @@
     <%
         }
     %>
-    <input type="hidden" name="<%= ActionURL.Param.returnUrl %>" value="<%= h(bean.getReturnURL()) %>">
+    <input type="hidden" name="<%= h(ActionURL.Param.returnUrl) %>" value="<%= h(bean.getReturnURL()) %>">
     <input type="hidden" name="containerFilterName" value="<%= h(bean.getContainerFilterName()) %>">
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>">
 </labkey:form>

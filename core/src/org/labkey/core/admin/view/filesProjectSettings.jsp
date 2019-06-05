@@ -104,13 +104,13 @@
                 <table>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionDisable" value="<%=FileRootProp.disable%>"
+                                type="radio" name="fileRootOption" id="optionDisable" value="<%=h(FileRootProp.disable)%>"
                                 <%=checked(FileRootProp.disable.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(true);">
                             Disable file sharing for this <%=h(getContainer().getContainerNoun())%></td></tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=FileRootProp.siteDefault%>"
+                                type="radio" name="fileRootOption" id="optionSiteDefault" value="<%=h(FileRootProp.siteDefault)%>"
                                 <%=checked(FileRootProp.siteDefault.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(true);">
                             Use a default based on the project-level root
@@ -118,7 +118,7 @@
                     </tr>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
+                                type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=h(FileRootProp.folderOverride)%>"
                                 <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(true);">
                             Use a <%=text(getContainer().getContainerNoun())%>-level file root
@@ -127,7 +127,7 @@
                     <% if (cloud != null) { %>
                     <tr style="height: 1.75em">
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
-                                type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=FileRootProp.cloudRoot%>"
+                                type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=h(FileRootProp.cloudRoot)%>"
                                 <%=checked(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>
                                 onclick="updateSelection(true);">
                             Use cloud-based file storage
@@ -147,13 +147,13 @@
                         <td>
                             <span style="color: #FF0000">Proposed File Root change from '<%=h(currentFileRootOption)%>'.</span> Existing files:
                             <select name="migrateFilesOption" id="migrateFilesOption" <%=h(canChangeFileSettings ? "" : " disabled ")%>>
-                                <option value="<%=MigrateFilesOption.leave%>" selected>
+                                <option value="<%=h(MigrateFilesOption.leave)%>" selected>
                                     Not copied or moved
                                 </option>
-                                <option value="<%=MigrateFilesOption.copy%>">
+                                <option value="<%=h(MigrateFilesOption.copy)%>">
                                     Copied to new location
                                 </option>
-                                <option id="migrateMoveOption" value="<%=MigrateFilesOption.move%>">
+                                <option id="migrateMoveOption" value="<%=h(MigrateFilesOption.move)%>">
                                     Moved to new location
                                 </option>
                             </select>
