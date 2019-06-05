@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -76,11 +75,10 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     /**
      * @throws NotFoundException if the query/table does not exist.
      */
-    @NotNull
-    public QueryView getQueryView(BindException errors)
+    public QueryView getQueryView()
     {
-        UserSchema schema = getSchema();
-        if (schema == null)
+        init();
+        if (_schema == null)
         {
             throw new NotFoundException("Could not find schema: " + getSchemaName());
         }
@@ -92,7 +90,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
         if (_queryView == null)
         {
-            throw new IllegalStateException("Expected _queryView to be initialized in call to getSchema()");
+            throw new IllegalStateException("Expected _queryView to be initialized in call to init()");
         }
         if (_queryView.getTable() == null)
         {
@@ -199,18 +197,15 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     protected String getValue(String key, PropertyValues... pvss)
     {
-        for (PropertyValues pvs : pvss)
+        String[] values = getValues(key, pvss);
+        if (values != null && values.length > 0)
         {
-            if (pvs == null) continue;
-            PropertyValue pv = pvs.getPropertyValue(key);
-            if (pv == null) continue;
-            Object value = pv.getValue();
-            if (value == null) continue;
-            return value instanceof  String ? (String)value : ((String[])value)[0];
+            return values[0];
         }
         return null;
     }
 
+    @Nullable
     protected String[] getValues(String key, PropertyValues... pvss)
     {
         for (PropertyValues pvs : pvss)
@@ -234,39 +229,13 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         String schemaName = getSchemaName();
         UserSchema baseSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
 
-        if (baseSchema == null)
-        {
-            return null;
-        }
-
-        QuerySettings settings = createQuerySettings(baseSchema);
-        _queryView = baseSchema.createView(getViewContext(), settings);
-        // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
-        // on some other schema or query name. Therefore, remember the correct names so that we're using them
-        // consistently within this request
-        _schemaName = _queryView.getSchema().getSchemaPath();
-        // Will be null in the case of executing LabKey SQL directly without a saved custom query
-        if (_queryView.getQueryDef() != null)
-        {
-            _queryName = _queryView.getQueryDef().getName();
-        }
-        return _queryView.getSchema();
+        return baseSchema;
     }
 
 
     final public QuerySettings getQuerySettings()
     {
-        // Don't side-effect until all URL parameters have been bound.
-        if (_bindState == BindState.BINDING)
-            return null;
-        if (_querySettings == null)
-        {
-            UserSchema schema = getSchema();
-            if (schema != null)
-                _querySettings = createQuerySettings(schema);
-            else
-                throw new NotFoundException("Could not find schema: " + getSchemaName());
-        }
+        init();
         return _querySettings;
     }
 
@@ -317,11 +286,38 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     public @Nullable UserSchema getSchema()
     {
-        if (_schema == null)
-        {
-            _schema = createSchema();
-        }
+        init();
         return _schema;
+    }
+
+    /** Initializes _schema, _querySettings, and _queryView */
+    protected void init()
+    {
+        // Don't side-effect until all URL parameters have been bound.
+        if (_bindState != BindState.BINDING)
+        {
+            if (_schema == null)
+            {
+                _schema = createSchema();
+            }
+            if (_querySettings == null && _schema != null)
+            {
+                _querySettings = createQuerySettings(_schema);
+            }
+            if (_queryView == null && _schema != null && _querySettings != null)
+            {
+                _queryView = _schema.createView(getViewContext(), _querySettings);
+                // In cases of backwards compatibility for legacy names, the schema may have resolved the QueryView based
+                // on some other schema or query name. Therefore, remember the correct names so that we're using them
+                // consistently within this request
+                _schemaName = _queryView.getSchema().getSchemaPath();
+                // Will be null in the case of executing LabKey SQL directly without a saved custom query
+                if (_queryView.getQueryDef() != null)
+                {
+                    _queryName = _queryView.getQueryDef().getName();
+                }
+            }
+        }
     }
 
     public void setQueryName(String name)
@@ -344,7 +340,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     {
         try
         {
-            QueryView view = getQueryView(new NullSafeBindException(this, "QueryForm"));
+            QueryView view = getQueryView();
             return view.getQueryDef();
         }
         catch (NotFoundException e)
