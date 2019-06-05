@@ -595,7 +595,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void index(SearchService.IndexTask task)
     {
-        // Big hack to prevent study specimens from being indexed as
+        // Big hack to prevent study specimens from being indexed as part of sample sets -- REVIEW: not sure if this applies
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
         {
             return;
@@ -608,54 +608,52 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             task = ss.defaultTask();
         }
 
-        // do the least possible amount of work here
         final SearchService.IndexTask indexTask = task;
-        final ExpSampleSet me = this;
+        final ExpSampleSetImpl me = this;
         indexTask.addRunnable(
-                () -> {
-                    ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(me);
-                    url.setExtraPath(getContainer().getId());
-
-                    Map<String, Object> props = new HashMap<>();
-                    Set<String> identifiersHi = new HashSet<>();
-
-                    // Name is identifier with highest weight
-                    identifiersHi.add(getName());
-
-                    // Add aliases in parenthesis in the title
-                    StringBuilder title = new StringBuilder("Sample source - " + getName());
-
-                    props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
-                    props.put(SearchService.PROPERTY.title.toString(), title.toString());
-                    props.put(SearchService.PROPERTY.keywordsLo.toString(), "SampleSet");      // Treat the word "Sample" a low priority keyword
-                    props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
-
-                    StringBuilder body = new StringBuilder();
-                    if (StringUtils.isNotBlank(getDescription()))
-                        body.append(getDescription());
-
-                    SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                            getContainer().getId(), "text/plain",
-                            body.toString(), url,
-                            getCreatedBy(), getCreated(),
-                            getModifiedBy(), getModified(),
-                            props)
-                    {
-                        @Override
-                        public void setLastIndexed(long ms, long modified)
-                        {
-                            ExperimentServiceImpl.get().setMaterialSourceLastIndexed(getRowId(), ms);
-                        }
-                    };
-
-                    indexTask.addResource(sdr, SearchService.PRIORITY.item);
-                }
+                () -> me.indexSampleSet(indexTask)
                 , SearchService.PRIORITY.bulk
         );
+    }
+
+    private void indexSampleSet(SearchService.IndexTask indexTask)
+    {
+        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(this);
+        url.setExtraPath(getContainer().getId());
+
+        Map<String, Object> props = new HashMap<>();
+        Set<String> identifiersHi = new HashSet<>();
+
+        // Name is identifier with highest weight
+        identifiersHi.add(getName());
+
+        props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+        props.put(SearchService.PROPERTY.title.toString(), "Sample Set - " + getName());
+        props.put(SearchService.PROPERTY.summary.toString(), getDescription());
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set");      // Treat the words "Sample Set" as a low priority keyword
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+
+        String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
+        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                getContainer().getId(), "text/plain",
+                body, url,
+                getCreatedBy(), getCreated(),
+                getModifiedBy(), getModified(),
+                props)
+        {
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                ExperimentServiceImpl.get().setMaterialSourceLastIndexed(getRowId(), ms);
+            }
+        };
+
+        indexTask.addResource(sdr, SearchService.PRIORITY.item);
     }
 
     public String getDocumentId()
     {
         return categoryName + ":" + getRowId();
     }
+
 }

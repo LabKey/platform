@@ -503,6 +503,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public void indexDeleted()
     {
+        // Clear the last indexed time on all material sources
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterialSource() +
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+
         // Clear the last indexed time on all materials
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
