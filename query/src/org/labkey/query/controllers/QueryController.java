@@ -1806,6 +1806,10 @@ public class QueryController extends SpringActionController
             _form = form;
 
             _query = _form.getQueryDef();
+            if (_query == null)
+            {
+                throw new NotFoundException();
+            }
             Map<String, String> props = new HashMap<>();
             props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
@@ -2328,9 +2332,10 @@ public class QueryController extends SpringActionController
 
             if (_schema != null && _table != null)
             {
-                if (_table.hasPermission(getUser(), UpdatePermission.class))
+                QueryDefinition queryDef = _form.getQueryDef();
+                if (queryDef != null && _table.hasPermission(getUser(), UpdatePermission.class))
                 {
-                    StringExpression updateExpr = _form.getQueryDef().urlExpr(QueryAction.updateQueryRow, _schema.getContainer());
+                    StringExpression updateExpr = queryDef.urlExpr(QueryAction.updateQueryRow, _schema.getContainer());
                     if (updateExpr != null)
                     {
                         String url = updateExpr.eval(tableForm.getTypedValues());
@@ -2344,16 +2349,16 @@ public class QueryController extends SpringActionController
                 }
 
 
-                ActionURL gridUrl;
+                ActionURL gridUrl = null;
                 if (_form.getReturnActionURL() != null)
                 {
                     // If we have a specific return URL requested, use that
                     gridUrl = _form.getReturnActionURL();
                 }
-                else
+                else if (queryDef != null)
                 {
                     // Otherwise go back to the default grid view
-                    gridUrl = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
+                    gridUrl = _schema.urlFor(QueryAction.executeQuery, queryDef);
                 }
                 if (gridUrl != null)
                 {
@@ -3241,6 +3246,10 @@ public class QueryController extends SpringActionController
             _form = form;
 
             QueryDefinition query = form.getQueryDef();
+            if (query == null)
+            {
+                throw new NotFoundException();
+            }
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())

@@ -17,11 +17,13 @@
 package org.labkey.query.controllers;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.query.sql.Query;
 import org.labkey.query.QueryDefinitionImpl;
 import org.springframework.validation.BindException;
@@ -86,13 +88,18 @@ public class TableInfoForm extends QueryForm
     public Map<FieldKey, TableInfo> getTableInfoMap()
     {
         Map<FieldKey, TableInfo> ret = new HashMap<>();
+        QueryDefinition queryDef = getQueryDef();
+        if (queryDef == null)
+        {
+            throw new NotFoundException();
+        }
         if (!isDesign())
         {
-            ret.put(null, getQueryDef().getTable(getSchema(), null, true));
+            ret.put(null, queryDef.getTable(getSchema(), null, true));
         }
         else
         {
-            Query query = ((QueryDefinitionImpl) getQueryDef()).getQuery(getSchema());
+            Query query = ((QueryDefinitionImpl) queryDef).getQuery(getSchema());
             for (FieldKey key : query.getFromTables())
             {
                 ret.put(key, query.getFromTable(key));
