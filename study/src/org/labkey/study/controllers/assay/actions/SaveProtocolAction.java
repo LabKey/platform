@@ -55,6 +55,6 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
 
         AssayServiceImpl svc = new AssayServiceImpl(getViewContext());
         GWTProtocol updated = svc.saveChanges(protocol, true);
-        return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'");
+        return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'", updated);
     }
 }

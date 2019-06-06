@@ -617,6 +617,7 @@ public class PropertyController extends SpringActionController
 
     public static class InferDomainForm
     {
+        // TODO should -1 allow you to get all data?
         private Integer _numLinesToInclude;
 
         public Integer getNumLinesToInclude()
