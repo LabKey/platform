@@ -2112,10 +2112,6 @@ public class QueryController extends SpringActionController
             // assertQueryExists requires that it be well-formed
             // assertQueryExists(form);
             QueryDefinition queryDef = form.getQueryDef();
-            if (queryDef == null)
-			{
-                throw new NotFoundException("Query not found");
-			}
             _form = form;
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
@@ -2136,7 +2132,7 @@ public class QueryController extends SpringActionController
             }
             QueryDefinition queryDef = form.getQueryDef();
             _queryName = form.getQueryName();
-            if (queryDef == null || !queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
+            if (!queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
                 throw new NotFoundException("Query not found");
 
 			_form = form;
