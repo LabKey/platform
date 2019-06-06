@@ -22,8 +22,7 @@ export class AssayRunForm extends React.Component<Props, any> {
                         />
                     </Col>
                 </Row>
-                <br/>
-                <Row>
+                <Row className={'margin-top'}>
                     <Col xs={3}>Comments</Col>
                     <Col xs={9}>
                         <textarea
