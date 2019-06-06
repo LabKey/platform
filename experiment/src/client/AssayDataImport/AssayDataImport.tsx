@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Button, ButtonToolbar, Col, Form, FormControl, Panel, Row} from "react-bootstrap";
+import {Button, ButtonToolbar, Panel} from "react-bootstrap";
 import {Map, List} from 'immutable';
 import {ActionURL, Utils} from '@labkey/api'
 import {
@@ -7,6 +7,7 @@ import {
     Cards,
     FileAttachmentForm,
     LoadingSpinner,
+    Progress,
     AssayDefinitionModel,
     InferDomainResponse,
     QueryColumn,
@@ -16,8 +17,9 @@ import {
     naturalSort
 } from "@glass/base";
 
-const NEW_ASSAY_NAME_ID = 'new-assay-design-name';
-const NEW_ASSAY_DESC_ID = 'new-assay-design-description';
+import {FORM_IDS} from "./constants";
+import {AssayDesignForm} from "./AssayDesignForm";
+import {AssayRunForm} from "./AssayRunForm";
 
 interface Props {}
 
@@ -28,7 +30,8 @@ interface State {
     warning: string
     file: File
     inferredFields: List<QueryColumn>
-    newAssayProps: {}
+    assayUploadProps: {},
+    isSubmitting: boolean
 }
 
 export class App extends React.Component<Props, State> {
@@ -43,7 +46,8 @@ export class App extends React.Component<Props, State> {
             warning: undefined,
             file: undefined,
             inferredFields: undefined,
-            newAssayProps: undefined
+            assayUploadProps: undefined,
+            isSubmitting: false
         }
     }
 
@@ -56,26 +60,36 @@ export class App extends React.Component<Props, State> {
             })
     }
 
+    userCanCreateAssay() {
+        // TODO need to check for user assay design permissions
+        return true;
+    }
+
     selectInitialAssay() {
         const { assays } = this.state;
         const urlRowId = ActionURL.getParameter('rowId');
         const rowId = urlRowId ? parseInt(urlRowId) : undefined;
 
-        if (assays && Utils.isNumber(rowId)) {
-            let selected;
-            assays.forEach((assay, i) => {
-                if (assay.id === rowId) {
-                    selected = i;
-                }
-            });
+        if (assays) {
+            if (assays.size > 0 && Utils.isNumber(rowId)) {
+                let selected;
+                assays.forEach((assay, i) => {
+                    if (assay.id === rowId) {
+                        selected = i;
+                    }
+                });
 
-            if (selected !== undefined) {
-                this.setState(() => ({selected}));
+                if (selected !== undefined) {
+                    this.setState(() => ({selected}));
+                }
+                else {
+                    this.setState(() => ({
+                        warning: 'Unable to find an available General type assay for rowId ' + rowId + '. Please select an assay from the available list below.'
+                    }));
+                }
             }
-            else {
-                this.setState(() => ({
-                    warning: 'Unable to find an available General type assay for rowId ' + rowId + '. Please select an assay from the available list below.'
-                }));
+            else if (assays.size === 0 && this.userCanCreateAssay()) {
+                this.setState(() => ({selected: 0}));
             }
         }
     }
@@ -97,21 +111,25 @@ export class App extends React.Component<Props, State> {
         return this.getSelectedAssay() || this.isCreateNewAssay();
     }
 
-    handleSubmit = () => {
-        const { inferredFields, newAssayProps } = this.state;
-        const selectedAssay = this.getSelectedAssay();
+    setSubmitting(isSubmitting: boolean) {
+        this.setState(() => ({isSubmitting}));
+    }
 
-        // TODO add progress indicator and disabled the buttons
+    handleSubmit = () => {
+        const { inferredFields, assayUploadProps } = this.state;
+        const selectedAssay = this.getSelectedAssay();
 
         if (selectedAssay) {
             this.setErrorMsg(undefined);
+            this.setSubmitting(true);
             this.importFileAsRun(selectedAssay.id);
         }
         else if (this.isCreateNewAssay() && inferredFields) {
             this.setErrorMsg(undefined);
+            this.setSubmitting(true);
 
-            const name = newAssayProps ? newAssayProps[NEW_ASSAY_NAME_ID] : undefined;
-            const descr = newAssayProps ? newAssayProps[NEW_ASSAY_DESC_ID] : undefined;
+            const name = assayUploadProps ? assayUploadProps[FORM_IDS.ASSAY_NAME] : undefined;
+            const descr = assayUploadProps ? assayUploadProps[FORM_IDS.ASSAY_DESCRIPTION] : undefined;
 
             if (!name || name.length === 0) {
                 this.setErrorMsg('You must provide a name for the new assay design.');
@@ -129,10 +147,13 @@ export class App extends React.Component<Props, State> {
     };
 
     importFileAsRun(assayId: number) {
-        const { file } = this.state;
+        const { file, assayUploadProps } = this.state;
 
-        if (assayId && assayId) {
-            importGeneralAssayRun(assayId, file)
+        if (assayId && file) {
+            const name = assayUploadProps ? assayUploadProps[FORM_IDS.RUN_NAME] : undefined;
+            const comment = assayUploadProps ? assayUploadProps[FORM_IDS.RUN_COMMENT] : undefined;
+
+            importGeneralAssayRun(assayId, file, name, comment)
                 .then((response) => {
                     window.location = response.successurl;
                 })
@@ -167,15 +188,77 @@ export class App extends React.Component<Props, State> {
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
 
+    setErrorMsg(error: string) {
+        this.setState(() => ({
+            error,
+            isSubmitting: false
+        }));
+    }
+
+    onAssayCardClick = (index: number) => {
+        this.setState(() => ({selected: index}));
+    };
+
+    onFormChange = (evt) => {
+        const id = evt.target.id;
+        const value = evt.target.value;
+
+        this.setState((state) => ({
+            assayUploadProps: {
+                ...state.assayUploadProps,
+                [id]: value
+            }
+        }));
+    };
+
+    getCardsFromAssays() {
+        const { assays } = this.state;
+        const selectedAssay = this.getSelectedAssay();
+        let cards = List<any>();
+
+        if (selectedAssay) {
+            cards = cards.push({
+                title: selectedAssay.name,
+                caption: 'Upload data to this assay.',
+                iconSrc: 'assay'
+            });
+        }
+        else if (this.isCreateNewAssay()) {
+            cards = cards.push({
+                title: 'Create a New Assay',
+                caption: 'Upload data to a new assay',
+                iconSrc: 'default'
+            });
+        }
+        else if (assays) {
+            cards = assays.map((assay, i) => {
+                return {
+                    title: assay.name,
+                    caption: 'Click to select this assay for the data upload.',
+                    iconSrc: 'assay',
+                    onClick: this.onAssayCardClick
+                };
+            }).toList();
+
+            if (this.userCanCreateAssay()) {
+                cards = cards.push({
+                    title: 'Create a New Assay',
+                    caption: 'Click to select this option for creating a new assay design.',
+                    iconSrc: 'default',
+                    disabled: true,
+                    onClick: this.onAssayCardClick
+                });
+            }
+        }
+
+        return cards;
+    }
+
     renderWarning() {
         const { warning } = this.state;
         if (warning) {
             return <Alert bsStyle={'warning'}>{warning}</Alert>
         }
-    }
-
-    setErrorMsg(error: string) {
-        this.setState(() => ({error}));
     }
 
     renderError() {
@@ -185,58 +268,20 @@ export class App extends React.Component<Props, State> {
         }
     }
 
-    onAssayCardClick = (index: number) => {
-        this.setState(() => ({selected: index}));
-    };
-
-    onNewAssayFormChange = (evt) => {
-        const id = evt.target.id;
-        const value = evt.target.value;
-
-        this.setState((state) => ({
-            newAssayProps: {
-                ...state.newAssayProps,
-                [id]: value
-            }
-        }));
-    };
-
     renderAvailableAssays() {
         const { assays, selected } = this.state;
-
-        let cards;
-        if (assays) {
-            cards = assays.map((assay, i) => {
-                const isSelected = i === selected;
-
-                return {
-                    title: assay.name,
-                    caption: isSelected ? 'Upload data to this assay.' : 'Click to select this assay for the data upload.',
-                    iconSrc: 'assay',
-                    disabled: !isSelected,
-                    onClick: this.onAssayCardClick
-                };
-            }).toArray();
-
-            // TODO check if user has design assay permissions
-            cards.push({
-                title: 'Create a New Assay',
-                caption: this.isCreateNewAssay() ? 'Upload data to a new assay' : 'Click to select this option for creating a new assay design.',
-                iconSrc: 'default',
-                disabled: !this.isCreateNewAssay(),
-                onClick: this.onAssayCardClick
-            })
-        }
+        const cards = this.getCardsFromAssays();
 
         return (
             <Panel>
                 <Panel.Heading>
-                    Step 1: Select an available assay or the option to create a new one.
+                    Step 1: Select an available assay or the option to create a new one.&nbsp;
+                    {assays && assays.size > 0 && selected !== undefined && <Button onClick={() => this.onAssayCardClick(undefined)}>Clear selection</Button>}
                 </Panel.Heading>
                 <Panel.Body>
                     {!assays && <LoadingSpinner msg={'Loading assays designs...'}/>}
-                    {assays && cards.length === 0 && <Alert bsStyle={'info'}>There are no available assays of type General in this container.</Alert>}
-                    {cards && <Cards cards={cards}/>}
+                    {assays && cards.size === 0 && <Alert bsStyle={'info'}>There are no available assays of type General in this container.</Alert>}
+                    {cards && <Cards cards={cards.toArray()}/>}
                 </Panel.Body>
             </Panel>
         )
@@ -253,31 +298,7 @@ export class App extends React.Component<Props, State> {
                     Step 2: Enter properties for the new assay.
                 </Panel.Heading>
                 <Panel.Body>
-                    <Form>
-                        <Row>
-                            <Col xs={3}>Name *</Col>
-                            <Col xs={9}>
-                                <FormControl
-                                    id={NEW_ASSAY_NAME_ID}
-                                    type="text"
-                                    placeholder={'Enter a name for this assay'}
-                                    onChange={this.onNewAssayFormChange}
-                                />
-                            </Col>
-                        </Row>
-                        <br/>
-                        <Row>
-                            <Col xs={3}>Description</Col>
-                            <Col xs={9}>
-                                <textarea
-                                    className="form-control"
-                                    id={NEW_ASSAY_DESC_ID}
-                                    placeholder={'Add a description'}
-                                    onChange={this.onNewAssayFormChange}
-                                />
-                            </Col>
-                        </Row>
-                    </Form>
+                    <AssayDesignForm onChange={this.onFormChange}/>
                 </Panel.Body>
             </Panel>
         )
@@ -291,6 +312,7 @@ export class App extends React.Component<Props, State> {
                 </Panel.Heading>
                 {this.isValidAvailableAssay() &&
                     <Panel.Body>
+                        {/*TODO add Download Template button*/}
                         <FileAttachmentForm
                                 acceptedFormats={".csv, .tsv, .txt, .xls, .xlsx"}
                                 showAcceptedFormats={true}
@@ -321,9 +343,10 @@ export class App extends React.Component<Props, State> {
                 <Panel.Heading>
                     Step {this.isCreateNewAssay() ? 4: 3}: Enter run properties for this import.
                 </Panel.Heading>
-                {file &&
+                {this.isValidAvailableAssay() && file &&
                     <Panel.Body>
-                        Not yet implemented...
+                        {/*TODO add run properties form inputs (see Biologics)*/}
+                        <AssayRunForm onChange={this.onFormChange}/>
                     </Panel.Body>
                 }
             </Panel>
@@ -331,7 +354,7 @@ export class App extends React.Component<Props, State> {
     }
 
     renderButtons() {
-        const { file } = this.state;
+        const { file, isSubmitting } = this.state;
 
         return (
             <Panel>
@@ -341,12 +364,25 @@ export class App extends React.Component<Props, State> {
                 {this.isValidAvailableAssay() && file &&
                     <Panel.Body>
                         <ButtonToolbar>
-                            <Button onClick={this.handleCancel}>Cancel</Button>
-                            <Button bsStyle={'success'} onClick={this.handleSubmit}>Save and Finish</Button>
+                            <Button onClick={this.handleCancel} disabled={isSubmitting}>Cancel</Button>
+                            <Button bsStyle={'success'} onClick={this.handleSubmit} disabled={isSubmitting}>Save and Finish</Button>
                         </ButtonToolbar>
                     </Panel.Body>
                 }
             </Panel>
+        )
+    }
+
+    renderProgress() {
+        return (
+            <Progress
+                title={'Uploading file and saving assay run...'}
+                toggle={this.state.isSubmitting}
+                // delay={0}
+                // estimate={20}
+                // updateIncrement={5}
+                modal={true}
+            />
         )
     }
 
@@ -360,6 +396,7 @@ export class App extends React.Component<Props, State> {
                 {this.renderRunDataUpload()}
                 {this.renderRunProperties()}
                 {this.renderButtons()}
+                {this.renderProgress()}
             </>
         )
     }
