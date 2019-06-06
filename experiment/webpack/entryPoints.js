@@ -14,11 +14,6 @@ module.exports = {
         permission: 'admin',
         path: './src/client/DomainDesigner'
     },{
-        name: 'fileUploadPreview',
-        title: 'File Upload Preview',
-        permission: 'insert',
-        path: './src/client/FileUploadPreview'
-    },{
         name: 'assayDataImport',
         title: 'Assay Data Import',
         permission: 'insert',
