@@ -59,5 +59,6 @@
     "webpack": "4.33.0",
     "webpack-cli": "3.3.2",
     "webpack-dev-server": "3.6.0"
-  }
+  },
+  "typings": "./src/client/typings/main.d.ts"
 }

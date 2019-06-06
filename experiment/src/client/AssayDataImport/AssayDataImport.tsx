@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {Button, ButtonToolbar, Panel} from "react-bootstrap";
-import {Map, List} from 'immutable';
-import {ActionURL, Utils} from '@labkey/api'
+import {Map, List, fromJS} from 'immutable';
+import {ActionURL, Security, Utils} from '@labkey/api'
 import {
     Alert,
     Cards,
@@ -11,10 +11,13 @@ import {
     AssayDefinitionModel,
     InferDomainResponse,
     QueryColumn,
+    PermissionTypes,
+    User,
     createGeneralAssayDesign,
     fetchAllAssays,
     importGeneralAssayRun,
-    naturalSort
+    naturalSort,
+    hasAllPermissions
 } from "@glass/base";
 
 import {FORM_IDS} from "./constants";
@@ -24,6 +27,7 @@ import {AssayRunForm} from "./AssayRunForm";
 interface Props {}
 
 interface State {
+    user: User,
     selected: number,
     assays: List<AssayDefinitionModel>
     error: string
@@ -40,6 +44,7 @@ export class App extends React.Component<Props, State> {
         super(props);
 
         this.state = {
+            user: new User(LABKEY.user),
             selected: undefined,
             assays: undefined,
             error: undefined,
@@ -57,12 +62,18 @@ export class App extends React.Component<Props, State> {
                 const sortedAssays = assays.sortBy(assay => assay.name, naturalSort).toList();
                 this.setState(() => ({assays: sortedAssays}));
                 this.selectInitialAssay();
-            })
+            });
+
+        Security.getUserPermissions({
+            success: (response) => {
+                const user = this.state.user.set('permissionsList', fromJS(response.container.effectivePermissions)) as User;
+                this.setState(() => ({user}));
+            }
+        })
     }
 
     userCanCreateAssay() {
-        // TODO need to check for user assay design permissions
-        return true;
+        return hasAllPermissions(this.state.user, [PermissionTypes.DesignAssay]);
     }
 
     selectInitialAssay() {
