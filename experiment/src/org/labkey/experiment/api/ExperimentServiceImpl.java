@@ -3759,14 +3759,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
             }
 
-            try (Timing t = MiniProfiler.step("SampleSet.onSamplesChanged"))
-            {
-                for (ExpSampleSet sampleSet : sss)
-                {
-                    ((ExpSampleSetImpl)sampleSet).onSamplesChanged(user, null);
-                }
-            }
-
             transaction.commit();
             if (timing != null)
                 LOG.info("SampleSet delete timings\n" + timing.dump());
