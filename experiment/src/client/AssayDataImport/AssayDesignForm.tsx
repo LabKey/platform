@@ -10,8 +10,15 @@ interface Props {
 export class AssayDesignForm extends React.Component<Props, any> {
     render() {
         return (
-            <Form>
-                <Row>
+            <Form className={'assay-data-import-text'}>
+                <div>
+                    Define basic properties for this new design. These and other advanced settings can always be
+                    modified later on the assay runs list by choosing "Manage Assay Design".
+                </div>
+                <div className={'margin-top'}>
+                    By default, this assay design will include the column headers detected from your uploaded file.
+                </div>
+                <Row className={'margin-top'}>
                     <Col xs={3}>Assay Name *</Col>
                     <Col xs={9}>
                         <FormControl
@@ -22,8 +29,7 @@ export class AssayDesignForm extends React.Component<Props, any> {
                         />
                     </Col>
                 </Row>
-                <br/>
-                <Row>
+                <Row className={'margin-top'}>
                     <Col xs={3}>Description</Col>
                     <Col xs={9}>
                         <textarea

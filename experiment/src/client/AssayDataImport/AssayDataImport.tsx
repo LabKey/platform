@@ -119,7 +119,8 @@ export class App extends React.Component<Props, State> {
     }
 
     isValidAvailableAssay() {
-        return this.getSelectedAssay() || this.isCreateNewAssay();
+        const { assayUploadProps } = this.state;
+        return this.getSelectedAssay() || (this.isCreateNewAssay() && assayUploadProps);
     }
 
     setSubmitting(isSubmitting: boolean) {
