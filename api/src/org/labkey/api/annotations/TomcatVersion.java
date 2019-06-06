@@ -23,7 +23,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * Used to mark code that is specific to a particular version of Apache Tomcat, for example, hacks that allow JSPs compiled
  * with one version of Tomcat to run in a different version. Re-evaluate these when new Tomcat versions are supported or
- * deprecated. Search for text "@TomcatVersion" to find all usages.
+ * support for old ones is removed. Search for text "@TomcatVersion" to find all usages.
  */
 
 @Retention(RetentionPolicy.SOURCE)

@@ -38,7 +38,7 @@
 <table>
     <tr>
         <td>
-            <%=textLink(caption, url)%>
+            <%=link(caption, url)%>
         </td>
     </tr>
 </table>

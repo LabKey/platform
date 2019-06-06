@@ -73,7 +73,7 @@
 <input type="hidden" id="targetFolder" name="target" value="">
 <table class="button-bar">
     <tr>
-        <td><%= PageFlowUtil.button("Confirm Move").href("#").onClick("action('confirmmove');").attributes("id=\"confirm-move-btn\" style=\"display: none;\"") %></td>
+        <td><%= button("Confirm Move").href("#").onClick("action('confirmmove');").attributes("id=\"confirm-move-btn\" style=\"display: none;\"") %></td>
         <td><%=generateBackButton("Cancel")%></td>
     </tr>
 </table>

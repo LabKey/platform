@@ -240,7 +240,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
                     }
                     catch (IOException e)
                     {
-                        _log.error("error occured upgrading existing file roots", e);
+                        _log.error("error occurred upgrading existing file roots", e);
                     }
                 }
             }

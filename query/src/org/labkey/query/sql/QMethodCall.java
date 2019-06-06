@@ -77,6 +77,7 @@ public class QMethodCall extends QExpr
         }
     }
 
+    @Override
     public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         MethodInfo method = getMethod(table.getSqlDialect());
@@ -124,6 +125,7 @@ public class QMethodCall extends QExpr
         return (QField) getFirstChild();
     }
 
+    @Override
     public QueryParseException fieldCheck(QNode parent, SqlDialect d)
     {
         if (getMethod(d) == null)

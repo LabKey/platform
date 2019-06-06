@@ -16,12 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.security.SecurityUrls"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.study.Study"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.model.SecurityType"%>
+<%@ page import="org.labkey.study.controllers.security.SecurityController"%>
+<%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
-<%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
@@ -41,7 +40,7 @@
 </ul>
 
 <p>All users must have READ permissions on this folder to access anything in this study. You can also
-    <%=PageFlowUtil.textLink("Configure Folder Security", urlProvider(SecurityUrls.class).getBeginURL(getContainer()))%></p>
+    <%=link("Configure Folder Security", urlProvider(SecurityUrls.class).getBeginURL(getContainer()))%></p>
 <%
     if (isSharedStudy)
     {

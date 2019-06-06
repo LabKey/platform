@@ -36,7 +36,7 @@ public class Link extends DisplayElement implements HasHtmlString
         boolean icon = lb.iconCls != null;
 
         if (null != lb.cssClass || icon)
-            sb.append("class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\" ");
+            sb.append(" class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\"");
 
         if (null != lb.attributes)
             sb.append(" ").append(lb.attributes);

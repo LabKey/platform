@@ -81,7 +81,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-
+/** Shared across a variety of different views of a TableInfo, such as grid, details, insert, and update. Knows
+ * about buttons that might appear in the view, the columns to be shown, etc. */
 public class DataRegion extends DisplayElement
 {
     private static final Logger _log = Logger.getLogger(DataRegion.class);
@@ -2754,7 +2755,7 @@ public class DataRegion extends DisplayElement
         return messages;
     }
 
-    private void prepareParameters(RenderContext ctx)
+    protected void prepareParameters(RenderContext ctx)
     {
         Map<String, Object> parameters = getQueryParameters();
 

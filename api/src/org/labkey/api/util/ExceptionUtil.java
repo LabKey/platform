@@ -327,6 +327,11 @@ public class ExceptionUtil
                     {
                         logMessage += "\n" + decorations;
                     }
+                    if (HttpView.hasCurrentView()) {
+                        ViewContext viewContext = HttpView.currentContext();
+                        logMessage += "\nCurrent URL: " + viewContext.getActionURL();
+                        logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
+                    }
                     LOG.error(logMessage);
                 }
             }

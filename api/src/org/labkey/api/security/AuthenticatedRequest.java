@@ -117,6 +117,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
      */
     public void convertToLoggedInSession()
     {
+        // NOTE this has effect of removing session from _nursery map via HttpSessionBindingListener.valueUnbound()
         removeAttribute(GuestSessionMarker.class.getName());
         // don't treat like guest on next getSession call
         _loggedIn = true;

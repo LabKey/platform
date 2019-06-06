@@ -17,10 +17,12 @@
 %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.exp.PropertyType" %>
 <%@ page import="org.labkey.api.study.MasterPatientIndexService" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -30,13 +32,10 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -165,7 +164,7 @@
         <p>Premium edition subscribers have the ability to integrate with an Enterprise Master Patient Index, using EMPI IDs to
             create an authoritative connection between LabKey-housed data and a patient's master index record. An administrator will
             need to set up the initial connection to a Master Patient Index Provider through the Admin Panel.</p>
-        <p><a class="alert-link" href="<%=PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()%>" target="_blank">Configure <i class="fa fa-external-link"></i></a></p>
+        <p><a class="alert-link" href="<%=urlProvider(AdminUrls.class).getAdminConsoleURL()%>" target="_blank">Configure <i class="fa fa-external-link"></i></a></p>
     </div>
 <%  }
 else

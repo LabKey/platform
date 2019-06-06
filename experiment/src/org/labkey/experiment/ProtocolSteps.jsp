@@ -15,29 +15,28 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.experiment.api.ExpProtocolImpl" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
+<%@ page import="org.labkey.api.exp.ProtocolParameter" %>
+<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
+<%@ page import="org.labkey.api.exp.api.ExpMaterialProtocolInput" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocolInputCriteria" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.experiment.api.ExpMaterialProtocolInputImpl" %>
-<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.api.ExpDataProtocolInputImpl" %>
+<%@ page import="org.labkey.experiment.api.ExpMaterialProtocolInputImpl" %>
 <%@ page import="org.labkey.experiment.api.ExpProtocolActionImpl" %>
-<%@ page import="java.util.stream.Collectors" %>
-<%@ page import="org.labkey.api.exp.ProtocolParameter" %>
+<%@ page import="org.labkey.experiment.api.ExpProtocolImpl" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocolInputCriteria" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.stream.Collectors" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -48,7 +47,7 @@
     final ActionURL ppURL = new ActionURL(ExperimentController.ProtocolPredecessorsAction.class, c);
     ppURL.addParameter("ParentLSID", protocol.getLSID());
 
-    ExperimentUrls urls = PageFlowUtil.urlProvider(ExperimentUrls.class);
+    ExperimentUrls urls = urlProvider(ExperimentUrls.class);
     assert urls != null;
 
     List<ExpProtocolActionImpl> steps = protocol.getSteps();

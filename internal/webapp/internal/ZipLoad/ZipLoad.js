@@ -139,7 +139,7 @@ LABKEY.internal.ZipLoad = new function () {
         getCurrentZipFile().update("Adding file - " + zipProgressName);
         getCurrentFileNumber().update(addIndex + '/' + filesBeingZipped.length);
 
-        zipWriter.add(file.name, new zip.BlobReader(file), function () {
+        zipWriter.add(file.fullPath, new zip.BlobReader(file), function () {
             addIndex++;
             if (addIndex < filesBeingZipped.length)
                 nextFile();

@@ -85,6 +85,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 
 /**
@@ -964,13 +965,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         props.clear();
         for (Module module : modules)
         {
-            if (null != module && userCanAccessModule(module, userHasEnableRestrictedModules))
+            if (null != module && userCanAccessModule(module, () -> userHasEnableRestrictedModules))
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
 
         for (Module module : getRequiredModules())
         {
-            if (null != module && userCanAccessModule(module, userHasEnableRestrictedModules))
+            if (null != module && userCanAccessModule(module, () -> userHasEnableRestrictedModules))
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
 
@@ -1000,7 +1001,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
         for (Module m : newModules)
         {
-            if (!existingModules.contains(m) && userCanAccessModule(m, userHasEnableRestrictedModules))
+            if (!existingModules.contains(m) && userCanAccessModule(m, () -> userHasEnableRestrictedModules))
             {
                 isChanged = true;
                 existingModules.add(m);
@@ -1008,7 +1009,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
         for (Module m : getFolderType().getActiveModules())
         {
-            if (!existingModules.contains(m) && userCanAccessModule(m, userHasEnableRestrictedModules))
+            if (!existingModules.contains(m) && userCanAccessModule(m, () -> userHasEnableRestrictedModules))
             {
                 isChanged = true;
                 existingModules.add(m);
@@ -1069,7 +1070,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //get active web parts for this container
         List<Portal.WebPart> activeWebparts = Portal.getParts(this);
 
-        boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
+        // Allows lazy-querying of the permissions since we typically don't need it, and they can be expensive enough
+        // that we benefit from skipping them
+        BooleanSupplier userHasEnableRestrictedModules = new BooleanSupplier()
+        {
+            Boolean value;
+
+            @Override
+            public boolean getAsBoolean()
+            {
+                if (value == null)
+                {
+                    value = hasEnableRestrictedModules(user);
+                }
+                return value.booleanValue();
+            }
+        };
 
         // store active modules, checking first that the container still exists -- junit test creates and deletes
         // containers quickly and this check helps keep the search indexer from creating orphaned property sets.
@@ -1558,9 +1574,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return false;
     }
 
-    public static boolean userCanAccessModule(Module module, boolean userHasEnableRestrictedModules)
+    public static boolean userCanAccessModule(@NotNull Module module, BooleanSupplier userHasEnableRestrictedModules)
     {
-        return userHasEnableRestrictedModules || !module.getRequireSitePermission();
+        return !module.getRequireSitePermission() || userHasEnableRestrictedModules.getAsBoolean();
     }
 
     public static boolean hasRestrictedModule(FolderType folderType)
@@ -1571,7 +1587,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return false;
     }
 
-    static final Map<String,String> iconPathToHref = Collections.synchronizedMap(new HashMap<String,String>());
+    static final Map<String,String> iconPathToHref = Collections.synchronizedMap(new HashMap<>());
 
     public String getIconHref()
     {

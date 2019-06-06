@@ -43,7 +43,7 @@ public class ModuleQueryMetadataDef
 
     private String _name;
     private Path _path;
-    private String _queryMetaData;
+    private QueryDef.ParsedMetadata _queryMetaData = QueryDef.createParsedMetadata(null);
     private String _description;
     private double _schemaVersion;
     private boolean _hidden = false;
@@ -77,7 +77,7 @@ public class ModuleQueryMetadataDef
                 if (rootElementName.equalsIgnoreCase("tables"))
                 {
                     // Just apply the tableInfo metadata directly
-                    _queryMetaData = PageFlowUtil.convertNodeToXml(docElem);
+                    _queryMetaData = QueryDef.createParsedMetadata(PageFlowUtil.convertNodeToXml(docElem));
                 }
                 else if (rootElementName.equalsIgnoreCase("query"))
                 {
@@ -95,7 +95,7 @@ public class ModuleQueryMetadataDef
                     {
                         Node root = DOMUtil.getFirstChildElement(node);
                         if (null != root)
-                            _queryMetaData = PageFlowUtil.convertNodeToXml(root);
+                            _queryMetaData = QueryDef.createParsedMetadata(PageFlowUtil.convertNodeToXml(root));
                     }
                 }
                 else
@@ -105,7 +105,7 @@ public class ModuleQueryMetadataDef
             }
             else
             {
-                _queryMetaData = "";
+                _queryMetaData = QueryDef.createParsedMetadata(null);
             }
         }
         catch (IOException | TransformerException | ParserConfigurationException | SAXException e)
@@ -135,7 +135,7 @@ public class ModuleQueryMetadataDef
 
     public String getQueryMetaData()
     {
-        return _queryMetaData;
+        return _queryMetaData.getXml();
     }
 
     public String getDescription()
@@ -160,7 +160,7 @@ public class ModuleQueryMetadataDef
         ret.setName(getName());
         ret.setDescription(getDescription());
         ret.setSchemaVersion(getSchemaVersion());
-        ret.setMetaData(getQueryMetaData());
+        ret.setParsedMetadata(_queryMetaData);
         if(isHidden())
             ret.setFlags(QueryManager.FLAG_HIDDEN);
 

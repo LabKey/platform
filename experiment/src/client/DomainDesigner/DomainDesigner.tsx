@@ -5,10 +5,10 @@
 import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert} from "@glass/base";
+import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
-interface IDomainDesignerState {
+interface StateProps {
     schemaName?: string,
     queryName?: string,
     domainId?: number,
@@ -16,10 +16,12 @@ interface IDomainDesignerState {
     domain?: DomainDesign,
     submitting: boolean,
     message?: string,
-    messageType?: string
+    messageType?: string,
+    showConfirm: boolean,
+    dirty: boolean
 }
 
-export class App extends React.PureComponent<any, IDomainDesignerState> {
+export class App extends React.PureComponent<any, StateProps> {
 
     constructor(props)
     {
@@ -36,7 +38,9 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             domainId,
             returnUrl,
             submitting: false,
-            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.'
+            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.',
+            showConfirm: false,
+            dirty: false
         };
     }
 
@@ -46,28 +50,49 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
                 .then(domain => {
-                    this.setState({domain});
+                    this.setState(() => ({domain}));
                 })
                 .catch(error => {
-                    this.setState({message: error.exception, messageType: 'danger'})
+                    this.setState(() => ({message: error.exception, messageType: 'danger'}));
                 });
         }
+
+        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
+    }
+
+    handleWindowBeforeUnload = (event) => {
+
+        if (this.state.dirty) {
+            event.returnValue = 'Changes you made may not be saved.';
+        }
+    };
+
+    componentWillUnmount() {
+        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     submitHandler = () => {
         const { domain } = this.state;
 
+        // NOTE: temp values for name and pk since those are not available inputs currently
+        // const name = 'list_' + Math.floor(Math.random() * 10000);
+        // const options = {
+        //     keyName: domain.fields.size > 0 ? domain.fields.get(0).name : undefined
+        // };
+
         this.setState(() => ({submitting: true}));
 
+        // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
-            .then((success) => {
-                const newDomain = clearFieldDetails(domain);
+            .then((savedDomain) => {
+                const newDomain = clearFieldDetails(savedDomain);
 
                 this.setState(() => ({
                     domain: newDomain,
                     submitting: false,
                     message: 'Domain saved successfully.',
-                    messageType: 'success'
+                    messageType: 'success',
+                    dirty: false
                 }));
 
                 window.setTimeout(() => {
@@ -83,23 +108,51 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
             });
     };
 
-    onChangeHandler = (newDomain) => {
-        this.setState(() => ({
-            domain: newDomain
+    onChangeHandler = (newDomain, dirty) => {
+        this.setState((state) => ({
+            domain: newDomain,
+            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
     };
 
     dismissAlert = () => {
-        this.setState({message: null, messageType: null})
+        this.setState(() => ({message: null, messageType: null}));
     };
 
-    onCancel = () => {
-        const { returnUrl } = this.state;
-        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+    onCancelBtnHandler = () => {
+        if (this.state.dirty) {
+            this.setState(() => ({showConfirm: true}));
+        }
+        else {
+            this.onConfirm();
+        }
     };
+
+    onConfirm = () => {
+        const { returnUrl } = this.state;
+        this.setState(() => ({dirty: false}), () => {
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+        });
+    };
+
+    hideConfirm = () => {
+        this.setState(() => ({showConfirm: false}));
+    };
+
+    renderNavigateConfirm() {
+        return (
+            <ConfirmModal
+                title='Confirm Leaving Page'
+                msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
+                confirmVariant='success'
+                onConfirm={this.onConfirm}
+                onCancel={this.hideConfirm}
+            />
+        )
+    }
 
     render() {
-        const { domain, message, messageType, submitting } = this.state;
+        const { domain, message, messageType, submitting, showConfirm, dirty } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
@@ -108,14 +161,15 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
 
         return (
             <>
-                { domain && <Row>
+                { domain &&
+                <Row>
                     <Col xs={12}>
                         <ButtonToolbar>
                             <Button
                                 type='button'
                                 className={'domain-designer-button'}
                                 bsClass='btn'
-                                onClick={this.onCancel}
+                                onClick={this.onCancelBtnHandler}
                                 disabled={submitting}>
                                 Cancel
                             </Button>
@@ -124,14 +178,19 @@ export class App extends React.PureComponent<any, IDomainDesignerState> {
                                 className={'domain-designer-button'}
                                 bsClass='btn btn-success'
                                 onClick={this.submitHandler}
-                                disabled={submitting}>
+                                disabled={submitting || !dirty}>
                                 Save Changes
                             </Button>
                         </ButtonToolbar>
                     </Col>
                 </Row>}
+                { showConfirm && this.renderNavigateConfirm() }
                 { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
-                { domain && <DomainForm domain={domain} onChange={this.onChangeHandler}/>}
+                { domain &&
+                <DomainForm
+                    domain={domain}
+                    onChange={this.onChangeHandler}
+                />}
             </>
         )
     }

@@ -75,7 +75,7 @@
             if (canEdit)
             {
                 ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
-                out.print(link("Disable").href(url).usePost());
+                out.print(link("Disable", url).usePost());
             }
             else
             {
@@ -89,7 +89,7 @@
             if (canEdit)
             {
                 ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_REGISTRATION_KEY);
-                out.print(link("Enable").href(url).usePost());
+                out.print(link("Enable", url).usePost());
             }
             else
             {
@@ -114,7 +114,7 @@
                 if (canEdit)
                 {
                     ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
-                    out.print(link("Disable").href(url).usePost());
+                    out.print(link("Disable", url).usePost());
                 }
                 else
                 {
@@ -128,7 +128,7 @@
                 if (canEdit)
                 {
                     ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY);
-                    out.print(link("Enable").href(url).usePost());
+                    out.print(link("Enable", url).usePost());
                 }
                 else
                 {
@@ -150,7 +150,7 @@
                     if (canEdit)
                     {
                         ActionURL url = urls.getDisableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
-                        out.print(link("Disable").href(url).usePost());
+                        out.print(link("Disable", url).usePost());
                     }
                     else
                     {
@@ -164,7 +164,7 @@
                     if (canEdit)
                     {
                         ActionURL url = urls.getEnableConfigParameterURL(AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY);
-                        out.print(link("Enable").href(url).usePost());
+                        out.print(link("Enable", url).usePost());
                     }
                     else
                     {
@@ -216,7 +216,7 @@
                 if (AuthenticationManager.isActive(authProvider))
                 {
                     if (canEdit)
-                        out.print(link("disable").href(urls.getDisableProviderURL(authProvider)).usePost());
+                        out.print(link("disable", urls.getDisableProviderURL(authProvider)).usePost());
                     else
                         out.print("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
                 }
@@ -230,7 +230,7 @@
                 else
                 {
                     if (canEdit)
-                        out.print(link("enable").href(urls.getEnableProviderURL(authProvider)).usePost());
+                        out.print(link("enable", urls.getEnableProviderURL(authProvider)).usePost());
                     else
                         out.print("<div class=\"labkey-disabled-text-link\">Disabled</div>");
                 }
@@ -243,14 +243,14 @@
             if (null == url || !canEdit)
                 out.print("&nbsp;");
             else
-                out.print(link("configure").href(url));
+                out.print(link("configure", url));
             out.print("</td>");
 
             out.print("<td>");
             if (canEdit && authProvider instanceof SSOAuthenticationProvider)
             {
                 ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
-                out.print(link("pick logos").href(pickLogoURL));
+                out.print(link("pick logos", pickLogoURL));
             };
             out.print("</td>");
 
