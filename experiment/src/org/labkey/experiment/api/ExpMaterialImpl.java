@@ -482,7 +482,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), ss.getContainer());
             if (null != pd)
-            super.setProperty(user, pd, entry.getValue());
+                super.setProperty(user, pd, entry.getValue());
         }
     }
 }
