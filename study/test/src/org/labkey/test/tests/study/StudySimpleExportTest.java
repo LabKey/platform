@@ -32,6 +32,7 @@ import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.pages.study.QCStateTableRow;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
@@ -50,6 +51,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
@@ -170,15 +172,13 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("QC States: go to Manage Dataset QC States page");
         goToProjectHome();
         clickFolder(getFolderName());
-        goToManageStudy();
-        ManageStudyPage manageStudyPage = new ManageStudyPage(getDriver());
-        manageStudyPage.manageDatasetQCStates();
+        ManageDatasetQCStatesPage qcStatesPage =goToManageStudy().manageDatasetQCStates();
 
         log("QC States: set [none] state to be public data, i.e. opposite of default");
-        click(Locator.name("blankQCStatePublic"));
+        qcStatesPage.getStateRow("[none]").setPublicData(true);
 
         log("QC States: create 3 new QC states (one for each default state type)");
-        ManageDatasetQCStatesPage qcStatesPage = new ManageDatasetQCStatesPage(getDriver());
+
         qcStatesPage.addStateRow("First QC State", "The first qc state description", false)
                 .addStateRow("Second QC State", "The second qc state description", false)
                 .addStateRow("Third QC State", "The third qc state description", false)
@@ -190,7 +190,7 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .setDefaultPipelineQCState("First QC State")
                 .setDefaultAssayQCState("Second QC State")
                 .setDefaultDirectEntryQCState("Third QC State")
-                .showPrivateDataByDefault("Public data")
+                .setDefaultVisibility("Public data")
                 .clickSave();
 
         log("QC States: export study folder to the pipeline as individual files");
@@ -206,29 +206,36 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder("QC States");
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Dataset QC States"));
-        waitForText("Manage Dataset QC States");
-        assertEquals("true", getFormElement(Locator.name("blankQCStatePublic")));
-        assertEquals("First QC State", getFormElement(Locator.name("labels").index(0)));
-        assertEquals("The first qc state description", getFormElement(Locator.name("descriptions").index(0)));
-        assertNotChecked(Locator.name("publicData").index(0));
-        assertEquals("Second QC State", getFormElement(Locator.name("labels").index(1)));
-        assertEquals("The second qc state description", getFormElement(Locator.name("descriptions").index(1)));
-        assertNotChecked(Locator.name("publicData").index(1));
-        assertEquals("Third QC State", getFormElement(Locator.name("labels").index(2)));
-        assertEquals("The third qc state description", getFormElement(Locator.name("descriptions").index(2)));
-        assertNotChecked(Locator.name("publicData").index(2));
-        assertEquals("First QC State", getSelectedOptionText(Locator.name("defaultPipelineQCState")).trim());
-        assertEquals("Second QC State", getSelectedOptionText(Locator.name("defaultAssayQCState")).trim());
-        assertEquals("Third QC State", getSelectedOptionText(Locator.name("defaultDirectEntryQCState")).trim());
-        assertEquals("Public data", getSelectedOptionText(Locator.name("showPrivateDataByDefault")).trim());
+        ManageDatasetQCStatesPage statesPage = new ManageDatasetQCStatesPage(getDriver());
+        List<QCStateTableRow> states = statesPage.getStateRows();
+
+        QCStateTableRow noneRow = statesPage.getStateRow("[none]");
+        assertEquals(true, noneRow.getPublicData());
+
+        QCStateTableRow firstRow = statesPage.getStateRow("First QC State");
+        assertEquals("The first qc state description", firstRow.getDescription());
+        assertFalse("expect first qc state not to be public", firstRow.getPublicData());
+
+        QCStateTableRow secondRow = statesPage.getStateRow("Second QC State");
+        assertEquals("The second qc state description", secondRow.getDescription());
+        assertFalse("expect second qc state not to be public", secondRow.getPublicData());
+
+        QCStateTableRow thirdRow = statesPage.getStateRow("Third QC State");
+        assertEquals("The third qc state description", thirdRow.getDescription());
+        assertFalse("don't expect 3rd row to be public", thirdRow.getPublicData());
+
+        assertEquals("First QC State", statesPage.getDefaultPipelineQCState());
+        assertEquals("Second QC State", statesPage.getDefaultAssayQCState());
+        assertEquals("Third QC State", statesPage.getDefaultDirectEntryQCState());
+        assertEquals("Public data", statesPage.getDefaultVisibility());
 
         log("QC States: reset default visibility state");
         clickFolder(getFolderName());
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Dataset QC States"));
-        waitForText("Manage Dataset QC States");
-        selectOptionByText(Locator.name("showPrivateDataByDefault"), "All data");
-        clickButton("Save");
+        new ManageDatasetQCStatesPage(getDriver())
+                .setDefaultVisibility("All data")
+                .clickSave();
     }
 
     @Test

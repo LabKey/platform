@@ -645,7 +645,7 @@ public class StudyTest extends StudyBaseTest
                     .clickSave()                    // have to save the form here; default entry qc state needs a page cycle to be selectable below
                     .manageDatasetQCStates()
                     .setDefaultDirectEntryQCState("unknown QC")
-                    .showPrivateDataByDefault("Public data")
+                    .setDefaultVisibility("Public data")
                     .clickSave();
 
             // return to dataset import page
