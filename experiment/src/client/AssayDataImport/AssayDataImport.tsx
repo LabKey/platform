@@ -1,15 +1,16 @@
 import * as React from 'react';
 import {Panel} from "react-bootstrap";
-import {Map} from 'immutable';
-import {Alert, FileAttachmentForm, LoadingSpinner, AssayProtocolModel, fetchProtocol} from "@glass/base";
-import {ActionURL, AssayDOM} from '@labkey/api'
+import {Map, List} from 'immutable';
+import {Alert, Cards, FileAttachmentForm, LoadingSpinner, AssayDefinitionModel, fetchAllAssays} from "@glass/base";
+import {ActionURL, AssayDOM, Utils} from '@labkey/api'
 
 interface Props {}
 
 interface State {
-    assayId: number
-    assayModel: AssayProtocolModel
+    selected: number,
+    assays: List<AssayDefinitionModel>
     error: string
+    warning: string
 }
 
 export class App extends React.Component<Props, State> {
@@ -17,47 +18,71 @@ export class App extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
-        const assayId = ActionURL.getParameter('assayId');
-
         this.state = {
-            assayId,
-            assayModel: undefined,
-            error: assayId ? undefined : 'Missing required property: assayId.'
+            selected: undefined,
+            assays: undefined,
+            error: undefined,
+            warning: undefined
         }
     }
 
     componentWillMount() {
-        fetchProtocol(this.state.assayId)
-            .then((assayModel) => {
-                if (assayModel.providerName !== 'General') {
-                    this.setErrorMsg('This assay run upload page is currently only supported for the General assay provider.');
-                }
-                else {
-                    this.setState(() => ({assayModel}));
-                }
+        fetchAllAssays('General')
+            .then((assays) => {
+                this.setState(() => ({assays}));
+                this.selectInitialAssay();
             })
-            .catch((error) => {
-                this.setErrorMsg(error);
-            });
     }
 
-    setErrorMsg(error: string) {
-        this.setState(() => ({error}));
+    selectInitialAssay() {
+        const { assays } = this.state;
+        const urlRowId = ActionURL.getParameter('rowId');
+        const rowId = urlRowId ? parseInt(urlRowId) : undefined;
+
+        if (assays && Utils.isNumber(rowId)) {
+            let selected;
+            assays.forEach((assay, i) => {
+                if (assay.id === rowId) {
+                    selected = i;
+                }
+            });
+
+            if (selected !== undefined) {
+                this.setState(() => ({selected}));
+            }
+            else {
+                this.setState(() => ({
+                    warning: 'Unable to find an available General type assay for rowId ' + rowId + '.'
+                }));
+            }
+        }
+    }
+
+    getSelectedAssay(): AssayDefinitionModel {
+        const { selected, assays } = this.state;
+
+        if (assays && selected !== undefined) {
+            return assays.get(selected);
+        }
     }
 
     handleFileSubmit = (files: Map<string, File>) => {
-        this.setErrorMsg(undefined);
+        const selectedAssay = this.getSelectedAssay();
 
-        AssayDOM.importRun({
-            assayId: this.state.assayId,
-            files: files.toArray(),
-            success: (response) => {
-                window.location = response.successurl;
-            },
-            failure: (response) => {
-                this.setErrorMsg(response.exception);
-            }
-        });
+        if (selectedAssay) {
+            this.setErrorMsg(undefined);
+
+            AssayDOM.importRun({
+                assayId: selectedAssay.id,
+                files: files.toArray(),
+                success: (response) => {
+                    window.location = response.successurl;
+                },
+                failure: (response) => {
+                    this.setErrorMsg(response.exception);
+                }
+            });
+        }
     };
 
     handleFileChange = (files: Map<string, File>) => {
@@ -69,8 +94,20 @@ export class App extends React.Component<Props, State> {
     };
 
     handleCancel = () => {
-        window.history.back();
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
+
+    renderWarning() {
+        const { warning } = this.state;
+        if (warning) {
+            return <Alert bsStyle={'warning'}>{warning}</Alert>
+        }
+    }
+
+    setErrorMsg(error: string) {
+        this.setState(() => ({error}));
+    }
 
     renderError() {
         const { error } = this.state;
@@ -79,26 +116,44 @@ export class App extends React.Component<Props, State> {
         }
     }
 
-    renderAssayHeader() {
-        const { assayModel } = this.state;
+    onAssayCardClick = (index: number) => {
+        this.setState(() => ({selected: index}));
+    };
 
-        if (assayModel) {
-            return (
-                <Panel>
-                    <Panel.Heading>Assay Properties</Panel.Heading>
-                    <Panel.Body>
-                        <p>Name: {assayModel.name}</p>
-                        <p>Description: {assayModel.description}</p>
-                    </Panel.Body>
-                </Panel>
-            )
+    renderAvailableAssays() {
+        const { assays, selected } = this.state;
+
+        let cards;
+        if (assays) {
+            cards = assays.map((assay, i) => {
+                const isSelected = i === selected;
+
+                return {
+                    title: assay.name,
+                    caption: isSelected ? 'Upload data to this assay.' : 'Click to select this assay for the data upload.',
+                    iconSrc: 'assay',
+                    disabled: !isSelected,
+                    onClick: this.onAssayCardClick
+                };
+            }).toArray();
         }
+
+        // TODO add a card for creating a new assay design (if user has proper permissions)
+
+        return (
+            <Panel>
+                <Panel.Heading>Available Assays</Panel.Heading>
+                <Panel.Body>
+                    {!assays && <LoadingSpinner msg={'Loading assays designs...'}/>}
+                    {assays && cards.length === 0 && <Alert bsStyle={'info'}>There are no available assays of type General in this container.</Alert>}
+                    {cards && <Cards cards={cards}/>}
+                </Panel.Body>
+            </Panel>
+        )
     }
 
     renderRunDataUpload() {
-        const { assayModel } = this.state;
-
-        if (assayModel) {
+        if (this.getSelectedAssay()) {
             return (
                 <Panel>
                     <Panel.Heading>Data Upload</Panel.Heading>
@@ -109,16 +164,17 @@ export class App extends React.Component<Props, State> {
                             allowDirectories={false}
                             allowMultiple={false}
                             label={'Import from Local File'}
-                            showPreviewGrid={true}
-                            previewRowCount={3}
-                            previewHeader={'Previewing Data for Import'}
-                            previewInfoMsg={'If the data does not look as expected, check you source file for errors and re-upload.'}
                             showButtons={true}
                             submitText={'Save and Finish'}
                             onFileChange={this.handleFileChange}
                             onFileRemoval={this.handleFileRemoval}
                             onSubmit={this.handleFileSubmit}
                             onCancel={this.handleCancel}
+                            previewGridProps={{
+                                previewCount: 3,
+                                header: 'Previewing Data for Import',
+                                infoMsg: 'If the data does not look as expected, check you source file for errors and re-upload.'
+                            }}
                         />
                     </Panel.Body>
                 </Panel>
@@ -127,18 +183,11 @@ export class App extends React.Component<Props, State> {
     }
 
     render() {
-        const { error, assayModel } = this.state;
-
-        if (!assayModel && !error) {
-            return (
-                <LoadingSpinner/>
-            )
-        }
-
         return (
             <>
+                {this.renderWarning()}
                 {this.renderError()}
-                {this.renderAssayHeader()}
+                {this.renderAvailableAssays()}
                 {this.renderRunDataUpload()}
             </>
         )

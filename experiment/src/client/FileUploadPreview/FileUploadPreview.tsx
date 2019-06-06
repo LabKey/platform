@@ -57,11 +57,12 @@ export class App extends React.Component<Props, State> {
                             allowDirectories={false}
                             allowMultiple={false}
                             label={"Upload a file:"}
-                            showPreviewGrid={true}
-                            previewRowCount={3}
                             onFileChange={this.handleFileChange}
                             onFileRemoval={this.handleFileRemoval}
                             onCancel={this.handleCancel}
+                            previewGridProps={{
+                                previewCount: 3
+                            }}
                         />
                     </Panel.Body>
                 </Panel>

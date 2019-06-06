@@ -33,8 +33,8 @@
   },
   "dependencies": {
     "@labkey/dependencies": "0.0.4",
-    "@glass/base": "0.6.0-fb-fileAttachmentWithPreview.0",
-    "@glass/domainproperties": "0.0.13-fb-fileAttachmentWithPreview.0",
+    "@glass/base": "0.6.0-fb-fileAttachmentWithPreview.1",
+    "@glass/domainproperties": "0.0.13-fb-fileAttachmentWithPreview.1",
     "classnames": "2.2.6"
   },
   "devDependencies": {
