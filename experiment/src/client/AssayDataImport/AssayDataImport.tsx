@@ -27,8 +27,8 @@ import {AssayRunForm} from "./AssayRunForm";
 interface Props {}
 
 interface State {
-    user: User,
-    selected: number,
+    user: User
+    selected: number
     assays: List<AssayDefinitionModel>
     error: string
     warning: string
@@ -118,9 +118,13 @@ export class App extends React.Component<Props, State> {
         return assays && selected !== undefined && selected === assays.size;
     }
 
-    isValidAvailableAssay() {
+    hasValidNewAssayName() {
         const { assayUploadProps } = this.state;
-        return this.getSelectedAssay() || (this.isCreateNewAssay() && assayUploadProps);
+        return assayUploadProps && assayUploadProps[FORM_IDS.ASSAY_NAME] && assayUploadProps[FORM_IDS.ASSAY_NAME].length > 0;
+    }
+
+    isValidAvailableAssay() {
+        return this.getSelectedAssay() || (this.isCreateNewAssay() && this.hasValidNewAssayName());
     }
 
     setSubmitting(isSubmitting: boolean) {
@@ -208,7 +212,12 @@ export class App extends React.Component<Props, State> {
     }
 
     onAssayCardClick = (index: number) => {
-        this.setState(() => ({selected: index}));
+        this.setState(() => ({
+            selected: index,
+            error: undefined,
+            file: undefined,
+            inferredFields: undefined
+        }));
     };
 
     onFormChange = (evt) => {
@@ -283,11 +292,12 @@ export class App extends React.Component<Props, State> {
     renderAvailableAssays() {
         const { assays, selected } = this.state;
         const cards = this.getCardsFromAssays();
+        const isCurrentStep = selected === undefined;
 
         return (
-            <Panel>
+            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
                 <Panel.Heading>
-                    Step 1: Select an available assay or the option to create a new one.&nbsp;
+                    Step 1: Select an available assay{this.userCanCreateAssay() ? ' or the option to create a new one' : ''}&nbsp;
                     {assays && assays.size > 0 && selected !== undefined && <Button onClick={() => this.onAssayCardClick(undefined)}>Clear selection</Button>}
                 </Panel.Heading>
                 <Panel.Body>
@@ -304,10 +314,12 @@ export class App extends React.Component<Props, State> {
             return;
         }
 
+        const isCurrentStep = !this.hasValidNewAssayName();
+
         return (
-            <Panel>
+            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
                 <Panel.Heading>
-                    Step 2: Enter properties for the new assay.
+                    Step 2: Enter properties for the new assay
                 </Panel.Heading>
                 <Panel.Body>
                     <AssayDesignForm onChange={this.onFormChange}/>
@@ -317,10 +329,12 @@ export class App extends React.Component<Props, State> {
     }
 
     renderRunDataUpload() {
+        const isCurrentStep = this.isValidAvailableAssay() && !this.state.file;
+
         return (
-            <Panel>
+            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
                 <Panel.Heading>
-                    Step {this.isCreateNewAssay() ? 3: 2}: Upload a data file.
+                    Step {this.isCreateNewAssay() ? 3: 2}: Upload a data file
                 </Panel.Heading>
                 {this.isValidAvailableAssay() &&
                     <Panel.Body>
@@ -353,7 +367,7 @@ export class App extends React.Component<Props, State> {
         return (
             <Panel>
                 <Panel.Heading>
-                    Step {this.isCreateNewAssay() ? 4: 3}: Enter run properties for this import.
+                    Step {this.isCreateNewAssay() ? 4: 3}: Enter run properties for this import
                 </Panel.Heading>
                 {this.isValidAvailableAssay() && file &&
                     <Panel.Body>
@@ -367,13 +381,14 @@ export class App extends React.Component<Props, State> {
 
     renderButtons() {
         const { file, isSubmitting } = this.state;
+        const isCurrentStep = this.isValidAvailableAssay() && file;
 
         return (
-            <Panel>
+            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
                 <Panel.Heading>
                     Step {this.isCreateNewAssay() ? 5: 4}: Submit
                 </Panel.Heading>
-                {this.isValidAvailableAssay() && file &&
+                {isCurrentStep &&
                     <Panel.Body>
                         <ButtonToolbar>
                             <Button onClick={this.handleCancel} disabled={isSubmitting}>Cancel</Button>
