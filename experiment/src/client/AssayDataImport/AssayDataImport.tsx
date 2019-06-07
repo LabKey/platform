@@ -123,8 +123,8 @@ export class App extends React.Component<Props, State> {
         return assayUploadProps && assayUploadProps[FORM_IDS.ASSAY_NAME] && assayUploadProps[FORM_IDS.ASSAY_NAME].length > 0;
     }
 
-    isValidAvailableAssay() {
-        return this.getSelectedAssay() || (this.isCreateNewAssay() && this.hasValidNewAssayName());
+    isValidNewAssay() {
+        return this.isCreateNewAssay() && this.hasValidNewAssayName();
     }
 
     setSubmitting(isSubmitting: boolean) {
@@ -314,29 +314,33 @@ export class App extends React.Component<Props, State> {
             return;
         }
 
-        const isCurrentStep = !this.hasValidNewAssayName();
+        const showStep = this.isCreateNewAssay() && this.state.file;
+        const isCurrentStep = showStep && !this.hasValidNewAssayName();
 
         return (
             <Panel className={isCurrentStep ? 'panel-portal' : ''}>
                 <Panel.Heading>
-                    Step 2: Enter properties for the new assay
+                    Step 3: Enter properties for the new assay
                 </Panel.Heading>
-                <Panel.Body>
-                    <AssayDesignForm onChange={this.onFormChange}/>
-                </Panel.Body>
+                {showStep &&
+                    <Panel.Body>
+                        <AssayDesignForm onChange={this.onFormChange}/>
+                    </Panel.Body>
+                }
             </Panel>
         )
     }
 
     renderRunDataUpload() {
-        const isCurrentStep = this.isValidAvailableAssay() && !this.state.file;
+        const showStep = (this.getSelectedAssay() || this.isCreateNewAssay());
+        const isCurrentStep = showStep && !this.state.file;
 
         return (
             <Panel className={isCurrentStep ? 'panel-portal' : ''}>
                 <Panel.Heading>
-                    Step {this.isCreateNewAssay() ? 3: 2}: Upload a data file
+                    Step 2: Upload a data file
                 </Panel.Heading>
-                {this.isValidAvailableAssay() &&
+                {showStep &&
                     <Panel.Body>
                         {/*TODO add Download Template button*/}
                         <FileAttachmentForm
@@ -363,13 +367,14 @@ export class App extends React.Component<Props, State> {
 
     renderRunProperties() {
         const { file } = this.state;
+        const showStep = (this.getSelectedAssay() || this.isValidNewAssay()) && file;
 
         return (
             <Panel>
                 <Panel.Heading>
                     Step {this.isCreateNewAssay() ? 4: 3}: Enter run properties for this import
                 </Panel.Heading>
-                {this.isValidAvailableAssay() && file &&
+                {showStep &&
                     <Panel.Body>
                         {/*TODO add run properties form inputs (see Biologics)*/}
                         <AssayRunForm onChange={this.onFormChange}/>
@@ -381,7 +386,7 @@ export class App extends React.Component<Props, State> {
 
     renderButtons() {
         const { file, isSubmitting } = this.state;
-        const isCurrentStep = this.isValidAvailableAssay() && file;
+        const isCurrentStep = (this.getSelectedAssay() || this.isValidNewAssay()) && file;
 
         return (
             <Panel className={isCurrentStep ? 'panel-portal' : ''}>
@@ -406,7 +411,7 @@ export class App extends React.Component<Props, State> {
                 title={'Uploading file and saving assay run...'}
                 toggle={this.state.isSubmitting}
                 // delay={0}
-                // estimate={20}
+                // estimate={20} // TODO: do we know the file size at this point? if so can we use that for an estimate?
                 // updateIncrement={5}
                 modal={true}
             />
@@ -419,8 +424,8 @@ export class App extends React.Component<Props, State> {
                 {this.renderWarning()}
                 {this.renderError()}
                 {this.renderAvailableAssays()}
-                {this.renderNewAssayProperties()}
                 {this.renderRunDataUpload()}
+                {this.renderNewAssayProperties()}
                 {this.renderRunProperties()}
                 {this.renderButtons()}
                 {this.renderProgress()}
