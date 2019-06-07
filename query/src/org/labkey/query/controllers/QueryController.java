@@ -2112,10 +2112,6 @@ public class QueryController extends SpringActionController
             // assertQueryExists requires that it be well-formed
             // assertQueryExists(form);
             QueryDefinition queryDef = form.getQueryDef();
-            if (queryDef == null)
-			{
-                throw new NotFoundException("Query not found");
-			}
             _form = form;
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
@@ -2136,7 +2132,7 @@ public class QueryController extends SpringActionController
             }
             QueryDefinition queryDef = form.getQueryDef();
             _queryName = form.getQueryName();
-            if (queryDef == null || !queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
+            if (!queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
                 throw new NotFoundException("Query not found");
 
 			_form = form;
@@ -2557,13 +2553,12 @@ public class QueryController extends SpringActionController
         QueryView _queryView;
     }
 
-    public static class APIQueryForm extends QueryForm
+    public static class APIQueryForm extends ContainerFilterQueryForm
     {
         private Integer _start;
         private Integer _limit;
         private boolean _includeDetailsColumn = false;
         private boolean _includeUpdateColumn = false;
-        private String _containerFilter;
         private boolean _includeTotalCount = true;
         private boolean _includeStyle = false;
         private boolean _includeDisplayValues = false;
@@ -2587,16 +2582,6 @@ public class QueryController extends SpringActionController
         public void setLimit(Integer limit)
         {
             _limit = limit;
-        }
-
-        public String getContainerFilter()
-        {
-            return _containerFilter;
-        }
-
-        public void setContainerFilter(String containerFilter)
-        {
-            _containerFilter = containerFilter;
         }
 
         public boolean isIncludeTotalCount()
@@ -2658,6 +2643,29 @@ public class QueryController extends SpringActionController
         {
             _minimalColumns = minimalColumns;
         }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            QuerySettings results = super.createQuerySettings(schema);
+
+            boolean missingShowRows = null == getViewContext().getRequest().getParameter(getDataRegionName() + "." + QueryParam.showRows);
+            if (null == getLimit() && !results.isMaxRowsSet() && missingShowRows)
+            {
+                results.setShowRows(ShowRows.PAGINATED);
+                results.setMaxRows(DEFAULT_API_MAX_ROWS);
+            }
+
+            if (getLimit() != null)
+            {
+                results.setShowRows(ShowRows.PAGINATED);
+                results.setMaxRows(getLimit());
+            }
+            if (getStart() != null)
+                results.setOffset(getStart());
+
+            return results;
+        }
     }
 
     public static final int DEFAULT_API_MAX_ROWS = 100000;
@@ -2675,28 +2683,6 @@ public class QueryController extends SpringActionController
             HttpServletRequest request = getViewContext().getRequest();
 
             QueryView view = form.getQueryView();
-
-            boolean missingShowRows = null == request.getParameter(form.getDataRegionName() + "." + QueryParam.showRows);
-            if (null == form.getLimit() && !form.getQuerySettings().isMaxRowsSet() && missingShowRows)
-            {
-                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(DEFAULT_API_MAX_ROWS);
-            }
-
-            if (form.getLimit() != null)
-            {
-                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(form.getLimit());
-            }
-            if (form.getStart() != null)
-                form.getQuerySettings().setOffset(form.getStart());
-            if (form.getContainerFilter() != null)
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                    ContainerFilter.Type.valueOf(form.getContainerFilter());
-                form.getQuerySettings().setContainerFilterName(containerFilterType.name());
-            }
 
             view.setShowPagination(form.isIncludeTotalCount());
 
@@ -2918,14 +2904,6 @@ public class QueryController extends SpringActionController
                 offset = form.getOffset();
             }
 
-            if (form.getContainerFilter() != null)
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                    ContainerFilter.Type.valueOf(form.getContainerFilter());
-                settings.setContainerFilterName(containerFilterType.name());
-            }
-
             //build a query view using the schema and settings
             QueryView view = new QueryView(form.getSchema(), settings, errors);
             view.setShowRecordSelectors(false);
@@ -2960,7 +2938,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class SelectDistinctForm extends QueryForm
+    public static class ContainerFilterQueryForm extends QueryForm
     {
         private String _containerFilter;
 
@@ -2973,25 +2951,29 @@ public class QueryController extends SpringActionController
         {
             _containerFilter = containerFilter;
         }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            var result = super.createQuerySettings(schema);
+            if (getContainerFilter() != null)
+            {
+                // If the user specified an incorrect filter, throw an IllegalArgumentException
+                ContainerFilter.Type containerFilterType =
+                        ContainerFilter.Type.valueOf(getContainerFilter());
+                result.setContainerFilterName(containerFilterType.name());
+            }
+            return result;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class SelectDistinctAction extends ReadOnlyApiAction<SelectDistinctForm>
+    public class SelectDistinctAction extends ReadOnlyApiAction<ContainerFilterQueryForm>
     {
         @Override
-        public ApiResponse execute(SelectDistinctForm form, BindException errors) throws Exception
+        public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
-            QuerySettings settings = form.getQuerySettings();
-            ContainerFilter cf = null;
-            if (null != form.getContainerFilter())
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(form.getContainerFilter());
-                settings.setContainerFilterName(containerFilterType.name());
-                cf = ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), getUser());
-            }
-
             TableInfo table = form.getQueryView().getTable();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
@@ -3027,7 +3009,7 @@ public class QueryController extends SpringActionController
         }
 
         @Nullable
-        private SqlSelector getDistinctSql(TableInfo table, SelectDistinctForm form, BindException errors)
+        private SqlSelector getDistinctSql(TableInfo table, ContainerFilterQueryForm form, BindException errors)
         {
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
