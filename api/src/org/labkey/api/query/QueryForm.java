@@ -399,6 +399,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _customView = null;
         _queryView = null;
         _schema = null;
+        _querySettings = null;
     }
 
     public boolean canEdit()
