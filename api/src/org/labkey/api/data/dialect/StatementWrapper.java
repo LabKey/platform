@@ -2749,10 +2749,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         var detector = new MutatingSqlDetector(sql);
         boolean newWay = detector.isMutating();
 
-        if (newWay && !oldWay)
-            _log.debug("New approach detected mutating SQL that old way missed: " + sql.substring(0, Math.min(sql.length(), 100)));
-        else if (oldWay != newWay)
-            _log.warn("oldWay: " + oldWay + ", newWay: " + newWay + ", " + detector.getFirstWord() + ". Detection of mutating SQL did not match for: " + sql);
+        if (oldWay && !newWay)
+            _log.warn("Previous mutating SQL detection approach flagged this statement, but new approach did not: " + sql);
 
         return newWay;
     }

@@ -43,7 +43,7 @@ public class MutatingSqlDetector
                 {
                     // Evaluate first keyword
                     String word = firstWord.toString();
-                    Boolean mutatingWord = MUTATING_WORD_MAP.get(word);
+                    Boolean mutatingWord = WORD_MUTATING_MAP.get(word);
 
                     if (null == mutatingWord)
                         LOG.warn("Unrecognized keyword: " + word);
@@ -80,17 +80,39 @@ public class MutatingSqlDetector
         abstract State getNextState(char c, StringBuilder firstWord);
     }
 
-    private static final Map<String, Boolean> MUTATING_WORD_MAP = new CaseInsensitiveHashMap<>(Map.of
-    (
-        "INSERT", true,
-        "UPDATE", true,
-        "DELETE", true,
-        "CREATE", true,
-        "DROP", true,
-        "ALTER", true,
+    private static final Map<String, Boolean> WORD_MUTATING_MAP = new CaseInsensitiveHashMap<>();
 
-        "SELECT", false
-    ));
+    static
+    {
+        WORD_MUTATING_MAP.putAll(Map.of(
+            "ALTER", true,
+            "CLUSTER", true,
+            "CREATE", true,
+            "DELETE", true,
+            "DROP", true,
+            "INSERT", true,
+            "TRUNCATE", true,
+            "UPDATE", true
+        ));
+
+        WORD_MUTATING_MAP.putAll(Map.of(
+            "BEGIN", false,
+            "DO", false,
+            "END", false,
+            "SELECT", false,
+            "WITH", false
+        ));
+
+        // Needed for SQL Server
+        WORD_MUTATING_MAP.putAll(Map.of(
+            "DECLARE", false,
+            "EXEC", true,
+            "EXECUTE", true,
+            "IF", true,   // Typically IF EXISTS followed by mutating action
+            "SET", true,
+            "sp_rename", true
+        ));
+    }
 
     public boolean isMutating()
     {
