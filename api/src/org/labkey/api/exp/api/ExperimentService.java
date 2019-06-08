@@ -541,8 +541,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return SampleSetService.get().getDefaultSampleSetLsid();
     }
 
+    /**
+     * Get all runs associated with these materials, including the source runs and any derived runs
+     * @param materials to get runs for
+     * @return List of ExpRun's associated to these materials
+     */
     List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
 
+    /**
+     * Get all runs associated with these materials, including the source runs and any derived runs
+     * @param materialIds to get runs for
+     * @return List of ExpRun's associated to these materials
+     */
     List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
 
     List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
@@ -762,6 +772,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
     public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
     public static final String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
+
+    /**
+     * Get the set of runs that can be deleted based on the materials supplied.
+     * INCLUDES: Derivative runs, and if only remaining output/derivative the immediate precursor run
+     * @param materials Set of materials to get runs for
+     * @return Set of runs that can be deleted based on the materials
+     */
+    List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
 
     public static class XarExportOptions
     {

@@ -3050,16 +3050,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpMaterial> materials = getMaterials(deleteForm);
-            List<ExpRun> runs = getRuns(materials);
+            List<ExpRun> runs = ExperimentService.get().getDeletableRunsFromMaterials(materials);
             return new ConfirmDeleteView("Sample", ShowMaterialAction.class, materials, deleteForm, runs);
-        }
-
-        private List<ExpRun> getRuns(List<ExpMaterial> materials)
-        {
-            // We don't actually delete runs that use the materials - we just disconnect the material from the run
-            // In some cases (such as flow) this is required. In others, it's not as sensible
-            List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingMaterials(materials);
-            return new ArrayList<>(ExperimentService.get().runsDeletedWithInput(runArray));
         }
 
         private List<ExpMaterial> getMaterials(DeleteForm deleteForm)

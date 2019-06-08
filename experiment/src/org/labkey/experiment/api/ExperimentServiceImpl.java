@@ -3811,21 +3811,11 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
     {
-//        var dataRowIds = new
-//
-//        List<? extends ExpRun> runsUsingItem;
-//        if (item instanceof Data)
-//            runsUsingItem = getRunsUsingDataIds(Arrays.asList(item.getRowId()));
-//        else if (item instanceof Material)
-//            runsUsingItem = getRunsUsingMaterials(item.getRowId());
-//        else
-//            throw new IllegalArgumentException("Expected Data or Material");
-
         var runsUsingItems = new ArrayList<ExpRun>();
         if (null != dataItems && !dataItems.isEmpty())
             runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
-        if (null != materialItems && !materialItems.isEmpty())
-            runsUsingItems.addAll(getRunsUsingMaterials(materialItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+
+        runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
@@ -3861,6 +3851,51 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
         }
+    }
+
+    private Collection<? extends ExpRun> getDeleteableSourceRunsFromMaterials(Set<Integer> materialIds)
+    {
+        if (materialIds.isEmpty())
+            return Collections.emptyList();
+
+        /* Ex. SQL
+        SELECT DISTINCT m.runId
+	    FROM exp.material m
+        WHERE m.rowId in (3592, 3593, 3594)
+            AND NOT EXIST (
+                -- Check for siblings
+                SELECT DISTINCT m2.runId
+                FROM exp.material m2
+                WHERE m.rowId in (3592, 3593, 3594)
+                    AND m.rowId != m2.rowId
+                    AND m.runId = m2.runId
+            );
+         */
+
+        SQLFragment idInclause = getMaterialIdsInClause(materialIds);
+
+        SQLFragment sql = new SQLFragment(
+                "SELECT DISTINCT m.runId\n")
+                .append("FROM ").append(getTinfoMaterial(), "m").append("\n")
+                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("AND NOT EXISTS (\n")
+                .append("SELECT DISTINCT m2.runId\n")
+                .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
+                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("AND m.rowId != m2.rowId\n")
+                .append("AND m.runId = m2.runId\n")
+                .append(")");
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
+
+    }
+
+    private Collection<? extends ExpRun> getDerivedRunsFromMaterial(Collection<Integer> materialIds)
+    {
+        if (materialIds.isEmpty())
+            return Collections.emptyList();
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getMaterialIdsInClause(materialIds))));
     }
 
 
@@ -4313,7 +4348,12 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
         }
 
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids)));
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getMaterialIdsInClause(ids)));
+    }
+
+    private SQLFragment getMaterialIdsInClause(Collection<Integer> ids)
+    {
+        return getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
     }
 
     // Get a map of run LSIDs to Roles used by the Material ids.
@@ -4423,27 +4463,90 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
 
+    /**
+     * Get the Source and Target runs
+     * @param materialRowIdSQL
+     * @return
+     */
     private List<ExperimentRun> getRunsForMaterialList(SQLFragment materialRowIdSQL)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
-        sql.append(getTinfoExperimentRun(), "er");
-        sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
-        sql.append(getTinfoExperimentRun(), "er2");
-        sql.append(" WHERE RowId IN ((SELECT pa.RunId FROM ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoMaterialInput(), "mi");
-        sql.append(" WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID ");
-        sql.append(materialRowIdSQL);
-        sql.append(")");
-        sql.append("\n UNION \n (SELECT pa.RunId FROM ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoMaterial(), "m");
-        sql.append(" WHERE m.SourceApplicationId = pa.RowId AND m.RowId ");
-        sql.append(materialRowIdSQL);
-        sql.append(")))");
+        SQLFragment sql = new SQLFragment("(\n");
+        sql.append(getTargetRunIdsFromMaterialIds(materialRowIdSQL));
+        sql.append("\n) UNION (\n");
+        sql.append(getSourceRunIdsFromMaterialIds(materialRowIdSQL));
+        sql.append("\n)");
+
+        return getRunsForRunIds(sql);
+    }
+
+    /**
+     * Get set ExperimentRuns from subquery
+     * @param runIdsSQL subquery providing runIds
+     * @return List of Experiment runs from subquery
+     */
+    private List<ExperimentRun> getRunsForRunIds(SQLFragment runIdsSQL)
+    {
+        SQLFragment sql = new SQLFragment("SELECT *\n");
+        sql.append("FROM ").append(getTinfoExperimentRun(), "er").append("\n");
+        sql.append("WHERE RowId IN (\n");
+        sql.append(runIdsSQL);
+        sql.append("\n)");
+
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
+    }
+
+    /**
+     * Generate a query to get the derived runIds from a set of material rowIds
+     * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds derived from supplied material ids
+     */
+    private SQLFragment getTargetRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.materialinput mi
+            WHERE mi.TargetApplicationId = pa.RowId
+                AND pa.cpastype = 'ExperimentRun'  --Limit protocolapplications, where materials are inputs
+                AND mi.MaterialID <materialRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoMaterialInput(), "mi").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
+            .append("AND pa.cpastype = ?\n").add("ExperimentRun")
+            .append("AND mi.MaterialID ").append(materialRowIdSQL);
+
+        return sql;
+    }
+
+    /**
+     * Get query to obtain precursor run ids based on materials
+     * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve precursor runs based on supplied material ids.
+     */
+    private SQLFragment getSourceRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.material m
+            WHERE m.SourceApplicationId = pa.RowId
+                AND m.rowId <materialRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoMaterial(), "m").append("\n");
+        sql.append("WHERE m.SourceApplicationId = pa.RowId AND m.RowId ").append(materialRowIdSQL);
+
+        return sql;
     }
 
     void deleteDomainObjects(Container c, String lsid) throws ExperimentException
@@ -6655,6 +6758,25 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             listener.afterMaterialCreated(materials, container, user);
         }
+    }
+
+    /**
+     * Get runs that can potentially be deleted based on supplied materials
+     * @param materials -- Set of materials to get runs for
+     * @return
+     */
+    @Override
+    public List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials)
+    {
+        var runsUsingItems = new ArrayList<ExpRun>();
+        if (null != materials && !materials.isEmpty())
+        {
+            Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            runsUsingItems.addAll(getDerivedRunsFromMaterial(materialIds));
+            runsUsingItems.addAll(getDeleteableSourceRunsFromMaterials(materialIds));
+        }
+
+        return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
     }
 
     public static class TestCase extends Assert
