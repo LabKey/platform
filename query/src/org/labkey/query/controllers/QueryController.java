@@ -502,20 +502,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    protected boolean queryExists(QueryForm form)
-    {
-        try
-        {
-            UserSchema schema = form.getSchema();
-            return schema != null && schema.getTable(form.getQueryName()) != null;
-        }
-        catch (QueryException x)
-        {
-            // exists with errors
-            return true;
-        }
-    }
-
     @Override
     public PageConfig defaultPageConfig()
     {
@@ -524,33 +510,6 @@ public class QueryController extends SpringActionController
         config.setHelpTopic(new HelpTopic("querySchemaBrowser"));
         return config;
     }
-
-    /**
-     * ensureQueryExists throws NotFound if the query/table does not exist.
-     * Does not guarantee that the query is syntactically correct, or can execute.
-     * This check can be expensive.
-     */
-    protected void ensureQueryExists(QueryForm form)
-    {
-        if (form.getSchema() == null)
-        {
-            throw new NotFoundException("Could not find schema: " + form.getSchemaName());
-        }
-
-        if (StringUtils.isEmpty(form.getQueryName()))
-        {
-            throw new NotFoundException("Query not specified");
-        }
-
-        if (!queryExists(form))
-        {
-            throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "' doesn't exist.");
-        }
-
-        // If the above checks succeed then QueryDef should be non-null. TODO: Remove null != getQueryDef() checks from callers of ensureQueryExists()
-        assert null != form.getQueryDef();
-    }
-
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class DataSourceAdminAction extends SimpleViewAction
@@ -1276,11 +1235,8 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            // ensureQueryExists() is ridiculously expensive, let's handle the errors lazily in this case
-            // TODO investigate removing other calls to ensureQueryExists()
             _form = form;
-
-            QueryView queryView = form.getQueryView(errors);
+            QueryView queryView = form.getQueryView();
             if (isPrint())
             {
                 queryView.setPrintView(true);
@@ -1322,11 +1278,9 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
-
             _form = form;
 
-            QueryView queryView = QueryView.create(form, errors);
+            QueryView queryView = form.getQueryView();
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
 
@@ -1516,13 +1470,13 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
+            ModelAndView result = super.getView(form, errors);
             _print = true;
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
                 title = form.getSchemaName();
             getPageConfig().setTitle(title, true);
-            return super.getView(form, errors);
+            return result;
         }
     }
 
@@ -1531,8 +1485,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(K form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
-            QueryView view = QueryView.create(form, errors);
+            QueryView view = form.getQueryView();
             getPageConfig().setTemplate(PageConfig.Template.None);
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
@@ -1579,7 +1532,7 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors)
         {
-            ensureQueryExists(form);
+            QueryView view = form.getQueryView();
 
             return ExportScriptModel.getExportScriptView(QueryView.create(form, errors), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
         }
@@ -1781,8 +1734,7 @@ public class QueryController extends SpringActionController
             // Set the headers to allow the client to cache, but not proxies
             ResponseHelper.setPrivate(response);
 
-            ensureQueryExists(form);
-            QueryView view = QueryView.create(form, errors);
+            QueryView view = form.getQueryView();
             getPageConfig().setTemplate(PageConfig.Template.None);
             view.exportToExcelWebQuery(getViewContext().getResponse());
             return null;
@@ -1797,7 +1749,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
-            ensureQueryExists(form);
+            form.getQueryView();
             String queryViewActionURL = form.getQueryViewActionURL();
             ActionURL url;
             if (queryViewActionURL != null)
@@ -1851,8 +1803,8 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, boolean reshow, BindException errors)
         {
-            ensureQueryExists(form);
             _form = form;
+
             _query = _form.getQueryDef();
             Map<String, String> props = new HashMap<>();
             props.put("schemaName", form.getSchemaName());
@@ -2160,10 +2112,6 @@ public class QueryController extends SpringActionController
             // assertQueryExists requires that it be well-formed
             // assertQueryExists(form);
             QueryDefinition queryDef = form.getQueryDef();
-            if (queryDef == null)
-			{
-                throw new NotFoundException("Query not found");
-			}
             _form = form;
             _form.setDescription(queryDef.getDescription());
             _form.setInheritable(queryDef.canInherit());
@@ -2184,7 +2132,7 @@ public class QueryController extends SpringActionController
             }
             QueryDefinition queryDef = form.getQueryDef();
             _queryName = form.getQueryName();
-            if (queryDef == null || !queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
+            if (!queryDef.getDefinitionContainer().getId().equals(getContainer().getId()))
                 throw new NotFoundException("Query not found");
 
 			_form = form;
@@ -2290,8 +2238,7 @@ public class QueryController extends SpringActionController
 
         public boolean handlePost(QueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
-            TableInfo table = form.getQueryDef().getTable(form.getSchema(), null, true);
+            TableInfo table = form.getQueryView().getTable();
 
             if (!table.hasPermission(getUser(), DeletePermission.class))
             {
@@ -2606,13 +2553,12 @@ public class QueryController extends SpringActionController
         QueryView _queryView;
     }
 
-    public static class APIQueryForm extends QueryForm
+    public static class APIQueryForm extends ContainerFilterQueryForm
     {
         private Integer _start;
         private Integer _limit;
         private boolean _includeDetailsColumn = false;
         private boolean _includeUpdateColumn = false;
-        private String _containerFilter;
         private boolean _includeTotalCount = true;
         private boolean _includeStyle = false;
         private boolean _includeDisplayValues = false;
@@ -2636,16 +2582,6 @@ public class QueryController extends SpringActionController
         public void setLimit(Integer limit)
         {
             _limit = limit;
-        }
-
-        public String getContainerFilter()
-        {
-            return _containerFilter;
-        }
-
-        public void setContainerFilter(String containerFilter)
-        {
-            _containerFilter = containerFilter;
         }
 
         public boolean isIncludeTotalCount()
@@ -2707,6 +2643,29 @@ public class QueryController extends SpringActionController
         {
             _minimalColumns = minimalColumns;
         }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            QuerySettings results = super.createQuerySettings(schema);
+
+            boolean missingShowRows = null == getViewContext().getRequest().getParameter(getDataRegionName() + "." + QueryParam.showRows);
+            if (null == getLimit() && !results.isMaxRowsSet() && missingShowRows)
+            {
+                results.setShowRows(ShowRows.PAGINATED);
+                results.setMaxRows(DEFAULT_API_MAX_ROWS);
+            }
+
+            if (getLimit() != null)
+            {
+                results.setShowRows(ShowRows.PAGINATED);
+                results.setMaxRows(getLimit());
+            }
+            if (getStart() != null)
+                results.setOffset(getStart());
+
+            return results;
+        }
     }
 
     public static final int DEFAULT_API_MAX_ROWS = 100000;
@@ -2720,33 +2679,10 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(APIQueryForm form, BindException errors)
         {
-            ensureQueryExists(form);
-
             // Issue 12233: add implicit maxRows=100k when using client API
             HttpServletRequest request = getViewContext().getRequest();
-            boolean missingShowRows = null == request.getParameter(form.getDataRegionName() + "." + QueryParam.showRows);
-            if (null == form.getLimit() && !form.getQuerySettings().isMaxRowsSet() && missingShowRows)
-            {
-                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(DEFAULT_API_MAX_ROWS);
-            }
 
-            if (form.getLimit() != null)
-            {
-                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
-                form.getQuerySettings().setMaxRows(form.getLimit());
-            }
-            if (form.getStart() != null)
-                form.getQuerySettings().setOffset(form.getStart());
-            if (form.getContainerFilter() != null)
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                    ContainerFilter.Type.valueOf(form.getContainerFilter());
-                form.getQuerySettings().setContainerFilterName(containerFilterType.name());
-            }
-
-            QueryView view = QueryView.create(form, errors);
+            QueryView view = form.getQueryView();
 
             view.setShowPagination(form.isIncludeTotalCount());
 
@@ -2968,14 +2904,6 @@ public class QueryController extends SpringActionController
                 offset = form.getOffset();
             }
 
-            if (form.getContainerFilter() != null)
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType =
-                    ContainerFilter.Type.valueOf(form.getContainerFilter());
-                settings.setContainerFilterName(containerFilterType.name());
-            }
-
             //build a query view using the schema and settings
             QueryView view = new QueryView(form.getSchema(), settings, errors);
             view.setShowRecordSelectors(false);
@@ -3010,7 +2938,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class SelectDistinctForm extends QueryForm
+    public static class ContainerFilterQueryForm extends QueryForm
     {
         private String _containerFilter;
 
@@ -3023,28 +2951,30 @@ public class QueryController extends SpringActionController
         {
             _containerFilter = containerFilter;
         }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            var result = super.createQuerySettings(schema);
+            if (getContainerFilter() != null)
+            {
+                // If the user specified an incorrect filter, throw an IllegalArgumentException
+                ContainerFilter.Type containerFilterType =
+                        ContainerFilter.Type.valueOf(getContainerFilter());
+                result.setContainerFilterName(containerFilterType.name());
+            }
+            return result;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class SelectDistinctAction extends ReadOnlyApiAction<SelectDistinctForm>
+    public class SelectDistinctAction extends ReadOnlyApiAction<ContainerFilterQueryForm>
     {
         @Override
-        public ApiResponse execute(SelectDistinctForm form, BindException errors) throws Exception
+        public ApiResponse execute(ContainerFilterQueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
-
-            QuerySettings settings = form.getQuerySettings();
-            ContainerFilter cf = null;
-            if (null != form.getContainerFilter())
-            {
-                // If the user specified an incorrect filter, throw an IllegalArgumentException
-                ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(form.getContainerFilter());
-                settings.setContainerFilterName(containerFilterType.name());
-                cf = ContainerFilter.getContainerFilterByName(settings.getContainerFilterName(), getUser());
-            }
-
-            TableInfo table = form.getSchema().getTable(form.getQueryName(), cf);
+            TableInfo table = form.getQueryView().getTable();
             SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors() || null == sqlSelector)
@@ -3079,7 +3009,7 @@ public class QueryController extends SpringActionController
         }
 
         @Nullable
-        private SqlSelector getDistinctSql(TableInfo table, SelectDistinctForm form, BindException errors)
+        private SqlSelector getDistinctSql(TableInfo table, ContainerFilterQueryForm form, BindException errors)
         {
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
@@ -3191,8 +3121,6 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(QueryForm form, Errors errors)
         {
-            ensureQueryExists(form);
-
             QuerySettings settings = form.getQuerySettings();
             List<FieldKey> fieldKeys = settings != null ? settings.getFieldKeys() : null;
             if (null == fieldKeys || fieldKeys.isEmpty() || fieldKeys.size() != 1)
@@ -3204,7 +3132,7 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(QueryForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            QueryView view = QueryView.create(form, errors);
+            QueryView view = form.getQueryView();
             DisplayColumn displayColumn = null;
 
             for (DisplayColumn dc : view.getDisplayColumns())
@@ -3293,7 +3221,6 @@ public class QueryController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             _form = form;
-            ensureQueryExists(form);
 
             QueryDefinition query = form.getQueryDef();
             List<QueryException> qpe = new ArrayList<>();

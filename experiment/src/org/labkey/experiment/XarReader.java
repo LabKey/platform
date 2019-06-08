@@ -990,7 +990,7 @@ public class XarReader extends AbstractXarImporter
             ExpMaterial inputRow = _xarSource.getMaterial(firstApp ? null : new ExpRunImpl(experimentRun), new ExpProtocolApplicationImpl(protocolApp), lsid);
             if (firstApp)
             {
-                _xarSource.addMaterial(experimentRun.getLSID(), inputRow);
+                _xarSource.addMaterial(experimentRun.getLSID(), inputRow, null);
             }
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialId"), inputRow.getRowId());
             filter = filter.addCondition(FieldKey.fromParts("TargetApplicationId"), protAppId);
@@ -1047,9 +1047,9 @@ public class XarReader extends AbstractXarImporter
     }
 
     private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
-                                  ExperimentRun run,
+                                  @Nullable ExperimentRun run,
                                   Integer sourceApplicationId,
-                                  XarContext context) throws SQLException, XarFormatException
+                                  XarContext context) throws XarFormatException
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 
@@ -1060,11 +1060,25 @@ public class XarReader extends AbstractXarImporter
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
-        checkMaterialCpasType(declaredType);
+        ExpSampleSetImpl sampleSet = checkMaterialCpasType(declaredType);
 
         String materialLSID = LsidUtils.resolveLsidFromTemplate(xbMaterial.getAbout(), context, declaredType, ExpMaterial.DEFAULT_CPAS_TYPE);
 
         ExpMaterialImpl material = ExperimentServiceImpl.get().getExpMaterial(materialLSID);
+        if (material == null && sampleSet != null)
+        {
+            // Try resolving it by name within the sample set in case we have it under a different LSID
+            material = sampleSet.getSample(context.getContainer(), xbMaterial.getName());
+            if (material != null)
+            {
+                // Remember this as an alternate LSID during import
+                _xarSource.addMaterial(null, material, materialLSID);
+                if (run != null)
+                {
+                    _xarSource.addMaterial(run.getLSID(), material, materialLSID);
+                }
+            }
+        }
         if (material == null)
         {
             Material m = new Material();
@@ -1084,13 +1098,13 @@ public class XarReader extends AbstractXarImporter
             if (null == xbProps)
                 xbProps = xbMaterial.addNewProperties();
 
-            Map<String,ObjectProperty> props = loadObjectProperties(xbProps, materialLSID, null);
+            Map<String, ObjectProperty> props = loadObjectProperties(xbProps, materialLSID, null);
 
             try
             {
                 ExpMaterialImpl mi = new ExpMaterialImpl(m);
                 mi.save(getUser());
-                mi.setProperties(getUser(), (Map<String,Object>)(Map)props);
+                mi.setProperties(getUser(), props);
             }
             catch (ValidationException vex)
             {
@@ -1105,7 +1119,7 @@ public class XarReader extends AbstractXarImporter
             updateSourceInfo(material.getDataObject(), sourceApplicationId, run == null ? null : run.getRowId(), context, tiMaterial);
         }
 
-        _xarSource.addMaterial(run == null ? null : run.getLSID(), material);
+        _xarSource.addMaterial(run == null ? null : run.getLSID(), material, null);
 
         getLog().debug("Finished loading material with LSID '" + materialLSID + "'");
         return material;

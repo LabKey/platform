@@ -42,8 +42,8 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
@@ -506,7 +506,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (pt == null)
                 continue;
 
-            // Lookup must point at "Samples.*" or "exp.Materials"
+            // Lookup must point at "Samples.*", "exp.materials.*", or "exp.Materials"
             @Nullable ExpSampleSet ss = getLookupSampleSet(dp, context.getContainer(), context.getUser());
             if (ss == null && !isLookupToMaterials(dp))
                 continue;
@@ -535,6 +535,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
+    /** returns the lookup ExpSampleSet if the property has a lookup to samples.<SampleSetName> or exp.materials.<SampleSetName> and is an int or string. */
     @Nullable
     public static ExpSampleSet getLookupSampleSet(@NotNull DomainProperty dp, @NotNull Container container, @NotNull User user)
     {
@@ -554,6 +555,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return ExperimentService.get().getSampleSet(c, user, lookup.getQueryName());
     }
 
+    /** returns true if the property has a lookup to exp.Materials and is an int or string. */
     public static boolean isLookupToMaterials(@NotNull DomainProperty dp)
     {
         Lookup lookup = dp.getLookup();
@@ -725,7 +727,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
 
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
-            resolved.put(material, role);
+        {
+            if (ss == null || ss.getLSID().equals(material.getCpasType()))
+                resolved.put(material, role);
+        }
     }
 
     protected void addMaterialById(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> resolved, Integer sampleRowId, String role, @NotNull Set<Container> searchContainers, @Nullable ExpSampleSet ss)
@@ -733,7 +738,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ExpMaterial material = ExperimentService.get().getExpMaterial(sampleRowId);
         if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
         {
-            if (ss != null && ss.getLSID().equals(material.getCpasType()))
+            if (ss == null || ss.getLSID().equals(material.getCpasType()))
                 resolved.put(material, role);
         }
     }
@@ -872,18 +877,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (outputs.containsKey(input))
             {
                 String role = outputs.get(input);
-                String msg = "Circular input/output '" + input.getName() + "' with role '" + role + "'";
-                if (allowCycles(context))
-                    logger.info(msg);
-                else
-                    throw new ExperimentException(msg);
+                throw new ExperimentException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
             }
         }
-    }
-
-    protected boolean allowCycles(AssayRunUploadContext<ProviderType> context)
-    {
-        return false;
     }
 
 

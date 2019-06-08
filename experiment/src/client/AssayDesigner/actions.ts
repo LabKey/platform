@@ -7,6 +7,7 @@ import {buildURL} from "@glass/base";
 
 import {AssayProtocolModel} from "./models";
 
+// TODO remove as this is now in @glass/base
 export function fetchProtocol(protocolId: number): Promise<AssayProtocolModel> {
     return new Promise((resolve, reject) => {
         Ajax.request({

@@ -5,6 +5,7 @@
 import {List, Record} from "immutable";
 import {DomainDesign} from "@glass/domainproperties";
 
+// TODO remove as this is now in @glass/base
 export class AssayProtocolModel extends Record({
     allowTransformationScript: false,
     autoCopyTargetContainer: undefined,

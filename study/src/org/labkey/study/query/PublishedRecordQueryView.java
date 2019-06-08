@@ -76,10 +76,12 @@ public class PublishedRecordQueryView extends DatasetQueryView
 
     protected TableInfo createTable()
     {
-        TableInfo table = super.createTable();
+        TableInfo table = getSchema().getTable(getSettings().getQueryName(), getContainerFilter(), true, true);
         var sourceLsidCol = table.getColumn("SourceLSID");
         if (sourceLsidCol != null)
             ((BaseColumnInfo)sourceLsidCol).setHidden(false);
+        table.setLocked(true);
+
         return table;
     }
 
