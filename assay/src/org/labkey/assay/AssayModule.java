@@ -19,10 +19,12 @@ package org.labkey.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.study.assay.FileBasedModuleDataHandler;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +64,7 @@ public class AssayModule extends DefaultModule
     {
         addController(AssayController.NAME, AssayController.class);
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
+        ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
     }
 
     @Override

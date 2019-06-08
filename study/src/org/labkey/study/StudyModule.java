@@ -109,7 +109,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.assay.query.AssaySchemaImpl;
@@ -308,7 +307,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         StudySerializationRegistry.setInstance(StudySerializationRegistryImpl.get());
 
-        ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
         
         // Register early so file-based assays are available to Java code at upgrade time
