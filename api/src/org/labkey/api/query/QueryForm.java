@@ -335,18 +335,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return getQuerySettings() != null ? getQuerySettings().getQueryName() : _queryName;
     }
 
-    @Nullable
+    /** @throws NotFoundException if the query can't be resolved */
+    @NotNull
     public QueryDefinition getQueryDef()
     {
-        try
-        {
-            QueryView view = getQueryView();
-            return view.getQueryDef();
-        }
-        catch (NotFoundException e)
-        {
-            return null;
-        }
+        return getQueryView().getQueryDef();
     }
 
     public @Nullable ActionURL urlFor(QueryAction action)
@@ -355,7 +348,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         UserSchema schema = getSchema();
         QueryDefinition def = getQueryDef();
 
-        if (null != schema && null != def)
+        if (null != schema)
         {
             ret = schema.urlFor(action, def);
             if (ret != null && _customView != null && _customView.getName() != null)
@@ -393,10 +386,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             return null;
         String columnListName = getViewName();
         QueryDefinition querydef = getQueryDef();
-        if (null == querydef)
-        {
-            throw new NotFoundException();
-        }
         _customView = querydef.getCustomView(getUser(), getViewContext().getRequest(), columnListName);
         return _customView;
     }
@@ -414,7 +403,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
 
     public boolean canEdit()
     {
-        return null != getQueryDef() && getQueryDef().canEdit(getUser());
+        return getQueryDef().canEdit(getUser());
     }
 
     public String getQueryViewActionURL()

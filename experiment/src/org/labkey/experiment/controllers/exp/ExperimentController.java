@@ -3589,15 +3589,12 @@ public class ExperimentController extends SpringActionController
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
-            if (query != null)
-            {
-                List<QueryException> qpe = new ArrayList<>();
-                TableInfo t = query.getTable(form.getSchema(), qpe, true);
-                if (!qpe.isEmpty())
-                    throw qpe.get(0);
-                if (null != t)
-                    setTarget(t);
-            }
+            List<QueryException> qpe = new ArrayList<>();
+            TableInfo t = query.getTable(form.getSchema(), qpe, true);
+            if (!qpe.isEmpty())
+                throw qpe.get(0);
+            if (null != t)
+                setTarget(t);
         }
 
         @Override
