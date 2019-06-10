@@ -272,7 +272,6 @@ public class ListController extends SpringActionController
             props.put("showDefaultValueSettings", "1");
             props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
             props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
-            // Why is this different than DesignListPermission???
             props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
             props.put("loading", "Loading...");
 
