@@ -121,8 +121,6 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.design.DgMessage;
-import org.labkey.query.design.ErrorsDocument;
 import org.labkey.query.metadata.MetadataServiceImpl;
 import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
@@ -4835,48 +4833,6 @@ public class QueryController extends SpringActionController
             }
         }
     }
-
-
-    @RequiresNoPermission
-    public class CheckSyntaxAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException bindErrors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.None);
-
-            String sql = (String)getProperty("sql");
-            if (sql == null)
-                sql = PageFlowUtil.getReaderContentsAsString(getViewContext().getRequest().getReader());
-            ErrorsDocument ret = ErrorsDocument.Factory.newInstance();
-            org.labkey.query.design.Errors xbErrors = ret.addNewErrors();
-            List<QueryParseException> errors = new ArrayList<>();
-            try
-            {
-                (new SqlParser()).parseExpr(sql, errors);
-            }
-            catch (Throwable t)
-            {
-                Logger.getLogger(QueryController.class).error("Error", t);
-                errors.add(new QueryParseException("Unhandled exception: " + t, null, 0, 0));
-            }
-            for (QueryParseException e : errors)
-            {
-                DgMessage msg = xbErrors.addNewError();
-                msg.setStringValue(e.getMessage());
-                msg.setLine(e.getLine());
-            }
-            HtmlView view = new HtmlView(ret.toString());
-            view.setContentType("text/xml");
-            view.setFrame(WebPartView.FrameType.NONE);
-            return view;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
 
     @RequiresPermission(AdminPermission.class)
     public class ManageViewsAction extends SimpleViewAction<QueryForm>
