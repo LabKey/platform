@@ -125,7 +125,11 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        auditInsert(ret);
+        if (ret > 0 && !errors.hasErrors())
+        {
+            onSamplesChanged();
+            audit("insert");
+        }
         return ret;
     }
 
@@ -133,10 +137,11 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
         int ret = super.loadRows(user, container, rows, context, extraScriptContext);
-        if (context.getInsertOption().mergeRows)
-            auditInsert(ret);
-        else
-            auditMerge(ret);
+        if (ret > 0 && !context.getErrors().hasErrors())
+        {
+            onSamplesChanged();
+            audit(context.getInsertOption().mergeRows ? "merge" : "insert");
+        }
         return ret;
     }
 
@@ -144,7 +149,11 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
-        auditMerge(ret);
+        if (ret > 0 && !errors.hasErrors())
+        {
+            onSamplesChanged();
+            audit("merge");
+        }
         return ret;
     }
 
@@ -152,8 +161,11 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        if (!errors.hasErrors())
-            auditInsert(null==results ? -1 : results.size());
+        if (results != null && results.size() > 0 && !errors.hasErrors())
+        {
+            onSamplesChanged();
+            audit("insert");
+        }
         return results;
     }
 
@@ -172,7 +184,12 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (context.getErrors().hasErrors())
             throw context.getErrors();
 
-        auditUpdate(ret.size());
+        if (ret.size() > 0)
+        {
+            onSamplesChanged();
+            audit("update");
+        }
+
         return ret;
     }
 
@@ -249,7 +266,11 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     protected int truncateRows(User user, Container container)
     {
         int ret = SampleSetServiceImpl.get().truncateSampleSet(_sampleset, user, container);
-        auditDelete(ret);
+        if (ret > 0)
+        {
+            // NOTE: Not necessary to call onSamplesChanged -- already called by truncateSampleSet
+            audit("delete");
+        }
         return ret;
     }
 
@@ -283,7 +304,12 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 
         // TODO check if this handle attachments???
         ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids);
-        auditDelete(result.size());
+
+        if (result.size() > 0)
+        {
+            // NOTE: Not necessary to call onSamplesChanged -- already called by deleteMaterialByRowIds
+            audit("delete");
+        }
         return result;
     }
 
@@ -369,49 +395,24 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 //        throw new IllegalStateException();
 //    }
 
+    private void onSamplesChanged()
+    {
+        _sampleset.onSamplesChanged(getUser(), null);
+    }
 
-    void auditInsert(int count)
+    void audit(String insertUpdateChoice)
     {
-        if (count==0)
-            return;
+        String verb;
+        if (insertUpdateChoice.equals("merge"))
+            verb = "inserted or updated";
+        else
+            verb = insertUpdateChoice + "ed";
+
         SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples inserted or updated in: " + _sampleset.getName());
+                getContainer().getId(), "Samples " + verb + " in: " + _sampleset.getName());
         event.setSourceLsid(_sampleset.getLSID());
         event.setSampleSetName(_sampleset.getName());
-        event.setInsertUpdateChoice("insert");
-        AuditLogService.get().addEvent(getUser(), event);
-    }
-    void auditUpdate(int count)
-    {
-        if (count==0)
-            return;
-        SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples inserted or updated in: " + _sampleset.getName());
-        event.setSourceLsid(_sampleset.getLSID());
-        event.setSampleSetName(_sampleset.getName());
-        event.setInsertUpdateChoice("update");
-        AuditLogService.get().addEvent(getUser(), event);
-    }
-    void auditMerge(int count)
-    {
-        if (count==0)
-            return;
-        SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples inserted or updated in: " + _sampleset.getName());
-        event.setSourceLsid(_sampleset.getLSID());
-        event.setSampleSetName(_sampleset.getName());
-        event.setInsertUpdateChoice("merge");
-        AuditLogService.get().addEvent(getUser(), event);
-    }
-    void auditDelete(int count)
-    {
-        if (count==0)
-            return;
-        SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples deleted in: " + _sampleset.getName());
-        event.setSourceLsid(_sampleset.getLSID());
-        event.setSampleSetName(_sampleset.getName());
-        event.setInsertUpdateChoice("delete");
+        event.setInsertUpdateChoice(insertUpdateChoice);
         AuditLogService.get().addEvent(getUser(), event);
     }
 }

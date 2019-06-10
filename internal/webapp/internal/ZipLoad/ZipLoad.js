@@ -121,6 +121,43 @@ LABKEY.internal.ZipLoad = new function () {
         return this.zipProgressWindow;
     }
 
+    function getZipError() {
+        if(!this.zipError) {
+            this.zipError = Ext4.create('Ext.form.Label', {
+                text: '',
+                style: 'display: inline-block ;text-align: center',
+                width: 500,
+                margin: 4,
+                border: false
+            });
+        }
+        return this.zipError;
+    }
+
+    function getZipErrorWindow() {
+        if(!this.zipErrorWindow) {
+            this.zipErrorWindow = Ext4.create('Ext.window.Window', {
+                title: 'Zip Error',
+                layout: 'vbox',
+                bodyPadding: 5,
+                border: false,
+                closable: false,
+                items: [getZipError()],
+                autoShow : true,
+                buttons : [{
+                    xtype: 'button',
+                    align: 'right',
+                    text: 'OK',
+                    scope: this,
+                    handler: function(){
+                        this.zipErrorWindow.hide();
+                    }
+                }]
+            });
+        }
+        return this.zipErrorWindow;
+    }
+
     function showZipProgressWindow() {
         getZipProgressWindow().show();
     }
@@ -251,13 +288,14 @@ LABKEY.internal.ZipLoad = new function () {
         totalDone = 0;
         prevDone = 0;
 
-        for(var s=0; s<files.length; s++) {
-            totalSize += files[s].file.size;
+        if(files) {
+            for (var s = 0; s < files.length; s++) {
+                totalSize += files[s].file.size;
+            }
+            showZipProgressWindow();
+            getStatusText().update("Zipping directory " + files[0].dir);
+            zipFiles(files);
         }
-
-        showZipProgressWindow();
-        getStatusText().update("Zipping directory " + files[0].dir);
-        zipFiles(files);
     }
 
     function sepZipFilesPerDirectory() {
@@ -334,7 +372,11 @@ LABKEY.internal.ZipLoad = new function () {
             }
 
             if (sum > limit) { //create parts
-                createPartialZipDirs(holder, limit);
+                getZipError().update('The directory that you have selected to upload, ' + parentItemName +', exceeds 4GB in size.'+ '\\n' + 'Please manually create a Zip file for it, and upload that file instead.');
+                getZipErrorWindow().show();
+                filesToUpload = [];
+                zipFail();
+                // createPartialZipDirs(holder, limit);
             }
             else {
                 filesToZipPerDirectoryParts.push(holder);
