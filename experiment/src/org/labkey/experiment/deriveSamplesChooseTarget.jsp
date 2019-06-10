@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -24,7 +25,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
-<%@ taglib prefix="labke" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<ExperimentController.DeriveSamplesChooseTargetBean> me = (JspView<ExperimentController.DeriveSamplesChooseTargetBean>) HttpView.currentView();
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
@@ -38,6 +38,9 @@
 %>
 
 <labkey:form action="<%=h(buildURL(ExperimentController.DeriveSamplesAction.class))%>" method="get">
+    <% if (bean.getDataRegionSelectionKey() != null) { %>
+    <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>"/>
+    <% } %>
 
     <table>
         <tr>
@@ -84,7 +87,7 @@
         <tr>
             <td class="labkey-form-label">Target sample set:</td>
             <td colspan="2">
-                <labkey:select name="tagetSampleSetId">
+                <labkey:select name="targetSampleSetId">
                     <labkey:options value="<%=bean.getTargetSampleSetId()%>" map="<%=sampleSetOptions%>"/>
                 </labkey:select>
             </td>

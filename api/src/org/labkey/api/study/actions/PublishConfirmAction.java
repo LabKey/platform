@@ -313,11 +313,10 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         QuerySettings settings = schema.getSettings(context, AssayProtocolSchema.DATA_TABLE_NAME, AssayProtocolSchema.DATA_TABLE_NAME);
         settings.setAllowChooseView(false);
         settings.setSelectionKey(publishConfirmForm.getDataRegionSelectionKey());
+        if (publishConfirmForm.getContainerFilterName() != null)
+            settings.setContainerFilterName(publishConfirmForm.getContainerFilterName());
         PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
                 _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
-
-        if (publishConfirmForm.getContainerFilterName() != null)
-            queryView.getSettings().setContainerFilterName(publishConfirmForm.getContainerFilterName());
 
         List<ActionButton> buttons = new ArrayList<>();
         URLHelper returnURL = publishConfirmForm.getReturnURLHelper();

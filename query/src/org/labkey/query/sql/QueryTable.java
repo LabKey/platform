@@ -419,7 +419,7 @@ public class QueryTable extends QueryRelation
         {
             assert ref.count() > 0;
             assert null != _generateSelectSQL : "Select SQL has not been generated";
-            if (_generateSelectSQL)
+            if (null != _generateSelectSQL && _generateSelectSQL.booleanValue())
                 return super.getValueSql();
             else
                 return _col.getValueSql(_innerAlias);

@@ -192,7 +192,7 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass", () ->
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass/" + dc.getRowId() + "/" + dc.getName(), () ->
                         {
                             DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
                             var ret = dcus.createTable(dc, getLookupContainerFilter());
@@ -223,7 +223,7 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Runs", () ->
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Runs/" + protocol.getRowId() + "/" + protocol.getName(), () ->
                         {
                             if (provider != null)
                             {
