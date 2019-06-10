@@ -595,7 +595,8 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     public void index(SearchService.IndexTask task)
     {
-        // Big hack to prevent study specimens from being indexed as part of sample sets -- REVIEW: not sure if this applies
+        // Big hack to prevent study specimens from being indexed as part of sample sets
+        // Check needed on restart, as all documents are enumerated.
         if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
         {
             return;
