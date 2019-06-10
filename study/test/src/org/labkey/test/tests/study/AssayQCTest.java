@@ -47,15 +47,13 @@ public class AssayQCTest extends BaseWebDriverTest
         // the pattern here will be to leave creation of assays to tests; they will do so in subfolders of this project
     }
 
-    private AssayDesignerPage generateAssay(String subfolderName)
+    private AssayDesignerPage generateAssay(String subfolderName, String assayName)
     {
         _containerHelper.createSubfolder(getProjectName(), subfolderName);
         navigateToFolder(getProjectName(), subfolderName);
         goToManageAssays();
-        AssayDesignerPage designerPage = _assayHelper.createAssayAndEdit("General", subfolderName + "_assay");
+        AssayDesignerPage designerPage = _assayHelper.createAssayAndEdit("General", assayName);
 
-
-        log("foo");
         return designerPage;
     }
 
@@ -69,7 +67,7 @@ public class AssayQCTest extends BaseWebDriverTest
     public void testQCStateVisibility() throws Exception
     {
         String assayName = "QCStateVisibilityTest_assay";
-        generateAssay("QCStateVisibilityTest")
+        generateAssay("QCStateVisibilityTest", assayName)
                 .addRunField("Color", "Color", FieldDefinition.ColumnType.String)
                 .addRunField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
                 .enableQCStates(true)
@@ -134,6 +132,7 @@ public class AssayQCTest extends BaseWebDriverTest
         customView.clickViewGrid();
 
         // now set each row to a different QC state
+        runsPage = new AssayRunsPage(getDriver());
         runsPage = runsPage.setRowQcStatus(0, "Seems shady", "Not so sure about this one");
         runsPage = runsPage.setRowQcStatus(1, "Totally legit", "Yeah, I trust this");
         runsPage = runsPage.setRowQcStatus(2, "WTF", "No way is this legit");
