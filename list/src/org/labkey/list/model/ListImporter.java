@@ -284,10 +284,13 @@ public class ListImporter
     {
         XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
 
+        //create list tables in the db as defined in lists.xml
         if (listXml != null)
             createDefinedLists(listsDir, listXml, c, user, errors, log);
 
         Map<String, String> fileTypeMap = new HashMap<>();
+
+        //get corresponding data file name and extension
         for (String f : listsDir.list())
         {
             if (f.endsWith(".tsv") || f.endsWith(".xlsx") || f.endsWith(".xls"))
@@ -302,6 +305,15 @@ public class ListImporter
         {
             ListDefinition def = lists.get(listName);
             String legalName = FileUtil.makeLegalName(listName);
+
+            //Issue 37324: Skip processing if a data file is missing during list archive import
+            //Case when a list exists in the db, but its corresponding data file is not present
+            if (!fileTypeMap.containsKey(legalName))
+            {
+                log.info("Data file was not found for list '" + legalName + "'. Nothing to process for this list.");
+                continue;
+            }
+
             String fileName = legalName + "." + fileTypeMap.remove(legalName);
 
             if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
