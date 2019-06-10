@@ -1715,7 +1715,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         for (ImportTemplateType t : templates)
         {
             StringExpression url = StringExpressionFactory.createURL(t.getUrl());
-            list.add(Pair.of(t.getLabel(), url));
+            list.add(Pair.of(t.getLabel() == null ? "Download Template" : t.getLabel(), url));
         }
 
 

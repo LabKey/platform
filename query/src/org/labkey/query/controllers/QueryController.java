@@ -1569,6 +1569,7 @@ public class QueryController extends SpringActionController
         boolean insertColumnsOnly = true;
         String filenamePrefix;
         FieldKey[] includeColumn;
+        String fileType;
 
         public TemplateForm()
         {
@@ -1612,6 +1613,16 @@ public class QueryController extends SpringActionController
         {
             this.filenamePrefix = prefix;
         }
+
+        public String getFileType()
+        {
+            return fileType;
+        }
+
+        public void setFileType(String fileType)
+        {
+            this.fileType = fileType;
+        }
     }
 
 
@@ -1649,7 +1660,16 @@ public class QueryController extends SpringActionController
         void _export(TemplateForm form, QueryView view) throws Exception
         {
             boolean respectView = form.getViewName() != null;
-            view.exportToExcelTemplate(getViewContext().getResponse(), form.getHeaderType(), form.insertColumnsOnly, respectView, form.getIncludeColumns(), form.getFilenamePrefix());
+            ExcelWriter.ExcelDocumentType fileType = ExcelWriter.ExcelDocumentType.xlsx;
+            if (form.getFileType() != null)
+            {
+                try
+                {
+                    fileType = ExcelWriter.ExcelDocumentType.valueOf(form.getFileType().toLowerCase());
+                }
+                catch (IllegalArgumentException ignored) {}
+            }
+            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getFilenamePrefix());
         }
     }
 
