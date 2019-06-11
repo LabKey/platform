@@ -122,7 +122,7 @@
         %>
         <tr>
             <td style="padding-top: 10px;">
-                <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : "" %>
+                <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : HtmlString.EMPTY_STRING %>
                 <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
             </td>
         </tr>
