@@ -77,6 +77,7 @@ import org.labkey.experiment.api.ExpDataClassType;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.LineagePerfTest;
@@ -133,7 +134,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 19.11;
+        return 19.12;
     }
 
     @Nullable
@@ -481,6 +482,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 //            OntologyManager.indexConcepts(task);
 
         Runnable r = () -> {
+            for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
+            {
+                sampleSet.index(task);
+            }
+
             for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
             {
                 material.index(task);
@@ -497,6 +503,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public void indexDeleted()
     {
+        // Clear the last indexed time on all material sources
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterialSource() +
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+
         // Clear the last indexed time on all materials
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");

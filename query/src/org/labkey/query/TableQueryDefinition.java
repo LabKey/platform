@@ -78,6 +78,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
+    @Override
     public ActionURL urlFor(QueryAction action, Container container)
     {
         ActionURL url = null;
@@ -109,51 +110,49 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
+    @Override
     public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
     {
-        ActionURL url = null;
         List<QueryException> errors = new ArrayList<>();
         TableInfo table = getTable(errors, true);
         if (table != null)
         {
-            switch (action)
+            if (action == QueryAction.detailsQueryRow)
             {
-                case detailsQueryRow:
-                    Map<FieldKey, ColumnInfo> selectCols = QueryService.get().getColumns(table, Collections.emptySet(), table.getColumns());
-                    StringExpression expr = table.getDetailsURL(selectCols.keySet(), container);
-                    // See if there's a details URL available with the set of columns that we can offer, and
-                    // we have enough PK values to uniquely identify the row
-                    if (expr != null && expr != AbstractTableInfo.LINK_DISABLER && pks.keySet().containsAll(table.getPkColumnNames()))
+                Map<FieldKey, ColumnInfo> selectCols = QueryService.get().getColumns(table, Collections.emptySet(), table.getColumns());
+                StringExpression expr = table.getDetailsURL(selectCols.keySet(), container);
+                // See if there's a details URL available with the set of columns that we can offer, and
+                // we have enough PK values to uniquely identify the row
+                if (expr != null && expr != AbstractTableInfo.LINK_DISABLER && pks.keySet().containsAll(table.getPkColumnNames()))
+                {
+                    SimpleFilter filter = new SimpleFilter();
+                    for (Map.Entry<String, Object> pk : pks.entrySet())
                     {
-                        SimpleFilter filter = new SimpleFilter();
-                        for (Map.Entry<String, Object> pk : pks.entrySet())
+                        filter.addCondition(pk.getKey(), pk.getValue());
+                    }
+                    try (Results rs = new TableSelector(table, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResults())
+                    {
+                        if (rs.next())
                         {
-                            filter.addCondition(pk.getKey(), pk.getValue());
+                            RenderContext ctx = new RenderContext(ViewContext.getMockViewContext(getUser(), getContainer(), null, false));
+                            ctx.setResults(rs);
+                            ctx.setRow(rs.getRowMap());
+                            return new ActionURL(expr.eval(ctx));
                         }
-                        try (Results rs = new TableSelector(table, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResults())
+                        else
                         {
-                            if (rs.next())
-                            {
-                                RenderContext ctx = new RenderContext(ViewContext.getMockViewContext(getUser(), getContainer(), null, false));
-                                ctx.setResults(rs);
-                                ctx.setRow(rs.getRowMap());
-                                return new ActionURL(expr.eval(ctx));
-                            }
-                            else
-                            {
-                                return null;
-                            }
-                        }
-                        catch (SQLException e)
-                        {
-                            throw new RuntimeSQLException(e);
+                            return null;
                         }
                     }
-                    break;
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeSQLException(e);
+                    }
+                }
             }
         }
 
-        return url != null ? url : super.urlFor(action, container, pks);
+        return super.urlFor(action, container, pks);
     }
 
 
@@ -202,6 +201,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
+    @Override
     public String getSql()
     {
         if (_sql != null)
@@ -216,12 +216,14 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
+    @Override
     public void setSql(String sql)
     {
         // Can't change the SQL
     }
 
 
+    @Override
     public boolean isTableQueryDefinition()
     {
         return true;
@@ -235,9 +237,10 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
+    @Override
     public boolean isMetadataEditable()
     {
-        TableInfo tableInfo = getTable(new ArrayList<QueryException>(), true);
+        TableInfo tableInfo = getTable(new ArrayList<>(), true);
         // Might have been deleted out from under us
         return tableInfo != null && tableInfo.isMetadataOverrideable();
     }

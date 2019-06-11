@@ -3380,6 +3380,7 @@ public class ExperimentController extends SpringActionController
         DataRegion dr = new DataRegion();
         dr.setSettings(settings);
         dr.addColumns(tableInfo.getUserEditableColumns());
+        dr.removeColumns("lastindexed");
         dr.getDisplayColumn(0).setVisible(false);
 
         dr.getDisplayColumn("idcol1").setVisible(false);
