@@ -2,7 +2,6 @@ package org.labkey.test.tests.study;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
@@ -201,7 +200,7 @@ public class AssayQCTest extends BaseWebDriverTest
      * @throws Exception
      */
     @Test
-    @Ignore  // un-mark as 'ignore' when issue is resolved
+   // @Ignore  // un-mark as 'ignore' when issue is resolved
     public void testQCStateRoundTrip() throws Exception
     {
         String importDestProjectName = "AssayQCTest_exportDestination";
@@ -303,9 +302,9 @@ public class AssayQCTest extends BaseWebDriverTest
         // now export the assay to a zip archive
         goToFolderManagement()
                 .goToExportTab();    // todo: make a FolderExportPage  and implement
-        new ExportFolderPage(getDriver())
-                .selectExperimentsAndRuns(true);
-        File exportArchive = clickAndWaitForDownload(Locator.linkWithSpan("Export"));
+        File exportArchive = new ExportFolderPage(getDriver())
+                .selectExperimentsAndRuns(true)
+                .exportToBrowserAsZipFile();
 
         // navigate into the destination folder and import there
         ImportFolderPage.beginAt(this, importDestProjectName +"/"+ destSubfolder)
