@@ -2,12 +2,13 @@ package org.labkey.test.tests.study;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.InDevelopment;
+import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.pages.AssayDesignerPage;
 import org.labkey.test.pages.admin.ExportFolderPage;
@@ -29,7 +30,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Category({InDevelopment.class})
+@Category({DailyC.class})
 public class AssayQCTest extends BaseWebDriverTest
 {
     @Override
@@ -96,7 +97,7 @@ public class AssayQCTest extends BaseWebDriverTest
 
         TestDataGenerator dgen1 = new TestDataGenerator(assayLookup)
                 .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "Jeff", "Date", "11/11/2018", "Color", "Green", "Concentration", 12.5))
+                .addCustomRow(Map.of("ParticipantID", "Mike", "Date", "11/11/2018", "Color", "Green", "Concentration", 12.5))
                 .addCustomRow(Map.of("ParticipantID", "Jim", "Date", "11/12/2018", "Color", "Red", "Concentration", 14.5))
                 .addCustomRow(Map.of("ParticipantID", "Billy", "Date", "11/13/2018", "Color", "Yellow", "Concentration", 17.5))
                 .addCustomRow(Map.of("ParticipantID", "Michael", "Date", "11/14/2018", "Color", "Orange", "Concentration", 11.5));
@@ -105,7 +106,7 @@ public class AssayQCTest extends BaseWebDriverTest
         TestDataGenerator dgen2 = new TestDataGenerator(assayLookup)
                 .withColumnSet(resultsFieldset)
                 .addCustomRow(Map.of("ParticipantID", "Harry", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "William", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
+                .addCustomRow(Map.of("ParticipantID", "Hugh", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
                 .addCustomRow(Map.of("ParticipantID", "Jenny", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
                 .addCustomRow(Map.of("ParticipantID", "Hermione", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
         String pasteData2 = dgen2.writeTsvContents();
@@ -113,7 +114,7 @@ public class AssayQCTest extends BaseWebDriverTest
         TestDataGenerator dgen3 = new TestDataGenerator(assayLookup)
                 .withColumnSet(resultsFieldset)
                 .addCustomRow(Map.of("ParticipantID", "George", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "Arthur", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
+                .addCustomRow(Map.of("ParticipantID", "Arthur", "Date", "10/12/2018", "Color", "Red", "Concentration", 19.5))
                 .addCustomRow(Map.of("ParticipantID", "Colin", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
                 .addCustomRow(Map.of("ParticipantID", "Ronald", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
         String pasteData3 = dgen3.writeTsvContents();
@@ -195,7 +196,12 @@ public class AssayQCTest extends BaseWebDriverTest
         _containerHelper.deleteFolder(getProjectName(), "QCStateVisibilityTest");
     }
 
+    /**
+     * coverage for https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=37704
+     * @throws Exception
+     */
     @Test
+    @Ignore  // un-mark as 'ignore' when issue is resolved
     public void testQCStateRoundTrip() throws Exception
     {
         String importDestProjectName = "AssayQCTest_exportDestination";
