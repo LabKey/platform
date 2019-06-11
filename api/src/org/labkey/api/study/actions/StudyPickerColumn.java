@@ -58,7 +58,6 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         {
             baseColumnInfo.setLocked(false);
         }
-        baseColumnInfo.setInputType(col.getInputType());
     }
 
     protected Object calculateValue(RenderContext ctx)
