@@ -22,6 +22,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheListener;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.test.TestWhen;
@@ -365,9 +366,13 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             selectInto.append(selectQuery);
             selectInto.append("\n) _sql_");
             new SqlExecutor(_scope).execute(selectInto);
-            for (String index : _indexes)
+
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                new SqlExecutor(_scope).execute(StringUtils.replace(index,"${NAME}",name));
+                for (String index : _indexes)
+                {
+                    new SqlExecutor(_scope).execute(StringUtils.replace(index, "${NAME}", name));
+                }
             }
 
             synchronized (this)

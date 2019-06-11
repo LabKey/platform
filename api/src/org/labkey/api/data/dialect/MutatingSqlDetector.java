@@ -25,7 +25,7 @@ public class MutatingSqlDetector
         SKIP_INITIAL_WHITESPACE
         {
             @Override
-            State getNextState(char c, StringBuilder firstWord)
+            State getNextState(char c, StringBuilder firstWord, String sql)
             {
                 if (Character.isWhitespace(c))
                     return this;
@@ -37,7 +37,7 @@ public class MutatingSqlDetector
         READ_KEYWORD
         {
             @Override
-            State getNextState(char c, StringBuilder firstWord)
+            State getNextState(char c, StringBuilder firstWord, String sql)
             {
                 if (Character.isWhitespace(c) || ';' == c)
                 {
@@ -46,7 +46,7 @@ public class MutatingSqlDetector
                     Boolean mutatingWord = WORD_MUTATING_MAP.get(word);
 
                     if (null == mutatingWord)
-                        LOG.warn("Unrecognized keyword: " + word);
+                        LOG.warn("Unrecognized keyword: " + word + " for SQL: " + sql);
 
                     if (Boolean.TRUE == mutatingWord)
                         return DONE;
@@ -63,7 +63,7 @@ public class MutatingSqlDetector
         SKIP_TO_NEXT_STATEMENT
         {
             @Override
-            State getNextState(char c, StringBuilder firstWord)
+            State getNextState(char c, StringBuilder firstWord, String sql)
             {
                 return ';' == c ? SKIP_INITIAL_WHITESPACE : this;
             }
@@ -71,13 +71,13 @@ public class MutatingSqlDetector
         DONE
         {
             @Override
-            State getNextState(char c, StringBuilder firstWord)
+            State getNextState(char c, StringBuilder firstWord, String sql)
             {
                 throw new IllegalStateException("Shouldn't be calling getNextState()");
             }
         };
 
-        abstract State getNextState(char c, StringBuilder firstWord);
+        abstract State getNextState(char c, StringBuilder firstWord, String sql);
     }
 
     private static final Map<String, Boolean> WORD_MUTATING_MAP = new CaseInsensitiveHashMap<>();
@@ -103,6 +103,12 @@ public class MutatingSqlDetector
             "WITH", false
         ));
 
+        // Needed for PostgreSQL
+        WORD_MUTATING_MAP.putAll(Map.of(
+            "ANALYZE", true,   // Typically executed after UPDATE, CREATE INDEX, et al
+            "{call", true      // Execute a stored procedure, which is likely to be mutating
+        ));
+
         // Needed for SQL Server
         WORD_MUTATING_MAP.putAll(Map.of(
             "DECLARE", false,
@@ -123,7 +129,7 @@ public class MutatingSqlDetector
             @Override
             public boolean character(char c, int index)
             {
-                _state = _state.getNextState(c, _firstWord);
+                _state = _state.getNextState(c, _firstWord, _sql);
                 return State.DONE != _state;
             }
         });
