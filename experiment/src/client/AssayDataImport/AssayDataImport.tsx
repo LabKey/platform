@@ -406,13 +406,13 @@ export class App extends React.Component<Props, State> {
     }
 
     renderProgress() {
+        const { file } = this.state;
+
         return (
             <Progress
                 title={'Uploading file and saving assay run...'}
                 toggle={this.state.isSubmitting}
-                // delay={0}
-                // estimate={20} // TODO: do we know the file size at this point? if so can we use that for an estimate?
-                // updateIncrement={5}
+                estimate={file ? file.size * .2 : undefined}
                 modal={true}
             />
         )
