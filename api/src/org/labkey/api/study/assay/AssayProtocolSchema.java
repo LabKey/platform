@@ -192,7 +192,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         List<QueryDefinition> providerQueryDefs = getFileBasedAssayProviderScopedQueries();
         for (QueryDefinition providerQueryDef : providerQueryDefs)
         {
-            if (queryName.equals(providerQueryDef.getName()))
+            if (queryName.equalsIgnoreCase(providerQueryDef.getName()))
                 return providerQueryDef;
         }
 

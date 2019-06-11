@@ -35,6 +35,7 @@ import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.ChartHelper;
@@ -637,15 +638,15 @@ public class StudyTest extends StudyBaseTest
             // configure QC state management before importing duplicate data
             clickFolder(getFolderName());
             clickAndWait(Locator.linkWithText("Manage Study"));
-            clickAndWait(Locator.linkWithText("Manage Dataset QC States"));
-            setFormElement(Locator.name("newLabel"), "unknown QC");
-            setFormElement(Locator.name("newDescription"), "Unknown data is neither clean nor dirty.");
-            click(Locator.checkboxById("dirty_public"));
-            click(Locator.checkboxByName("newPublicData"));
-            clickButton("Save");
-            selectOptionByText(Locator.name("defaultDirectEntryQCState"), "unknown QC");
-            selectOptionByText(Locator.name("showPrivateDataByDefault"), "Public data");
-            clickButton("Save");
+            ManageStudyPage studyPage = new ManageStudyPage(getDriver());
+            studyPage.manageDatasetQCStates()
+                    .addStateRow("unknown QC", "Unknown data is neither clean nor dirty.", false)
+                    .setStatePublic("dirty_public", true)
+                    .clickSave()                    // have to save the form here; default entry qc state needs a page cycle to be selectable below
+                    .manageDatasetQCStates()
+                    .setDefaultDirectEntryQCState("unknown QC")
+                    .setDefaultVisibility("Public data")
+                    .clickSave();
 
             // return to dataset import page
             clickFolder(getFolderName());

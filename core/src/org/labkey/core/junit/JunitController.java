@@ -44,6 +44,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
@@ -58,12 +59,15 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -274,30 +278,34 @@ public class JunitController extends SpringActionController
 
         private List<Class> getTestClasses(TestForm form)
         {
-            Map<String, List<Class>> allTestClasses = JunitManager.getTestCases();
-
             String module = form.getModule();
 
             if (null != module)
-                return JunitManager.getTestCases().get(module);
-
-            List<Class> testClasses = new LinkedList<>();
-            String testCase = form.getTestCase();
-
-            if (null == testCase || 0 != testCase.length())
             {
-                for (String m : allTestClasses.keySet())
+                List<Class> moduleTests = JunitManager.getTestCases().get(module);
+                if (moduleTests == null || moduleTests.isEmpty())
                 {
-                    for (Class clazz : allTestClasses.get(m))
-                    {
-                        // include test
-                        if (null == testCase || testCase.equals(clazz.getName()))
-                            testClasses.add(clazz);
-                    }
+                    throw new NotFoundException("No tests for module: " + module);
                 }
+                return moduleTests;
             }
 
-            return testClasses;
+            Set<Class> allTestClasses = new LinkedHashSet<>();
+            JunitManager.getTestCases()
+                    .values()
+                    .forEach(moduleTests -> allTestClasses.addAll(moduleTests));
+
+            final String testCase = form.getTestCase();
+            if (!StringUtils.isBlank(testCase))
+            {
+                Class specifiedTest = allTestClasses.parallelStream()
+                        .filter(clazz -> testCase.equals(clazz.getName()))
+                        .findAny()
+                        .orElseThrow(() -> new NotFoundException("No such test: " + testCase));
+                return Collections.singletonList(specifiedTest);
+            }
+
+            return List.copyOf(allTestClasses);
         }
 
         public NavTree appendNavTrail(NavTree root)

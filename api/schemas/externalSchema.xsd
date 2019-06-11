@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             xmlns:esd="http://labkey.org/data/xml/externalSchema"
-            xmlns:qd="http://query.labkey.org/design"
-            xmlns:cv="http://labkey.org/data/xml/queryCustomView"
             xmlns:tableinfo="http://labkey.org/data/xml"
             targetNamespace="http://labkey.org/data/xml/externalSchema"
-        elementFormDefault="qualified" attributeFormDefault="unqualified">
+        elementFormDefault="qualified">
 
     <xsd:import namespace="http://labkey.org/data/xml" schemaLocation="tableInfo.xsd"/>
-    <xsd:import namespace="http://query.labkey.org/design" schemaLocation="queryDesign.xsd"/>
     <xsd:import namespace="http://labkey.org/data/xml/queryCustomView" schemaLocation="queryCustomView.xsd"/>
 
     <xsd:element name="externalSchema" type="esd:externalSchemaType"/>
@@ -18,10 +15,10 @@
 
     <xsd:complexType name="templateSchemaType">
         <xsd:all>
-            <xsd:element name="tables" minOccurs="0" maxOccurs="1">
+            <xsd:element name="tables" minOccurs="0">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="tableName" minOccurs="1" maxOccurs="unbounded" type="xsd:string" />
+                        <xsd:element name="tableName" maxOccurs="unbounded" type="xsd:string" />
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
