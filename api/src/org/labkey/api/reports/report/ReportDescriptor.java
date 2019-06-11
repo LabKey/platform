@@ -40,6 +40,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -95,7 +96,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
     // serialize these twice
     protected Map<String, Object> _mapReportProps = new HashMap<>();
 
-    public enum Prop implements ReportProperty
+    public enum Prop implements ReportProperty, EnumHasHtmlString<Prop>
     {
         descriptorType,
         reportId,

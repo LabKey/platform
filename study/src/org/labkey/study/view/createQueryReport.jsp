@@ -97,12 +97,12 @@
 </script>
 
 <labkey:form action="<%=new ActionURL(ReportsController.SaveReportAction.class, container)%>" method="POST">
-<input type="hidden" name="<%=h(ReportDescriptor.Prop.reportType)%>" value="<%=h(StudyQueryReport.TYPE)%>">
+<input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyQueryReport.TYPE)%>">
 <input type="hidden" id="redirectToReport" name="redirectToReport" value="true">
 <input type="hidden" id="redirectToDataset" name="redirectToDataset" value="-1">
 <input type="hidden" id="showWithDataset" name="showWithDataset" value="0">
-<input type="hidden" name="<%=h(ActionURL.Param.returnUrl.name())%>" value="<%=h(bean.getSrcURL().getLocalURIString())%>">
-<input type="hidden" id="viewName" name="<%=h(QueryParam.viewName.toString())%>" value="">
+<input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%=h(bean.getSrcURL().getLocalURIString())%>">
+<input type="hidden" id="viewName" name="<%=QueryParam.viewName%>" value="">
 <input type="hidden" name="dataRegionName" value="<%=h(DatasetQueryView.DATAREGION)%>">
 <table>
     <tr>

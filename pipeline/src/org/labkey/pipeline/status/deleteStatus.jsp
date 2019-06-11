@@ -187,7 +187,7 @@
 <% } %>
 
 <% if (successUrl != null) { %>
-    <input type="hidden" name="<%=h(ActionURL.Param.successUrl)%>" value="<%= h(successUrl) %>"/>
+    <input type="hidden" name="<%=ActionURL.Param.successUrl%>" value="<%= h(successUrl) %>"/>
 <% } %>
 
 <%= button("Confirm Delete").submit(true) %>

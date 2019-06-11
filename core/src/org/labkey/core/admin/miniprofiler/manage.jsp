@@ -76,7 +76,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
             <td class="labkey-form-label"><label for="renderPosition">Render position<%=helpPopup("Render Position", "Specifies the corner in which to render the MiniProfiler widget")%></label></td>
             <td>
                 <select name="renderPosition" id="renderPosition">
-                    <labkey:options map="<%=renderOptions%>" value="<%=h(settings.getRenderPosition())%>"/>
+                    <labkey:options map="<%=renderOptions%>" value="<%=settings.getRenderPosition()%>"/>
                 </select>
             </td>
         </tr>
