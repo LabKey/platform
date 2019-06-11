@@ -290,7 +290,7 @@ public class CoreUpgradeCode implements UpgradeCode
         }
     }
 
-    private boolean encryptPassword(Integer rowId, String configuration)
+    private void encryptPassword(Integer rowId, String configuration)
     {
         if (rowId != null && configuration != null)
         {
@@ -316,15 +316,12 @@ public class CoreUpgradeCode implements UpgradeCode
                         user = User.getSearchUser();
 
                     Table.update(user, CoreSchema.getInstance().getTableInfoReportEngines(), PageFlowUtil.map("configuration", def.getConfiguration()), rowId);
-                    return true;
                 }
             }
             catch (IOException e)
             {
-                LOG.error("unable to encrypt saved remote R engine password", e);
-                throw new RuntimeException(e);
+                LOG.error("unable to encrypt saved remote R engine password for configuration: " + def.getName(), e);
             }
         }
-        return false;
     }
 }
