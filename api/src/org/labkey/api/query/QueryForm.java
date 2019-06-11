@@ -92,7 +92,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         {
             throw new IllegalStateException("Expected _queryView to be initialized in call to init()");
         }
-        if (_queryView.getTable() == null)
+        // Don't treat a query with errors as if it doesn't exist at all
+        if (_queryView.getTable() == null && _queryView.getParseErrors().isEmpty())
         {
             throw new NotFoundException("Query '" + getQueryName() + "' in schema '" + getSchemaName() + "' doesn't exist.");
         }
@@ -399,6 +400,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _customView = null;
         _queryView = null;
         _schema = null;
+        _querySettings = null;
     }
 
     public boolean canEdit()
