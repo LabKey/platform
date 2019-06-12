@@ -27,12 +27,12 @@ import org.labkey.api.util.PageFlowUtil;
  */
 public class AssayResultsWebPartFactory extends AssayBaseWebPartFactory
 {
-
     public AssayResultsWebPartFactory()
     {
         super("Assay Results");
     }
 
+    @Override
     public String getDescription()
     {
         return "This web part displays a list of results for a specific assay.";

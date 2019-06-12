@@ -15,8 +15,6 @@
  */
 package org.labkey.api.data.statistics;
 
-import org.labkey.api.assay.dilution.DilutionCurve;
-
 import java.util.Map;
 
 /**

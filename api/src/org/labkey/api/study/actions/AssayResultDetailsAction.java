@@ -45,6 +45,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     private ExpData _data;
     private Object _dataRowId;
 
+    @Override
     public ModelAndView getView(DataDetailsForm form, BindException errors)
     {
         ViewContext context = getViewContext();
@@ -70,6 +71,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         return provider.createResultDetailsView(context, _protocol, _data, _dataRowId);
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         Container c = getContainer();

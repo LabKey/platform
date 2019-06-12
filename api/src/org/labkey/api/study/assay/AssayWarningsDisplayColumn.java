@@ -27,7 +27,6 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
  */
 public class AssayWarningsDisplayColumn extends DataColumn
 {
-
     public AssayWarningsDisplayColumn(AssayRunUploadForm form)
     {
         super(createColumnInfo());
@@ -39,6 +38,7 @@ public class AssayWarningsDisplayColumn extends DataColumn
         return new BaseColumnInfo("ignoreWarnings");
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
