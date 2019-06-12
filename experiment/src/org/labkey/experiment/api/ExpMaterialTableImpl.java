@@ -79,6 +79,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
+
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
     ExpSampleSetImpl _ss;
@@ -655,6 +657,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     // UpdatableTableInfo
     //
 
+
+    @Override
+    public @Nullable Integer getOwnerObjectId()
+    {
+        return OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Integer) null);
+    }
+
     @Nullable
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
@@ -673,8 +682,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo propertiesTable = _ss.getTinfo();
 
-        // TODO: move to ExpSampleSetImpl.save
-        int sampleSetObjectId = OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Integer) null);
+        int sampleSetObjectId = requireNonNull(getOwnerObjectId());
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), sampleSetObjectId)

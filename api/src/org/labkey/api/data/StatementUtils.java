@@ -540,12 +540,15 @@ public class StatementUtils
 
                 // In the update case, it's still possible that there isn't a row in exp.Object - there might have been
                 // no properties in the domain when the row was originally inserted
-                sqlfInsertObject.append("INSERT INTO exp.Object (container, objecturi) ");
+                sqlfInsertObject.append("INSERT INTO exp.Object (container, objecturi, ownerobjectid) ");
                 sqlfInsertObject.append("SELECT ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);
                 sqlfInsertObject.append(" AS Container,");
                 appendParameterOrVariable(sqlfInsertObject, objecturiParameter);
-                sqlfInsertObject.append(" AS ObjectURI WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
+                sqlfInsertObject.append(" AS ObjectURI, ");
+                Integer ownerObjectId = updatable.getOwnerObjectId();
+                sqlfInsertObject.append( null == ownerObjectId ? "NULL" : String.valueOf(ownerObjectId) ).append(" AS OwnerObjectId");
+                sqlfInsertObject.append(" WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
                 appendParameterOrVariable(sqlfInsertObject, containerParameter);
                 sqlfInsertObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
 

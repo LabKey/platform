@@ -68,6 +68,9 @@ public interface UpdateableTableInfo extends TableInfo
     @Nullable
     String getObjectURIColumnName();
 
+    @Nullable
+    default Integer getOwnerObjectId() { return null; }
+
     // name of column that contains exp.object.objectid
     @Nullable
     String getObjectIdColumnName();
