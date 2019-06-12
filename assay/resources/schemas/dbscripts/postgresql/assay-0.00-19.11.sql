@@ -13,29 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.assay.dilution;
 
-/**
- * Refactored out of class SampleInfo, which was no longer used other than this enum.
- *
- * Created by adam on 9/13/2016.
- */
-public enum SampleInfoMethod
-{
-    Concentration
-    {
-        public String getAbbreviation()
-        {
-            return "Conc.";
-        }
-    },
-    Dilution
-    {
-        public String getAbbreviation()
-        {
-            return "Dilution";
-        }
-    };
-
-    public abstract String getAbbreviation();
-}
+-- Create schema, tables, indexes, and constraints used for Assay module here
+-- All SQL VIEW definitions should be created in assay-create.sql and dropped in assay-drop.sql
+CREATE SCHEMA assay;
