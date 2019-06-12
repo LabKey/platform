@@ -1,3 +1,5 @@
+import org.labkey.gradle.util.BuildUtils
+
 // TODO move resources files into resources directory to avoid this overlap
 sourceSets {
     main {
@@ -8,3 +10,6 @@ sourceSets {
         }
     }
 }
+
+BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "assay"), depProjectConfig: "apiCompile")
+BuildUtils.addLabKeyDependency(project: project, config: "jspCompile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "assay"), depProjectConfig: "apiCompile")

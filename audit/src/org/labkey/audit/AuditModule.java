@@ -16,12 +16,9 @@
 
 package org.labkey.audit;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.view.WebPartFactory;
@@ -33,40 +30,45 @@ import java.util.Set;
 
 public class AuditModule extends DefaultModule
 {
-    private static final Logger _log = Logger.getLogger(AuditModule.class);
-
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     public String getName()
     {
         return "Audit";
     }
 
+    @Override
     public double getVersion()
     {
         return 19.10;
     }
 
+    @Override
     protected void init()
     {
         AuditLogService.registerProvider(AuditLogImpl.get());
         addController("audit", AuditController.class);
     }
 
+    @Override
     public TabDisplayMode getTabDisplayMode()
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         AuditQuerySchema.register(this);

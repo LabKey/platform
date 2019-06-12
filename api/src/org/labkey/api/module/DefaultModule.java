@@ -82,7 +82,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -168,12 +167,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
     }
 
+    @Override
     public int compareTo(@NotNull Module m)
     {
         //sort by name--core module will override to ensure first in sort
         return getName().compareToIgnoreCase(m.getName());
     }
 
+    @Override
     final public void initialize()
     {
         SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
@@ -245,6 +246,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     /** @return true if this module has SQL upgrade scripts that should be run as part of startup */
     public abstract boolean hasScripts();
 
+    @Override
     final public void startup(ModuleContext moduleContext)
     {
         Resource xml = getModuleResolver().lookup(Path.parse(XML_FILENAME));
@@ -306,18 +308,21 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    @Override
     public String getTabName(ViewContext context)
     {
         return getName();
     }
 
 
+    @Override
     public String getFormattedVersion()
     {
         return ModuleContext.formatVersion(getVersion());
     }
 
 
+    @Override
     public void beforeUpdate(ModuleContext moduleContext)
     {
         if (!moduleContext.isNewInstall())
@@ -327,6 +332,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     /**
      * Upgrade each schema in this module to the latest version.
      */
+    @Override
     public void versionUpdate(ModuleContext moduleContext) throws Exception
     {
         if (hasScripts())
@@ -349,6 +355,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
+    @Override
     public void afterUpdate(ModuleContext moduleContext)
     {
     }
@@ -756,6 +763,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    @Override
     public final Set<String> getModuleDependenciesAsSet()
     {
         return _moduleDependencies;
@@ -904,6 +912,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _buildOS = buildOS;
     }
 
+    @Override
     public final String getSourcePath()
     {
         return _sourcePath;
@@ -914,6 +923,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _sourcePath = sourcePath;
     }
 
+    @Override
     public final String getBuildPath()
     {
         return _buildPath;
@@ -992,6 +1002,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _manageVersion;
     }
 
+    @Override
     public final Map<String, String> getProperties()
     {
         Map<String, String> props = new LinkedHashMap<>();
@@ -1030,16 +1041,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
+    @Override
     public final File getExplodedPath()
     {
         return _explodedPath;
     }
 
+    @Override
     public final void setExplodedPath(File path)
     {
         _explodedPath = path.getAbsoluteFile();
     }
 
+    @Override
     public final Set<String> getSqlScripts(@NotNull DbSchema schema)
     {
         SqlDialect dialect = schema.getSqlDialect();
@@ -1060,6 +1074,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return fileNames;
     }
 
+    @Override
     public final String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
@@ -1202,11 +1217,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return getModuleResolver().lookup(path);
     }
 
+    @Override
     public final Resource getModuleResource(String path)
     {
         return getModuleResource(Path.parse(path));
     }
 
+    @Override
     public final InputStream getResourceStream(String path) throws IOException
     {
         Resource r = getModuleResource(path);
@@ -1222,6 +1239,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    @Override
     public @Nullable UpgradeCode getUpgradeCode()
     {
         return null;
@@ -1283,6 +1301,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
+    @Override
     public Controller getController(HttpServletRequest request, String name)
     {
         Class cls = _controllerNameToClass.get(name);
@@ -1305,6 +1324,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     }
 
+    @Override
     @NotNull
     public List<File> getStaticFileDirectories()
     {
@@ -1341,12 +1361,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 l.add(f);
         }
         return l;
-    }
-
-    @NotNull @Deprecated // Left for backward compatibility -- TODO: remove
-    public List<File> getResourceDirectories()
-    {
-        return Collections.singletonList(getResourceDirectory());
     }
 
     public File getResourceDirectory()
@@ -1436,6 +1450,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
+    // TODO: Delete
     private boolean isInternalJar(String jarFilename, Pattern moduleJarPattern)
     {
         jarFilename = jarFilename.toLowerCase();
@@ -1457,11 +1472,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return Collections.emptySet();
 
         return getDependenciesFromFile();
-    }
-
-    protected FilenameFilter getJarFilenameFilter()
-    {
-        return (dir, name) -> isRuntimeJar(name);
     }
 
     public static boolean isRuntimeJar(String name)
@@ -1563,6 +1573,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _moduleProperties.put(property.getName(), property);
     }
 
+    @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
         return new JSONObject(getDefaultPageContextJson(context.getContainer()));
@@ -1579,6 +1590,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
+    @Override
     @NotNull
     public LinkedHashSet<ClientDependency> getClientDependencies(Container c)
     {
@@ -1623,6 +1635,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private boolean _locked = false;
 
+    @Override
     public void lock()
     {
         checkLocked();

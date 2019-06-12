@@ -210,6 +210,4 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             keys.add(rowId);
         }
     }
-
-
 }
