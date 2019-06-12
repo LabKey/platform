@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -650,6 +651,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 {
                     vbox.addView(exclusionWarning);
                 }
+            }
+
+            AssayQCService qcService = AssayQCService.getProvider();
+            HttpView qcWarning = qcService.getAssayReImportWarningView(getContainer(), newRunForm.getReRun());
+            if (qcWarning != null)
+            {
+                vbox.addView(qcWarning);
             }
         }
 
