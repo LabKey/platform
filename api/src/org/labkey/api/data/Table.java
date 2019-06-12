@@ -43,6 +43,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
@@ -1437,7 +1438,7 @@ public class Table
                 bad++;
 //            if (enforceUnique && null != (prev=mapFK.put(column.getFieldKey(), column)) && prev != column)
 //                bad++;
-            if (enforceUnique && null != (prev = mapAlias.put(column.getAlias(), column)) && prev != column)
+            if (enforceUnique && !(column instanceof AliasedColumn) && null != (prev = mapAlias.put(column.getAlias(), column)) && prev != column)
             {
                 _log.warn(prefix + ": Column " + column + " from table: " + column.getParentTable() + " is mapped to the same alias (" + column.getAlias() + ") as column " + prev + " from table: " + prev.getParentTable());
                 bad++;

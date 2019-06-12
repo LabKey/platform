@@ -92,7 +92,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         {
             throw new IllegalStateException("Expected _queryView to be initialized in call to init()");
         }
-        if (_queryView.getTable() == null)
+        // Don't treat a query with errors as if it doesn't exist at all
+        if (_queryView.getTable() == null && _queryView.getParseErrors().isEmpty())
         {
             throw new NotFoundException("Query '" + getQueryName() + "' in schema '" + getSchemaName() + "' doesn't exist.");
         }
@@ -335,18 +336,11 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return getQuerySettings() != null ? getQuerySettings().getQueryName() : _queryName;
     }
 
-    @Nullable
+    /** @throws NotFoundException if the query can't be resolved */
+    @NotNull
     public QueryDefinition getQueryDef()
     {
-        try
-        {
-            QueryView view = getQueryView();
-            return view.getQueryDef();
-        }
-        catch (NotFoundException e)
-        {
-            return null;
-        }
+        return getQueryView().getQueryDef();
     }
 
     public @Nullable ActionURL urlFor(QueryAction action)
@@ -355,7 +349,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         UserSchema schema = getSchema();
         QueryDefinition def = getQueryDef();
 
-        if (null != schema && null != def)
+        if (null != schema)
         {
             ret = schema.urlFor(action, def);
             if (ret != null && _customView != null && _customView.getName() != null)
@@ -393,10 +387,6 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
             return null;
         String columnListName = getViewName();
         QueryDefinition querydef = getQueryDef();
-        if (null == querydef)
-        {
-            throw new NotFoundException();
-        }
         _customView = querydef.getCustomView(getUser(), getViewContext().getRequest(), columnListName);
         return _customView;
     }
@@ -410,11 +400,12 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _customView = null;
         _queryView = null;
         _schema = null;
+        _querySettings = null;
     }
 
     public boolean canEdit()
     {
-        return null != getQueryDef() && getQueryDef().canEdit(getUser());
+        return getQueryDef().canEdit(getUser());
     }
 
     public String getQueryViewActionURL()

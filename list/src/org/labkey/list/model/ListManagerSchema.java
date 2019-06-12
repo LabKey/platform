@@ -172,7 +172,7 @@ public class ListManagerSchema extends UserSchema
                     btnDelete.setIconCls("trash");
                     btnDelete.setActionType(ActionButton.Action.POST);
                     btnDelete.isLocked();
-                    btnDelete.setDisplayPermission(DeletePermission.class);
+                    btnDelete.setDisplayPermission(DesignListPermission.class);
                     btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
                     return btnDelete;
                 }

@@ -16,10 +16,11 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URLHelper;
 
-public enum QueryParam
+public enum QueryParam implements EnumHasHtmlString<QueryParam>
 {
     schemaName,
     queryName,

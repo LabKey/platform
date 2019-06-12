@@ -84,7 +84,7 @@
             <div><a class="labkey-text-link" target="_blank" href="<%=h(reportUrl)%>">Preview Link</a></div>
             <br/>
 
-            <input type="hidden" name="<%=h(ReportDescriptor.Prop.reportId)%>" value="<%=h(bean.getReportId())%>">
+            <input type="hidden" name="<%=ReportDescriptor.Prop.reportId%>" value="<%=h(bean.getReportId())%>">
             <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
             <%= button("Submit").submit(true) %>
             <%= button("Cancel").href(returnUrl) %>

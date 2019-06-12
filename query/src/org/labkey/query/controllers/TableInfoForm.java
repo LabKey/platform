@@ -39,6 +39,7 @@ public class TableInfoForm extends QueryForm
     {
     }
 
+    @Override
     protected @NotNull BindException doBindParameters(PropertyValues in)
     {
         BindException errors = super.doBindParameters(in);
@@ -107,7 +108,7 @@ public class TableInfoForm extends QueryForm
         List<String> parts;
         if (target == null)
         {
-            parts = Collections.EMPTY_LIST;
+            parts = Collections.emptyList();
         }
         else
         {

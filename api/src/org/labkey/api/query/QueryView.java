@@ -2794,7 +2794,8 @@ public class QueryView extends WebPartView<Object>
 
     final public TableInfo getTable()
     {
-        if (_table != null)
+        // We'll have parseErrors if we already tried and failed to create the table
+        if (_table != null || !_parseErrors.isEmpty())
             return _table;
         _table = createTable();
 

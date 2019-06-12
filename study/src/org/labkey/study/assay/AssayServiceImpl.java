@@ -19,6 +19,7 @@ package org.labkey.study.assay;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -89,21 +90,25 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         super(context);
     }
 
+    @Nullable
     public GWTProtocol getAssayDefinition(int rowId, boolean copy)
     {
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(rowId);
-        if (protocol == null)
-            return null;
-        else
+        if (protocol != null)
         {
             Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> assayInfo;
             AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
-            if (copy)
-                assayInfo = provider.getAssayTemplate(getUser(), getContainer(), protocol);
-            else
-                assayInfo = new Pair<>(protocol, provider.getDomains(protocol));
-            return getAssayTemplate(provider, assayInfo, copy);
+            if (provider != null)
+            {
+                if (copy)
+                    assayInfo = provider.getAssayTemplate(getUser(), getContainer(), protocol);
+                else
+                    assayInfo = new Pair<>(protocol, provider.getDomains(protocol));
+                return getAssayTemplate(provider, assayInfo, copy);
+            }
         }
+
+        return null;
     }
 
     public GWTProtocol getAssayTemplate(String providerName)

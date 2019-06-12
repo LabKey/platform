@@ -22,9 +22,13 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
@@ -33,6 +37,11 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -47,9 +56,11 @@ import org.labkey.api.util.TestContext;
 
 import java.io.StringBufferInputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
@@ -639,5 +650,67 @@ public class ExpSampleSetTestCase
 
     }
 
+    // Issue 37690: Customize Grid on Assay Results Data Won't Allow for Showing Input to Sample ID
+    @Test
+    public void testListAndSampleLineage() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup sample set
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+        props.add(new GWTPropertyDescriptor("age", "int"));
+        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                "MySamples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        TableInfo table = schema.getTable("MySamples");
+        QueryUpdateService svc = table.getUpdateService();
+
+        // insert a sample and a derived sample
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("name", "bob", "age", 50));
+        rows.add(CaseInsensitiveHashMap.of("name", "sally", "age", 10, "MaterialInputs/MySamples", "bob"));
+
+        BatchValidationException errors = new BatchValidationException();
+        List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        // setup list with lookup to sample set
+        ListDefinition listDef = ListService.get().createList(c, "MyList", ListDefinition.KeyType.AutoIncrementInteger);
+
+        Domain listDomain = listDef.getDomain();
+        listDomain.addProperty(new PropertyStorageSpec("Key", JdbcType.INTEGER));
+        DomainProperty sampleLookup = listDomain.addProperty(new PropertyStorageSpec("SampleId", JdbcType.VARCHAR));
+        sampleLookup.setLookup(new Lookup(null, "Samples", "MySamples"));
+        listDef.setKeyName("Key");
+        listDef.save(user);
+
+        // insert a a row with a lookup to the sample
+        UserSchema listSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("lists"));
+        QueryUpdateService listQus = listSchema.getTable("MyList").getUpdateService();
+
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of("SampleId", "sally"));
+
+        DataIteratorContext context = new DataIteratorContext();
+        context.setAllowImportLookupByAlternateKey(true);
+
+        errors = new BatchValidationException();
+        listQus.loadRows(user, c, new ListofMapsDataIterator.Builder(Set.of("SampleId"), rows), context, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        // query
+        TableSelector ts = QueryService.get().selector(listSchema,
+                "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
+        Collection<Map<String, Object>> results = ts.getMapCollection();
+        assertEquals(1, results.size());
+        Map<String, Object> row = results.iterator().next();
+        assertEquals("sally", row.get("SampleId"));
+        assertEquals("bob", row.get("MySampleParent"));
+    }
 
 }

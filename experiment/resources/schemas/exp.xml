@@ -16,7 +16,7 @@
  * limitations under the License.
 
  -->
-<tables xsi:schemaLocation="http://labkey.org/data/xml ..\..\..\..\..\schemas\tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<tables xsi:schemaLocation="http://labkey.org/data/xml ../../../api/schemas/tableInfo.xsd" xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <table tableName="Data" tableDbType="TABLE">
     <columns>
       <column columnName="RowId">
@@ -371,7 +371,12 @@
         <description>Contains the user that last modified this sample set</description>
       </column>
       <column columnName="Container">
-          <description>Contains the folder or project in which this sample set is stored</description>
+        <description>Contains the folder or project in which this sample set is stored</description>
+      </column>
+      <column columnName="LastIndexed">
+        <description>Contains the time this material source was last updated in the search index</description>
+        <isUserEditable>false</isUserEditable>
+        <isHidden>true</isHidden>
       </column>
     </columns>
     <description>Contains a row per sample set, a collection of samples.</description>
