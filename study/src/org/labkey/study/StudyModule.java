@@ -46,7 +46,6 @@ import org.labkey.api.exp.property.AssayBatchDomainKind;
 import org.labkey.api.exp.property.AssayResultDomainKind;
 import org.labkey.api.exp.property.AssayRunDomainKind;
 import org.labkey.api.exp.property.DefaultAssayDomainKind;
-import org.labkey.api.exp.property.PlateBasedAssaySampleSetDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -110,7 +109,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.TsvAssayProvider;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.assay.query.AssaySchemaImpl;
@@ -241,16 +239,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
     public static final WebPartFactory immunizationScheduleWebpartFactory = new ImmunizationScheduleWebpartFactory();
 
+    @Override
     public String getName()
     {
         return MODULE_NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.10;
     }
 
+    @Override
     protected void init()
     {
         addController("study", StudyController.class);
@@ -284,7 +285,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
         PropertyService.get().registerDomainKind(new AssayRunDomainKind());
         PropertyService.get().registerDomainKind(new AssayResultDomainKind());
-        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
@@ -307,7 +307,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         StudySerializationRegistry.setInstance(StudySerializationRegistryImpl.get());
 
-        ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
         
         // Register early so file-based assays are available to Java code at upgrade time
@@ -328,11 +327,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -348,6 +349,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 new SharedStudyController.StudyFilterWebPartFactory()));
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -589,6 +591,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             addLegacyNames("Reports", "Reports and Views");
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
@@ -726,7 +729,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Datasets", DatasetsWebPartView.class);
         }
 
-
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
@@ -746,6 +749,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Vaccine Study Protocols");
             addLegacyNames("Study Designs");
         }
+
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             return new StudyDesignsWebPart(portalCtx, true);
@@ -759,6 +764,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Study Protocol Summary");
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             JspView view = new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
@@ -811,12 +817,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return new StudyUpgradeCode();
     }
 
+    @Override
     public void enumerateDocuments(@NotNull SearchService.IndexTask task, @NotNull Container c, Date modifiedSince)
     {
         StudyManager._enumerateDocuments(task, c);
     }
     
-
+    @Override
     public void indexDeleted()
     {
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.Participant SET LastIndexed = NULL");

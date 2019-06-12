@@ -15,7 +15,6 @@
  */
 package org.labkey.core.statistics;
 
-import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;

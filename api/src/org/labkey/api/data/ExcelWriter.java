@@ -322,13 +322,13 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _rs = rs;
     }
 
-    @Deprecated /** Use setResults() */
+    @Deprecated // Use setResults()
     public void setResultSet(ResultSet rs)
     {
         _rs = new ResultsImpl(rs);
     }
 
-    @Deprecated /** Use setResults() */
+    @Deprecated // Use setResults()
     public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = new ResultsImpl(rs, fieldMap);
@@ -554,12 +554,9 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     // Create the spreadsheet and stream it to the browser.
     public void write(HttpServletResponse response, String filenamePrefix)
     {
-        ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType);
-
-        try
+        try (ServletOutputStream outputStream = getOutputStream(response, filenamePrefix, _docType))
         {
             _write(outputStream);
-            outputStream.close();
         }
         catch (IOException e)
         {
@@ -888,7 +885,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         if (null == rs)
             return;
 
-        try
+        try (rs)
         {
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             ctx.setResults(rs);
@@ -900,14 +897,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 renderGridRow(sheet, ctx, visibleColumns);
             }
         }
-        finally
-        {
-            rs.close();
-        }
     }
 
 
-    protected void renderGridRow(Sheet sheet, RenderContext ctx, List<ExcelColumn> columns) throws SQLException, MaxRowsExceededException
+    protected void renderGridRow(Sheet sheet, RenderContext ctx, List<ExcelColumn> columns) throws MaxRowsExceededException
     {
         int row = getCurrentRow();
         _totalDataRows++;
