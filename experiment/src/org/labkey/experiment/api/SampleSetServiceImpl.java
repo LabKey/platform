@@ -59,6 +59,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -186,24 +188,51 @@ public class SampleSetServiceImpl implements SampleSetService
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-            // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                    .append(getTinfoMaterial(), "m")
-                    .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
-                    .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
-                    .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
-                    .add(sampleSet.getModified());
 
-            new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(batch -> {
-                for (Material m : batch)
-                {
-                    ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                    impl.index(task);
-                }
-            }, Material.class, 1000);
+            indexSampleSet(sampleSet, task);
+            indexSampleSetMaterials(sampleSet, task);
+
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
+
+    private void indexSampleSet(ExpSampleSet sampleSet, SearchService.IndexTask task)
+    {
+        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                .append(getTinfoMaterialSource(), "ms")
+                .append(" WHERE ms.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" AND ms.LSID = ?").add(sampleSet.getLSID())
+                .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
+                .add(sampleSet.getModified());
+
+        MaterialSource materialSource = new SqlSelector(getExpSchema().getScope(), sql).getObject(MaterialSource.class);
+        if (materialSource != null)
+        {
+            ExpSampleSetImpl impl = new ExpSampleSetImpl(materialSource);
+            impl.index(task);
+        }
+    }
+
+    private void indexSampleSetMaterials(ExpSampleSet sampleSet, SearchService.IndexTask task)
+    {
+        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                .append(getTinfoMaterial(), "m")
+                .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
+                .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
+                .add(sampleSet.getModified());
+
+        new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(batch -> {
+            for (Material m : batch)
+            {
+                ExpMaterialImpl impl = new ExpMaterialImpl(m);
+                impl.index(task);
+            }
+        }, Material.class, 1000);
     }
 
 
@@ -514,6 +543,16 @@ public class SampleSetServiceImpl implements SampleSetService
 
         SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
+
+        // Remove SampleSet from search index
+        SearchService ss = SearchService.get();
+        if (null != ss)
+        {
+            try (Timing t = MiniProfiler.step("search docs"))
+            {
+                    ss.deleteResource(source.getDocumentId());
+            }
+        }
 
         timer.stop();
         LOG.info("Deleted SampleSet '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
