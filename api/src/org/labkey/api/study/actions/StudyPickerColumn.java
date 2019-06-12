@@ -53,7 +53,6 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     {
         super(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, inputName);
         _colInfo = col;
-        ((BaseColumnInfo)_colInfo).setInputType("select");
     }
 
     protected Object calculateValue(RenderContext ctx)

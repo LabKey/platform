@@ -72,6 +72,12 @@ public interface UpdateableTableInfo extends TableInfo
     @Nullable
     String getObjectIdColumnName();
 
+    /* if getObjectIdColumnName() != null, then return==true means insert into exp.object even if there is no domain or properties */
+    default boolean isAlwaysInsertExpObject()
+    {
+        return false;
+    }
+
     /**
      * Some columns in the SchemaTableInfo may be aliased in the QueryTableInfo.  This map describes the mapping.
      *

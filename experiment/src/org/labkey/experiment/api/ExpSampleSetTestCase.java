@@ -81,7 +81,7 @@ public class ExpSampleSetTestCase
     @After
     public void tearDown()
     {
-        ContainerManager.deleteAll(c, TestContext.get().getUser());
+//        ContainerManager.deleteAll(c, TestContext.get().getUser());
     }
 
     private void assertExpectedName(ExpSampleSet ss, String expectedName)

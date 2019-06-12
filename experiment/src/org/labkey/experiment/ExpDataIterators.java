@@ -12,9 +12,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RemapCache;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -23,8 +21,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.StatementDataIterator;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
@@ -40,16 +37,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
+import org.labkey.experiment.api.ExpDataClassDataTableImpl;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.SampleSetUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -192,7 +187,7 @@ public class ExpDataIterators
         Map<String, Object> _lsidAliasMap = new HashMap<>();
         private final TableInfo _expAliasTable;
 
-        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container,  User user, TableInfo expTable)
+        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expTable)
         {
             super(di);
             _context = context;
@@ -368,7 +363,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            if (null!=context.getConfigParameters() && context.getConfigParameters().containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
+            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
             {
                 return pre;
             }
@@ -494,13 +489,12 @@ public class ExpDataIterators
                         if (pair.first == null && pair.second == null)
                             continue;
 
-                        ExpMaterial sample = null;
                         Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
                         ExpData data = null;
                         Map<ExpData, String> currentDataMap = Collections.emptyMap();
                         if (_isSample)
                         {
-                            sample = ExperimentService.get().getExpMaterial(lsid);
+                            ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
                             if (null == sample)
                                 continue;
 
@@ -639,7 +633,7 @@ public class ExpDataIterators
         Supplier[] suppliers;
         String[] savedFileName;
 
-        FileLinkDataIterator(final DataIterator in,  final DataIteratorContext context, Container c, String file_link_dir_name)
+        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, String file_link_dir_name)
         {
             super(in);
             suppliers = new Supplier[in.getColumnCount() + 1];
@@ -759,27 +753,28 @@ public class ExpDataIterators
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
             step0.setDebugName("drop alias");
 
+//            // Insert into exp.object
+//            var ensureObjectStep = new EnsureExpObjectDataIteratorBuilder(DataIteratorBuilder.wrap(step0),
+//                    _expTable.getSchema().getScope(), _container, _ownerObjectId);
+
             // Insert into exp.data then the provisioned table
-            // Temporary work around for Issue 26082 (row at a time, reselect rowid)
-            // mucking with the context like this is not UL approved
-            context.setSelectIds(true);
-            // The PK is rowid, switch to use lsid
-            DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), _expTable, _container, context,
-                    Collections.singleton("lsid"), null, null);
-            context.setSelectIds(false);
-            // TODO the lsid is a unique key, but is not recognized as the PK in the schema table
-            DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _propertiesTable, _container, context,
-                Collections.singleton("lsid"), null, null);
+            // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
+            DataIteratorBuilder step2 = new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
+                    .setKeyColumns(Collections.singleton("lsid"))
+                    .setAddlSkipColumns(Set.of("generated","sourceapplicationid"))     // generated has database DEFAULT 0
+                    .setCommitRowsBeforeContinuing(true)
+                    ;
 
-            // Insert into exp.object
-            var ensureObjectStep = new EnsureExpObjectDataIteratorBuilder(_expTable.getSchema().getScope(), step3, _container, _ownerObjectId);
+            DataIteratorBuilder step3 = new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
+                    .setKeyColumns(Collections.singleton("lsid"));
 
-            boolean isSample = "Material".equalsIgnoreCase(_expTable.getName());
+            assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
+            boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
 
-            DataIteratorBuilder step4 = ensureObjectStep;
+            DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
             {
-                step4 = new ExpDataIterators.FlagDataIteratorBuilder(ensureObjectStep, _user, isSample);
+                step4 = new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample);
             }
 
             // Wire up derived parent/child data and materials
@@ -804,67 +799,4 @@ public class ExpDataIterators
             return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }
     }
-
-    public static class EnsureExpObjectDataIteratorBuilder implements DataIteratorBuilder
-    {
-        private final DbScope _scope;
-        private final DataIteratorBuilder _in;
-        private final Container _container;
-        private final Integer _ownerObjectId;
-
-        public EnsureExpObjectDataIteratorBuilder(DbScope scope, DataIteratorBuilder in, @NotNull Container container, Integer ownerObjectId)
-        {
-            _scope = scope;
-            _in = in;
-            _container = container;
-            _ownerObjectId = ownerObjectId;
-        }
-
-        @Override
-        public DataIterator getDataIterator(DataIteratorContext context)
-        {
-            return new StatementDataIterator(_in.getDataIterator(context), context) {
-
-                private Connection _conn;
-                private boolean _closed = false;
-
-                @Override
-                protected void onFirst()
-                {
-                    PreparedStatement p;
-                    try
-                    {
-                        _conn = _scope.getConnection();
-
-                        if (_ownerObjectId != null)
-                            p = _conn.prepareStatement("INSERT INTO exp.object (objecturi, container, ownerobjectid) VALUES (?, '" + _container.getId() + "', " + _ownerObjectId + ")");
-                        else
-                            p = _conn.prepareStatement("INSERT INTO exp.object (objecturi, container) VALUES (?, '" + _container.getId() + "')");
-
-                        Parameter param = new Parameter("lsid", 1, JdbcType.VARCHAR);
-                        Parameter.ParameterMap map = new Parameter.ParameterMap(_scope, p, Arrays.asList(param));
-
-                        _stmts = new Parameter.ParameterMap[] { map };
-
-                        super.onFirst();
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
-                }
-
-                @Override
-                public void close() throws IOException
-                {
-                    if (_closed)
-                        return;
-                    _closed = true;
-                    super.close();
-                    _scope.releaseConnection(_conn);
-                }
-            };
-        }
-    }
-
 }

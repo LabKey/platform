@@ -39,7 +39,7 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
-import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -2770,7 +2770,10 @@ public class SpecimenImporter
 
         DataIteratorBuilder specimenIter = new SpecimenImportBuilder(target, new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
         DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, _container, getUser(), dix);
-        DataIteratorBuilder tableIter = TableInsertDataIterator.create(std, target, _container, dix, keyColumns, skipColumns, dontUpdate);
+        DataIteratorBuilder tableIter = new TableInsertDataIteratorBuilder(std, target, _container)
+                .setKeyColumns(keyColumns)
+                .setAddlSkipColumns(skipColumns)
+                .setDontUpdate(dontUpdate);
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
         info(tableName + ": Starting merge of data...");

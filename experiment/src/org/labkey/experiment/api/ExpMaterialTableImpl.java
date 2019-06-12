@@ -29,7 +29,6 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -55,13 +54,11 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -74,7 +71,6 @@ import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -165,6 +161,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 columnInfo.setHidden(true);
+                columnInfo.setAutoIncrement(false);
                 return columnInfo;
             }
 
@@ -658,51 +655,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     // UpdatableTableInfo
     //
 
-
-    @Override
-    public boolean insertSupported()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean updateSupported()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean deleteSupported()
-    {
-        return true;
-    }
-
-    @Override
-    public TableInfo getSchemaTableInfo()
-    {
-        return ((FilteredTable)getRealTable()).getRealTable();
-    }
-
-    @Override
-    public ObjectUriType getObjectUriType()
-    {
-        return ObjectUriType.schemaColumn;
-    }
-
-    @Nullable
-    @Override
-    public String getObjectURIColumnName()
-    {
-        return "lsid";
-    }
-
-    @Nullable
-    @Override
-    public String getObjectIdColumnName()
-    {
-        return null;
-    }
-
     @Nullable
     @Override
     public CaseInsensitiveHashMap<String> remapSchemaColumns()
@@ -716,24 +668,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return null;
     }
 
-    @Nullable
-    @Override
-    public CaseInsensitiveHashSet skipProperties()
-    {
-        return null;
-    }
-
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        TableInfo expTable = ExperimentService.get().getTinfoMaterial();
         TableInfo propertiesTable = _ss.getTinfo();
 
         // TODO: move to ExpSampleSetImpl.save
         int sampleSetObjectId = OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Integer) null);
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
-        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), sampleSetObjectId)
+        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), sampleSetObjectId)
             .setFileLinkDirectory("sampleset")
             .setIndexFunction( lsids -> () ->
                 {
@@ -746,23 +690,5 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 });
 
         return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
-    }
-
-    @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user)
-    {
-        return null;
-    }
-
-    @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
-    {
-        return null;
-    }
-
-    @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn)
-    {
-        return null;
     }
 }

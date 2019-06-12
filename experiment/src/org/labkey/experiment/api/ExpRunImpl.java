@@ -29,6 +29,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
@@ -100,6 +101,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public ExpRunImpl(ExperimentRun run)
     {
         super(run);
+        if (null != run.getObjectId())
+            _objectId = run.getObjectId();
     }
 
     @Override
@@ -283,6 +286,23 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             if (newRun)
                 ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
             t.commit();
+        }
+    }
+
+    @Override
+    protected void save(User user, TableInfo table, boolean ensureObject)
+    {
+        if (getRowId() == 0)
+        {
+            assert null == _object.getObjectId();
+            _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
+            _object.setObjectId(_objectId);
+            _object = Table.insert(user, table, _object);
+            assert _objectId == _object.getObjectId();
+        }
+        else
+        {
+            _object = Table.update(user, table, _object, getRowId());
         }
     }
 

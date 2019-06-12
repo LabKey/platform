@@ -88,7 +88,7 @@ public class StatementUtils
     // builder style methods
     //
 
-    private StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
+    public StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
     {
         _operation = op;
         _dialect = table.getSqlDialect();
@@ -125,25 +125,25 @@ public class StatementUtils
         return this;
     }
 
-    private StatementUtils noupdate(Set<String> noupdate)
+    public StatementUtils noupdate(Set<String> noupdate)
     {
-        _dontUpdateColumnNames = noupdate;
+        _dontUpdateColumnNames.addAll(noupdate);
         return this;
     }
 
-    private StatementUtils updateBuiltinColumns(boolean b)
+    public StatementUtils updateBuiltinColumns(boolean b)
     {
         _updateBuiltInColumns = b;
         return this;
     }
 
-    private StatementUtils selectIds(boolean b)
+    public StatementUtils selectIds(boolean b)
     {
         _selectIds = b;
         return this;
     }
 
-    private StatementUtils allowSetAutoIncrement(boolean b)
+    public StatementUtils allowSetAutoIncrement(boolean b)
     {
         _allowUpdateAutoIncrement = b;
         return this;
@@ -155,6 +155,25 @@ public class StatementUtils
         return this;
     }
 
+/*
+    // NOTE these properties are usually pulled from UpdateableTableInfo, these are only used when createStatement() is
+    // used for say a SchemaTableInfo
+
+    UpdateableTableInfo.ObjectUriType objectUriType;
+    TableInfo schemaTableInfo
+        getObjectURIColumnName
+        getSchemaTableInfo
+        isAlwaysInsertExpObject
+        getObjectIdColumnName
+        remapSchemaColumns
+        skipProperties
+
+    void initFromTableInfo(UpdateableTableInfo t)
+    {
+        t.getObjectUriType();
+        t.getSchemaTableInfo()
+    }
+*/
 
 
     /**
@@ -374,8 +393,7 @@ public class StatementUtils
         }
     }
 
-
-    private Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
+    public Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
         if (!(_table instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
@@ -467,14 +485,20 @@ public class StatementUtils
         List<? extends DomainProperty> properties = Collections.emptyList();
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
+        boolean alwaysInsertExpObject = hasObjectURIColumn && updatable.isAlwaysInsertExpObject();
         if (hasObjectURIColumn)
             _dontUpdateColumnNames.add(objectURIColumnName);
+// TODO Should we add created and createdby? Or make the caller decide?
+//        _dontUpdateColumnNames.add("Created");
+//        _dontUpdateColumnNames.add("CreatedBy");
 
-        if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
+        boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
+
+        if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain))
         {
-            properties = domain.getProperties();
+            properties = (null==domain||isMaterializedDomain) ? Collections.emptyList() : domain.getProperties();
 
-            if (!properties.isEmpty())
+            if (alwaysInsertExpObject || !properties.isEmpty())
             {
                 if (!_dialect.isPostgreSQL() && !_dialect.isSqlServer())
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
@@ -492,18 +516,27 @@ public class StatementUtils
                 // Grab the object's ObjectId based on the pk of the base table
                 if (hasObjectURIColumn)
                 {
-                    sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = (");
-                    sqlfPreselectObject.append("SELECT ").append(table.getColumn(objectURIColumnName).getSelectName());
-                    sqlfPreselectObject.append(" FROM ").append(table.getSelectName());
-                    sqlfPreselectObject.append(getPkWhereClause(keys));
-                    sqlfPreselectObject.append(");\n");
+                    if (Operation.merge == _operation)
+                    {
+                        // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
+                        sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = COALESCE((");
+                        sqlfPreselectObject.append("SELECT ").append(table.getColumn(objectURIColumnName).getSelectName());
+                        sqlfPreselectObject.append(" FROM ").append(table.getSelectName());
+                        sqlfPreselectObject.append(getPkWhereClause(keys));
+                        sqlfPreselectObject.append("),");
+                        appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
+                        sqlfPreselectObject.append(");\n");
+                    }
+                    else
+                    {
+                        sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = ");
+                        appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
+                        sqlfPreselectObject.append(";\n");
+                    }
                 }
 
                 SQLFragment sqlfWhereObjectURI = new SQLFragment();
-                sqlfWhereObjectURI.append("((").append(objectURIVar).append(" IS NOT NULL AND ObjectURI = ").append(objectURIVar).append(")");
-                sqlfWhereObjectURI.append(" OR ObjectURI = ");
-                appendParameterOrVariable(sqlfWhereObjectURI, objecturiParameter);
-                sqlfWhereObjectURI.append(")");
+                sqlfWhereObjectURI.append("(ObjectURI = ").append(objectURIVar).append(")");
 
                 // In the update case, it's still possible that there isn't a row in exp.Object - there might have been
                 // no properties in the domain when the row was originally inserted
@@ -522,7 +555,7 @@ public class StatementUtils
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
 
-                if (Operation.insert != _operation)
+                if (Operation.insert != _operation && !properties.isEmpty())
                 {
                     // Clear out any existing property values for this domain
                     sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
