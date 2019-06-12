@@ -753,10 +753,6 @@ public class ExpDataIterators
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
             step0.setDebugName("drop alias");
 
-//            // Insert into exp.object
-//            var ensureObjectStep = new EnsureExpObjectDataIteratorBuilder(DataIteratorBuilder.wrap(step0),
-//                    _expTable.getSchema().getScope(), _container, _ownerObjectId);
-
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
             DataIteratorBuilder step2 = new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)

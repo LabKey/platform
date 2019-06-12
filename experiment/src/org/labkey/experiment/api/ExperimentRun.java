@@ -30,7 +30,6 @@ public class ExperimentRun extends IdentifiableEntity
     private Integer jobId;
     private Integer _replacedByRunId;
     private Integer _batchId;
-    private Integer _objectId;
 
     public String getProtocolLSID()
     {
@@ -100,16 +99,6 @@ public class ExperimentRun extends IdentifiableEntity
     public void setBatchId(Integer batchId)
     {
         _batchId = batchId;
-    }
-
-    public Integer getObjectId()
-    {
-        return _objectId;
-    }
-
-    public void setObjectId(Integer objectId)
-    {
-        _objectId = objectId;
     }
 
     public boolean equals(Object o)

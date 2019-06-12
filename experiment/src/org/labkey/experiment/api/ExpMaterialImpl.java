@@ -192,6 +192,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    protected void save(User user, TableInfo table, boolean ensureObject)
+    {
+        assert ensureObject;
+        super.save(user, table, true);
+    }
+
+    @Override
     public void delete(User user)
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()));

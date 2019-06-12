@@ -292,18 +292,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     protected void save(User user, TableInfo table, boolean ensureObject)
     {
-        if (getRowId() == 0)
-        {
-            assert null == _object.getObjectId();
-            _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
-            _object.setObjectId(_objectId);
-            _object = Table.insert(user, table, _object);
-            assert _objectId == _object.getObjectId();
-        }
-        else
-        {
-            _object = Table.update(user, table, _object, getRowId());
-        }
+        assert ensureObject;
+        super.save(user, table, true);
     }
 
     @Override

@@ -37,6 +37,8 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     private int modifiedBy;
     private long modified;
     private Container container;
+    // some entities copy the exp.object.objectid value
+    private Integer objectId;
 
     protected IdentifiableEntity()
     {
@@ -154,6 +156,18 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
         if (this.entityId != null && !this.entityId.equals(entityId))
             throw new IllegalStateException("can't change entityid");
         this.entityId = entityId;
+    }
+
+    public Integer getObjectId()
+    {
+        return objectId;
+    }
+
+    public void setObjectId(Integer objectId)
+    {
+        if (this.objectId != null && !this.objectId.equals(objectId))
+            throw new IllegalStateException("can't change entityid");
+        this.objectId = objectId;
     }
 
     public static boolean diff(int i1, int i2, String name, List<Difference> diffs)

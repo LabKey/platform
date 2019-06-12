@@ -104,13 +104,15 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
     {
         if (getRowId() == 0)
         {
-            _object = Table.insert(user, table, _object);
             if (ensureObject)
             {
-                assert _objectId == 0;
+                assert _object instanceof IdentifiableEntity;
+                assert null == ((IdentifiableEntity)_object).getObjectId();
                 _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
-                // TODO: set the objectId on the table
+                ((IdentifiableEntity) _object).setObjectId(_objectId);
             }
+            _object = Table.insert(user, table, _object);
+            assert !ensureObject || _objectId == ((IdentifiableEntity)_object).getObjectId();
         }
         else
         {
