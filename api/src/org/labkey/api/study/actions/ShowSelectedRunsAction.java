@@ -50,6 +50,7 @@ public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsActio
     }
 
 
+    @Override
     public ActionURL getURL(ShowSelectedForm form, Errors errors)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);

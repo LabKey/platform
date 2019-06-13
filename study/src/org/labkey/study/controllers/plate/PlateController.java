@@ -77,11 +77,13 @@ public class PlateController extends SpringActionController
 
     public static class PlateUrlsImpl implements PlateUrls
     {
+        @Override
         public ActionURL getPlateTemplateListURL(Container c)
         {
             return new ActionURL(PlateTemplateListAction.class, c);
         }
 
+        @Override
         public ActionURL getPlateDetailsURL(Container c)
         {
             return new ActionURL(PlateDetailsAction.class, c);

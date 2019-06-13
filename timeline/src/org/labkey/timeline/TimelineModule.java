@@ -39,25 +39,30 @@ public class TimelineModule extends CodeOnlyModule
 {
     public static final String NAME = "Timeline";
 
+    @Override
     public String getName()
     {
         return "Timeline";
     }
 
+    @Override
     protected void init()
     {
         addController("timeline", TimelineController.class);
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<>(Arrays.asList(new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 TimelineSettings settings = new TimelineSettings();
@@ -73,6 +78,7 @@ public class TimelineModule extends CodeOnlyModule
                 return new TimelineView(settings);
             }
 
+            @Override
             public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
             {
                 return new JspView<>(TimelineView.class, "customizeTimeline.jsp", webPart);

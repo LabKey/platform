@@ -16,18 +16,20 @@
 
 package org.labkey.experiment;
 
+import org.labkey.api.util.EnumHasHtmlString;
+
 /**
  * User: jeckels
  * Date: Sep 12, 2006
  */
-public enum XarExportType
+public enum XarExportType implements EnumHasHtmlString<XarExportType>
 {
     BROWSER_DOWNLOAD("Download to web browser"),
     PIPELINE_FILE("Write to exportedXars directory in pipeline");
 
     private final String _description;
 
-    private XarExportType(String description)
+    XarExportType(String description)
     {
         _description = description;
     }

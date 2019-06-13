@@ -759,6 +759,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
     }
 
+    public Collection<ExpSampleSetImpl> getIndexableSampleSets(Container container, @Nullable Date modifiedSince)
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterialSource() + " WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterialSource(), modifiedSince, null).toSQLFragment(null, null);
+        if (!modifiedSQL.isEmpty())
+            sql.append(" AND ").append(modifiedSQL);
+        return ExpSampleSetImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
+    }
+
     public void setDataLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoData(), rowId, ms);
@@ -768,6 +777,12 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         setLastIndexed(getTinfoMaterial(), rowId, ms);
     }
+
+    public void setMaterialSourceLastIndexed(int rowId, long ms)
+    {
+        setLastIndexed(getTinfoMaterialSource(), rowId, ms);
+    }
+
 
     private void setLastIndexed(TableInfo table, int rowId, long ms)
     {

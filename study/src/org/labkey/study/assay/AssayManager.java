@@ -156,6 +156,7 @@ public class AssayManager implements AssayService
                 newProtocol.getDescription());
     }
 
+    @Override
     public void registerAssayProvider(AssayProvider provider)
     {
         // Blow up if we've already added a provider with this name
@@ -392,13 +393,14 @@ public class AssayManager implements AssayService
         return provider.createProtocolSchema(user, container, protocol, null).createRunsTable(cf);
     }
 
+    @Override
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
     {
         return new AssaySchemaImpl(user, container, targetStudy);
     }
 
-    public @NotNull
-    List<ExpProtocol> getAssayProtocols(Container container)
+    @Override
+    public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
     {
         return PROTOCOL_CACHE.get(container, null, (c, argument) ->
         {
@@ -425,8 +427,8 @@ public class AssayManager implements AssayService
         });
     }
 
-    public @NotNull
-    List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
+    @Override
+    public @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider)
     {
         // Take the full list
         List<ExpProtocol> allProtocols = getAssayProtocols(container);
@@ -448,8 +450,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @Nullable
-    ExpProtocol getAssayProtocolByName(Container container, String name)
+    public @Nullable ExpProtocol getAssayProtocolByName(Container container, String name)
     {
         if (name != null)
         {
@@ -508,14 +509,15 @@ public class AssayManager implements AssayService
         return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 
+    @Override
     @NotNull
     public Set<ClientDependency> getClientDependenciesForImportButtons()
     {
         return PageFlowUtil.set(ClientDependency.fromPath("Ext4ClientApi"), ClientDependency.fromPath("extWidgets/ImportWizard.js"));
     }
 
-    public @NotNull
-    List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
+    @Override
+    public @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
@@ -608,6 +610,7 @@ public class AssayManager implements AssayService
         return result;
     }
 
+    @Override
     public ExpExperiment createStandardBatch(Container container, String name, ExpProtocol protocol)
     {
         if (name == null)
@@ -626,6 +629,7 @@ public class AssayManager implements AssayService
         return batch;
     }
 
+    @Override
     public ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user)
     {
         synchronized (BATCH_NAME_LOCK)
@@ -644,6 +648,7 @@ public class AssayManager implements AssayService
         }
     }
 
+    @Override
     @Nullable
     public ExpExperiment findBatch(ExpRun run)
     {
@@ -663,6 +668,7 @@ public class AssayManager implements AssayService
      * Creates a single document per assay design/folder combo, with some simple assay info (name, description), plus
      * the names and comments from all of the runs.
      */
+    @Override
     public void indexAssays(SearchService.IndexTask task, Container c)
     {
         SearchService ss = SearchService.get();
@@ -723,6 +729,7 @@ public class AssayManager implements AssayService
         }
     }
 
+    @Override
     public ExpRun createExperimentRun(@Nullable String name, Container container, ExpProtocol protocol, @Nullable File file)
     {
         if (name == null)
@@ -770,8 +777,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @NotNull
-    List<Pair<Container, String>> getLocationOptions(Container container, User user)
+    public @NotNull List<Pair<Container, String>> getLocationOptions(Container container, User user)
     {
         List<Pair<Container, String>> containers = new ArrayList<>();
 
@@ -820,6 +826,7 @@ public class AssayManager implements AssayService
         return properties;
     }
 
+    @Override
     public ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, Container targetStudyContainer)
             throws IOException, ExperimentException
     {
@@ -887,6 +894,7 @@ public class AssayManager implements AssayService
         return expProtocol;
     }
 
+    @Override
     public void clearProtocolCache()
     {
         PROTOCOL_CACHE.clear();

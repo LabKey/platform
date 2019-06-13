@@ -2741,18 +2741,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     private boolean isMutatingSql(String sql)
     {
-        // The original approach used to detect mutating SQL. It can encounter false positives and negatives, since it
-        // doesn't handle block comments or quoted strings.
-        String firstLine = Arrays.stream(sql.split("\n")).map(StringUtils::trimToEmpty).filter(s -> !s.isEmpty() && !startsWith(s,"--")).findFirst().orElse("").toUpperCase();
-        boolean oldWay = (contains(firstLine,"INSERT ") || contains(firstLine, "UPDATE ") || contains(firstLine, "DELETE "));
-
-        var detector = new MutatingSqlDetector(sql);
-        boolean newWay = detector.isMutating();
-
-        if (oldWay && !newWay)
-            _log.warn("Previous mutating SQL detection approach flagged this statement, but new approach did not: " + sql);
-
-        return newWay;
+        return new MutatingSqlDetector(sql).isMutating();
     }
 
 
