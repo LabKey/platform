@@ -101,7 +101,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public ExpRunImpl(ExperimentRun run)
     {
         super(run);
-        if (null != run.getObjectId())
+        if (null != run && null != run.getObjectId())
             _objectId = run.getObjectId();
     }
 

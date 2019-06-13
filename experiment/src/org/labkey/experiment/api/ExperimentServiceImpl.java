@@ -2726,7 +2726,7 @@ public class ExperimentServiceImpl implements ExperimentService
             if (edgeCount > 0)
             {
                 // ensure the run has an exp.object
-                if (null == runObjectId)
+                if (null == runObjectId || 0 == runObjectId)
                 {
                     if (LOG.isDebugEnabled())
                     {
