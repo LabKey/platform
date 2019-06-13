@@ -356,6 +356,7 @@ export class App extends React.Component<Props, State> {
                                     previewCount: 3,
                                     header: 'Previewing Data for Import',
                                     infoMsg: 'If the data does not look as expected, check you source file for errors and re-upload.',
+                                    // TODO add info about if the assay has transform scripts, this preview does not reflect that
                                     onPreviewLoad: this.handlePreviewLoad
                                 }}
                         />
