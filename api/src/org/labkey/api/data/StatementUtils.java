@@ -127,7 +127,8 @@ public class StatementUtils
 
     public StatementUtils noupdate(Set<String> noupdate)
     {
-        _dontUpdateColumnNames.addAll(noupdate);
+        if (null != noupdate)
+            _dontUpdateColumnNames.addAll(noupdate);
         return this;
     }
 

@@ -918,6 +918,7 @@
       <column columnName="ModifiedBy"/>
       <column columnName="Container"/>
       <column columnName="LastIndexed"/>
+      <column columnName="ObjectId"/>
     </columns>
   </table>
   <table tableName="ObjectPropertiesView" tableDbType="VIEW">
@@ -958,6 +959,7 @@
       <column columnName="Container"/>
       <column columnName="Generated"/>
       <column columnName="LastIndexed"/>
+      <column columnName="ObjectId"/>
     </columns>
   </table>
   <table tableName="ExperimentRunDataOutputs" tableDbType="VIEW">
