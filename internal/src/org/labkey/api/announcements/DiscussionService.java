@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.VBox;
@@ -45,7 +44,7 @@ import java.util.Collection;
  */
 public interface DiscussionService
 {
-    public enum StatusOption
+    enum StatusOption
     {
         Active,
         Closed
@@ -140,7 +139,7 @@ public interface DiscussionService
         SortOrder _sortOrder = SortOrder.getDefaultSortOrder();
         String _moderatorReview = "None";
 
-        public enum SortOrder implements EnumHasHtmlString<SortOrder>
+        public enum SortOrder
         {
             CreationDate(0, "-Created"), LatestResponseDate(1, "-ResponseCreated");
 
@@ -187,7 +186,7 @@ public interface DiscussionService
             }
         }
 
-        // Set the defaults that will be used for un-customized message boards.  We must set them to false above to
+        // Set the defaults that will be used for un-customized message boards. We must set them to false above to
         // workaround the "checkbox doesn't post if false" problem.
         public void setDefaults()
         {
