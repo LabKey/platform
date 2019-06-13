@@ -23,10 +23,10 @@ import org.labkey.api.view.DisplayElement;
 import java.io.IOException;
 import java.io.Writer;
 
-import static org.labkey.api.util.HtmlStringBuilder.Attribute;
-import static org.labkey.api.util.HtmlStringBuilder.DOM.*;
-import static org.labkey.api.util.HtmlStringBuilder.DOMx.*;
-import static org.labkey.api.util.HtmlStringBuilder.Attribute.*;
+import static org.labkey.api.util.DOM.Attribute;
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.DOM.X.*;
+import static org.labkey.api.util.DOM.Attribute.*;
 
 
 /**
