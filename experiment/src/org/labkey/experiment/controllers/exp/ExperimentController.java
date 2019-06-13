@@ -982,7 +982,7 @@ public class ExperimentController extends SpringActionController
             runListView.getRunTable().setRuns(successorRuns);
             runListView.getRunTable().setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             runListView.setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders, ContainerFilter.Type.AllFolders);
-            runListView.setTitle("Runs using this material or a derived material");
+            runListView.setTitle("Runs associated with this material or a derived material");
 
             ParentChildView pv = new ParentChildView(_material, getViewContext());
             vbox.addView(pv);
