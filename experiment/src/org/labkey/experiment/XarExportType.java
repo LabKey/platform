@@ -29,7 +29,7 @@ public enum XarExportType implements EnumHasHtmlString<XarExportType>
 
     private final String _description;
 
-    private XarExportType(String description)
+    XarExportType(String description)
     {
         _description = description;
     }

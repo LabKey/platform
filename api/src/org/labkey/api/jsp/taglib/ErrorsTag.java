@@ -51,7 +51,7 @@ public class ErrorsTag extends TagSupport
             Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
             while (e.hasMoreElements())
             {
-                String s = (String)e.nextElement();
+                String s = e.nextElement();
                 if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
                 {
                     Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);
