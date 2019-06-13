@@ -1137,7 +1137,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 for (var i=0; i < queryConfig.filterArray.length; i++)
                 {
                     var f = queryConfig.filterArray[i];
-                    this.userFilters.push(LABKEY.Filter.create(f.name,  f.value, LABKEY.Filter.getFilterTypeForURLSuffix(f.type)));
+                    var type = LABKEY.Filter.getFilterTypeForURLSuffix(f.type);
+                    var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
+                    this.userFilters.push(LABKEY.Filter.create(f.name,  value, type));
                 }
             }
 
