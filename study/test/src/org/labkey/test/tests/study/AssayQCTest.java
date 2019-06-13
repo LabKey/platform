@@ -10,6 +10,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.pages.AssayDesignerPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.admin.ExportFolderPage;
 import org.labkey.test.pages.admin.ImportFolderPage;
 import org.labkey.test.pages.assay.AssayImportPage;
@@ -20,6 +21,7 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.TestDataGenerator;
+import org.openqa.selenium.WebElement;
 
 import java.io.File;
 import java.util.Arrays;
@@ -70,78 +72,42 @@ public class AssayQCTest extends BaseWebDriverTest
     }
 
     @Test
+    public void testQCStateRequiredPermissions() throws Exception
+    {
+        String assayName = "QCStatePermissionsTest_assay";
+        String assayFolder = "QCStatePermissionsTest";
+        generateAssay(assayFolder, assayName)
+                .addDataField("Color", "Color", FieldDefinition.ColumnType.String)
+                .addDataField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
+                .enableQCStates(true)
+                .saveAndClose();
+        insertAssayData(assayName,  new FieldDefinition.LookupInfo(getProjectName() + "/" + assayFolder,
+                "assay.General.QCStatePermissionsTest_assay", "Runs"));
+        setQCStates();
+
+        impersonateRole("Reader");  // currently fails here with issue https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=37681
+
+        // todo: verify reader cannot view non-public QC data, that the grid indicates withheld data
+
+
+        // clean up the subfolder on success
+        _containerHelper.deleteFolder(getProjectName(), assayFolder);
+    }
+
+    @Test
     public void testQCStateVisibility() throws Exception
     {
         String assayName = "QCStateVisibilityTest_assay";
-        generateAssay("QCStateVisibilityTest", assayName)
-                .addRunField("Color", "Color", FieldDefinition.ColumnType.String)
-                .addRunField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
+        String assayFolder = "QCStateVisibilityTest";
+        generateAssay(assayFolder, assayName)
+                .addDataField("Color", "Color", FieldDefinition.ColumnType.String)
+                .addDataField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
                 .enableQCStates(true)
                 .saveAndClose();
-        List<FieldDefinition> resultsFieldset = List.of(
-                TestDataGenerator.simpleFieldDef("ParticipantID",FieldDefinition.ColumnType.String),
-                TestDataGenerator.simpleFieldDef("Date", FieldDefinition.ColumnType.DateTime),
-                TestDataGenerator.simpleFieldDef("Color", FieldDefinition.ColumnType.String),
-                TestDataGenerator.simpleFieldDef("Concentration", FieldDefinition.ColumnType.Double));
-        FieldDefinition.LookupInfo assayLookup = new FieldDefinition.LookupInfo(getProjectName() + "/" + "QCStateVisibilityTest",
-                "assay.General.QCStateVisibilityTest_assay", "Runs");
+        insertAssayData(assayName,  new FieldDefinition.LookupInfo(getProjectName() + "/" + assayFolder,
+                "assay.General.QCStateVisibilityTest_assay", "Runs"));
 
-        clickAndWait(Locator.linkWithText(assayName));
-        DataRegionTable.DataRegion(getDriver()).withName("Runs").find().clickHeaderMenu("QC State", "Manage states");
-        new ManageAssayQCStatesPage(getDriver())
-                .addStateRow("Seems shady", "Better review this one", true)
-                .addStateRow("Totally legit", "Looks good", true)
-                .addStateRow("WTF", "What, was this found on the lab floor somewhere?", false)
-                .clickSave();
-
-        TestDataGenerator dgen1 = new TestDataGenerator(assayLookup)
-                .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "Mike", "Date", "11/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "Jim", "Date", "11/12/2018", "Color", "Red", "Concentration", 14.5))
-                .addCustomRow(Map.of("ParticipantID", "Billy", "Date", "11/13/2018", "Color", "Yellow", "Concentration", 17.5))
-                .addCustomRow(Map.of("ParticipantID", "Michael", "Date", "11/14/2018", "Color", "Orange", "Concentration", 11.5));
-        String pasteData1 = dgen1.writeTsvContents();
-
-        TestDataGenerator dgen2 = new TestDataGenerator(assayLookup)
-                .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "Harry", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "Hugh", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
-                .addCustomRow(Map.of("ParticipantID", "Jenny", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
-                .addCustomRow(Map.of("ParticipantID", "Hermione", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
-        String pasteData2 = dgen2.writeTsvContents();
-
-        TestDataGenerator dgen3 = new TestDataGenerator(assayLookup)
-                .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "George", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "Arthur", "Date", "10/12/2018", "Color", "Red", "Concentration", 19.5))
-                .addCustomRow(Map.of("ParticipantID", "Colin", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
-                .addCustomRow(Map.of("ParticipantID", "Ronald", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
-        String pasteData3 = dgen3.writeTsvContents();
-
-        DataRegionTable runsTable = DataRegionTable.DataRegion(getDriver()).withName("Runs").find();
-        runsTable.clickHeaderButton("Import Data");
-        clickButton("Next");
-
-        // insert 3 runs
-        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData1);
-        clickButton("Save and Import Another Run");
-        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData2);
-        clickButton("Save and Import Another Run");
-        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData3);
-        clickButton("Save and Finish");
-
-        AssayRunsPage runsPage = new AssayRunsPage(getDriver());
-        CustomizeView customView = runsPage.getTable().openCustomizeGrid();
-        customView.addColumn("QCFLAGS/LABEL", "Label");
-        customView.addColumn("QCFLAGS/DESCRIPTION", "Description");
-        customView.addColumn("QCFLAGS/PUBLICDATA", "Public Data");
-        customView.clickViewGrid();
-
-        // now set each row to a different QC state
-        runsPage = new AssayRunsPage(getDriver());
-        runsPage = runsPage.setRowQcStatus(0, "Seems shady", "Not so sure about this one");
-        runsPage = runsPage.setRowQcStatus(1, "Totally legit", "Yeah, I trust this");
-        runsPage = runsPage.setRowQcStatus(2, "WTF", "No way is this legit");
+        AssayRunsPage runsPage = setQCStates();
 
         Map<String, String> run1Data = runsPage.getTable().getRowDataAsMap(0);
         Map<String, String> run2Data = runsPage.getTable().getRowDataAsMap(1);
@@ -207,79 +173,20 @@ public class AssayQCTest extends BaseWebDriverTest
         String destSubfolder= "ImportExportedAssaySubdir";
         // create the destination project and subfolder
         _containerHelper.addCreatedProject(importDestProjectName);
+        _containerHelper.deleteProject(importDestProjectName, false);
         _containerHelper.createProject(importDestProjectName, null);
         _containerHelper.createSubfolder(importDestProjectName, destSubfolder);
 
         String assayName = "RoundTripQCStateTest_assay";
         generateAssay("RoundTripQCStateTest", assayName)
-                .addRunField("Color", "Color", FieldDefinition.ColumnType.String)
-                .addRunField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
+                .addDataField("Color", "Color", FieldDefinition.ColumnType.String)
+                .addDataField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
                 .enableQCStates(true)
                 .saveAndClose();
-        List<FieldDefinition> resultsFieldset = List.of(
-                TestDataGenerator.simpleFieldDef("ParticipantID",FieldDefinition.ColumnType.String),
-                TestDataGenerator.simpleFieldDef("Date", FieldDefinition.ColumnType.DateTime),
-                TestDataGenerator.simpleFieldDef("Color", FieldDefinition.ColumnType.String),
-                TestDataGenerator.simpleFieldDef("Concentration", FieldDefinition.ColumnType.Double));
-        FieldDefinition.LookupInfo assayLookup = new FieldDefinition.LookupInfo(getProjectName() + "/" + "RoundTripQCStateTest",
-                "assay.General.RoundTripQCStateTest_assay", "Runs");
+        insertAssayData(assayName, new FieldDefinition.LookupInfo(getProjectName() + "/" + "RoundTripQCStateTest",
+                "assay.General.RoundTripQCStateTest_assay", "Runs"));
 
-        clickAndWait(Locator.linkWithText(assayName));
-        DataRegionTable.DataRegion(getDriver()).withName("Runs").find().clickHeaderMenu("QC State", "Manage states");
-        new ManageAssayQCStatesPage(getDriver())
-                .addStateRow("Seems shady", "Better review this one", true)
-                .addStateRow("Totally legit", "Looks good", true)
-                .addStateRow("WTF", "What, was this found on the lab floor somewhere?", false)
-                .clickSave();
-
-        TestDataGenerator dgen1 = new TestDataGenerator(assayLookup)
-                .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "Jeff", "Date", "11/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "Jim", "Date", "11/12/2018", "Color", "Red", "Concentration", 14.5))
-                .addCustomRow(Map.of("ParticipantID", "Billy", "Date", "11/13/2018", "Color", "Yellow", "Concentration", 17.5))
-                .addCustomRow(Map.of("ParticipantID", "Michael", "Date", "11/14/2018", "Color", "Orange", "Concentration", 11.5));
-        String pasteData1 = dgen1.writeTsvContents();
-
-        TestDataGenerator dgen2 = new TestDataGenerator(assayLookup)
-                .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "Harry", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "William", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
-                .addCustomRow(Map.of("ParticipantID", "Jenny", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
-                .addCustomRow(Map.of("ParticipantID", "Hermione", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
-        String pasteData2 = dgen2.writeTsvContents();
-
-        TestDataGenerator dgen3 = new TestDataGenerator(assayLookup)
-                .withColumnSet(resultsFieldset)
-                .addCustomRow(Map.of("ParticipantID", "George", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
-                .addCustomRow(Map.of("ParticipantID", "Arthur", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
-                .addCustomRow(Map.of("ParticipantID", "Colin", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
-                .addCustomRow(Map.of("ParticipantID", "Ronald", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
-        String pasteData3 = dgen3.writeTsvContents();
-
-        DataRegionTable runsTable = DataRegionTable.DataRegion(getDriver()).withName("Runs").find();
-        runsTable.clickHeaderButton("Import Data");
-        clickButton("Next");
-
-        // insert 3 runs
-        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData1);
-        clickButton("Save and Import Another Run");
-        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData2);
-        clickButton("Save and Import Another Run");
-        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData3);
-        clickButton("Save and Finish");
-
-        AssayRunsPage runsPage = new AssayRunsPage(getDriver());
-        CustomizeView customView = runsPage.getTable().openCustomizeGrid();
-        customView.addColumn("QCFLAGS/LABEL", "Label");
-        customView.addColumn("QCFLAGS/DESCRIPTION", "Description");
-        customView.addColumn("QCFLAGS/PUBLICDATA", "Public Data");
-        customView.clickViewGrid();
-
-        // now set each row to a different QC state
-        runsPage = new AssayRunsPage(getDriver());
-        runsPage = runsPage.setRowQcStatus(0, "Seems shady", "Not so sure about this one");
-        runsPage = runsPage.setRowQcStatus(1, "Totally legit", "Yeah, I trust this");
-        runsPage = runsPage.setRowQcStatus(2, "WTF", "No way is this legit");
+        AssayRunsPage runsPage = setQCStates();
 
         Map<String, String> run1Data = runsPage.getTable().getRowDataAsMap(0);
         Map<String, String> run2Data = runsPage.getTable().getRowDataAsMap(1);
@@ -360,6 +267,154 @@ public class AssayQCTest extends BaseWebDriverTest
         _containerHelper.deleteFolder(getProjectName(), "QCStateVisibilityTest");
         // also the import destination project
         _containerHelper.deleteProject(importDestProjectName);
+    }
+
+    @Test
+    public void testQCStateCopyToStudy() throws Exception
+    {
+        String studyProjectName = "AssayQCTest_studyProject";
+        String assayFolder = "CopyToStudyTest";
+
+        // create the destination project
+        _containerHelper.deleteProject(studyProjectName, false);
+        _containerHelper.addCreatedProject(studyProjectName);
+        _containerHelper.createProject(studyProjectName, "Study");
+        goToProjectHome(studyProjectName);
+        EditDatasetDefinitionPage datasetDefPage = _studyHelper.startCreateStudy()
+                .createStudy()
+                .goToManageStudy()
+                .manageDatasets()
+                .clickCreateNewDataset()
+                .setName("testDataset")
+                .submit();
+        datasetDefPage
+                .getFieldsEditor()
+                .selectField(0).setName("Color").setLabel("Color").setType(FieldDefinition.ColumnType.String);
+        datasetDefPage.getFieldsEditor()
+                .addField(new FieldDefinition("Concentration", FieldDefinition.ColumnType.Double));
+        datasetDefPage.save();
+
+        goToProjectHome();
+        // now create the assay we'll copy to study
+        String assayName = "CopyToStudyTest_assay";
+        generateAssay(assayFolder, assayName)
+                .addDataField("Color", "Color", FieldDefinition.ColumnType.String)
+                .addDataField("Concentration", "Concentration", FieldDefinition.ColumnType.Double)
+                .enableQCStates(true)
+                .saveAndClose();
+        insertAssayData(assayName, new FieldDefinition.LookupInfo(getProjectName() + "/" + assayFolder,
+                "assay.General.CopyToStudyTest_assay", "Runs"));
+        AssayRunsPage runsPage = setQCStates();
+
+        DataRegionTable runsTable = runsPage.getTable();
+        runsTable.checkAllOnPage();
+        runsTable.clickHeaderButtonAndWait("Copy to Study");
+        waitForText("QC checks failed. There are unapproved rows of data in the copy to study selection, please change your selection or request a QC Analyst to approve the run data.");
+        clickAndWait(Locator.linkWithText(assayName));
+
+        new AssayRunsPage(getDriver()).getTable().checkAllOnPage();
+        new AssayRunsPage(getDriver()).updateSelectedQcStatus()
+                .selectState("Totally legit")
+                .setComment("Nice work getting all this ready to be copied to the study.")
+                .clickUpdate()
+                .getTable().checkAllOnPage();
+        new AssayRunsPage(getDriver()).getTable().clickHeaderButtonAndWait("Copy to Study");
+
+
+        selectOptionByText(Locator.name("targetStudy"), "/"+studyProjectName + " ("+studyProjectName+ " Study)");
+        clickAndWait(Locator.linkWithSpan("Next"));
+
+        // hack: put a dummy value of 1 into all of the 'visitId' inputs
+        DataRegionTable data = DataRegionTable.DataRegion(getDriver()).withName("Data").waitFor();
+        List<WebElement> visitIdInputs = Locator.input("visitId").findElements(data.getComponentElement());
+        for (WebElement input : visitIdInputs)
+        {
+            setFormElement(input, "1");
+        }
+        data.clickHeaderButton("Copy to Study");
+
+        DataRegionTable importedData = DataRegionTable.DataRegion(getDriver()).withName("Dataset").waitFor();
+        assertEquals("Expect all dozen rows to make it to the study",12, importedData.getDataRowCount());
+    }
+
+    /**
+     * generates data (runs) for the gpat assay used by tests in this class.
+     * @param assayName
+     * @return
+     */
+    private List<TestDataGenerator> insertAssayData(String assayName, FieldDefinition.LookupInfo assayLookup)
+    {
+        List<FieldDefinition> resultsFieldset = List.of(
+                TestDataGenerator.simpleFieldDef("ParticipantID",FieldDefinition.ColumnType.String),
+                TestDataGenerator.simpleFieldDef("Date", FieldDefinition.ColumnType.DateTime),
+                TestDataGenerator.simpleFieldDef("Color", FieldDefinition.ColumnType.String),
+                TestDataGenerator.simpleFieldDef("Concentration", FieldDefinition.ColumnType.Double));
+
+        clickAndWait(Locator.linkWithText(assayName));
+        DataRegionTable.DataRegion(getDriver()).withName("Runs").find().clickHeaderMenu("QC State", "Manage states");
+        new ManageAssayQCStatesPage(getDriver())
+                .addStateRow("Seems shady", "Better review this one", true)
+                .addStateRow("Totally legit", "Looks good", true)
+                .addStateRow("WTF", "What, was this found on the lab floor somewhere?", false)
+                .clickSave();
+
+        TestDataGenerator dgen1 = new TestDataGenerator(assayLookup)
+                .withColumnSet(resultsFieldset)
+                .addCustomRow(Map.of("ParticipantID", "Jeff", "Date", "11/11/2018", "Color", "Green", "Concentration", 12.5))
+                .addCustomRow(Map.of("ParticipantID", "Jim", "Date", "11/12/2018", "Color", "Red", "Concentration", 14.5))
+                .addCustomRow(Map.of("ParticipantID", "Billy", "Date", "11/13/2018", "Color", "Yellow", "Concentration", 17.5))
+                .addCustomRow(Map.of("ParticipantID", "Michael", "Date", "11/14/2018", "Color", "Orange", "Concentration", 11.5));
+        String pasteData1 = dgen1.writeTsvContents();
+
+        TestDataGenerator dgen2 = new TestDataGenerator(assayLookup)
+                .withColumnSet(resultsFieldset)
+                .addCustomRow(Map.of("ParticipantID", "Harry", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
+                .addCustomRow(Map.of("ParticipantID", "William", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
+                .addCustomRow(Map.of("ParticipantID", "Jenny", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
+                .addCustomRow(Map.of("ParticipantID", "Hermione", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
+        String pasteData2 = dgen2.writeTsvContents();
+
+        TestDataGenerator dgen3 = new TestDataGenerator(assayLookup)
+                .withColumnSet(resultsFieldset)
+                .addCustomRow(Map.of("ParticipantID", "George", "Date", "10/11/2018", "Color", "Green", "Concentration", 12.5))
+                .addCustomRow(Map.of("ParticipantID", "Arthur", "Date", "10/12/2018", "Color", "Red", "Concentration", 14.5))
+                .addCustomRow(Map.of("ParticipantID", "Colin", "Date", "10/13/2018", "Color", "Yellow", "Concentration", 17.5))
+                .addCustomRow(Map.of("ParticipantID", "Ronald", "Date", "10/14/2018", "Color", "Orange", "Concentration", 11.5));
+        String pasteData3 = dgen3.writeTsvContents();
+
+        DataRegionTable runsTable = DataRegionTable.DataRegion(getDriver()).withName("Runs").find();
+        runsTable.clickHeaderButton("Import Data");
+        clickButton("Next");
+
+        // insert 3 runs
+        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData1);
+        clickButton("Save and Import Another Run");
+        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData2);
+        clickButton("Save and Import Another Run");
+        new AssayImportPage(getDriver()).setNamedTextAreaValue("TextAreaDataCollector.textArea", pasteData3);
+        clickButton("Save and Finish");
+
+        return Arrays.asList(dgen1, dgen2, dgen3);
+    }
+
+    /**
+     * sets qc states in the assay run page it is currently in
+     * @return
+     */
+    private AssayRunsPage setQCStates()
+    {
+        AssayRunsPage runsPage = new AssayRunsPage(getDriver());
+        CustomizeView customView = runsPage.getTable().openCustomizeGrid();
+        customView.addColumn("QCFLAGS/LABEL", "Label");
+        customView.addColumn("QCFLAGS/DESCRIPTION", "Description");
+        customView.addColumn("QCFLAGS/PUBLICDATA", "Public Data");
+        customView.saveDefaultView();
+
+        // now set each row to a different QC state
+        runsPage = new AssayRunsPage(getDriver());
+        runsPage = runsPage.setRowQcStatus(0, "Seems shady", "Not so sure about this one");
+        runsPage = runsPage.setRowQcStatus(1, "Totally legit", "Yeah, I trust this");
+        return runsPage.setRowQcStatus(2, "WTF", "No way is this legit");
     }
 
     @Override
