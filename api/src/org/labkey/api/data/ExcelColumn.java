@@ -302,6 +302,7 @@ public class ExcelColumn extends RenderColumn
     }
 
 
+    @Override
     public String getName()
     {
         return _name;
@@ -765,7 +766,7 @@ public class ExcelColumn extends RenderColumn
 
                 // Need to be careful here, checking _simpleType again and verifying legal values. See #18561 for an example
                 // of a problem that occurred because we assumed all date values could be formatted by FastDateFormat.
-                switch (cell.getCellTypeEnum())
+                switch (cell.getCellType())
                 {
                     case NUMERIC:
                         switch (_simpleType)
@@ -822,6 +823,7 @@ public class ExcelColumn extends RenderColumn
     }
 
     // CONSIDER: Change RenderColumn to NOT extend DisplayElement
+    @Override
     public void render(RenderContext ctx, Writer out)
     {
         throw new UnsupportedOperationException();

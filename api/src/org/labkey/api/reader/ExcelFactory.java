@@ -294,7 +294,7 @@ public class ExcelFactory
 
             if ("General".equals(cell.getCellStyle().getDataFormatString()))
             {
-                switch (cell.getCellTypeEnum())
+                switch (cell.getCellType())
                 {
                     case BOOLEAN:
                         return formatter.format(cell.getBooleanCellValue());
@@ -302,7 +302,7 @@ public class ExcelFactory
                         return formatter.format(cell.getNumericCellValue());
                     case FORMULA:
                     {
-                        if (cell.getCachedFormulaResultTypeEnum() == CellType.STRING)
+                        if (cell.getCachedFormulaResultType() == CellType.STRING)
                         {
                             return cell.getStringCellValue();
                         }
@@ -328,7 +328,7 @@ public class ExcelFactory
             }
             else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell) && cell.getDateCellValue() != null)
                 return formatter.format(cell.getDateCellValue());
-            else if (cell.getCellTypeEnum() == CellType.FORMULA && cell.getCachedFormulaResultTypeEnum() == CellType.STRING)
+            else if (cell.getCellType() == CellType.FORMULA && cell.getCachedFormulaResultType() == CellType.STRING)
                 return cell.getStringCellValue();
             else
             {
@@ -346,10 +346,10 @@ public class ExcelFactory
     {
         if (cell != null)
         {
-            CellType type = cell.getCellTypeEnum();
+            CellType type = cell.getCellType();
             if (type == CellType.FORMULA)
             {
-                type = cell.getCachedFormulaResultTypeEnum();
+                type = cell.getCachedFormulaResultType();
             }
             return type == CellType.NUMERIC;
         }
@@ -436,10 +436,10 @@ public class ExcelFactory
                             formatString = null;
                         }
 
-                        CellType effectiveCellType = cell.getCellTypeEnum();
+                        CellType effectiveCellType = cell.getCellType();
                         if (effectiveCellType == CellType.FORMULA)
                         {
-                            effectiveCellType = cell.getCachedFormulaResultTypeEnum();
+                            effectiveCellType = cell.getCachedFormulaResultType();
                             metadataMap.put("formula", cell.getCellFormula());
                         }
 
