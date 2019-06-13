@@ -908,6 +908,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.geomOptions.colorRange = this.options.general.binColorGroup;
             config.geomOptions.binSingleColor = this.options.general.binSingleColor;
             config.geomOptions.chartLayout = this.options.general.chartLayout;
+            config.geomOptions.marginTop = this.options.general.marginTop;
+            config.geomOptions.marginRight = this.options.general.marginRight;
+            config.geomOptions.marginBottom = this.options.general.marginBottom;
+            config.geomOptions.marginLeft = this.options.general.marginLeft;
         }
 
         if (this.options.x)
