@@ -3855,7 +3855,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private Collection<? extends ExpRun> getDeleteableSourceRunsFromMaterials(Set<Integer> materialIds)
     {
-        if (materialIds.isEmpty())
+        if (materialIds == null || materialIds.isEmpty())
             return Collections.emptyList();
 
         /* Ex. SQL
@@ -3872,7 +3872,7 @@ public class ExperimentServiceImpl implements ExperimentService
             );
          */
 
-        SQLFragment idInclause = getMaterialIdsInClause(materialIds);
+        SQLFragment idInclause = getAppendInClause(materialIds);
 
         SQLFragment sql = new SQLFragment(
                 "SELECT DISTINCT m.runId\n")
@@ -3892,10 +3892,10 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private Collection<? extends ExpRun> getDerivedRunsFromMaterial(Collection<Integer> materialIds)
     {
-        if (materialIds.isEmpty())
+        if (materialIds == null || materialIds.isEmpty())
             return Collections.emptyList();
 
-        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getMaterialIdsInClause(materialIds))));
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
     }
 
 
@@ -4348,10 +4348,15 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
         }
 
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(getMaterialIdsInClause(ids)));
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getAppendInClause(ids)));
     }
 
-    private SQLFragment getMaterialIdsInClause(Collection<Integer> ids)
+    /**
+     * Get sql IN clause using supplied ids
+     * @param ids to include within parentheses
+     * @return SQLFragment like: IN (1, 2, 3)
+     */
+    private SQLFragment getAppendInClause(Collection ids)
     {
         return getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
     }
@@ -4468,7 +4473,7 @@ public class ExperimentServiceImpl implements ExperimentService
      * @param materialRowIdSQL
      * @return
      */
-    private List<ExperimentRun> getRunsForMaterialList(SQLFragment materialRowIdSQL)
+    private List<ExperimentRun> getRunsForMaterialList(@NotNull SQLFragment materialRowIdSQL)
     {
         SQLFragment sql = new SQLFragment("(\n");
         sql.append(getTargetRunIdsFromMaterialIds(materialRowIdSQL));
@@ -4496,9 +4501,9 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     /**
-     * Generate a query to get the derived runIds from a set of material rowIds
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
      * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
-     * @return Query to retrieve set of runIds derived from supplied material ids
+     * @return Query to retrieve set of runIds from supplied input material ids
      */
     private SQLFragment getTargetRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
     {
@@ -4518,18 +4523,18 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
         sql.append(getTinfoMaterialInput(), "mi").append("\n");
         sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
-            .append("AND pa.cpastype = ?\n").add("ExperimentRun")
+            .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
             .append("AND mi.MaterialID ").append(materialRowIdSQL);
 
         return sql;
     }
 
     /**
-     * Get query to obtain precursor run ids based on materials
+     * Get query to obtain the runIds that created the materials requested by parameter
      * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
      * @return Query to retrieve precursor runs based on supplied material ids.
      */
-    private SQLFragment getSourceRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
+    private SQLFragment getSourceRunIdsFromMaterialIds(@NotNull SQLFragment materialRowIdSQL)
     {
         // ex SQL:
         /*
