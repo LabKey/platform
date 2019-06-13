@@ -166,7 +166,7 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     public void setObjectId(Integer objectId)
     {
         if (this.objectId != null && !this.objectId.equals(objectId))
-            throw new IllegalStateException("can't change entityid");
+            throw new IllegalStateException("can't change objectId");
         this.objectId = objectId;
     }
 

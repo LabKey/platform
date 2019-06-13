@@ -40,6 +40,12 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         return this;
     }
 
+    /**
+     * This option can be used to request that this data iterator does not return rows that are not yet 'in' the database.
+     * For instance, this may be important if there is a subsequent insert into a table with an enforced foreign key to this table.
+     *
+     * This functionality is implemented by using EmbargoDataIterator (with cooperation of StatementDataIterator)
+     */
     public TableInsertDataIteratorBuilder setCommitRowsBeforeContinuing(boolean commitRowsBeforeContinuing)
     {
         this.commitRowsBeforeContinuing = commitRowsBeforeContinuing;

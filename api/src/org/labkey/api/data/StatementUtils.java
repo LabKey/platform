@@ -155,26 +155,6 @@ public class StatementUtils
         return this;
     }
 
-/*
-    // NOTE these properties are usually pulled from UpdateableTableInfo, these are only used when createStatement() is
-    // used for say a SchemaTableInfo
-
-    UpdateableTableInfo.ObjectUriType objectUriType;
-    TableInfo schemaTableInfo
-        getObjectURIColumnName
-        getSchemaTableInfo
-        isAlwaysInsertExpObject
-        getObjectIdColumnName
-        remapSchemaColumns
-        skipProperties
-
-    void initFromTableInfo(UpdateableTableInfo t)
-    {
-        t.getObjectUriType();
-        t.getSchemaTableInfo()
-    }
-*/
-
 
     /**
      * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship

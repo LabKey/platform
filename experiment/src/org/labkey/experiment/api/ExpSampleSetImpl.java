@@ -551,7 +551,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
                 }
             }
         }
-        OntologyManager.ensureObject(getContainer(), getLSID(), (Integer) null);
 
         // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
         // Just call uncache(), and let normal cache loading do its thing

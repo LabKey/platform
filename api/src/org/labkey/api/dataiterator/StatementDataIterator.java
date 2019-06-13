@@ -125,7 +125,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
     /*
      * EmbargoDataIterator and a StatementDataIterator can be paired such that the CachingDataIterator
-     * does not 'release' roles until the statement that operates on that row (e.g. inserts it) has been
+     * does not 'release' rows until the statement that operates on that row (e.g. inserts it) has been
      * executed.
      *
      * This is different than the normal flow of control where 'later' data iterators only call 'earlier' data iterators.

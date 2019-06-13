@@ -1791,10 +1791,6 @@ public class ExperimentServiceImpl implements ExperimentService
                 newHotness.second.equals(oldAndBusted.second))
             return true; // short-circuit if everything matches
 
-        int skip=0;
-        if (skip!=0)
-            return true;
-
         // when there is a recursive lineage, the old lineage includes the seed but the new lineage doesn't
         if (oldAndBusted.first.contains(seed) || oldAndBusted.second.contains(seed))
         {

@@ -56,6 +56,10 @@ public class EmbargoDataIterator extends AbstractDataIterator
         return null;
     }
 
+    /*
+     * This is how the paired dataiterator usually (always?) a StatementDataIterator, that
+     * this EmbargoDataIterator can release a batch of rows that have been committed (inserted/updated)
+     */
     public void setReleasedRowNumber(int n)
     {
         _releasedRowNumber = n;
