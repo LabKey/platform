@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.VBox;
@@ -140,7 +139,7 @@ public interface DiscussionService
         SortOrder _sortOrder = SortOrder.getDefaultSortOrder();
         String _moderatorReview = "None";
 
-        public enum SortOrder implements EnumHasHtmlString<SortOrder>
+        public enum SortOrder
         {
             CreationDate(0, "-Created"), LatestResponseDate(1, "-ResponseCreated");
 
