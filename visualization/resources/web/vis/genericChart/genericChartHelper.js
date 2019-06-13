@@ -1201,7 +1201,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             }
         }
 
-        return Object.keys(margins).length ? margins : null;
+        return !LABKEY.Utils.isEmptyObj(margins) ? margins : null;
     };
 
     var _generatePieChartConfig = function(baseConfig, chartConfig, labels, data)
