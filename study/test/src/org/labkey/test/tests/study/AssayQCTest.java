@@ -27,6 +27,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -83,12 +84,40 @@ public class AssayQCTest extends BaseWebDriverTest
                 .saveAndClose();
         insertAssayData(assayName,  new FieldDefinition.LookupInfo(getProjectName() + "/" + assayFolder,
                 "assay.General.QCStatePermissionsTest_assay", "Runs"));
+
+        // capture this location for later use
+        String runsPageUrl = getDriver().getCurrentUrl();
+
+        // make sure reader can't access QCState management, but admin can
+        DataRegionTable adminTable = new AssayRunsPage(getDriver()).getTable();
+        assertEquals("Header button QC State should be present",1, adminTable.getHeaderButtons().stream()
+                .filter(a-> a.getText().equals("QC State")).collect(Collectors.toList())
+                .size());
+        impersonateRole("Reader");
+        DataRegionTable readerTable = new AssayRunsPage(getDriver()).getTable();
+        assertEquals("Header button QC State not be present",0, readerTable.getHeaderButtons().stream()
+                        .filter(a-> a.getText().equals("QC State")).collect(Collectors.toList())
+                .size());
+        stopImpersonating();
+        // for some reason stopping impersonation drops you at /home?
+
+        beginAt(runsPageUrl);
+
+        // set the QC states as admin
         setQCStates();
 
+        DataRegionTable adminView = new AssayRunsPage(getDriver())
+                .getTable();
+        assertEquals("expect all 3 run records to be shown", 3, adminView.getDataRowCount());
+        assertEquals(Arrays.asList("true", "true", "false"), adminView.getColumnDataAsText("Public Data"));
+
         impersonateRole("Reader");  // currently fails here with issue https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=37681
-
-        // todo: verify reader cannot view non-public QC data, that the grid indicates withheld data
-
+        waitForText("There are 1 rows not shown due to unapproved QC state");
+        DataRegionTable withheld = new AssayRunsPage(getDriver())
+                .getTable();
+        assertEquals("expect only 2 (publicdata=true) records to be shown", 2, withheld.getDataRowCount());
+        assertEquals(Arrays.asList("true", "true"), withheld.getColumnDataAsText("Public Data"));
+        stopImpersonating();
 
         // clean up the subfolder on success
         _containerHelper.deleteFolder(getProjectName(), assayFolder);
