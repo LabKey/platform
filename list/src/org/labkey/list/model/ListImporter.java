@@ -310,7 +310,6 @@ public class ListImporter
             //Case when a list exists in the db, but its corresponding data file is not present
             if (!fileTypeMap.containsKey(legalName))
             {
-                log.info("Data file was not found for list '" + legalName + "'. Nothing to process for this list.");
                 continue;
             }
 
