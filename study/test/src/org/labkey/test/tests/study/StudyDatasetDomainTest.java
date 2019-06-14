@@ -12,8 +12,9 @@ import org.labkey.remoteapi.domain.DomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
 import org.labkey.remoteapi.domain.SaveDomainCommand;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyA;
+import org.labkey.test.pages.study.CreateStudyPage;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Category({DailyA.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 5)
@@ -32,8 +34,6 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
 
     private final String BLANK_PROPERTY_ERROR_MSG = "Name field must not be blank.";
     private final String DUPLICATE_FIELD_ERROR_MSG = "All property names must be unique. Duplicate found: bloodLevel.";
-
-    private int NUM_ERRORS = 0;
 
     @Override
     protected @Nullable String getProjectName()
@@ -70,37 +70,38 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         _containerHelper.createProject(getProjectName(), null);
         _containerHelper.createSubfolder(getProjectName(), getProjectName(), getFolderName(), "Study", null, true);
 
-        clickButton("Create Study");
-        setFormElement(Locator.name("subjectNounSingular"), "Vampire");
-        setFormElement(Locator.name("subjectNounPlural"), "Vampires");
-        setFormElement(Locator.name("subjectColumnName"), "VampireId");
-        checkRadioButton(Locator.radioButtonById("dateTimepointType"));
-        clickButton("Create Study");
+        CreateStudyPage createStudyPage = new StudyHelper(this).startCreateStudy();
+        createStudyPage.setSubjectNounSingular("Vampire");
+        createStudyPage.setSubjectNounPlural("Vampires");
+        createStudyPage.setSubjectColumnName("VampireId");
+        createStudyPage.setTimepointType(StudyHelper.TimepointType.DATE);
+        createStudyPage.createStudy();
+    }
+
+    private String getContainerPath()
+    {
+        return getProjectName() + "/" + getFolderName();
     }
 
     @Before
     public void preTest()
     {
-        NUM_ERRORS = 0;
         goToProjectHome();
         clickFolder(getFolderName());
     }
 
     @Test
-    public void createDomainErrorsTest()
+    public void createDomainErrorsTest() throws IOException
     {
         log("Test for expected errors when creating a new domain with a missing property.");
         CreateDomainCommand createCmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         createCmd.setColumns(getColumnWithBlankNameProperty());
-        testForExpectedErrorMessage(createCmd, BLANK_PROPERTY_ERROR_MSG);
+        testForExpectedErrorMessage(createCmd, BLANK_PROPERTY_ERROR_MSG, "CreateDomain");
 
         log("Test for expected errors when creating a new domain with duplicate columns.");
         createCmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         createCmd.setColumns(getColumnsWithDuplicateFields());
-        testForExpectedErrorMessage(createCmd, DUPLICATE_FIELD_ERROR_MSG);
-
-        int expectedErrorCount = 2;
-        assertEquals("Create Domain error count mismatch.", expectedErrorCount, NUM_ERRORS);
+        testForExpectedErrorMessage(createCmd, DUPLICATE_FIELD_ERROR_MSG, "CreateDomain");
     }
 
     @Test
@@ -117,7 +118,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         saveCmd.setDomainURI(domainURI);
         saveCmd.setSchemaName("study");
         saveCmd.setColumns(getColumnWithBlankNameProperty());
-        testForExpectedErrorMessage(saveCmd, BLANK_PROPERTY_ERROR_MSG);
+        testForExpectedErrorMessage(saveCmd, BLANK_PROPERTY_ERROR_MSG, "SaveDomain");
 
         log("Test for expected errors when saving an existing domain with duplicate columns.");
         saveCmd = new SaveDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
@@ -125,21 +126,18 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         saveCmd.setDomainURI(domainURI);
         saveCmd.setSchemaName("study");
         saveCmd.setColumns(getColumnsWithDuplicateFields());
-        testForExpectedErrorMessage(saveCmd, DUPLICATE_FIELD_ERROR_MSG);
-
-        int expectedErrorCount = 2;
-        assertEquals("Update Domain error count mismatch.", expectedErrorCount, NUM_ERRORS);
+        testForExpectedErrorMessage(saveCmd, DUPLICATE_FIELD_ERROR_MSG, "SaveDomain");
     }
 
-    private void testForExpectedErrorMessage(DomainCommand cmd, String expectedErrorMsg)
+    private void testForExpectedErrorMessage(DomainCommand cmd, String expectedErrorMsg, String domainApiType) throws IOException
     {
         try
         {
-            cmd.execute(this.createDefaultConnection(false), getCurrentContainerPath());
+            cmd.execute(this.createDefaultConnection(false), getContainerPath());
+            fail("Expected " + domainApiType + " API to throw CommandException.");
         }
-        catch (IOException | CommandException e)
+        catch (CommandException e)
         {
-            NUM_ERRORS++;
             assertEquals("Error message mismatch.", expectedErrorMsg, e.getMessage());
         }
     }
@@ -153,7 +151,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         col.put("name", "");
         col.put("label", "Sun Exposure Time (secs)");
         col.put("rangeURI", "int");
-        columns.add(0, col);
+        columns.add(col);
 
         return columns;
     }
@@ -166,13 +164,13 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         col.put("name", "bloodLevel");
         col.put("label", "Blood Level (g/dL)");
         col.put("rangeURI", "double");
-        columns.add(0, col);
+        columns.add(col);
 
         col = new CaseInsensitiveHashMap<>();
         col.put("name", "bloodLevel");
         col.put("label", "Blood Level (g/dL)");
         col.put("rangeURI", "double");
-        columns.add(1, col);
+        columns.add(col);
 
         return columns;
     }
@@ -186,7 +184,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         col.put("name", "SequenceNum");
         col.put("label", "Sequence Num");
         col.put("rangeURI", "int");
-        columns.add(0, col);
+        columns.add(col);
 
         return columns;
     }
@@ -199,31 +197,31 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         col.put("name", "sunExposure");
         col.put("label", "Sun Exposure Time (secs)");
         col.put("rangeURI", "int");
-        columns.add(0, col);
+        columns.add(col);
 
         col = new CaseInsensitiveHashMap<>();
         col.put("name", "bloodConsumed");
         col.put("label", "Blood Consumed (g/dL)");
         col.put("rangeURI", "double");
-        columns.add(1, col);
+        columns.add(col);
 
         col = new CaseInsensitiveHashMap<>();
         col.put("name", "isPale");
         col.put("label", "Is Vampire Pale?");
         col.put("rangeURI", "boolean");
-        columns.add(2, col);
+        columns.add(col);
 
         col = new CaseInsensitiveHashMap<>();
         col.put("name", "activityComments");
         col.put("label", "Unusual Activities");
         col.put("rangeURI", "String");
-        columns.add(3, col);
+        columns.add(col);
 
         col = new CaseInsensitiveHashMap<>();
         col.put("name", "lastWeighed");
         col.put("label", "Last Weighed On");
         col.put("rangeURI", "date");
-        columns.add(4, col);
+        columns.add(col);
 
         return columns;
     }
@@ -232,6 +230,6 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
     {
         CreateDomainCommand cmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         cmd.setColumns(goodColumns);
-        return cmd.execute(this.createDefaultConnection(false), getCurrentContainerPath());
+        return cmd.execute(this.createDefaultConnection(false), getContainerPath());
     }
 }
