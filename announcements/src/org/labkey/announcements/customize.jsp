@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
+<%@ page import="org.labkey.api.announcements.DiscussionService.Settings.SortOrder" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -52,12 +53,12 @@
         <td>
             <table>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.CreationDate%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.CreationDate.getIndex())%>></td>
-                    <td><b>Initial Post</b> - Sort lists of conversations by date of the first posting.  This is appropriate for announcements and blogs.</td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=SortOrder.CreationDate.getIndex()%>"<%=checked(settings.getSortOrderIndex() == SortOrder.CreationDate.getIndex())%>></td>
+                    <td><b>Initial Post</b> - Sort lists of conversations by date of the first posting. This is appropriate for announcements and blogs.</td>
                 </tr>
                 <tr>
-                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=DiscussionService.Settings.SortOrder.LatestResponseDate%>" <%=checked(settings.getSortOrderIndex() == DiscussionService.Settings.SortOrder.LatestResponseDate.getIndex())%>></td>
-                    <td><b>Most Recent Post</b> - Sort lists of conversations by date of the most recent post.  This is often preferred for discussion boards.</td>
+                    <td valign="top"><input type="radio" name="sortOrderIndex" value="<%=SortOrder.LatestResponseDate.getIndex()%>"<%=checked(settings.getSortOrderIndex() == SortOrder.LatestResponseDate.getIndex())%>></td>
+                    <td><b>Most Recent Post</b> - Sort lists of conversations by date of the most recent post. This is often preferred for discussion boards.</td>
                 </tr>
             </table>
         </td>

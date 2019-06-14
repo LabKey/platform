@@ -31,7 +31,7 @@ public enum TimepointType implements EnumHasHtmlString<TimepointType>
 
     private final boolean _visitBased;
 
-    private TimepointType(boolean visitBased)
+    TimepointType(boolean visitBased)
     {
         _visitBased = visitBased;
     }
