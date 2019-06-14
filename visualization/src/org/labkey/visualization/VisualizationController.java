@@ -783,10 +783,14 @@ public class VisualizationController extends SpringActionController
             response.setContentType("application/pdf");
             response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("pdf") + "\"");
 
+            PDFTranscoder transcoder = new PDFTranscoder();
             TranscoderInput xIn = new TranscoderInput(new StringReader(getSVGSource()));
             TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
 
-            new PDFTranscoder().transcode(xIn, xOut);
+            // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
+            transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
+
+            transcoder.transcode(xIn, xOut);
 
             return null;
         }

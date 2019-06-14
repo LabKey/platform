@@ -20,8 +20,8 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
-<%@ page import="java.util.zip.ZipException" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.zip.ZipException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ImportSpecimensBean> me =
@@ -99,10 +99,10 @@
             if (!bean.isNoSpecimens())
             {
         %>
-        <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="<%=text(replaceOrMerge)%>" />
+        <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="<%=replaceOrMerge%>"/>
         <label for="merge"><b>Replace</b>: <%=text(replaceText)%></label>
         <br>
-        <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="<%=text(replaceOrMerge)%>"/>
+        <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="<%=replaceOrMerge%>"/>
         <label for="merge"><b>Merge</b>: <%=text(mergeText)%></label>
         <%
             }
