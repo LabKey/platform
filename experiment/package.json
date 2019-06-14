@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.16-fb-fileAttachmentWithPreview.7"
+    "@glass/domainproperties": "0.0.16-fb-fileAttachmentWithPreview.8"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
