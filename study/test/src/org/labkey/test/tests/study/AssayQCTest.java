@@ -240,7 +240,7 @@ public class AssayQCTest extends BaseWebDriverTest
         goToFolderManagement()
                 .goToExportTab();    // todo: make a FolderExportPage  and implement
         File exportArchive = new ExportFolderPage(getDriver())
-                .selectExperimentsAndRuns(true)
+                .includeExperimentsAndRuns(true)
                 .exportToBrowserAsZipFile();
 
         // navigate into the destination folder and import there
@@ -441,10 +441,10 @@ public class AssayQCTest extends BaseWebDriverTest
         customView.saveDefaultView();
 
         // now set each row to a different QC state
-        runsPage = new AssayRunsPage(getDriver());
-        runsPage = runsPage.setRowQcStatus(0, "Seems shady", "Not so sure about this one");
-        runsPage = runsPage.setRowQcStatus(1, "Totally legit", "Yeah, I trust this");
-        return runsPage.setRowQcStatus(2, "WTF", "No way is this legit");
+        return new AssayRunsPage(getDriver())
+            .setRowQcStatus("Seems shady", "Not so sure about this one", 0)
+            .setRowQcStatus( "Totally legit", "Yeah, I trust this", 1)
+            .setRowQcStatus("WTF", "No way is this legit", 2);
     }
 
     @Override
