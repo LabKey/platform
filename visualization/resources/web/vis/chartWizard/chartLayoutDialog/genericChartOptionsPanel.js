@@ -625,7 +625,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
     },
 
-    defineMarginOptions() {
+    defineMarginOptions: function() {
         this.marginTopInput = Ext4.create('Ext.form.field.Number', {
             name: 'marginTop',
             getInputValue: this.getMarginTop,
