@@ -47,7 +47,7 @@
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return HtmlStringBuilder.of(link(c.getTitle(), c.getStartURL(u))).append(getTrailSeparator()).getHtmlString();
+            return HtmlStringBuilder.of(link(c.getTitle(), c.getStartURL(u)).clearClasses()).append(getTrailSeparator()).getHtmlString();
         }
         return HtmlStringBuilder.of(HtmlString.unsafe("<span>")).append(c.getTitle()).append(HtmlString.unsafe("</span>")).append(getTrailSeparator()).getHtmlString();
     }
