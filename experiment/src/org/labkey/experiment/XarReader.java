@@ -823,7 +823,16 @@ public class XarReader extends AbstractXarImporter
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
 
-            run = Table.insert(getUser(), tiExperimentRun, vals);
+            ExpRunImpl impl = new ExpRunImpl(vals);
+            try
+            {
+                impl.save(getUser());
+                run = impl.getDataObject();
+            }
+            catch (BatchValidationException x)
+            {
+                throw new ExperimentException(x);
+            }
         }
 
         if (experimentLSID != null)
