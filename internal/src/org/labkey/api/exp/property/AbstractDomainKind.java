@@ -211,25 +211,6 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
-    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
-    {
-        SQLFragment allRowsSQL = new SQLFragment();
-        SQLFragment nonBlankRowsSQL = new SQLFragment();
-
-        if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
-        {
-            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
-            long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
-
-            return totalRows == 0 || nonBlankRows == 0;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    @Override
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
         TreeSet<String> ret = new TreeSet<>();

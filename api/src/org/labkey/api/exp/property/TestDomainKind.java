@@ -229,12 +229,6 @@ public class TestDomainKind extends DomainKind
     }
 
     @Override
-    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Set<String> getNonProvisionedTableNames()
     {
         return Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList("testtable", "testtable2")));
