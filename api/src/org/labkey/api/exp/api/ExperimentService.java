@@ -729,26 +729,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
 
-    // Opt to marshal JSON to GWTPropertyValidator bean directly
-    @Deprecated
-    GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException;
-
-    // Opt to marshal JSON to GWTConditionalFormat bean directly
-    @Deprecated
-    GWTConditionalFormat convertJsonToConditionalFormatter(JSONObject obj) throws JSONException;
-
-    // Opt to marshal JSON to GWTPropertyDescriptor bean directly
-    @Deprecated
-    GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException;
-
-    // Opt to marshal JSON to GWTDomain bean directly
-    @Deprecated
-    GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException;
-
-    JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd);
-
-    JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd);
-
     void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
 
     void onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
