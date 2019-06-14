@@ -46,8 +46,6 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
     {
         _form = form;
         QueryDefinition qdef = form.getQueryDef();
-        if (null == qdef)
-                throw new NotFoundException("Could not find a custom query named '" + form.getQueryName() + "' in schema '" + form.getSchemaName() + "'!");
 
         StringBuilder html = new StringBuilder("<div class='labkey-query-source'><pre>");
         html.append(qdef.getSql());

@@ -39,12 +39,16 @@ public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
             ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(protocol.getProtocolId());
             if (expProtocol == null)
             {
-                return new NotFoundException("Could not locate Experiment Protocol for id: " + protocol.getProtocolId().toString());
+                throw new NotFoundException("Could not locate Experiment Protocol for id: " + protocol.getProtocolId().toString());
             }
             else if (expProtocol.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 AssayServiceImpl svc = new AssayServiceImpl(getViewContext());
                 GWTProtocol ret = svc.getAssayDefinition(protocol.getProtocolId(), false);
+                if (ret == null)
+                {
+                    throw new NotFoundException("Could not locate Assay Definition for id: " + protocol.getProtocolId().toString());
+                }
                 return success("Assay protocol " + protocol.getName() + "'", ret);
             }
             else

@@ -23,7 +23,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -31,7 +30,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.ReimportRedirectAction;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
@@ -45,7 +43,6 @@ import org.labkey.api.view.NavTree;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
 
 /**
  * User: brittp
@@ -75,6 +72,7 @@ public class RunListQueryView extends ExperimentRunListView
         _replacedRunFilter = ReplacedRunFilter.getFromURL(this, REPLACED_FIELD_KEY);
     }
 
+    @Override
     protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response)
     {
         // No-op to avoid double-rendering header links

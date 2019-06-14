@@ -25,8 +25,6 @@ import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryLogging;
-import org.labkey.api.data.SqlScanner;
-import org.labkey.api.data.SqlScanner.Handler;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
@@ -63,7 +61,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.contains;
 import static org.apache.commons.lang3.StringUtils.startsWith;
@@ -2742,52 +2739,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
-    private static final Set<String> MUTATING_WORDS = Set.of("INSERT", "UPDATE", "DELETE");
-    private static final Set<String> NON_MUTATING_WORDS = Set.of("SELECT");
-
     private boolean isMutatingSql(String sql)
     {
-        // The original approach used to detect mutating SQL. It can encounter false positives and negatives, since it
-        // doesn't handle block comments or quoted strings.
-        String firstLine = Arrays.stream(sql.split("\n")).map(StringUtils::trimToEmpty).filter(s -> !s.isEmpty() && !startsWith(s,"--")).findFirst().orElse("").toUpperCase();
-        boolean oldWay = (contains(firstLine,"INSERT ") || contains(firstLine, "UPDATE ") || contains(firstLine, "DELETE "));
-
-        // Strip all comments and leading whitespace, then extract the first word. This is a simple but expensive
-        // approach. Included temporarily to test the faster approach below.
-        StringBuilder sb = new SqlScanner(sql).stripComments();
-        String stripped = StringUtils.stripStart(sb.toString(), null);
-        String[] words = stripped.split("\\s+");
-        String firstWord = words[0].toUpperCase();
-        boolean slowWay = "INSERT".equals(firstWord) || "UPDATE".equals(firstWord) || "DELETE".equals(firstWord);
-
-        // Extract the first word, ignoring all leading comments and whitespace
-        StringBuilder firstWord2 = new StringBuilder();
-        SqlScanner scanner = new SqlScanner(sql);
-        scanner.scan(0, new Handler()
-        {
-            @Override
-            public boolean character(char c, int index)
-            {
-                if (Character.isWhitespace(c))
-                    return 0 == firstWord2.length();
-
-                firstWord2.append(c);
-                return true;
-            }
-        });
-
-        boolean newWay = MUTATING_WORDS.contains(firstWord2.toString().toUpperCase());
-
-//        if (!newWay && !NON_MUTATING_WORDS.contains(firstWord2.toString()))
-//            _log.info(firstWord);
-
-        if (oldWay != newWay)
-            _log.warn("oldWay: " + oldWay + ", newWay: " + newWay + ", " + firstWord2 + ". Detection of mutating SQL did not match for: " + sql);
-
-        if (newWay != slowWay)
-            _log.error("newWay: " + newWay + ", " + firstWord2 + ". slowWay: " + slowWay + ", " + firstWord + ". Detection of mutating SQL did not match for: " + sql);
-
-        return oldWay;
+        return new MutatingSqlDetector(sql).isMutating();
     }
 
 

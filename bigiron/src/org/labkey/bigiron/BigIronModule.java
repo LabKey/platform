@@ -44,22 +44,26 @@ public class BigIronModule extends CodeOnlyModule
         SqlDialectRegistry.register(new OracleDialectFactory());
     }
 
+    @Override
     public String getName()
     {
         return "BigIron";
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
 
+    @Override
     protected void init()
     {
         addController("bigiron", BigIronController.class);
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
@@ -68,13 +72,14 @@ public class BigIronModule extends CodeOnlyModule
         }
     }
 
+    @Override
     public TabDisplayMode getTabDisplayMode()
     {
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
-    @NotNull
     @Override
+    @NotNull
     public Set<Class> getIntegrationTests()
     {
         return Collections.singleton(GroupConcatInstallationManager.TestCase.class);

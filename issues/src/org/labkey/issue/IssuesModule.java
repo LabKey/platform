@@ -16,14 +16,12 @@
 package org.labkey.issue;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
@@ -48,8 +46,8 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.GeneralIssuesListDefProvider;
 import org.labkey.issue.model.Issue;
-import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssueCommentType;
+import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.model.IssuesListDefServiceImpl;
 import org.labkey.issue.query.IssueDefDomainKind;
 import org.labkey.issue.query.IssuesQuerySchema;
@@ -72,16 +70,19 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
 {
     public static final String NAME = "Issues";
 
+    @Override
     public String getName()
     {
         return NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.10;
     }
 
+    @Override
     protected void init()
     {
         addController("issues", IssuesController.class);
@@ -97,6 +98,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         AttachmentService.get().registerAttachmentType(IssueCommentType.get());
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -124,12 +126,14 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         return result;
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new IssueContainerListener());
@@ -170,6 +174,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         return new ActionURL(IssuesController.BeginAction.class, c).addParameter(DataRegion.LAST_FILTER_PARAM, true);
     }
 
+    @Override
     @NotNull
     public Set<Class> getIntegrationTests()
     {
@@ -183,12 +188,14 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
 
+    @Override
     public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
         Runnable r = () -> IssueManager.indexIssues(task, c, modifiedSince);
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
+    @Override
     public void indexDeleted()
     {
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute("UPDATE issues.issues SET lastIndexed=NULL");

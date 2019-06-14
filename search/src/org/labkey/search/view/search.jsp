@@ -288,7 +288,7 @@
             <labkey:input type="hidden" name="showAdvanced" value="<%=h(form.isShowAdvanced())%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
-            <labkey:input type="hidden" name="scope" value="<%=h(form.getSearchScope())%>"/>
+            <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
             <% } %>
             <% if (null != form.getTemplate()) { %>
             <labkey:input type="hidden" name="template" value="<%=h(form.getTemplate())%>"/>

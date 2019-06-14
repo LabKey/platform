@@ -2210,12 +2210,13 @@ public class CoreController extends SpringActionController
 
                         PathMapper pathMap = def.getPathMap();
                         if (pathMap != null)
-                            record.put("pathMap", ((PathMapperImpl)pathMap).toJSON());
+                            record.put("pathMap", pathMap.toJSON());
                         else
                             record.put("pathMap", null);
 
                         record.put("user", def.getUser());
-                        record.put("password", def.getPassword());
+                        // don't send down password
+                        //record.put("password", def.getPassword());
                     }
                 }
                 views.add(record);

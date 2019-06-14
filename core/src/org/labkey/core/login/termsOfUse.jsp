@@ -60,7 +60,7 @@
                 <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item">
                 <label for="approvedTermsOfUse">I agree to these terms</label>
             </div>
-            <input type="hidden" name="termsOfUseType" id="termsOfUseType" value="<%= h(bean.form.getTermsOfUseType())%>">
+            <input type="hidden" name="termsOfUseType" id="termsOfUseType" value="<%=bean.form.getTermsOfUseType()%>">
 
             <div class="auth-item">
                 <%= button("Agree").submit(true) %>

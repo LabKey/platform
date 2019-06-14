@@ -22,6 +22,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
@@ -33,11 +34,12 @@ import java.util.regex.Pattern;
  * User: jeckels
  * Date: Nov 21, 2005
  */
-public enum LSIDRelativizer
+public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
 {
     /** Keeps the original LSID from the source server */
     ABSOLUTE("Absolute")
     {
+        @Override
         protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
             return lsid.toString();
@@ -45,6 +47,7 @@ public enum LSIDRelativizer
     },
     FOLDER_RELATIVE("Folder relative")
     {
+        @Override
         protected String relativize(ExpObject o, RelativizedLSIDs lsids)
         {
             if (o instanceof ExpData)
@@ -60,6 +63,7 @@ public enum LSIDRelativizer
             return super.relativize(o, lsids);
         }
 
+        @Override
         protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
             String prefix = lsid.getNamespacePrefix();
@@ -91,6 +95,7 @@ public enum LSIDRelativizer
     },
     PARTIAL_FOLDER_RELATIVE("Partial folder relative")
     {
+        @Override
         public String relativize(Lsid lsid, RelativizedLSIDs lsids)
         {
             String prefix = lsid.getNamespacePrefix();

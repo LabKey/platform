@@ -623,7 +623,7 @@ public enum PropertyType
 
         for (PropertyType t : values())
         {
-            if (t.excelCellType == cell.getCellTypeEnum())
+            if (t.excelCellType == cell.getCellType())
                 return t.convertExcelValue(cell);
         }
         return ExcelFactory.getCellStringValue(cell);
