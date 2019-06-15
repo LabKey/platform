@@ -271,12 +271,6 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
-    {
-        return false;
-    }
-
-    @Override
     public DbSchemaType getSchemaType()
     {
         return DbSchemaType.Provisioned;
