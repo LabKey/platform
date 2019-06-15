@@ -1,5 +1,6 @@
 package org.labkey.test.tests.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -10,6 +11,7 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.DomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
+import org.labkey.remoteapi.domain.GetDomainCommand;
 import org.labkey.remoteapi.domain.SaveDomainCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.categories.DailyA;
@@ -30,10 +32,12 @@ import static org.junit.Assert.fail;
 public class StudyDatasetDomainTest extends BaseWebDriverTest
 {
     private final String DOMAIN_KIND = "StudyDatasetDate";
+    private final String DOMAIN_NAME = "Study";//schemaName
     private final String STUDY_DATASET_NAME = "vampireBloodLevels";
 
     private final String BLANK_PROPERTY_ERROR_MSG = "Name field must not be blank.";
     private final String DUPLICATE_FIELD_ERROR_MSG = "All property names must be unique. Duplicate found: bloodLevel.";
+    private final String TYPE_CHANGE_ERROR_MSG = "Cannot convert an instance of VARCHAR to INTEGER.";
 
     @Override
     protected @Nullable String getProjectName()
@@ -93,26 +97,26 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
     @Test
     public void createDomainErrorsTest() throws IOException
     {
-        log("Test for expected errors when creating a new domain with a missing property.");
+        log("Test for an expected error when creating a new domain with a missing property.");
         CreateDomainCommand createCmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         createCmd.setColumns(getColumnWithBlankNameProperty());
         testForExpectedErrorMessage(createCmd, BLANK_PROPERTY_ERROR_MSG, "CreateDomain");
 
-        log("Test for expected errors when creating a new domain with duplicate columns.");
+        log("Test for an expected error when creating a new domain with duplicate columns.");
         createCmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         createCmd.setColumns(getColumnsWithDuplicateFields());
         testForExpectedErrorMessage(createCmd, DUPLICATE_FIELD_ERROR_MSG, "CreateDomain");
     }
 
     @Test
-    public void updateDomainErrorTest() throws IOException, CommandException
+    public void updateDomainErrorsTest() throws Exception
     {
         log("Create a study domain.");
         DomainResponse domainResponse = createDomainWithGoodColumns(getGoodColumns());
         long domainId = domainResponse.getDomainId();
         String domainURI = domainResponse.getDomainURI();
 
-        log("Test for expected errors when saving an existing domain with a missing property.");
+        log("Test for an expected error when saving an existing domain with a missing property.");
         SaveDomainCommand saveCmd = new SaveDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         saveCmd.setDomainId((int)domainId);
         saveCmd.setDomainURI(domainURI);
@@ -120,13 +124,60 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         saveCmd.setColumns(getColumnWithBlankNameProperty());
         testForExpectedErrorMessage(saveCmd, BLANK_PROPERTY_ERROR_MSG, "SaveDomain");
 
-        log("Test for expected errors when saving an existing domain with duplicate columns.");
+        log("Test for an expected error when saving an existing domain with duplicate columns.");
         saveCmd = new SaveDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         saveCmd.setDomainId((int)domainId);
         saveCmd.setDomainURI(domainURI);
         saveCmd.setSchemaName("study");
         saveCmd.setColumns(getColumnsWithDuplicateFields());
         testForExpectedErrorMessage(saveCmd, DUPLICATE_FIELD_ERROR_MSG, "SaveDomain");
+
+        log("Rename 'activityComments' column to 'activityCode'.");
+        renameColumnName();
+
+        log("Test for an expected error when changing at type from String to Int");
+        GetDomainCommand getCmd = new GetDomainCommand(DOMAIN_NAME, STUDY_DATASET_NAME);
+        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(false), getContainerPath());
+        List<Map<String, Object>> getDomainCols = getDomainResponse.getColumns();
+        Map<String, Object> activityCodeCol = getDomainCols.get(3);
+
+        if ("activityCode".equalsIgnoreCase((String)activityCodeCol.get("name")))
+        {
+            activityCodeCol.put("rangeURI", "int"); //rename from activityComments
+
+            saveCmd = new SaveDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
+            long getDomainId = getDomainResponse.getDomainId();
+            saveCmd.setDomainId((int) getDomainId);
+            saveCmd.setDomainURI(getDomainResponse.getDomainURI());
+            saveCmd.setSchemaName("study");
+            saveCmd.setColumns(getDomainCols);
+
+            testForExpectedErrorMessage(saveCmd, TYPE_CHANGE_ERROR_MSG, "SaveDomain");
+        }
+        else
+        {
+            throw new Exception("Renamed column 'activityCode' not found.");
+        }
+
+    }
+
+    @NotNull
+    private void renameColumnName() throws IOException, CommandException
+    {
+        GetDomainCommand getCmd = new GetDomainCommand(DOMAIN_NAME, STUDY_DATASET_NAME);
+        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(false), getContainerPath());
+        List<Map<String, Object>> getDomainCols = getDomainResponse.getColumns();
+        Map<String, Object> activityCommentsCol = getDomainCols.get(3);
+
+        activityCommentsCol.put("name", "activityCode"); //rename from activityComments
+
+        SaveDomainCommand saveCmd = new SaveDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
+        long getDomainId = getDomainResponse.getDomainId();
+        saveCmd.setDomainId((int)getDomainId);
+        saveCmd.setDomainURI(getDomainResponse.getDomainURI());
+        saveCmd.setSchemaName("study");
+        saveCmd.setColumns(getDomainCols);
+        saveCmd.execute(this.createDefaultConnection(false), getContainerPath());
     }
 
     private void testForExpectedErrorMessage(DomainCommand cmd, String expectedErrorMsg, String domainApiType) throws IOException
