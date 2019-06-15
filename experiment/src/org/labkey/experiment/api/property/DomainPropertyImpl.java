@@ -621,7 +621,7 @@ public class DomainPropertyImpl implements DomainProperty
             PropertyType newType = _pd.getPropertyType();
             if (oldType.getStorageType() != newType.getStorageType())
             {
-                throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType());
+                throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
             }
 
             OntologyManager.validatePropertyDescriptor(_pd);
