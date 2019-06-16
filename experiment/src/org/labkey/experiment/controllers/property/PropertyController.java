@@ -389,10 +389,6 @@ public class PropertyController extends SpringActionController
                 Map<String, Object> map = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
                 resp.putAll(map);
             }
-            else
-            {
-                resp = new ApiSimpleResponse();
-            }
 
             resp.put("success", true);
             return resp;
@@ -912,7 +908,7 @@ public class PropertyController extends SpringActionController
                 throw new NotFoundException("Could not find domain for " + domainId);
 
             if (dom.getContainer() != container)
-                throw new NotFoundException("Could not find domain for " + domainId + " in container " + container.getName() + ".");
+                throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
 
             domain = DomainUtil.getDomainDescriptor(user, dom);
         }

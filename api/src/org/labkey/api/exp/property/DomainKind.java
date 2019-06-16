@@ -165,7 +165,7 @@ abstract public class DomainKind implements Handler<String>
     abstract public String getMetaDataTableName();
 
     /**
-     * Determines if the domain has either no rows or row which are all null
+     * Determines if the domain has any existing rows where the value is null for the given property
      * Perhaps DomainKind should have getTableInfo() method.
      */
     abstract public boolean hasNullValues(Domain domain, DomainProperty prop);

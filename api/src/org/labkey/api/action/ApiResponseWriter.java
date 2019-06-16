@@ -428,7 +428,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             ObjectError error = allErrors.get(i);
             String msg = error.getDefaultMessage();
             String key = error.getObjectName();
-            String propertyId = (null != error.getCodes() ? error.getCodes()[0] : key);
+            String propertyId = (null != error.getCodes() && error.getCodes().length > 0 ? error.getCodes()[0] : key);
 
             if (error instanceof FieldError)
             {
