@@ -897,24 +897,31 @@ public class StudyServiceImpl implements StudyService
                         fk.addJoin(FieldKey.fromParts("Container"), "Container", false);
                         unionCol.setFk(fk);
                     }
-                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name)) || "visit".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name))
+                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name) || "visit".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name)))
                     {
-                        final TableInfo lookupTable = unionCol.getFk().getLookupTableInfo();
-                        LookupForeignKey fk = new LookupForeignKey()
+                        TableInfo lookupTable = unionCol.getFk().getLookupTableInfo();
+                        UserSchema schema = null==lookupTable ? null : lookupTable.getUserSchema();
+                        if (schema instanceof StudyQuerySchema)
                         {
-                            @Override
-                            public TableInfo getLookupTableInfo()
+                            final String lookupTableName = lookupTable.getName();
+                            LookupForeignKey fk = new LookupForeignKey()
                             {
-                                if (lookupTable instanceof FilteredTable && lookupTable.supportsContainerFilter())
-                                    ((FilteredTable)lookupTable).setContainerFilter(new ContainerFilter.SimpleContainerFilter(containers));
-                                return lookupTable;
-                            }
-                        };
-                        if ("visit".equalsIgnoreCase(name))
-                            fk.addJoin(new FieldKey(null, "Container"), "Folder", false);
-                        else if ("participantid".equalsIgnoreCase(name))
-                            fk.addJoin(new FieldKey(null, "Container"), "Container", false);
-                        unionCol.setFk(fk);
+                                @Override
+                                public TableInfo getLookupTableInfo()
+                                {
+                                    return schemaDefault.getTable(lookupTableName, new ContainerFilter.SimpleContainerFilter(containers));
+                                }
+                            };
+                            if (null != lookupTable.getColumn("Folder"))
+                                fk.addJoin(new FieldKey(null, "Container"), "Folder", false);
+                            else if (null != lookupTable.getColumn("Container"))
+                                fk.addJoin(new FieldKey(null, "Container"), "Container", false);
+                            unionCol.setFk(fk);
+                        }
+                        else
+                        {
+                            unionCol.clearFk();
+                        }
                     }
 
                     unionColumns.put(name,unionCol);
