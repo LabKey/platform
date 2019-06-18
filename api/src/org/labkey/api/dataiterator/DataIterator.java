@@ -60,8 +60,6 @@ public interface DataIterator extends Closeable
      * a) null
      * b) real value (e.g. 5.0, or "name")
      * c) MvFieldWrapper
-     *
-     * MSInspectFeaturesDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
 
