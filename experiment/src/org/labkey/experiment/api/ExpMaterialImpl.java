@@ -70,7 +70,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
 
-    static public List<ExpMaterialImpl> fromMaterials(List<Material> materials)
+    static public List<ExpMaterialImpl> fromMaterials(Collection<Material> materials)
     {
         return materials.stream().map(ExpMaterialImpl::new).collect(Collectors.toList());
     }

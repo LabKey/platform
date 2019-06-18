@@ -27,9 +27,6 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -134,13 +131,8 @@ import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.model.GWTConditionalFormat;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
-import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -3811,21 +3803,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
     {
-//        var dataRowIds = new
-//
-//        List<? extends ExpRun> runsUsingItem;
-//        if (item instanceof Data)
-//            runsUsingItem = getRunsUsingDataIds(Arrays.asList(item.getRowId()));
-//        else if (item instanceof Material)
-//            runsUsingItem = getRunsUsingMaterials(item.getRowId());
-//        else
-//            throw new IllegalArgumentException("Expected Data or Material");
-
         var runsUsingItems = new ArrayList<ExpRun>();
         if (null != dataItems && !dataItems.isEmpty())
             runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+
         if (null != materialItems && !materialItems.isEmpty())
-            runsUsingItems.addAll(getRunsUsingMaterials(materialItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
@@ -3861,6 +3844,51 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
         }
+    }
+
+    private Collection<? extends ExpRun> getDeleteableSourceRunsFromMaterials(Set<Integer> materialIds)
+    {
+        if (materialIds == null || materialIds.isEmpty())
+            return Collections.emptyList();
+
+        /* Ex. SQL
+        SELECT DISTINCT m.runId
+	    FROM exp.material m
+        WHERE m.rowId in (3592, 3593, 3594)
+            AND NOT EXIST (
+                -- Check for siblings
+                SELECT DISTINCT m2.runId
+                FROM exp.material m2
+                WHERE m.rowId in (3592, 3593, 3594)
+                    AND m.rowId != m2.rowId
+                    AND m.runId = m2.runId
+            );
+         */
+
+        SQLFragment idInclause = getAppendInClause(materialIds);
+
+        SQLFragment sql = new SQLFragment(
+                "SELECT DISTINCT m.runId\n")
+                .append("FROM ").append(getTinfoMaterial(), "m").append("\n")
+                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("AND NOT EXISTS (\n")
+                .append("SELECT DISTINCT m2.runId\n")
+                .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
+                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("AND m.rowId != m2.rowId\n")
+                .append("AND m.runId = m2.runId\n")
+                .append(")");
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
+
+    }
+
+    private Collection<? extends ExpRun> getDerivedRunsFromMaterial(Collection<Integer> materialIds)
+    {
+        if (materialIds == null || materialIds.isEmpty())
+            return Collections.emptyList();
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
     }
 
 
@@ -4313,7 +4341,17 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
         }
 
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids)));
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getAppendInClause(ids)));
+    }
+
+    /**
+     * Get sql IN clause using supplied ids
+     * @param ids to include within parentheses
+     * @return SQLFragment like: IN (1, 2, 3)
+     */
+    private SQLFragment getAppendInClause(Collection ids)
+    {
+        return getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
     }
 
     // Get a map of run LSIDs to Roles used by the Material ids.
@@ -4423,27 +4461,90 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
 
-    private List<ExperimentRun> getRunsForMaterialList(SQLFragment materialRowIdSQL)
+    /**
+     * Get the Source and Target runs
+     * @param materialRowIdSQL
+     * @return
+     */
+    private List<ExperimentRun> getRunsForMaterialList(@NotNull SQLFragment materialRowIdSQL)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
-        sql.append(getTinfoExperimentRun(), "er");
-        sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
-        sql.append(getTinfoExperimentRun(), "er2");
-        sql.append(" WHERE RowId IN ((SELECT pa.RunId FROM ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoMaterialInput(), "mi");
-        sql.append(" WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID ");
-        sql.append(materialRowIdSQL);
-        sql.append(")");
-        sql.append("\n UNION \n (SELECT pa.RunId FROM ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoMaterial(), "m");
-        sql.append(" WHERE m.SourceApplicationId = pa.RowId AND m.RowId ");
-        sql.append(materialRowIdSQL);
-        sql.append(")))");
+        SQLFragment sql = new SQLFragment("(\n");
+        sql.append(getTargetRunIdsFromMaterialIds(materialRowIdSQL));
+        sql.append("\n) UNION (\n");
+        sql.append(getSourceRunIdsFromMaterialIds(materialRowIdSQL));
+        sql.append("\n)");
+
+        return getRunsForRunIds(sql);
+    }
+
+    /**
+     * Get set ExperimentRuns from subquery
+     * @param runIdsSQL subquery providing runIds
+     * @return List of Experiment runs from subquery
+     */
+    private List<ExperimentRun> getRunsForRunIds(SQLFragment runIdsSQL)
+    {
+        SQLFragment sql = new SQLFragment("SELECT *\n");
+        sql.append("FROM ").append(getTinfoExperimentRun(), "er").append("\n");
+        sql.append("WHERE RowId IN (\n");
+        sql.append(runIdsSQL);
+        sql.append("\n)");
+
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
+     * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.materialinput mi
+            WHERE mi.TargetApplicationId = pa.RowId
+                AND pa.cpastype = 'ExperimentRun'  --Limit protocolapplications, where materials are inputs
+                AND mi.MaterialID <materialRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoMaterialInput(), "mi").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
+            .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+            .append("AND mi.MaterialID ").append(materialRowIdSQL);
+
+        return sql;
+    }
+
+    /**
+     * Get query to obtain the runIds that created the materials requested by parameter
+     * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve precursor runs based on supplied material ids.
+     */
+    private SQLFragment getSourceRunIdsFromMaterialIds(@NotNull SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.material m
+            WHERE m.SourceApplicationId = pa.RowId
+                AND m.rowId <materialRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoMaterial(), "m").append("\n");
+        sql.append("WHERE m.SourceApplicationId = pa.RowId AND m.RowId ").append(materialRowIdSQL);
+
+        return sql;
     }
 
     void deleteDomainObjects(Container c, String lsid) throws ExperimentException
@@ -6420,211 +6521,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException
-    {
-        GWTDomain domain = new GWTDomain();
-        JSONObject jsonDomain = obj.getJSONObject("domainDesign");
-
-        domain.set_Ts(jsonDomain.optString("ts"));
-        domain.setDomainId(jsonDomain.optInt("domainId", -1));
-
-        domain.setName(jsonDomain.getString("name"));
-        domain.setDomainURI(jsonDomain.optString("domainURI", null));
-        domain.setContainer(jsonDomain.getString("container"));
-
-        // Description can be null
-        domain.setDescription(jsonDomain.optString("description", null));
-
-        JSONArray jsonFields = jsonDomain.getJSONArray("fields");
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        for (int i=0; i<jsonFields.length(); i++)
-        {
-            JSONObject jsonProp = jsonFields.getJSONObject(i);
-            GWTPropertyDescriptor prop = convertJsonToPropertyDescriptor(jsonProp);
-            props.add(prop);
-        }
-
-        domain.setFields(props);
-
-        JSONArray jsonIndices = jsonDomain.optJSONArray("indices");
-        if (jsonIndices != null)
-        {
-            List<GWTIndex> indices = new ArrayList<>();
-            for (JSONObject jsonIndex : jsonIndices.toJSONObjectArray())
-            {
-                List<String> columnNames = new ArrayList<>();
-                for (Object o : jsonIndex.getJSONArray("columns").toArray())
-                    columnNames.add(String.valueOf(o));
-
-                // Only unique is supported currently
-                boolean unique = TableInfo.IndexType.Unique.name().equalsIgnoreCase(jsonIndex.optString("type"));
-                GWTIndex index = new GWTIndex(columnNames, unique);
-                indices.add(index);
-            }
-            domain.setIndices(indices);
-        }
-
-        return domain;
-    }
-
-    @Override
-    public GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException
-    {
-        GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-
-        // copy over properties (listed in alphabetical order)
-        prop.setConceptURI((String)obj.get("conceptURI"));
-        prop.setDefaultValue((String)obj.get("defaultValue"));
-        if (!obj.isNull("defaultValueType"))
-            prop.setDefaultValueType(DefaultValueType.valueOf((String)obj.get("defaultValueType")));
-        prop.setDescription((String)obj.get("description"));
-        if (!obj.isNull("dimension"))
-            prop.setDimension((Boolean)obj.get("dimension"));
-        if (!obj.isNull("disableEditing"))
-            prop.setDisableEditing((Boolean)obj.get("disableEditing"));
-        if (!obj.isNull("excludeFromShifting"))
-            prop.setExcludeFromShifting((Boolean)obj.get("excludeFromShifting"));
-        if (!obj.isNull("facetingBehaviorType"))
-            prop.setFacetingBehaviorType(obj.getString("facetingBehaviorType"));
-        prop.setFormat((String)obj.get("format"));
-        if (!obj.isNull("hidden"))
-            prop.setHidden((Boolean)obj.get("hidden"));
-        prop.setImportAliases((String)obj.get("importAliases"));
-        prop.setLabel((String)obj.get("label"));
-        prop.setLookupContainer((String)obj.get("lookupContainer"));
-        prop.setLookupQuery((String)obj.get("lookupQuery"));
-        prop.setLookupSchema((String)obj.get("lookupSchema"));
-        if (!obj.isNull("measure"))
-            prop.setMeasure((Boolean)obj.get("measure"));
-        if (!obj.isNull("mvEnabled"))
-            prop.setMvEnabled((Boolean)obj.get("mvEnabled"));
-        prop.setName(obj.getString("name"));
-        prop.setOntologyURI((String)obj.get("ontologyURI"));
-        if (!obj.isNull("phi"))
-            prop.setPHI((String)obj.get("phi"));
-        if (!obj.isNull("propertyId"))
-            prop.setPropertyId((Integer)obj.get("propertyId"));
-        prop.setPropertyURI((String)obj.get("propertyURI"));
-        prop.setRangeURI(obj.getString("rangeURI"));
-        if (!obj.isNull("recommendedVariable"))
-            prop.setRecommendedVariable((Boolean)obj.get("recommendedVariable"));
-        prop.setRedactedText((String)obj.get("redactedText"));
-        if (!obj.isNull("required"))
-            prop.setRequired((Boolean)obj.get("required"));
-        if (!obj.isNull("scale"))
-            prop.setScale((Integer)obj.get("scale"));
-        prop.setSearchTerms((String)obj.get("searchTerms"));
-        prop.setSemanticType((String)obj.get("semanticType"));
-        if (!obj.isNull("shownInDetailsView"))
-            prop.setShownInDetailsView((Boolean)obj.get("shownInDetailsView"));
-        if (!obj.isNull("shownInInsertView"))
-            prop.setShownInInsertView((Boolean)obj.get("shownInInsertView"));
-        if (!obj.isNull("shownInUpdateView"))
-            prop.setShownInUpdateView((Boolean)obj.get("shownInUpdateView"));
-        prop.setURL((String)obj.get("url"));
-
-        // property validators
-        JSONArray jsonValidators = obj.optJSONArray("validators");
-        if(null != jsonValidators)
-        {
-            List<GWTPropertyValidator> validators = new ArrayList<>();
-            for (int i = 0; i < jsonValidators.length(); i++)
-            {
-                JSONObject jsonValidator = jsonValidators.getJSONObject(i);
-                if (null != jsonValidator)
-                {
-                    validators.add(convertJsonToPropertyValidator(jsonValidator));
-                }
-            }
-            prop.setPropertyValidators(validators);
-        }
-
-        //conditional formats
-        JSONArray conditionalFormats = obj.optJSONArray("conditionalFormats");
-        if (null != conditionalFormats)
-        {
-            List<GWTConditionalFormat> conditionalFormatters = new ArrayList<>();
-            for (int i = 0; i < conditionalFormats.length(); i++)
-            {
-                JSONObject conditionalFormatter = conditionalFormats.getJSONObject(i);
-                if (null != conditionalFormatter)
-                {
-                    conditionalFormatters.add(convertJsonToConditionalFormatter(conditionalFormatter));
-                }
-            }
-            prop.setConditionalFormats(conditionalFormatters);
-        }
-
-        return prop;
-    }
-
-    @Override
-    public GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException
-    {
-        GWTPropertyValidator validator = new GWTPropertyValidator();
-        validator.setName(obj.optString("name", "Validator"));
-        validator.setDescription(obj.optString("description"));
-        validator.setType(PropertyValidatorType.getType(obj.getString("type")));
-        validator.setExpression(obj.optString("expression"));
-        validator.setErrorMessage(obj.optString("errorMessage"));
-
-        return validator;
-    }
-
-    @Override
-    public GWTConditionalFormat convertJsonToConditionalFormatter(JSONObject obj) throws JSONException
-    {
-        GWTConditionalFormat formatter = new GWTConditionalFormat();
-        formatter.setFilter(obj.getString("filter"));
-        formatter.setBold(obj.optBoolean("bold"));
-        formatter.setBold(obj.optBoolean("italic"));
-        formatter.setBold(obj.optBoolean("strikethrough"));
-        formatter.setTextColor(obj.optString("textColor"));
-        formatter.setTextColor(obj.optString("backgroundColor"));
-
-        return formatter;
-    }
-
-    @Override
-    public JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd)
-    {
-        JSONArray json = new JSONArray();
-        JSONObject obj;
-        for (GWTPropertyValidator pv : pd.getPropertyValidators())
-        {
-            obj = new JSONObject();
-            obj.put("name", pv.getName());
-            obj.put("description", pv.getDescription());
-            obj.put("type", pv.getType().getTypeName());
-            obj.put("expression", pv.getExpression());
-            obj.put("errorMessage", pv.getErrorMessage());
-            json.put(obj);
-        }
-
-        return json;
-    }
-
-    public JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd)
-    {
-        JSONObject json = new JSONObject();
-        json.put("propertyId", pd.getPropertyId());
-        json.put("name", pd.getName());
-        json.put("required", pd.isRequired());
-        json.put("label", pd.getLabel());
-        json.put("scale", pd.getScale());
-        json.put("format", pd.getFormat());
-        json.put("lookupSchema", pd.getLookupSchema());
-        json.put("lookupQuery", pd.getLookupQuery());
-        json.put("defaultValue", pd.getDefaultValue());
-        json.put("redactedText", pd.getRedactedText());
-        json.put("validators", convertPropertyValidatorsToJson(pd));
-        json.put("rangeURI", pd.getRangeURI());
-        json.put("conceptURI", pd.getConceptURI());
-
-        return json;
-    }
-
-    @Override
     public void addExperimentListener(ExperimentListener listener)
     {
         _listeners.add(listener);
@@ -6655,6 +6551,25 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             listener.afterMaterialCreated(materials, container, user);
         }
+    }
+
+    /**
+     * Get runs that can potentially be deleted based on supplied materials
+     * @param materials -- Set of materials to get runs for
+     * @return
+     */
+    @Override
+    public List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials)
+    {
+        var runsUsingItems = new ArrayList<ExpRun>();
+        if (null != materials && !materials.isEmpty())
+        {
+            Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            runsUsingItems.addAll(getDerivedRunsFromMaterial(materialIds));
+            runsUsingItems.addAll(getDeleteableSourceRunsFromMaterials(materialIds));
+        }
+
+        return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
     }
 
     public static class TestCase extends Assert
