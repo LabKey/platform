@@ -27,9 +27,6 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -134,13 +131,8 @@ import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.model.GWTConditionalFormat;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
-import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -3815,7 +3807,8 @@ public class ExperimentServiceImpl implements ExperimentService
         if (null != dataItems && !dataItems.isEmpty())
             runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
 
-        runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
+        if (null != materialItems && !materialItems.isEmpty())
+            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
