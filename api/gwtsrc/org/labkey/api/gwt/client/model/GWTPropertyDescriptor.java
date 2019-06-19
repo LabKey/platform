@@ -76,6 +76,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
+    private BooleanProperty isPrimaryKey = new BooleanProperty(false);
+    private BooleanProperty isLocked = new BooleanProperty(false);
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -134,6 +136,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDisableEditing(s.getDisableEditing());
         setScale(s.getScale());
         setRedactedText(s.getRedactedText());
+        setPrimaryKey(s.isPrimaryKey());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -525,6 +528,32 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setRedactedText(String redactedText)
     {
         this.redactedText.set(redactedText);
+    }
+
+    public boolean isPrimaryKey()
+    {
+        return isPrimaryKey.booleanValue();
+    }
+
+    /** This method is for informational purpose only so that the client can identify column as a PK column.
+     * Setting PK on a column via this method will not get preserved in the domain's table.
+     */
+    public void setPrimaryKey(boolean isPrimaryKey)
+    {
+        this.isPrimaryKey.setBool(isPrimaryKey);
+    }
+
+    public boolean isLocked()
+    {
+        return isLocked.booleanValue();
+    }
+
+    /** This method is for informational purpose only so that the client can identify this column as a locked column.
+     * Setting lock on a column via this method will not get preserved in the domain's table.
+     */
+    public void setLocked(boolean locked)
+    {
+        this.isLocked.setBool(locked);
     }
 
     public String debugString()
