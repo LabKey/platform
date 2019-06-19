@@ -22,6 +22,8 @@ package org.labkey.api.query;
 */
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.validation.BindException;
+import org.springframework.validation.ObjectError;
 
 import java.sql.SQLException;
 
@@ -46,6 +48,12 @@ public class SimpleValidationError implements ValidationError
     public String getMessage()
     {
         return _message;
+    }
+
+    @Override
+    public ObjectError getObjectError()
+    {
+        return null;
     }
 
 
@@ -78,5 +86,17 @@ public class SimpleValidationError implements ValidationError
     public int hashCode()
     {
         return _message != null ? _message.hashCode() : 0;
+    }
+
+    public void addToBindException(BindException errors, String errorCode)
+    {
+        if (null != this.getObjectError())
+        {
+            errors.addError(this.getObjectError());
+        }
+        else
+        {
+            errors.reject(errorCode, this.getMessage());
+        }
     }
 }

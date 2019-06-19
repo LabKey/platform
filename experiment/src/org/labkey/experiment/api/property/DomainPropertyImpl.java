@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.Table;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -616,7 +617,16 @@ public class DomainPropertyImpl implements DomainProperty
             _pd = OntologyManager.insertOrUpdatePropertyDescriptor(_pd, dd, sortOrder);
         else if (_pdOld != null)
         {
-            _pd = OntologyManager.updatePropertyDescriptor(user, _domain, this, _domain._dd, _pdOld, _pd, sortOrder);
+            PropertyType oldType = _pdOld.getPropertyType();
+            PropertyType newType = _pd.getPropertyType();
+            if (oldType.getStorageType() != newType.getStorageType())
+            {
+                throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
+            }
+
+            OntologyManager.validatePropertyDescriptor(_pd);
+            Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());
+            OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
 

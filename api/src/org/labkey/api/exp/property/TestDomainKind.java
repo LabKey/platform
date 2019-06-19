@@ -27,6 +27,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -35,7 +36,6 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -163,7 +163,7 @@ public class TestDomainKind extends DomainKind
     }
 
     @Override
-    public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         throw new UnsupportedOperationException();
     }
@@ -224,12 +224,6 @@ public class TestDomainKind extends DomainKind
 
     @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
     {
         throw new UnsupportedOperationException();
     }
