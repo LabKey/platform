@@ -573,7 +573,7 @@ public class PropertyController extends SpringActionController
      */
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class InferDomainAction extends ReadOnlyApiAction<Object>
+    public class InferDomainAction extends ReadOnlyApiAction<InferDomainForm>
     {
         @Override
         protected ObjectMapper createObjectMapper()
@@ -584,7 +584,7 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(InferDomainForm form, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
@@ -610,10 +610,32 @@ public class PropertyController extends SpringActionController
 
                         fields.add(prop);
                     }
+
+                    if (form.getNumLinesToInclude() != null)
+                    {
+                        response.put("data", loader.getFirstNLines(form.getNumLinesToInclude()));
+                    }
                 }
+
                 response.put("fields", fields);
             }
             return response;
+        }
+    }
+
+    public static class InferDomainForm
+    {
+        // TODO should -1 allow you to get all data?
+        private Integer _numLinesToInclude;
+
+        public Integer getNumLinesToInclude()
+        {
+            return _numLinesToInclude;
+        }
+
+        public void setNumLinesToInclude(Integer numLinesToInclude)
+        {
+            _numLinesToInclude = numLinesToInclude;
         }
     }
 

@@ -8,7 +8,7 @@ import $ from 'jquery'
 
 import { AppContainer } from 'react-hot-loader'
 
-import { App } from './FileUploadPreview'
+import { App } from './AssayDataImport'
 
 const render = () => {
     ReactDOM.render(
