@@ -770,6 +770,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.binShapeRadioGroup,
             this.binColorRadioGroup,
             this.binSingleColorPicker,
+            // Note: the margins input fields were split into two field containers because it was easier to get the
+            // layout for the 4 total margin input fields to look nice when they were done as two field containers
+            // with 2 inputs on each row in an hbox layout.
             this.marginsFieldContainer1,
             this.marginsFieldContainer2
         ];
