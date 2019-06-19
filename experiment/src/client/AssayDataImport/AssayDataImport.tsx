@@ -62,21 +62,27 @@ export class App extends React.Component<Props, State> {
                 const sortedAssays = assays.sortBy(assay => assay.name, naturalSort).toList();
                 this.setState(() => ({assays: sortedAssays}));
                 this.selectInitialAssay();
+            })
+            .catch((error) => {
+                this.setErrorMsg(error);
             });
 
         Security.getUserPermissions({
             success: (response) => {
                 const user = this.state.user.set('permissionsList', fromJS(response.container.effectivePermissions)) as User;
                 this.setState(() => ({user}));
+            },
+            failure: (error) => {
+                this.setErrorMsg(error);
             }
         })
     }
 
-    userCanCreateAssay() {
+    userCanCreateAssay(): boolean {
         return hasAllPermissions(this.state.user, [PermissionTypes.DesignAssay]);
     }
 
-    selectInitialAssay() {
+    selectInitialAssay(): void {
         const { assays } = this.state;
         const urlRowId = ActionURL.getParameter('rowId');
         const rowId = urlRowId ? parseInt(urlRowId) : undefined;
@@ -118,16 +124,16 @@ export class App extends React.Component<Props, State> {
         return assays && selected !== undefined && selected === assays.size;
     }
 
-    hasValidNewAssayName() {
+    hasValidNewAssayName(): boolean {
         const { assayUploadProps } = this.state;
         return assayUploadProps && assayUploadProps[FORM_IDS.ASSAY_NAME] && assayUploadProps[FORM_IDS.ASSAY_NAME].length > 0;
     }
 
-    isValidNewAssay() {
+    isValidNewAssay(): boolean {
         return this.isCreateNewAssay() && this.hasValidNewAssayName();
     }
 
-    setSubmitting(isSubmitting: boolean) {
+    setSubmitting(isSubmitting: boolean): void {
         this.setState(() => ({isSubmitting}));
     }
 
@@ -162,7 +168,7 @@ export class App extends React.Component<Props, State> {
         }
     };
 
-    importFileAsRun(assayId: number) {
+    importFileAsRun(assayId: number): void {
         const { file, assayUploadProps } = this.state;
 
         if (assayId && file) {
@@ -204,7 +210,7 @@ export class App extends React.Component<Props, State> {
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
     };
 
-    setErrorMsg(error: string) {
+    setErrorMsg(error: string): void {
         this.setState(() => ({
             error,
             isSubmitting: false
@@ -232,10 +238,10 @@ export class App extends React.Component<Props, State> {
         }));
     };
 
-    getCardsFromAssays() {
+    getCardsFromAssays(): List<any> {
         const { assays } = this.state;
         const selectedAssay = this.getSelectedAssay();
-        let cards = List<any>();
+        let cards = List<any>(); // TODO should we be exporting ICardProps from @glass and using here instead of any?
 
         if (selectedAssay) {
             cards = cards.push({
@@ -301,7 +307,7 @@ export class App extends React.Component<Props, State> {
                     {assays && assays.size > 0 && selected !== undefined && <Button onClick={() => this.onAssayCardClick(undefined)}>Clear selection</Button>}
                 </Panel.Heading>
                 <Panel.Body>
-                    {!assays && <LoadingSpinner msg={'Loading assays designs...'}/>}
+                    {!assays && <LoadingSpinner msg={'Loading assay designs...'}/>}
                     {assays && cards.size === 0 && <Alert bsStyle={'info'}>There are no available assays of type General in this container.</Alert>}
                     {cards && <Cards cards={cards.toArray()}/>}
                 </Panel.Body>

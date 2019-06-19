@@ -7,7 +7,7 @@ interface Props {
     onChange: (evt: any) => any
 }
 
-export class AssayRunForm extends React.Component<Props, any> {
+export class AssayRunForm extends React.PureComponent<Props, any> {
     render() {
         return (
             <Form>

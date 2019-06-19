@@ -7,7 +7,7 @@ interface Props {
     onChange: (evt: any) => any
 }
 
-export class AssayDesignForm extends React.Component<Props, any> {
+export class AssayDesignForm extends React.PureComponent<Props, any> {
     render() {
         return (
             <Form className={'assay-data-import-text'}>
