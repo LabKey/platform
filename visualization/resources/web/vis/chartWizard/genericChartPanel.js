@@ -908,6 +908,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.geomOptions.colorRange = this.options.general.binColorGroup;
             config.geomOptions.binSingleColor = this.options.general.binSingleColor;
             config.geomOptions.chartLayout = this.options.general.chartLayout;
+            config.geomOptions.marginTop = this.options.general.marginTop;
+            config.geomOptions.marginRight = this.options.general.marginRight;
+            config.geomOptions.marginBottom = this.options.general.marginBottom;
+            config.geomOptions.marginLeft = this.options.general.marginLeft;
         }
 
         if (this.options.x)
@@ -1133,7 +1137,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 for (var i=0; i < queryConfig.filterArray.length; i++)
                 {
                     var f = queryConfig.filterArray[i];
-                    this.userFilters.push(LABKEY.Filter.create(f.name,  f.value, LABKEY.Filter.getFilterTypeForURLSuffix(f.type)));
+                    var type = LABKEY.Filter.getFilterTypeForURLSuffix(f.type);
+                    var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
+                    this.userFilters.push(LABKEY.Filter.create(f.name,  value, type));
                 }
             }
 
