@@ -58,6 +58,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
             case LSID:
             case MaterialLSIDPrefix:
             case Name:
+            case NameExpression:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
             case Created:
@@ -88,6 +89,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.RowId).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Name);
         addColumn(ExpSampleSetTable.Column.Description);
+        addColumn(ExpSampleSetTable.Column.NameExpression).setHidden(true);
         addColumn(ExpSampleSetTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);
