@@ -57,6 +57,7 @@ public class TempQuerySettings extends QuerySettings
 
         // deep copy settings
         this.setMaxRows(settings.getMaxRows());
+        this.setContainerFilterName(settings.getContainerFilterName());
 
         // Other settings that are required can be added here.
     }

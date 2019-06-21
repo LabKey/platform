@@ -1960,7 +1960,7 @@ public class DavController extends SpringActionController
             long first = direction == Sort.SortDirection.ASC ? num1 : num2;
             long second = direction == Sort.SortDirection.ASC ? num2 : num1;
 
-            return (int)(first - second);
+            return Long.compare(first, second);
         }
 
         private int compareDate(Date date1, Date date2, Sort.SortDirection direction)
