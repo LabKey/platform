@@ -724,9 +724,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
                                 baseQueryView.setMessageSupplier(dataRegion -> {
                                     if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
                                     {
-                                        DataRegion.Message msg = new DataRegion.Message("There are " + (rowCount - dataRegion.getTotalRows()) + " rows not shown due to unapproved QC state",
-                                                DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
-                                        return Collections.singletonList(msg);
+                                        long count = rowCount - dataRegion.getTotalRows();
+                                        String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
+                                                : "There is one row not shown due to unapproved QC state.";
+                                        DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                        return Collections.singletonList(drm);
                                     }
                                     return Collections.emptyList();
                                 });
