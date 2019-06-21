@@ -3449,6 +3449,55 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    private void validateSampleSetForm(CreateSampleSetForm form, Errors errors)
+    {
+        if (StringUtils.isEmpty(form.getName()))
+            errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+        else
+        {
+            int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
+            if (form.getName().length() > nameMax)
+                errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
+            else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
+                errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+        }
+        int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
+        if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
+            errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+    }
+
+    private ExpSampleSet createSampleSetFromForm(CreateSampleSetForm form) throws Exception
+    {
+        List<GWTPropertyDescriptor> properties = new ArrayList<>();
+
+        GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
+        descriptor.setName(ExpMaterialTable.Column.Name.name());
+        properties.add(descriptor);
+
+        return ExperimentService.get().createSampleSet(
+                getContainer(), getUser(), form.getName(), form.getDescription(),
+                properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
+                null
+        );
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public class CreateSampleSetApiAction extends MutatingApiAction<CreateSampleSetForm>
+    {
+        @Override
+        public void validateForm(CreateSampleSetForm form, Errors errors)
+        {
+            validateSampleSetForm(form, errors);
+        }
+
+        @Override
+        public Object execute(CreateSampleSetForm form, BindException errors) throws Exception
+        {
+            ExpSampleSet sampleSet = createSampleSetFromForm(form);
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
     @RequiresPermission(InsertPermission.class)
     public class CreateSampleSetAction extends FormViewAction<CreateSampleSetForm>
     {
@@ -3457,19 +3506,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateCommand(CreateSampleSetForm form, Errors errors)
         {
-            if (StringUtils.isEmpty(form.getName()))
-                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
-            else
-            {
-                int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
-                if (form.getName().length() > nameMax)
-                    errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
-                else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
-                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
-            }
-            int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
-            if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
-                errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+            validateSampleSetForm(form, errors);
         }
 
         @Override
@@ -3481,17 +3518,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(CreateSampleSetForm form, BindException errors) throws Exception
         {
-            List<GWTPropertyDescriptor> properties = new ArrayList<>();
-
-            GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
-            descriptor.setName(ExpMaterialTable.Column.Name.name());
-            properties.add(descriptor);
-
-            ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
-                    getContainer(), getUser(), form.getName(), form.getDescription(),
-                    properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
-                    null
-            );
+            ExpSampleSet sampleSet = createSampleSetFromForm(form);
 
             Domain domain = sampleSet.getType();
             DomainKind kind = domain.getDomainKind();
