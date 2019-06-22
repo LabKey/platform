@@ -43,6 +43,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -221,11 +222,15 @@ public class DomainUtil
                 p.setPrimaryKey(true);
             }
 
-            //lock shared columns or columns not in the same container (dataset)
-            //lock mandatory properties (issues, specimen)
-            if (!p.getContainer().equalsIgnoreCase(container.getId()) || mandatoryProperties.contains(p.getName()))
+            //fully lock shared columns or columns not in the same container (ex. for dataset domain)
+            if (!p.getContainer().equalsIgnoreCase(container.getId()))
             {
-                p.setLocked(true);
+                p.setLockType(LockedPropertyType.FULLY_LOCKED);
+            }
+            //partially lock mandatory properties (ex. for issues, specimen domains)
+            if (mandatoryProperties.contains(p.getName()))
+            {
+                p.setLockType(LockedPropertyType.PARTIALLY_LOCKED);
             }
 
             list.add(p);
@@ -637,7 +642,9 @@ public class DomainUtil
         Set<GWTPropertyDescriptor> locked = new HashSet<>();
         for (GWTPropertyDescriptor pd : origFields)
         {
-            if (pd.isLocked())
+            //if a column is fully locked and not partially locked or unlocked
+            if (pd.getLockType().equals(LockedPropertyType.FULLY_LOCKED) &&
+                    !(pd.getLockType().equals(LockedPropertyType.PARTIALLY_LOCKED) || pd.getLockType().equals(LockedPropertyType.NOT_LOCKED)))
             {
                 locked.add(pd);
             }
