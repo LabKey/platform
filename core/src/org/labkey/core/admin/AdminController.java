@@ -18,6 +18,7 @@ package org.labkey.core.admin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -35,25 +36,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.IgnoresAllocationTracking;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -6039,6 +6022,8 @@ public class AdminController extends SpringActionController
         private String[] templateWriterTypes;
         private boolean templateIncludeSubfolders = false;
 
+        private String[] targets;
+
         public boolean getHasLoaded()
         {
             return hasLoaded;
@@ -6203,6 +6188,74 @@ public class AdminController extends SpringActionController
         public void setTemplateIncludeSubfolders(boolean templateIncludeSubfolders)
         {
             this.templateIncludeSubfolders = templateIncludeSubfolders;
+        }
+
+        public String[] getTargets()
+        {
+            return targets;
+        }
+
+        public void setTargets(String[] targets)
+        {
+            this.targets = targets;
+        }
+
+        /**
+         * Note: this is designed to allow code to specify a set of children to delete in bulk.  The main use-case is workbooks,
+         * but it will work for non-workbook children as well.
+         */
+        public List<Container> getTargetContainers(final Container currentContainer) throws IllegalArgumentException
+        {
+            if (getTargets() != null)
+            {
+                final List<Container> targets = new ArrayList<>();
+                final List<Container> directChildren = ContainerManager.getChildren(currentContainer);
+
+                Arrays.stream(getTargets()).forEach(x -> {
+                    Container c = ContainerManager.getForId(x);
+                    if (c == null)
+                    {
+                        try
+                        {
+                            Integer rowId = ConvertHelper.convert(x, Integer.class);
+                            if (rowId > 0)
+                                c = ContainerManager.getForRowId(rowId);
+                        }
+                        catch (ConversionException e)
+                        {
+                            //ignore
+                        }
+                    }
+
+                    if (c != null)
+                    {
+                        if (!c.equals(currentContainer))
+                        {
+                            if (!directChildren.contains(c))
+                            {
+                                throw new IllegalArgumentException("Folder " + c.getPath() + " is not a direct child of the current folder: " + currentContainer.getPath());
+                            }
+
+                            if (c.getContainerType().canHaveChildren())
+                            {
+                                throw new IllegalArgumentException("Multi-folder delete is not supported for containers of type: " + c.getContainerType().getName());
+                            }
+                        }
+
+                        targets.add(c);
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("Unable to find folder with ID or RowId of: " + x);
+                    }
+                });
+
+                return targets;
+            }
+            else
+            {
+                return Collections.singletonList(currentContainer);
+            }
         }
     }
 
@@ -6852,14 +6905,62 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    public class DeleteWorkbooksAction extends RedirectAction<ReturnUrlForm>
+    {
+        @Override
+        public void validateCommand(ReturnUrlForm target, Errors errors)
+        {
+            Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
+            if (ids.isEmpty())
+            {
+                errors.reject(ERROR_MSG, "No IDs provided");
+            }
+        }
+
+        @Override
+        public @Nullable URLHelper getURL(ReturnUrlForm form, Errors errors) throws Exception
+        {
+            Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
+
+            ActionURL ret = new ActionURL(DeleteFolderAction.class, getContainer());
+            ids.forEach(id -> {
+                ret.addParameter("targets", id);
+            });
+
+            ret.replaceParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
+
+            return ret;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
+        private List<Container> _deleted = new ArrayList<>();
+
         public void validateCommand(ManageFoldersForm form, Errors errors)
         {
-            Container target = getContainer();
+            try
+            {
+                List<Container> targets = form.getTargetContainers(getContainer());
+                for (Container target : targets)
+                {
+                    if (!ContainerManager.isDeletable(target))
+                        errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
 
-            if (!ContainerManager.isDeletable(target))
-                errors.reject(ERROR_MSG, "The path " + target.getPath() + " is not deletable.");
+                    if (target.isProject() && !getUser().hasRootAdminPermission())
+                    {
+                        throw new UnauthorizedException();
+                    }
+
+                    if (target.equals(ContainerManager.getSharedContainer()) || target.equals(ContainerManager.getHomeContainer()))
+                        errors.reject(ERROR_MSG, "Deleting /Shared or /home is not possible.");
+                }
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
         }
 
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
@@ -6870,41 +6971,57 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
-            Container c = getContainer();
+            List<Container> targets = form.getTargetContainers(getContainer());
 
             // Must be site/app admin to delete a project
-            if (c.isProject() && !getUser().hasRootAdminPermission())
+            for (Container c : targets)
             {
-                throw new UnauthorizedException();
+                if (!form.getRecurse() && !c.getChildren().isEmpty())
+                {
+                    throw new IllegalStateException("This container has children: " + c.getPath());  // UI should prevent this case
+                }
             }
 
-            if (c.equals(ContainerManager.getSharedContainer()) || c.equals(ContainerManager.getHomeContainer()))
-                throw new UnsupportedOperationException("Deleting /Shared or /home is not possible.");
-
-            if (form.getRecurse())
+            for (Container c : targets)
             {
-                ContainerManager.deleteAll(c, getUser());
-            }
-            else
-            {
-                if (c.getChildren().isEmpty())
-                    ContainerManager.delete(c, getUser());
+                if (form.getRecurse())
+                {
+                    ContainerManager.deleteAll(c, getUser());
+                }
                 else
-                    throw new IllegalStateException("This container has children");  // UI should prevent this case
+                {
+                    ContainerManager.delete(c, getUser());
+                }
             }
+
+            _deleted.addAll(targets);
 
             return true;
         }
 
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
+            // Note: because in some scenarios we might be deleting children of the current contaner, in those cases we remain in this folder:
             // If we just deleted a project then redirect to the home page, otherwise back to managing the project folders
-            Container c = getContainer();
-
-            if (c.isProject())
-                return AppProps.getInstance().getHomePageActionURL();
+            if (_deleted.size() == 1 && _deleted.get(0).equals(getContainer()))
+            {
+                Container c = getContainer();
+                if (c.isProject())
+                    return AppProps.getInstance().getHomePageActionURL();
+                else
+                    return new AdminUrlsImpl().getManageFoldersURL(c.getParent());
+            }
             else
-                return new AdminUrlsImpl().getManageFoldersURL(c.getParent());
+            {
+                if (form.getReturnUrl() != null)
+                {
+                    return form.getReturnActionURL();
+                }
+                else
+                {
+                    return getContainer().getStartURL(getUser());
+                }
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
