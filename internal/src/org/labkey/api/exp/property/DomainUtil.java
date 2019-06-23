@@ -222,13 +222,18 @@ public class DomainUtil
                 p.setPrimaryKey(true);
             }
 
+            //partially lock columns that are both shared AND mandatory
+            if (!p.getContainer().equalsIgnoreCase(container.getId()) && mandatoryProperties.contains(p.getName()))
+            {
+                p.setLockType(LockedPropertyType.PARTIALLY_LOCKED);
+            }
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
-            if (!p.getContainer().equalsIgnoreCase(container.getId()))
+            else if (!p.getContainer().equalsIgnoreCase(container.getId()))
             {
                 p.setLockType(LockedPropertyType.FULLY_LOCKED);
             }
             //partially lock mandatory properties (ex. for issues, specimen domains)
-            if (mandatoryProperties.contains(p.getName()))
+            else if (mandatoryProperties.contains(p.getName()))
             {
                 p.setLockType(LockedPropertyType.PARTIALLY_LOCKED);
             }
@@ -642,9 +647,8 @@ public class DomainUtil
         Set<GWTPropertyDescriptor> locked = new HashSet<>();
         for (GWTPropertyDescriptor pd : origFields)
         {
-            //if a column is fully locked and not partially locked or unlocked
-            if (pd.getLockType().equals(LockedPropertyType.FULLY_LOCKED) &&
-                    !(pd.getLockType().equals(LockedPropertyType.PARTIALLY_LOCKED) || pd.getLockType().equals(LockedPropertyType.NOT_LOCKED)))
+            //if a column is fully locked
+            if (pd.getLockType() == LockedPropertyType.FULLY_LOCKED)
             {
                 locked.add(pd);
             }
