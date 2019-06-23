@@ -58,7 +58,7 @@
         showFinalConfirmation = !anyHaveChildren;
     }
 
-    String message = containersToDelete.size() == 1 ? "project".equals(containersToDelete.get(0).getContainerNoun()) ? "project and its sub1folders" : ("folder" + (recurse ? "s" : "")) : "folders";
+    String message = containersToDelete.size() == 1 ? containersToDelete.get(0).isProject() ? "project and its sub1folders" : ("folder" + (recurse ? "s" : "")) : "folders";
 
     %>
         <table class="labkey-data-region">

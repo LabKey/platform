@@ -6953,6 +6953,16 @@ public class AdminController extends SpringActionController
                         throw new UnauthorizedException();
                     }
 
+                    if (!target.hasPermission(getUser(), AdminPermission.class))
+                    {
+                        throw new UnauthorizedException("Cannot delete folder: " + target.getName() + ". Admin permissions are required");
+                    }
+
+                    if (!ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
+                    {
+                        throw new UnauthorizedException("Deleting the " + target.getContainerNoun() + " " + target.getName() + " requires admin permissions on that folder and all children.  You do not have admin permission on all subfolders.");
+                    }
+
                     if (target.equals(ContainerManager.getSharedContainer()) || target.equals(ContainerManager.getHomeContainer()))
                         errors.reject(ERROR_MSG, "Deleting /Shared or /home is not possible.");
                 }
