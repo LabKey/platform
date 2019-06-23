@@ -222,18 +222,13 @@ public class DomainUtil
                 p.setPrimaryKey(true);
             }
 
-            //partially lock columns that are both shared AND mandatory
-            if (!p.getContainer().equalsIgnoreCase(container.getId()) && mandatoryProperties.contains(p.getName()))
-            {
-                p.setLockType(LockedPropertyType.PARTIALLY_LOCKED);
-            }
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
-            else if (!p.getContainer().equalsIgnoreCase(container.getId()))
+            if (!p.getContainer().equalsIgnoreCase(container.getId()))
             {
                 p.setLockType(LockedPropertyType.FULLY_LOCKED);
             }
             //partially lock mandatory properties (ex. for issues, specimen domains)
-            else if (mandatoryProperties.contains(p.getName()))
+            if (mandatoryProperties.contains(p.getName()))
             {
                 p.setLockType(LockedPropertyType.PARTIALLY_LOCKED);
             }
