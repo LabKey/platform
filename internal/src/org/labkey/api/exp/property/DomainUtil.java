@@ -516,6 +516,14 @@ public class DomainUtil
             return validationException;
         }
 
+        //error if mandatory field name is not the same as orig or has been removed in updated domain
+        String missingMandatoryField = getMissingMandatoryField(update.getMandatoryFieldNames(), orig.getMandatoryFieldNames());
+        if(StringUtils.isNotEmpty(missingMandatoryField))
+        {
+            validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
+            return validationException;
+        }
+
         // validate names
         // look for swapped names
 
@@ -635,6 +643,18 @@ public class DomainUtil
         }
 
         return validationException;
+    }
+
+    private static String getMissingMandatoryField(Set<String> updatedMandatoryFieldNames, Set<String> origMandatoryFieldNames)
+    {
+        for (String mandatoryField : origMandatoryFieldNames)
+        {
+            if (!updatedMandatoryFieldNames.contains(mandatoryField))
+            {
+                return mandatoryField;
+            }
+        }
+        return null;
     }
 
     private static Set<GWTPropertyDescriptor> getLockedFields(List<? extends GWTPropertyDescriptor> origFields)
