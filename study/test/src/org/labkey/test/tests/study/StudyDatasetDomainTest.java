@@ -1,6 +1,5 @@
 package org.labkey.test.tests.study;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -161,7 +160,6 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
 
     }
 
-    @NotNull
     private void renameColumnName() throws IOException, CommandException
     {
         GetDomainCommand getCmd = new GetDomainCommand(DOMAIN_NAME, STUDY_DATASET_NAME);
