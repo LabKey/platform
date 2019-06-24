@@ -300,7 +300,7 @@ public class ExperimentJSONConverter
             else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
             {
                 // resolve propName by PropertyURI if propName looks like a URI
-                if (propName.contains(":") || propName.contains("/") || propName.contains("#"))
+                if (URIUtil.hasURICharacters(propName))
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
                     if (pd != null)

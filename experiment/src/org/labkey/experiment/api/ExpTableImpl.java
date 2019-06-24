@@ -51,6 +51,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -123,7 +124,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 }
 
                 // Attempt to resolve the column name as a property URI if it looks like a URI
-                if (name.contains(":") || name.contains("/") || name.contains("#"))
+                if (URIUtil.hasURICharacters(name))
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
