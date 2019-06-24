@@ -517,7 +517,7 @@ public class DomainUtil
         }
 
         //error if mandatory field name is not the same as orig or has been removed in updated domain
-        String missingMandatoryField = getMissingMandatoryField(update.getMandatoryFieldNames(), orig.getMandatoryFieldNames());
+        String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getMandatoryFieldNames());
         if(StringUtils.isNotEmpty(missingMandatoryField))
         {
             validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
@@ -645,11 +645,14 @@ public class DomainUtil
         return validationException;
     }
 
-    private static String getMissingMandatoryField(Set<String> updatedMandatoryFieldNames, Set<String> origMandatoryFieldNames)
+    private static String getMissingMandatoryField(List<? extends GWTPropertyDescriptor> updatedFields, Set<String> origMandatoryFieldNames)
     {
+        Map<String, ? extends GWTPropertyDescriptor> updatedFieldsMap = updatedFields.stream().collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
+        Set<String> updatedFieldNames = new CaseInsensitiveHashSet(updatedFieldsMap.keySet());
+
         for (String mandatoryField : origMandatoryFieldNames)
         {
-            if (!updatedMandatoryFieldNames.contains(mandatoryField))
+            if (!updatedFieldNames.contains(mandatoryField))
             {
                 return mandatoryField;
             }
