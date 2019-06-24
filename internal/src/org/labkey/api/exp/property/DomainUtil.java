@@ -517,7 +517,7 @@ public class DomainUtil
         }
 
         //error if mandatory field name is not the same as orig or has been removed in updated domain
-        String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getMandatoryFieldNames());
+        String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getFields());
         if(StringUtils.isNotEmpty(missingMandatoryField))
         {
             validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
@@ -645,10 +645,14 @@ public class DomainUtil
         return validationException;
     }
 
-    private static String getMissingMandatoryField(List<? extends GWTPropertyDescriptor> updatedFields, Set<String> origMandatoryFieldNames)
+    private static String getMissingMandatoryField(List<? extends GWTPropertyDescriptor> updatedFields,
+                                                   List<? extends GWTPropertyDescriptor> origFields)
     {
         Map<String, ? extends GWTPropertyDescriptor> updatedFieldsMap = updatedFields.stream().collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
         Set<String> updatedFieldNames = new CaseInsensitiveHashSet(updatedFieldsMap.keySet());
+
+        Map<String, ? extends GWTPropertyDescriptor> origFieldsMap = origFields.stream().filter(e -> e.getLockType() == LockedPropertyType.PARTIALLY_LOCKED).collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
+        Set<String> origMandatoryFieldNames = new CaseInsensitiveHashSet(origFieldsMap.keySet());
 
         for (String mandatoryField : origMandatoryFieldNames)
         {
