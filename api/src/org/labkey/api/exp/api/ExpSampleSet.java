@@ -165,4 +165,7 @@ public interface ExpSampleSet extends ExpObject
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    Map<String, String> getMaterialParentImportAliasMap();
+    void setMaterialParentImportAliasMap(Map<String, String> parentImportAliasMap);
 }

@@ -28,52 +28,11 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PanelButton;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -177,25 +136,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.HBox;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.InsertView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.UpdateView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
@@ -3470,6 +3411,22 @@ public class ExperimentController extends SpringActionController
             int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
             if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
                 errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+
+            //Verify Aliases
+            List<String> importHeadings = form.getImportAliasKeys();
+            List<String> importParents = form.getImportAliasValues();
+
+            if (importHeadings != null && importParents != null)
+            {
+                if (importHeadings.contains(null))
+                    errors.reject(ERROR_MSG, "Import alias heading cannot be blank");
+
+                if(importParents.contains(null))
+                    errors.reject(ERROR_MSG, "Import alias Parent cannot be blank");
+
+                //TODO check if heading is unique--field does not use alias
+                //TODO check if alias parent exists
+            }
         }
 
         @Override
@@ -3490,7 +3447,7 @@ public class ExperimentController extends SpringActionController
             ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
                     getContainer(), getUser(), form.getName(), form.getDescription(),
                     properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
-                    null
+                    null, form.getAliasMap()
             );
 
             Domain domain = sampleSet.getType();
@@ -3521,6 +3478,9 @@ public class ExperimentController extends SpringActionController
         private String nameExpression;
         private String description;
         private Boolean nameReadOnly = false;
+        private List<String> importAliasKeys;
+        private List<String> importAliasValues;
+        private Integer rowId;
 
         public String getName()
         {
@@ -3560,6 +3520,48 @@ public class ExperimentController extends SpringActionController
         public void setDescription(String description)
         {
             this.description = description;
+        }
+
+        public List<String> getImportAliasKeys()
+        {
+            return importAliasKeys;
+        }
+
+        public void setImportAliasKeys(List<String> importAliasKeys)
+        {
+            this.importAliasKeys = importAliasKeys;
+        }
+
+        public List<String> getImportAliasValues()
+        {
+            return importAliasValues;
+        }
+
+        public void setImportAliasValues(List<String> importAliasValues)
+        {
+            this.importAliasValues = importAliasValues;
+        }
+
+        public Integer getRowId()
+        {
+            return rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            this.rowId = rowId;
+        }
+
+        public @Nullable  Map<String, String> getAliasMap()
+        {
+            if (getImportAliasKeys() == null)
+                return null;
+
+            Map<String, String> aliases = new HashMap<>();
+            for (int i = 0; i < getImportAliasKeys().size(); i++)
+                aliases.put(getImportAliasKeys().get(i), getImportAliasValues().get(i));
+
+            return aliases;
         }
     }
 

@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,8 +51,6 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
-import org.labkey.api.search.SearchResultTemplate;
-import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -60,14 +60,14 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +82,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     private Domain _domain;
     private NameGenerator _nameGen;
+    private Map<String,String> _importAliases;
 
     // For serialization
     protected ExpSampleSetImpl() {}
@@ -94,6 +95,26 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public ExpSampleSetImpl(MaterialSource ms)
     {
         super(ms);
+    }
+
+    private Map<String, String> getImportAliases(MaterialSource ms)
+    {
+        if (StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
+            return null;
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            TypeReference<HashMap<String,String>> typeRef = new TypeReference<HashMap<String, String>>() {};
+
+            return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
+        }
+        catch (IOException e)
+        {
+            //TODO figure out what is appropriate here
+//            throw new RuntimeValidationException(e);
+            return  null;
+        }
     }
 
     @Override
@@ -656,4 +677,19 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return categoryName + ":" + getRowId();
     }
 
+    @Override
+    public Map<String, String> getMaterialParentImportAliasMap()
+    {
+        if (_importAliases == null)
+            _importAliases = getImportAliases(_object);
+
+        return _importAliases != null ?
+                Collections.unmodifiableMap(_importAliases):
+                null;
+    }
+
+    public void setMaterialParentImportAliasMap(Map<String, String> parentImportAliasMap)
+    {
+        _importAliases = parentImportAliasMap;
+    }
 }

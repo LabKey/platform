@@ -701,6 +701,7 @@ public class ExpDataIterators
         private final User _user;
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
+        Supplier<Map<String, String>> _sampleAliasSupplier = null;
 
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
@@ -725,6 +726,12 @@ public class ExpDataIterators
             return this;
         }
 
+        public PersistDataIteratorBuilder setGetAliasesFunction(Supplier<Map<String, String>> aliasesSupplier )
+        {
+            _sampleAliasSupplier = aliasesSupplier;
+            return this;
+        }
+
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
@@ -744,8 +751,12 @@ public class ExpDataIterators
 
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
 
+            Map<String, String> aliases = _sampleAliasSupplier != null ?
+                    _sampleAliasSupplier.get() :
+                    new HashMap<>();
+
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             step0.setDebugName("drop alias");
 
             // Insert into exp.data then the provisioned table
