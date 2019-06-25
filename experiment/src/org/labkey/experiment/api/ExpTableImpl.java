@@ -51,6 +51,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -114,7 +115,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
         if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
         {
-            ColumnInfo lsidCol = getLSIDColumn();
+            ColumnInfo lsidCol = getColumn("LSID");
             if (lsidCol != null)
             {
                 if ("Properties".equalsIgnoreCase(name))
@@ -123,13 +124,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 }
 
                 // Attempt to resolve the column name as a property URI if it looks like a URI
-                if (name.contains(":") || name.contains("/"))
+                if (URIUtil.hasURICharacters(name))
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
-                        PropertyColumn pc;
-                        pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        // use the property URI as the column's FieldKey name
+                        pc.setFieldKey(FieldKey.fromParts(name));
+                        pc.setLabel(pd.getName());
                         return pc;
                     }
                 }
