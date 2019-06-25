@@ -8,9 +8,21 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 **/
 public enum LockedPropertyType implements IsSerializable
 {
-    FULLY_LOCKED, // can't change any properties
-    PARTIALLY_LOCKED, // can't change name and type, for example, but can change other properties
-    NOT_LOCKED; // not locked, can change all properties
+    FullyLocked("Fully Locked"), // can't change any properties
+    PartiallyLocked("Partially Locked"), // can't change name and type, for example, but can change other properties
+    NotLocked("Not Locked"); // not locked, can change all properties
 
     LockedPropertyType() {}
+
+    private String _label;
+
+    LockedPropertyType(String label)
+    {
+        _label = label;
+    }
+
+    public String getLabel()
+    {
+        return _label;
+    }
 }
