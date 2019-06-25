@@ -6,19 +6,7 @@ package org.labkey.api.gwt.client;
 **/
 public enum LockedPropertyType
 {
-    FullyLocked("Fully Locked"), // can't change any properties
-    PartiallyLocked("Partially Locked"), // can't change name and type, for example, but can change other properties
-    NotLocked("Not Locked"); // not locked, can change all properties
-
-    private String _label;
-
-    LockedPropertyType(String label)
-    {
-        _label = label;
-    }
-
-    public String getLabel()
-    {
-        return _label;
-    }
+    FullyLocked, // can't change any properties
+    PartiallyLocked, // can't change name and type, for example, but can change other properties
+    NotLocked // not locked, can change all properties
 }
