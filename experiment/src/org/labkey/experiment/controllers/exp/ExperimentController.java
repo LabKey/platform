@@ -3412,25 +3412,46 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    private MaterialSource validateMaterialSourceForm(MaterialSourceForm form, Errors errors)
+    {
+        MaterialSource source = form.getBean();
+
+        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(source.getLSID());
+        if (sampleSet == null)
+            sampleSet = ExperimentService.get().getSampleSet(source.getRowId());
+
+        if (sampleSet == null)
+        {
+            errors.reject(ERROR_MSG, "MaterialSource not found: " + (source.getLSID() != null ? source.getLSID() : source.getRowId()));
+        }
+
+        if (sampleSet != null && !getContainer().equals(sampleSet.getContainer()))
+        {
+            errors.reject(ERROR_MSG, "MaterialSource is not defined in the given container.");
+        }
+
+        return source;
+    }
+
+    private void updateMaterialSourceFromForm(MaterialSource source, MaterialSourceForm form)
+    {
+        Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), source.getRowId());
+        SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
+    }
+
     @RequiresPermission(UpdatePermission.class)
     public class UpdateMaterialSourceAction extends FormHandlerAction<MaterialSourceForm>
     {
         private MaterialSource _source;
 
-        public void validateCommand(MaterialSourceForm target, Errors errors)
+        public void validateCommand(MaterialSourceForm form, Errors errors)
         {
+            _source = validateMaterialSourceForm(form, errors);
         }
 
         public boolean handlePost(MaterialSourceForm form, BindException errors)
         {
-            _source = form.getBean();
-            ExpSampleSet oldSampleSet = ExperimentService.get().getSampleSet(_source.getLSID());
-            if (oldSampleSet == null || !getContainer().equals(oldSampleSet.getContainer()))
-            {
-                throw new NotFoundException("MaterialSource with LSID " + _source.getLSID());
-            }
-            Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId());
-            SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
+            updateMaterialSourceFromForm(_source, form);
             return true;
         }
 
@@ -3438,6 +3459,25 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(_source.getRowId())));
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class UpdateMaterialSourceApiAction extends MutatingApiAction<MaterialSourceForm>
+    {
+        private MaterialSource _source;
+
+        @Override
+        public void validateForm(MaterialSourceForm form, Errors errors)
+        {
+            _source = validateMaterialSourceForm(form, errors);
+        }
+
+        @Override
+        public Object execute(MaterialSourceForm form, BindException errors) throws Exception
+        {
+            updateMaterialSourceFromForm(_source, form);
+            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -3452,7 +3492,9 @@ public class ExperimentController extends SpringActionController
     private void validateSampleSetForm(CreateSampleSetForm form, Errors errors)
     {
         if (StringUtils.isEmpty(form.getName()))
+        {
             errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+        }
         else
         {
             int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
@@ -3461,6 +3503,7 @@ public class ExperimentController extends SpringActionController
             else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
                 errors.reject(ERROR_MSG, "A sample set with that name already exists.");
         }
+
         int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
         if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
             errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
