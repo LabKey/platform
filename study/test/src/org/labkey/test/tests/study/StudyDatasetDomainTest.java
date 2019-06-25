@@ -1,6 +1,5 @@
 package org.labkey.test.tests.study;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -135,7 +134,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         log("Rename 'activityComments' column to 'activityCode'.");
         renameColumnName();
 
-        log("Test for an expected error when changing at type from String to Int");
+        log("Test for an expected error when changing type from String to Int");
         GetDomainCommand getCmd = new GetDomainCommand(DOMAIN_NAME, STUDY_DATASET_NAME);
         DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(false), getContainerPath());
         List<Map<String, Object>> getDomainCols = getDomainResponse.getColumns();
@@ -143,7 +142,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
 
         if ("activityCode".equalsIgnoreCase((String)activityCodeCol.get("name")))
         {
-            activityCodeCol.put("rangeURI", "int"); //rename from activityComments
+            activityCodeCol.put("rangeURI", "int");
 
             saveCmd = new SaveDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
             long getDomainId = getDomainResponse.getDomainId();
@@ -161,7 +160,6 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
 
     }
 
-    @NotNull
     private void renameColumnName() throws IOException, CommandException
     {
         GetDomainCommand getCmd = new GetDomainCommand(DOMAIN_NAME, STUDY_DATASET_NAME);

@@ -391,6 +391,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public void deleteIndex()
     {
+        _log.info("Deleting Search Index");
         if (_indexManager.isReal())
             closeIndex();
 

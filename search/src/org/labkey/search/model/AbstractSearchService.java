@@ -384,10 +384,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public final void clearLastIndexed()
     {
+        _log.info("Clearing last indexed for all providers");
         for (DocumentProvider p : _documentProviders)
         {
             try
             {
+                _log.info("Clearing last indexed for provider : " + p.getClass().getName());
                 p.indexDeleted();
             }
             catch (Throwable t)

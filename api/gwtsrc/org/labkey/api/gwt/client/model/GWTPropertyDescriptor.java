@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.model;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
@@ -77,7 +78,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
-    private BooleanProperty isLocked = new BooleanProperty(false);
+    private LockedPropertyType lockType = LockedPropertyType.NOT_LOCKED;
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -543,17 +544,17 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.isPrimaryKey.setBool(isPrimaryKey);
     }
 
-    public boolean isLocked()
+    public LockedPropertyType getLockType()
     {
-        return isLocked.booleanValue();
+        return this.lockType;
     }
 
-    /** This method is for informational purpose only so that the client can identify this column as a locked column.
-     * Setting lock on a column via this method will not get preserved in the domain's table.
+    /** This method is for informational purpose only so that the client can identify column's locked type.
+     * Setting lock type on a column via this method will not get preserved in the domain's table.
      */
-    public void setLocked(boolean locked)
+    public void setLockType(LockedPropertyType lockType)
     {
-        this.isLocked.setBool(locked);
+        this.lockType = lockType;
     }
 
     public String debugString()

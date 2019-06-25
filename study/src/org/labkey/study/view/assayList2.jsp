@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -49,12 +50,26 @@
             <br><%=h(protocol.getDescription())%>
      <% }  %>
         <br>
-<%  }
-    if (proj.hasPermission(getUser(), AdminPermission.class))
-    {
-        ActionURL actionURL = new ActionURL(AssayController.BeginAction.class, proj);
-%>
-<%= button("Manage Assays").href(actionURL) %>
 <%
     }
 %>
+
+<table>
+    <tr>
+<%
+    if (proj.hasPermission(getUser(), InsertPermission.class))
+    {
+%>
+        <td style="padding-right: 5px;"><%= button("Import Data").href(new ActionURL("experiment", "assayDataImport", proj)) %></td>
+<%
+    }
+
+    if (proj.hasPermission(getUser(), AdminPermission.class))
+    {
+%>
+        <td><%= button("Manage Assays").href(new ActionURL(AssayController.BeginAction.class, proj)) %></td>
+<%
+    }
+%>
+    </tr>
+</table>
