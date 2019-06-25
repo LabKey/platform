@@ -10,8 +10,6 @@ public enum LockedPropertyType
     PartiallyLocked("Partially Locked"), // can't change name and type, for example, but can change other properties
     NotLocked("Not Locked"); // not locked, can change all properties
 
-    LockedPropertyType() {}
-
     private String _label;
 
     LockedPropertyType(String label)
