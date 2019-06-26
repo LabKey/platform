@@ -2,6 +2,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -9,21 +10,20 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-        dependencies.add("experiment/aliasGroup.js");
     }
 %>
 <%
-    JspView<ExperimentController.CreateSampleSetForm> view = (JspView<ExperimentController.CreateSampleSetForm>) HttpView.currentView();
-    ExperimentController.CreateSampleSetForm bean = view.getModelBean();
+    JspView<ExperimentController.BaseSampleSetForm> view = (JspView<ExperimentController.BaseSampleSetForm>) HttpView.currentView();
+    ExperimentController.BaseSampleSetForm bean = view.getModelBean();
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
 
 %>
 
 <labkey:errors />
-<labkey:form action="" method="POST" layout="horizontal" id="createSampleSetForm">
+<labkey:form action="" method="POST" layout="horizontal" id="sampleSetForm">
     <labkey:input
-            id="name" name="name" label="Name" value="<%=bean.getName()%>"
-            contextContent="Name of sample set (required)." size="60" isDisabled="<%=bean.getNameReadOnly()%>"
+            id="name" name="name" label="Name" isReadOnly="<%=bean.isUpdate()%>" value="<%=h(bean.getName())%>"
+            contextContent="Name of sample set (required)." size="60"
     />
     <labkey:input
             id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
@@ -41,7 +41,7 @@
 
     <div class=" form-group">
         <div>
-            <div id="extraAlias">
+            <div id="extraAlias" >
             </div>
             <a class="lk-exp-addAliasGroup" style="cursor: pointer; color: #555;">
                 <i class="fa fa-plus-circle"></i> add parent column import alias
@@ -50,34 +50,80 @@
     </div>
 
     <br/>
-    <%=button("Create").id("btnSubmit").submit(true)%>
+    <labkey:input type="hidden" name="isUpdate" value="<%=h(bean.isUpdate())%>"/>
+    <labkey:input type="hidden" name="LSID" value="<%=h(bean.getLSID())%>"/>
+    <labkey:input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>"/>
+
+    <%=button(bean.isUpdate() ? "Update" : "Create").id("btnSubmit").submit(true)%>
     <%=button("Cancel").href(bean.getReturnURLHelper())%>
 </labkey:form>
 <script type="application/javascript">
     +function ($) {
+        $(document).ready(function(){
+            function processAliasJson(aliases) {
+                if (aliases) {
+                    for (var j in aliases) {
+                        if (aliases.hasOwnProperty(j) && aliases[j]) {
+                            addAliasGroup(j, aliases[j])
+                        }
+                    }
+                }
+            }
+
+            function addAliasGroup(key, value) {
+                let elem = $("<div class='form-group lk-exp-alias-group' name='importAliases'>" +
+                        "<label class=' control-label col-sm-3 col-lg-2'>Parent Alias</label>" +
+                        "<div class='col-sm-3 col-lg-2'>" +
+                        "<input type='text' class='form-control lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys' style='float: right;'>" +
+                        "</div>" +
+                        "<div class='col-sm-3 col-lg-2'>" +
+                        //TODO should this be a dropdown selector of existing SampleSets?
+                        "<input type='text' class='form-control lk-exp-alias-value' placeholder='Parent' name='importAliasValues' style='display: inline-block;'>" +
+                        "<a class='removeAliasTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
+                        "</div>" +
+                        "</div>");
+
+                if (key && value) {
+                    elem.find(".lk-exp-alias-key").val(key);
+                    elem.find(".lk-exp-alias-value").val(value);
+                }
+
+                elem.appendTo($("#extraAlias"));
+            }
+
+            $('#extraAlias').on('click', '.removeAliasTrigger' , function() {
+                $(this).parents('.lk-exp-alias-group').remove();
+            });
+
+            $(".lk-exp-addAliasGroup").on('click', function () {
+                addAliasGroup();
+            });
+
+            $("#btnSubmit").on('click', (function() {
+                let data = {};
+                $("#createSampleSetForm").serializeArray().map(function(x){
+                    if (!data[x.name]) {
+                        data[x.name] = x.value;
+                    } else {
+                        if (!$.isArray(data[x.name])){
+                            let prev = data[x.name];
+                            data[x.name] = [prev];
+                        }
+                        data[x.name].push(x.value);
+                    }
+                });
+            }));
         <%
             if (bean.getRowId() != null) {
+                if (StringUtils.isNotBlank(bean.getImportAliasJson())) {
         %>
-        //TODO this is kinda gross ... can't we just iterate over the bean?
-        $(document).ready(function(){
-            LABKEY.Query.selectRows({
-                schemaName: "experiment",
-                queryName: "materialsource",
-                success: onLoadSuccess,
-                failure: onLoadFailure,
-                filterArray: [LABKEY.Filter.create("RowId", rowId)]
-            });
-        });
-        <%--LABKEY.Query.selectRows({--%>
-        <%--schemaName: "pipeline",--%>
-        <%--queryName: "TriggerConfigurations",--%>
-        <%--success: onSuccess,--%>
-        <%--failure: onFailure,--%>
-        <%--filterArray: [LABKEY.Filter.create("RowId", <%=bean.getImportAliases()%>)]--%>
-        <%--});--%>
+            let aliases = JSON.parse(<%=q(bean.getImportAliasJson())%>);
+            processAliasJson(aliases);
         <%
+                }
             }
         %>
+        });
     }(jQuery);
 </script>
 

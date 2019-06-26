@@ -82,7 +82,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     private Domain _domain;
     private NameGenerator _nameGen;
-    private Map<String,String> _importAliases;
 
     // For serialization
     protected ExpSampleSetImpl() {}
@@ -95,26 +94,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public ExpSampleSetImpl(MaterialSource ms)
     {
         super(ms);
-    }
-
-    private Map<String, String> getImportAliases(MaterialSource ms)
-    {
-        if (StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
-            return null;
-
-        try
-        {
-            ObjectMapper mapper = new ObjectMapper();
-            TypeReference<HashMap<String,String>> typeRef = new TypeReference<HashMap<String, String>>() {};
-
-            return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
-        }
-        catch (IOException e)
-        {
-            //TODO figure out what is appropriate here
-//            throw new RuntimeValidationException(e);
-            return  null;
-        }
     }
 
     @Override
@@ -677,19 +656,46 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return categoryName + ":" + getRowId();
     }
 
-    @Override
-    public Map<String, String> getMaterialParentImportAliasMap()
+    private Map<String, String> getImportAliases(MaterialSource ms)
     {
-        if (_importAliases == null)
-            _importAliases = getImportAliases(_object);
+        if (StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
+            return null;
 
-        return _importAliases != null ?
-                Collections.unmodifiableMap(_importAliases):
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            TypeReference<HashMap<String,String>> typeRef = new TypeReference<>() {};
+
+            return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
+        }
+        catch (IOException e)
+        {
+            //TODO figure out what is appropriate here
+//            throw new RuntimeValidationException(e);
+            return  null;
+        }
+    }
+
+    @Override
+    public String getImportAliasJson()
+    {
+        return _object.getMaterialParentImportAliasMap();
+    }
+
+    @Override
+    public Map<String, String> getImportAliasMap()
+    {
+        Map<String, String> importAliases = getImportAliases(_object);
+
+        return importAliases != null ?
+                Collections.unmodifiableMap(importAliases):
                 null;
     }
 
-    public void setMaterialParentImportAliasMap(Map<String, String> parentImportAliasMap)
+
+    @Override
+    public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _importAliases = parentImportAliasMap;
+        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap));
     }
 }

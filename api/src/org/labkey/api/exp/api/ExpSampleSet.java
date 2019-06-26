@@ -166,6 +166,8 @@ public interface ExpSampleSet extends ExpObject
     @Override
     void save(User user);
 
-    Map<String, String> getMaterialParentImportAliasMap();
-    void setMaterialParentImportAliasMap(Map<String, String> parentImportAliasMap);
+    String getImportAliasJson();
+
+    Map<String, String> getImportAliasMap();
+    void setImportAliasMap(Map<String, String> aliasMap);
 }

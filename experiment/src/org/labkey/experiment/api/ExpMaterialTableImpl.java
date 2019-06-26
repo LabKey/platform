@@ -740,7 +740,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             expMaterial.index(null);
                     }
                 })
-            .setGetAliasesFunction(_ss::getMaterialParentImportAliasMap);
+            .setGetAliasesFunction(_ss::getImportAliasMap);
 
         return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
     }

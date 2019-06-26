@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -161,7 +162,13 @@ public class SampleSetDomainKind extends AbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return RESERVED_NAMES;
+        ExpSampleSet ss = getSampleSet(domain);
+        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+        Map<String, String> aliases = ss.getImportAliasMap();
+        if (aliases != null)
+            reserved.addAll(aliases.keySet());
+
+        return reserved;
     }
 
     @Override

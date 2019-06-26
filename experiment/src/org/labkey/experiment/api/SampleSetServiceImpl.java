@@ -740,7 +740,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return ss;
     }
 
-    private String getAliasJson(Map<String, String> importAliases)
+    public String getAliasJson(Map<String, String> importAliases)
     {
         if (importAliases == null || importAliases.size() == 0)
             return null;
