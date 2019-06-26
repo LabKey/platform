@@ -1,0 +1,1 @@
+EXEC core.fn_dropifexists '*', 'ms1', 'SCHEMA';

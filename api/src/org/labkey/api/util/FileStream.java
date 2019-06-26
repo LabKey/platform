@@ -17,8 +17,10 @@ package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.util.Date;
 
 /**
  * User: Matthew
@@ -32,6 +34,9 @@ import java.io.*;
 public interface FileStream
 {
     long getSize() throws IOException;
+
+    @Nullable
+    default Date getLastModified() { return null; }
 
     InputStream openInputStream() throws IOException;
 

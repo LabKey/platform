@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,6 +463,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
+        AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",
+                "Adds an 'Import Data' button (using plus icon) to the 'Assay List' query view to get to the new UX Assay Data Import page.", false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

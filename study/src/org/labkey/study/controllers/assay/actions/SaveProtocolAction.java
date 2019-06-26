@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,6 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
 
         AssayServiceImpl svc = new AssayServiceImpl(getViewContext());
         GWTProtocol updated = svc.saveChanges(protocol, true);
-        return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'");
+        return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'", updated);
     }
 }

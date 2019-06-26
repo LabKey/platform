@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
- * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
+ * Copyright (c) 2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 module.exports = {
     apps: [{
@@ -14,9 +15,9 @@ module.exports = {
         permission: 'admin',
         path: './src/client/DomainDesigner'
     },{
-        name: 'fileUploadPreview',
-        title: 'File Upload Preview',
+        name: 'assayDataImport',
+        title: 'Assay Data Import',
         permission: 'insert',
-        path: './src/client/FileUploadPreview'
+        path: './src/client/AssayDataImport'
     }]
 };

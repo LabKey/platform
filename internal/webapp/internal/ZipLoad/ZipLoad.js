@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -629,7 +629,7 @@ LABKEY.internal.ZipLoad = new function () {
                         _entry.file(function (file) {
                             fileCbCount--;
 
-                            var updatedFile = new File([file], file.name, {type: file.type});
+                            var updatedFile = new File([file], file.name, {type: file.type, lastModified: file.lastModified, lastModifiedDate: file.lastModifiedDate});
                             updatedFile.fullPath = entry.fullPath + "/" + file.name;
 
                             allFiles.push(updatedFile);

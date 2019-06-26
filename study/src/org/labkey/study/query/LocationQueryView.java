@@ -56,7 +56,7 @@ public class LocationQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createViewButton(getViewItemFilter()));
-        bar.add(createReportButton());
+        populateChartsReports(bar);
 
         // Only admins can insert/delete locations
         if (getContainer().hasPermission(getUser(), AdminPermission.class))

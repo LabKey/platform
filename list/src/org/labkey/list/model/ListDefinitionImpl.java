@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -44,6 +45,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
@@ -636,13 +638,14 @@ public class ListDefinitionImpl implements ListDefinition
     @Nullable
     public TableInfo getTable(User user, Container c)
     {
-        ListTable table;
+        TableInfo table;
         try
         {
             if (null != getDomain())
             {
-                table = new ListTable(new ListQuerySchema(user, c), this, getDomain());
-                table.afterConstruct();
+                // Go through the schema so we always get all of the XML metadata applied
+                UserSchema schema = new ListQuerySchema(user, c);
+                table = schema.getTable(getDomain().getName(), null, true, false);
             }
             else
             {

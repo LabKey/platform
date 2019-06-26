@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -42,7 +43,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -106,7 +106,7 @@ public abstract class AbstractDomainKind extends DomainKind
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }
@@ -203,25 +203,6 @@ public abstract class AbstractDomainKind extends DomainKind
                 nonBlankRowsSQL.append(" IS NOT NULL");
             }
             return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean hasNullOrNoRows(Domain domain, DomainProperty prop)
-    {
-        SQLFragment allRowsSQL = new SQLFragment();
-        SQLFragment nonBlankRowsSQL = new SQLFragment();
-
-        if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
-        {
-            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
-            long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
-
-            return totalRows == 0 || nonBlankRows == 0;
         }
         else
         {

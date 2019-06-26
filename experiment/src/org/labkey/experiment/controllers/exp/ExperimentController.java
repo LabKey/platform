@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3488,7 +3488,7 @@ public class ExperimentController extends SpringActionController
             properties.add(descriptor);
 
             ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
-                    getContainer(), getUser(), form.getName(), null,
+                    getContainer(), getUser(), form.getName(), form.getDescription(),
                     properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
                     null
             );
@@ -3519,6 +3519,7 @@ public class ExperimentController extends SpringActionController
     {
         private String name;
         private String nameExpression;
+        private String description;
         private Boolean nameReadOnly = false;
 
         public String getName()
@@ -3549,6 +3550,16 @@ public class ExperimentController extends SpringActionController
         public void setNameReadOnly(Boolean nameReadOnly)
         {
             this.nameReadOnly = nameReadOnly;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
         }
     }
 

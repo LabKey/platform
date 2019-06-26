@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1715,7 +1715,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         for (ImportTemplateType t : templates)
         {
             StringExpression url = StringExpressionFactory.createURL(t.getUrl());
-            list.add(Pair.of(t.getLabel(), url));
+            list.add(Pair.of(t.getLabel() == null ? "Download Template" : t.getLabel(), url));
         }
 
 

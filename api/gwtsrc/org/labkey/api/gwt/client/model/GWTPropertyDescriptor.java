@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 LabKey Corporation
+ * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.model;
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.PHIType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
@@ -76,6 +77,8 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty isDisableEditing = new BooleanProperty();
     private IntegerProperty scale = new IntegerProperty(4000);
     private StringProperty redactedText = new StringProperty();
+    private BooleanProperty isPrimaryKey = new BooleanProperty(false);
+    private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -134,6 +137,8 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDisableEditing(s.getDisableEditing());
         setScale(s.getScale());
         setRedactedText(s.getRedactedText());
+        setPrimaryKey(s.isPrimaryKey());
+        setLockType(s.getLockType());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -527,11 +532,36 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.redactedText.set(redactedText);
     }
 
+    public boolean isPrimaryKey()
+    {
+        return isPrimaryKey.booleanValue();
+    }
+
+    /** This method is for informational purpose only so that the client can identify column as a PK column.
+     * Setting PK on a column via this method will not get preserved in the domain's table.
+     */
+    public void setPrimaryKey(boolean isPrimaryKey)
+    {
+        this.isPrimaryKey.setBool(isPrimaryKey);
+    }
+
+    public String getLockType()
+    {
+        return lockType.getString();
+    }
+
+    /** This method is for informational purpose only so that the client can identify column's locked type.
+     * Setting lock type on a column via this method will not get preserved in the domain's table.
+     */
+    public void setLockType(String lockType)
+    {
+        this.lockType.set(lockType);
+    }
+
     public String debugString()
     {
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
     }
-
 
     public boolean equals(Object o)
     {
