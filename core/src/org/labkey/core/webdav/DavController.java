@@ -18,6 +18,7 @@
 
 package org.labkey.core.webdav;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.fileupload.InvalidFileNameException;
 import org.apache.commons.io.FileUtils;
@@ -87,6 +88,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DefaultModelAndView;
 import org.labkey.api.view.JspView;
@@ -122,8 +124,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -132,6 +136,8 @@ import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -156,6 +162,8 @@ import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -3036,6 +3044,8 @@ public class DavController extends SpringActionController
         // because it overrides handleRequest()
         protected void setFileStream(final FileStream fis, String name) throws IOException, DavException
         {
+            final Date lastModified = getLastModifiedHeader();
+
             FileStream keepalive = new FileStream()
             {
                 @Override
@@ -3054,6 +3064,12 @@ public class DavController extends SpringActionController
                 public void closeInputStream() throws IOException
                 {
                     fis.closeInputStream();
+                }
+
+                @Override
+                public @Nullable Date getLastModified()
+                {
+                    return lastModified;
                 }
             };
 
@@ -3101,8 +3117,14 @@ public class DavController extends SpringActionController
                 }
                 // NOTE Mac Finder does not set content-length, but we don't really need it
                 final long _size = size;
+                final Date lastModified = getLastModifiedHeader();
                 FileStream fis = new FileStream()
                 {
+                    @Override
+                    public @Nullable Date getLastModified()
+                    {
+                        return lastModified;
+                    }
                     public long getSize()
                     {
                         return _size;
@@ -3194,6 +3216,7 @@ public class DavController extends SpringActionController
                 }
                 else
                 {
+
                     if (resource.getContentType().startsWith("text/html") && !isBrowserDev)
                     {
                         _ByteArrayOutputStream bos = new _ByteArrayOutputStream(4*1025);
@@ -3263,6 +3286,22 @@ public class DavController extends SpringActionController
         }
     }
 
+    @Nullable
+    private Date getLastModifiedHeader()
+    {
+        Date lastModified = null;
+        String lastModifiedHeader = getRequest().getHeader("X-LABKEY-Last-Modified");
+        if (lastModifiedHeader != null)
+        {
+            try
+            {
+                lastModified = new Date(Long.parseLong(lastModifiedHeader));
+            }
+            catch (NumberFormatException ignored) {}
+        }
+        return lastModified;
+    }
+
     @RequiresNoPermission
     public class DeleteAction extends DavAction
     {
@@ -3286,8 +3325,6 @@ public class DavController extends SpringActionController
      *
      * @param path      Path of the resource which is to be deleted
      * @return SC_NO_CONTENT indicates success
-     * @throws java.io.IOException
-     * @throws org.labkey.api.webdav.DavException
      */
     private WebdavStatus deleteResource(Path path) throws DavException, IOException
     {
@@ -3585,8 +3622,22 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
-            // Windows insists on calling PROPPATCH despite being told that we don't support it. It will consider
-            // uploads unsuccessful if this doesn't return a minimal response. See issue 33197
+            FileTime lastModified = getLastModified(getRequest().getInputStream());
+
+            if (lastModified != null)
+            {
+                try
+                {
+                    WebdavResource resource = resolvePath();
+                    if (resource != null)
+                    {
+                        resource.setLastModified(lastModified.toMillis());
+                    }
+                }
+                catch (ConversionException ignored) {}
+            }
+
+            // Windows will consider uploads unsuccessful if this doesn't return a minimal response. See issue 33197
             Writer writer = getResponse().getWriter();
             assert track(writer);
             try
@@ -3630,6 +3681,83 @@ public class DavController extends SpringActionController
         }
     }
 
+    /**
+     * Handle modified time here. Example posted XML from Windows WebDAV
+     * <?xml version="1.0" encoding="utf-8" ?>
+     * <D:propertyupdate xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:">
+     *  <D:set>
+     *    <D:prop>
+     *      <Z:Win32LastModifiedTime>Tue, 23 Oct 2018 00:53:45 GMT</Z:Win32LastModifiedTime>
+     *    </D:prop>
+     *  </D:set>
+     * </D:propertyupdate>
+     */
+    @Nullable
+    private static FileTime getLastModified(InputStream in) throws IOException
+    {
+        try
+        {
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParser saxParser = factory.newSAXParser();
+            final List<StringBuilder> lastModifieds = new ArrayList<>();
+
+            saxParser.parse(new InputSource(in), new DefaultHandler()
+            {
+                private static final String WINDOWS_LAST_MODIFIED_TIME_ELEMENT = "Win32LastModifiedTime";
+                boolean _inLastModified = false;
+
+                @Override
+                public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
+                {
+                    if (WINDOWS_LAST_MODIFIED_TIME_ELEMENT.equalsIgnoreCase(localName) || (qName != null && qName.endsWith(":" + WINDOWS_LAST_MODIFIED_TIME_ELEMENT)))
+                    {
+                        _inLastModified = true;
+                        lastModifieds.add(new StringBuilder());
+                    }
+                }
+
+                @Override
+                public void endElement(String uri, String localName, String qName)
+                {
+                    if (WINDOWS_LAST_MODIFIED_TIME_ELEMENT.equalsIgnoreCase(localName) || (qName != null && qName.endsWith(":" + WINDOWS_LAST_MODIFIED_TIME_ELEMENT)))
+                    {
+                        _inLastModified = false;
+                    }
+
+                }
+
+                @Override
+                public void characters(char[] ch, int start, int length)
+                {
+                    if (_inLastModified)
+                    {
+                        lastModifieds.get(lastModifieds.size() - 1).append(ch, start, length);
+                    }
+                }
+            });
+            if (lastModifieds.size() == 1)
+            {
+                String lastModified = lastModifieds.get(0).toString();
+                try
+                {
+                    return FileTime.fromMillis(DateUtil.parseDateTime(lastModified, "EEE, dd MMM yyyy HH:mm:ss zzz").getTime());
+                }
+                catch (ConversionException | ParseException e)
+                {
+                    _log.debug("Bad LastModified value for PROPPATCH: " + lastModified, e);
+                }
+            }
+        }
+        catch (ParserConfigurationException e)
+        {
+            throw new UnexpectedException(e);
+        }
+        catch (SAXException e)
+        {
+            _log.debug("Bad XML for PROPPATCH", e);
+        }
+        return null;
+    }
 
     @RequiresNoPermission
     public class CopyAction extends DavAction
@@ -6749,6 +6877,30 @@ public class DavController extends SpringActionController
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends Assert
     {
+        @Test
+        public void testLastModifiedParsing() throws IOException
+        {
+            // Test that we don't blow up on bogus input
+            assertNull(getLastModified(new ByteArrayInputStream("<badXML".getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+            assertNull(getLastModified(new ByteArrayInputStream(("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                    "<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"urn:schemas-microsoft-com:\">\n" +
+                    " <D:set>\n" +
+                    "   <D:prop>\n" +
+                    "     <Z:Win32LastModifiedTime>BogusDate</Z:Win32LastModifiedTime>\n" +
+                    "   </D:prop>\n" +
+                    " </D:set>\n" +
+                    "</D:propertyupdate>").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+
+            assertEquals(FileTime.fromMillis(1540256025000l), getLastModified(new ByteArrayInputStream(("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                    "<D:propertyupdate xmlns:D=\"DAV:\" xmlns:Z=\"urn:schemas-microsoft-com:\">\n" +
+                    " <D:set>\n" +
+                    "   <D:prop>\n" +
+                    "     <Z:Win32LastModifiedTime>Tue, 23 Oct 2018 00:53:45 GMT</Z:Win32LastModifiedTime>\n" +
+                    "   </D:prop>\n" +
+                    " </D:set>\n" +
+                    "</D:propertyupdate>").getBytes(StringUtilsLabKey.DEFAULT_CHARSET))));
+        }
+
         @Test
         public void testAllowedFileName()
         {

@@ -226,16 +226,20 @@ public interface WebdavResource extends Resource
      *
      * Note there are other checks that can cause an object to be skipped.
      * see LuceneSearchService.accept()
-     *
-     * @return
      */
     boolean shouldIndex();
 
     /**
      * Returns custom (user configured) properties for this resource
-     * @return
      */
     Map<String, String> getCustomProperties(User user);
 
     void notify(ContainerUser context, String message);
+
+    /**
+     * For file-backed resources, set the metadata for when it was last modified (like a 'touch' on a Unix machine file system.
+     * Other types of resources can ignore this call/
+     */
+    void setLastModified(long time) throws IOException;
+
 }

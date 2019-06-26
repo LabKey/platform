@@ -676,4 +676,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return ContainerManager.getForId(id);
     }
 
+    @Override
+    public void setLastModified(long time) throws IOException
+    {
+        // No-op
+    }
 }
