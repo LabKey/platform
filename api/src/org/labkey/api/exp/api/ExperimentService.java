@@ -225,6 +225,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpMaterial createExpMaterial(Container container, String lsid, String name);
 
+    @Nullable
     ExpMaterial getExpMaterial(int rowid);
 
     @NotNull List<? extends ExpMaterial> getExpMaterials(Collection<Integer> rowids);
@@ -236,6 +237,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
 
+    /**
+     * Use {@link SampleSetService} instead.
+     */
     @Deprecated
     default Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
@@ -257,6 +261,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     }
 
     /**
+     * Use {@link SampleSetService} instead.
      * (MAB) todo need a builder interface, or at least  parameter bean
      */
     @NotNull
@@ -268,6 +273,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
     }
 
+    /**
+     * Use {@link SampleSetService} instead.
+     */
     @NotNull
     @Deprecated
     default ExpSampleSet createSampleSet()
@@ -275,6 +283,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return SampleSetService.get().createSampleSet();
     }
 
+    /**
+     * Use {@link SampleSetService} instead.
+     */
     @Nullable
     @Deprecated
     default ExpSampleSet getSampleSet(int rowId)
@@ -282,6 +293,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return SampleSetService.get().getSampleSet(rowId);
     }
 
+    /**
+     * Use {@link SampleSetService} instead.
+     */
     @Nullable
     @Deprecated
     default ExpSampleSet getSampleSet(String lsid)
@@ -290,6 +304,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     }
 
     /**
+     * Use {@link SampleSetService} instead.
      * @param includeOtherContainers whether sample sets from the shared container or the container's project should be included
      */
     @Deprecated
@@ -299,6 +314,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     }
 
     /**
+     * Use {@link SampleSetService} instead.
      * Get a SampleSet by name within the definition container.
      */
     @Deprecated
@@ -308,6 +324,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     }
 
     /**
+     * Use {@link SampleSetService} instead.
      * Get a SampleSet by name within scope -- current, project, and shared.
      * Requires a user to check for container read permission.
      */
