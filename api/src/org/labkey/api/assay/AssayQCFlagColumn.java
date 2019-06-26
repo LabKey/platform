@@ -48,12 +48,14 @@ import java.util.Set;
  */
 public class AssayQCFlagColumn extends ExprColumn
 {
+    public static final String NAME = "QCFlags";
+
     private String _schemaName;
     private boolean _editable;
 
     public AssayQCFlagColumn(TableInfo parent, String schemaName, boolean editable)
     {
-        super(parent, "QCFlags", createSQLFragment(parent.getSqlDialect(), "FlagType"), JdbcType.VARCHAR);
+        super(parent, NAME, createSQLFragment(parent.getSqlDialect(), "FlagType"), JdbcType.VARCHAR);
         setLabel("QC Flags");
         _schemaName = schemaName;
         _editable = editable;
