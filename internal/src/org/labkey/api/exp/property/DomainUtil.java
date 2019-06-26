@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -225,12 +225,12 @@ public class DomainUtil
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
             if (!p.getContainer().equalsIgnoreCase(container.getId()))
             {
-                p.setLockType(LockedPropertyType.FULLY_LOCKED);
+                p.setLockType(LockedPropertyType.FullyLocked.name());
             }
             //partially lock mandatory properties (ex. for issues, specimen domains)
             if (mandatoryProperties.contains(p.getName()))
             {
-                p.setLockType(LockedPropertyType.PARTIALLY_LOCKED);
+                p.setLockType(LockedPropertyType.PartiallyLocked.name());
             }
 
             list.add(p);
@@ -651,7 +651,7 @@ public class DomainUtil
         Map<String, ? extends GWTPropertyDescriptor> updatedFieldsMap = updatedFields.stream().collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
         Set<String> updatedFieldNames = new CaseInsensitiveHashSet(updatedFieldsMap.keySet());
 
-        Map<String, ? extends GWTPropertyDescriptor> origFieldsMap = origFields.stream().filter(e -> e.getLockType() == LockedPropertyType.PARTIALLY_LOCKED).collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
+        Map<String, ? extends GWTPropertyDescriptor> origFieldsMap = origFields.stream().filter(e -> e.getLockType().equalsIgnoreCase(LockedPropertyType.PartiallyLocked.name())).collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
         Set<String> origMandatoryFieldNames = new CaseInsensitiveHashSet(origFieldsMap.keySet());
 
         for (String mandatoryField : origMandatoryFieldNames)
@@ -670,7 +670,7 @@ public class DomainUtil
         for (GWTPropertyDescriptor pd : origFields)
         {
             //if a column is fully locked
-            if (pd.getLockType() == LockedPropertyType.FULLY_LOCKED)
+            if (pd.getLockType().equalsIgnoreCase(LockedPropertyType.FullyLocked.name()))
             {
                 locked.add(pd);
             }

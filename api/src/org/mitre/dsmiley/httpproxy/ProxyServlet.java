@@ -56,6 +56,9 @@ import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.List;
 
+import static org.apache.commons.lang3.StringUtils.replace;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+
 // moved from git, see history at https://github.com/LabKey/docker/commits/release18.1/src/org/mitre/dsmiley/httpproxy/ProxyServlet.java
 
 /**
@@ -113,6 +116,23 @@ public class ProxyServlet extends HttpServlet
     protected HttpHost targetHost;//URIUtils.extractHost(targetUriObj);
 
     private HttpClient proxyClient;
+
+    private StringBuilder appendPath(StringBuilder sb, CharSequence path)
+    {
+        return appendPath(sb, path, false);
+    }
+
+    private StringBuilder appendPath(StringBuilder sb, CharSequence path, boolean trimTrailingSlash)
+    {
+        if (sb.length() < 1 || '/' != sb.charAt(sb.length()-1))
+            sb.append('/');
+        if (path.length() > 0)
+            sb.append(path, '/'==path.charAt(0)?1:0 , path.length());
+        // trim trailing slash (unless sb is "/")
+        if (trimTrailingSlash && sb.length() > 1 && '/' == sb.charAt(sb.length()-1))
+            sb.setLength(sb.length()-1);
+        return sb;
+    }
 
     @Override
     public String getServletInfo()
@@ -569,7 +589,11 @@ public class ProxyServlet extends HttpServlet
             Cookie servletCookie = new Cookie(proxyCookieName, cookie.getValue());
             servletCookie.setComment(cookie.getComment());
             servletCookie.setMaxAge((int) cookie.getMaxAge());
-            servletCookie.setPath(path); //set to the path of the proxy servlet
+            String proxyCookiePath = replace(trimToEmpty(cookie.getPath()),"//","/");
+            if (StringUtils.startsWith(proxyCookiePath, path))
+                servletCookie.setPath( appendPath(new StringBuilder(proxyCookiePath),"",true).toString() );
+            else
+                servletCookie.setPath( appendPath(new StringBuilder(path),proxyCookiePath,true).toString() );
             // don't set cookie domain
             servletCookie.setSecure(cookie.getSecure());
             servletCookie.setVersion(cookie.getVersion());
@@ -652,10 +676,8 @@ public class ProxyServlet extends HttpServlet
         uri.append(getTargetUri(servletRequest));
         // Handle the path given to the servlet
         String pathInfo = getPathInfo(servletRequest);
-        if (pathInfo != null)
-        {//ex: /my/path.html
-            uri.append(encodeUriQuery(pathInfo));
-        }
+        appendPath(uri, encodeUriQuery(trimToEmpty(pathInfo)));
+
         // Handle the query string & fragment
         String queryString = servletRequest.getQueryString();//ex:(following '?'): name=value&foo=bar#fragment
         String fragment = null;
@@ -707,7 +729,7 @@ public class ProxyServlet extends HttpServlet
        * using this servlet's absolute path and the path from the returned URL
        * after the base target URL.
        */
-            StringBuffer curUrl = servletRequest.getRequestURL();//no query
+            StringBuilder curUrl = new StringBuilder(servletRequest.getRequestURL());//no query
             int pos;
             // Skip the protocol part
             if ((pos = curUrl.indexOf("://")) >= 0)
@@ -722,9 +744,9 @@ public class ProxyServlet extends HttpServlet
             }
             curUrl.append(getSourcePath(servletRequest));
             if (theUrl.startsWith("/"))
-                curUrl.append(theUrl);
+                appendPath(curUrl, theUrl);
             else
-                curUrl.append(theUrl, targetUri.length(), theUrl.length());
+                appendPath(curUrl, theUrl.substring(targetUri.length()));
             theUrl = curUrl.toString();
         }
         return theUrl;

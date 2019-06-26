@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,12 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController.MigrateFilesOption;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -328,10 +330,69 @@ public class CopyFileRootPipelineJob extends PipelineJob
                             throw new NullPointerException("Simulating an unexpected error copying " + sourceChild);
                         }
 
-                        Files.copy(sourceChild, destChild, StandardCopyOption.REPLACE_EXISTING);
-                        info("Copy complete '" + pathString + "'");
+                        long sourceSize = Files.size(sourceChild);
+                        boolean retainExisting = false;
+
+                        try
+                        {
+                            if (sourceSize == Files.size(destChild))
+                            {
+                                retainExisting = true;
+                                int retryCount = 0;
+                                boolean modifiedUpdated = false;
+                                while (!modifiedUpdated)
+                                {
+                                    try
+                                    {
+                                        Files.setLastModifiedTime(destChild, Files.getLastModifiedTime(sourceChild));
+                                        info("Retained existing file '" + pathString + "'");
+                                        modifiedUpdated = true;
+                                    }
+                                    catch (FileNotFoundException e)
+                                    {
+                                        // S3 backed storage is not immediately consistent after the PUT. Try a few times
+                                        // before declaring failure
+                                        if (retryCount++ > 5)
+                                        {
+                                            throw e;
+                                        }
+                                        warn("Failed trying to update last modified for '" + pathString + "', will retry");
+                                        try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                                    }
+                                }
+                            }
+                        }
+                        catch (NoSuchFileException ignored) {}
+
+                        if (!retainExisting)
+                        {
+                            Files.copy(sourceChild, destChild, StandardCopyOption.REPLACE_EXISTING);
+                            boolean modifiedUpdated = false;
+                            int retryCount = 0;
+                            while (!modifiedUpdated)
+                            {
+                                try
+                                {
+                                    Files.setLastModifiedTime(destChild, Files.getLastModifiedTime(sourceChild));
+                                    info("Copy complete '" + pathString + "'");
+                                    modifiedUpdated = true;
+                                }
+                                catch (FileNotFoundException e)
+                                {
+                                    // S3 backed storage is not immediately consistent after the PUT. Try a few times
+                                    // before declaring failure
+                                    if (retryCount++ > 5)
+                                    {
+                                        throw e;
+                                    }
+                                    warn("Failed trying to update last modified for '" + pathString + "', will retry");
+                                    try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                                }
+                            }
+                        }
+
                         stats.first -= 1;
-                        stats.second -= Files.size(sourceChild);
+                        stats.second -= sourceSize;
                         logStatTime(lastStatTime, stats, origStats);
                     }
                     setStatus(TaskStatus.running, "Done copying '" + pathString + "'");

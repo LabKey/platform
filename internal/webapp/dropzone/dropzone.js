@@ -1319,7 +1319,8 @@
         "Accept": "application/json",
         "Cache-Control": "no-cache",
         "X-Requested-With": "XMLHttpRequest",
-         "X-LABKEY-CSRF": LABKEY.CSRF
+         "X-LABKEY-CSRF": LABKEY.CSRF,
+          "X-LABKEY-Last-Modified": file.lastModified
       };
       if (this.options.headers) {
         extend(headers, this.options.headers);
