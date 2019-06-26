@@ -75,7 +75,7 @@ public class ParentChildView extends VBox
         parentsHBox.addView(parentDatasView);
 
         Set<ExpMaterial> parentMaterials = parents.second;
-        QueryView parentSamplesView = createMaterialsView(parentMaterials, "parentMaterials", "Parent Samples");
+        QueryView parentSamplesView = createMaterialsView(parentMaterials, "parentMaterials", "Precursor Samples");
         parentsHBox.addView(parentSamplesView);
 
         Pair<Set<ExpData>, Set<ExpMaterial>> children = ExperimentService.get().getChildren(output);

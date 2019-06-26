@@ -203,4 +203,13 @@ public class URIUtil
         }
         return res.normalize();
     }
+
+    /**
+     * Return true if the string contains characters typically found in URIs but doesn't attempt to parse.
+     */
+    public static boolean hasURICharacters(String propertyURI)
+    {
+        return StringUtils.containsAny(propertyURI, ':', '/', '#', '%', '?');
+    }
+
 }

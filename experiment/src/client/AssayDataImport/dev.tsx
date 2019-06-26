@@ -17,10 +17,24 @@ import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import $ from 'jquery'
 
-import { App } from './FileUploadPreview'
+import { AppContainer } from 'react-hot-loader'
 
-$(() => ReactDOM.render(
-    <App/>,
-    document.getElementById('app'))
-);
+import { App } from './AssayDataImport'
 
+const render = () => {
+    ReactDOM.render(
+        <AppContainer>
+            <App/>
+        </AppContainer>,
+        document.getElementById('app')
+    )
+};
+
+declare const module: any;
+
+$(() => {
+    render();
+    if (module.hot) {
+        module.hot.accept();
+    }
+});

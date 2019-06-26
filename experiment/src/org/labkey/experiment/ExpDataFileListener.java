@@ -23,8 +23,11 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * User: jeckels
@@ -38,7 +41,13 @@ public class ExpDataFileListener extends TableUpdaterFileListener
     }
 
     @Override
-    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container c)
+    public void fileMoved(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
+    {
+        fileMoved(src.toPath(), dest.toPath(), user, container);
+    }
+
+    @Override
+    public void fileMoved(@NotNull Path src, @NotNull Path dest, @Nullable User user, @Nullable Container c)
     {
         ExpData data = ExperimentService.get().getExpDataByURL(src, c);
 
@@ -47,15 +56,15 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             data = ExperimentService.get().getExpDataByURL(dest, c);
         }
             // Do not create a new ExpData for directories
-        if (data == null && !dest.isDirectory() && c != null)
+        if (data == null && !Files.isDirectory(dest) && c != null)
         {
             data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
         }
 
-        if (data != null && data.getName().equals(src.getName()) && !src.getName().equals(dest.getName()))
+        if (data != null && data.getFilePath().equals(src) && !src.equals(dest))
         {
             // The file has been renamed, so rename the exp.data row if its name matches
-            data.setName(dest.getName());
+            data.setName(FileUtil.getFileName(dest));
             data.save(user);
         }
 

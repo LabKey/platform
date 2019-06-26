@@ -541,8 +541,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return SampleSetService.get().getDefaultSampleSetLsid();
     }
 
+    /**
+     * Get all runs associated with these materials, including the source runs and any derived runs
+     * @param materials to get runs for
+     * @return List of ExpRun's associated to these materials
+     */
     List<? extends ExpRun> getRunsUsingMaterials(List<ExpMaterial> materials);
 
+    /**
+     * Get all runs associated with these materials, including the source runs and any derived runs
+     * @param materialIds to get runs for
+     * @return List of ExpRun's associated to these materials
+     */
     List<? extends ExpRun> getRunsUsingMaterials(int... materialIds);
 
     List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
@@ -729,26 +739,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
 
-    // Opt to marshal JSON to GWTPropertyValidator bean directly
-    @Deprecated
-    GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException;
-
-    // Opt to marshal JSON to GWTConditionalFormat bean directly
-    @Deprecated
-    GWTConditionalFormat convertJsonToConditionalFormatter(JSONObject obj) throws JSONException;
-
-    // Opt to marshal JSON to GWTPropertyDescriptor bean directly
-    @Deprecated
-    GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException;
-
-    // Opt to marshal JSON to GWTDomain bean directly
-    @Deprecated
-    GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException;
-
-    JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd);
-
-    JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd);
-
     void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
 
     void onRunDataCreated(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
@@ -762,6 +752,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
     public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
     public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
     public static final String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
+
+    /**
+     * Get the set of runs that can be deleted based on the materials supplied.
+     * INCLUDES: Derivative runs, and if only remaining output/derivative the immediate precursor run
+     * @param materials Set of materials to get runs for
+     * @return Set of runs that can be deleted based on the materials
+     */
+    List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
 
     public static class XarExportOptions
     {

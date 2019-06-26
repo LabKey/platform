@@ -402,6 +402,9 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
+    public void setLastModified(long time) {}
+
+    @Override
     @Nullable
     public InputStream getInputStream() throws IOException
     {

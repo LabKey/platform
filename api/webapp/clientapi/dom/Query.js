@@ -479,6 +479,8 @@ LABKEY.Query = new function(impl, $) {
             form.append('importLookupByAlternateKey', config.importLookupByAlternateKey);
         if (config.saveToPipeline !== undefined)
             form.append('saveToPipeline', config.saveToPipeline);
+        if (config.insertOption !== undefined)
+            form.append('insertOption', config.insertOption);
 
         if (config.file) {
             if (config.file instanceof File)

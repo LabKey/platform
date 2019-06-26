@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
@@ -42,14 +43,18 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
@@ -68,8 +73,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jgarms
@@ -180,28 +187,62 @@ public class DomainUtil
 
         Map<DomainProperty, Object> defaultValues = DefaultValueService.get().getDefaultValues(container, domain);
 
+        DomainKind domainKind = domain.getDomainKind();
+        if (domainKind == null)
+        {
+            throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
+        }
+
+        Set<String> mandatoryProperties = new CaseInsensitiveHashSet(domainKind.getMandatoryPropertyNames(domain));
+
+        //get PK columns
+        TableInfo tableInfo = domainKind.getTableInfo(user, container, domain.getName());
+        Map<String, Object> pkColMap;
+        if (null != tableInfo && null != tableInfo.getPkColumns())
+        {
+            pkColMap = tableInfo.getPkColumns().stream().collect(Collectors.toMap(ColumnInfo :: getColumnName, ColumnInfo :: isKeyField));
+        }
+        else
+        {
+            pkColMap = new HashMap<>();
+        }
+
         for (DomainProperty prop : properties)
         {
             GWTPropertyDescriptor p = getPropertyDescriptor(prop);
+
             Object defaultValue = defaultValues.get(prop);
             String formattedDefaultValue = getFormattedDefaultValue(user, prop, defaultValue);
             p.setDefaultDisplayValue(formattedDefaultValue);
             p.setDefaultValue(ConvertUtils.convert(defaultValue));
+
+            //set property as PK
+            if (pkColMap.containsKey(p.getName()))
+            {
+                p.setPrimaryKey(true);
+            }
+
+            //fully lock shared columns or columns not in the same container (ex. for dataset domain)
+            if (!p.getContainer().equalsIgnoreCase(container.getId()))
+            {
+                p.setLockType(LockedPropertyType.FullyLocked.name());
+            }
+            //partially lock mandatory properties (ex. for issues, specimen domains)
+            if (mandatoryProperties.contains(p.getName()))
+            {
+                p.setLockType(LockedPropertyType.PartiallyLocked.name());
+            }
+
             list.add(p);
         }
 
         d.setFields(list);
 
         // Handle reserved property names
-        DomainKind domainKind = domain.getDomainKind();
-        if (domainKind == null)
-        {
-            throw new IllegalStateException("Could not find a DomainKind for " + domain.getTypeURI());
-        }
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
-        d.setReservedFieldNames(new HashSet<>(reservedProperties));
-        d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));
-        d.setExcludeFromExportFieldNames(new HashSet<>(domainKind.getAdditionalProtectedPropertyNames(domain)));
+        d.setReservedFieldNames(new CaseInsensitiveHashSet(reservedProperties));
+        d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
+        d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
@@ -401,7 +442,7 @@ public class DomainUtil
     }
 
 
-    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName)
+    public static Domain createDomain(DomainTemplate template, Container container, User user, @Nullable String domainName) throws ValidationException
     {
         return createDomain(template.getDomainKind(), template.getDomain(), template.getOptions(), container, user, domainName, template.getTemplateInfo());
     }
@@ -411,7 +452,7 @@ public class DomainUtil
             String kindName, GWTDomain domain, Map<String, Object> arguments,
             Container container, User user, @Nullable String domainName,
             @Nullable TemplateInfo templateInfo
-    )
+    ) throws ValidationException
     {
         // Create a copy of the GWTDomain to ensure the template's Domain is not modified
         domain = new GWTDomain(domain);
@@ -427,6 +468,11 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
+        ValidationException ve = DomainUtil.validateProperties(null, domain, null);
+        if (ve.hasErrors())
+        {
+            throw new ValidationException(ve);
+        }
         Domain created = kind.createDomain(domain, arguments, container, user, templateInfo);
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
@@ -436,22 +482,28 @@ public class DomainUtil
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
-        List<String> errors = new ArrayList<>();
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
+        ValidationException validationException = validateProperties(d, update, d.getDomainKind());
+
+        if (validationException.hasErrors())
+        {
+            return validationException;
+        }
+
         if (null == d)
         {
-            errors.add("Domain not found: " + update.getDomainURI());
-            return errors;
+            validationException.addError(new SimpleValidationError("Domain not found: " + update.getDomainURI()));
+            return validationException;
         }
 
         if (!d.getDomainKind().canEditDefinition(user, d))
         {
-            errors.add("Unauthorized");
-            return errors;
+            validationException.addError(new SimpleValidationError("Unauthorized"));
+            return validationException;
         }
 
         // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
@@ -460,8 +512,16 @@ public class DomainUtil
         String currentTs = JdbcUtil.rowVersionToString(d.get_Ts());
         if (!StringUtils.equalsIgnoreCase(currentTs,orig.get_Ts()))
         {
-            errors.add("The domain has been edited by another user, you may need to refresh and try again.");
-            return errors;
+            validationException.addError(new SimpleValidationError("The domain has been edited by another user, you may need to refresh and try again."));
+            return validationException;
+        }
+
+        //error if mandatory field name is not the same as orig or has been removed in updated domain
+        String missingMandatoryField = getMissingMandatoryField(update.getFields(), orig.getFields());
+        if(StringUtils.isNotEmpty(missingMandatoryField))
+        {
+            validationException.addError(new SimpleValidationError("Mandatory field '" + missingMandatoryField + "' not found, it may have been removed or renamed. Unable to update domain."));
+            return validationException;
         }
 
         // validate names
@@ -475,6 +535,9 @@ public class DomainUtil
         {
             s.remove(pd.getPropertyId());
         }
+
+        //replace update's locked fields with the orig for the same propertyId regardless of what we get from client
+        replaceLockedFields(getLockedFields(orig.getFields()), (List<GWTPropertyDescriptor>) update.getFields());
 
         int deletedCount = 0;
         for (int id : s)
@@ -513,8 +576,9 @@ public class DomainUtil
             DomainProperty p = d.getProperty(pd.getPropertyId());
             if(p == null)
             {
-                errors.add("Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.");
-                return errors;
+                String errorMsg = "Column " + pd.getName() + " not found (id: " + pd.getPropertyId() + "), it was probably deleted. Please reload the designer and attempt the edit again.";
+                validationException.addError(new PropertyValidationError(errorMsg, pd.getName(), pd.getPropertyId()));
+                return validationException;
             }
 
             defaultValues.put(p, pd.getDefaultValue());
@@ -525,7 +589,7 @@ public class DomainUtil
             if (old.equals(pd))
                 continue;
 
-            _copyProperties(p, pd, errors);
+            _copyProperties(p, pd, validationException);
         }
 
         // Need to ensure that any new properties are given a unique PropertyURI.  See #8329
@@ -538,14 +602,14 @@ public class DomainUtil
         // now add properties
         for (GWTPropertyDescriptor pd : update.getFields())
         {
-            addProperty(d, pd, defaultValues, propertyUrisInUse, errors);
+            addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
         }
 
         // TODO: update indices -- drop and re-add?
 
         try
         {
-            if (errors.size() == 0)
+            if (validationException.getErrors().isEmpty())
             {
                 // Reorder the properties based on what we got from GWT
                 Map<String, DomainProperty> dps = new HashMap<>();
@@ -569,19 +633,79 @@ public class DomainUtil
                 }
                 catch (ExperimentException e)
                 {
-                    errors.add(e.getMessage() == null ? e.toString() : e.getMessage());
+                    validationException.addError(new SimpleValidationError(e.getMessage() == null ? e.toString() : e.getMessage()));
                 }
             }
         }
         catch (IllegalStateException | ChangePropertyDescriptorException x)
         {
-            errors.add(x.getMessage() == null ? x.toString() : x.getMessage());
+            validationException.addError(new SimpleValidationError(x.getMessage() == null ? x.toString() : x.getMessage()));
         }
 
-        return errors;
+        return validationException;
     }
 
-    public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, List<String> errors)
+    private static String getMissingMandatoryField(List<? extends GWTPropertyDescriptor> updatedFields,
+                                                   List<? extends GWTPropertyDescriptor> origFields)
+    {
+        Map<String, ? extends GWTPropertyDescriptor> updatedFieldsMap = updatedFields.stream().collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
+        Set<String> updatedFieldNames = new CaseInsensitiveHashSet(updatedFieldsMap.keySet());
+
+        Map<String, ? extends GWTPropertyDescriptor> origFieldsMap = origFields.stream().filter(e -> e.getLockType().equalsIgnoreCase(LockedPropertyType.PartiallyLocked.name())).collect(Collectors.toMap(GWTPropertyDescriptor::getName, e -> e));
+        Set<String> origMandatoryFieldNames = new CaseInsensitiveHashSet(origFieldsMap.keySet());
+
+        for (String mandatoryField : origMandatoryFieldNames)
+        {
+            if (!updatedFieldNames.contains(mandatoryField))
+            {
+                return mandatoryField;
+            }
+        }
+        return null;
+    }
+
+    private static Set<GWTPropertyDescriptor> getLockedFields(List<? extends GWTPropertyDescriptor> origFields)
+    {
+        Set<GWTPropertyDescriptor> locked = new HashSet<>();
+        for (GWTPropertyDescriptor pd : origFields)
+        {
+            //if a column is fully locked
+            if (pd.getLockType().equalsIgnoreCase(LockedPropertyType.FullyLocked.name()))
+            {
+                locked.add(pd);
+            }
+        }
+        return locked;
+    }
+
+    private static void replaceLockedFields(Set<GWTPropertyDescriptor> lockedFields, List<GWTPropertyDescriptor> updateFields)
+    {
+        Map<Integer, GWTPropertyDescriptor> origLockedFieldMap = getLockedPropertyIdMap(lockedFields);
+        ListIterator<GWTPropertyDescriptor> updateFieldsIterator = updateFields.listIterator(); //using an iterator to avoid ConcurrentModificationException
+
+        //replace locked field that came from the client
+        while (updateFieldsIterator.hasNext())
+        {
+            GWTPropertyDescriptor pd = updateFieldsIterator.next();
+            int propertyId = pd.getPropertyId();
+            if (origLockedFieldMap.containsKey(propertyId))
+            {
+                updateFieldsIterator.set(origLockedFieldMap.get(propertyId));
+            }
+        }
+    }
+
+    private static Map<Integer, GWTPropertyDescriptor> getLockedPropertyIdMap(Set<? extends GWTPropertyDescriptor> lockedFields)
+    {
+        Map<Integer, GWTPropertyDescriptor> lockedFieldMap = new HashMap<>();
+        for (GWTPropertyDescriptor lockedField : lockedFields)
+        {
+            lockedFieldMap.put(lockedField.getPropertyId(), lockedField);
+        }
+        return lockedFieldMap;
+    }
+
+    public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, ValidationException errors)
     {
         if (pd.getPropertyId() > 0)
             return null;
@@ -617,7 +741,7 @@ public class DomainUtil
         return candidateURI;
     }
 
-    private static void _copyProperties(DomainProperty to, GWTPropertyDescriptor from, List<String> errors)
+    private static void _copyProperties(DomainProperty to, GWTPropertyDescriptor from, ValidationException errors)
     {
         // avoid problems with setters that depend on rangeURI being set
         to.setRangeURI(from.getRangeURI());
@@ -636,7 +760,7 @@ public class DomainUtil
             String msg = "Unrecognized type '" + from.getRangeURI() + "' for property '" + from.getName() + "'";
             if (errors == null)
                 throw new IllegalArgumentException(msg);
-            errors.add(msg);
+            errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
             return;
         }
 
@@ -653,10 +777,10 @@ public class DomainUtil
                     c = ContainerManager.getForPath(containerId);
                 if (c == null)
                 {
-                    String msg = "Container not found: " + containerId;
+                    String msg = "Lookup for "+ from.getName() + " target Container not found: " + containerId;
                     if (errors == null)
                         throw new RuntimeException(msg);
-                    errors.add(msg);
+                    errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
                 }
             }
             Lookup lu = new Lookup(c, from.getLookupSchema(), from.getLookupQuery());
@@ -777,38 +901,44 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static List<String> validateProperties(@NotNull Domain domain, @NotNull GWTDomain updates)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind)
     {
-        List<String> errors = new ArrayList<>();
-        Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
-        Set<String> names = new CaseInsensitiveHashSet();
+        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
+        Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
+        ValidationException exception = new ValidationException();
 
         for (Object f : updates.getFields())
         {
             GWTPropertyDescriptor field = (GWTPropertyDescriptor)f;
 
             String name = field.getName();
+
             if (null == name || name.length() == 0)
             {
-                errors.add("Name field must not be blank.");
+                exception.addError(new SimpleValidationError("Name field must not be blank."));
                 continue;
             }
 
-            if (reservedNames.contains(name) && field.getPropertyId() <= 0)
+            if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
             {
-                errors.add("\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
                 continue;
             }
 
-            if (names.contains(name))
+            if (namePropertyIdMap.containsKey(name))
             {
-                errors.add("All property names must be unique. Duplicate found: " + name + ".");
+                String errorMsg = "All property names must be unique. Duplicate found: " + name + ".";
+                PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
+                exception.addError(propertyValidationError);
                 continue;
             }
 
-            names.add(name);
+            if (!namePropertyIdMap.containsKey(name))
+            {
+                namePropertyIdMap.put(name, field.getPropertyId());
+            }
         }
 
-        return errors;
+        return exception;
     }
 }

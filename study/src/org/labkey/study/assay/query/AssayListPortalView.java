@@ -23,6 +23,7 @@ import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.validation.BindException;
 
@@ -40,14 +41,14 @@ public class AssayListPortalView extends AssayListQueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createViewButton(getItemFilter()));
-        bar.add(createReportButton());
+        populateChartsReports(bar);
+        AssayManager.get().createAssayDataImportButton(getViewContext(), bar);
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
             ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
             insertURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
             bar.add(new ActionButton("New Assay Design", insertURL));
         }
-
         bar.add(new ActionButton("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())));
     }
 }

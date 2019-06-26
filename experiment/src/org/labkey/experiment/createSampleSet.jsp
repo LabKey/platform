@@ -37,6 +37,15 @@
         placeholder="S-\${now:date}-\${batchRandomId}-\${randomId}"
         contextContent="<%=helpText%>" size="60"
     />
+    <div class="form-group">
+        <label class=" control-label col-sm-3 col-lg-2">
+            Description
+        </label>
+        <div class="col-sm-9 col-lg-10">
+            <textarea name="description" id="description" cols="60" rows="5"><%=text(bean.getDescription())%></textarea>
+        </div>
+    </div>
+
     <br/>
     <%=button("Create").submit(true)%>
     <%=button("Cancel").href(bean.getReturnURLHelper())%>

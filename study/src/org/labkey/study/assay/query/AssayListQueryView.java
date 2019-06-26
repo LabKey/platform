@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.validation.BindException;
 
@@ -48,6 +49,8 @@ public class AssayListQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
+
+        AssayManager.get().createAssayDataImportButton(getViewContext(), bar);
 
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {

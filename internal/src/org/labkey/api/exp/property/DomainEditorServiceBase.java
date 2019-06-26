@@ -224,7 +224,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     @NotNull
     public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
-        return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser());
+        return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser()).getAllErrors();
     }
 
     protected GWTDomain<? extends GWTPropertyDescriptor> getDomainDescriptor(String typeURI, Container domainContainer)

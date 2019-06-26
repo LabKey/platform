@@ -982,7 +982,7 @@ public class ExperimentController extends SpringActionController
             runListView.getRunTable().setRuns(successorRuns);
             runListView.getRunTable().setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             runListView.setAllowableContainerFilterTypes(ContainerFilter.Type.Current, ContainerFilter.Type.CurrentAndSubfolders, ContainerFilter.Type.AllFolders);
-            runListView.setTitle("Runs using this material or a derived material");
+            runListView.setTitle("Runs associated with this material or a derived material");
 
             ParentChildView pv = new ParentChildView(_material, getViewContext());
             vbox.addView(pv);
@@ -3050,16 +3050,8 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<ExpMaterial> materials = getMaterials(deleteForm);
-            List<ExpRun> runs = getRuns(materials);
+            List<ExpRun> runs = ExperimentService.get().getDeletableRunsFromMaterials(materials);
             return new ConfirmDeleteView("Sample", ShowMaterialAction.class, materials, deleteForm, runs);
-        }
-
-        private List<ExpRun> getRuns(List<ExpMaterial> materials)
-        {
-            // We don't actually delete runs that use the materials - we just disconnect the material from the run
-            // In some cases (such as flow) this is required. In others, it's not as sensible
-            List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingMaterials(materials);
-            return new ArrayList<>(ExperimentService.get().runsDeletedWithInput(runArray));
         }
 
         private List<ExpMaterial> getMaterials(DeleteForm deleteForm)
@@ -3496,7 +3488,7 @@ public class ExperimentController extends SpringActionController
             properties.add(descriptor);
 
             ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
-                    getContainer(), getUser(), form.getName(), null,
+                    getContainer(), getUser(), form.getName(), form.getDescription(),
                     properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
                     null
             );
@@ -3527,6 +3519,7 @@ public class ExperimentController extends SpringActionController
     {
         private String name;
         private String nameExpression;
+        private String description;
         private Boolean nameReadOnly = false;
 
         public String getName()
@@ -3557,6 +3550,16 @@ public class ExperimentController extends SpringActionController
         public void setNameReadOnly(Boolean nameReadOnly)
         {
             this.nameReadOnly = nameReadOnly;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
         }
     }
 

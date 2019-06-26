@@ -1100,7 +1100,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             scales.x.tickLabelMax = Math.floor((plotConfig.width - 300) / 30);
         }
 
-        var margins = _getPlotMargins(renderType, scales, aes, data, plotConfig);
+        var margins = _getPlotMargins(renderType, scales, aes, data, plotConfig, chartConfig);
         if (LABKEY.Utils.isObject(margins)) {
             plotConfig.margins = margins;
         }
@@ -1165,7 +1165,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         return false;
     };
 
-    var _getPlotMargins = function(renderType, scales, aes, data, plotConfig) {
+    var _getPlotMargins = function(renderType, scales, aes, data, plotConfig, chartConfig) {
+        var margins = {};
+
         // issue 29690: for bar and box plots, set default bottom margin based on the number of labels and the max label length
         if (LABKEY.Utils.isArray(data)) {
             var maxLen = 0;
@@ -1179,11 +1181,27 @@ LABKEY.vis.GenericChartHelper = new function(){
             if (_willRotateXAxisTickText(scales, plotConfig, maxLen, data)) {
                 // min bottom margin: 50, max bottom margin: 275
                 var bottomMargin = Math.min(Math.max(50, maxLen*5), 275);
-                return {bottom: bottomMargin};
+                margins.bottom = bottomMargin;
             }
         }
 
-        return null;
+        // issue 31857: allow custom margins to be set in Chart Layout dialog
+        if (chartConfig && chartConfig.geomOptions) {
+            if (chartConfig.geomOptions.marginTop !== null) {
+                margins.top = chartConfig.geomOptions.marginTop;
+            }
+            if (chartConfig.geomOptions.marginRight !== null) {
+                margins.right = chartConfig.geomOptions.marginRight;
+            }
+            if (chartConfig.geomOptions.marginBottom !== null) {
+                margins.bottom = chartConfig.geomOptions.marginBottom;
+            }
+            if (chartConfig.geomOptions.marginLeft !== null) {
+                margins.left = chartConfig.geomOptions.marginLeft;
+            }
+        }
+
+        return !LABKEY.Utils.isEmptyObj(margins) ? margins : null;
     };
 
     var _generatePieChartConfig = function(baseConfig, chartConfig, labels, data)

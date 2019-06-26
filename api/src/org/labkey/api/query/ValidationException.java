@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.RuntimeSQLException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
@@ -61,6 +62,14 @@ public class ValidationException extends Exception implements Iterable<Validatio
     private Map<String, Object> _row;
     private int _rowNumber = -1;
     private SEVERITY _severity = SEVERITY.ERROR;
+
+    public void setBindExceptionErrors(BindException errors, String errorCode)
+    {
+        for (ValidationError ve : this.getErrors())
+        {
+            ve.addToBindException(errors, errorCode);
+        }
+    }
 
     public enum SEVERITY
     {
@@ -325,6 +334,18 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public SimpleValidationError getGlobalError(int i)
     {
         return _globalErrors.get(i);
+    }
+
+    public List<String> getAllErrors()
+    {
+        List<String> result = new ArrayList<>();
+        result.addAll(getGlobalErrorStrings());
+        for (String field : getFields())
+        {
+            result.addAll(getFieldErrors(field));
+        }
+
+        return result;
     }
 
     /**

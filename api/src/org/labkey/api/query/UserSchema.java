@@ -202,7 +202,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             }
             if (null != table && !forWrite)
                 table.setLocked(true);
-            if (null != table && null != cacheKey)
+            // TODO distinguish cases we can cache query/table with named parameters and when we can't (see 37732)
+            if (null != table && null != cacheKey && table.getNamedParameters().isEmpty())
                 tableInfoCache.put(cacheKey, table);
         }
         if (null == table)

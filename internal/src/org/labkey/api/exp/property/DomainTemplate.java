@@ -390,6 +390,10 @@ public class DomainTemplate
                 d = DomainUtil.createDomain(this, c, u, domainName);
                 tx.commit();
             }
+            catch (ValidationException ve)
+            {
+                throw new BatchValidationException(ve);
+            }
         }
 
         if (importData)

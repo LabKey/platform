@@ -641,7 +641,7 @@ public class StudyTest extends StudyBaseTest
             ManageStudyPage studyPage = new ManageStudyPage(getDriver());
             studyPage.manageDatasetQCStates()
                     .addStateRow("unknown QC", "Unknown data is neither clean nor dirty.", false)
-                    .setStatePublic("dirty_public", true)
+                    .setStatePublic("dirty_public", false)
                     .clickSave()                    // have to save the form here; default entry qc state needs a page cycle to be selectable below
                     .manageDatasetQCStates()
                     .setDefaultDirectEntryQCState("unknown QC")

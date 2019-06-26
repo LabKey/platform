@@ -134,11 +134,11 @@ public class ListManagerSchema extends UserSchema
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     bar.add(super.createViewButton(getViewItemFilter()));
-                    bar.add(createReportButton());
-                    bar.add(createCreateNewListButton());
+                    populateChartsReports(bar);
                     bar.add(createDeleteButton());
                     List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
                     bar.add(super.createExportButton(recordSelectorColumns));
+                    bar.add(createCreateNewListButton());
                     bar.add(createImportListArchiveButton());
                     bar.add(createExportArchiveButton());
                 }

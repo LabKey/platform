@@ -26,6 +26,7 @@ import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.property.DomainProperty;
@@ -300,9 +301,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public void handleProperties(ViewContext context, ExpObject object, List<? extends DomainProperty> dps, JSONObject propertiesJsonObject) throws ValidationException, JSONException
     {
-        for (Map.Entry<DomainProperty, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps, context.getContainer(), true).entrySet())
+        for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps, context.getContainer(), true).entrySet())
         {
-            object.setProperty(context.getUser(), entry.getKey().getPropertyDescriptor(), entry.getValue());
+            object.setProperty(context.getUser(), entry.getKey(), entry.getValue());
         }
     }
 

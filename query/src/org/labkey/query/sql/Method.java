@@ -440,7 +440,7 @@ public abstract class Method
         this("#UNDEF#", jdbcType, min, max);
     }
 
-    Method(String name, JdbcType jdbcType, int min, int max)
+    protected Method(String name, JdbcType jdbcType, int min, int max)
     {
         _name = name;
         _jdbcType = jdbcType;
@@ -461,6 +461,18 @@ public abstract class Method
             else
                 parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments", null, fn.getLine(), fn.getCharPositionInLine()));
         }
+    }
+
+    public static void addMethod(String name, MethodInfo info, JdbcType returnType, int minArgs, int maxArgs)
+    {
+        Method m = new Method(name, returnType, minArgs, maxArgs) {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return info;
+            }
+        };
+        labkeyMethod.put(name.toLowerCase(), m);
     }
 
     public static void addPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
