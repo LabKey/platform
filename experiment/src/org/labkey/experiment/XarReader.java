@@ -1211,6 +1211,7 @@ public class XarReader extends AbstractXarImporter
 
         if (expData != null)
         {
+            Data data = expData.getDataObject();
             Path existingFile = expData.getFilePath();
             String uri = _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
             if (uri != null && existingFile != null && !Files.isDirectory(existingFile))
@@ -1219,7 +1220,20 @@ public class XarReader extends AbstractXarImporter
                 if (null == newFile)
                     throw new ExperimentException("Unable to create path from URI: " + uri);
 
-                if (!Files.isDirectory(newFile) && !newFile.equals(existingFile))
+                boolean newFileExists = !Files.isDirectory(newFile) && Files.exists(newFile);
+                if (!newFileExists)
+                {
+                    throw new ExperimentException("The data file with LSID " + dataLSID + " (referenced as "
+                            + xbData.getAbout() + " in the xar.xml, does not exist.");
+                }
+
+                // Issue 37561: if the existing file does not exist, don't try to keep using it or compare its contents
+                if (!Files.exists(existingFile))
+                {
+                    getLog().debug("Updating " + data.getClass().getSimpleName() + " with LSID '" + dataLSID + "', setting dataFileUrl");
+                    data.setDataFileUrl(getDataFileUrlForType(xbData));
+                }
+                else if (!newFile.equals(existingFile))
                 {
                     byte[] existingHash = hashFile(existingFile);
                     byte[] newHash = hashFile(newFile);
@@ -1238,8 +1252,9 @@ public class XarReader extends AbstractXarImporter
                 String containerDesc = otherContainer == null ? expData.getContainer().getPath() : otherContainer.getPath();
                 throw new XarFormatException("Cannot reference a data file (" + expData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
+
             Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(expData.getDataObject(), sourceApplicationId, runId, context, tiData);
+            updateSourceInfo(data, sourceApplicationId, runId, context, tiData);
         }
         else
         {
@@ -1261,23 +1276,7 @@ public class XarReader extends AbstractXarImporter
                 data.setRunId(experimentRun.getRowId());
             }
 
-            if (null != trimString(xbData.getDataFileUrl()))
-            {
-                data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl())));
-            }
-            else if (_useOriginalFileUrl)
-            {
-                String original = findOriginalUrlProperty(xbData.getProperties());
-                if (null != original)
-                {
-                    URI uri = FileUtil.createUri(original);
-                    if ("file".equals(uri.getScheme()))
-                    {
-                        if (new File(uri).exists())
-                            data.setDataFileUrl(original);
-                    }
-                }
-            }
+            data.setDataFileUrl(getDataFileUrlForType(xbData));
 
             Data insertedData = Table.insert(getUser(), tiData, data);
             // Pull from the database so we get the magically filled-in fields,
@@ -1314,6 +1313,29 @@ public class XarReader extends AbstractXarImporter
         _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);
         getLog().debug("Finished loading Data with LSID '" + dataLSID + "'");
         return expData.getDataObject();
+    }
+
+    private String getDataFileUrlForType(DataBaseType xbData) throws XarFormatException
+    {
+        if (null != trimString(xbData.getDataFileUrl()))
+        {
+            return _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
+        }
+        else if (_useOriginalFileUrl)
+        {
+            String original = findOriginalUrlProperty(xbData.getProperties());
+            if (null != original)
+            {
+                URI uri = FileUtil.createUri(original);
+                if ("file".equals(uri.getScheme()))
+                {
+                    if (new File(uri).exists())
+                        return original;
+                }
+            }
+        }
+
+        return null;
     }
 
     private byte[] hashFile(Path existingFile) throws ExperimentException
