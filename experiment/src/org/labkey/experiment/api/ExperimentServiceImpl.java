@@ -42,75 +42,11 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.MaterializedQueryHelper;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.AbstractParameter;
-import org.labkey.api.exp.DomainNotFoundException;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.LsidType;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.ProtocolApplicationParameter;
-import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.XarSource;
-import org.labkey.api.exp.api.DataType;
-import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataClass;
-import org.labkey.api.exp.api.ExpDataProtocolInput;
-import org.labkey.api.exp.api.ExpExperiment;
-import org.labkey.api.exp.api.ExpLineage;
-import org.labkey.api.exp.api.ExpLineageOptions;
-import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpMaterialProtocolInput;
-import org.labkey.api.exp.api.ExpMaterialRunInput;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpProtocolInput;
-import org.labkey.api.exp.api.ExpProtocolInputCriteria;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExpRunAttachmentParent;
-import org.labkey.api.exp.api.ExpRunItem;
-import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentListener;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProtocolImplementation;
-import org.labkey.api.exp.api.SampleSetService;
-import org.labkey.api.exp.api.SimpleRunRecord;
+import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -219,6 +155,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.CompareType.IN;
@@ -3625,6 +3562,16 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
+    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    {
+        if (materialIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, materialIds);
+        return new SqlSelector(getExpSchema(), getMaterialsUsedAsInputs(rowIdInFrag)).getArrayList(Integer.class);
+    }
+
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
     {
         deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
@@ -4491,6 +4438,32 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append("\n)");
 
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
+    }
+
+    /**
+     * Generate a query to get the subset of runIds from the supplied set material RowIds
+     * that are inputs to runs.
+     * @param materialRowIdSQL --  SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve subset of materialIds
+     */
+    private SQLFragment getMaterialsUsedAsInputs(SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT DISTINCT m.materialId
+            FROM exp.MaterialInput m, exp.protocolapplication pa
+            WHERE m.targetapplicationId = pa.rowId
+             AND m.materialId <materialIdRowSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT m.materialID\n");
+        sql.append("FROM ").append(getTinfoMaterialInput(), "m").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE m.TargetApplicationId = pa.rowId\n\t");
+        sql.append("AND m.materialID ").append(materialRowIdSQL).append("\n");
+
+        return sql;
     }
 
     /**

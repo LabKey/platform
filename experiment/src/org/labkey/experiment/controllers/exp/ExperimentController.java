@@ -28,52 +28,11 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PanelButton;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -177,50 +136,9 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.HBox;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.InsertView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.UpdateView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -3029,6 +2947,63 @@ public class ExperimentController extends SpringActionController
             }
         }
     }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(DeletePermission.class)
+    public class GetMaterialDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
+    {
+        @Override
+        public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
+        {
+            if (deleteForm.getDataRegionSelectionKey() == null && deleteForm.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+        }
+
+        @Override
+        public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
+        {
+            List<Integer> canDelete = new ArrayList<>(deleteForm.getIds(false)); // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set
+            List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
+
+            canDelete.removeAll(cannotDelete);
+            Map<String, List<Integer>> partitionedIds = new HashMap<>();
+            partitionedIds.put("canDelete", canDelete);
+            partitionedIds.put("cannotDelete", cannotDelete);
+            return success(partitionedIds);
+        }
+    }
+
+    public static class DeleteConfirmationForm extends ViewForm
+    {
+        private String _dataRegionSelectionKey;
+        private Set<Integer> _rowIds;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public Set<Integer> getRowIds()
+        {
+            return _rowIds;
+        }
+
+        public void setRowIds(Set<Integer> rowIds)
+        {
+            _rowIds = rowIds;
+        }
+
+        public Set<Integer> getIds(boolean clear)
+        {
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), true, clear);
+        }
+    }
+
 
     @RequiresPermission(DeletePermission.class)
     public class DeleteMaterialByRowIdAction extends AbstractDeleteAction
