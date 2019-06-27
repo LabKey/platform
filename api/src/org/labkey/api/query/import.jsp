@@ -18,7 +18,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -27,8 +26,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("clientapi/ext3");
-        dependencies.add("FileUploadField.js");
+        dependencies.add("clientapi/ext4");
     }
 %>
 <%
@@ -104,11 +102,9 @@
     </div>
 </div>
 <script type="text/javascript"> (function(){
-    var $html = Ext.util.Format.htmlEncode;
-
-    var importTsvDiv = Ext.get(<%=q(copyPasteDivId)%>);
-    var uploadFileDiv = Ext.get(<%=q(uploadFileDivId)%>);
-    var errorDiv = Ext.get(<%=q(errorDivId)%>);
+    var importTsvDiv = Ext4.get(<%=q(copyPasteDivId)%>);
+    var uploadFileDiv = Ext4.get(<%=q(uploadFileDivId)%>);
+    var errorDiv = Ext4.get(<%=q(errorDivId)%>);
     var tsvTextarea ;
     var endpoint = <%=q(bean.urlEndpoint)%>;
     var cancelUrl = <%=q(bean.urlCancel)%>;
@@ -118,8 +114,8 @@
     var uploadFileForm;
 
     // attach listeners to the buttons
-    var importTsvExpando = Ext.get(<%=q(copyPasteDivId+"Expando")%>);
-    var uploadTsvExpando = Ext.get(<%=q(uploadFileDivId+"Expando")%>);
+    var importTsvExpando = Ext4.get(<%=q(copyPasteDivId+"Expando")%>);
+    var uploadTsvExpando = Ext4.get(<%=q(uploadFileDivId+"Expando")%>);
 
     importTsvExpando.parent('div').on('click',function(){toggleExpanded(importTsvExpando,importTsvDiv,uploadTsvExpando,uploadFileDiv);});
     uploadTsvExpando.parent('div').on('click',function(){toggleExpanded(uploadTsvExpando,uploadFileDiv,importTsvExpando,importTsvDiv);});
@@ -151,12 +147,12 @@
 
     function showSuccessMessage(msg)
     {
-        Ext.Msg.show({
+        Ext4.Msg.show({
             title: "Success",
             msg: msg,
             closable: false
         });
-        new Ext.util.DelayedTask(function(){
+        new Ext4.util.DelayedTask(function(){
             window.location = returnUrl;
         }).delay(1500);
     }
@@ -171,7 +167,7 @@
         if (!form)
             return;
 
-        Ext.getBody().mask();
+        Ext4.getBody().mask();
         errorDiv.update("&nbsp;");
 
         form.getForm().submit(
@@ -179,7 +175,7 @@
             clientValidation : false,
             success: function(form, action)
             {
-                Ext.getBody().unmask();
+                Ext4.getBody().unmask();
                 var msg = null;
                 var rowCount;
 
@@ -217,19 +213,19 @@
             },
             failure: function(form, action)
             {
-                Ext.getBody().unmask();
+                Ext4.getBody().unmask();
                 switch (action.failureType)
                 {
-                    case Ext.form.Action.CLIENT_INVALID:
-                        Ext.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
+                    case Ext4.form.Action.CLIENT_INVALID:
+                        Ext4.Msg.alert('Failure', 'Form fields may not be submitted with invalid values');
                         break;
-                    case Ext.form.Action.CONNECT_FAILURE:
+                    case Ext4.form.Action.CONNECT_FAILURE:
                         if (action.result && (action.result.errors || action.result.exception))
                             serverInvalid(action.result);
                         else
-                            Ext.Msg.alert('Failure', 'Ajax communication failed');
+                            Ext4.Msg.alert('Failure', 'Ajax communication failed');
                         break;
-                    case Ext.form.Action.SERVER_INVALID:
+                    case Ext4.form.Action.SERVER_INVALID:
                         serverInvalid(action.result);
                         break;
                     break;
@@ -260,7 +256,7 @@
     {
         var errors = _getGlobalErrors([], result);
         for (var i=0 ; i<errors.length ; i++)
-            errors[i] = $html(errors[i]);
+            errors[i] = LABKEY.Utils.encodeHtml(errors[i]);
         if (errors.length > 20)
         {
             var total = errors.length;
@@ -285,7 +281,7 @@
             collection.push(err);
         }
 
-        if (Ext.isArray(errors))
+        if (Ext4.isArray(errors))
         {
             for (var i=0 ; i<errors.length ; i++)
                 _getGlobalErrors(collection, errors[i], rowNumber);
@@ -324,37 +320,25 @@
                 itemId: 'insertOption',
                 fieldLabel: 'Import Options',
                 preventMark: true,
-                listeners: {
-                    render: function(el) {
-                        Ext.QuickTips.register({
-                            target: el.label,
-                            title: 'Import options',
-                            text: '<ul>' +
-                                    '<li>The "Insert" option will insert new records and error if there are any input rows corresponding to existing records in the database.</li> ' +
-                                    '<li>The "Insert and Update" option will insert all new records and update the data for rows corresponding to existing records in the database.</li>' +
-                                  '</ul><br/>',
-                            width: 400,
-                            dismissDelay: 15000 // Hide after 10 seconds hover
-                        });
-                    }
-                },
+                helpPopup: LABKEY.Utils.encodeHtml('<b>Import Options:</b>' +
+                        '<ul>' +
+                        '<li>The "Insert" option will insert new records and error if there are any input rows corresponding to existing records in the database.</li> ' +
+                        '<li>The "Insert and Update" option will insert all new records and update the data for rows corresponding to existing records in the database.</li>' +
+                        '</ul>'),
                 columns: 1,
                 defaults: {
                     xtype: 'radio',
                     name: 'insertOption',
-                    style: "margin-left: 2px"
                 },
                 items: [
                     {
                         boxLabel: 'Insert',
                         inputValue: 'IMPORT',
-                        id: 'insertId',
                         checked: true
                     },
                     {
                         boxLabel: 'Insert and Update',
                         inputValue: 'MERGE',
-                        id: 'upsertId'
                     }
                 ]
             }];
@@ -371,16 +355,18 @@
 
     function onReady(bean)
     {
-        Ext.QuickTips.init();
-        importTsvForm = new Ext.form.FormPanel({
+        Ext4.QuickTips.init();
+        importTsvForm = new Ext4.form.FormPanel({
             fileUpload : false,
-            labelWidth: 100, // label settings here cascade unless overridden
+            defaults: {
+                labelWidth: 110, // label settings here cascade unless overridden
+            },
             url:endpoint,
             title: false, // 'Import text',
             border: false,
             bodyStyle:'padding:5px',
             minWidth:600,
-            timeout: Ext.Ajax.timeout,
+            timeout: Ext4.Ajax.timeout,
 
             items: getImportOptions().concat([
                 <%=text(extraFormFields)%>
@@ -388,7 +374,7 @@
                     xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                 },
                 {
-                    id: <%=q(tsvId)%>,
+                    inputId: <%=q(tsvId)%>,
                     xtype: 'textarea',
                     fieldLabel: 'Data',
                     name: 'text',
@@ -398,7 +384,7 @@
                 {
                     fieldLabel: 'Format',
                     xtype: 'combo',
-                    store: new Ext.data.ArrayStore({
+                    store: new Ext4.data.ArrayStore({
                         fields: ['id', 'value'],
                         data:
                         [
@@ -414,14 +400,16 @@
                     displayField: 'value',
                     triggerAction: 'all',
                     value: 'tsv',
-                    width: 250
+                    width: 350
                 },
                 {
+                    hideEmptyLabel: false,
                     boxLabel: 'Import Lookups by Alternate Key',
+                    labelPad:8,
                     xtype: 'checkbox',
                     name: 'importLookupByAlternateKey',
                     checked: false,
-                    inputValue: "true"
+                    inputValue: "true",
                 }
             ]),
             buttonAlign:'left',
@@ -432,25 +420,29 @@
             }]
         });
         importTsvForm.render(importTsvDiv);
-        var resizer = new Ext.Resizable(<%=q(tsvId)%>, {
+        var resizer = new Ext4.Resizable(<%=q(tsvId)%>, {
             wrap:true,
             handles: 'se',
             minWidth: 200,
             minHeight: 100,
             pinned: true
         });
-        tsvTextarea = Ext.get(<%=q(tsvId)%>);
-        Ext.EventManager.on(tsvTextarea, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+        tsvTextarea = Ext4.get(<%=q(tsvId)%>);
+        Ext4.EventManager.on(tsvTextarea, 'keydown', LABKEY.Utils.handleTabsInTextArea);
 
-        var fibasic = new Ext.form.FileUploadField({
-            width: 300,
-            hideLabel: true,
+        var fibasic = new Ext4.form.field.File({
+            width: 400,
+            fieldLabel: 'File to Import',
+            labelPad:16,
             name: 'file',
             buttonText: 'Browse',
             emptyText: 'Select a file to upload'
         });
 
-        uploadFileForm = new Ext.form.FormPanel({
+        uploadFileForm = new Ext4.form.Panel({
+            defaults: {
+                labelWidth: 110, // label settings here cascade unless overridden
+            },
             fileUpload : true,
             url: endpoint,
             title: false, // 'Import text',
@@ -458,7 +450,7 @@
             bodyStyle:'padding:5px',
             minWidth:600,
             defaultType: 'textfield',
-            timeout: Ext.Ajax.timeout,
+            timeout: Ext4.Ajax.timeout,
 
             items: getImportOptions().concat([
                     <%=text(extraFormFields)%>
@@ -467,12 +459,13 @@
                     },
                     fibasic,
                     {
+                        hideEmptyLabel: false,
                         boxLabel: 'Import Lookups by Alternate Key',
+                        labelPad:8,
                         xtype: 'checkbox',
                         name: 'importLookupByAlternateKey',
                         checked: false,
                         inputValue: "true",
-                        hideLabel: true
                     }
             ]),
 
@@ -487,6 +480,6 @@
         uploadFileDiv.parent().setStyle("display","none");
     }
 
-    Ext.onReady(onReady);
+    Ext4.onReady(onReady);
 })();
 </script>
