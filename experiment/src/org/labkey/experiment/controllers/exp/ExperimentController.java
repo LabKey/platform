@@ -504,90 +504,7 @@ public class ExperimentController extends SpringActionController
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
-            QueryView queryView = new QueryView(schema, settings, errors)
-            {
-                @Override
-                protected boolean canInsert()
-                {
-                    return _source.canImportMoreSamples() && super.canInsert();
-                }
-
-                @Override
-                protected boolean canUpdate()
-                {
-                    return _source.canImportMoreSamples() && super.canUpdate();
-                }
-
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-
-                @Override
-                @NotNull
-                public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
-                {
-                    PanelButton result = super.createExportButton(recordSelectorColumns);
-                    ActionURL url = new ActionURL(ExportSampleSetAction.class, getContainer());
-                    url.addParameter("sampleSetId", _source.getRowId());
-                    result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
-                    return result;
-                }
-
-                @Override
-                protected void populateButtonBar(DataView view, ButtonBar bar)
-                {
-                    super.populateButtonBar(view, bar);
-
-                    bar.add(getDeriveSamplesButton(_source.getRowId()));
-                }
-
-                @Override
-                public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
-                {
-                    MenuButton button = new MenuButton("Insert");
-                    button.setTooltip(getInsertButtonText(INSERT_DATA_TEXT));
-                    button.setIconCls("plus");
-                    boolean hasInsertNewOption = false;
-                    boolean hasImportDataOption = false;
-
-                    if (showInsertNewButton())
-                    {
-                        ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
-                        if (urlInsert != null)
-                        {
-                            NavTree insertNew = new NavTree(getInsertButtonText(getInsertButtonText(INSERT_ROW_TEXT)), urlInsert);
-                            insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
-                            button.addMenuItem(insertNew);
-                            hasInsertNewOption = true;
-                        }
-                    }
-
-                    if (showImportDataButton())
-                    {
-                        ActionURL urlImport = overrideImportUrl == null ? urlFor(QueryAction.importData) : overrideImportUrl;
-                        if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
-                        {
-                            NavTree importData = new NavTree(getInsertButtonText(IMPORT_BULK_DATA_TEXT), urlImport);
-                            importData.setId(getBaseMenuId() + ":Insert:Import");
-                            button.addMenuItem(importData);
-                            hasImportDataOption = true;
-                        }
-                    }
-
-                    return hasInsertNewOption && hasImportDataOption ? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
-
-                }
-
-            };
-            queryView.setTitle("Sample Set Contents");
+            QueryView queryView = new SampleSetContentsView(_source, schema, settings, errors);
 
             DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
@@ -713,7 +630,7 @@ public class ExperimentController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    bar.add(getDeriveSamplesButton(null));
+                    bar.add(SampleSetContentsView.getDeriveSamplesButton(getContainer(),null));
                 }
             };
             view.setShowDetailsColumn(false);
