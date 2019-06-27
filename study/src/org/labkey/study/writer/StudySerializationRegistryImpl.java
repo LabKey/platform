@@ -26,7 +26,7 @@ import org.labkey.study.importer.InternalStudyImporter;
 import org.labkey.study.importer.ParticipantCommentImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.ProtocolDocumentImporter;
-import org.labkey.study.importer.QcStatesImporter;
+import org.labkey.study.importer.StudyQcStatesImporter;
 import org.labkey.study.importer.SpecimenSchemaImporter;
 import org.labkey.study.importer.SpecimenSettingsImporter;
 import org.labkey.study.importer.StudyViewsImporter;
@@ -88,7 +88,6 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantCommentWriter(),
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),
-            new QcStateWriter(),
             new SpecimenSettingsWriter(),
             new SpecimenArchiveWriter(),
             new TreatmentDataWriter(),
@@ -109,7 +108,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
             new ParticipantCommentImporter(),
             new ParticipantGroupImporter(),
             new ProtocolDocumentImporter(),
-            new QcStatesImporter(),
+            new StudyQcStatesImporter(),
             new SpecimenSettingsImporter(),
             new SpecimenSchemaImporter(),
             new TreatmentDataImporter(),

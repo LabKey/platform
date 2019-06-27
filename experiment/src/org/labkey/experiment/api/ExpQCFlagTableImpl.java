@@ -128,6 +128,11 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
         addColumn(Column.ModifiedBy);
+
+        addColumn(Column.IntKey1).setHidden(true);
+        addColumn(Column.IntKey2).setHidden(true);
+        addColumn(Column.Key1).setHidden(true);
+        addColumn(Column.Key2).setHidden(true);
     }
 
     public void setAssayProtocol(ExpProtocol protocol)
@@ -224,17 +229,18 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             {
                 try
                 {
-                    ObjectFactory<ExpQCFlag> f = ObjectFactory.Registry.getFactory(ExpQCFlag.class);
-                    ExpQCFlag flag = f.fromMap(row);
+                    Integer runId = row.containsKey("RunId") ? (Integer)row.get("RunId") : (row.containsKey("Run") ? (Integer)row.get("Run") : null);
+                    Integer qcId = (Integer)row.get("IntKey1");
+                    String comment = (String)row.get("Comment");
 
-                    ExpRun run = ExperimentService.get().getExpRun(flag.getRunId());
+                    ExpRun run = runId != null ? ExperimentService.get().getExpRun(runId) : null;
                     if (run != null)
                     {
                         // check if there is a QC state associated with this flag
-                        QCState state = QCStateManager.getInstance().getQCStateForRowId(container, flag.getIntKey1());
+                        QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(container, qcId) : null;
                         if (state != null)
                         {
-                            ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), flag.getComment());
+                            ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), comment);
 
                             event.setProtocolLsid(run.getProtocol().getLSID());
                             event.setRunLsid(run.getLSID());

@@ -70,8 +70,13 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
                 ObjectFactory<FlagType> f = ObjectFactory.Registry.getFactory((Class<FlagType>)flag.getClass());
 
                 Map<String, Object> row = f.toMap(flag, null);
+                row.put("run", flag.getRunId());
                 BatchValidationException errors = new BatchValidationException();
-                qus.insertRows(user, container, Collections.singletonList(row), errors, null, null);
+
+                if (flag.getRowId() != 0)
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), null, null);
+                else
+                    qus.insertRows(user, container, Collections.singletonList(row), errors, null, null);
             }
             catch (Exception e)
             {
