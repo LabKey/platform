@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.samples;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,6 +109,9 @@ public abstract class UploadSamplesHelper
 
     public static boolean isInputOutputHeader(String name)
     {
+        if(StringUtils.isBlank(name))
+            return false;
+
         String[] parts = name.split("\\.|/");
         return parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) ||
                 parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD);
