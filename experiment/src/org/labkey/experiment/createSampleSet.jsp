@@ -1,8 +1,10 @@
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -70,6 +72,47 @@
                 }
             }
 
+            var parentAliasTemplate = new DocumentFragment();
+            var selectList = document.createElement("datalist");
+            selectList.setAttribute("id", "materialInputs");
+            selectList.setAttribute("class", "form-control lk-exp-alias-value");
+            selectList.hidden = true;
+            parentAliasTemplate.appendChild(selectList);
+
+            var sampleSetList = [];
+            <%
+                if (bean.getSampleSetList() != null && bean.getSampleSetList().size() > 0) {
+                for (ExpSampleSet ss : bean.getSampleSetList()) {
+            %>
+                sampleSetList.push(<%=q(ss.getName())%>);
+            <%
+                }
+            }
+            %>
+            var dataClassList = [];
+            <%
+            if (bean.getDataClassList() != null && bean.getDataClassList().size() > 0) {
+            for (ExpDataClass dc : bean.getDataClassList()) {
+            %>
+            dataClassList.push(<%=q(dc.getName())%>);
+            <%
+                }
+            }
+            %>
+
+            function createOptions(list, selectEl, valPrefix) {
+                for (var i = 0; i < list.length; i++) {
+                    var option = document.createElement("option");
+                    option.value = valPrefix + '/' + list[i];
+                    option.text = list[i];
+                    selectEl.appendChild(option);
+                }
+            }
+
+            createOptions(sampleSetList, selectList, 'materialInputs');
+            createOptions(dataClassList, selectList, 'dataInputs');
+            $('#extraAlias').append(parentAliasTemplate);
+
             function addAliasGroup(key, value) {
                 let elem = $("<div class='form-group lk-exp-alias-group' name='importAliases'>" +
                         "<label class=' control-label col-sm-3 col-lg-2'>Parent Alias</label>" +
@@ -77,11 +120,13 @@
                         "<input type='text' class='form-control lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys' style='float: right;'>" +
                         "</div>" +
                         "<div class='col-sm-3 col-lg-2'>" +
-                        //TODO should this be a dropdown selector of existing SampleSets?
-                        "<input type='text' class='form-control lk-exp-alias-value' placeholder='Parent' name='importAliasValues' style='display: inline-block;'>" +
+                        //TODO should this be a dropdown selector of existing SampleSets? -- yes
+                        "<input type='text' class='form-control lk-exp-alias-value' placeholder='Parent' name='importAliasValues' list='materialInputs' style='display: inline-block;'>" +
                         "<a class='removeAliasTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
                         "</div>" +
                         "</div>");
+
+                elem.append(parentAliasTemplate.cloneNode(true));
 
                 if (key && value) {
                     elem.find(".lk-exp-alias-key").val(key);
@@ -114,13 +159,11 @@
                 });
             }));
         <%
-            if (bean.getRowId() != null) {
-                if (StringUtils.isNotBlank(bean.getImportAliasJson())) {
+            if (bean.getRowId() != null && StringUtils.isNotBlank(bean.getImportAliasJson())) {
         %>
             let aliases = JSON.parse(<%=q(bean.getImportAliasJson())%>);
             processAliasJson(aliases);
         <%
-                }
             }
         %>
         });

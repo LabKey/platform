@@ -864,9 +864,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 continue;
             else if (translations.containsKey(name))
             {
-                BaseColumnInfo translatedCol = new BaseColumnInfo(c);
-                translatedCol.setName(translations.get(name));
-                c = translatedCol;
+                ((BaseColumnInfo)c).setName(translations.get(name));
             }
 
             addColumn(c, i);

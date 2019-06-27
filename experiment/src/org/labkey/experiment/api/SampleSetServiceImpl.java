@@ -589,7 +589,7 @@ public class SampleSetServiceImpl implements SampleSetService
     @NotNull
     @Override
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                            String nameExpression, @Nullable TemplateInfo templateInfo, Map<String, String> importAliases)
+                                            String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
         throws ExperimentException
     {
         if (name == null)

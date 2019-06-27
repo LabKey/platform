@@ -65,6 +65,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -656,23 +657,21 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return categoryName + ":" + getRowId();
     }
 
-    private Map<String, String> getImportAliases(MaterialSource ms)
+    private Map<String, String> getImportAliases(MaterialSource ms) throws IOException
     {
-        if (StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
-            return null;
+        if (ms == null || StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
+            return new HashMap<>();
 
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            TypeReference<HashMap<String,String>> typeRef = new TypeReference<>() {};
+            TypeReference<HashMap<String, String>> typeRef = new TypeReference<>() {};
 
             return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
         }
         catch (IOException e)
         {
-            //TODO figure out what is appropriate here
-//            throw new RuntimeValidationException(e);
-            return  null;
+            throw new IOException(String.format("Failed to parse MaterialSource [%1$s] import alias json", ms.getRowId()), e);
         }
     }
 
@@ -685,13 +684,19 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public Map<String, String> getImportAliasMap()
     {
-        Map<String, String> importAliases = getImportAliases(_object);
-
-        return importAliases != null ?
-                Collections.unmodifiableMap(importAliases):
-                null;
+        try
+        {
+            Map<String, String> importAliases = getImportAliases(_object);
+            return importAliases != null ?
+                    Collections.unmodifiableMap(importAliases):
+                    null;
+        }
+        catch (IOException e)
+        {
+            //cant use checked IOException because of use as delegate
+            throw new UncheckedIOException("Unable to parse parent alias mappings", e);
+        }
     }
-
 
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)

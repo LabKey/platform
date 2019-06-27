@@ -137,32 +137,26 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -204,6 +198,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -3401,7 +3396,17 @@ public class ExperimentController extends SpringActionController
                     Domain domain = ss.getDomain();
 
                     Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
-                    Set<String> existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
+                    Set<String> existingAliases = null;
+                    try
+                    {
+                        existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
+                    }
+                    catch (UncheckedIOException e)
+                    {
+                        logger.error("Unable to parse aliases", e);
+                        errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
+                    }
+
                     for (String heading : importHeadings)
                     {
                         //Skip if alias was added previously
@@ -3437,6 +3442,8 @@ public class ExperimentController extends SpringActionController
 
         private void initForm(BaseSampleSetForm form)
         {
+            form.setSampleSetList(SampleSetService.get().getSampleSets(ExperimentController.this.getContainer(), ExperimentController.this.getUser(), false));
+            form.setDataClassList(ExperimentService.get().getDataClasses(ExperimentController.this.getContainer(), ExperimentController.this.getUser(), false));
             if (form.getRowId() == null)
                 return;
 
@@ -3483,6 +3490,8 @@ public class ExperimentController extends SpringActionController
 
         /** */
         private String importAliasJson;
+        private Collection<? extends ExpSampleSet> sampleSetList = new HashSet<>();
+        private Collection<? extends ExpDataClass> dataClassList = new HashSet<>();
 
         public String getName()
         {
@@ -3564,12 +3573,12 @@ public class ExperimentController extends SpringActionController
             this.lsid = lsid;
         }
 
-        public @Nullable  Map<String, String> getAliasMap()
+        public @NotNull  Map<String, String> getAliasMap()
         {
-            if (getImportAliasKeys() == null)
-                return null;
-
             Map<String, String> aliases = new HashMap<>();
+            if (getImportAliasKeys() == null)
+                return aliases;
+
             for (int i = 0; i < getImportAliasKeys().size(); i++)
                 aliases.put(getImportAliasKeys().get(i), getImportAliasValues().get(i));
 
@@ -3584,6 +3593,26 @@ public class ExperimentController extends SpringActionController
         public void setImportAliasJson(String importAliasJson)
         {
             this.importAliasJson = importAliasJson;
+        }
+
+        public Collection<? extends ExpSampleSet> getSampleSetList()
+        {
+            return sampleSetList;
+        }
+
+        public void setSampleSetList(Collection<? extends ExpSampleSet> sampleSets)
+        {
+            this.sampleSetList = sampleSets;
+        }
+
+        public Collection<? extends ExpDataClass> getDataClassList()
+        {
+            return dataClassList;
+        }
+
+        public void setDataClassList(Collection<? extends ExpDataClass> dataClassList)
+        {
+            this.dataClassList = dataClassList;
         }
     }
 

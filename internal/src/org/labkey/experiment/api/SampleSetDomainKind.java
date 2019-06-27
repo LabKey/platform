@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -53,6 +54,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
+import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,6 +66,7 @@ import java.util.stream.Collectors;
 
 public class SampleSetDomainKind extends AbstractDomainKind
 {
+    private static final Logger logger;
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -90,6 +93,8 @@ public class SampleSetDomainKind extends AbstractDomainKind
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec.Index(true, "lsid")
         )));
+
+        logger = Logger.getLogger(SampleSetDomainKind.class);
     }
 
     public SampleSetDomainKind()
@@ -163,11 +168,21 @@ public class SampleSetDomainKind extends AbstractDomainKind
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         ExpSampleSet ss = getSampleSet(domain);
-        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
-        Map<String, String> aliases = ss.getImportAliasMap();
-        if (aliases != null)
-            reserved.addAll(aliases.keySet());
+        if (ss == null)
+            return RESERVED_NAMES;
 
+        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+        try
+        {
+            Map<String, String> aliases = ss.getImportAliasMap();
+            if (aliases != null)
+                reserved.addAll(aliases.keySet());
+
+        }
+        catch (UncheckedIOException e)
+        {
+            logger.error(String.format("Failed to parse SampleSet parent aliases for [%1$s]", ss.getRowId()), e);
+        }
         return reserved;
     }
 
