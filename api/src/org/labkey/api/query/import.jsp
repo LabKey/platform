@@ -320,11 +320,18 @@
                 itemId: 'insertOption',
                 fieldLabel: 'Import Options',
                 preventMark: true,
-                helpPopup: LABKEY.Utils.encodeHtml('<b>Import Options:</b>' +
-                        '<ul>' +
-                        '<li>The "Insert" option will insert new records and error if there are any input rows corresponding to existing records in the database.</li> ' +
-                        '<li>The "Insert and Update" option will insert all new records and update the data for rows corresponding to existing records in the database.</li>' +
-                        '</ul>'),
+                helpPopup: LABKEY.Utils.encodeHtml(
+                        '<dl>' +
+                        '<dt>Insert</dt>' +
+                        '<dd style="margin-left:1em">Insert new records and error if there are any input rows corresponding to existing records in the database.</dd> ' +
+                        '<dt>Insert and Replace</dt>' +
+                        '<dd style="margin-left:1em">Insert all new records and replace the data for rows corresponding to existing records in the database.' +
+                        '<br>' +
+                        // Issue 37728: Insert/Update on Samples will clear out any existing data even if it's not being updated
+                        '<b class="labkey-error fa fa-exclamation-triangle"></b> ' +
+                        '<em>When replacing an existing record, any columns not present will be replaced will null values.</em>' +
+                        '</dd>' +
+                        '</dl>'),
                 columns: 1,
                 defaults: {
                     xtype: 'radio',
@@ -337,7 +344,7 @@
                         checked: true
                     },
                     {
-                        boxLabel: 'Insert and Update',
+                        boxLabel: 'Insert and Replace',
                         inputValue: 'MERGE',
                     }
                 ]
@@ -430,15 +437,6 @@
         tsvTextarea = Ext4.get(<%=q(tsvId)%>);
         Ext4.EventManager.on(tsvTextarea, 'keydown', LABKEY.Utils.handleTabsInTextArea);
 
-        var fibasic = new Ext4.form.field.File({
-            width: 400,
-            fieldLabel: 'File to Import',
-            labelPad:16,
-            name: 'file',
-            buttonText: 'Browse',
-            emptyText: 'Select a file to upload'
-        });
-
         uploadFileForm = new Ext4.form.Panel({
             defaults: {
                 labelWidth: 110, // label settings here cascade unless overridden
@@ -457,7 +455,16 @@
                     {
                         xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                     },
-                    fibasic,
+                    {
+                        xtype: 'filefield',
+                        width: 400,
+                        fieldLabel: 'File to Import',
+                        labelPad:16,
+                        name: 'file',
+                        buttonText: 'Browse',
+                        emptyText: 'Select a file to upload',
+                        clearOnSubmit: false
+                    },
                     {
                         hideEmptyLabel: false,
                         boxLabel: 'Import Lookups by Alternate Key',
