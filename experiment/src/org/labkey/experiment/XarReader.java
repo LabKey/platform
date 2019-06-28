@@ -1223,7 +1223,7 @@ public class XarReader extends AbstractXarImporter
                 boolean newFileExists = !Files.isDirectory(newFile) && Files.exists(newFile);
                 if (!newFileExists)
                 {
-                    throw new ExperimentException("The data file with LSID " + dataLSID + " (referenced as "
+                    getLog().warn("The data file with LSID " + dataLSID + " (referenced as "
                             + xbData.getAbout() + " in the xar.xml, does not exist.");
                 }
 
@@ -1231,9 +1231,9 @@ public class XarReader extends AbstractXarImporter
                 if (!Files.exists(existingFile))
                 {
                     getLog().debug("Updating " + data.getClass().getSimpleName() + " with LSID '" + dataLSID + "', setting dataFileUrl");
-                    data.setDataFileUrl(getDataFileUrlForType(xbData));
+                    data.setDataFileUrl(uri);
                 }
-                else if (!newFile.equals(existingFile))
+                else if (newFileExists && !newFile.equals(existingFile))
                 {
                     byte[] existingHash = hashFile(existingFile);
                     byte[] newHash = hashFile(newFile);
@@ -1276,7 +1276,23 @@ public class XarReader extends AbstractXarImporter
                 data.setRunId(experimentRun.getRowId());
             }
 
-            data.setDataFileUrl(getDataFileUrlForType(xbData));
+            if (null != trimString(xbData.getDataFileUrl()))
+            {
+                data.setDataFileUrl(_xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl())));
+            }
+            else if (_useOriginalFileUrl)
+            {
+                String original = findOriginalUrlProperty(xbData.getProperties());
+                if (null != original)
+                {
+                    URI uri = FileUtil.createUri(original);
+                    if ("file".equals(uri.getScheme()))
+                    {
+                        if (new File(uri).exists())
+                            data.setDataFileUrl(original);
+                    }
+                }
+            }
 
             Data insertedData = Table.insert(getUser(), tiData, data);
             // Pull from the database so we get the magically filled-in fields,
@@ -1313,29 +1329,6 @@ public class XarReader extends AbstractXarImporter
         _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData);
         getLog().debug("Finished loading Data with LSID '" + dataLSID + "'");
         return expData.getDataObject();
-    }
-
-    private String getDataFileUrlForType(DataBaseType xbData) throws XarFormatException
-    {
-        if (null != trimString(xbData.getDataFileUrl()))
-        {
-            return _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
-        }
-        else if (_useOriginalFileUrl)
-        {
-            String original = findOriginalUrlProperty(xbData.getProperties());
-            if (null != original)
-            {
-                URI uri = FileUtil.createUri(original);
-                if ("file".equals(uri.getScheme()))
-                {
-                    if (new File(uri).exists())
-                        return original;
-                }
-            }
-        }
-
-        return null;
     }
 
     private byte[] hashFile(Path existingFile) throws ExperimentException
