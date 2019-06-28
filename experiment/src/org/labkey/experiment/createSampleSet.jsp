@@ -5,6 +5,10 @@
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
+<%@ page import="org.labkey.api.exp.api.SampleSetService" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -18,6 +22,14 @@
     JspView<ExperimentController.BaseSampleSetForm> view = (JspView<ExperimentController.BaseSampleSetForm>) HttpView.currentView();
     ExperimentController.BaseSampleSetForm bean = view.getModelBean();
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
+
+    List<String> sampleSetList = new ArrayList<>();
+    for (ExpSampleSet ss : SampleSetService.get().getSampleSets(getContainer(), getUser(), false))
+        sampleSetList.add(ss.getName());
+
+    List<String> dataClassList = new ArrayList<>();
+    for(ExpDataClass dc : ExperimentService.get().getDataClasses(getContainer(), getUser(), false))
+            dataClassList.add(dc.getName());
 
 %>
 
@@ -72,61 +84,64 @@
                 }
             }
 
-            var parentAliasTemplate = new DocumentFragment();
-            var selectList = document.createElement("datalist");
-            selectList.setAttribute("id", "materialInputs");
-            selectList.setAttribute("class", "form-control lk-exp-alias-value");
-            selectList.hidden = true;
-            parentAliasTemplate.appendChild(selectList);
+            let parentAliasTemplate = new DocumentFragment();
+            let selectListTemplate = document.createElement("select");
+            selectListTemplate.setAttribute("name", "importAliasValues");
+            selectListTemplate.setAttribute("class", "form-control lk-exp-alias-value");
+            parentAliasTemplate.appendChild(selectListTemplate);
 
-            var sampleSetList = [];
+            let defaultOption = document.createElement("option");
+            defaultOption.value = "";
+            defaultOption.text = "";
+            selectListTemplate.append(defaultOption);
+
+            let sampleSetList = [];
+            let dataClassList = [];
+
             <%
-                if (bean.getSampleSetList() != null && bean.getSampleSetList().size() > 0) {
-                for (ExpSampleSet ss : bean.getSampleSetList()) {
+                for (String ss : sampleSetList ) {
             %>
-                sampleSetList.push(<%=q(ss.getName())%>);
+                sampleSetList.push(<%=q(ss)%>);  // Do this so we can escape SampleSet names
             <%
                 }
-            }
             %>
-            var dataClassList = [];
             <%
-            if (bean.getDataClassList() != null && bean.getDataClassList().size() > 0) {
-            for (ExpDataClass dc : bean.getDataClassList()) {
+                for (String dc : dataClassList ) {
             %>
-            dataClassList.push(<%=q(dc.getName())%>);
+                dataClassList.push(<%=q(dc)%>);  // Do this so we can escape DataClass names
             <%
                 }
-            }
             %>
 
-            function createOptions(list, selectEl, valPrefix) {
-                for (var i = 0; i < list.length; i++) {
-                    var option = document.createElement("option");
+            function createOptions(list, selectEl, valPrefix, textPrefix) {
+                for (let i = 0; i < list.length; i++) {
+                    let option = document.createElement("option");
                     option.value = valPrefix + '/' + list[i];
-                    option.text = list[i];
+                    option.text = textPrefix + list[i];  //Apply a text prefix in the event there are duplicate names between DataClasses and SampleSets
                     selectEl.appendChild(option);
                 }
             }
 
-            createOptions(sampleSetList, selectList, 'materialInputs');
-            createOptions(dataClassList, selectList, 'dataInputs');
-            $('#extraAlias').append(parentAliasTemplate);
+            createOptions(dataClassList, selectListTemplate, 'dataInputs', 'dc: ');
+            createOptions(sampleSetList, selectListTemplate, 'materialInputs', 'ss: ');
+
+            let aliasRowTemplate = "<div class='form-group lk-exp-alias-group' name='importAliases'>" +
+                    "<label class=' control-label col-sm-3 col-lg-2'>Parent Alias</label>" +
+                    "<div class='col-sm-3 col-lg-2'>" +
+                    "<input type='text' class='form-control lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys' style='float: right;'>" +
+                    "</div>" +
+                    "<div class='col-sm-3 col-lg-2'>";
+
+            aliasRowTemplate += selectListTemplate.outerHTML;
+
+            aliasRowTemplate += "</select>" +
+                    // "<input type='text' class='form-control lk-exp-alias-value' placeholder='Parent' name='importAliasValues' style='display: inline-block;'>" +
+                    "<a class='removeAliasTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
+                    "</div>" +
+                    "</div>";
 
             function addAliasGroup(key, value) {
-                let elem = $("<div class='form-group lk-exp-alias-group' name='importAliases'>" +
-                        "<label class=' control-label col-sm-3 col-lg-2'>Parent Alias</label>" +
-                        "<div class='col-sm-3 col-lg-2'>" +
-                        "<input type='text' class='form-control lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys' style='float: right;'>" +
-                        "</div>" +
-                        "<div class='col-sm-3 col-lg-2'>" +
-                        //TODO should this be a dropdown selector of existing SampleSets? -- yes
-                        "<input type='text' class='form-control lk-exp-alias-value' placeholder='Parent' name='importAliasValues' list='materialInputs' style='display: inline-block;'>" +
-                        "<a class='removeAliasTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
-                        "</div>" +
-                        "</div>");
-
-                elem.append(parentAliasTemplate.cloneNode(true));
+                let elem = $(aliasRowTemplate);
 
                 if (key && value) {
                     elem.find(".lk-exp-alias-key").val(key);

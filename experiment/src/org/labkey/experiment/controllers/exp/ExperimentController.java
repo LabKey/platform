@@ -3434,16 +3434,12 @@ public class ExperimentController extends SpringActionController
                     //check if it is of the expected format
                     if (!UploadSamplesHelper.isInputOutputHeader(parent))
                         errors.reject(ERROR_MSG, String.format("Invalid parent heading: %1$s", parent));
-
-                    //TODO: check if alias parent exists
                 }
             }
         }
 
         private void initForm(BaseSampleSetForm form)
         {
-            form.setSampleSetList(SampleSetService.get().getSampleSets(ExperimentController.this.getContainer(), ExperimentController.this.getUser(), false));
-            form.setDataClassList(ExperimentService.get().getDataClasses(ExperimentController.this.getContainer(), ExperimentController.this.getUser(), false));
             if (form.getRowId() == null)
                 return;
 
@@ -3490,8 +3486,6 @@ public class ExperimentController extends SpringActionController
 
         /** */
         private String importAliasJson;
-        private Collection<? extends ExpSampleSet> sampleSetList = new HashSet<>();
-        private Collection<? extends ExpDataClass> dataClassList = new HashSet<>();
 
         public String getName()
         {
@@ -3593,26 +3587,6 @@ public class ExperimentController extends SpringActionController
         public void setImportAliasJson(String importAliasJson)
         {
             this.importAliasJson = importAliasJson;
-        }
-
-        public Collection<? extends ExpSampleSet> getSampleSetList()
-        {
-            return sampleSetList;
-        }
-
-        public void setSampleSetList(Collection<? extends ExpSampleSet> sampleSets)
-        {
-            this.sampleSetList = sampleSets;
-        }
-
-        public Collection<? extends ExpDataClass> getDataClassList()
-        {
-            return dataClassList;
-        }
-
-        public void setDataClassList(Collection<? extends ExpDataClass> dataClassList)
-        {
-            this.dataClassList = dataClassList;
         }
     }
 
