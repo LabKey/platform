@@ -17,6 +17,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.springframework.validation.Errors;
 
@@ -31,6 +32,8 @@ public class SampleSetContentsView extends QueryView
         super(schema, settings, errors);
         _source = source;
         setTitle("Sample Set Contents");
+        addClientDependency(ClientDependency.fromPath("Ext4"));
+        addClientDependency(ClientDependency.fromPath("experiment/confirmDelete.js"));
     }
 
     public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Integer targetSampleSetId)
@@ -64,6 +67,7 @@ public class SampleSetContentsView extends QueryView
         ActionButton button = super.createDeleteButton();
         if (button != null)
         {
+            button.setScript("LABKEY.experiment.confirmDelete('" + getSchema().getName() + "', '" + getQueryDef().getName() + "', '" + getSelectionKey() + "', 'sample', 'samples')");
             button.setRequiresSelection(true);
         }
         return button;

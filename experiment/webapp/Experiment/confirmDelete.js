@@ -1,0 +1,110 @@
+
+Ext4.namespace("LABKEY.experiment");
+
+LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, nounSingular, nounPlural) {
+    Ext4.Ajax.request({
+        url: LABKEY.ActionURL.buildURL('experiment', "getMaterialDeleteConfirmationData.api", LABKEY.containerPath, {
+            dataRegionSelectionKey: selectionKey
+        }),
+        method: "GET",
+        success: LABKEY.Utils.getCallbackWrapper(function(response) {
+            if (response.success) {
+                var numCanDelete = response.data.canDelete.length;
+                var numCannotDelete = response.data.cannotDelete.length;
+                var totalNum = numCanDelete + numCannotDelete;
+                var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
+                var text;
+                if (totalNum === 0) {
+                    text = "No samples selected for deletion."
+                }
+                else if (numCannotDelete === 0)  {
+                    text = totalNum === 1 ? "The selected "  : "All " + totalNum + " ";
+                    text += totalNoun + " will be permanently deleted."
+                }
+                else if (numCanDelete === 0) {
+                    if (totalNum === 1) {
+                        text = "The " + totalNoun + " you've selected cannot be deleted because it has dependencies.  ";
+                    } else {
+                        text = (numCannotDelete === 2) ? "Neither of" : "None of";
+                        text += " the " + totalNum + " " + totalNoun + " you've selected can be deleted";
+                        text += " because they have dependencies.";
+                    }
+                }
+                else {
+                    text = "You've selected " + totalNum + " " + totalNoun + " but only " + numCanDelete + " can be deleted.  ";
+                    text += numCannotDelete + " " + (numCannotDelete === 1 ? nounSingular : nounPlural) + " cannot be deleted because ";
+                    text += (numCannotDelete === 1 ? " it has ": " they have ") + "dependencies."
+                }
+                if (numCannotDelete > 0) {
+                    text += "(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets') + "'>deleting samples</a>)";
+                }
+                if (numCanDelete > 0) {
+                    text += "  <br/><br/><b>Deletion cannot be undone.</b>  Do you want to proceed?";
+                }
+
+                Ext4.Msg.show({
+                    title: numCanDelete > 0 ? "Permanently delete " + numCanDelete + " " + totalNoun : "No " + nounPlural + " can be deleted.",
+                    msg: text,
+                    icon: Ext4.window.MessageBox.QUESTION,
+                    buttons: numCanDelete === 0 ? Ext4.Msg.CANCEL : Ext4.Msg.OKCANCEL,
+                    buttonText: numCanDelete === 0 ?
+                            {
+                                cancel:  "Dismiss"
+                            } :
+                            {
+                                ok: "Yes, Delete",
+                                cancel: "Cancel"
+                            },
+                    fn: function(btn) {
+                        if (btn === 'cancel') {
+                            Ext4.Msg.hide();
+                        }
+                        else if (btn === 'ok') {
+                            Ext4.Ajax.request({
+                                url: LABKEY.ActionURL.buildURL('query', 'deleteRows'),
+                                method: 'POST',
+                                jsonData: {
+                                    schemaName: schemaName,
+                                    queryName: queryName,
+                                    rows: response.data.canDelete,
+                                    apiVersion: 13.2
+                                },
+                                success: LABKEY.Utils.getCallbackWrapper(function(response)  {
+                                    Ext4.Msg.hide();
+                                    var responseMsg = Ext4.Msg.show({
+                                        title: totalNoun +  " Deleted",
+                                        msg:  response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted",
+                                        // buttons: Ext4.Msg.OK,
+                                        // fn: function() {
+                                        //     window.location.reload();
+                                        // }
+                                    });
+                                    Ext4.defer(function() {
+                                        responseMsg.hide();
+                                        window.location.reload();
+                                    }, 2500, responseMsg);
+
+                                }),
+                                failure: LABKEY.Utils.getCallbackWrapper(function(response) {
+                                    console.error("There was a problem deleting " + nounPlural, response);
+                                    Ext4.Msg.hide();
+                                    Ext4.Msg.show({
+                                        title: totalNoun +  " Deleted",
+                                        msg: "There was a problem deleting your " + nounPlural + ".",
+                                        buttons: Ext4.Msg.OK
+                                    });
+                                })
+                            });
+                        }
+                    }
+                });
+            }
+            else {
+                LABKEY.Utils.displayAjaxErrorResponse(response);
+            }
+        }),
+        failure: function(response, opts) {
+            LABKEY.Utils.displayAjaxErrorResponse(response, opts);
+        }
+    })
+};

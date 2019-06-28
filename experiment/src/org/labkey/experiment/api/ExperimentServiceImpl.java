@@ -164,6 +164,7 @@ import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
+import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
@@ -4453,15 +4454,18 @@ public class ExperimentServiceImpl implements ExperimentService
             SELECT DISTINCT m.materialId
             FROM exp.MaterialInput m, exp.protocolapplication pa
             WHERE m.targetapplicationId = pa.rowId
+             AND pa.cpastype = 'ProtocolApplication'  --Limit protocolapplications, where materials are inputs
              AND m.materialId <materialIdRowSQL>;
          */
         SQLFragment sql = new SQLFragment();
 
-        sql.append("SELECT DISTINCT m.materialID\n");
-        sql.append("FROM ").append(getTinfoMaterialInput(), "m").append(", \n\t");
+        sql.append("SELECT DISTINCT mi.materialID\n");
+        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
         sql.append(getTinfoProtocolApplication(), "pa").append("\n");
-        sql.append("WHERE m.TargetApplicationId = pa.rowId\n\t");
-        sql.append("AND m.materialID ").append(materialRowIdSQL).append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
+            .append("AND pa.cpastype = ?\n").add(ProtocolApplication.name())
+            .append("AND mi.materialID ").append(materialRowIdSQL).append("\n");
+        // TODO is this the correct cpastype to filter on?
 
         return sql;
     }
