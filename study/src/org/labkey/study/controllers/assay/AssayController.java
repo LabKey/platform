@@ -1193,7 +1193,7 @@ public class AssayController extends SpringActionController
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null && provider.isQCEnabled(protocol))
             {
-                return new ActionURL(UpdateQCStateAction.class, container);
+                return new ActionURL(QCStateAction.class, container);
             }
             return null;
         }
@@ -1587,27 +1587,10 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class UpdateQCStateAction extends FormViewAction<UpdateQCStateForm>
+    public class QCStateAction extends SimpleViewAction<UpdateQCStateForm>
     {
         @Override
-        public void validateCommand(UpdateQCStateForm form, Errors errors)
-        {
-            if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
-            {
-                if (form.getRuns() != null)
-                {
-                    if (form.getState() == null)
-                        errors.reject(ERROR_MSG, "QC State cannot be blank");
-                    if (form.getRuns().isEmpty())
-                        errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
-                }
-            }
-            else
-                throw new UnauthorizedException("You must be in the QCAnalyst role to update QC states for the run.");
-        }
-
-        @Override
-        public ModelAndView getView(UpdateQCStateForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(UpdateQCStateForm form, BindException errors) throws Exception
         {
             if (form.getRuns() == null)
             {
@@ -1660,8 +1643,28 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(UpdateQCStateForm form, BindException errors) throws Exception
+        public NavTree appendNavTrail(NavTree root)
         {
+            return root.addChild("Change QC State");
+        }
+    }
+
+    @RequiresPermission(QCAnalystPermission.class)
+    public class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
+    {
+        @Override
+        public void validateForm(UpdateQCStateForm form, Errors errors)
+        {
+            if (form.getState() == null)
+                errors.reject(ERROR_MSG, "QC State cannot be blank");
+            if (form.getRuns().isEmpty())
+                errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+        }
+
+        @Override
+        public ApiSimpleResponse execute(UpdateQCStateForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getRuns() != null)
             {
                 AssayQCService svc = AssayQCService.getProvider();
@@ -1681,21 +1684,9 @@ public class AssayController extends SpringActionController
                     if (state != null)
                         svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }
-                return true;
+                response.put("success", true);
             }
-            return false;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(UpdateQCStateForm form)
-        {
-            return form.getReturnActionURL();
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Change QC State");
+            return response;
         }
     }
 

@@ -85,7 +85,6 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
-import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.qc.AbstractDeleteQCStateAction;
 import org.labkey.api.qc.AbstractManageQCStatesAction;

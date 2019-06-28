@@ -57,7 +57,10 @@ public interface AssayFlagHandler
     @Nullable
     static AssayFlagHandler getHandler(AssayProvider provider)
     {
-        return _handlers.get(provider.getName());
+        if (provider != null)
+            return _handlers.get(provider.getName());
+        else
+            return null;
     }
 
     BaseColumnInfo createFlagColumn(ExpProtocol protocol, TableInfo parent, String schemaName, boolean editable);

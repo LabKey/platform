@@ -248,6 +248,12 @@ public class DataRegion extends DisplayElement
             _messages.add(message);
     }
 
+    @Nullable
+    public List<Message> getMessages()
+    {
+        return _messages;
+    }
+
     public void addMessageSupplier(MessageSupplier supplier)
     {
         _messageSuppliers.add(supplier);
@@ -878,6 +884,12 @@ public class DataRegion extends DisplayElement
     public Long getTotalRows()
     {
         return _totalRows;
+    }
+
+    public void setTotalRows(Long totalRows)
+    {
+        if (_totalRows == null)
+            _totalRows = totalRows;
     }
 
     public class ParameterViewBean
@@ -2717,7 +2729,7 @@ public class DataRegion extends DisplayElement
         return StringUtils.join(clauseParts, " AND ");
     }
 
-    protected Map<String, String> prepareMessages(RenderContext ctx) throws IOException
+    public Map<String, String> prepareMessages(RenderContext ctx) throws IOException
     {
         StringBuilder headerMsg = new StringBuilder();
 
