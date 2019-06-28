@@ -682,14 +682,16 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public Map<String, String> getImportAliasMap()
+    public @NotNull Map<String, String> getImportAliasMap()
     {
         try
         {
             Map<String, String> importAliases = getImportAliases(_object);
-            return importAliases != null ?
-                    Collections.unmodifiableMap(importAliases):
-                    null;
+            importAliases = importAliases != null ?
+                    importAliases:
+                    new HashMap<>();
+
+            return Collections.unmodifiableMap(importAliases);
         }
         catch (IOException e)
         {

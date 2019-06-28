@@ -3395,8 +3395,10 @@ public class ExperimentController extends SpringActionController
                 {
                     Domain domain = ss.getDomain();
 
+                    // Contains both existingAliases and reserved property names
                     Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
                     Set<String> existingAliases = null;
+
                     try
                     {
                         existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
