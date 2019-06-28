@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,6 +169,10 @@ public interface ExpSampleSet extends ExpObject
 
     String getImportAliasJson();
 
-    Map<String, String> getImportAliasMap();
-    void setImportAliasMap(Map<String, String> aliasMap);
+    default @NotNull Map<String, String> getImportAliasMap()
+    {
+        return Collections.emptyMap();
+    }
+
+    default void setImportAliasMap(Map<String, String> aliasMap) {}
 }
