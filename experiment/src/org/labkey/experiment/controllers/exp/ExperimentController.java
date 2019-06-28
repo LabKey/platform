@@ -154,6 +154,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -671,7 +672,7 @@ public class ExperimentController extends SpringActionController
             };
             queryView.setTitle("Sample Set Contents");
 
-            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), _source.getRowId());
+            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), false), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
@@ -739,11 +740,11 @@ public class ExperimentController extends SpringActionController
                     updateURL.addParameter("RowId", _source.getRowId());
                     updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton updateButton = new ActionButton(updateURL, "Edit Set", ActionButton.Action.LINK);
-                    updateButton.setDisplayPermission(UpdatePermission.class);
+                    updateButton.setDisplayPermission(DesignSampleSetPermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
                     ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", ActionButton.Action.POST);
-                    deleteButton.setDisplayPermission(DeletePermission.class);
+                    deleteButton.setDisplayPermission(DesignSampleSetPermission.class);
                     ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
                     deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
@@ -3223,7 +3224,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class DeleteMaterialSourceAction extends AbstractDeleteAction
     {
         @Override
@@ -3250,6 +3251,12 @@ public class ExperimentController extends SpringActionController
             }
             for (ExpSampleSet source : sampleSets)
             {
+                Domain domain = source.getDomain();
+                if (domain != null && !domain.getDomainKind().canDeleteDefinition(getUser(), domain))
+                {
+                    throw new UnauthorizedException();
+                }
+
                 source.delete(getUser());
             }
         }
@@ -3313,7 +3320,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class ShowUpdateMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         private ExpSampleSet _sampleSet;
@@ -3346,7 +3353,7 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(url);
             }
 
-            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
+            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext(), true), form, errors);
             if (form.getReturnUrl() != null)
             {
                 updateView.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl());
@@ -3362,7 +3369,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private DataRegion getMaterialSourceRegion(ViewContext model)
+    private DataRegion getMaterialSourceRegion(ViewContext model, boolean forUpdate)
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
 
@@ -3387,9 +3394,10 @@ public class ExperimentController extends SpringActionController
         dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
 
         ButtonBar bb = new ButtonBar();
-
-        bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit"));
-
+        if (forUpdate)
+        {
+            bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit"));
+        }
         dr.setButtonBar(bb);
         bb.setStyle(ButtonBar.Style.separateButtons);
 
@@ -3397,12 +3405,12 @@ public class ExperimentController extends SpringActionController
 
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors)
         {
-            return new InsertView(getMaterialSourceRegion(getViewContext()), form, errors);
+            return new InsertView(getMaterialSourceRegion(getViewContext(), true), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3439,7 +3447,7 @@ public class ExperimentController extends SpringActionController
         SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
     }
 
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class UpdateMaterialSourceAction extends FormHandlerAction<MaterialSourceForm>
     {
         private MaterialSource _source;
@@ -3462,7 +3470,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class UpdateMaterialSourceApiAction extends MutatingApiAction<MaterialSourceForm>
     {
         private MaterialSource _source;
@@ -3524,7 +3532,7 @@ public class ExperimentController extends SpringActionController
         );
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class CreateSampleSetApiAction extends MutatingApiAction<CreateSampleSetForm>
     {
         @Override
@@ -3541,7 +3549,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class CreateSampleSetAction extends FormViewAction<CreateSampleSetForm>
     {
         ActionURL _successUrl;
