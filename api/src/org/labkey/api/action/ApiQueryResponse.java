@@ -83,7 +83,6 @@ public class ApiQueryResponse implements ApiResponse
     private boolean _includeDisplayValues;
     private List<FieldKey> _columnFilter;
     private boolean _includeMetaData;
-    private List<DataRegion.Message> _messages;
 
     // TODO: This is silly... switch to builder pattern, or at least a constructor that takes reasonable strategies
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
@@ -149,6 +148,9 @@ public class ApiQueryResponse implements ApiResponse
             boolean complete;
             try (Results results = getResults())
             {
+                if (_includeMetaData)
+                    writeMetaData(writer);
+
                 complete = writeRowset(writer, results);
             }
 
@@ -168,11 +170,22 @@ public class ApiQueryResponse implements ApiResponse
 
             if (_includeMetaData)
             {
+                // messages, but only if metadata is requested
                 _dataRegion.setTotalRows(rowCount);
                 _dataRegion.prepareMessages(_ctx);
-                _messages = _dataRegion.getMessages();
+                List<DataRegion.Message> dataRegionMessages = _dataRegion.getMessages();
 
-                writeMetaData(writer);
+                if (dataRegionMessages != null)
+                {
+                    List<Map<String, String>> messages = new ArrayList<>();
+                    for (DataRegion.Message msg : dataRegionMessages)
+                    {
+                        messages.add(PageFlowUtil.map("area", msg.getArea(),
+                                "content", msg.getContent(),
+                                "type", msg.getType().name()));
+                    }
+                    writer.writeProperty("messages", messages);
+                }
             }
         }
         writer.endResponse();
@@ -367,17 +380,6 @@ public class ApiQueryResponse implements ApiResponse
         }
         metaData.put("importTemplates", templates);
 
-        if (_messages != null)
-        {
-            List<Map<String, String>> messages = new ArrayList<>();
-            metaData.put("messages", messages);
-            for (DataRegion.Message msg : _messages)
-            {
-                messages.add(PageFlowUtil.map("area", msg.getArea(),
-                        "content", msg.getContent(),
-                        "type", msg.getType().name()));
-            }
-        }
         return metaData;
     }
 
