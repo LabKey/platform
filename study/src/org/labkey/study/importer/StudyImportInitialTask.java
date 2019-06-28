@@ -183,7 +183,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
         new MissingValueImporterFactory().create().process(job, ctx, ctx.getRoot());
 
-        processImporter(ctx, job, errors, new QcStatesImporter());
+        // check for legacy QC states file in study
+        processImporter(ctx, job, errors, new StudyQcStatesImporter());
 
         processImporter(ctx, job, errors, new VisitImporter());
         if (errors.hasErrors())

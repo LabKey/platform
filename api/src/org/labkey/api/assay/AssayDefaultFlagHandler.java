@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.assay;
 
 import org.labkey.api.data.BaseColumnInfo;
@@ -55,8 +70,13 @@ public class AssayDefaultFlagHandler implements AssayFlagHandler
                 ObjectFactory<FlagType> f = ObjectFactory.Registry.getFactory((Class<FlagType>)flag.getClass());
 
                 Map<String, Object> row = f.toMap(flag, null);
+                row.put("run", flag.getRunId());
                 BatchValidationException errors = new BatchValidationException();
-                qus.insertRows(user, container, Collections.singletonList(row), errors, null, null);
+
+                if (flag.getRowId() != 0)
+                    qus.updateRows(user, container, Collections.singletonList(row), Collections.singletonList(row), null, null);
+                else
+                    qus.insertRows(user, container, Collections.singletonList(row), errors, null, null);
             }
             catch (Exception e)
             {

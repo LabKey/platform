@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -399,7 +399,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             {
                 for (ColumnInfo c : ti.getColumns())
                 {
-                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid",c.getName()))
+                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid", c.getName()) || StringUtils.equalsIgnoreCase("genId", c.getName()))
                         continue;
                     if (c.isMvIndicatorColumn())
                         continue;

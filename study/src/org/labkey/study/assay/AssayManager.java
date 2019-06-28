@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -128,6 +129,7 @@ public class AssayManager implements AssayService
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
     private static final ModuleResourceCache<Collection<ModuleAssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create("Module assay providers", new ModuleAssayCacheHandler(), ResourceRootProvider.getAssayProviders(Path.rootPath));
     private static final Object PROVIDER_LOCK = new Object();
+    public static final String EXPERIMENTAL_ASSAY_DATA_IMPORT = "experimental-uxassaydataimport";
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
@@ -482,6 +484,7 @@ public class AssayManager implements AssayService
             vbox.setFrame(WebPartView.FrameType.PORTAL);
 
             NavTree menu = new NavTree();
+            createAssayDataImportButton(context, menu);
             if (context.getContainer().hasPermission(context.getUser(), DesignAssayPermission.class))
             {
                 ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, context.getContainer());
@@ -940,6 +943,38 @@ public class AssayManager implements AssayService
             return handler.getFlags(runId, cls);
         }
         return Collections.emptyList();
+    }
+
+    public void createAssayDataImportButton(ViewContext context, ButtonBar bar)
+    {
+        if (shouldShowAssayDataImport(context))
+        {
+            ActionButton button = new ActionButton("Import Data (Experimental)", getAssayDataImportURL(context));
+            button.setIconCls("plus");
+            button.setActionType(ActionButton.Action.LINK);
+            bar.add(button);
+        }
+    }
+
+    public void createAssayDataImportButton(ViewContext context, NavTree menu)
+    {
+        if (shouldShowAssayDataImport(context))
+        {
+            menu.addChild("Import Data", getAssayDataImportURL(context));
+        }
+    }
+
+    private boolean shouldShowAssayDataImport(ViewContext context)
+    {
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_ASSAY_DATA_IMPORT);
+        return experimentalFlagEnabled && context.getContainer().hasPermission(context.getUser(), InsertPermission.class);
+    }
+
+    private ActionURL getAssayDataImportURL(ViewContext context)
+    {
+        ActionURL importURL = new ActionURL("experiment", "assayDataImport", context.getContainer());
+        importURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
+        return importURL;
     }
 
     public static class TestCase extends Assert

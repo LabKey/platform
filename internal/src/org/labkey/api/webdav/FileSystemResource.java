@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,6 +287,10 @@ public class FileSystemResource extends AbstractWebdavResource
         try
         {
             is.transferTo(file);
+            if (is.getLastModified() != null)
+            {
+                file.setLastModified(is.getLastModified().getTime());
+            }
             resetMetadata();
             return file.length();
         }
@@ -701,6 +705,20 @@ public class FileSystemResource extends AbstractWebdavResource
         addAuditEvent(new DefaultContainerUser(getContainer(), context.getUser()), message);
     }
 
+    @Override
+    public void setLastModified(long time) throws IOException
+    {
+        java.nio.file.Path nioPath = getNioPath();
+        if (nioPath != null)
+        {
+            Files.setLastModifiedTime(nioPath, FileTime.fromMillis(time));
+        }
+        FileInfo info = getFileInfo();
+        if (info != null)
+        {
+            info._attributes = null;
+        }
+    }
 
     static final FileTime nullTime = FileTime.from(Long.MIN_VALUE,TimeUnit.MILLISECONDS);
 

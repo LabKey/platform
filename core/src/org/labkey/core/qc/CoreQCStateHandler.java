@@ -1,8 +1,22 @@
+/*
+ * Copyright (c) 2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.core.qc;
 
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateHandler;
 import org.labkey.api.qc.QCStateManager;
@@ -10,22 +24,15 @@ import org.labkey.api.security.User;
 import org.labkey.core.CoreController;
 
 import java.util.List;
-import java.util.Map;
 
 public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQCStatesForm>
 {
     protected List<QCState> _states = null;
-    public static final String PROPS_KEY = "CoreQCStateHandlerProps";
-    public static final String IS_BLANK_QC_STATE_PUBLIC_KEY = "IsBlankQCStatePublic";
 
     @Override
     public boolean isBlankQCStatePublic(Container container)
     {
-        Map<String, String> props = PropertyManager.getNormalStore().getProperties(container, PROPS_KEY);
-        String isBlankQCStatePublicString = props.get(IS_BLANK_QC_STATE_PUBLIC_KEY);
-        if (isBlankQCStatePublicString == null)
-            return false;  // TODO: should a different default be used?
-        return Boolean.parseBoolean(props.get(IS_BLANK_QC_STATE_PUBLIC_KEY));
+        return AssayQCService.getProvider().isBlankQCStatePublic(container);
     }
 
     public Integer getDefaultQCState(Container container)
@@ -34,13 +41,15 @@ public class CoreQCStateHandler implements QCStateHandler<CoreController.ManageQ
         return state != null ? state.getRowId() : null;
     }
 
-    public void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState)
+    private void setProps(Container container, boolean isBlankQCStatePublic, Integer defaultQCState)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getNormalStore().getWritableProperties(container, PROPS_KEY, true);
-        props.put(IS_BLANK_QC_STATE_PUBLIC_KEY, Boolean.toString(isBlankQCStatePublic));
-        props.save();
+        AssayQCService.getProvider().setIsBlankQCStatePublic(container, isBlankQCStatePublic);
 
-        AssayQCService.getProvider().setDefaultDataImportState(container, QCStateManager.getInstance().getQCStateForRowId(container, defaultQCState));
+        QCState state = null;
+        if (defaultQCState != null)
+            state = QCStateManager.getInstance().getQCStateForRowId(container, defaultQCState);
+
+        AssayQCService.getProvider().setDefaultDataImportState(container, state);
     }
 
     @Override

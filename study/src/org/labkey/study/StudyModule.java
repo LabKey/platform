@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
@@ -146,6 +147,7 @@ import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
+import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
@@ -461,6 +463,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
+        AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",
+                "Adds an 'Import Data' button (using plus icon) to the 'Assay List' query view to get to the new UX Assay Data Import page.", false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
@@ -537,6 +541,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
+        QCStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
     @Override

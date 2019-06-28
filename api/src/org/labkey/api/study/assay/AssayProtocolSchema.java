@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFlagHandler;
+import org.labkey.api.assay.AssayQCFlagColumn;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
@@ -454,6 +455,12 @@ public abstract class AssayProtocolSchema extends AssaySchema
         SQLFragment qcFragment = svc.getRunsTableCondition(getProtocol(), getContainer(), getUser());
         runTable.addCondition(qcFragment);
 
+        // include QCFlags if the assay is qc enabled
+        if (getProvider().isQCEnabled(getProtocol()))
+        {
+            visibleColumns.add(FieldKey.fromParts(AssayQCFlagColumn.NAME));
+        }
+
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
         Domain batchDomain = getProvider().getBatchDomain(getProtocol());
@@ -682,6 +689,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
             if (AssayQCService.getProvider().isQCEnabled(getProtocol()))
             {
                 User user = context.getUser();
+
+                // Don't bother checking for elided rows if the user doesn't at least have ReadPermission
+                if (!context.getContainer().hasPermission(user, ReadPermission.class))
+                    return;
+
                 // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
                 if (!context.getContainer().hasPermission(user, QCAnalystPermission.class))
                 {
@@ -712,9 +724,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
                                 baseQueryView.setMessageSupplier(dataRegion -> {
                                     if (dataRegion.getTotalRows() != null && dataRegion.getTotalRows() < rowCount)
                                     {
-                                        DataRegion.Message msg = new DataRegion.Message("There are " + (rowCount - dataRegion.getTotalRows()) + " rows not shown due to unapproved QC state",
-                                                DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
-                                        return Collections.singletonList(msg);
+                                        long count = rowCount - dataRegion.getTotalRows();
+                                        String msg = count > 1 ? "There are " + count + " rows not shown due to unapproved QC state."
+                                                : "There is one row not shown due to unapproved QC state.";
+                                        DataRegion.Message drm = new DataRegion.Message(msg, DataRegion.MessageType.WARNING, DataRegion.MessagePart.view);
+                                        return Collections.singletonList(drm);
                                     }
                                     return Collections.emptyList();
                                 });
