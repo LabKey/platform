@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -619,8 +620,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     private void indexSampleSet(SearchService.IndexTask indexTask)
     {
-        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(this);
-        url.setExtraPath(getContainer().getId());
+        ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
+        ActionURL url = null;
+
+        if(urlProvider != null)
+        {
+            url = urlProvider.getShowSampleSetURL(this);
+            url.setExtraPath(getContainer().getId());
+        }
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
@@ -657,10 +664,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return categoryName + ":" + getRowId();
     }
 
-    private Map<String, String> getImportAliases(MaterialSource ms) throws IOException
+    @Contract("null -> new")
+    private @NotNull Map<String, String> getImportAliases(MaterialSource ms) throws IOException
     {
         if (ms == null || StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
-            return new HashMap<>();
+            return Collections.emptyMap();
 
         try
         {
@@ -686,16 +694,11 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     {
         try
         {
-            Map<String, String> importAliases = getImportAliases(_object);
-            importAliases = importAliases != null ?
-                    importAliases:
-                    new HashMap<>();
-
-            return Collections.unmodifiableMap(importAliases);
+            return Collections.unmodifiableMap(getImportAliases(_object));
         }
         catch (IOException e)
         {
-            //cant use checked IOException because of use as delegate
+            //cant use checked IOException because of this method's use as delegate
             throw new UncheckedIOException("Unable to parse parent alias mappings", e);
         }
     }

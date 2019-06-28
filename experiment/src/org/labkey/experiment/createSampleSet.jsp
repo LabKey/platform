@@ -50,6 +50,18 @@
 
 %>
 
+<style type="text/css">
+    .lk-parent-alias-icon {
+        cursor: pointer;
+        color: #555;
+    }
+
+    .lk-parent-alias-input {
+        display: inline-block;
+        margin-right: 10px;
+    }
+</style>
+
 <labkey:errors />
 <labkey:form action="" method="POST" layout="horizontal" id="sampleSetForm">
     <labkey:input
@@ -70,11 +82,14 @@
         </div>
     </div>
 
+    <div id="extraAlias"></div>
+
     <div class=" form-group">
-        <div>
-            <div id="extraAlias" >
-            </div>
-            <a class="lk-exp-addAliasGroup" style="cursor: pointer; color: #555;">
+        <label class=" control-label col-sm-3 col-lg-2">
+            &nbsp;
+        </label>
+        <div class="col-sm-9 col-lg-10">
+            <a class="lk-exp-addAliasGroup lk-parent-alias-icon">
                 <i class="fa fa-plus-circle"></i> add parent column import alias
             </a>
         </div>
@@ -104,7 +119,7 @@
             let parentAliasTemplate = new DocumentFragment();
             let selectListTemplate = document.createElement("select");
             selectListTemplate.setAttribute("name", "importAliasValues");
-            selectListTemplate.setAttribute("class", "form-control lk-exp-alias-value");
+            selectListTemplate.setAttribute("class", "form-control lk-parent-alias-input lk-exp-alias-value");
             parentAliasTemplate.appendChild(selectListTemplate);
 
             let defaultOption = document.createElement("option");
@@ -139,21 +154,18 @@
                 }
             }
 
-            createOptions(dataClassList, selectListTemplate, 'dataInputs', 'dc: ');
-            createOptions(sampleSetList, selectListTemplate, 'materialInputs', 'ss: ');
+            createOptions(dataClassList, selectListTemplate, 'dataInputs', 'Data Class: ');
+            createOptions(sampleSetList, selectListTemplate, 'materialInputs', 'Sample Set: ');
 
             let aliasRowTemplate = "<div class='form-group lk-exp-alias-group' name='importAliases'>" +
                     "<label class=' control-label col-sm-3 col-lg-2'>Parent Alias</label>" +
-                    "<div class='col-sm-3 col-lg-2'>" +
-                    "<input type='text' class='form-control lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys' style='float: right;'>" +
-                    "</div>" +
-                    "<div class='col-sm-3 col-lg-2'>";
+                    "<div class='col-sm-9 col-lg-10'>" +
+                    "<input type='text' class='form-control lk-parent-alias-input lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys'/>";
 
             aliasRowTemplate += selectListTemplate.outerHTML;
 
             aliasRowTemplate += "</select>" +
-                    // "<input type='text' class='form-control lk-exp-alias-value' placeholder='Parent' name='importAliasValues' style='display: inline-block;'>" +
-                    "<a class='removeAliasTrigger' style='cursor: pointer;' title='remove'><i class='fa fa-trash' style='padding: 0 8px; color: #555;'></i></a>" +
+                    "<a class='removeAliasTrigger lk-parent-alias-icon' title='remove'><i class='fa fa-trash'></i></a>" +
                     "</div>" +
                     "</div>";
 

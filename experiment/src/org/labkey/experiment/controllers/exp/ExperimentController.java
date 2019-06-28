@@ -3405,7 +3405,7 @@ public class ExperimentController extends SpringActionController
                     }
                     catch (UncheckedIOException e)
                     {
-                        logger.error("Unable to parse aliases", e);
+                        logger.error("Unable to parse existing import aliases", e);
                         errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
                     }
 
@@ -5954,6 +5954,7 @@ public class ExperimentController extends SpringActionController
             return getShowSampleSetListURL(c, null);
         }
 
+        @Override
         public ActionURL getShowSampleSetURL(ExpSampleSet sampleSet)
         {
             return new ActionURL(ShowMaterialSourceAction.class, sampleSet.getContainer()).addParameter("rowId", sampleSet.getRowId());
