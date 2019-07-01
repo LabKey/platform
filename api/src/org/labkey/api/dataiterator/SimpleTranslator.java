@@ -856,18 +856,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public void selectAll(@NotNull Set<String> skipColumns, @NotNull Map<String, String> translations)
     {
-        for (int i=1 ; i<=_data.getColumnCount() ; i++)
+        for (int i = 1; i <= _data.getColumnCount(); i++)
         {
             ColumnInfo c = _data.getColumnInfo(i);
             String name = c.getName();
             if (skipColumns.contains(name))
                 continue;
-            else if (translations.containsKey(name))
-            {
-                ((BaseColumnInfo)c).setName(translations.get(name));
-            }
 
             addColumn(c, i);
+            if (translations.containsKey(name))
+            {
+                addAliasColumn(translations.get(name), i);
+            }
         }
     }
 
