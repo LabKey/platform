@@ -316,18 +316,13 @@ function tinyMceHandleEvent(evt) {
         });
     };
 
-
-
     var onAddAttachment = function(fileInput, index) {
         // update the name column
         var cell = $('#wiki-na-name-' + index).attr('nobreak', '1').html('<a class="labkey-button"><span>remove</span></a>&nbsp;' + getFileName(fileInput.value));
-        cell.click(function() { onRemoveNewAttachment(index); });
 
         // mark the attachments as dirty
         _attachments.isDirty = true;
     };
-
-
 
     var onAttachmentSuccess = function(response) {
         //parse the response JSON
@@ -425,30 +420,16 @@ function tinyMceHandleEvent(evt) {
     };
 
     // TODO: We shouldn't need to expose either of these methods, rather hookup the onclicks after appending the elements
-        onDeleteAttachment = function(index) {
+    var onDeleteAttachment = function(index) {
         var row = getExistingAttachmentRow(index);
 
         getExistingAttachmentIconImg(index).src = LABKEY.ActionURL.getContextPath() + "/_icons/_deleted.gif";
         row.cells[1].style.textDecoration = "line-through";
-        // row.cells[2].innerHTML = "<a class='labkey-button' onclick='LABKEY._wiki.onUndeleteAttachment(" + index + ")'><span>undelete</span></a>"
-        // + "<input type='hidden' name='toDelete' value=\"" + LABKEY.Utils.encodeHtml(_attachments[index].name) + "\"/>";
-
         row.cells[2].innerHTML = "<a onclick='LABKEY._wiki.onUndeleteAttachment(" + index + ")'><span>&nbsp; un-delete</span></a>"
                 + "<input type='hidden' name='toDelete' value=\"" + LABKEY.Utils.encodeHtml(_attachments[index].name) + "\"/>";
 
-
-
-            //add a prop so we know we need to save the attachments
+        //add a prop so we know we need to save the attachments
         _attachments.isDirty = true;
-    };
-
-    //    candelete
-    var onRemoveNewAttachment = function(index)
-    {
-        //delete the entire table row
-        var row = document.getElementById("wiki-na-" + index);
-        if (row)
-            getNewAttachmentsTable().deleteRow(row.rowIndex);
     };
 
     var getNewAttachmentsTable = function() {
@@ -464,9 +445,6 @@ function tinyMceHandleEvent(evt) {
         getExistingAttachmentIconImg(index).src = _attachments[index].iconUrl;
         row.cells[1].style.textDecoration = "";
         row.cells[2].innerHTML = "<a href='javascript:onDeleteAttachment("+ index +")'>&nbsp; delete</a>";
-
-
-
     };
 
     var onDeletePage = function() {
@@ -836,7 +814,7 @@ function tinyMceHandleEvent(evt) {
                 cell = row.insertCell(1);
                 cell.id = "wiki-ea-name-" + idx;
                 cell.innerHTML = "<a target='_blank' href='" + attachments[idx].downloadUrl + "'>"
-                + "&nbsp;" + (encodeNames ? LABKEY.Utils.encodeHtml( attachments[idx].name) : attachments[idx].name) + "</a>";
+                    + "&nbsp;" + (encodeNames ? LABKEY.Utils.encodeHtml( attachments[idx].name) : attachments[idx].name) + "</a>";
 
                 cell = row.insertCell(2);
                 cell.id = "wiki-ea-del-" + idx;
