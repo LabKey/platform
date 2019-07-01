@@ -294,6 +294,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return result;
     }
 
+    @Override
     public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, user, includeOtherContainers);

@@ -41,11 +41,11 @@
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
 
     List<String> sampleSetList = new ArrayList<>();
-    for (ExpSampleSet ss : SampleSetService.get().getSampleSets(getContainer(), getUser(), false))
+    for (ExpSampleSet ss : SampleSetService.get().getSampleSets(getContainer(), getUser(), true))
         sampleSetList.add(ss.getName());
 
     List<String> dataClassList = new ArrayList<>();
-    for(ExpDataClass dc : ExperimentService.get().getDataClasses(getContainer(), getUser(), false))
+    for(ExpDataClass dc : ExperimentService.get().getDataClasses(getContainer(), getUser(), true))
             dataClassList.add(dc.getName());
 
 %>
