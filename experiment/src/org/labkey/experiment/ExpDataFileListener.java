@@ -61,7 +61,7 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
         }
 
-        if (data != null && data.getFilePath().equals(src) && !src.equals(dest))
+        if (data != null && src.equals(data.getFilePath()) && !src.equals(dest))
         {
             // The file has been renamed, so rename the exp.data row if its name matches
             data.setName(FileUtil.getFileName(dest));
