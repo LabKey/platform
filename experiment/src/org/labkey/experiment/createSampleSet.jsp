@@ -26,6 +26,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -40,13 +41,21 @@
     ExperimentController.BaseSampleSetForm bean = view.getModelBean();
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
 
-    List<String> sampleSetList = new ArrayList<>();
+    List<Pair<String, String>> sampleSetList = new ArrayList<>();
     for (ExpSampleSet ss : SampleSetService.get().getSampleSets(getContainer(), getUser(), true))
-        sampleSetList.add(ss.getName());
+    {
+        //Apply prefix and suffix to differentiate duplicates
+        Pair ssPair = new Pair<>(ss.getName(), String.format("Sample Set: %1$s (%2$s)", ss.getName(), ss.getContainer().getPath()));
+        sampleSetList.add(ssPair);
+    }
 
-    List<String> dataClassList = new ArrayList<>();
+    List<Pair<String, String>> dataClassList = new ArrayList<>();
     for(ExpDataClass dc : ExperimentService.get().getDataClasses(getContainer(), getUser(), true))
-            dataClassList.add(dc.getName());
+    {
+        //Apply prefix and suffix to differentiate duplicates
+        Pair dcPair = new Pair<>(dc.getName(), String.format("Data Class: %1$s (%2$s)", dc.getName(), dc.getContainer().getPath()));
+        dataClassList.add(dcPair);
+    }
 
 %>
 
@@ -131,44 +140,48 @@
             let dataClassList = [];
 
             <%
-                for (String ss : sampleSetList ) {
+                for (Pair<String, String> ssPair : sampleSetList ) {
             %>
-                sampleSetList.push(<%=q(ss)%>);  // Do this so we can escape SampleSet names
+                sampleSetList.push([<%=q(ssPair.getKey())%>, <%=q(ssPair.getValue())%>]);  // Do this so we can escape SampleSet names
             <%
                 }
             %>
             <%
-                for (String dc : dataClassList ) {
+                for (Pair<String, String> dcPair : dataClassList ) {
             %>
-                dataClassList.push(<%=q(dc)%>);  // Do this so we can escape DataClass names
+                dataClassList.push([<%=q(dcPair.getKey())%>, <%=q(dcPair.getValue())%>]);  // Do this so we can escape SampleSet names
             <%
                 }
             %>
 
-            function createOptions(list, selectEl, valPrefix, textPrefix) {
+            function createOptions(list, selectEl, valPrefix) {
                 for (let i = 0; i < list.length; i++) {
+                    let pair = list[i];
+
                     let option = document.createElement("option");
-                    option.value = valPrefix + '/' + list[i];
-                    option.text = textPrefix + list[i];  //Apply a text prefix in the event there are duplicate names between DataClasses and SampleSets
+                    option.value = valPrefix + '/' + pair[0];   //Set value to import path
+                    option.text = pair[1];                      //Set display text containing type, name, and path
                     selectEl.appendChild(option);
                 }
             }
 
-            createOptions(dataClassList, selectListTemplate, 'dataInputs', 'Data Class: ');
-            createOptions(sampleSetList, selectListTemplate, 'materialInputs', 'Sample Set: ');
+            createOptions(dataClassList, selectListTemplate, 'dataInputs');
+            createOptions(sampleSetList, selectListTemplate, 'materialInputs');
 
+            //Create string template to use for adding new alias rows
             let aliasRowTemplate = "<div class='form-group lk-exp-alias-group' name='importAliases'>" +
                     "<label class=' control-label col-sm-3 col-lg-2'>Parent Alias</label>" +
                     "<div class='col-sm-9 col-lg-10'>" +
                     "<input type='text' class='form-control lk-parent-alias-input lk-exp-alias-key' placeholder='Import Header' name='importAliasKeys'/>";
 
-            aliasRowTemplate += selectListTemplate.outerHTML;
+            aliasRowTemplate += selectListTemplate.outerHTML;  //Add select element and options
 
-            aliasRowTemplate += "</select>" +
-                    "<a class='removeAliasTrigger lk-parent-alias-icon' title='remove'><i class='fa fa-trash'></i></a>" +
+            // Add trashcan icon and link for removing rows.
+            aliasRowTemplate += "<a class='removeAliasTrigger lk-parent-alias-icon' title='remove'><i class='fa fa-trash'></i></a>" +
                     "</div>" +
                     "</div>";
 
+            //Set existing values and append existing alias to DOM
             function addAliasGroup(key, value) {
                 let elem = $(aliasRowTemplate);
 

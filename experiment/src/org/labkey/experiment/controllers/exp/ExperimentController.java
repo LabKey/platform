@@ -3387,8 +3387,14 @@ public class ExperimentController extends SpringActionController
                 if (importHeadings.contains(null))
                     errors.reject(ERROR_MSG, "Import alias heading cannot be blank");
 
-                if(importParents.contains(null))
-                    errors.reject(ERROR_MSG, "Import parent alias cannot be blank");
+                if(importParents.contains(null)
+                        || importParents.size() < importHeadings.size())  //Can happen if Alias is created and then target Parent is subsequently deleted
+                {
+                    String msg = "Import parent alias cannot be blank";
+                    if (importParents.size() < importHeadings.size())
+                        msg += ", targeted parent may have been deleted.";
+                    errors.reject(ERROR_MSG, msg);
+                }
 
                 //check if heading is unique--alias isn't a field/reserved name
                 if (ss != null)
