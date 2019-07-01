@@ -1,0 +1,11 @@
+<view xmlns="http://labkey.org/data/xml/view" frame="none" title="File Upload Preview">
+    <permissions>
+        <permission name="insert"/>
+    </permissions>
+    <dependencies>
+        <dependency path="experiment/gen/experiment-styles.css" />
+        
+         <dependency path="experiment/gen/fileUploadPreview.js"/>
+        
+    </dependencies>
+</view>
