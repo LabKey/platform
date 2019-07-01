@@ -856,6 +856,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public void selectAll(@NotNull Set<String> skipColumns, @NotNull Map<String, String> translations)
     {
+        Map<String, Integer> aliasColumns = new HashMap<>();
         for (int i = 1; i <= _data.getColumnCount(); i++)
         {
             ColumnInfo c = _data.getColumnInfo(i);
@@ -865,10 +866,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             addColumn(c, i);
             if (translations.containsKey(name))
-            {
-                addAliasColumn(translations.get(name), i);
-            }
+                aliasColumns.put(translations.get(name),i);
         }
+
+        //Append new alias columns to prevent indexing errors
+        for(Map.Entry<String, Integer> alias : aliasColumns.entrySet())
+            addAliasColumn(alias.getKey(), alias.getValue());
     }
 
 

@@ -623,7 +623,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
         ActionURL url = null;
 
-        if(urlProvider != null)
+        if (urlProvider != null)
         {
             url = urlProvider.getShowSampleSetURL(this);
             url.setExtraPath(getContainer().getId());
@@ -689,17 +689,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public @NotNull Map<String, String> getImportAliasMap()
+    public @NotNull Map<String, String> getImportAliasMap() throws IOException
     {
-        try
-        {
             return Collections.unmodifiableMap(getImportAliases(_object));
-        }
-        catch (IOException e)
-        {
-            //cant use checked IOException because of this method's use as delegate
-            throw new UncheckedIOException("Unable to parse parent alias mappings", e);
-        }
     }
 
     @Override

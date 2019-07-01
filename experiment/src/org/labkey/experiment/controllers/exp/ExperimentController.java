@@ -3409,7 +3409,7 @@ public class ExperimentController extends SpringActionController
                     {
                         existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
                     }
-                    catch (UncheckedIOException e)
+                    catch (IOException e)
                     {
                         logger.error("Unable to parse existing import aliases", e);
                         errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));

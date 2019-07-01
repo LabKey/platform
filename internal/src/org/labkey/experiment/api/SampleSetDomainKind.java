@@ -54,6 +54,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -179,7 +180,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
                 reserved.addAll(aliases.keySet());
 
         }
-        catch (UncheckedIOException e)
+        catch (IOException e)
         {
             logger.error(String.format("Failed to parse SampleSet parent aliases for [%1$s]", ss.getRowId()), e);
         }
