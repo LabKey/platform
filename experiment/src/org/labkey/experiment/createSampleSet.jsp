@@ -149,7 +149,7 @@
             <%
                 for (Pair<String, String> dcPair : dataClassList ) {
             %>
-                dataClassList.push([<%=q(dcPair.getKey())%>, <%=q(dcPair.getValue())%>]);  // Do this so we can escape SampleSet names
+                dataClassList.push([<%=q(dcPair.getKey())%>, <%=q(dcPair.getValue())%>]);  // Do this so we can escape DataClass names
             <%
                 }
             %>
