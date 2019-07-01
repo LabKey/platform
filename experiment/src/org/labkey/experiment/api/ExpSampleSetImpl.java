@@ -683,7 +683,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         }
     }
 
-    @Override
     public String getImportAliasJson()
     {
         return _object.getMaterialParentImportAliasMap();

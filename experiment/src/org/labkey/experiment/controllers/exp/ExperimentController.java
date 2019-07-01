@@ -3451,7 +3451,7 @@ public class ExperimentController extends SpringActionController
             if (form.getRowId() == null)
                 return;
 
-            ExpSampleSet source = SampleSetService.get().getSampleSet(form.getRowId());
+            ExpSampleSetImpl source = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(form.getRowId());
             if (source == null)
                 return;
 

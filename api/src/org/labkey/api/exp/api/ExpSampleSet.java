@@ -167,12 +167,7 @@ public interface ExpSampleSet extends ExpObject
     @Override
     void save(User user);
 
-    String getImportAliasJson();
+    @NotNull Map<String, String> getImportAliasMap();
 
-    default @NotNull Map<String, String> getImportAliasMap()
-    {
-        return Collections.emptyMap();
-    }
-
-    default void setImportAliasMap(Map<String, String> aliasMap) {}
+    void setImportAliasMap(Map<String, String> aliasMap);
 }
