@@ -36,10 +36,10 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                     text += (numCannotDelete === 1 ? " it has ": " they have ") + "dependencies."
                 }
                 if (numCannotDelete > 0) {
-                    text += "(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets') + "'>deleting samples</a>)";
+                    text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets') + "'>more info</a>)";
                 }
                 if (numCanDelete > 0) {
-                    text += "  <br/><br/><b>Deletion cannot be undone.</b>  Do you want to proceed?";
+                    text += " <br/><br/><b>Deletion cannot be undone.</b>  Do you want to proceed?";
                 }
 
                 Ext4.Msg.show({
