@@ -73,6 +73,8 @@ import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -731,19 +733,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         TableInfo propertiesTable = _ss.getTinfo();
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
-        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser())
-            .setFileLinkDirectory("sampleset")
-            .setIndexFunction( lsids -> () ->
-                {
-                    for (String lsid : lsids)
+        try
+        {
+            DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap())
+                    .setFileLinkDirectory("sampleset")
+                    .setIndexFunction(lsids -> () ->
                     {
-                        ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
-                        if (null != expMaterial)
-                            expMaterial.index(null);
-                    }
-                });
+                        for (String lsid : lsids)
+                        {
+                            ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
+                            if (null != expMaterial)
+                                expMaterial.index(null);
+                        }
+                    });
 
-        return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+            return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

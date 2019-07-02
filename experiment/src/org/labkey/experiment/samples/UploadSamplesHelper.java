@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.samples;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +50,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -108,6 +110,9 @@ public abstract class UploadSamplesHelper
 
     public static boolean isInputOutputHeader(String name)
     {
+        if(StringUtils.isBlank(name))
+            return false;
+
         String[] parts = name.split("\\.|/");
         return parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT) ||
                 parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD) || parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD);
@@ -324,39 +329,43 @@ public abstract class UploadSamplesHelper
             }
             if (parts.length == 2)
             {
+                String namePart = parts[1];
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
-                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
+                    if (!findMaterialSource(c, user, namePart))
+                        throw new ValidationException(String.format("Invalid import alias: parent SampleSet [%1$s] does not exist or may have been deleted", namePart));
+
+                    ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
                     if (sample != null)
                         parentMaterials.put(sample, sampleRole(sample));
                     else
-                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
+                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + namePart + "' not found");
                 }
                 else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
                 {
-                    ExpMaterial sample = findMaterial(c, user, parts[1], parentValue, cache, materialMap);
+                    ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
                     if (sample != null)
                         childMaterials.put(sample, sampleRole(sample));
                     else
-                        throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
+                        throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + namePart + "' not found");
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
                 {
                     if (source != null)
-                        ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", parts[1]);
-                    ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
+                        ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", namePart);
+                    ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
                     if (data != null)
                         parentData.put(data, dataRole(data, user));
                     else
-                        throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
+                        throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + namePart + "' not found");
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
                 {
-                    ExpData data = findData(c, user, parts[1], parentValue, cache, dataMap);
+                    ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
                     if (data != null)
                         childData.put(data, dataRole(data, user));
                     else
-                        throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + parts[1] + "' not found");
+                        throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + namePart + "' not found");
                 }
             }
         }
@@ -430,6 +439,12 @@ public abstract class UploadSamplesHelper
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         return dataCache.computeIfAbsent(rowId, svc::getExpData);
+    }
+
+
+    private static boolean findMaterialSource(Container c, User user, String parentName)
+    {
+        return SampleSetService.get().getSampleSet(c, user, parentName) != null;
     }
 
 

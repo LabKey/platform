@@ -17,7 +17,6 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -28,52 +27,12 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PanelButton;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -104,6 +63,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -190,37 +150,13 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -234,13 +170,13 @@ import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.GraphAlgorithms;
-import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.SampleSetUpdateServiceDI;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.pipeline.ExperimentPipelineJob;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.springframework.validation.BindException;
@@ -262,6 +198,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -735,7 +672,7 @@ public class ExperimentController extends SpringActionController
 
                 if (domainKind instanceof SampleSetDomainKind)
                 {
-                    ActionURL updateURL = new ActionURL(ShowUpdateMaterialSourceAction.class, _source.getContainer());
+                    ActionURL updateURL = new ActionURL(UpdateMaterialSourceAction.class, _source.getContainer());
                     updateURL.addParameter("RowId", _source.getRowId());
                     updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton updateButton = new ActionButton(updateURL, "Edit Set", ActionButton.Action.LINK);
@@ -3313,55 +3250,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class ShowUpdateMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
-    {
-        private ExpSampleSet _sampleSet;
-
-        @Override
-        public ModelAndView getView(MaterialSourceForm form, BindException errors)
-        {
-            try
-            {
-                _sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getBean().getRowId());
-            }
-            catch (ConversionException e)
-            {
-                throw new NotFoundException("No matching sample set");
-            }
-            if (_sampleSet == null)
-            {
-                throw new NotFoundException("No matching sample set with RowId " + form.getBean().getRowId());
-            }
-
-            if (ExperimentService.get().getDefaultSampleSetLsid().equals(_sampleSet.getLSID()))
-            {
-                throw new UnauthorizedException("Cannot edit default sample set");
-            }
-
-            if (!_sampleSet.getContainer().equals(getContainer()))
-            {
-                ActionURL url = getViewContext().getActionURL().clone();
-                url.setContainer(_sampleSet.getContainer());
-                throw new RedirectException(url);
-            }
-
-            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
-            if (form.getReturnUrl() != null)
-            {
-                updateView.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl());
-            }
-            return updateView;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Sample Set " + _sampleSet.getName());
-        }
-    }
-
     private DataRegion getMaterialSourceRegion(ViewContext model)
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
@@ -3397,89 +3285,44 @@ public class ExperimentController extends SpringActionController
 
     }
 
-    @RequiresPermission(InsertPermission.class)
-    public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
-    {
-        public ModelAndView getView(MaterialSourceForm form, BindException errors)
-        {
-            return new InsertView(getMaterialSourceRegion(getViewContext()), form, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer())).addChild("Insert Sample Set");
-        }
-    }
-
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateMaterialSourceAction extends FormHandlerAction<MaterialSourceForm>
+    public class UpdateMaterialSourceAction extends BaseSampleSetAction
     {
-        private MaterialSource _source;
-
-        public void validateCommand(MaterialSourceForm target, Errors errors)
+        @Override
+        public boolean handlePost(BaseSampleSetForm form, BindException errors)
         {
-        }
-
-        public boolean handlePost(MaterialSourceForm form, BindException errors)
-        {
-            _source = form.getBean();
-            ExpSampleSet oldSampleSet = ExperimentService.get().getSampleSet(_source.getLSID());
-            if (oldSampleSet == null || !getContainer().equals(oldSampleSet.getContainer()))
+            ExpSampleSetImpl sampleSet = (ExpSampleSetImpl)SampleSetService.get().getSampleSet(form.getRowId());
+            if (sampleSet == null || !getContainer().equals(sampleSet.getContainer()))
             {
-                throw new NotFoundException("MaterialSource with LSID " + _source.getLSID());
+                throw new NotFoundException("MaterialSource with LSID " + form.getLSID());
             }
-            Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId());
+
+            sampleSet.setDescription(form.getDescription());
+            sampleSet.setNameExpression(form.getNameExpression());
+            sampleSet.setImportAliasMap(form.getAliasMap());
+            sampleSet.save(getUser());
             SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
             return true;
         }
 
-        public ActionURL getSuccessURL(MaterialSourceForm form)
+        public ActionURL getSuccessURL(BaseSampleSetForm form)
         {
             setHelpTopic("sampleSets");
-            return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(_source.getRowId())));
+            return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(form.getRowId())));
         }
-    }
 
-    public static class MaterialSourceForm extends BeanViewForm<MaterialSource>
-    {
-        public MaterialSourceForm()
+        @Override
+        public NavTree appendNavTrail(NavTree root)
         {
-            super(MaterialSource.class, ExperimentService.get().getTinfoMaterialSource());
+            return root.addChild("Update Sample Set");
         }
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class CreateSampleSetAction extends FormViewAction<CreateSampleSetForm>
+    public class CreateSampleSetAction extends BaseSampleSetAction
     {
-        ActionURL _successUrl;
-
         @Override
-        public void validateCommand(CreateSampleSetForm form, Errors errors)
-        {
-            if (StringUtils.isEmpty(form.getName()))
-                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
-            else
-            {
-                int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
-                if (form.getName().length() > nameMax)
-                    errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
-                else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
-                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
-            }
-            int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
-            if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
-                errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
-        }
-
-        @Override
-        public ModelAndView getView(CreateSampleSetForm form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/experiment/createSampleSet.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(CreateSampleSetForm form, BindException errors) throws Exception
+        public boolean handlePost(BaseSampleSetForm form, BindException errors) throws Exception
         {
             List<GWTPropertyDescriptor> properties = new ArrayList<>();
 
@@ -3490,7 +3333,7 @@ public class ExperimentController extends SpringActionController
             ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
                     getContainer(), getUser(), form.getName(), form.getDescription(),
                     properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
-                    null
+                    null, form.getAliasMap()
             );
 
             Domain domain = sampleSet.getType();
@@ -3503,24 +3346,154 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public URLHelper getSuccessURL(CreateSampleSetForm form)
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Sample Set");
+        }
+
+    }
+
+    private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
+    {
+        ActionURL _successUrl;
+
+        @Override
+        public void validateCommand(BaseSampleSetForm form, Errors errors)
+        {
+            TableInfo ti = ExperimentService.get().getTinfoMaterialSource();
+            ExpSampleSet ss = null;
+            if (StringUtils.isEmpty(form.getName()))
+                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+            else
+            {
+                int nameMax = ti.getColumn("Name").getScale();
+                ss = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName());
+
+                if (form.getName().length() > nameMax)
+                    errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
+                else if (!form.isUpdate() && ss != null)
+                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+            }
+            int nameExpMax = ti.getColumn("NameExpression").getScale();
+            if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
+                errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+
+            //Verify Aliases
+            List<String> importHeadings = form.getImportAliasKeys();
+            List<String> importParents = form.getImportAliasValues();
+
+            if (importHeadings != null && importParents != null)
+            {
+                if (importHeadings.contains(null))
+                    errors.reject(ERROR_MSG, "Import alias heading cannot be blank");
+
+                if(importParents.contains(null)
+                        || importParents.size() < importHeadings.size())  //Can happen if Alias is created and then target Parent is subsequently deleted
+                {
+                    String msg = "Import parent alias cannot be blank";
+                    if (importParents.size() < importHeadings.size())
+                        msg += ", targeted parent may have been deleted.";
+                    errors.reject(ERROR_MSG, msg);
+                }
+
+                //check if heading is unique--alias isn't a field/reserved name
+                if (ss != null)
+                {
+                    Domain domain = ss.getDomain();
+
+                    // Contains both existingAliases and reserved property names
+                    Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
+                    Set<String> existingAliases = null;
+
+                    try
+                    {
+                        existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
+                    }
+                    catch (IOException e)
+                    {
+                        logger.error("Unable to parse existing import aliases", e);
+                        errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
+                    }
+
+                    for (String heading : importHeadings)
+                    {
+                        //Skip if alias was added previously
+                        if (existingAliases.contains(heading))
+                            continue;
+
+                        if (reservedNames.contains(heading))
+                            errors.reject(ERROR_MSG, String.format("Heading [%1$s] is reserved", heading));
+
+                        if (domain.getPropertyByName(heading) != null)
+                            errors.reject(ERROR_MSG, String.format("Property exists with alias name: %1$s", heading));
+                    }
+                }
+
+                //Check for duplicates
+                Set<String> dupes = new HashSet<>();
+                for (String heading : importHeadings)
+                {
+                    if (!dupes.add(heading))
+                        errors.reject(ERROR_UNIQUE, String.format("Duplicate alias: %1$s", heading));
+                }
+
+                for (String parent : importParents)
+                {
+                    //check if it is of the expected format
+                    if (!UploadSamplesHelper.isInputOutputHeader(parent))
+                        errors.reject(ERROR_MSG, String.format("Invalid parent heading: %1$s", parent));
+                }
+            }
+        }
+
+        private void initForm(BaseSampleSetForm form)
+        {
+            if (form.getRowId() == null)
+                return;
+
+            ExpSampleSetImpl source = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(form.getRowId());
+            if (source == null)
+                return;
+
+            form.setIsUpdate(true);
+            form.setDescription(source.getDescription());
+            form.setLSID(source.getLSID());
+            form.setName(source.getName());
+            form.setNameExpression(source.getNameExpression());
+            form.setImportAliasJson(source.getImportAliasJson());
+        }
+
+        @Override
+        public ModelAndView getView(BaseSampleSetForm form, boolean reshow, BindException errors) throws Exception
+        {
+            initForm(form);
+            return new JspView<>("/org/labkey/experiment/createSampleSet.jsp", form, errors);
+        }
+
+        @Override
+        public URLHelper getSuccessURL(BaseSampleSetForm form)
         {
             return _successUrl;
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Create Sample Set");
-        }
+        public abstract NavTree appendNavTrail(NavTree root);
     }
 
-    public static class CreateSampleSetForm extends ReturnUrlForm
+    public static class BaseSampleSetForm extends ReturnUrlForm
     {
         private String name;
         private String nameExpression;
         private String description;
-        private Boolean nameReadOnly = false;
+        private Boolean isUpdate = false;
+        private Integer rowId;
+        private String lsid;
+
+        private List<String> importAliasKeys;
+        private List<String> importAliasValues;
+
+        /** */
+        private String importAliasJson;
 
         public String getName()
         {
@@ -3542,14 +3515,14 @@ public class ExperimentController extends SpringActionController
             this.nameExpression = nameExpression;
         }
 
-        public Boolean getNameReadOnly()
+        public Boolean isUpdate()
         {
-            return nameReadOnly;
+            return isUpdate;
         }
 
-        public void setNameReadOnly(Boolean nameReadOnly)
+        public void setIsUpdate(Boolean isUpdate)
         {
-            this.nameReadOnly = nameReadOnly;
+            this.isUpdate = isUpdate;
         }
 
         public String getDescription()
@@ -3560,6 +3533,68 @@ public class ExperimentController extends SpringActionController
         public void setDescription(String description)
         {
             this.description = description;
+        }
+
+        public List<String> getImportAliasKeys()
+        {
+            return importAliasKeys;
+        }
+
+        public void setImportAliasKeys(List<String> importAliasKeys)
+        {
+            this.importAliasKeys = importAliasKeys;
+        }
+
+        public List<String> getImportAliasValues()
+        {
+            return importAliasValues;
+        }
+
+        public void setImportAliasValues(List<String> importAliasValues)
+        {
+            this.importAliasValues = importAliasValues;
+        }
+
+        public Integer getRowId()
+        {
+            return rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            this.rowId = rowId;
+        }
+
+        public String getLSID()
+        {
+            return this.lsid;
+        }
+
+        public void setLSID(String lsid)
+        {
+            this.lsid = lsid;
+        }
+
+        public @NotNull  Map<String, String> getAliasMap()
+        {
+            Map<String, String> aliases = new HashMap<>();
+            if (getImportAliasKeys() == null)
+                return aliases;
+
+            for (int i = 0; i < getImportAliasKeys().size(); i++)
+                aliases.put(getImportAliasKeys().get(i), getImportAliasValues().get(i));
+
+            return aliases;
+        }
+
+        public String getImportAliasJson()
+        {
+            return importAliasJson;
+        }
+
+        public void setImportAliasJson(String importAliasJson)
+        {
+            this.importAliasJson = importAliasJson;
         }
     }
 
@@ -5925,6 +5960,7 @@ public class ExperimentController extends SpringActionController
             return getShowSampleSetListURL(c, null);
         }
 
+        @Override
         public ActionURL getShowSampleSetURL(ExpSampleSet sampleSet)
         {
             return new ActionURL(ShowMaterialSourceAction.class, sampleSet.getContainer()).addParameter("rowId", sampleSet.getRowId());
