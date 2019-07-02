@@ -25,7 +25,7 @@ LABKEY.discuss.validate = function(form)
         renderTypeEl = document.getElementById('rendererType'),
         isHTML = new RegExp(['<a', '<table', '<div', '<span'].join('|')),
         // Look for double-backslashes at the end of a line, tildes (italics) around anything, and curlybracket-formatted links
-        isWiki = new RegExp(['\\\\\\\\[\\n\\r]', '{(link|image):.*}'].join('|')),
+        isWiki = new RegExp(['\\\\\\\\[\\n\\r]','{(link|image):.*}'].join('|')),
         // Look for underscores around anything or # at the start of a line or three slanted ticks before and after anything, and parens-formatted links
         isMarkdown = new RegExp(['_.*_', '^#', '\\`\\`\\`.*\\`\\`\\`', '\\[.*\\]\\(.*\\)'].join('|'));
 
