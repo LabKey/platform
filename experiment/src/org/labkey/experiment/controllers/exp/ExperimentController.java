@@ -2933,46 +2933,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-
-    @RequiresPermission(DeletePermission.class)
-    public class DeleteMaterialByRowIdAction extends AbstractDeleteAction
-    {
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            return super.appendNavTrail(root);
-        }
-
-        @Override
-        protected void deleteObjects(DeleteForm deleteForm)
-        {
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(getUser(), getContainer(), deleteForm.getIds(false));
-        }
-
-        @Override
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
-        {
-            List<ExpMaterial> materials = getMaterials(deleteForm);
-            List<ExpRun> runs = ExperimentService.get().getDeletableRunsFromMaterials(materials);
-            return new ConfirmDeleteView("Sample", ShowMaterialAction.class, materials, deleteForm, runs);
-        }
-
-        private List<ExpMaterial> getMaterials(DeleteForm deleteForm)
-        {
-            List<ExpMaterial> materials = new ArrayList<>();
-            for (int materialId : deleteForm.getIds(false))
-            {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(materialId);
-                if (material != null)
-                {
-                    materials.add(material);
-                }
-            }
-            return materials;
-        }
-    }
-
     @RequiresPermission(DeletePermission.class)
     public class DeleteSelectedDataAction extends AbstractDeleteAction
     {
@@ -5858,14 +5818,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(DeleteSelectedDataAction.class, c);
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
-            return url;
-        }
-
-        public ActionURL getDeleteMaterialsURL(Container c, URLHelper returnURL)
-        {
-            ActionURL url = new ActionURL(DeleteMaterialByRowIdAction.class, c);
             if (returnURL != null)
                 url.addReturnURL(returnURL);
             return url;
