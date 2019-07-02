@@ -3238,10 +3238,15 @@ public class ExperimentController extends SpringActionController
         protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
+            if (sampleSets.size() == 0)
+            {
+                throw new NotFoundException("No sample sets found for ids provided.");
+            }
             if (!ensureCorrectContainer(sampleSets))
             {
                 throw new UnauthorizedException();
             }
+
             for (ExpRun run : getRuns(sampleSets))
             {
                 if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -3249,6 +3254,7 @@ public class ExperimentController extends SpringActionController
                     throw new UnauthorizedException();
                 }
             }
+
             for (ExpSampleSet source : sampleSets)
             {
                 Domain domain = source.getDomain();
