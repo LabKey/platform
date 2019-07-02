@@ -401,6 +401,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             nameCol.setShownInInsertView(false);
         }
 
+        addColumn(Column.Alias);
+
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
