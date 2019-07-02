@@ -451,6 +451,7 @@ public class ExpSampleSetTestCase
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
         TableInfo table = schema.getTable("Samples");
         QueryUpdateService svc = table.getUpdateService();
+        assertNotNull(svc);
 
         // insert 3 rows with no values
         List<Map<String, Object>> rows = new ArrayList<>();

@@ -583,8 +583,8 @@ public class SampleSetServiceImpl implements SampleSetService
                                             String nameExpression, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {
-        return createSampleSet(c,u,name,description,properties,indices,idCol1,idCol2,idCol3,parentCol,null, null, null);
-
+        return createSampleSet(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
+                parentCol, nameExpression, templateInfo, null);
     }
 
     @NotNull
