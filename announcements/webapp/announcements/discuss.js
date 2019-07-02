@@ -24,10 +24,10 @@ LABKEY.discuss.validate = function(form)
     var text = document.getElementById('body').value.toLowerCase(),
         renderTypeEl = document.getElementById('rendererType'),
         isHTML = new RegExp(['<a', '<table', '<div', '<span'].join('|')),
-        // Look for double-backslashes at the end of a line, double stars (bold) or tildes (italics) around anything,
-        isWiki = new RegExp(['\\\\\\\\[\\n\\r]', '\\*\\*.*\\*\\*', '\\~\\~.*\\~\\~'].join('|')),
-        // Look for underscores around anything or # at the start of a line or three slanted ticks before and after anything,
-        isMarkup = new RegExp(['_.*_', '^#', '\\`\\`\\`.*\\`\\`\\`'].join('|'));
+        // Look for double-backslashes at the end of a line, tildes (italics) around anything, and curlybracket-formatted links
+        isWiki = new RegExp(['\\\\\\\\[\\n\\r]','{(link|image):.*}'].join('|')),
+        // Look for underscores around anything or # at the start of a line or three slanted ticks before and after anything, and parens-formatted links
+        isMarkdown = new RegExp(['_.*_', '^#', '\\`\\`\\`.*\\`\\`\\`', '\\[.*\\]\\(.*\\)'].join('|'));
 
     var msg = null;
     // Not all message board configurations include the rendererType option
@@ -40,7 +40,7 @@ LABKEY.discuss.validate = function(form)
     {
         msg = 'The content of your message may contain Wiki markup. Are you sure that you want to submit it as ' + renderTypeEl.options[renderTypeEl.selectedIndex].text + '?';
     }
-    else if (renderTypeEl && renderTypeEl.value != 'MARKDOWN' && isMarkup.test(text))
+    else if (renderTypeEl && renderTypeEl.value != 'MARKDOWN' && isMarkdown.test(text))
     {
         msg = 'The content of your message may contain Markdown markup. Are you sure that you want to submit it as ' + renderTypeEl.options[renderTypeEl.selectedIndex].text + '?';
     }
