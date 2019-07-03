@@ -605,6 +605,11 @@ LABKEY.internal.ZipLoad = new function () {
             zipDirectory(filesToZipPerDirectoryParts[zipDirectoryCount]);
         }
         else {
+            var entry = itemsDropped[itemCount];
+            if (entry.isDirectory) {
+                if (dropZone.options.acceptDirectory)
+                    dropZone.options.acceptDirectory.call(dropZone, entry);
+            }
             for (var up = 0; up < filesToUpload.length; up++) {
                 dropZone.addFile(filesToUpload[up].file);
             }
