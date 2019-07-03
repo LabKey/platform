@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
@@ -38,8 +37,8 @@ public class QAggregate extends QExpr
 
     public enum Type
     {
-        COUNT, SUM, MIN, MAX, AVG, GROUP_CONCAT,
-        STDDEV
+        COUNT, SUM(true), MIN(true), MAX(true), AVG(true), GROUP_CONCAT,
+        STDDEV(true)
             {
                 @Override
                 String getFunction(SqlDialect d)
@@ -250,6 +249,22 @@ public class QAggregate extends QExpr
             }
         ;
 
+        private final boolean _propagateAttributes;
+
+        Type()
+        {
+            this(false);
+        }
+        Type(boolean propagateAttributes)
+        {
+            _propagateAttributes = propagateAttributes;
+        }
+
+        public boolean isPropagateAttributes()
+        {
+            return _propagateAttributes;
+        }
+
         String getFunction(SqlDialect d)
         {
             return name();
@@ -383,6 +398,7 @@ public class QAggregate extends QExpr
         }
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" ").append(getTokenText()).append("(");
@@ -423,7 +439,7 @@ public class QAggregate extends QExpr
     public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         var ret = super.createColumnInfo(table, alias, query);
-        if (getType() == Type.MAX || getType() == Type.MIN)
+        if (getType().isPropagateAttributes())
         {
             List<QNode> children = childList();
             if (children.size() == 1 && children.get(0) instanceof QField)
@@ -441,14 +457,7 @@ public class QAggregate extends QExpr
         if (getType() == Type.GROUP_CONCAT)
         {
             final DisplayColumnFactory originalFactory = ret.getDisplayColumnFactory();
-            ret.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new MultiValuedDisplayColumn(originalFactory.createRenderer(colInfo));
-                }
-            });
+            ret.setDisplayColumnFactory(colInfo -> new MultiValuedDisplayColumn(originalFactory.createRenderer(colInfo)));
         }
         return ret;
     }
