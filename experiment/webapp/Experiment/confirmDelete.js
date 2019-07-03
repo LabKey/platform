@@ -73,11 +73,7 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                                     Ext4.Msg.hide();
                                     var responseMsg = Ext4.Msg.show({
                                         title: totalNoun +  " Deleted",
-                                        msg:  response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted",
-                                        // buttons: Ext4.Msg.OK,
-                                        // fn: function() {
-                                        //     window.location.reload();
-                                        // }
+                                        msg:  response.rowsAffected + " " + (response.rowsAffected === 1 ? nounSingular : nounPlural) + " deleted."
                                     });
                                     Ext4.defer(function() {
                                         responseMsg.hide();
