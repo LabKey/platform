@@ -105,6 +105,7 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
             }
         }),
         failure: function(response, opts) {
+            loadingMsg.hide();
             LABKEY.Utils.displayAjaxErrorResponse(response, opts);
         }
     })
