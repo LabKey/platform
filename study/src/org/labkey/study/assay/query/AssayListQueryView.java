@@ -19,6 +19,7 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.*;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.PlateUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -54,7 +55,7 @@ public class AssayListQueryView extends QueryView
 
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
-            ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
+            ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(view.getViewContext().getContainer());
             insertURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
             ActionButton insert = new ActionButton("New Assay Design", insertURL);
             insert.setActionType(ActionButton.Action.LINK);

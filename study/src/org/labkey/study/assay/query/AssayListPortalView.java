@@ -19,7 +19,9 @@ package org.labkey.study.assay.query;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
@@ -45,7 +47,7 @@ public class AssayListPortalView extends AssayListQueryView
         AssayManager.get().createAssayDataImportButton(getViewContext(), bar);
         if (getContainer().hasPermission(getUser(), DesignAssayPermission.class))
         {
-            ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, view.getViewContext().getContainer());
+            ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(view.getViewContext().getContainer());
             insertURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
             bar.add(new ActionButton("New Assay Design", insertURL));
         }

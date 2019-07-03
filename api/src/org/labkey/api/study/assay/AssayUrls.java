@@ -84,4 +84,9 @@ public interface AssayUrls extends UrlProvider
      * QC and the protocol must be configured to include the QC workflow.
      */
     ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol);
+
+    ActionURL getBeginURL(Container container);
+    ActionURL getSummaryRedirectURL(Container container);
+    ActionURL getSetResultFlagURL(Container container);
+    ActionURL getChooseAssayTypeURL(Container container);
 }

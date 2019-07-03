@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
@@ -27,7 +28,6 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%

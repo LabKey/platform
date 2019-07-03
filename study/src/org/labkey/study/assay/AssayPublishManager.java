@@ -81,6 +81,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditProvider;
+import org.labkey.study.controllers.PublishController;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
@@ -776,7 +777,7 @@ public class AssayPublishManager implements AssayPublishService
     {
         if (protocol != null)
         {
-            ActionURL url = new ActionURL(AssayController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
+            ActionURL url = new ActionURL(PublishController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
             if (containerFilter != null && containerFilter.getType() != null)
                 url.addParameter("containerFilterName", containerFilter.getType().name());
             return url;

@@ -30,24 +30,20 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayQCService;
-import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
@@ -64,38 +60,25 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.QCState;
-import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayResultTable;
 import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.study.assay.AssaySchema;
@@ -107,13 +90,11 @@ import org.labkey.api.study.assay.PipelineDataCollectorRedirectAction;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.study.permissions.DesignAssayPermission;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -122,16 +103,10 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.WebPartView;
 import org.labkey.study.assay.AssayImportServiceImpl;
-import org.labkey.study.assay.AssayManager;
-import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
-import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
-import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.assay.actions.DeleteProtocolAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
@@ -156,7 +131,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -278,7 +252,7 @@ public class AssayController extends SpringActionController
         {
             Container c = getContainer();
             HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
-            List<ExpProtocol> protocols = AssayManager.get().getAssayProtocols(c);
+            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c);
             for (ExpProtocol protocol : protocols)
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -594,7 +568,7 @@ public class AssayController extends SpringActionController
 
         public List<AssayProvider> getProviders()
         {
-            List<AssayProvider> providers = new ArrayList<>(AssayManager.get().getAssayProviders());
+            List<AssayProvider> providers = new ArrayList<>(AssayService.get().getAssayProviders());
 
             // Remove AssayProviders without a designer action
             providers.removeIf(provider -> provider.getDesignerAction() == null);
@@ -657,46 +631,6 @@ public class AssayController extends SpringActionController
         protected BaseRemoteService createService()
         {
             return new AssayServiceImpl(getViewContext());
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
-    {
-        private ExpProtocol _protocol;
-        public ModelAndView getView(PublishHistoryForm form, BindException errors)
-        {
-            ContainerFilter containerFilter = ContainerFilter.CURRENT;
-            if (form.getContainerFilterName() != null)
-                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
-
-            _protocol = form.getProtocol();
-            VBox view = new VBox();
-            view.addView(new AssayHeaderView(_protocol, form.getProvider(), false, true, containerFilter));
-
-            UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
-
-            if (schema != null)
-            {
-                QuerySettings settings = new QuerySettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT);
-
-                SimpleFilter filter = new SimpleFilter();
-                if (_protocol.getRowId() != -1)
-                    filter.addCondition(FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_PROTOCOL), _protocol.getRowId());
-                filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_CONTAINER), getContainer()));
-
-                settings.setBaseFilter(filter);
-                settings.setQueryName(AssayAuditProvider.ASSAY_PUBLISH_AUDIT_EVENT);
-                view.addView(schema.createView(getViewContext(), settings, errors));
-            }
-            setHelpTopic(new HelpTopic("publishHistory"));
-            return view;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
-                    new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
         }
     }
 
@@ -860,38 +794,6 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
-    {
-        private ExpProtocol _protocol;
-
-        @Override
-        public ModelAndView getView(AssayRunUploadForm form, BindException errors)
-        {
-            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
-                throw new NotFoundException("Pipeline root must be configured before uploading assay files");
-
-            _protocol = form.getProtocol();
-
-            AssayProvider ap = form.getProvider();
-            if (!(ap instanceof ModuleAssayProvider))
-                throw new NotFoundException("Assay must be a ModuleAssayProvider, but assay design " + _protocol.getName() + " was of type '" + ap.getName() + "', implemented by " + ap.getClass().getName());
-            ModuleAssayProvider provider = (ModuleAssayProvider) ap;
-            return provider.createUploadView(form);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            Container c = getContainer();
-            ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
-
-            return super.appendNavTrail(root)
-                .addChild(_protocol.getName() + " Batches", batchListURL)
-                .addChild("Data Import");
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
     public class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
     {
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
@@ -956,21 +858,6 @@ public class AssayController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    public static class PublishHistoryForm extends ProtocolIdForm
-    {
-        private String containerFilterName;
-
-        public String getContainerFilterName()
-        {
-            return containerFilterName;
-        }
-
-        public void setContainerFilterName(String containerFilterName)
-        {
-            this.containerFilterName = containerFilterName;
         }
     }
 
@@ -1187,14 +1074,43 @@ public class AssayController extends SpringActionController
             return url;
         }
 
+        @AssayMigration // Move back to QCStateAction.class
         @Override
         public ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null && provider.isQCEnabled(protocol))
             {
-                return new ActionURL(QCStateAction.class, container);
+                return new ActionURL("assay2", "QCState.view", container);
             }
+            return null;
+        }
+
+        @Override
+        @AssayMigration // Review & remove?
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        @Override
+        @AssayMigration // Review & remove?
+        public ActionURL getSummaryRedirectURL(Container container)
+        {
+            return new ActionURL(SummaryRedirectAction.class, container);
+        }
+
+        @Override
+        @AssayMigration // Review & remove?
+        public ActionURL getSetResultFlagURL(Container container)
+        {
+            return new ActionURL(AssayController.SetResultFlagAction.class, container);
+        }
+
+        @Override
+        @AssayMigration // Review & remove?
+        public ActionURL getChooseAssayTypeURL(Container container)
+        {
             return null;
         }
     }
@@ -1202,6 +1118,7 @@ public class AssayController extends SpringActionController
     @RequiresPermission(DesignAssayPermission.class)
     public class AssayImportServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService()
         {
             return new AssayImportServiceImpl(getViewContext());
@@ -1287,7 +1204,7 @@ public class AssayController extends SpringActionController
             if (null != resultRowIds)
                 return Arrays.asList(resultRowIds);
             if (null == lsids)
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             ArrayList<Integer> ret = new ArrayList<>(lsids.length);
             for (String lsid : lsids)
             {
@@ -1367,326 +1284,6 @@ public class AssayController extends SpringActionController
             res.put("comment", form.getComment());
             res.put("rowsAffected", rowsAffected);
             return new ApiSimpleResponse(res);
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
-    public class AutoCopyRunAction extends MutatingApiAction<AutoCopyRunForm>
-    {
-        @Override
-        public Object execute(AutoCopyRunForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            String jobGuid = startAutoCopyPipelineJob(form);
-            Integer jobId = null;
-
-            if (null != jobGuid)
-                jobId = PipelineService.get().getJobId(getUser(), getContainer(), jobGuid);
-
-            PipelineStatusUrls urls = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
-            ActionURL url  = null != jobId ? urls.urlDetails(getContainer(), jobId) : urls.urlBegin(getContainer());
-
-            response.put("success", true);
-            response.put("returnUrl", url);
-
-            return response;
-        }
-
-        private String startAutoCopyPipelineJob(AutoCopyRunForm form)
-        {
-            Container c = getContainer();
-            ViewBackgroundInfo vbi = new ViewBackgroundInfo(c, getUser(), null);
-            PipeRoot root = PipelineService.get().findPipelineRoot(c);
-
-            if (null == root)
-                throw new ConfigurationException("Invalid pipeline configuration for " + c);
-
-            if (!root.isValid())
-                throw new ConfigurationException("Invalid pipeline configuration for " + c + ", " + root.getRootPath().getPath());
-
-            try
-            {
-                PipelineJob job = new AutoCopyPipelineJob(vbi, root, form);
-                PipelineService.get().queueJob(job);
-                return job.getJobGUID();
-            }
-            catch (PipelineValidationException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
-    public static class AutoCopyRunForm extends ProtocolIdForm
-    {
-        private List<Integer> _runId;
-        private Container _targetStudy;
-
-        public Container getTargetStudy()
-        {
-            return _targetStudy;
-        }
-
-        public void setTargetStudy(Container targetStudy)
-        {
-            _targetStudy = targetStudy;
-        }
-
-        public List<Integer> getRunId()
-        {
-            return _runId;
-        }
-
-        public void setRunId(List<Integer> runId)
-        {
-            _runId = runId;
-        }
-    }
-
-    private static class AutoCopyPipelineJob extends PipelineJob
-    {
-        private Container _targetStudyContainer;
-        private Integer _protocolId;
-        private List<Integer> _runIds = Collections.emptyList();
-        private ActionURL _statusUrl;
-
-        // For serialization
-        protected AutoCopyPipelineJob() {}
-
-        public AutoCopyPipelineJob(ViewBackgroundInfo info, @NotNull PipeRoot pipeRoot, AutoCopyRunForm form)
-        {
-            super(null, info, pipeRoot);
-            _targetStudyContainer = form.getTargetStudy();
-            _protocolId = form.getProtocol().getRowId();
-            _runIds = form.getRunId();
-
-            setLogFile(new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp("auto_copy_to_study", "log")));
-        }
-
-        @Override
-        public URLHelper getStatusHref()
-        {
-            return _statusUrl;
-        }
-
-        @Override
-        public String getDescription()
-        {
-            return  "Automatic copying of assay data to study";
-        }
-
-        @Override
-        public void run()
-        {
-            setStatus(TaskStatus.running);
-            TaskStatus finalStatus = TaskStatus.complete;
-            try
-            {
-                if (_targetStudyContainer != null)
-                {
-                    info("Starting copy of data to study in folder: " + _targetStudyContainer.getPath());
-                    boolean hasPermission = false;
-                    for (Study publishTarget : AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class))
-                    {
-                        if (publishTarget.getContainer().equals(_targetStudyContainer))
-                        {
-                            hasPermission = true;
-                            break;
-                        }
-                    }
-
-                    if (!hasPermission)
-                    {
-                        error("Insufficient permission to copy assay data to study in folder : " + _targetStudyContainer.getPath());
-                    }
-                    else
-                    {
-                        ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId);
-                        AssayProvider provider = AssayService.get().getProvider(protocol);
-                        _runIds.forEach((runId) -> {
-
-                            info("Starting copy for run : " + runId);
-                            ExpRun run = ExperimentService.get().getExpRun(runId);
-                            if (run != null)
-                            {
-                                List<String> errors = new ArrayList<>();
-                                _statusUrl = AssayPublishManager.getInstance().autoCopyResults(
-                                        protocol,
-                                        provider,
-                                        run,
-                                        getUser(),
-                                        getContainer(),
-                                        _targetStudyContainer,
-                                        errors,
-                                        getLogger());
-
-                                errors.forEach(this::error);
-                            }
-                            else
-                                error("Unable to locate run : " + runId);
-                        });
-                    }
-                }
-                else
-                    error("Invalid target study folder");
-
-            }
-            catch (Throwable t)
-            {
-                error("Failure", t);
-                finalStatus = TaskStatus.error;
-            }
-            info("Auto copy to study complete");
-            setStatus(finalStatus);
-        }
-    }
-
-    public static class UpdateQCStateForm extends ReturnUrlForm
-    {
-        private Integer _state;
-        private String _comment;
-        private Set<Integer> _runs;
-
-        public Integer getState()
-        {
-            return _state;
-        }
-
-        public void setState(Integer state)
-        {
-            _state = state;
-        }
-
-        public String getComment()
-        {
-            return _comment;
-        }
-
-        public void setComment(String comment)
-        {
-            _comment = comment;
-        }
-
-        public Set<Integer> getRuns()
-        {
-            return _runs;
-        }
-
-        public void setRuns(Set<Integer> runs)
-        {
-            _runs = runs;
-        }
-
-        public void setRun(Integer run)
-        {
-            if (_runs == null)
-                _runs = new HashSet<>();
-            _runs.add(run);
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class QCStateAction extends SimpleViewAction<UpdateQCStateForm>
-    {
-        @Override
-        public ModelAndView getView(UpdateQCStateForm form, BindException errors) throws Exception
-        {
-            if (form.getRuns() == null)
-            {
-                if (DataRegionSelection.hasSelected(getViewContext()))
-                    form.setRuns(DataRegionSelection.getSelectedIntegers(getViewContext(), true));
-            }
-            VBox view = new VBox();
-
-            if (form.getRuns() != null && !form.getRuns().isEmpty())
-            {
-                if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
-                {
-                    JspView jspView = new JspView<>("/org/labkey/study/assay/view/updateQCState.jsp", form, errors);
-                    jspView.setFrame(WebPartView.FrameType.PORTAL);
-                    view.addView(jspView);
-                }
-
-                if (form.getRuns().size() == 1)
-                {
-                    // construct the audit log query view
-                    User user = getUser();
-                    if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
-                    {
-                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-                        contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-                        user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
-                    }
-
-                    UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
-                    ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
-                    if (run != null && schema != null)
-                    {
-                        QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
-                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunLsid"), run.getLSID());
-                        filter.addCondition(FieldKey.fromParts("QCState"), null, CompareType.NONBLANK);
-
-                        settings.setBaseFilter(filter);
-                        settings.setQueryName("ExperimentAuditEvent");
-
-                        QueryView auditView = schema.createView(getViewContext(), settings, errors);
-                        auditView.setTitle("QC History");
-
-                        view.addView(auditView);
-                    }
-                }
-                return view;
-            }
-            else
-                return new HtmlView("No runs have been selected to update");
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Change QC State");
-        }
-    }
-
-    @RequiresPermission(QCAnalystPermission.class)
-    public class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
-    {
-        @Override
-        public void validateForm(UpdateQCStateForm form, Errors errors)
-        {
-            if (form.getState() == null)
-                errors.reject(ERROR_MSG, "QC State cannot be blank");
-            if (form.getRuns().isEmpty())
-                errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
-        }
-
-        @Override
-        public ApiSimpleResponse execute(UpdateQCStateForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            if (form.getRuns() != null)
-            {
-                AssayQCService svc = AssayQCService.getProvider();
-                ExpRun run = null;
-
-                for (int id : form.getRuns())
-                {
-                    // just get the first run
-                    run = ExperimentService.get().getExpRun(id);
-                    if (run != null)
-                        break;
-                }
-
-                if (run != null)
-                {
-                    QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
-                    if (state != null)
-                        svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
-                }
-                response.put("success", true);
-            }
-            return response;
         }
     }
 

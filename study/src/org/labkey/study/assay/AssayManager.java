@@ -17,12 +17,11 @@
 package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.assay.AssayFlagHandler;
+import org.labkey.api.assay.AssayMigration;
+import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
@@ -48,11 +47,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceCache;
-import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
@@ -108,7 +102,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -125,10 +118,7 @@ import java.util.stream.Collectors;
  */
 public class AssayManager implements AssayService
 {
-    private static final Logger LOG = Logger.getLogger(AssayManager.class);
     private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
-    private static final ModuleResourceCache<Collection<ModuleAssayProvider>> PROVIDER_CACHE = ModuleResourceCaches.create("Module assay providers", new ModuleAssayCacheHandler(), ResourceRootProvider.getAssayProviders(Path.rootPath));
-    private static final Object PROVIDER_LOCK = new Object();
     public static final String EXPERIMENTAL_ASSAY_DATA_IMPORT = "experimental-uxassaydataimport";
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
@@ -176,7 +166,8 @@ public class AssayManager implements AssayService
         provider.registerLsidHandler();
     }
 
-    private void verifyLegalName(AssayProvider provider)
+    @AssayMigration // private, non-static
+    public void verifyLegalName(AssayProvider provider)
     {
         if (AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getName()) || AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getResourceName()))
         {
@@ -191,8 +182,8 @@ public class AssayManager implements AssayService
         return getProvider(providerName, getAssayProviders());
     }
 
-    private @Nullable
-    AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
+    @AssayMigration // private, non-static
+    public @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
     {
         for (AssayProvider potential : providers)
         {
@@ -236,77 +227,9 @@ public class AssayManager implements AssayService
         return Collections.unmodifiableCollection(ret);
     }
 
-    // Protected by PROVIDER_LOCK
-    private ModuleAssayCollections _moduleAssayCollections = null;
-
     private ModuleAssayCollections getModuleAssayCollections()
     {
-        synchronized (PROVIDER_LOCK)
-        {
-            if (null == _moduleAssayCollections)
-                _moduleAssayCollections = new ModuleAssayCollections();
-
-            return _moduleAssayCollections;
-        }
-    }
-
-    void clearModuleAssayCollections()
-    {
-        synchronized (PROVIDER_LOCK)
-        {
-            _moduleAssayCollections = null;
-        }
-    }
-
-    private class ModuleAssayCollections
-    {
-        private final List<AssayProvider> _assayProviders = new LinkedList<>();
-        private final Map<String, PipelineProvider> _pipelineProviders = new HashMap<>();
-        private final Set<String> _runLsidPrefixes = new HashSet<>();
-
-        private ModuleAssayCollections()
-        {
-            for (Module module : ModuleLoader.getInstance().getModules())
-            {
-                for (AssayProvider provider : PROVIDER_CACHE.getResourceMap(module))
-                {
-                    // Validate the provider
-                    verifyLegalName(provider);
-                    if (getProvider(provider.getName(), _providers) != null) // Check against the registered providers
-                    {
-                        throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
-                    }
-                    if (getProvider(provider.getName(), _assayProviders) != null) // Check against the existing module assay providers
-                    {
-                        throw new IllegalArgumentException("A module assay provider with the name " + provider.getName() + " already exists");
-                    }
-
-                    // Update all the collections with this provider
-                    _assayProviders.add(provider);
-                    PipelineProvider pipelineProvider = provider.getPipelineProvider();
-                    if (pipelineProvider != null)
-                    {
-                        _pipelineProviders.put(pipelineProvider.getName(), pipelineProvider);
-                    }
-                    _runLsidPrefixes.add(provider.getRunLSIDPrefix());
-                }
-            }
-        }
-
-        public List<AssayProvider> getAssayProviders()
-        {
-            return _assayProviders;
-        }
-
-        public Map<String, PipelineProvider> getPipelineProviders()
-        {
-            return _pipelineProviders;
-        }
-
-        public Set<String> getRunLsidPrefixes()
-        {
-            return _runLsidPrefixes;
-        }
+        return AssayToStudyMigrationService.get().getModuleAssayCollections();
     }
 
     private class ModuleAssayPipelineProviderSupplier implements PipelineProviderSupplier
@@ -487,7 +410,7 @@ public class AssayManager implements AssayService
             createAssayDataImportButton(context, menu);
             if (context.getContainer().hasPermission(context.getUser(), DesignAssayPermission.class))
             {
-                ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, context.getContainer());
+                ActionURL insertURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseAssayTypeURL(context.getContainer());
                 insertURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
                 menu.addChild("New Assay Design", insertURL);
             }
@@ -495,7 +418,7 @@ public class AssayManager implements AssayService
             vbox.setNavMenu(menu);
         }
 
-        vbox.addView(new JspView("/org/labkey/study/assay/view/assaySetup.jsp"));
+        vbox.addView(new JspView("/org/labkey/study/view/assaySetup.jsp"));
         vbox.addView(queryView);
         return vbox;
     }
@@ -977,24 +900,9 @@ public class AssayManager implements AssayService
         return importURL;
     }
 
-    public static class TestCase extends Assert
+    @Override
+    public List<AssayProvider> getRegisteredAssayProviders()
     {
-        @Test
-        public void testModuleResourceCache()
-        {
-            // Load all the module assay providers to ensure no exceptions and get a count
-            int count = PROVIDER_CACHE.streamAllResourceMaps()
-                .mapToInt(Collection::size)
-                .sum();
-
-            LOG.info(count + " assay providers defined in all modules");
-
-            // Make sure the cache retrieves the expected number of assay providers from the miniassay module, if present
-
-            Module miniassay = ModuleLoader.getInstance().getModule("miniassay");
-
-            if (null != miniassay)
-                assertEquals("Assay providers from miniassay module", 2, PROVIDER_CACHE.getResourceMap(miniassay).size());
-        }
+        return _providers;
     }
 }

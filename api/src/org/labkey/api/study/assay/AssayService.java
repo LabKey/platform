@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -87,19 +88,26 @@ public interface AssayService
 
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
-    /** @return all of the assay protocols that are in scope in the given container */
+    /**
+     * @return all of the assay protocols that are in scope in the given container
+     */
     @NotNull List<ExpProtocol> getAssayProtocols(Container container);
 
-    /** @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider */
+    /**
+     * @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider
+     */
     @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 
-    /** @return an assay protocol that matches the given name for the assay protocols that are in scope in the given container */
+    /**
+     * @return an assay protocol that matches the given name for the assay protocols that are in scope in the given container
+     */
     @Nullable ExpProtocol getAssayProtocolByName(Container container, String name);
 
     /**
      * Populates the import button with possible containers
+     *
      * @param isStudyView true if this view is from a study, and thus should exclude the current container
-     * unless it already has assay data in it
+     *                    unless it already has assay data in it
      */
     @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
@@ -108,12 +116,15 @@ public interface AssayService
 
     /**
      * Creates a batch object but does not save it to the database
+     *
      * @param container location for this batch to live
-     * @param name preferred name for the batch. If null, a default name will be assigned. If the name is already in
+     * @param name      preferred name for the batch. If null, a default name will be assigned. If the name is already in
      */
     ExpExperiment createStandardBatch(Container container, @Nullable String name, ExpProtocol protocol);
 
-    /** Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is. */
+    /**
+     * Ensures that the batch name is unique within the container. Will add unique numeric suffix until it is.
+     */
     ExpExperiment ensureUniqueBatchName(ExpExperiment batch, ExpProtocol protocol, User user);
 
     /**
@@ -131,6 +142,7 @@ public interface AssayService
 
     /**
      * Returns the list of valid locations an assay design can be created in.
+     *
      * @return the list of containers as pairs of container objects and corresponding label.
      */
     @NotNull List<Pair<Container, String>> getLocationOptions(Container container, User user);
@@ -140,10 +152,10 @@ public interface AssayService
      * the StudyParticipantVisitResolverType will be used.  If targetStudyContainer is null, the ExpRun
      * and ExpBatch will be searched for the configured TargetStudy.
      *
-     * @param run experiment run
-     * @param protocol The run's protocol.  If null, the ExpRun.getProcotol() will be used.
-     * @param provider The assay provider.  If null, the provider will be found from the protocol.
-     * @param targetStudyContainer  The target study.  If null, the ExpRun and ExpBatch properties will be searched.
+     * @param run                  experiment run
+     * @param protocol             The run's protocol.  If null, the ExpRun.getProcotol() will be used.
+     * @param provider             The assay provider.  If null, the provider will be found from the protocol.
+     * @param targetStudyContainer The target study.  If null, the ExpRun and ExpBatch properties will be searched.
      * @return The resolver.
      * @throws ExperimentException
      */
@@ -154,36 +166,42 @@ public interface AssayService
 
     /**
      * Register a provider that will add text links to the assay header link display.
+     *
      * @param provider the provider that will determine which links to add based on a given ExpProtocol
      */
     void registerAssayHeaderLinkProvider(AssayHeaderLinkProvider provider);
 
     /**
      * Returns the list of registered providers which can add links to the assay header link listing.
+     *
      * @return the list of registered providers
      */
     @NotNull List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders();
 
     /**
      * Register a provider that will add text links to the assay results header link display.
+     *
      * @param provider the provider that will determine which links to add based on a given ExpProtocol
      */
     void registerAssayResultsHeaderProvider(AssayResultsHeaderProvider provider);
 
     /**
      * Returns the list of registered providers which can add links to the assay results header link listing.
+     *
      * @return the list of registered providers
      */
     @NotNull List<AssayResultsHeaderProvider> getAssayResultsHeaderProviders();
 
     /**
      * Register a renderer to be used on the assay insert form to customize the input field.
+     *
      * @param renderer the renderer that will determine the display of the input field based on the column info.
      */
     void registerAssayColumnInfoRenderer(AssayColumnInfoRenderer renderer);
 
     /**
      * Return the first applicable renderer for the provided parameters.
+     *
      * @return AssayColumnInfoRenderer
      */
     AssayColumnInfoRenderer getAssayColumnInfoRenderer(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
@@ -213,4 +231,7 @@ public interface AssayService
      * The assay provider must implement an instance of the AssayFlagHandler interface
      */
     <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
+
+    @AssayMigration // Remove
+    List<AssayProvider> getRegisteredAssayProviders();
 }
