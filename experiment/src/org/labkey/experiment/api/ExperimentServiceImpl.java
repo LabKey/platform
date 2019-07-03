@@ -4518,7 +4518,7 @@ public class ExperimentServiceImpl implements ExperimentService
             SELECT DISTINCT m.materialId
             FROM exp.MaterialInput m, exp.protocolapplication pa
             WHERE m.targetapplicationId = pa.rowId
-             AND pa.cpastype = 'ProtocolApplication'  --Limit protocolapplications, where materials are inputs
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
              AND m.materialId <materialIdRowSQL>;
          */
         SQLFragment sql = new SQLFragment();
@@ -4529,7 +4529,6 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
             .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
             .append("AND mi.materialID ").append(materialRowIdSQL).append("\n");
-        // TODO is this the correct cpastype to filter on?
 
         return sql;
     }
