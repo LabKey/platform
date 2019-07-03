@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,6 +64,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.study.assay.TsvImportAction;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
@@ -188,7 +189,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public HttpView getDataDescriptionView(AssayRunUploadForm form)
     {
-        return new JspView<>("/org/labkey/study/assay/view/tsvDataDescription.jsp", form);
+        return new JspView<>("/org/labkey/assay/view/tsvDataDescription.jsp", form);
     }
 
     public List<ParticipantVisitResolverType> getParticipantVisitResolverTypes()

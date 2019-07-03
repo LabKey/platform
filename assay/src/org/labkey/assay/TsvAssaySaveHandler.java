@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.DefaultAssaySaveHandler;

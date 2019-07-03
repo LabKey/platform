@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.study.PlateTemplate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.study.controllers.plate.PlateController" %>
+<%@ page import="org.labkey.assay.PlateController" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

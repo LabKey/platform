@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -2977,12 +2978,12 @@ public class StudyManager
             //
             // plate service
             //
-            Table.delete(StudySchema.getInstance().getSchema().getTable("Well"), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getSchema().getTable("Well"));
-            Table.delete(StudySchema.getInstance().getSchema().getTable("WellGroup"), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getSchema().getTable("WellGroup"));
-            Table.delete(StudySchema.getInstance().getTableInfoPlate(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoPlate());
+            Table.delete(AssaySchema.getInstance().getTableInfoWell(), containerFilter);
+            assert deletedTables.add(AssaySchema.getInstance().getTableInfoWell());
+            Table.delete(AssaySchema.getInstance().getTableInfoWellGroup(), containerFilter);
+            assert deletedTables.add(AssaySchema.getInstance().getTableInfoWellGroup());
+            Table.delete(AssaySchema.getInstance().getTableInfoPlate(), containerFilter);
+            assert deletedTables.add(AssaySchema.getInstance().getTableInfoPlate());
 
             // Specimen comments
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);

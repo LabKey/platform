@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.controllers.plate;
+package org.labkey.assay;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
@@ -125,7 +125,7 @@ public class PlateController extends SpringActionController
         {
             setHelpTopic(new HelpTopic("editPlateTemplate"));
             List<? extends PlateTemplate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
-            return new JspView<>("/org/labkey/study/plate/view/plateTemplateList.jsp",
+            return new JspView<>("/org/labkey/assay/plate/view/plateTemplateList.jsp",
                     new PlateTemplateListBean(plateTemplates));
         }
 
@@ -360,7 +360,7 @@ public class PlateController extends SpringActionController
             if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
                 return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
 
-            return new JspView<>("/org/labkey/study/plate/view/copyTemplate.jsp",
+            return new JspView<>("/org/labkey/assay/plate/view/copyTemplate.jsp",
                     new CopyTemplateBean(getContainer(), getUser(), form.getTemplateName(), form.getDestination()), errors);
         }
 

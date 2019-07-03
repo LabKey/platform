@@ -1,4 +1,4 @@
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -14,6 +14,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Path;
+import org.labkey.study.assay.ModuleAssayCollections;
 
 import java.util.Collection;
 import java.util.HashMap;

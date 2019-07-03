@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.plate.query;
+package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssaySchema;

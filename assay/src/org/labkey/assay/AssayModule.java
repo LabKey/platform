@@ -36,13 +36,9 @@ import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
-import org.labkey.study.assay.AssayToStudyMigrationServiceImpl;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
-import org.labkey.study.assay.ModuleAssayCache;
-import org.labkey.study.assay.TsvAssayProvider;
-import org.labkey.study.controllers.plate.PlateController;
 import org.labkey.study.plate.PlateManager;
-import org.labkey.study.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateSchema;
 
 import java.util.Arrays;
 import java.util.Collection;

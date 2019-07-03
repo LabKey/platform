@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -561,7 +561,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.expProtocol = protocol;
         bean.expRun = run;
 
-        JspView<RunDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/runDetails.jsp", bean);
+        JspView<RunDetailsBean> view = new JspView<>("/org/labkey/assay/view/runDetails.jsp", bean);
         view.setView("nested", runDetailsView);
         return view;
     }
@@ -609,7 +609,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             }
         }
 
-        JspView<ResultDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/resultDetails.jsp", bean);
+        JspView<ResultDetailsBean> view = new JspView<>("/org/labkey/assay/view/resultDetails.jsp", bean);
         view.setView("nested", resultDetailsView);
         return view;
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;

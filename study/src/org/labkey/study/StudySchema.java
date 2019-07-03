@@ -325,21 +325,6 @@ public class StudySchema
         return getSchema().getTable("UploadLog");
     }
 
-    public TableInfo getTableInfoPlate()
-    {
-        return getSchema().getTable("Plate");
-    }
-
-    public TableInfo getTableInfoWellGroup()
-    {
-        return getSchema().getTable("WellGroup");
-    }
-
-    public TableInfo getTableInfoWell()
-    {
-        return getSchema().getTable("Well");
-    }
-
     public TableInfo getTableInfoCohort()
     {
         return getSchema().getTable("Cohort");
