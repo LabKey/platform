@@ -2,12 +2,17 @@
 Ext4.namespace("LABKEY.experiment");
 
 LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, nounSingular, nounPlural) {
+    var loadingMsg = Ext4.Msg.show({
+        title: "Retrieving data",
+        msg: "Loading ..."
+    });
     Ext4.Ajax.request({
         url: LABKEY.ActionURL.buildURL('experiment', "getMaterialDeleteConfirmationData.api", LABKEY.containerPath, {
             dataRegionSelectionKey: selectionKey
         }),
         method: "GET",
         success: LABKEY.Utils.getCallbackWrapper(function(response) {
+            loadingMsg.hide();
             if (response.success) {
                 var numCanDelete = response.data.canDelete.length;
                 var numCannotDelete = response.data.cannotDelete.length;
