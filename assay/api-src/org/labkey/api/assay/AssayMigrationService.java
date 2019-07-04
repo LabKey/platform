@@ -3,6 +3,8 @@ package org.labkey.api.assay;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -41,7 +43,11 @@ public interface AssayMigrationService
 
     AssayService getGwtAssayService(ViewContext ctx);
 
+    DomainEditorServiceBase getAssayDomainEditorService(ViewContext ctx);
+
     void verifyLegalName(AssayProvider provider);
 
     @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers);
+
+    DomainImporterServiceBase getAssayImportService(ViewContext ctx);
 }

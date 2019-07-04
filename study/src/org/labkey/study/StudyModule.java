@@ -250,7 +250,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("study-samples-api", SpecimenApiController.class);
         addController("study-security", SecurityController.class);
         addController("study-designer", DesignerController.class);
-        addController("assay", AssayController.class);
         addController("publish", PublishController.class);
         addController("dataset", DatasetController.class);
         addController("study-definition", StudyDefinitionController.class);

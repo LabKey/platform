@@ -4,7 +4,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.gwt.client.assay.AssayService;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.User;
@@ -19,6 +20,9 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Exposes code in study-src to classes in assay, to help with assay migration process
+ */
 public class AssayMigrationServiceImpl implements AssayMigrationService
 {
     @Override
@@ -59,7 +63,13 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     }
 
     @Override
-    public AssayService getGwtAssayService(ViewContext ctx)
+    public AssayServiceImpl getGwtAssayService(ViewContext ctx)
+    {
+        return new AssayServiceImpl(ctx);
+    }
+
+    @Override
+    public DomainEditorServiceBase getAssayDomainEditorService(ViewContext ctx)
     {
         return new AssayServiceImpl(ctx);
     }
@@ -74,5 +84,11 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     public @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
     {
         return AssayManager.get().getProvider(providerName, providers);
+    }
+
+    @Override
+    public DomainImporterServiceBase getAssayImportService(ViewContext ctx)
+    {
+        return new AssayImportServiceImpl(ctx);
     }
 }

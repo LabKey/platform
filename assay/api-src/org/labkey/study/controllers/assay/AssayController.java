@@ -34,6 +34,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayMigration;
+import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -103,8 +104,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
-import org.labkey.study.assay.AssayImportServiceImpl;
-import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.controllers.assay.actions.DeleteProtocolAction;
@@ -628,9 +627,10 @@ public class AssayController extends SpringActionController
     @RequiresPermission(DesignAssayPermission.class)
     public class ServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService()
         {
-            return new AssayServiceImpl(getViewContext());
+            return AssayMigrationService.get().getAssayDomainEditorService(getViewContext());
         }
     }
 
@@ -1121,7 +1121,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
-            return new AssayImportServiceImpl(getViewContext());
+            return AssayMigrationService.get().getAssayImportService(getViewContext());
         }
     }
 

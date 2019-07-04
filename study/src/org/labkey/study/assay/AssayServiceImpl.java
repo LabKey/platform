@@ -90,6 +90,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         super(context);
     }
 
+    @Override
     @Nullable
     public GWTProtocol getAssayDefinition(int rowId, boolean copy)
     {
@@ -111,6 +112,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return null;
     }
 
+    @Override
     public GWTProtocol getAssayTemplate(String providerName)
     {
         AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(providerName);
@@ -347,6 +349,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         protocol.setObjectProperties(props);
     }
 
+    @Override
     public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException
     {
         // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
@@ -411,7 +414,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             String uri = entry.getKey();
                             param.setOntologyEntryURI(uri);
                             param.setValue(SimpleTypeNames.STRING, entry.getValue());
-                            param.setName(uri.indexOf("#") != -1 ? uri.substring(uri.indexOf("#") + 1) : uri);
+                            param.setName(uri.contains("#") ? uri.substring(uri.indexOf("#") + 1) : uri);
                             newParams.put(uri, param);
                         }
                     }
