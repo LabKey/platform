@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.plate;
+package org.labkey.assay.plate;
 
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataRow;

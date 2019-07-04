@@ -89,7 +89,6 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
-import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
@@ -321,7 +320,7 @@ public class AssayManager implements AssayService
     @Override
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
     {
-        return new AssaySchemaImpl(user, container, targetStudy);
+        return AssayToStudyMigrationService.get().getAssaySchema(user, container, targetStudy);
     }
 
     @Override

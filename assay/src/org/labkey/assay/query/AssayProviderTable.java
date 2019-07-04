@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.assay.query;
+package org.labkey.assay.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;

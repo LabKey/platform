@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.plate;
+package org.labkey.assay.plate;
 
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.Position;

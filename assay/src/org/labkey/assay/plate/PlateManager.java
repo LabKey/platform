@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.plate;
+package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -79,16 +79,19 @@ public class PlateManager implements PlateService
     {
         registerPlateTypeHandler(new AbstractPlateTypeHandler()
         {
+            @Override
             public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount)
             {
                 return PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
             }
 
+            @Override
             public String getAssayType()
             {
                 return "blank";
             }
 
+            @Override
             public List<String> getTemplateTypes(Pair<Integer, Integer> size)
             {
                 return new ArrayList<>();
@@ -100,6 +103,7 @@ public class PlateManager implements PlateService
                 return Collections.singletonList(new Pair<>(8, 12));
             }
 
+            @Override
             public List<WellGroup.Type> getWellGroupTypes()
             {
                 return Arrays.asList(WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,

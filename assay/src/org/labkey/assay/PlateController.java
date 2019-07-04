@@ -48,7 +48,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.study.plate.PlateManager;
+import org.labkey.assay.plate.PlateManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -138,6 +138,7 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class DesignerServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService() throws IllegalStateException
         {
             return AssayMigrationService.get().getPlateDataServiceImpl(getViewContext());

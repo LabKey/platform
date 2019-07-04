@@ -20,6 +20,7 @@ import gwt.client.org.labkey.plate.designer.client.PlateDataService;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
+import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.PlateService;
@@ -63,14 +64,14 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (template == null)
                     throw new Exception("Plate " + templateName + " does not exist.");
 
-                handler = PlateManager.get().getPlateTypeHandler(template.getType());
+                handler = AssayToStudyMigrationService.get().getPlateTypeHandler(template.getType());
                 if (handler == null)
                     throw new Exception("Plate template type " + template.getType() + " does not exist.");
             }
             else
             {
                 // new default template
-                handler = PlateManager.get().getPlateTypeHandler(assayTypeName);
+                handler = AssayToStudyMigrationService.get().getPlateTypeHandler(assayTypeName);
                 if (handler == null)
                     throw new Exception("Plate template type " + assayTypeName + " does not exist.");
 
@@ -116,7 +117,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
                 WellGroup.Type.REPLICATE, WellGroup.Type.OTHER);
 
-        PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(template.getType());
+        PlateTypeHandler handler = AssayToStudyMigrationService.get().getPlateTypeHandler(template.getType());
         if (handler != null)
             wellTypes = handler.getWellGroupTypes();
 
@@ -159,7 +160,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                         group.setProperty(entry.getKey(), entry.getValue());
                 }
             }
-            PlateManager.get().getPlateTypeHandler(template.getType()).validate(getContainer(), getUser(), template);
+            AssayToStudyMigrationService.get().getPlateTypeHandler(template.getType()).validate(getContainer(), getUser(), template);
             PlateService.get().save(getContainer(), getUser(), template);
         }
         catch (SQLException | ValidationException e)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay.query;
+package org.labkey.assay.query;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;

@@ -1,4 +1,4 @@
-package org.labkey.study.plate;
+package org.labkey.assay.plate;
 
 import org.labkey.api.study.Position;
 

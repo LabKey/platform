@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay.query;
 
+import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -42,7 +43,7 @@ public class AssayListQueryView extends QueryView
 {
     public AssayListQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        super(new AssaySchemaImpl(context.getUser(), context.getContainer(), null), settings, errors);
+        super(AssayToStudyMigrationService.get().getAssaySchema(context.getUser(), context.getContainer(), null), settings, errors);
         setShowExportButtons(false);
         setShowDetailsColumn(false);
         setShowRecordSelectors(false);

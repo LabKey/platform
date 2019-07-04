@@ -37,8 +37,8 @@ import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
-import org.labkey.study.assay.query.AssaySchemaImpl;
-import org.labkey.study.plate.PlateManager;
+import org.labkey.assay.query.AssaySchemaImpl;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
 
 import java.util.Arrays;
@@ -132,7 +132,7 @@ public class AssayModule extends SpringModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return Collections.singleton(AssaySchema.NAME);
+        return Collections.emptySet();
     }
 
     @Override

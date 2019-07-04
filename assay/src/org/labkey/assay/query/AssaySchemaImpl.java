@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay.query;
+package org.labkey.assay.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.jmock.Expectations;
@@ -81,6 +81,7 @@ public class AssaySchemaImpl extends AssaySchema
             return true;
         }
 
+        @Override
         public QuerySchema createSchema(DefaultSchema schema, Module module)
         {
             return new AssaySchemaImpl(schema.getUser(), schema.getContainer(), null);

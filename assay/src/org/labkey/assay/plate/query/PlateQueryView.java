@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study;
+package org.labkey.assay.plate.query;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Sort;
