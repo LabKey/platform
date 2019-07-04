@@ -18,7 +18,6 @@ package org.labkey.assay;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
@@ -97,7 +96,6 @@ public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Colle
 
     @Nullable
     @Override
-    @AssayMigration // Change back to invoking method on AssayManager
     public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
     {
         return new FileSystemDirectoryListener()

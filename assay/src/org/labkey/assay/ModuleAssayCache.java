@@ -3,7 +3,6 @@ package org.labkey.assay;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -54,8 +53,7 @@ public class ModuleAssayCache
         }
     }
 
-    @AssayMigration // change to package-private
-    public void clearModuleAssayCollections()
+    void clearModuleAssayCollections()
     {
         synchronized (PROVIDER_LOCK)
         {

@@ -1111,7 +1111,7 @@ public class AssayController extends SpringActionController
         @AssayMigration // Review & remove?
         public ActionURL getChooseAssayTypeURL(Container container)
         {
-            return null;
+            return new ActionURL(ChooseAssayTypeAction.class, container);
         }
     }
 
