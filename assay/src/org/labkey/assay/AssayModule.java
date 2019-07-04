@@ -37,7 +37,6 @@ import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
-import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -89,8 +88,6 @@ public class AssayModule extends SpringModule
     @Override
     protected void init()
     {
-        // TODO: Combine into a single controller
-        addController(AssayController2.NAME, AssayController2.class);
         addController("assay", AssayController.class);
 
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());

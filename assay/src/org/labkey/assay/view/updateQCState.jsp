@@ -23,11 +23,11 @@
 <%@ page import="org.labkey.api.util.element.Select" %>
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.assay.AssayController2" %>
+<%@ page import="org.labkey.assay.AssayController.UpdateQCStateForm" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    AssayController2.UpdateQCStateForm form = (AssayController2.UpdateQCStateForm) HttpView.currentView().getModelBean();
+    UpdateQCStateForm form = (UpdateQCStateForm) HttpView.currentView().getModelBean();
     String currentState = null;
 
     if (form.getRuns().size() == 1)

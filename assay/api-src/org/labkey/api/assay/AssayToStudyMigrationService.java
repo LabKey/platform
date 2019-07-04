@@ -1,7 +1,6 @@
 package org.labkey.api.assay;
 
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.study.assay.ModuleAssayCollections;
 
 /**
  * Exposes code in assay-src to classes in study, to help with assay migration process

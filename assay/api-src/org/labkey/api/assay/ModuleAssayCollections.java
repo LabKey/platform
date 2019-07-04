@@ -1,4 +1,4 @@
-package org.labkey.study.assay;
+package org.labkey.api.assay;
 
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;

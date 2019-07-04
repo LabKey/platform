@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayToStudyMigrationService;
+import org.labkey.api.assay.ModuleAssayCollections;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;

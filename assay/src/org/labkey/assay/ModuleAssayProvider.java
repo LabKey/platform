@@ -65,6 +65,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.assay.AssayController.ModuleAssayUploadAction;
 import org.labkey.study.assay.xml.DomainDocument;
 import org.labkey.study.assay.xml.ProviderType;
 import org.springframework.validation.BindException;
@@ -618,7 +619,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         if (!hasUploadView())
             return super.getImportURL(container, protocol);
-        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController2.ModuleAssayUploadAction.class);
+        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, ModuleAssayUploadAction.class);
     }
 
     protected boolean hasUploadView()

@@ -30,21 +30,26 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
@@ -65,16 +70,23 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.QCState;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
@@ -104,11 +116,11 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.assay.actions.AssayBatchesAction;
 import org.labkey.assay.actions.DeleteAction;
 import org.labkey.assay.actions.TemplateAction;
-import org.labkey.study.assay.FileBasedModuleDataHandler;
 import org.labkey.assay.actions.TsvImportAction;
 import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
@@ -134,6 +146,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1078,14 +1091,13 @@ public class AssayController extends SpringActionController
             return url;
         }
 
-        @AssayMigration // Move back to QCStateAction.class
         @Override
         public ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null && provider.isQCEnabled(protocol))
             {
-                return new ActionURL("assay2", "QCState.view", container);
+                return new ActionURL(QCStateAction.class, container);
             }
             return null;
         }
@@ -1314,6 +1326,186 @@ public class AssayController extends SpringActionController
                 }
             }
             return response;
+        }
+    }
+
+    public static class UpdateQCStateForm extends ReturnUrlForm
+    {
+        private Integer _state;
+        private String _comment;
+        private Set<Integer> _runs;
+
+        public Integer getState()
+        {
+            return _state;
+        }
+
+        public void setState(Integer state)
+        {
+            _state = state;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+
+        public Set<Integer> getRuns()
+        {
+            return _runs;
+        }
+
+        public void setRuns(Set<Integer> runs)
+        {
+            _runs = runs;
+        }
+
+        public void setRun(Integer run)
+        {
+            if (_runs == null)
+                _runs = new HashSet<>();
+            _runs.add(run);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class QCStateAction extends SimpleViewAction<UpdateQCStateForm>
+    {
+        @Override
+        public ModelAndView getView(UpdateQCStateForm form, BindException errors) throws Exception
+        {
+            if (form.getRuns() == null)
+            {
+                if (DataRegionSelection.hasSelected(getViewContext()))
+                    form.setRuns(DataRegionSelection.getSelectedIntegers(getViewContext(), true));
+            }
+            VBox view = new VBox();
+
+            if (form.getRuns() != null && !form.getRuns().isEmpty())
+            {
+                if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
+                {
+                    JspView jspView = new JspView<>("/org/labkey/assay/view/updateQCState.jsp", form, errors);
+                    jspView.setFrame(WebPartView.FrameType.PORTAL);
+                    view.addView(jspView);
+                }
+
+                if (form.getRuns().size() == 1)
+                {
+                    // construct the audit log query view
+                    User user = getUser();
+                    if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
+                    {
+                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                        contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
+                        user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
+                    }
+
+                    UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
+                    ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
+                    if (run != null && schema != null)
+                    {
+                        QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
+                        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunLsid"), run.getLSID());
+                        filter.addCondition(FieldKey.fromParts("QCState"), null, CompareType.NONBLANK);
+
+                        settings.setBaseFilter(filter);
+                        settings.setQueryName("ExperimentAuditEvent");
+
+                        QueryView auditView = schema.createView(getViewContext(), settings, errors);
+                        auditView.setTitle("QC History");
+
+                        view.addView(auditView);
+                    }
+                }
+                return view;
+            }
+            else
+                return new HtmlView("No runs have been selected to update");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Change QC State");
+        }
+    }
+
+    @RequiresPermission(QCAnalystPermission.class)
+    public class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
+    {
+        @Override
+        public void validateForm(UpdateQCStateForm form, Errors errors)
+        {
+            if (form.getState() == null)
+                errors.reject(ERROR_MSG, "QC State cannot be blank");
+            if (form.getRuns().isEmpty())
+                errors.reject(ERROR_MSG, "No runs were selected to update their QC State");
+        }
+
+        @Override
+        public ApiSimpleResponse execute(UpdateQCStateForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            if (form.getRuns() != null)
+            {
+                AssayQCService svc = AssayQCService.getProvider();
+                ExpRun run = null;
+
+                for (int id : form.getRuns())
+                {
+                    // just get the first run
+                    run = ExperimentService.get().getExpRun(id);
+                    if (run != null)
+                        break;
+                }
+
+                if (run != null)
+                {
+                    QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
+                    if (state != null)
+                        svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
+                }
+                response.put("success", true);
+            }
+            return response;
+        }
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
+    {
+        private ExpProtocol _protocol;
+
+        @Override
+        public ModelAndView getView(AssayRunUploadForm form, BindException errors)
+        {
+            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
+                throw new NotFoundException("Pipeline root must be configured before uploading assay files");
+
+            _protocol = form.getProtocol();
+
+            AssayProvider ap = form.getProvider();
+            if (!(ap instanceof ModuleAssayProvider))
+                throw new NotFoundException("Assay must be a ModuleAssayProvider, but assay design " + _protocol.getName() + " was of type '" + ap.getName() + "', implemented by " + ap.getClass().getName());
+            ModuleAssayProvider provider = (ModuleAssayProvider) ap;
+            return provider.createUploadView(form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            Container c = getContainer();
+            ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
+
+            return super.appendNavTrail(root)
+                    .addChild(_protocol.getName() + " Batches", batchListURL)
+                    .addChild("Data Import");
         }
     }
 }

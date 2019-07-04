@@ -13,7 +13,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Path;
-import org.labkey.study.assay.ModuleAssayCollections;
+import org.labkey.api.assay.ModuleAssayCollections;
 
 import java.util.Collection;
 import java.util.HashMap;
