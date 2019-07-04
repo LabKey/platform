@@ -616,7 +616,7 @@ public class AssayController extends SpringActionController
         {
             ChooseAssayBean bean = new ChooseAssayBean();
             bean.returnURL = form.getReturnActionURL();
-            return new JspView<>("/org/labkey/study/assay/view/chooseAssayType.jsp", bean, errors);
+            return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

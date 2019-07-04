@@ -138,7 +138,7 @@ public class AssayController2 extends SpringActionController
             {
                 if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
                 {
-                    JspView jspView = new JspView<>("/org/labkey/study/assay/view/updateQCState.jsp", form, errors);
+                    JspView jspView = new JspView<>("/org/labkey/assay/view/updateQCState.jsp", form, errors);
                     jspView.setFrame(WebPartView.FrameType.PORTAL);
                     view.addView(jspView);
                 }

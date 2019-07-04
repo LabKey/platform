@@ -488,7 +488,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.provider = this;
         bean.expProtocol = protocol;
 
-        JspView<AssayPageBean> view = new JspView<>("/org/labkey/study/assay/view/moduleAssayListView.jsp", bean);
+        JspView<AssayPageBean> view = new JspView<>("/org/labkey/assay/view/moduleAssayListView.jsp", bean);
         view.setView("nested", nestedView);
         return view;
     }
@@ -504,7 +504,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.provider = this;
         bean.expProtocol = protocol;
 
-        JspView<BatchDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/begin.jsp", bean);
+        JspView<BatchDetailsBean> view = new JspView<>("/org/labkey/assay/view/begin.jsp", bean);
         view.setView("nested", beginView);
         return view;
     }
@@ -532,7 +532,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         bean.expProtocol = protocol;
         bean.expExperiment = batch;
 
-        JspView<BatchDetailsBean> view = new JspView<>("/org/labkey/study/assay/view/batchDetails.jsp", bean);
+        JspView<BatchDetailsBean> view = new JspView<>("/org/labkey/assay/view/batchDetails.jsp", bean);
         view.setView("nested", batchDetailsView);
         return view;
     }
@@ -641,7 +641,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             return HttpView.redirect(url);
         }
 
-        JspView<AssayRunUploadForm> view = new JspView<>("/org/labkey/study/assay/view/moduleAssayUpload.jsp", form);
+        JspView<AssayRunUploadForm> view = new JspView<>("/org/labkey/assay/view/moduleAssayUpload.jsp", form);
         view.setView("nested", uploadView);
         return view;
     }
