@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study.actions;
+package org.labkey.assay.actions;
 
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.study.actions.BaseAssayAction;
+import org.labkey.api.study.actions.ProtocolIdForm;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;

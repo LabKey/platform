@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.controllers.assay.actions;
+package org.labkey.assay.actions;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;

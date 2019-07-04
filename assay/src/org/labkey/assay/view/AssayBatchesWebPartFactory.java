@@ -17,7 +17,6 @@
 package org.labkey.assay.view;
 
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AssayBatchesView;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;

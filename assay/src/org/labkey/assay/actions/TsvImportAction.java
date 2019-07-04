@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.assay;
+package org.labkey.assay.actions;
 
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.ImportAction;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.controllers.assay.actions;
+package org.labkey.assay.actions;
 
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;

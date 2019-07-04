@@ -28,6 +28,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.study.PlateService;
+import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.WebPartFactory;
@@ -37,6 +38,7 @@ import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
+import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
 
@@ -89,11 +91,12 @@ public class AssayModule extends SpringModule
     {
         // TODO: Combine into a single controller
         addController(AssayController2.NAME, AssayController2.class);
-        addController("assay", org.labkey.study.controllers.assay.AssayController.class);
+        addController("assay", AssayController.class);
 
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
+        DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
         FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
         addController("plate", PlateController.class);
         PlateService.setInstance(new PlateManager());
@@ -144,6 +147,11 @@ public class AssayModule extends SpringModule
     @Override
     public @NotNull Set<Class> getUnitTests()
     {
-        return Collections.singleton(TsvAssayProvider.TestCase.class);
+        Set<Class> set = new HashSet<>();
+        set.add(TsvAssayProvider.TestCase.class);
+        set.add(AssaySchemaImpl.TestCase.class);
+        set.add(AssayProviderSchema.TestCase.class);
+
+        return set;
     }
 }

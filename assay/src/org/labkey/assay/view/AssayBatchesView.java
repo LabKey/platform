@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study.assay;
+package org.labkey.assay.view;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -23,8 +23,15 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.study.actions.AssayBatchDetailsAction;
+import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayView;
+import org.labkey.api.study.assay.BatchListQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;

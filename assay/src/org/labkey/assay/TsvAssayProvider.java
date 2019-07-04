@@ -64,7 +64,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
-import org.labkey.study.assay.TsvImportAction;
+import org.labkey.assay.actions.TsvImportAction;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;

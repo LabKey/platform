@@ -79,7 +79,6 @@ import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -110,7 +109,6 @@ import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayMigrationServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.CreateChildStudyAction;
@@ -260,7 +258,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AssayMigrationService.setInstance(new AssayMigrationServiceImpl());
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
-        DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
 
         PropertyService.get().registerDomainKind(new VisitDatasetDomainKind());
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
@@ -774,8 +771,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(SampleMindedTransformTask.TestCase.class);
         set.add(DatasetDataWriter.TestCase.class);
         set.add(SpecimenWriter.TestCase.class);
-        set.add(AssaySchemaImpl.TestCase.class);
-        set.add(AssayProviderSchema.TestCase.class);
         set.add(SequenceNumImportHelper.SequenceNumTest.class);
         set.add(ParticipantIdImportHelper.ParticipantIdTest.class);
         set.add(DefaultStudyDesignWriter.TestCase.class);

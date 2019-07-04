@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.controllers.assay;
+package org.labkey.assay;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -104,15 +104,19 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.assay.actions.AssayBatchDetailsAction;
+import org.labkey.assay.actions.AssayBatchesAction;
+import org.labkey.assay.actions.DeleteAction;
+import org.labkey.assay.actions.TemplateAction;
 import org.labkey.study.assay.FileBasedModuleDataHandler;
-import org.labkey.study.assay.TsvImportAction;
-import org.labkey.study.controllers.assay.actions.DeleteProtocolAction;
-import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
-import org.labkey.study.controllers.assay.actions.GetAssayBatchesAction;
-import org.labkey.study.controllers.assay.actions.GetProtocolAction;
-import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
-import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
-import org.labkey.study.controllers.assay.actions.SaveProtocolAction;
+import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.actions.DeleteProtocolAction;
+import org.labkey.assay.actions.GetAssayBatchAction;
+import org.labkey.assay.actions.GetAssayBatchesAction;
+import org.labkey.assay.actions.GetProtocolAction;
+import org.labkey.assay.actions.ImportRunApiAction;
+import org.labkey.assay.actions.SaveAssayBatchAction;
+import org.labkey.assay.actions.SaveProtocolAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
