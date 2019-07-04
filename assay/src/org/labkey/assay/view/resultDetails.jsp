@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.assay.AssayMigrationService" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
@@ -25,6 +24,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.assay.ModuleAssayProvider" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -42,7 +42,7 @@
     ExpProtocol protocol = bean.expProtocol;
     ExpData data = bean.expData;
 
-    Map<String, Object> assay = AssayMigrationService.get().serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
     JSONArray dataRows = AssayJSONConverter.serializeDataRows(data, provider, protocol, getUser(), bean.objectId);
     JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
 %>

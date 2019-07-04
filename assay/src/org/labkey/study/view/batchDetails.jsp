@@ -16,13 +16,13 @@
  */
 %>
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.assay.AssayMigrationService" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.ModuleAssayProvider" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -32,7 +32,7 @@
     ExpProtocol protocol = bean.expProtocol;
     ExpExperiment batch = bean.expExperiment;
 
-    Map<String, Object> assay = AssayMigrationService.get().serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
     JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser());
 %>
 <script type="text/javascript">

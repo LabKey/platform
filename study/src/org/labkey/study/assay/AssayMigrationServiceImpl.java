@@ -8,14 +8,11 @@ import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.view.StudyGWTView;
-import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collection;
 import java.util.Map;
@@ -35,12 +32,6 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     public HttpView getStudyGWTView(Map<String, String> properties)
     {
         return new StudyGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
-    }
-
-    @Override
-    public Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
-    {
-        return AssayController.serializeAssayDefinition(protocol, provider, c, user);
     }
 
     @Override

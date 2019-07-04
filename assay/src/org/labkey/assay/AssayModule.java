@@ -17,7 +17,6 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -89,7 +88,7 @@ public class AssayModule extends SpringModule
     protected void init()
     {
         // TODO: Combine into a single controller
-        addController(AssayController.NAME, AssayController.class);
+        addController(AssayController2.NAME, AssayController2.class);
         addController("assay", org.labkey.study.controllers.assay.AssayController.class);
 
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());

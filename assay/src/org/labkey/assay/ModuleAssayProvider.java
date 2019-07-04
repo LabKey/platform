@@ -618,7 +618,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         if (!hasUploadView())
             return super.getImportURL(container, protocol);
-        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
+        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController2.ModuleAssayUploadAction.class);
     }
 
     protected boolean hasUploadView()

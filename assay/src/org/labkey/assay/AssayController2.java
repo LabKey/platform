@@ -67,12 +67,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class AssayController extends SpringActionController
+public class AssayController2 extends SpringActionController
 {
-    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AssayController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AssayController2.class);
     public static final String NAME = "assay2";
 
-    public AssayController()
+    public AssayController2()
     {
         setActionResolver(_actionResolver);
     }

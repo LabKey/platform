@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.json.JSONObject"%>
-<%@ page import="org.labkey.api.assay.AssayMigrationService" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
@@ -27,6 +26,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NotFoundException" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -60,7 +60,7 @@
     ExpProtocol protocol = bean.getProtocol();
     int batchId = bean.getBatchId() == null ? 0 : bean.getBatchId().intValue();
 
-    Map<String, Object> assay = AssayMigrationService.get().serializeAssayDefinition(protocol, provider, getContainer(), getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getContainer(), getUser());
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};

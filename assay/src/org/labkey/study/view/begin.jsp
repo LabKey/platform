@@ -16,16 +16,16 @@
  */
 %>
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.api.assay.AssayMigrationService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.ModuleAssayProvider" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.BatchDetailsBean> me = (JspView<ModuleAssayProvider.BatchDetailsBean>) HttpView.currentView();
     ModuleAssayProvider.BatchDetailsBean bean = me.getModelBean();
-    Map<String, Object> assay = AssayMigrationService.get().serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
