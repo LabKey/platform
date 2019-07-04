@@ -57,6 +57,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -67,7 +68,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.ParticipantCategoryImpl;
@@ -286,7 +286,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
 
         // Merge in any filters the user had when creating the snapshot
-        ActionURL filterURL = new ActionURL(AssayController.BeginAction.class, context.getContainer());
+        ActionURL filterURL = PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(context.getContainer());
         view.getCustomView().applyFilterAndSortToURL(filterURL, QueryView.DATAREGIONNAME_DEFAULT);
         filter.addUrlFilters(filterURL, QueryView.DATAREGIONNAME_DEFAULT);
 

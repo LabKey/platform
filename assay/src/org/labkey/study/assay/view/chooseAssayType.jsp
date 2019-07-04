@@ -21,9 +21,10 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
@@ -102,7 +103,7 @@
                 <%
                     } else {
                 %>
-                <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
+                <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer())) %></td>
                 <%
                     }
                 %>

@@ -26,7 +26,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.AssayManager;
-import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.validation.BindException;
 
 /**
@@ -40,6 +39,7 @@ public class AssayListPortalView extends AssayListQueryView
         super(context, settings, errors);
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createViewButton(getItemFilter()));
@@ -51,6 +51,6 @@ public class AssayListPortalView extends AssayListQueryView
             insertURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
             bar.add(new ActionButton("New Assay Design", insertURL));
         }
-        bar.add(new ActionButton("Manage Assays", new ActionURL(AssayController.BeginAction.class, getContainer())));
+        bar.add(new ActionButton("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer())));
     }
 }

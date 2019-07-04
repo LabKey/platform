@@ -24,7 +24,6 @@ import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
@@ -619,7 +618,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     {
         if (!hasUploadView())
             return super.getImportURL(container, protocol);
-        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayMigrationService.get().getModuleAssayUploadActionClass());
+        return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, AssayController.ModuleAssayUploadAction.class);
     }
 
     protected boolean hasUploadView()

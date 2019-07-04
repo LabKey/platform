@@ -89,7 +89,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
-import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
@@ -414,7 +413,7 @@ public class AssayManager implements AssayService
                 insertURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
                 menu.addChild("New Assay Design", insertURL);
             }
-            menu.addChild("Manage Assays", new ActionURL(AssayController.BeginAction.class, context.getContainer()));
+            menu.addChild("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(context.getContainer()));
             vbox.setNavMenu(menu);
         }
 

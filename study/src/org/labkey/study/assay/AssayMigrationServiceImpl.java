@@ -38,19 +38,6 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     }
 
     @Override
-    public Class<? extends Controller> getModuleAssayUploadActionClass()
-    {
-        try
-        {
-            return (Class<? extends Controller>)Class.forName("org.labkey.assay.AssayController$ModuleAssayUploadAction");
-        }
-        catch (ClassNotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
     {
         return AssayController.serializeAssayDefinition(protocol, provider, c, user);

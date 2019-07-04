@@ -35,8 +35,6 @@ public interface AssayMigrationService
 
     HttpView getStudyGWTView(Map<String, String> properties);
 
-    Class<? extends Controller> getModuleAssayUploadActionClass();
-
     Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user);
 
     ExpProtocol findExpProtocol(GWTProtocol protocol, Container c);

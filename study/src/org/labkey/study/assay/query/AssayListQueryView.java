@@ -16,7 +16,11 @@
 
 package org.labkey.study.assay.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AssayUrls;
@@ -27,7 +31,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.assay.AssayManager;
-import org.labkey.study.controllers.assay.AssayController;
 import org.springframework.validation.BindException;
 
 /**
@@ -47,6 +50,7 @@ public class AssayListQueryView extends QueryView
         setShowBorders(true);
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
@@ -67,7 +71,7 @@ public class AssayListQueryView extends QueryView
         Container project = getContainer().getProject() == null ? getContainer() : getContainer().getProject();
         if (project != null && !project.equals(getContainer()) && project.hasPermission(getUser(), DesignAssayPermission.class))
         {
-            ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, project);
+            ActionURL manageProjectAssays = PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(project);
             ActionButton sharedButton = new ActionButton("Manage Project Assays", manageProjectAssays);
             sharedButton.setActionType(ActionButton.Action.LINK);
             bar.add(sharedButton);
@@ -77,7 +81,7 @@ public class AssayListQueryView extends QueryView
         if (!sharedProject.equals(getContainer()) && !sharedProject.equals(project) &&
                 sharedProject.hasPermission(getUser(), DesignAssayPermission.class))
         {
-            ActionURL manageProjectAssays = new ActionURL(AssayController.BeginAction.class, sharedProject);
+            ActionURL manageProjectAssays = PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(sharedProject);
             ActionButton sharedButton = new ActionButton("Manage Shared Project Assays", manageProjectAssays);
             sharedButton.setActionType(ActionButton.Action.LINK);
             bar.add(sharedButton);
@@ -94,6 +98,7 @@ public class AssayListQueryView extends QueryView
         }
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView result = super.createDataView();
