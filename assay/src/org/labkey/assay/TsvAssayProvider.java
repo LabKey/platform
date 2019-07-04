@@ -57,7 +57,6 @@ import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.PipelineDataCollector;
 import org.labkey.api.study.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
-import org.labkey.api.study.assay.TextAreaDataCollector;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.PageFlowUtil;
