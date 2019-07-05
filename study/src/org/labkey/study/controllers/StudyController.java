@@ -2466,7 +2466,10 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getUser();
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def, null);
+            // Go through normal getTable() codepath to be sure all metadata is applied
+            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).getTable(_def.getName(), null);
+            if (t == null)
+                throw new NotFoundException("Dataset not found");
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
