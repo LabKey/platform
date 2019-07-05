@@ -16,6 +16,7 @@
 package org.labkey.assay;
 
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.DefaultAssaySaveHandler;
 
 /**
  * User: kevink

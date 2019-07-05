@@ -3,7 +3,7 @@ package org.labkey.assay;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.assay.AssayMigrationService;
+import org.labkey.api.assay.ModuleAssayCollections;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -13,8 +13,6 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Path;
-import org.labkey.api.assay.ModuleAssayCollections;
-import org.labkey.study.assay.AssayManager;
 
 import java.util.Collection;
 import java.util.HashMap;

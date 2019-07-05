@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay;
+package org.labkey.assay;
 
-import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -31,7 +30,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.assay.AssayManager;
 import org.springframework.validation.BindException;
 
 /**
@@ -43,7 +41,7 @@ public class AssayListQueryView extends QueryView
 {
     public AssayListQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        super(AssayToStudyMigrationService.get().getAssaySchema(context.getUser(), context.getContainer(), null), settings, errors);
+        super(AssayManager.get().createSchema(context.getUser(), context.getContainer(), null), settings, errors);
         setShowExportButtons(false);
         setShowDetailsColumn(false);
         setShowRecordSelectors(false);

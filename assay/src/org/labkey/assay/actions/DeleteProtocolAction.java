@@ -16,7 +16,6 @@
 package org.labkey.assay.actions;
 
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.security.RequiresPermission;
@@ -24,7 +23,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.assay.AssayManager;
+import org.labkey.assay.AssayManager;
 import org.springframework.validation.BindException;
 
 @RequiresPermission(DeletePermission.class)

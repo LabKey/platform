@@ -42,7 +42,6 @@ import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
-import org.labkey.study.assay.AssayManager;
 
 import java.util.Arrays;
 import java.util.Collection;

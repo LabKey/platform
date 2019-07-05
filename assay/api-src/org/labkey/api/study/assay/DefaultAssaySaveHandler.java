@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.assay;
+package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -39,13 +39,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.study.assay.AssayDataType;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunCreator;
-import org.labkey.api.study.assay.AssayRunUploadContext;
-import org.labkey.api.study.assay.AssaySaveHandler;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;

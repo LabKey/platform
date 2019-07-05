@@ -20,7 +20,6 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.assay.AssayService;
@@ -32,6 +31,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.assay.AssayServiceImpl;
 import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)
@@ -59,7 +59,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
             }
             else if (expProtocol.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
-                AssayService svc = AssayMigrationService.get().getGwtAssayService(getViewContext());
+                AssayService svc = new AssayServiceImpl(getViewContext());
                 GWTProtocol ret = svc.getAssayDefinition(protocol.getProtocolId(), false);
                 if (ret == null)
                 {
@@ -75,7 +75,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
         else if (protocol.getProviderName() != null)
         {
             // get the assay template
-            AssayService svc = AssayMigrationService.get().getGwtAssayService(getViewContext());
+            AssayService svc = new AssayServiceImpl(getViewContext());
             GWTProtocol ret = svc.getAssayTemplate(protocol.getProviderName());
             return success("Generated assay template for provider '" + protocol.getProviderName() + "'", ret);
         }

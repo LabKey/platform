@@ -24,7 +24,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.study.assay.AssayManager;
 
 import java.util.ArrayList;
 import java.util.Collections;

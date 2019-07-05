@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.assay.DefaultAssaySaveHandler;
+import org.labkey.api.study.assay.DefaultAssaySaveHandler;
 import org.springframework.validation.BindException;
 
 /**

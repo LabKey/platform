@@ -2,7 +2,6 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.labkey.api.assay.AssayMigrationService;
-import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.view.HttpView;
@@ -28,18 +27,6 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     public HttpView getStudyGWTView(Map<String, String> properties)
     {
         return new StudyGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
-    }
-
-    @Override
-    public AssayServiceImpl getGwtAssayService(ViewContext ctx)
-    {
-        return new AssayServiceImpl(ctx);
-    }
-
-    @Override
-    public DomainEditorServiceBase getAssayDomainEditorService(ViewContext ctx)
-    {
-        return new AssayServiceImpl(ctx);
     }
 
     @Override

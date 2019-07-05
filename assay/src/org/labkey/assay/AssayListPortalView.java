@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;

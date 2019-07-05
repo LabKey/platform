@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayMigrationService;
-import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.assay.ModuleAssayCollections;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -87,6 +86,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.assay.query.AssaySchemaImpl;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -224,7 +224,7 @@ public class AssayManager implements AssayService
 
     private ModuleAssayCollections getModuleAssayCollections()
     {
-        return AssayToStudyMigrationService.get().getModuleAssayCollections();
+        return ModuleAssayCache.get().getModuleAssayCollections();
     }
 
     private class ModuleAssayPipelineProviderSupplier implements PipelineProviderSupplier
@@ -269,8 +269,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @NotNull
-    List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
+    public @NotNull List<AssayHeaderLinkProvider> getAssayHeaderLinkProviders()
     {
         return Collections.unmodifiableList(_headerLinkProviders);
     }
@@ -282,8 +281,7 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public @NotNull
-    List<AssayResultsHeaderProvider> getAssayResultsHeaderProviders()
+    public @NotNull List<AssayResultsHeaderProvider> getAssayResultsHeaderProviders()
     {
         return Collections.unmodifiableList(_resultsHeaderLinkProviders);
     }
@@ -316,7 +314,7 @@ public class AssayManager implements AssayService
     @Override
     public AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy)
     {
-        return AssayToStudyMigrationService.get().getAssaySchema(user, container, targetStudy);
+        return new AssaySchemaImpl(user, container, targetStudy);
     }
 
     @Override

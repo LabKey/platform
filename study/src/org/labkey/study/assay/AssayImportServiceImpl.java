@@ -17,6 +17,7 @@ package org.labkey.study.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -51,7 +52,6 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -147,8 +147,8 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         loader.setThrowOnErrors(true);
 
         // validate the entire document by scanning all rows using the dataloader
-        CloseableIterator it = loader.iterator();
-        try {
+        try (CloseableIterator it = loader.iterator())
+        {
             while (it.hasNext())
             {
                 it.next();
@@ -158,10 +158,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         {
             throw new GWTImportException(e.getMessage());
         }
-        finally
-        {
-            try {it.close();} catch(IOException ioe){}
-        }
+
         return true;
     }
 
@@ -183,8 +180,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
                     DomainProperty dp = domain.getPropertyByName(entry.getValue().toLowerCase());
                     if (dp != null)
                     {
-                        Set<String> alias = new LinkedHashSet<>();
-                        alias.addAll(dp.getImportAliasSet());
+                        Set<String> alias = new LinkedHashSet<>(dp.getImportAliasSet());
 
                         alias.add(entry.getKey());
 
@@ -195,7 +191,8 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             }
             if (changed)
             {
-                try {
+                try
+                {
                     domain.save(getUser());
                 }
                 catch (ChangePropertyDescriptorException e)
@@ -229,12 +226,13 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     {
         ViewContext context = new ViewContext(getViewContext());
 
-        try {
+        try
+        {
             Container location = ContainerManager.getForId(containerID);
             if (location != null)
                 context.setContainer(location);
 
-            AssayServiceImpl svc = new AssayServiceImpl(context);
+            org.labkey.api.gwt.client.assay.AssayService svc = AssayToStudyMigrationService.get().getAssayService(context);
 
             GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
 
@@ -252,7 +250,8 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     @Override
     public String getDomainImportURI(GWTProtocol gwtProtocol) throws GWTImportException
     {
-        try {
+        try
+        {
             AssayProvider provider = AssayService.get().getProvider(gwtProtocol.getProviderName());
             if (provider != null)
             {
@@ -305,9 +304,9 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     {
         ViewContext context = getViewContext();
 
-        try {
-
-            AssayServiceImpl svc = new AssayServiceImpl(context);
+        try
+        {
+            org.labkey.api.gwt.client.assay.AssayService svc = AssayToStudyMigrationService.get().getAssayService(context);
 
             GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
 
