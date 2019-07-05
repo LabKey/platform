@@ -12,6 +12,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Collection;
 import java.util.Map;
@@ -33,15 +34,13 @@ public interface AssayMigrationService
 
     HttpView getStudyGWTView(Map<String, String> properties);
 
-    ExpProtocol findExpProtocol(GWTProtocol protocol, Container c);
-
     AssayService getGwtAssayService(ViewContext ctx);
 
     DomainEditorServiceBase getAssayDomainEditorService(ViewContext ctx);
 
-    void verifyLegalName(AssayProvider provider);
-
-    @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers);
-
     DomainImporterServiceBase getAssayImportService(ViewContext ctx);
+
+    ModelAndView createAssayDesignerView(Map<String, String> properties);
+
+    ModelAndView createAssayImportView(Map<String, String> properties);
 }

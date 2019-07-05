@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -139,7 +140,6 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
@@ -191,7 +191,6 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
-    public static final SearchService.SearchCategory assayCategory = new SearchService.SearchCategory("assay", "Study Assay");
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
@@ -2866,7 +2865,7 @@ public class StudyManager
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
 //        _locationHelper.clearCache(c);
-        AssayManager.get().clearProtocolCache();
+        AssayService.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
             for (DatasetDefinition def : getDatasetDefinitions(study))
                 uncache(def);

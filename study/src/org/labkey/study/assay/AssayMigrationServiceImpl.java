@@ -1,20 +1,16 @@
 package org.labkey.study.assay;
 
-import org.jetbrains.annotations.Nullable;
+import gwt.client.org.labkey.study.StudyApplication;
 import org.labkey.api.assay.AssayMigrationService;
-import org.labkey.api.data.Container;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
-import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.server.BaseRemoteService;
-import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.plate.PlateDataServiceImpl;
 import org.labkey.study.view.StudyGWTView;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -35,12 +31,6 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     }
 
     @Override
-    public ExpProtocol findExpProtocol(GWTProtocol protocol, Container c)
-    {
-        return AssayManager.get().findExpProtocol(protocol, c);
-    }
-
-    @Override
     public AssayServiceImpl getGwtAssayService(ViewContext ctx)
     {
         return new AssayServiceImpl(ctx);
@@ -53,20 +43,20 @@ public class AssayMigrationServiceImpl implements AssayMigrationService
     }
 
     @Override
-    public void verifyLegalName(AssayProvider provider)
-    {
-        AssayManager.get().verifyLegalName(provider);
-    }
-
-    @Override
-    public @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
-    {
-        return AssayManager.get().getProvider(providerName, providers);
-    }
-
-    @Override
     public DomainImporterServiceBase getAssayImportService(ViewContext ctx)
     {
         return new AssayImportServiceImpl(ctx);
+    }
+
+    @Override
+    public ModelAndView createAssayDesignerView(Map<String, String> properties)
+    {
+        return new StudyGWTView(new StudyApplication.AssayDesigner(), properties);
+    }
+
+    @Override
+    public ModelAndView createAssayImportView(Map<String, String> properties)
+    {
+        return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 }

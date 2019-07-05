@@ -80,7 +80,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.ExperimentListenerImpl;
 import org.labkey.api.study.assay.TsvDataHandler;
@@ -105,7 +104,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
-import org.labkey.study.assay.AssayManager;
 import org.labkey.study.assay.AssayMigrationServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
@@ -254,7 +252,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("participant-group", ParticipantGroupController.class);
         addController("study-design", StudyDesignController.class);
 
-        AssayService.setInstance(new AssayManager());
         AssayMigrationService.setInstance(new AssayMigrationServiceImpl());
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
@@ -405,7 +402,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             ss.addSearchCategory(StudyManager.subjectCategory);
             ss.addSearchCategory(StudyManager.datasetCategory);
-            ss.addSearchCategory(StudyManager.assayCategory);
             ss.addDocumentProvider(this);
         }
 
@@ -429,8 +425,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
-        AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",
-                "Adds an 'Import Data' button (using plus icon) to the 'Assay List' query view to get to the new UX Assay Data Import page.", false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

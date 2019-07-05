@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.study.assay.AssayManager;
 import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)
@@ -44,7 +45,7 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
         }
         else
         {
-            ExpProtocol expProtocol = AssayMigrationService.get().findExpProtocol(protocol, getContainer());
+            ExpProtocol expProtocol = AssayManager.get().findExpProtocol(protocol, getContainer());
             if (expProtocol == null)
                 throw new NotFoundException();
 

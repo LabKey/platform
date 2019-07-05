@@ -52,6 +52,9 @@ import java.util.Set;
  */
 public interface AssayService
 {
+    @AssayMigration // Move to AssayManager or AssayModule
+    SearchService.SearchCategory assayCategory = new SearchService.SearchCategory("assay", "Study Assay");
+
     String BATCH_COLUMN_NAME = "Batch";
     String ASSAY_DIR_NAME = "assay";
 

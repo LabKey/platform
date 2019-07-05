@@ -27,6 +27,8 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.search.SearchService;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayRunType;
@@ -40,6 +42,7 @@ import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.study.assay.AssayManager;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -88,8 +91,8 @@ public class AssayModule extends SpringModule
     @Override
     protected void init()
     {
+        AssayService.setInstance(new AssayManager());
         addController("assay", AssayController.class);
-
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
@@ -116,6 +119,15 @@ public class AssayModule extends SpringModule
             return result;
         });
         PlateManager.get().registerLsidHandlers();
+        SearchService ss = SearchService.get();
+
+        if (null != ss)
+        {
+            ss.addSearchCategory(AssayService.assayCategory);
+        }
+
+        AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",
+                "Adds an 'Import Data' button (using plus icon) to the 'Assay List' query view to get to the new UX Assay Data Import page.", false);
 
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new AssayContainerListener());

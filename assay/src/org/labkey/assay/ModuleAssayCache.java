@@ -14,6 +14,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Path;
 import org.labkey.api.assay.ModuleAssayCollections;
+import org.labkey.study.assay.AssayManager;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,12 +75,12 @@ public class ModuleAssayCache
                 for (AssayProvider provider : PROVIDER_CACHE.getResourceMap(module))
                 {
                     // Validate the provider
-                    AssayMigrationService.get().verifyLegalName(provider);
-                    if (AssayMigrationService.get().getProvider(provider.getName(), AssayService.get().getRegisteredAssayProviders()) != null) // Check against the registered providers
+                    AssayManager.get().verifyLegalName(provider);
+                    if (AssayManager.get().getProvider(provider.getName(), AssayService.get().getRegisteredAssayProviders()) != null) // Check against the registered providers
                     {
                         throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
                     }
-                    if (AssayMigrationService.get().getProvider(provider.getName(), _assayProviders) != null) // Check against the existing module assay providers
+                    if (AssayManager.get().getProvider(provider.getName(), _assayProviders) != null) // Check against the existing module assay providers
                     {
                         throw new IllegalArgumentException("A module assay provider with the name " + provider.getName() + " already exists");
                     }
