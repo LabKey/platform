@@ -17,31 +17,27 @@ import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {DomainForm, DomainDesign, fetchDomain, saveDomain} from "@glass/domainproperties"
 
-interface StateProps {
-    schemaName?: string,
-    queryName?: string,
-    domainId?: number,
-    returnUrl?: string,
-    domain?: DomainDesign,
-    submitting: boolean,
-    message?: string,
-    messageType?: string,
-    showConfirm: boolean,
+interface IAppState {
     dirty: boolean
+    domain: DomainDesign
+    domainId: number
+    message: string
+    messageType: string
+    queryName: string
+    returnUrl: string
+    schemaName: string
+    showConfirm: boolean
+    submitting: boolean
 }
 
-export class App extends React.PureComponent<any, StateProps> {
+export class App extends React.PureComponent<any, Partial<IAppState>> {
 
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
-        const schemaName = ActionURL.getParameter('schemaName');
-        const queryName = ActionURL.getParameter('queryName');
-        const domainId = ActionURL.getParameter('domainId');
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const { domainId, queryName, returnUrl, schemaName } = ActionURL.getParameters();
 
         this.state = {
             schemaName,
@@ -83,23 +79,20 @@ export class App extends React.PureComponent<any, StateProps> {
     }
 
     submitHandler = () => {
-        const { domain } = this.state;
+        const { domain, submitting } = this.state;
 
-        // NOTE: temp values for name and pk since those are not available inputs currently
-        // const name = 'list_' + Math.floor(Math.random() * 10000);
-        // const options = {
-        //     keyName: domain.fields.size > 0 ? domain.fields.get(0).name : undefined
-        // };
+        if (submitting) {
+            return;
+        }
 
-        this.setState(() => ({submitting: true}));
+        this.setState({
+            submitting: true
+        });
 
-        // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
-                const newDomain = clearFieldDetails(savedDomain);
-
                 this.setState(() => ({
-                    domain: newDomain,
+                    domain: savedDomain,
                     submitting: false,
                     message: 'Domain saved successfully.',
                     messageType: 'success',
