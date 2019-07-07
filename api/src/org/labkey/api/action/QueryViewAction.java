@@ -23,7 +23,9 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -136,6 +138,15 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             throw new NotFoundException("Could not create a view for the requested exportRegion: '" + form.getExportRegion() + "'");
 
         result.setUseQueryViewActionExportURLs(true);
+        QuerySettings settings = result.getSettings();
+        if (settings.getSchemaName() == null)
+        {
+            UserSchema schema = result.getTable().getUserSchema();
+            if (schema != null)
+            {
+                settings.setSchemaName(schema.getName());
+            }
+        }
         return result;
     }
 
