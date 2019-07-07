@@ -139,6 +139,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
 
         result.setUseQueryViewActionExportURLs(true);
         QuerySettings settings = result.getSettings();
+        // Issue 37914 - be sure we have a fully populated QuerySettings to generate the right dataRegionSelectionKey
         if (settings.getSchemaName() == null)
         {
             UserSchema schema = result.getTable().getUserSchema();
