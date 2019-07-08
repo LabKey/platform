@@ -21,6 +21,7 @@ import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -45,7 +46,9 @@ public class EditorRole extends AbstractRole
                 DeletePermission.class,
                 EditSharedViewPermission.class,
                 ShareReportPermission.class, EditSharedReportPermission.class,
-                SharedParticipantGroupPermission.class);
+                SharedParticipantGroupPermission.class,
+                DesignSampleSetPermission.class // TODO adding here for now (for backwards compatibility) but we probably want to split out a SampleSetDesignerRole
+        );
     }
 
     @Override

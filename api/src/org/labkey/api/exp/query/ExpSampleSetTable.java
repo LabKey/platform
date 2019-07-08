@@ -28,6 +28,7 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         LSID,
         Name,
         Description,
+        NameExpression,
         MaterialLSIDPrefix,
         Created,
         Modified,
