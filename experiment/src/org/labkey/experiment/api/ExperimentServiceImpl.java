@@ -3627,6 +3627,13 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
+    /**
+     * Finds the subset of materialIds that are used as inputs to runs.
+     *
+     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
+     * @param materialIds
+     * @return
+     */
     public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
     {
         if (materialIds.isEmpty())
@@ -4508,6 +4515,8 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * Generate a query to get the subset of rowids from the supplied set material RowIds
      * that are inputs to runs.
+     *
+     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
      * @param materialRowIdSQL --  SQL clause generating material rowIds used to limit results
      * @return Query to retrieve subset of materialIds
      */
