@@ -190,30 +190,27 @@ public class JunitController extends SpringActionController
 
             if (!StringUtils.isEmpty(form.getModule()))
             {
+                // This is branch taken when you select a group of unit tests, like Core or Study.
+                // Performance tests will not be run in this case.
                 testClasses.addAll(JunitManager.getTestCases().get(form.getModule()));
-
-                // Exclude performance tests.
-                form._scope = TestWhen.When.WEEKLY;
             }
             else if (!StringUtils.isEmpty(form.getTestCase()))
             {
+                // This is the branch taken when you select a specific unit test from the UI.
+                // To allow performance tests to be selected change the scope to PERFORMANCE.
+                form._scope = TestWhen.When.PERFORMANCE;
+
                 for (List<Class> list : JunitManager.getTestCases().values())
                 {
                     list.stream()
                         .filter((test) -> test.getName().equals(form.getTestCase()))
                         .forEach(testClasses::add);
                 }
-
-                // This is the branch taken when you select a unit test from the UI,
-                // allow performance tests to be selected.
-                form._scope = TestWhen.When.PERFORMANCE;
             }
             else
             {
+                // You end up here if you select "All", "BVT" or "DRT"  unit tests.
                 JunitManager.getTestCases().values().forEach(testClasses::addAll);
-
-                // Exclude performance tests from "All" tests.
-                form._scope = TestWhen.When.WEEKLY;
             }
 
             // filter by scope
