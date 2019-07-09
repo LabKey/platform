@@ -22,7 +22,7 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                 var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
                 var text;
                 if (totalNum === 0) {
-                    text = "No samples selected for deletion."
+                    text = "No " + nounPlural + " selected for deletion."
                 }
                 else if (numCannotDelete === 0)  {
                     text = totalNum === 1 ? "The selected "  : (totalNum === 2 ? "Both " : "All " + totalNum + " ");
