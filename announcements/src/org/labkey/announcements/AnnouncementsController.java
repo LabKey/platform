@@ -2104,7 +2104,6 @@ public class AnnouncementsController extends SpringActionController
 
     private static void addAdminMenus(LinkBarBean bean, NavTree menu, ViewContext context)
     {
-
         NavTree email = new NavTree("Email", "", context.getContextPath() + "/_images/email.png");
         if (bean.emailPrefsURL != null)
             email.addChild("Preferences", bean.emailPrefsURL);
@@ -2114,36 +2113,10 @@ public class AnnouncementsController extends SpringActionController
             email.addChild("Site-Wide Email Template", bean.siteEmailTemplateURL);
         if (bean.containerEmailTemplateURL != null)
             email.addChild(StringUtils.capitalize(context.getContainer().getContainerNoun()) + " Email Template", bean.containerEmailTemplateURL);
-
         if (email.hasChildren())
             menu.addChild(email);
 
-        if (PageFlowUtil.isPageAdminMode(context))
-            menu.addChild("Admin", bean.adminURL);
-
-
-
-        // this is all the email sub-menu
-//        NavTree email = new NavTree("Email", "", context.getContextPath() + "/_images/email.png");
-//        if (bean.emailPrefsURL != null)
-//            email.addChild("Preferences", bean.emailPrefsURL);
-//        if (bean.emailManageURL != null)
-//            email.addChild("Administration", bean.emailManageURL);
-//        if (bean.siteEmailTemplateURL != null)
-//            email.addChild("Site-Wide Email Template", bean.siteEmailTemplateURL);
-//        if (bean.containerEmailTemplateURL != null)
-//            email.addChild(StringUtils.capitalize(context.getContainer().getContainerNoun()) + " Email Template", bean.containerEmailTemplateURL);
-//
-//        if (email.hasChildren())
-//            menu.addChild(email);
-//
-////        this is adminBLARGL in particular. Why is it picked out?
-////        this doesn't contain any info on whether or not admin mode is turned on
-////        old: bean.adminURL != null
-//        if (PageFlowUtil.isPageAdminMode(context))
-//            menu.addChild("AdminBLARGL", bean.adminURL);
-
-
+        menu.addChild("Admin", bean.adminURL);
     }
 
 
@@ -2207,7 +2180,6 @@ public class AnnouncementsController extends SpringActionController
                 menu.addChild("View List", bean.listURL);
             if ((bean.listURL != null) && !isAdmin)
                 menu.addChild("Email Preferences", bean.emailPrefsURL);
-
 
             if (isAdmin)
                 addAdminMenus(bean, menu, context);
