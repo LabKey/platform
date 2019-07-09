@@ -151,6 +151,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -586,7 +587,7 @@ public class ExperimentController extends SpringActionController
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
             QueryView queryView = new SampleSetContentsView(_source, schema, settings, errors);
 
-            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), _source.getRowId());
+            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), false), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
             detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
             detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
@@ -654,11 +655,11 @@ public class ExperimentController extends SpringActionController
                     updateURL.addParameter("RowId", _source.getRowId());
                     updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                     ActionButton updateButton = new ActionButton(updateURL, "Edit Set", ActionButton.Action.LINK);
-                    updateButton.setDisplayPermission(UpdatePermission.class);
+                    updateButton.setDisplayPermission(DesignSampleSetPermission.class);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(updateButton);
 
                     ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete Set", ActionButton.Action.POST);
-                    deleteButton.setDisplayPermission(DeletePermission.class);
+                    deleteButton.setDisplayPermission(DesignSampleSetPermission.class);
                     ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, _source.getContainer());
                     deleteURL.addParameter("singleObjectRowId", _source.getRowId());
                     deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()).toString());
@@ -3168,7 +3169,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class DeleteMaterialSourceAction extends AbstractDeleteAction
     {
         @Override
@@ -3182,10 +3183,15 @@ public class ExperimentController extends SpringActionController
         protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpSampleSet> sampleSets = getSampleSets(deleteForm);
+            if (sampleSets.size() == 0)
+            {
+                throw new NotFoundException("No sample sets found for ids provided.");
+            }
             if (!ensureCorrectContainer(sampleSets))
             {
                 throw new UnauthorizedException();
             }
+
             for (ExpRun run : getRuns(sampleSets))
             {
                 if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -3193,8 +3199,15 @@ public class ExperimentController extends SpringActionController
                     throw new UnauthorizedException();
                 }
             }
+
             for (ExpSampleSet source : sampleSets)
             {
+                Domain domain = source.getDomain();
+                if (domain != null && !domain.getDomainKind().canDeleteDefinition(getUser(), domain))
+                {
+                    throw new UnauthorizedException();
+                }
+
                 source.delete(getUser());
             }
         }
@@ -3258,7 +3271,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class ShowUpdateMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         private ExpSampleSet _sampleSet;
@@ -3291,7 +3304,7 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(url);
             }
 
-            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext()), form, errors);
+            UpdateView updateView = new UpdateView(getMaterialSourceRegion(getViewContext(), true), form, errors);
             if (form.getReturnUrl() != null)
             {
                 updateView.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnUrl());
@@ -3307,7 +3320,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private DataRegion getMaterialSourceRegion(ViewContext model)
+    private DataRegion getMaterialSourceRegion(ViewContext model, boolean forUpdate)
     {
         TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
 
@@ -3332,9 +3345,10 @@ public class ExperimentController extends SpringActionController
         dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
 
         ButtonBar bb = new ButtonBar();
-
-        bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit"));
-
+        if (forUpdate)
+        {
+            bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit"));
+        }
         dr.setButtonBar(bb);
         bb.setStyle(ButtonBar.Style.separateButtons);
 
@@ -3342,12 +3356,12 @@ public class ExperimentController extends SpringActionController
 
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class ShowInsertMaterialSourceAction extends SimpleViewAction<MaterialSourceForm>
     {
         public ModelAndView getView(MaterialSourceForm form, BindException errors)
         {
-            return new InsertView(getMaterialSourceRegion(getViewContext()), form, errors);
+            return new InsertView(getMaterialSourceRegion(getViewContext(), true), form, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3357,25 +3371,46 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
+    private MaterialSource validateMaterialSourceForm(MaterialSourceForm form, Errors errors)
+    {
+        MaterialSource source = form.getBean();
+
+        ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(source.getLSID());
+        if (sampleSet == null)
+            sampleSet = ExperimentService.get().getSampleSet(source.getRowId());
+
+        if (sampleSet == null)
+        {
+            errors.reject(ERROR_MSG, "MaterialSource not found: " + (source.getLSID() != null ? source.getLSID() : source.getRowId()));
+        }
+
+        if (sampleSet != null && !getContainer().equals(sampleSet.getContainer()))
+        {
+            errors.reject(ERROR_MSG, "MaterialSource is not defined in the given container.");
+        }
+
+        return source;
+    }
+
+    private void updateMaterialSourceFromForm(MaterialSource source, MaterialSourceForm form)
+    {
+        Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), source.getRowId());
+        SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
+    }
+
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class UpdateMaterialSourceAction extends FormHandlerAction<MaterialSourceForm>
     {
         private MaterialSource _source;
 
-        public void validateCommand(MaterialSourceForm target, Errors errors)
+        public void validateCommand(MaterialSourceForm form, Errors errors)
         {
+            _source = validateMaterialSourceForm(form, errors);
         }
 
         public boolean handlePost(MaterialSourceForm form, BindException errors)
         {
-            _source = form.getBean();
-            ExpSampleSet oldSampleSet = ExperimentService.get().getSampleSet(_source.getLSID());
-            if (oldSampleSet == null || !getContainer().equals(oldSampleSet.getContainer()))
-            {
-                throw new NotFoundException("MaterialSource with LSID " + _source.getLSID());
-            }
-            Table.update(getUser(), ExperimentService.get().getTinfoMaterialSource(), form.getTypedValues(), _source.getRowId());
-            SampleSetServiceImpl.get().clearMaterialSourceCache(getContainer());
+            updateMaterialSourceFromForm(_source, form);
             return true;
         }
 
@@ -3383,6 +3418,25 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(_source.getRowId())));
+        }
+    }
+
+    @RequiresPermission(DesignSampleSetPermission.class)
+    public class UpdateMaterialSourceApiAction extends MutatingApiAction<MaterialSourceForm>
+    {
+        private MaterialSource _source;
+
+        @Override
+        public void validateForm(MaterialSourceForm form, Errors errors)
+        {
+            _source = validateMaterialSourceForm(form, errors);
+        }
+
+        @Override
+        public Object execute(MaterialSourceForm form, BindException errors) throws Exception
+        {
+            updateMaterialSourceFromForm(_source, form);
+            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -3394,7 +3448,59 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
+    private void validateSampleSetForm(CreateSampleSetForm form, Errors errors)
+    {
+        if (StringUtils.isEmpty(form.getName()))
+        {
+            errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+        }
+        else
+        {
+            int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
+            if (form.getName().length() > nameMax)
+                errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
+            else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
+                errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+        }
+
+        int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
+        if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
+            errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+    }
+
+    private ExpSampleSet createSampleSetFromForm(CreateSampleSetForm form) throws Exception
+    {
+        List<GWTPropertyDescriptor> properties = new ArrayList<>();
+
+        GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
+        descriptor.setName(ExpMaterialTable.Column.Name.name());
+        properties.add(descriptor);
+
+        return ExperimentService.get().createSampleSet(
+                getContainer(), getUser(), form.getName(), form.getDescription(),
+                properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
+                null
+        );
+    }
+
+    @RequiresPermission(DesignSampleSetPermission.class)
+    public class CreateSampleSetApiAction extends MutatingApiAction<CreateSampleSetForm>
+    {
+        @Override
+        public void validateForm(CreateSampleSetForm form, Errors errors)
+        {
+            validateSampleSetForm(form, errors);
+        }
+
+        @Override
+        public Object execute(CreateSampleSetForm form, BindException errors) throws Exception
+        {
+            ExpSampleSet sampleSet = createSampleSetFromForm(form);
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermission(DesignSampleSetPermission.class)
     public class CreateSampleSetAction extends FormViewAction<CreateSampleSetForm>
     {
         ActionURL _successUrl;
@@ -3402,19 +3508,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateCommand(CreateSampleSetForm form, Errors errors)
         {
-            if (StringUtils.isEmpty(form.getName()))
-                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
-            else
-            {
-                int nameMax = ExperimentService.get().getTinfoMaterialSource().getColumn("Name").getScale();
-                if (form.getName().length() > nameMax)
-                    errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
-                else if (ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName()) != null)
-                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
-            }
-            int nameExpMax = ExperimentService.get().getTinfoMaterialSource().getColumn("NameExpression").getScale();
-            if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
-                errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+            validateSampleSetForm(form, errors);
         }
 
         @Override
@@ -3426,17 +3520,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(CreateSampleSetForm form, BindException errors) throws Exception
         {
-            List<GWTPropertyDescriptor> properties = new ArrayList<>();
-
-            GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
-            descriptor.setName(ExpMaterialTable.Column.Name.name());
-            properties.add(descriptor);
-
-            ExpSampleSet sampleSet = ExperimentService.get().createSampleSet(
-                    getContainer(), getUser(), form.getName(), form.getDescription(),
-                    properties, Collections.emptyList(), -1, -1, -1, -1, form.getNameExpression(),
-                    null
-            );
+            ExpSampleSet sampleSet = createSampleSetFromForm(form);
 
             Domain domain = sampleSet.getType();
             DomainKind kind = domain.getDomainKind();

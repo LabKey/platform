@@ -43,8 +43,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -202,13 +201,19 @@ public class SampleSetDomainKind extends AbstractDomainKind
         {
             return false;
         }
-        return domain.getContainer().hasPermission(user, UpdatePermission.class);
+        return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, DesignSampleSetPermission.class);
+    }
+
+    @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
     }
 
     @Override
