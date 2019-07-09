@@ -3551,6 +3551,9 @@ public class ExperimentController extends SpringActionController
         private Integer rowId;
         private String lsid;
 
+        //Parameter used by the Flow module
+        private Boolean nameReadOnly = false;
+
         private List<String> importAliasKeys;
         private List<String> importAliasValues;
 
@@ -3657,6 +3660,16 @@ public class ExperimentController extends SpringActionController
         public void setImportAliasJson(String importAliasJson)
         {
             this.importAliasJson = importAliasJson;
+        }
+
+        public Boolean isNameReadOnly()
+        {
+            return nameReadOnly;
+        }
+
+        public void setNameReadOnly(Boolean nameReadOnly)
+        {
+            this.nameReadOnly = nameReadOnly;
         }
     }
 
