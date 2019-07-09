@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.samples;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -417,25 +418,50 @@ public abstract class UploadSamplesHelper
 
 
     private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException
     {
         Integer rowId;
-        if (sampleSetName == null)
-            rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-        else
-            rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+        try
+        {
+            if (sampleSetName == null)
+                rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+            else
+                rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
 
-        if (rowId == null)
-            return null;
+            if (rowId == null)
+                return null;
+        }
+        catch (ConversionException e)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+            if (sampleSetName == null)
+            {
+                sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
+            }
+            sb.append(" " + e.getMessage());
+            throw new ValidationException(sb.toString());
+        }
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
     }
 
-    private static ExpData findData(Container c, User user, String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
+    private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
+            throws ValidationException
     {
-        Integer rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-        if (rowId == null)
-            return null;
+        Integer rowId;
+
+        try
+        {
+            rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+            if (rowId == null)
+                return null;
+        }
+        catch (ConversionException e)
+        {
+            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e.getMessage());
+        }
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         return dataCache.computeIfAbsent(rowId, svc::getExpData);
