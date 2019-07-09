@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class ParentChildView extends VBox
         parentsHBox.addView(parentDatasView);
 
         Set<ExpMaterial> parentMaterials = parents.second;
-        QueryView parentSamplesView = createMaterialsView(parentMaterials, "parentMaterials", "Parent Samples");
+        QueryView parentSamplesView = createMaterialsView(parentMaterials, "parentMaterials", "Precursor Samples");
         parentsHBox.addView(parentSamplesView);
 
         Pair<Set<ExpData>, Set<ExpMaterial>> children = ExperimentService.get().getChildren(output);

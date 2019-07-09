@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,7 +202,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             }
             if (null != table && !forWrite)
                 table.setLocked(true);
-            if (null != table && null != cacheKey)
+            // TODO distinguish cases we can cache query/table with named parameters and when we can't (see 37732)
+            if (null != table && null != cacheKey && table.getNamedParameters().isEmpty())
                 tableInfoCache.put(cacheKey, table);
         }
         if (null == table)

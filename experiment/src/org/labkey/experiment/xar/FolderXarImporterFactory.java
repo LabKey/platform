@@ -53,6 +53,12 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
         return new FolderXarImporter();
     }
 
+    @Override
+    public int getPriority()
+    {
+        return 70;
+    }
+
     public class FolderXarImporter implements  FolderImporter<FolderDocument.Folder>
     {
         @Override

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2013-2018 LabKey Corporation
+ * Copyright (c) 2013-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@
     {
         if (c.hasPermission(u, ReadPermission.class))
         {
-            return HtmlStringBuilder.of(link(c.getTitle(), c.getStartURL(u))).append(getTrailSeparator()).getHtmlString();
+            return HtmlStringBuilder.of(link(c.getTitle(), c.getStartURL(u)).clearClasses()).append(getTrailSeparator()).getHtmlString();
         }
         return HtmlStringBuilder.of(HtmlString.unsafe("<span>")).append(c.getTitle()).append(HtmlString.unsafe("</span>")).append(getTrailSeparator()).getHtmlString();
     }

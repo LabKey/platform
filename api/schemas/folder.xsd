@@ -44,6 +44,25 @@
                         </xs:attribute>
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="qcStates" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="showPrivateDataByDefault" type="xs:boolean">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    This setting determines whether users see non-public data by default. Users can
+                                    always explicitly choose to see data in any QC state.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="file" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    Names the file that stores qc state configuration information.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="notifications" minOccurs="0" type="notificationsType"/>
                 <xs:element name="groups" minOccurs="0" maxOccurs="1" type="sec:groupsType"/>
                 <xs:element name="roleAssignments" minOccurs="0" maxOccurs="1" type="ra:roleAssignmentsType"/>

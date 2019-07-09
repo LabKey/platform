@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -34,6 +34,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.definePieOptions();
         this.defineBinningOptions();
         this.defineTimeOptions();
+        this.defineMarginOptions();
 
         this.items = [{
             columnWidth: 0.5,
@@ -439,7 +440,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             value: '000000',  // initial selected color
             width: 70,
             hideLabel: true,
-            padding: '0 0 0 125px',
+            padding: '0 0 10px 125px',
             layoutOptions: 'binnable'
         });
     },
@@ -624,6 +625,79 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
     },
 
+    defineMarginOptions: function() {
+        this.marginTopInput = Ext4.create('Ext.form.field.Number', {
+            name: 'marginTop',
+            getInputValue: this.getMarginTop,
+            fieldLabel: 'Top',
+            labelWidth: 50,
+            width: 120,
+            padding: '0 10px 10px 0',
+            allowDecimals: false,
+            minValue: 0,
+            step: 10
+        });
+
+        this.marginRightInput = Ext4.create('Ext.form.field.Number', {
+            name: 'marginRight',
+            getInputValue: this.getMarginRight,
+            fieldLabel: 'Right',
+            labelWidth: 50,
+            width: 120,
+            padding: '0 10px 10px 0',
+            allowDecimals: false,
+            minValue: 0,
+            step: 10
+        });
+
+        this.marginBottomInput = Ext4.create('Ext.form.field.Number', {
+            name: 'marginBottom',
+            getInputValue: this.getMarginBottom,
+            fieldLabel: 'Bottom',
+            labelWidth: 50,
+            width: 120,
+            padding: '0 10px 10px 0',
+            allowDecimals: false,
+            minValue: 0,
+            step: 10
+        });
+
+        this.marginLeftInput = Ext4.create('Ext.form.field.Number', {
+            name: 'marginLeft',
+            getInputValue: this.getMarginLeft,
+            fieldLabel: 'Left',
+            labelWidth: 50,
+            width: 120,
+            padding: '0 10px 10px 0',
+            allowDecimals: false,
+            minValue: 0,
+            step: 10
+        });
+
+        this.marginsFieldContainer1 = Ext4.create('Ext.form.FieldContainer', {
+            fieldLabel: 'Margins (px)',
+            layout: 'hbox',
+            width: 450,
+            layoutOptions: ['line', 'point', 'box', 'series'],
+            items: [
+                this.marginTopInput,
+                this.marginRightInput
+            ]
+        });
+
+        this.marginsFieldContainer2 = Ext4.create('Ext.form.FieldContainer', {
+            hideFieldLabel: true,
+            layout: 'hbox',
+            width: 450,
+            layoutOptions: ['line', 'point', 'box', 'series'],
+            padding: '0 0 0 105px',
+            items: [
+                this.marginBottomInput,
+                this.marginLeftInput
+            ]
+        });
+    },
+
     colorToStrConverter: function(colorSet)
     {
         var colorStrArr = [];
@@ -695,7 +769,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.binFieldRadioGroup,
             this.binShapeRadioGroup,
             this.binColorRadioGroup,
-            this.binSingleColorPicker
+            this.binSingleColorPicker,
+            // Note: the margins input fields were split into two field containers because it was easier to get the
+            // layout for the 4 total margin input fields to look nice when they were done as two field containers
+            // with 2 inputs on each row in an hbox layout.
+            this.marginsFieldContainer1,
+            this.marginsFieldContainer2
         ];
     },
 
@@ -911,6 +990,19 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if (Ext4.isDefined(chartConfig.binSingleColor))
             this.setBinColorPicker(chartConfig.binSingleColor);
+
+        if (Ext4.isDefined(chartConfig.marginTop)) {
+            this.setMarginTop(chartConfig.marginTop);
+        }
+        if (Ext4.isDefined(chartConfig.marginRight)) {
+            this.setMarginRight(chartConfig.marginRight);
+        }
+        if (Ext4.isDefined(chartConfig.marginBottom)) {
+            this.setMarginBottom(chartConfig.marginBottom);
+        }
+        if (Ext4.isDefined(chartConfig.marginLeft)) {
+            this.setMarginLeft(chartConfig.marginLeft);
+        }
 
         if (Ext4.isDefined(chartConfig.geomOptions))
         {
@@ -1259,6 +1351,38 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     setBinColorPicker: function(value) {
         if (value != null && value != 'none')
             this.binSingleColorPicker.setValue(value);
+    },
+
+    getMarginTop: function() {
+        return this.marginTopInput.getValue();
+    },
+
+    setMarginTop: function(value) {
+        this.marginTopInput.setValue(value);
+    },
+
+    getMarginRight: function() {
+        return this.marginRightInput.getValue();
+    },
+
+    setMarginRight: function(value) {
+        this.marginRightInput.setValue(value);
+    },
+
+    getMarginBottom: function() {
+        return this.marginBottomInput.getValue();
+    },
+
+    setMarginBottom: function(value) {
+        this.marginBottomInput.setValue(value);
+    },
+
+    getMarginLeft: function() {
+        return this.marginLeftInput.getValue();
+    },
+
+    setMarginLeft: function(value) {
+        this.marginLeftInput.setValue(value);
     }
 });
 

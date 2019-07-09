@@ -20,11 +20,6 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
 
     monitorValid: true,
 
-    layout: {
-        type: 'vbox',
-        align: 'stretch'
-    },
-
     display: 'query-response-panel',
 
     initComponent : function() {

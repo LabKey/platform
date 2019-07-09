@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 LabKey Corporation
+ * Copyright (c) 2014-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,11 +134,11 @@ public class ListManagerSchema extends UserSchema
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     bar.add(super.createViewButton(getViewItemFilter()));
-                    bar.add(createReportButton());
-                    bar.add(createCreateNewListButton());
+                    populateChartsReports(bar);
                     bar.add(createDeleteButton());
                     List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();
                     bar.add(super.createExportButton(recordSelectorColumns));
+                    bar.add(createCreateNewListButton());
                     bar.add(createImportListArchiveButton());
                     bar.add(createExportArchiveButton());
                 }

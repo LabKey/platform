@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2018 LabKey Corporation
+* Copyright (c) 2008-2019 LabKey Corporation
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -1240,6 +1240,7 @@ public class XarReader extends AbstractXarImporter
 
         if (expData != null)
         {
+            Data data = expData.getDataObject();
             Path existingFile = expData.getFilePath();
             String uri = _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
             if (uri != null && existingFile != null && !Files.isDirectory(existingFile))
@@ -1248,7 +1249,20 @@ public class XarReader extends AbstractXarImporter
                 if (null == newFile)
                     throw new ExperimentException("Unable to create path from URI: " + uri);
 
-                if (!Files.isDirectory(newFile) && !newFile.equals(existingFile))
+                boolean newFileExists = !Files.isDirectory(newFile) && Files.exists(newFile);
+                if (!newFileExists)
+                {
+                    getLog().warn("The data file with LSID " + dataLSID + " (referenced as "
+                            + xbData.getAbout() + " in the xar.xml, does not exist.");
+                }
+
+                // Issue 37561: if the existing file does not exist, don't try to keep using it or compare its contents
+                if (!Files.exists(existingFile))
+                {
+                    getLog().debug("Updating " + data.getClass().getSimpleName() + " with LSID '" + dataLSID + "', setting dataFileUrl");
+                    data.setDataFileUrl(uri);
+                }
+                else if (newFileExists && !newFile.equals(existingFile))
                 {
                     byte[] existingHash = hashFile(existingFile);
                     byte[] newHash = hashFile(newFile);
@@ -1267,8 +1281,9 @@ public class XarReader extends AbstractXarImporter
                 String containerDesc = otherContainer == null ? expData.getContainer().getPath() : otherContainer.getPath();
                 throw new XarFormatException("Cannot reference a data file (" + expData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
+
             Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(expData.getDataObject(), sourceApplicationId, runId, context, tiData);
+            updateSourceInfo(data, sourceApplicationId, runId, context, tiData);
         }
         else
         {

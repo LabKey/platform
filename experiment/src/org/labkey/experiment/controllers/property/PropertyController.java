@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -214,7 +215,7 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
@@ -228,7 +229,7 @@ public class PropertyController extends SpringActionController
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
             Map<String, Object> options = new HashMap<>();
-            GWTDomain newDomain;
+            GWTDomain newDomain = form.getDomainDesign();
             Domain domain = null;
             List<Domain> domains = null;
 
@@ -286,7 +287,6 @@ public class PropertyController extends SpringActionController
             }
             else if (kindName != null)
             {
-                newDomain = form.getDomainDesign();
                 JSONObject jsOptions = form.getOptions();
                 if (jsOptions == null)
                     jsOptions = new JSONObject();
@@ -360,7 +360,7 @@ public class PropertyController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
         @Override
@@ -379,11 +379,19 @@ public class PropertyController extends SpringActionController
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
-            List<String> updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            for (String msg : updateErrors)
-                errors.reject(ERROR_MSG, msg);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
+            updateErrors.setBindExceptionErrors(errors, ERROR_MSG);
 
-            return new ApiSimpleResponse("success", true);
+            Domain domain = PropertyService.get().getDomain(getContainer(), newDomain.getDomainURI());
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            if (domain != null)
+            {
+                Map<String, Object> map = convertDomainToApiResponse(DomainUtil.getDomainDescriptor(getUser(), domain));
+                resp.putAll(map);
+            }
+
+            resp.put("success", true);
+            return resp;
         }
     }
 
@@ -565,7 +573,7 @@ public class PropertyController extends SpringActionController
      */
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class InferDomainAction extends ReadOnlyApiAction<Object>
+    public class InferDomainAction extends ReadOnlyApiAction<InferDomainForm>
     {
         @Override
         protected ObjectMapper createObjectMapper()
@@ -576,7 +584,7 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(InferDomainForm form, BindException errors) throws Exception
         {
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
@@ -602,10 +610,32 @@ public class PropertyController extends SpringActionController
 
                         fields.add(prop);
                     }
+
+                    if (form.getNumLinesToInclude() != null)
+                    {
+                        response.put("data", loader.getFirstNLines(form.getNumLinesToInclude()));
+                    }
                 }
+
                 response.put("fields", fields);
             }
             return response;
+        }
+    }
+
+    public static class InferDomainForm
+    {
+        // TODO should -1 allow you to get all data?
+        private Integer _numLinesToInclude;
+
+        public Integer getNumLinesToInclude()
+        {
+            return _numLinesToInclude;
+        }
+
+        public void setNumLinesToInclude(Integer numLinesToInclude)
+        {
+            _numLinesToInclude = numLinesToInclude;
         }
     }
 
@@ -847,7 +877,8 @@ public class PropertyController extends SpringActionController
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    private static List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                             Container container, User user)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -859,10 +890,6 @@ public class PropertyController extends SpringActionController
 
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
-
-        List<String> errors = DomainUtil.validateProperties(domain, update);
-        if (!errors.isEmpty())
-            return errors;
 
         return kind.updateDomain(original, update, container, user);
     }
@@ -901,6 +928,9 @@ public class PropertyController extends SpringActionController
             Domain dom = PropertyService.get().getDomain(domainId);
             if (dom == null)
                 throw new NotFoundException("Could not find domain for " + domainId);
+
+            if (dom.getContainer() != container)
+                throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
 
             domain = DomainUtil.getDomainDescriptor(user, dom);
         }

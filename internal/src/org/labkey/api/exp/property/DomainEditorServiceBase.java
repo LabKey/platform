@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -224,7 +224,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     @NotNull
     public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
-        return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser());
+        return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser()).getAllErrors();
     }
 
     protected GWTDomain<? extends GWTPropertyDescriptor> getDomainDescriptor(String typeURI, Container domainContainer)
