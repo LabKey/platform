@@ -20,6 +20,7 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                 var cannotDeleteNoun = numCannotDelete === 1 ? nounSingular : nounPlural;
                 var totalNum = numCanDelete + numCannotDelete;
                 var totalNoun = totalNum === 1 ? nounSingular : nounPlural;
+                var dependencyText = "derived sample or assay data dependencies";
                 var text;
                 if (totalNum === 0) {
                     text = "No " + nounPlural + " selected for deletion."
@@ -30,17 +31,17 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                 }
                 else if (numCanDelete === 0) {
                     if (totalNum === 1) {
-                        text = "The " + totalNoun + " you've selected cannot be deleted because it has dependencies.  ";
+                        text = "The " + totalNoun + " you've selected cannot be deleted because it has " + dependencyText;
                     } else {
                         text = (numCannotDelete === 2) ? "Neither of" : "None of";
                         text += " the " + totalNum + " " + totalNoun + " you've selected can be deleted";
-                        text += " because they have dependencies.";
+                        text += " because they have " + dependencyText + ".";
                     }
                 }
                 else {
                     text = "You've selected " + totalNum + " " + totalNoun + " but only " + numCanDelete + " can be deleted.  ";
                     text += numCannotDelete + " " + cannotDeleteNoun + " cannot be deleted because ";
-                    text += (numCannotDelete === 1 ? " it has ": " they have ") + "dependencies."
+                    text += (numCannotDelete === 1 ? " it has ": " they have ") + dependencyText + "."
                 }
                 if (numCannotDelete > 0) {
                     text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets') + "'>more info</a>)";
