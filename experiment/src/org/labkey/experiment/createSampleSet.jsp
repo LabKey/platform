@@ -74,8 +74,8 @@
 <labkey:errors />
 <labkey:form action="" method="POST" layout="horizontal" id="sampleSetForm">
     <labkey:input
-            id="name" name="name" label="Name" isReadOnly="<%=bean.isUpdate()%>" value="<%=h(bean.getName())%>"
-            contextContent="Name of sample set (required)." size="60"
+            id="name" name="name" label="Name" isReadOnly="<%=bean.isUpdate() || bean.isNameReadOnly()%>" value="<%=h(bean.getName())%>"
+            contextContent="Name of sample set (required)." size="60" isDisabled="<%=bean.isNameReadOnly()%>"
     />
     <labkey:input
             id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
@@ -201,20 +201,6 @@
                 addAliasGroup();
             });
 
-            $("#btnSubmit").on('click', (function() {
-                let data = {};
-                $("#createSampleSetForm").serializeArray().map(function(x){
-                    if (!data[x.name]) {
-                        data[x.name] = x.value;
-                    } else {
-                        if (!$.isArray(data[x.name])){
-                            let prev = data[x.name];
-                            data[x.name] = [prev];
-                        }
-                        data[x.name].push(x.value);
-                    }
-                });
-            }));
         <%
             if (bean.getRowId() != null && StringUtils.isNotBlank(bean.getImportAliasJson())) {
         %>
