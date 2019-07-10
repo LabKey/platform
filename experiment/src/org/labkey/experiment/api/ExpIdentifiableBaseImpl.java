@@ -108,8 +108,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             {
                 assert !(_object instanceof IdentifiableEntity) || null == ((IdentifiableEntity)_object).getObjectId();
                 _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
-                if (_object instanceof IdentifiableEntity)
-                    ((IdentifiableEntity) _object).setObjectId(_objectId);
+                _object.setObjectId(_objectId);
             }
             _object = Table.insert(user, table, _object);
             assert !ensureObject || !(_object instanceof IdentifiableEntity) || _objectId == ((IdentifiableEntity)_object).getObjectId();
