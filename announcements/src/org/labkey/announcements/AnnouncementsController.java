@@ -2116,7 +2116,8 @@ public class AnnouncementsController extends SpringActionController
         if (email.hasChildren())
             menu.addChild(email);
 
-        menu.addChild("Admin", bean.adminURL);
+        if (bean.adminURL != null)
+            menu.addChild("Admin", bean.adminURL);
     }
 
 
@@ -2178,7 +2179,7 @@ public class AnnouncementsController extends SpringActionController
                 menu.addChild("New", bean.insertURL);
             if (bean.listURL != null)
                 menu.addChild("View List", bean.listURL);
-            if ((bean.listURL != null) && !isAdmin)
+            if ((bean.emailPrefsURL != null) && !isAdmin)
                 menu.addChild("Email Preferences", bean.emailPrefsURL);
 
             if (isAdmin)
