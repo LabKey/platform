@@ -197,7 +197,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
 
         log("QC States: verify xml file was created in export");
-        _fileBrowserHelper.selectFileBrowserItem("export/study/quality_control_states.xml");
+        _fileBrowserHelper.selectFileBrowserItem("export/quality_control_states.xml");
 
         log("QC States: import study into subfolder");
         createSubfolderAndImportStudyFromPipeline("QC States");

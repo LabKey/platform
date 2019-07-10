@@ -250,7 +250,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public double getVersion()
     {
-        return 19.10;
+        return 19.20;
     }
 
     @Override

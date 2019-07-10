@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.log4j.Logger;
@@ -292,6 +294,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return result;
     }
 
+    @Override
     public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, user, includeOtherContainers);
@@ -578,6 +581,16 @@ public class SampleSetServiceImpl implements SampleSetService
     @Override
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                             String nameExpression, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException
+    {
+        return createSampleSet(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
+                parentCol, nameExpression, templateInfo, null);
+    }
+
+    @NotNull
+    @Override
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                            String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
         throws ExperimentException
     {
         if (name == null)
@@ -667,6 +680,8 @@ public class SampleSetServiceImpl implements SampleSetService
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
+        String importAliasJson = getAliasJson(importAliases);
+
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid.toString());
         source.setName(name);
@@ -675,6 +690,7 @@ public class SampleSetServiceImpl implements SampleSetService
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         source.setContainer(c);
+        source.setMaterialParentImportAliasMap(importAliasJson);
 
         if (hasNameProperty)
         {
@@ -723,6 +739,24 @@ public class SampleSetServiceImpl implements SampleSetService
             throw lastException;
 
         return ss;
+    }
+
+    public String getAliasJson(Map<String, String> importAliases)
+    {
+        if (importAliases == null || importAliases.size() == 0)
+            return null;
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(importAliases);
+            return json;
+        }
+        catch (JsonProcessingException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 

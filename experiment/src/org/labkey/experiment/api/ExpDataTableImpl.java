@@ -786,6 +786,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         public WebDavUrlColumn (ColumnInfo colInfo, boolean relative)
         {
             super(colInfo);
+            setTextAlign("left");
             _relative = relative;
         }
 
