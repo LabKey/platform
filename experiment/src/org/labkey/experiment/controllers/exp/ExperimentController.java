@@ -51,7 +51,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
@@ -65,8 +64,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -195,6 +192,7 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -587,90 +585,7 @@ public class ExperimentController extends SpringActionController
 
             SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
-            QueryView queryView = new QueryView(schema, settings, errors)
-            {
-                @Override
-                protected boolean canInsert()
-                {
-                    return _source.canImportMoreSamples() && super.canInsert();
-                }
-
-                @Override
-                protected boolean canUpdate()
-                {
-                    return _source.canImportMoreSamples() && super.canUpdate();
-                }
-
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-
-                @Override
-                @NotNull
-                public PanelButton createExportButton(@Nullable List<String> recordSelectorColumns)
-                {
-                    PanelButton result = super.createExportButton(recordSelectorColumns);
-                    ActionURL url = new ActionURL(ExportSampleSetAction.class, getContainer());
-                    url.addParameter("sampleSetId", _source.getRowId());
-                    result.addSubPanel("XAR", new JspView<>("/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp", url));
-                    return result;
-                }
-
-                @Override
-                protected void populateButtonBar(DataView view, ButtonBar bar)
-                {
-                    super.populateButtonBar(view, bar);
-
-                    bar.add(getDeriveSamplesButton(_source.getRowId()));
-                }
-
-                @Override
-                public ActionButton createInsertMenuButton(ActionURL overrideInsertUrl, ActionURL overrideImportUrl)
-                {
-                    MenuButton button = new MenuButton("Insert");
-                    button.setTooltip(getInsertButtonText(INSERT_DATA_TEXT));
-                    button.setIconCls("plus");
-                    boolean hasInsertNewOption = false;
-                    boolean hasImportDataOption = false;
-
-                    if (showInsertNewButton())
-                    {
-                        ActionURL urlInsert = overrideInsertUrl == null ? urlFor(QueryAction.insertQueryRow) : overrideInsertUrl;
-                        if (urlInsert != null)
-                        {
-                            NavTree insertNew = new NavTree(getInsertButtonText(getInsertButtonText(INSERT_ROW_TEXT)), urlInsert);
-                            insertNew.setId(getBaseMenuId() + ":Insert:InsertNew");
-                            button.addMenuItem(insertNew);
-                            hasInsertNewOption = true;
-                        }
-                    }
-
-                    if (showImportDataButton())
-                    {
-                        ActionURL urlImport = overrideImportUrl == null ? urlFor(QueryAction.importData) : overrideImportUrl;
-                        if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
-                        {
-                            NavTree importData = new NavTree(getInsertButtonText(IMPORT_BULK_DATA_TEXT), urlImport);
-                            importData.setId(getBaseMenuId() + ":Insert:Import");
-                            button.addMenuItem(importData);
-                            hasImportDataOption = true;
-                        }
-                    }
-
-                    return hasInsertNewOption && hasImportDataOption ? button : hasInsertNewOption ? createInsertButton() : hasImportDataOption ? createImportButton() : null;
-
-                }
-
-            };
-            queryView.setTitle("Sample Set Contents");
+            QueryView queryView = new SampleSetContentsView(_source, schema, settings, errors);
 
             DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext(), false), _source.getRowId());
             detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
@@ -796,7 +711,7 @@ public class ExperimentController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    bar.add(getDeriveSamplesButton(null));
+                    bar.add(SampleSetContentsView.getDeriveSamplesButton(getContainer(),null));
                 }
             };
             view.setShowDetailsColumn(false);
@@ -3031,42 +2946,72 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(DeletePermission.class)
-    public class DeleteMaterialByRowIdAction extends AbstractDeleteAction
+    public class GetMaterialDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
         {
-            setHelpTopic("sampleSets");
-            return super.appendNavTrail(root);
+            if (deleteForm.getDataRegionSelectionKey() == null && deleteForm.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
         }
 
         @Override
-        protected void deleteObjects(DeleteForm deleteForm)
+        public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
         {
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(getUser(), getContainer(), deleteForm.getIds(false));
+            // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
+            List<Integer> canDelete = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(canDelete);
+
+            List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
+            canDelete.removeAll(cannotDelete);
+            List<Map<String, Object>> canDeleteRows = new ArrayList<>();
+            List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
+            allMaterials.forEach((material) -> {
+                Map<String, Object> rowMap = Map.of("RowId", material.getRowId(), "Name", material.getName());
+                if (canDelete.contains(material.getRowId()))
+                    canDeleteRows.add(rowMap);
+                else
+                    cannotDeleteRows.add(rowMap);
+            });
+
+
+            Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
+            partitionedIds.put("canDelete", canDeleteRows);
+            partitionedIds.put("cannotDelete", cannotDeleteRows);
+            return success(partitionedIds);
+        }
+    }
+
+    public static class DeleteConfirmationForm extends ViewForm
+    {
+        private String _dataRegionSelectionKey;
+        private Set<Integer> _rowIds;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
         }
 
-        @Override
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
         {
-            List<ExpMaterial> materials = getMaterials(deleteForm);
-            List<ExpRun> runs = ExperimentService.get().getDeletableRunsFromMaterials(materials);
-            return new ConfirmDeleteView("Sample", ShowMaterialAction.class, materials, deleteForm, runs);
+            _dataRegionSelectionKey = dataRegionSelectionKey;
         }
 
-        private List<ExpMaterial> getMaterials(DeleteForm deleteForm)
+        public Set<Integer> getRowIds()
         {
-            List<ExpMaterial> materials = new ArrayList<>();
-            for (int materialId : deleteForm.getIds(false))
-            {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(materialId);
-                if (material != null)
-                {
-                    materials.add(material);
-                }
-            }
-            return materials;
+            return _rowIds;
+        }
+
+        public void setRowIds(Set<Integer> rowIds)
+        {
+            _rowIds = rowIds;
+        }
+
+        public Set<Integer> getIds(boolean clear)
+        {
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), true, clear);
         }
     }
 
@@ -6038,14 +5983,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(DeleteSelectedDataAction.class, c);
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
-            return url;
-        }
-
-        public ActionURL getDeleteMaterialsURL(Container c, URLHelper returnURL)
-        {
-            ActionURL url = new ActionURL(DeleteMaterialByRowIdAction.class, c);
             if (returnURL != null)
                 url.addReturnURL(returnURL);
             return url;
