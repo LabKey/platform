@@ -593,13 +593,4 @@ public class ListImporter
         }
         return true;
     }
-
-    private boolean allowableTypeConversion(JdbcType incomingType, JdbcType domainType)
-    {
-        // See if the inferred jdbc type can be cast e.g. date -> string, int -> double | 34517
-        //  - We can always convert to String
-        //  - We can take integers if the list column type is more precise
-        return domainType.getJavaClass().equals(String.class) ||
-                (incomingType.isInteger() && JdbcType.promote(domainType, incomingType).equals(domainType));
-    }
 }
