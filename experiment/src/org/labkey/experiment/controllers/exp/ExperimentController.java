@@ -3350,11 +3350,6 @@ public class ExperimentController extends SpringActionController
         dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
         dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
 
-        ButtonBar bb = new ButtonBar();
-        bb.add(new ActionButton(new ActionURL(ExperimentController.UpdateMaterialSourceAction.class, model.getContainer()), "Submit"));
-        dr.setButtonBar(bb);
-        bb.setStyle(ButtonBar.Style.separateButtons);
-
         return dr;
     }
 
