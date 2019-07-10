@@ -23,7 +23,7 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                 var dependencyText = "derived sample or assay data dependencies";
                 var text;
                 if (totalNum === 0) {
-                    text = "No " + nounPlural + " selected for deletion."
+                    text = "Either no " + nounPlural + " are selected for deletion or the selected " + nounPlural + " are no longer valid."
                 }
                 else if (numCannotDelete === 0)  {
                     text = totalNum === 1 ? "The selected "  : (totalNum === 2 ? "Both " : "All " + totalNum + " ");
