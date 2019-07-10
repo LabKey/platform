@@ -68,6 +68,11 @@ public interface SampleSetService
             throws ExperimentException, SQLException;
 
     @NotNull
+    ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                 String nameExpression, @Nullable TemplateInfo templateInfo, Map<String, String> importAliases)
+            throws ExperimentException, SQLException;
+
+    @NotNull
     ExpSampleSet createSampleSet();
 
     @Nullable
