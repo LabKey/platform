@@ -2172,7 +2172,7 @@ public class AnnouncementsController extends SpringActionController
             setTitleHref(getBeginURL(c));
 
             ViewContext context = getViewContext();
-            boolean isAdmin = PageFlowUtil.isPageAdminMode(context);
+            boolean isAdminMode = PageFlowUtil.isPageAdminMode(context);
             MessagesBean bean = getModelBean(); 
             NavTree menu = new NavTree("");
             if (bean.insertURL != null)
