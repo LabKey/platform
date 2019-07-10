@@ -548,7 +548,7 @@ public class QueryView extends WebPartView<Object>
                 break;
         }
 
-        if (null == ret)
+        if (null == ret && null != getQueryDef())
             ret = _schema.urlFor(action, getQueryDef());
 
         if (ret == null)
