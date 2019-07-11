@@ -274,6 +274,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
         return SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
     }
 
+    @Deprecated
+    default ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                         String nameExpression, @Nullable TemplateInfo templateInfo, Map<String, String> importAliases)
+            throws ExperimentException, SQLException
+    {
+        return SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, importAliases);
+    }
+
     @NotNull
     @Deprecated
     default ExpSampleSet createSampleSet()

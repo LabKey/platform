@@ -71,6 +71,8 @@ import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -481,9 +483,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rowIdCol.setURL(url);
         setDetailsURL(url);
 
-        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteMaterialsURL(getContainer(), null);
-        setDeleteURL(new DetailsURL(deleteUrl));
-
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
@@ -687,18 +686,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         int sampleSetObjectId = requireNonNull(getOwnerObjectId());
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
-        DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), sampleSetObjectId)
-            .setFileLinkDirectory("sampleset")
-            .setIndexFunction( lsids -> () ->
-                {
-                    for (String lsid : lsids)
+        try
+        {
+            DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
+                    .setFileLinkDirectory("sampleset")
+                    .setIndexFunction(lsids -> () ->
                     {
-                        ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
-                        if (null != expMaterial)
-                            expMaterial.index(null);
-                    }
-                });
+                        for (String lsid : lsids)
+                        {
+                            ExpMaterialImpl expMaterial = ExperimentServiceImpl.get().getExpMaterial(lsid);
+                            if (null != expMaterial)
+                                expMaterial.index(null);
+                        }
+                    });
 
-        return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+            return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
     }
 }

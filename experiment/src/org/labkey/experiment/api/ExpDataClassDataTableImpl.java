@@ -467,7 +467,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         TableInfo propertiesTable = _dataClass.getTinfo();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), null)
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null)
             .setIndexFunction( lsids -> () ->
             {
                 List<ExpDataImpl> expDatas = ExperimentServiceImpl.get().getExpDatasByLSID(lsids);

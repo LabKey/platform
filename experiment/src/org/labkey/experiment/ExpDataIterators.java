@@ -720,10 +720,11 @@ public class ExpDataIterators
 
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
+        Map<String, String> _importAliases;
 
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user, @Nullable Integer ownerObjectId)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user, Map<String, String> importAliases, @Nullable Integer ownerObjectId)
         {
             _in = in;
             _expTable = expTable;
@@ -731,6 +732,7 @@ public class ExpDataIterators
             _container = container;
             _user = user;
             _ownerObjectId = ownerObjectId;
+            _importAliases = importAliases;
         }
 
         public PersistDataIteratorBuilder setIndexFunction(Function<List<String>, Runnable> indexFunction)
@@ -764,8 +766,12 @@ public class ExpDataIterators
 
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
 
+            Map<String, String> aliases = _importAliases != null ?
+                    _importAliases :
+                    new HashMap<>();
+
             SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"));
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             step0.setDebugName("drop alias");
 
             // Insert into exp.data then the provisioned table

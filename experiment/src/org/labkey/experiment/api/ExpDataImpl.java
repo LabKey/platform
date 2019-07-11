@@ -44,6 +44,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -599,7 +600,15 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 if (relPath == null)
                     return null;
 
-                relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                if(!FileContentService.get().isCloudRoot(getContainer()))
+                {
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                }
+                else
+                {
+                    // Do not encode path from S3 folder.  It is already encoded.
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
+                }
                 switch (type)
                 {
                     case folderRelative: return relPath;
