@@ -2179,10 +2179,10 @@ public class AnnouncementsController extends SpringActionController
                 menu.addChild("New", bean.insertURL);
             if (bean.listURL != null)
                 menu.addChild("View List", bean.listURL);
-            if ((bean.emailPrefsURL != null) && !isAdmin)
+            if ((bean.emailPrefsURL != null) && !isAdminMode)
                 menu.addChild("Email Preferences", bean.emailPrefsURL);
 
-            if (isAdmin)
+            if (isAdminMode)
                 addAdminMenus(bean, menu, context);
 
             setIsWebPart(asWebPart);
