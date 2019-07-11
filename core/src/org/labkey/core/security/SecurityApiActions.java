@@ -2163,6 +2163,7 @@ public class SecurityApiActions
 
     public static class TestCase extends AbstractActionPermissionTest
     {
+        @Override
         @Test
         public void testActionPermissions()
         {
