@@ -1323,10 +1323,8 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            Data insertedData = Table.insert(getUser(), tiData, data);
-            // Pull from the database so we get the magically filled-in fields,
-            // like Created, populated correctly
-            expData = new ExpDataImpl(new TableSelector(tiData).getObject(insertedData.getRowId(), Data.class));
+            expData = new ExpDataImpl(data);
+            expData.save(getUser());
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)
