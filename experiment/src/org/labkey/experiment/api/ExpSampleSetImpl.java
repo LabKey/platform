@@ -16,7 +16,10 @@
 
 package org.labkey.experiment.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -49,8 +52,6 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
-import org.labkey.api.search.SearchResultTemplate;
-import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -60,14 +61,15 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -618,8 +620,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
 
     private void indexSampleSet(SearchService.IndexTask indexTask)
     {
-        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(this);
-        url.setExtraPath(getContainer().getId());
+        ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
+        ActionURL url = null;
+
+        if (urlProvider != null)
+        {
+            url = urlProvider.getShowSampleSetURL(this);
+            url.setExtraPath(getContainer().getId());
+        }
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
@@ -656,4 +664,39 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return categoryName + ":" + getRowId();
     }
 
+    @Contract("null -> new")
+    private @NotNull Map<String, String> getImportAliases(MaterialSource ms) throws IOException
+    {
+        if (ms == null || StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
+            return Collections.emptyMap();
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            TypeReference<HashMap<String, String>> typeRef = new TypeReference<>() {};
+
+            return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
+        }
+        catch (IOException e)
+        {
+            throw new IOException(String.format("Failed to parse MaterialSource [%1$s] import alias json", ms.getRowId()), e);
+        }
+    }
+
+    public String getImportAliasJson()
+    {
+        return _object.getMaterialParentImportAliasMap();
+    }
+
+    @Override
+    public @NotNull Map<String, String> getImportAliasMap() throws IOException
+    {
+            return Collections.unmodifiableMap(getImportAliases(_object));
+    }
+
+    @Override
+    public void setImportAliasMap(Map<String, String> aliasMap)
+    {
+        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap));
+    }
 }

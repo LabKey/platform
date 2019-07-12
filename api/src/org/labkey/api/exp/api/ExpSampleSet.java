@@ -26,6 +26,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -165,4 +167,8 @@ public interface ExpSampleSet extends ExpObject
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    @NotNull Map<String, String> getImportAliasMap() throws IOException;
+
+    void setImportAliasMap(Map<String, String> aliasMap);
 }

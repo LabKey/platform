@@ -2769,19 +2769,23 @@ public class DataRegion extends DisplayElement
 
     protected void prepareParameters(RenderContext ctx)
     {
-        Map<String, Object> parameters = getQueryParameters();
-
-        if (!parameters.isEmpty())
+        // Treat parameters like filters in terms of showing them or not in the header of the grid
+        if (isShowFilterDescription())
         {
-            for (Map.Entry<String, Object> entry : parameters.entrySet())
+            Map<String, Object> parameters = getQueryParameters();
+
+            if (!parameters.isEmpty())
             {
-                String text = entry.getKey() + " = " + entry.getValue();
+                for (Map.Entry<String, Object> entry : parameters.entrySet())
+                {
+                    String text = entry.getKey() + " = " + entry.getValue();
 
-                ContextAction.Builder action = new ContextAction.Builder()
-                        .iconCls("question")
-                        .text(text);
+                    ContextAction.Builder action = new ContextAction.Builder()
+                            .iconCls("question")
+                            .text(text);
 
-                _contextActions.add(action.build());
+                    _contextActions.add(action.build());
+                }
             }
         }
     }
