@@ -257,12 +257,12 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         log("Verify required field for imported study");
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t999");
-        click(Locator.button("Submit"));
+        clickButton("Submit");
         waitForText("Data does not contain required field: TestString");
 
         log("Verify field validator for imported study");
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestString\tTestInt\nPTID123\t999\tZZZ\t333");
-        click(Locator.button("Submit"));
+        clickButton("Submit");
         waitForText("Value '333' for field 'TestInt' is invalid. TestInt must equals '999'.");
     }
 

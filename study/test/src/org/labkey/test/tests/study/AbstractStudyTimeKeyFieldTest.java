@@ -24,7 +24,6 @@ import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
 import org.labkey.test.pages.core.admin.LookAndFeelSettingsPage;
-import org.labkey.test.util.DataRegionTable;
 
 import java.io.File;
 import java.util.HashMap;
@@ -110,7 +109,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
-        importPage.uploadData(toUpload.getAbsolutePath(),false,"Duplicates were found in the database or imported data");
+        importPage.uploadData(toUpload,"Duplicates were found in the database or imported data");
     }
 
     //Ensure a row differing only in the time portion of the timestamp can be inserted if time is specified as an additional key
@@ -124,7 +123,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
-        importPage.uploadData(toUpload.getAbsolutePath(),true,"Duplicates were found in the database or imported data");
+        importPage.uploadData(toUpload, null);
     }
 
     //Ensure that it is possible to change additional key from time if doing so would not result in a collision
@@ -138,7 +137,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
-        importPage.uploadData(toUpload.getAbsolutePath(),true,"Duplicates were found in the database or imported data");
+        importPage.uploadData(toUpload, null);
         dataPage = goToDataset(folder,dataset);
         propertiesPage = dataPage.clickManageDataset();
         editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
