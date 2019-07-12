@@ -35,6 +35,6 @@ ALTER TABLE exp.data ALTER COLUMN objectid SET NOT NULL;
 ALTER TABLE exp.experimentrun ALTER COLUMN objectid SET NOT NULL;
 ALTER TABLE exp.material ALTER COLUMN objectid SET NOT NULL;
 
-CREATE UNIQUE INDEX idx_data_objectid ON exp.data (objectid) WHERE objectid IS NOT NULL;
-CREATE UNIQUE INDEX idx_experimentrun_objectid ON exp.experimentrun (objectid) WHERE objectid IS NOT NULL;
-CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid) WHERE objectid IS NOT NULL;
+CREATE UNIQUE INDEX idx_data_objectid ON exp.data (objectid);
+CREATE UNIQUE INDEX idx_experimentrun_objectid ON exp.experimentrun (objectid);
+CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);

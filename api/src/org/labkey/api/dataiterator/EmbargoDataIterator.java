@@ -10,10 +10,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
-// StatementDataIterator is already complicated enough, so the cache-ahead functionality is implemented by a separate class called
-// EmbargoDataIterator.  This class is similar to CachingDataIterator, however, where CachingDataIterator
-// caches rows that have have already been seen, EmbargoDataIterator caches rows _ahead_ and holds them back until
-// the StatementDataIterator indicates that they have been 'saved' and may be released.
+/**
+ * StatementDataIterator is already complicated enough, so the cache-ahead functionality is implemented by a separate class called
+ * EmbargoDataIterator.  This class is similar to CachingDataIterator, however, where CachingDataIterator
+ * caches rows that have have already been seen, EmbargoDataIterator caches rows _ahead_ and holds them back until
+ * the StatementDataIterator indicates that they have been 'saved' and may be released.
+ */
 
 public class EmbargoDataIterator extends AbstractDataIterator
 {

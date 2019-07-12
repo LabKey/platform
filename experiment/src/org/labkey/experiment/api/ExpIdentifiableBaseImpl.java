@@ -38,6 +38,8 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
     public ExpIdentifiableBaseImpl(Type object)
     {
         _object = object;
+        if (null != _object.getObjectId())
+            _objectId = _object.getObjectId();
     }
 
     public String getLSID()

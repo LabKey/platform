@@ -124,12 +124,12 @@ public class StatementDataIterator extends AbstractDataIterator
 
 
     /*
-     * EmbargoDataIterator and a StatementDataIterator can be paired such that the CachingDataIterator
+     * EmbargoDataIterator and a StatementDataIterator can be paired such that the EmbargoDataIterator
      * does not 'release' rows until the statement that operates on that row (e.g. inserts it) has been
      * executed.
      *
      * This is different than the normal flow of control where 'later' data iterators only call 'earlier' data iterators.
-     * In this case the StatementDataIterator is passing some internal state information forward to to the CachingDataIterator
+     * In this case the StatementDataIterator is passing some internal state information forward to to the EmbargoDataIterator
      * This is actually fine, since it's the DataIteratorBuilder's job to set up a correct pipeline.
      */
     public void setEmbargoDataIterator(EmbargoDataIterator cache)
