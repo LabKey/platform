@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
@@ -325,7 +324,12 @@ public class ModuleLoader implements Filter
         }
         catch (NoSuchMethodException e)
         {
-            throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />", e);
+            // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
+            File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
+            if (!webinfModulesDir.isDirectory())
+                throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />", e);
+            File[] modules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
+            explodedModuleDirs = null==modules ? Collections.emptyList() : Arrays.asList(modules);
         }
         catch (InvocationTargetException e)
         {
