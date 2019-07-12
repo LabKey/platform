@@ -18,6 +18,7 @@ package org.labkey.experiment;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
@@ -763,7 +764,7 @@ public class ExpDataIterators
 
             Map<String, String> aliases = _importAliases != null ?
                     _importAliases :
-                    new HashMap<>();
+                    new CaseInsensitiveHashMap<>();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
