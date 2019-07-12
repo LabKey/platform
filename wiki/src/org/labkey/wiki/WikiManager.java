@@ -180,8 +180,8 @@ public class WikiManager implements WikiService
 
             //insert initial version for this page
             wikiversion.setPageEntityId(entityId);
-            wikiversion.setCreated(wikiInsert.getCreated());
-            wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
+//            wikiversion.setCreated(wikiInsert.getCreated());
+//            wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
             wikiversion.setVersion(1);
             LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
             Table.insert(user, comm.getTableInfoPageVersions(), wikiversion);
@@ -241,8 +241,8 @@ public class WikiManager implements WikiService
             {
                 String entityId = wikiNew.getEntityId();
                 versionNew.setPageEntityId(entityId);
-                versionNew.setCreated(new Date(System.currentTimeMillis()));
-                versionNew.setCreatedBy(user.getUserId());
+//                versionNew.setCreated(new Date(System.currentTimeMillis()));
+//                versionNew.setCreatedBy(user.getUserId());
                 //get version number for new version
                 versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
                 //insert initial version for this page
@@ -486,6 +486,8 @@ public class WikiManager implements WikiService
             WikiVersion newWikiVersion = new WikiVersion(destName);
             newWikiVersion.setTitle(wikiVersion.getTitle());
             newWikiVersion.setBody(wikiVersion.getBody());
+            newWikiVersion.setCreatedBy(wikiVersion.getCreatedBy());
+            newWikiVersion.setCreated((wikiVersion.getCreated()));
             newWikiVersion.setRendererTypeEnum(wikiVersion.getRendererTypeEnum());
 
             if(firstVersion)
