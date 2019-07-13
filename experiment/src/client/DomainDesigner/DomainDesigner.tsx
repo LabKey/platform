@@ -91,25 +91,21 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         saveDomain(domain)
             .then((savedDomain) => {
-                this.setState(() => ({
+                this.showMessage('Domain saved successfully', 'success', {
+                    dirty: false,
                     domain: savedDomain,
-                    submitting: false,
-                    message: 'Domain saved successfully.',
-                    messageType: 'success',
-                    dirty: false
-                }));
+                    submitting: false
+                });
 
                 window.setTimeout(() => {
                     this.dismissAlert();
                 }, 5000);
-            })
-            .catch(error => {
-                this.setState(() => ({
-                    submitting: false,
-                    message: error.exception,
-                    messageType: 'danger'
-                }));
-            });
+            }, (msg) => this.showMessage(msg, 'danger', {
+                submitting: false
+            }))
+            .catch((error) => this.showMessage(error.exception, 'danger', {
+                submitting: false
+            }))
     };
 
     onChangeHandler = (newDomain, dirty) => {
@@ -120,7 +116,17 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     dismissAlert = () => {
-        this.setState(() => ({message: null, messageType: null}));
+        this.setState({
+            message: undefined,
+            messageType: undefined
+        });
+    };
+
+    showMessage = (message: string, messageType: string, additionalState?: Partial<IAppState>) => {
+        this.setState(Object.assign({}, additionalState, {
+            message,
+            messageType
+        }));
     };
 
     onCancelBtnHandler = () => {
