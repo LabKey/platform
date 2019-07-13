@@ -2818,6 +2818,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
+        @Override
         public ApiResponse execute(DeleteRunForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
@@ -2834,12 +2835,35 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteRunsAction extends MutatingApiAction<DeleteForm>
+    {
+        @Override
+        public void validateForm(DeleteForm form, Errors errors)
+        {
+            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
+                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
+        }
+
+        @Override
+        public ApiResponse execute(DeleteForm form, BindException errors)
+        {
+            Set<Integer> ids = form.getIds(true);
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), ids);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
     private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
     {
+        @Override
         public void validateCommand(DeleteForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(DeleteForm deleteForm, BindException errors) throws Exception
         {
             if (!deleteForm.isForceDelete())
@@ -2864,11 +2888,13 @@ public class ExperimentController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteForm form)
         {
             return form.getSuccessActionURL(ExperimentUrlsImpl.get().getOverviewURL(getContainer()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Confirm Deletion");
