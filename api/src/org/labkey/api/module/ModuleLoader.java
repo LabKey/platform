@@ -2021,64 +2021,64 @@ public class ModuleLoader implements Filter
     private void loadStartupProps()
     {
         File propsDir = new File(_webappDir.getParent(), "startup");
-        if (!propsDir.isDirectory())
-            return;
-
-        File newinstall = new File(propsDir,"newinstall");
-        if (newinstall.isFile())
+        if (propsDir.isDirectory())
         {
-            _newInstall = true;
-            if (newinstall.canWrite())
-                newinstall.delete();
-            else
-                throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
-        }
-
-        File[] propFiles = propsDir.listFiles((File dir, String name) -> StringUtils.equalsIgnoreCase(FileUtil.getExtension(name),("properties")));
-
-        if (propFiles != null)
-        {
-            List<File> sortedPropFiles = Arrays.stream(propFiles)
-                .sorted(Comparator.comparing(File::getName).reversed())
-                .collect(Collectors.toList());
-
-            for (File propFile : sortedPropFiles)
+            File newinstall = new File(propsDir, "newinstall");
+            if (newinstall.isFile())
             {
-                try (FileInputStream in = new FileInputStream(propFile))
-                {
-                    Properties props = new Properties();
-                    props.load(in);
-
-                    for (Map.Entry<Object, Object> entry : props.entrySet())
-                    {
-                        if (entry.getKey() instanceof String && entry.getValue() instanceof String)
-                        {
-                            ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
-                            if (_configPropertyMap.containsMapping(config.getScope(), config))
-                                _configPropertyMap.removeMapping(config.getScope(), config);
-                            _configPropertyMap.put(config.getScope(), config);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error parsing startup config properties file '" + propFile.getAbsolutePath() + "'", e);
-                }
+                _newInstall = true;
+                if (newinstall.canWrite())
+                    newinstall.delete();
+                else
+                    throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
             }
 
-            // load any system properties with the labkey prop prefix
-            for (Map.Entry<Object, Object> entry : System.getProperties().entrySet())
-            {
-                String name = String.valueOf(entry.getKey());
-                String value = String.valueOf(entry.getValue());
+            File[] propFiles = propsDir.listFiles((File dir, String name) -> StringUtils.equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
 
-                if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+            if (propFiles != null)
+            {
+                List<File> sortedPropFiles = Arrays.stream(propFiles)
+                        .sorted(Comparator.comparing(File::getName).reversed())
+                        .collect(Collectors.toList());
+
+                for (File propFile : sortedPropFiles)
                 {
-                    ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
-                    if (_configPropertyMap.containsMapping(config.getScope(), config))
-                        _configPropertyMap.removeMapping(config.getScope(), config);
-                    _configPropertyMap.put(config.getScope(), config);
+                    try (FileInputStream in = new FileInputStream(propFile))
+                    {
+                        Properties props = new Properties();
+                        props.load(in);
+
+                        for (Map.Entry<Object, Object> entry : props.entrySet())
+                        {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String)
+                            {
+                                ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
+                                if (_configPropertyMap.containsMapping(config.getScope(), config))
+                                    _configPropertyMap.removeMapping(config.getScope(), config);
+                                _configPropertyMap.put(config.getScope(), config);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _log.error("Error parsing startup config properties file '" + propFile.getAbsolutePath() + "'", e);
+                    }
                 }
+            }
+        }
+
+        // load any system properties with the labkey prop prefix
+        for (Map.Entry<Object, Object> entry : System.getProperties().entrySet())
+        {
+            String name = String.valueOf(entry.getKey());
+            String value = String.valueOf(entry.getValue());
+
+            if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+            {
+                ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
+                if (_configPropertyMap.containsMapping(config.getScope(), config))
+                    _configPropertyMap.removeMapping(config.getScope(), config);
+                _configPropertyMap.put(config.getScope(), config);
             }
         }
     }
