@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@glass/base": "0.6.0",
-    "@glass/domainproperties": "0.0.16"
+    "@glass/domainproperties": "0.0.20-fb-type-dependent-domain-fields-1.1"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
