@@ -363,7 +363,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
 
-            ExperimentService.get().syncRunEdges(run);
+            ExperimentService.get().queueSyncRunEdges(run);
 
             transaction.commit();
             return batch;
