@@ -80,8 +80,9 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.LineagePerfTest;
+import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.LineagePerfTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
@@ -134,7 +135,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 19.20;
+        return 19.21;
     }
 
     @Nullable
@@ -441,7 +442,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 ExpSampleSetTestCase.class,
                 UniqueValueCounterTestCase.class,
                 ExperimentServiceImpl.TestCase.class,
-                ExpDataTableImpl.TestCase.class
+                ExpDataTableImpl.TestCase.class,
+                ExperimentStressTest.class
                 , LineagePerfTest.class));
     }
 

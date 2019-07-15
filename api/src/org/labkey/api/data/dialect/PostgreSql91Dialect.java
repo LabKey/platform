@@ -1874,4 +1874,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
         return super.formatJdbcFunction("timestampdiff", arguments);
     }
+
+    @Override
+    public boolean supportsBatchGeneratedKeys()
+    {
+        return true;
+    }
 }
