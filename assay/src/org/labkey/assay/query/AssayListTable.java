@@ -31,9 +31,8 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.AssayController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         setName(AssaySchema.ASSAY_LIST_TABLE_NAME);
         setTitleColumn("Name");
 
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(_userSchema.getContainer());
+        ActionURL url = new ActionURL(AssayController.AssayBeginAction.class, _userSchema.getContainer());
         DetailsURL detailsURL = new DetailsURL(url, "rowId", FieldKey.fromParts("RowId"));
         // Don't let our context be stomped over by the one using the Container/Folder column. We want to stay
         // in the current container, even when the protocol is defined in another container.
