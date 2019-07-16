@@ -915,19 +915,19 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Name field must not be blank."));
+                exception.addError(new SimpleValidationError("Please provide a name for each field."));
                 continue;
             }
 
             if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
             {
-                exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "All property names must be unique. Duplicate found: " + name + ".";
+                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;
