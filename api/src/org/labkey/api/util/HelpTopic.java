@@ -58,6 +58,11 @@ public class HelpTopic
         return HELP_LINK_PREFIX;
     }
 
+    public static String getJdkJavaDocLinkPrefix()
+    {
+        return FormatItem.JDK_JAVADOC_BASE_URL;
+    }
+
     public String getHelpTopicHref()
     {
         return HELP_LINK_PREFIX + _topic;

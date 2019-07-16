@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
@@ -63,11 +64,13 @@ import java.util.Map;
 import java.util.Set;
 
 import static junit.framework.TestCase.fail;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -424,6 +427,50 @@ public class ExpSampleSetTestCase
         assertExpectedName(ss, expectedName3);
     }
 
+    @Test
+    public void testAliases() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+        props.add(new GWTPropertyDescriptor("age", "int"));
+
+        final ExpSampleSet ss = ExperimentService.get().createSampleSet(c, user,
+                "Samples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        Map<String, Object> row = new CaseInsensitiveHashMap<>();
+        row.put("name", "boo");
+        row.put("age", 20);
+        row.put("alias", "a,b,c");
+        rows.add(row);
+
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        TableInfo table = schema.getTable("Samples");
+        QueryUpdateService svc = table.getUpdateService();
+
+        List<Map<String, Object>> insertedRows = null;
+        try (DbScope.Transaction tx = table.getSchema().getScope().beginTransaction())
+        {
+            BatchValidationException errors = new BatchValidationException();
+            QueryUpdateService qus = table.getUpdateService();
+
+            insertedRows = qus.insertRows(user, c, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            tx.commit();
+        }
+
+        ExpMaterial m = ss.getSample(c, "boo");
+        Collection<String> aliases = m.getAliases();
+        assertThat(aliases, hasItems("a", "b", "c"));
+    }
+
+
     // Issue 33682: Calling insertRows on SampleSet with empty values will not insert new samples
     @Test
     public void testBlankRows() throws Exception
@@ -451,6 +498,7 @@ public class ExpSampleSetTestCase
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
         TableInfo table = schema.getTable("Samples");
         QueryUpdateService svc = table.getUpdateService();
+        assertNotNull(svc);
 
         // insert 3 rows with no values
         List<Map<String, Object>> rows = new ArrayList<>();

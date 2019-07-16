@@ -187,8 +187,9 @@
                         </table>
                         <labkey:form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments"></table>
+                            <br>
                             <table id="wiki-new-attachments"></table>
-                            <a id="wiki-file-link"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a>
+                            <a href="javascript:addFilePicker('wiki-new-attachments','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a>
                         </labkey:form>
                     </td>
                 </tr>

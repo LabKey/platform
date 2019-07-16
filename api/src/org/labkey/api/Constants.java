@@ -17,6 +17,11 @@ package org.labkey.api;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.module.ModuleLoader;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 
 /**
  * This class provides a single place to update system-wide constants used for sizing caches and other purposes.
@@ -25,6 +30,23 @@ import org.junit.Test;
  */
 public class Constants
 {
+    private static final Collection<Double> VALID_VERSIONS;
+
+    static
+    {
+        Collection<Double> list = new LinkedList<>();
+        double version = ModuleLoader.EARLIEST_UPGRADE_VERSION;
+
+        while (version <= getNextReleaseVersion())
+        {
+            list.add(version);
+            version = incrementVersion(version);
+        }
+
+        VALID_VERSIONS = Collections.unmodifiableCollection(list);
+    }
+
+
     /**
      * The most recent official release version number is used to generate help topics, tag all code-only modules, and
      * drive the script consolidation process. This constant should be updated just before branching each major release.
@@ -33,7 +55,7 @@ public class Constants
      */
     public static double getPreviousReleaseVersion()
     {
-        return 19.10;
+        return 19.20;
     }
 
     /**
@@ -56,6 +78,11 @@ public class Constants
         int fractional = round % 10;  // [1, 2, 3]
 
         return (round + (3 == fractional ? 8 : 1)) / 10.0;
+    }
+
+    public static Collection<Double> getValidVersions()
+    {
+        return VALID_VERSIONS;
     }
 
     /**

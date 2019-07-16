@@ -38,6 +38,8 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     void lock();
 
     int getRowId();
+    /** Get the exp.object objectId */
+    @Nullable Integer getObjectId();
     void setLSID(String lsid);
     void setLSID(Lsid lsid);
     String getLSIDNamespacePrefix();

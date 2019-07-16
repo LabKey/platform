@@ -132,7 +132,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
                         // use the property URI as the column's FieldKey name
                         pc.setFieldKey(FieldKey.fromParts(name));
-                        pc.setLabel(pd.getName());
+                        pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
                         return pc;
                     }
                 }
