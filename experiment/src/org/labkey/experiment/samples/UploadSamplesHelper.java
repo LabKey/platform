@@ -204,7 +204,7 @@ public abstract class UploadSamplesHelper
             if (outputApp != null)
                 outputApp.removeMaterialInput(user, material);
             existingSourceApp.removeMaterialInput(user, material);
-            ExperimentService.get().syncRunEdges(existingDerivationRun);
+            ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
         }
     }
 

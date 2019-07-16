@@ -32,6 +32,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -535,7 +536,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
+        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
