@@ -124,7 +124,8 @@ public class AssayModule extends SpringModule
 
         if (null != ss)
         {
-            ss.addSearchCategory(AssayService.assayCategory);
+            ss.addSearchCategory(AssayManager.ASSAY_CATEGORY);
+            ss.addDocumentProvider(new AssayDocumentProvider());
         }
 
         AdminConsole.addExperimentalFeatureFlag(AssayManager.EXPERIMENTAL_ASSAY_DATA_IMPORT, "UX Assay Data Import",

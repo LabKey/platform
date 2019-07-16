@@ -11,7 +11,6 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -74,7 +73,7 @@ public class ModuleAssayCache
                 {
                     // Validate the provider
                     AssayManager.get().verifyLegalName(provider);
-                    if (AssayManager.get().getProvider(provider.getName(), AssayService.get().getRegisteredAssayProviders()) != null) // Check against the registered providers
+                    if (AssayManager.get().getProvider(provider.getName(), AssayManager.get().getRegisteredAssayProviders()) != null) // Check against the registered providers
                     {
                         throw new IllegalArgumentException("A provider with the name " + provider.getName() + " has already been registered");
                     }
@@ -95,16 +94,19 @@ public class ModuleAssayCache
             }
         }
 
+        @Override
         public List<AssayProvider> getAssayProviders()
         {
             return _assayProviders;
         }
 
+        @Override
         public Map<String, PipelineProvider> getPipelineProviders()
         {
             return _pipelineProviders;
         }
 
+        @Override
         public Set<String> getRunLsidPrefixes()
         {
             return _runLsidPrefixes;
@@ -131,5 +133,4 @@ public class ModuleAssayCache
                 assertEquals("Assay providers from miniassay module", 2, PROVIDER_CACHE.getResourceMap(miniassay).size());
         }
     }
-
 }

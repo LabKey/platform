@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -52,9 +51,6 @@ import java.util.Set;
  */
 public interface AssayService
 {
-    @AssayMigration // Move to AssayManager or AssayModule
-    SearchService.SearchCategory assayCategory = new SearchService.SearchCategory("assay", "Study Assay");
-
     String BATCH_COLUMN_NAME = "Batch";
     String ASSAY_DIR_NAME = "assay";
 
@@ -234,7 +230,4 @@ public interface AssayService
      * The assay provider must implement an instance of the AssayFlagHandler interface
      */
     <FlagType extends ExpQCFlag> List<FlagType> getFlags(AssayProvider provider, int runId, Class<FlagType> cls);
-
-    @AssayMigration // Remove
-    List<AssayProvider> getRegisteredAssayProviders();
 }

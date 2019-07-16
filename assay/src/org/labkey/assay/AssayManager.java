@@ -19,7 +19,6 @@ package org.labkey.assay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFlagHandler;
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.assay.ModuleAssayCollections;
 import org.labkey.api.cache.Cache;
@@ -113,8 +112,10 @@ import java.util.stream.Collectors;
  */
 public class AssayManager implements AssayService
 {
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
+    public static final SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay");
     public static final String EXPERIMENTAL_ASSAY_DATA_IMPORT = "experimental-uxassaydataimport";
+
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "AssayProtocols");
 
     private final List<AssayProvider> _providers = new CopyOnWriteArrayList<>();
     private final List<AssayHeaderLinkProvider> _headerLinkProviders = new CopyOnWriteArrayList<>();
@@ -161,8 +162,7 @@ public class AssayManager implements AssayService
         provider.registerLsidHandler();
     }
 
-    @AssayMigration // private, non-static
-    public void verifyLegalName(AssayProvider provider)
+    void verifyLegalName(AssayProvider provider)
     {
         if (AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getName()) || AssaySchema.ASSAY_LIST_TABLE_NAME.equalsIgnoreCase(provider.getResourceName()))
         {
@@ -177,8 +177,7 @@ public class AssayManager implements AssayService
         return getProvider(providerName, getAssayProviders());
     }
 
-    @AssayMigration // private, non-static
-    public @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
+    @Nullable AssayProvider getProvider(String providerName, Collection<AssayProvider> providers)
     {
         for (AssayProvider potential : providers)
         {
@@ -639,7 +638,7 @@ public class AssayManager implements AssayService
             Map<String, Object> m = new HashMap<>();
             m.put(SearchService.PROPERTY.title.toString(), name);
             m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
-            m.put(SearchService.PROPERTY.categories.toString(), AssayService.assayCategory.getName());
+            m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
             String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
             assayRunsURL.setExtraPath(c.getId());
@@ -893,8 +892,7 @@ public class AssayManager implements AssayService
         return importURL;
     }
 
-    @Override
-    public List<AssayProvider> getRegisteredAssayProviders()
+    List<AssayProvider> getRegisteredAssayProviders()
     {
         return _providers;
     }

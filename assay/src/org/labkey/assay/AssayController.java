@@ -34,7 +34,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.audit.AuditLogService;
@@ -120,8 +119,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.assay.actions.AssayBatchesAction;
 import org.labkey.assay.actions.DeleteAction;
-import org.labkey.assay.actions.TemplateAction;
-import org.labkey.assay.actions.TsvImportAction;
 import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
 import org.labkey.assay.actions.GetAssayBatchesAction;
@@ -129,6 +126,8 @@ import org.labkey.assay.actions.GetProtocolAction;
 import org.labkey.assay.actions.ImportRunApiAction;
 import org.labkey.assay.actions.SaveAssayBatchAction;
 import org.labkey.assay.actions.SaveProtocolAction;
+import org.labkey.assay.actions.TemplateAction;
+import org.labkey.assay.actions.TsvImportAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1103,28 +1102,24 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        @AssayMigration // Review & remove?
         public ActionURL getBeginURL(Container container)
         {
             return new ActionURL(BeginAction.class, container);
         }
 
         @Override
-        @AssayMigration // Review & remove?
         public ActionURL getSummaryRedirectURL(Container container)
         {
             return new ActionURL(SummaryRedirectAction.class, container);
         }
 
         @Override
-        @AssayMigration // Review & remove?
         public ActionURL getSetResultFlagURL(Container container)
         {
             return new ActionURL(AssayController.SetResultFlagAction.class, container);
         }
 
         @Override
-        @AssayMigration // Review & remove?
         public ActionURL getChooseAssayTypeURL(Container container)
         {
             return new ActionURL(ChooseAssayTypeAction.class, container);

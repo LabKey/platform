@@ -4648,6 +4648,7 @@ public class StudyManager
 
         Runnable runEnumerate = new Runnable()
         {
+            @Override
             public void run()
             {
                 if (task == defaultTask)
@@ -4670,8 +4671,6 @@ public class StudyManager
                     // study protocol document
                     _enumerateProtocolDocuments(task, study);
                 }
-
-                AssayService.get().indexAssays(task, c);
             }
         };
 
