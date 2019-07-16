@@ -18,7 +18,7 @@ package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
@@ -144,7 +144,7 @@ public class PlateManager implements PlateService
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
         filter.addCondition(FieldKey.fromParts("Name"), name);
         filter.addCondition(FieldKey.fromParts("Container"), container);
-        PlateTemplateImpl template = new TableSelector(AssaySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
+        PlateTemplateImpl template = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
         if (template != null)
         {
             populatePlate(template);
@@ -158,7 +158,7 @@ public class PlateManager implements PlateService
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
         filter.addCondition(FieldKey.fromParts("RowId"), plateId);
         filter.addCondition(FieldKey.fromParts("Container"), container);
-        PlateTemplateImpl template = new TableSelector(AssaySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
+        PlateTemplateImpl template = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
         if (template != null)
         {
             populatePlate(template);
@@ -172,7 +172,7 @@ public class PlateManager implements PlateService
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
         filter.addCondition(FieldKey.fromParts("Container"), container);
-        List<PlateTemplateImpl> templates = new TableSelector(AssaySchema.getInstance().getTableInfoPlate(),
+        List<PlateTemplateImpl> templates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
                 filter, new Sort("Name")).getArrayList(PlateTemplateImpl.class);
         for (int i = 0; i < templates.size(); i++)
         {
@@ -199,7 +199,7 @@ public class PlateManager implements PlateService
         PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, rowid);
         if (plate != null)
             return plate;
-        plate = new TableSelector(AssaySchema.getInstance().getTableInfoPlate()).getObject(rowid, PlateImpl.class);
+        plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getObject(rowid, PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
@@ -213,7 +213,7 @@ public class PlateManager implements PlateService
         if (plate != null)
             return plate;
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container).addCondition(FieldKey.fromParts("DataFileId"), entityId);
-        plate = new TableSelector(AssaySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
+        plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
@@ -224,7 +224,7 @@ public class PlateManager implements PlateService
     public PlateImpl getPlate(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        PlateImpl plate = new TableSelector(AssaySchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
+        PlateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
@@ -233,7 +233,7 @@ public class PlateManager implements PlateService
 
     public WellGroup getWellGroup(Container container, int rowid)
     {
-        WellGroupImpl unboundWellgroup = new TableSelector(AssaySchema.getInstance().getTableInfoWellGroup()).getObject(rowid, WellGroupImpl.class);
+        WellGroupImpl unboundWellgroup = new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup()).getObject(rowid, WellGroupImpl.class);
         if (unboundWellgroup == null || !unboundWellgroup.getContainer().equals(container))
             return null;
         Plate plate = getPlate(container, unboundWellgroup.getPlateId());
@@ -249,7 +249,7 @@ public class PlateManager implements PlateService
     public WellGroup getWellGroup(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        WellGroupImpl unboundWellgroup = new TableSelector(AssaySchema.getInstance().getTableInfoWellGroup(), filter, null).getObject(WellGroupImpl.class);
+        WellGroupImpl unboundWellgroup = new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), filter, null).getObject(WellGroupImpl.class);
         if (unboundWellgroup == null)
             return null;
         Plate plate = getPlate(unboundWellgroup.getContainer(), unboundWellgroup.getPlateId());
@@ -331,7 +331,7 @@ public class PlateManager implements PlateService
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Sort sort = new Sort("Col,Row");
         Class<? extends PositionImpl> clazz = plate.isTemplate() ? PositionImpl.class : WellImpl.class;
-        return new TableSelector(AssaySchema.getInstance().getTableInfoWell(), plateFilter, sort).getArray(clazz);
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), plateFilter, sort).getArray(clazz);
 
     }
 
@@ -339,7 +339,7 @@ public class PlateManager implements PlateService
     {
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Class<? extends WellGroupTemplateImpl> clazz = plate.isTemplate() ? WellGroupTemplateImpl.class : WellGroupImpl.class;
-        return new TableSelector(AssaySchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(clazz);
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(clazz);
     }
 
     private String getLsid(PlateTemplateImpl plate, Class type, boolean instance)
@@ -367,7 +367,7 @@ public class PlateManager implements PlateService
         if (plate.getRowId() != null)
             throw new UnsupportedOperationException("Resaving of plate templates is not supported.");
 
-        DbScope scope = AssaySchema.getInstance().getSchema().getScope();
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
@@ -377,7 +377,7 @@ public class PlateManager implements PlateService
             plate.setContainer(container);
             plate.setCreatedBy(user.getUserId());
             plate.setCreated(new Date());
-            PlateTemplateImpl newPlate = Table.insert(user, AssaySchema.getInstance().getTableInfoPlate(), plate);
+            PlateTemplateImpl newPlate = Table.insert(user, AssayDbSchema.getInstance().getTableInfoPlate(), plate);
             savePropertyBag(container, plateInstanceLsid, plateObjectLsid, newPlate.getProperties());
 
             for (WellGroupTemplateImpl wellgroup : plate.getWellGroupTemplates())
@@ -386,7 +386,7 @@ public class PlateManager implements PlateService
                 String wellGroupObjectLsid = getLsid(plate, WellGroup.class, false);
                 wellgroup.setLsid(wellGroupInstanceLsid);
                 wellgroup.setPlateId(newPlate.getRowId());
-                Table.insert(user, AssaySchema.getInstance().getTableInfoWellGroup(), wellgroup);
+                Table.insert(user, AssayDbSchema.getInstance().getTableInfoWellGroup(), wellgroup);
                 savePropertyBag(container, wellGroupInstanceLsid, wellGroupObjectLsid, wellgroup.getProperties());
             }
 
@@ -400,7 +400,7 @@ public class PlateManager implements PlateService
                     String wellLsid = wellInstanceLsidPrefix + "-well-" + position.getRow() + "-" + position.getCol();
                     position.setLsid(wellLsid);
                     position.setPlateId(newPlate.getRowId());
-                    Table.insert(user, AssaySchema.getInstance().getTableInfoWell(), position);
+                    Table.insert(user, AssayDbSchema.getInstance().getTableInfoWell(), position);
                     savePropertyBag(container, wellLsid, wellObjectLsid, getPositionProperties(plate, position));
                 }
             }
@@ -453,7 +453,7 @@ public class PlateManager implements PlateService
     {
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
         plateFilter.addCondition(FieldKey.fromParts("RowId"), rowid);
-        PlateTemplateImpl plate = new TableSelector(AssaySchema.getInstance().getTableInfoPlate(),
+        PlateTemplateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
                 plateFilter, null).getObject(PlateTemplateImpl.class);
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
         PositionImpl[] positions = getPositions(plate);
@@ -468,13 +468,13 @@ public class PlateManager implements PlateService
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
 
-        DbScope scope = AssaySchema.getInstance().getSchema().getScope();
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
-            Table.delete(AssaySchema.getInstance().getTableInfoWell(), plateIdFilter);
-            Table.delete(AssaySchema.getInstance().getTableInfoWellGroup(), plateIdFilter);
-            Table.delete(AssaySchema.getInstance().getTableInfoPlate(), plateFilter);
+            Table.delete(AssayDbSchema.getInstance().getTableInfoWell(), plateIdFilter);
+            Table.delete(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateIdFilter);
+            Table.delete(AssayDbSchema.getInstance().getTableInfoPlate(), plateFilter);
             transaction.commit();
             clearCache();
         }
@@ -483,9 +483,9 @@ public class PlateManager implements PlateService
     public void deleteAllPlateData(Container container)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        Table.delete(AssaySchema.getInstance().getTableInfoWell(), filter);
-        Table.delete(AssaySchema.getInstance().getTableInfoWellGroup(), filter);
-        Table.delete(AssaySchema.getInstance().getTableInfoPlate(), filter);
+        Table.delete(AssayDbSchema.getInstance().getTableInfoWell(), filter);
+        Table.delete(AssayDbSchema.getInstance().getTableInfoWellGroup(), filter);
+        Table.delete(AssayDbSchema.getInstance().getTableInfoPlate(), filter);
         clearCache();
     }
 

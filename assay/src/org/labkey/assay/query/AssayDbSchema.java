@@ -1,21 +1,21 @@
-package org.labkey.api.assay;
+package org.labkey.assay.query;
 
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 
-public class AssaySchema
+public class AssayDbSchema
 {
-    private static final AssaySchema INSTANCE = new AssaySchema();
+    private static final AssayDbSchema INSTANCE = new AssayDbSchema();
     private static final String SCHEMA_NAME = "assay";
 
-    public static AssaySchema getInstance()
+    public static AssayDbSchema getInstance()
     {
         return INSTANCE;
     }
 
-    private AssaySchema()
+    private AssayDbSchema()
     {
     }
 

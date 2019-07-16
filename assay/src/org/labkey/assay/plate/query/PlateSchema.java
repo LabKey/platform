@@ -17,7 +17,7 @@
 package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
@@ -64,7 +64,7 @@ public class PlateSchema extends UserSchema
 
     public PlateSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AssaySchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AssayDbSchema.getInstance().getSchema());
     }
 
     @Override

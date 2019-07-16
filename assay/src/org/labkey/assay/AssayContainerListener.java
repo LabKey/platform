@@ -17,7 +17,7 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager.ContainerListener;
@@ -51,9 +51,9 @@ public class AssayContainerListener implements ContainerListener
         // plate service
         //
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(c);
-        Table.delete(AssaySchema.getInstance().getTableInfoWell(), containerFilter);
-        Table.delete(AssaySchema.getInstance().getTableInfoWellGroup(), containerFilter);
-        Table.delete(AssaySchema.getInstance().getTableInfoPlate(), containerFilter);
+        Table.delete(AssayDbSchema.getInstance().getTableInfoWell(), containerFilter);
+        Table.delete(AssayDbSchema.getInstance().getTableInfoWellGroup(), containerFilter);
+        Table.delete(AssayDbSchema.getInstance().getTableInfoPlate(), containerFilter);
 
         // Changing the container tree can change what assays are in scope
         AssayManager.get().clearProtocolCache();

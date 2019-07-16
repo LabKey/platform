@@ -16,7 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SimpleFilter;
@@ -46,7 +46,7 @@ public class WellGroupTable extends BasePlateTable
 {
     public WellGroupTable(PlateSchema schema, ContainerFilter cf, WellGroup.Type groupType)
     {
-        super(schema, AssaySchema.getInstance().getTableInfoWellGroup(), cf);
+        super(schema, AssayDbSchema.getInstance().getTableInfoWellGroup(), cf);
         final FieldKey keyProp = new FieldKey(null, "Property");
         final List<FieldKey> visibleColumns = new ArrayList<>();
         addWrapColumn(_rootTable.getColumn("RowId"));

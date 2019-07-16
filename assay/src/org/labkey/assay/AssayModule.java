@@ -17,7 +17,7 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -146,7 +146,7 @@ public class AssayModule extends SpringModule
     public Set<String> getSchemaNames()
     {
         HashSet<String> set = new HashSet<>();
-        set.add(AssaySchema.getInstance().getSchemaName());
+        set.add(AssayDbSchema.getInstance().getSchemaName());
         set.addAll(getProvisionedSchemaNames());
 
         return set;

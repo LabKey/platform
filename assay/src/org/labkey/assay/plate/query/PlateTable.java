@@ -16,7 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
@@ -43,7 +43,7 @@ public class PlateTable extends BasePlateTable
 {
     public PlateTable(PlateSchema schema, ContainerFilter cf)
     {
-        super(schema, AssaySchema.getInstance().getTableInfoPlate(), cf);
+        super(schema, AssayDbSchema.getInstance().getTableInfoPlate(), cf);
         setPublicSchemaName(PlateSchema.SCHEMA_NAME);
         final FieldKey keyProp = new FieldKey(null, "Property");
         final List<FieldKey> visibleColumns = new ArrayList<>();

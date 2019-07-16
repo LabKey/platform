@@ -20,7 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssaySchema;
+import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -358,7 +358,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             if (replaceIfExisting)
             {
-                DbSchema schema = AssaySchema.getInstance().getSchema();
+                DbSchema schema = AssayDbSchema.getInstance().getSchema();
                 try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                 {
                     ExpProtocol protocol;
