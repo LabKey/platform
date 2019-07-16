@@ -2955,7 +2955,7 @@ public class StudyManager
             ParticipantGroupManager.getInstance().clearCache(c);
 
             //
-            // participant and assay data (OntologyManager will take care of properties)
+            // participant data (OntologyManager will take care of properties)
             //
             // Table.delete(StudySchema.getInstance().getTableInfoStudyData(null), containerFilter);
             //assert deletedTables.add(StudySchema.getInstance().getTableInfoStudyData(null));
@@ -2972,16 +2972,6 @@ public class StudyManager
 
             // participant group cohort union view
             assert deletedTables.add(StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
-
-            //
-            // plate service
-            //
-            Table.delete(AssaySchema.getInstance().getTableInfoWell(), containerFilter);
-            assert deletedTables.add(AssaySchema.getInstance().getTableInfoWell());
-            Table.delete(AssaySchema.getInstance().getTableInfoWellGroup(), containerFilter);
-            assert deletedTables.add(AssaySchema.getInstance().getTableInfoWellGroup());
-            Table.delete(AssaySchema.getInstance().getTableInfoPlate(), containerFilter);
-            assert deletedTables.add(AssaySchema.getInstance().getTableInfoPlate());
 
             // Specimen comments
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
