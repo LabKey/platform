@@ -24,6 +24,7 @@ public enum JavaVersion
 {
     JAVA_12(false, true),
     JAVA_13(false, false),
+    JAVA_14(false, false),
     JAVA_FUTURE(false, false);
 
     private final boolean _deprecated;
@@ -58,6 +59,7 @@ public enum JavaVersion
         {
             case 12: return JAVA_12;
             case 13: return JAVA_13;
+            case 14: return JAVA_14;
         }
 
         if (version < 12)

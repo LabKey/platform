@@ -18,8 +18,8 @@ package org.labkey.api.data.bigiron;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.view.template.Warnings;
 
-import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * User: tgaluhn
@@ -32,7 +32,7 @@ import java.util.Set;
  */
 public class ClrAssemblyManager
 {
-    private static final Set<AbstractClrInstallationManager> _managers = new LinkedHashSet<>();
+    private static final Set<AbstractClrInstallationManager> _managers = new CopyOnWriteArraySet<>();
 
     private ClrAssemblyManager()
     {

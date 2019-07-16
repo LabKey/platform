@@ -68,9 +68,19 @@ public interface UpdateableTableInfo extends TableInfo
     @Nullable
     String getObjectURIColumnName();
 
+    /** getOwnerObjectId() is used to populate the exp.object.ownerObjectId column when inserting. */
+    @Nullable
+    default Integer getOwnerObjectId() { return null; }
+
     // name of column that contains exp.object.objectid
     @Nullable
     String getObjectIdColumnName();
+
+    /* if getObjectIdColumnName() != null, then return==true means insert into exp.object even if there is no domain or properties */
+    default boolean isAlwaysInsertExpObject()
+    {
+        return false;
+    }
 
     /**
      * Some columns in the SchemaTableInfo may be aliased in the QueryTableInfo.  This map describes the mapping.

@@ -202,7 +202,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void save(User user)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoExperiment());
+        save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
     }
 
     public void delete(User user)
