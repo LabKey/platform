@@ -155,7 +155,10 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, true, false);
+        if (ExperimentService.get().useUXDomainDesigner())
+            return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, false, true, false);
+        else
+            return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, true, false);
     }
 
     @Override
