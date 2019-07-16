@@ -17,6 +17,7 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -33,6 +34,7 @@ import org.labkey.api.study.PlateService;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.assay.view.AssayBatchesWebPartFactory;
 import org.labkey.assay.view.AssayList2WebPartFactory;
@@ -63,7 +65,7 @@ public class AssayModule extends SpringModule
     @Override
     public double getVersion()
     {
-        return 0.00;
+        return 19.21;
     }
 
     @Override
@@ -111,9 +113,9 @@ public class AssayModule extends SpringModule
             if (container != null)
             {
                 result.addAll(AssayService.get().getAssayProtocols(container)
-                        .stream()
-                        .map(protocol -> new AssayRunType(protocol, container))
-                        .collect(Collectors.toList()));
+                    .stream()
+                    .map(protocol -> new AssayRunType(protocol, container))
+                    .collect(Collectors.toList()));
             }
             return result;
         });
@@ -143,7 +145,18 @@ public class AssayModule extends SpringModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return Collections.emptySet();
+        HashSet<String> set = new HashSet<>();
+        set.add(AssaySchema.getInstance().getSchemaName());
+        set.addAll(getProvisionedSchemaNames());
+
+        return set;
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getProvisionedSchemaNames()
+    {
+        return PageFlowUtil.set("assayresult");
     }
 
     @Override

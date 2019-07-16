@@ -8,7 +8,7 @@ import org.labkey.api.data.TableInfo;
 public class AssaySchema
 {
     private static final AssaySchema INSTANCE = new AssaySchema();
-    private static final String SCHEMA_NAME = "study";
+    private static final String SCHEMA_NAME = "assay";
 
     public static AssaySchema getInstance()
     {

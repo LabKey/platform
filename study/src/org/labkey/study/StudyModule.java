@@ -519,7 +519,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getProvisionedSchemaNames()
     {
-        return PageFlowUtil.set("studydataset", "assayresult", "studydesign", "specimentables");
+        return PageFlowUtil.set("studydataset", "studydesign", "specimentables");
     }
 
     private void registerFolderTypes()
