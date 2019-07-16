@@ -547,7 +547,11 @@ public class Table
             fields.put(OWNER_COLUMN_NAME, user.getUserId());
         col = table.getColumn(CREATED_BY_COLUMN_NAME);
         if (null != col && null != user)
-            fields.put(CREATED_BY_COLUMN_NAME, user.getUserId());
+        {
+            int existingUserID = (int)fields.get("CreatedBy");
+            int userID = (0 == existingUserID) ? user.getUserId() : existingUserID;
+            fields.put(CREATED_BY_COLUMN_NAME, userID);
+        }
         col = table.getColumn(CREATED_COLUMN_NAME);
         if (null != col)
         {
