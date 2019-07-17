@@ -27,6 +27,7 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -109,7 +110,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, false, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(ContainerManager.getSharedContainer(), domain, false, false, false);
     }
 
     @Override
