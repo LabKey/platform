@@ -184,6 +184,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public static final String EXPERIMENTAL_LEGACY_LINEAGE = "legacy-lineage";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
+    public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
@@ -6589,6 +6590,12 @@ public class ExperimentServiceImpl implements ExperimentService
         }
 
         return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
+    }
+
+    @Override
+    public boolean useUXDomainDesigner()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
     }
 
     public static class TestCase extends Assert
