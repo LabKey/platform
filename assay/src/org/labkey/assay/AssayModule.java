@@ -17,39 +17,46 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.security.User;
-import org.labkey.api.study.assay.TsvDataHandler;
-import org.labkey.api.view.ActionURL;
-import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.assay.pipeline.AssayImportRunTask;
+import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.query.AssayDbSchema;
+import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.view.AssayBatchesWebPartFactory;
 import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
-import org.labkey.assay.query.AssaySchemaImpl;
-import org.labkey.assay.plate.PlateManager;
-import org.labkey.assay.plate.query.PlateSchema;
-import org.labkey.assay.pipeline.AssayImportRunTask;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
+import org.labkey.study.security.roles.AssayDesignerRole;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -112,6 +119,13 @@ public class AssayModule extends SpringModule
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+
+        PropertyService.get().registerDomainKind(new DefaultAssayDomainKind());
+        PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
+        PropertyService.get().registerDomainKind(new AssayRunDomainKind());
+        PropertyService.get().registerDomainKind(new AssayResultDomainKind());
+
+        RoleManager.registerRole(new AssayDesignerRole());
     }
 
     @Override
@@ -144,6 +158,15 @@ public class AssayModule extends SpringModule
 
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new AssayContainerListener());
+
+        AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
+            // Need only read permissions to view manage assays page
+            if (container.hasPermission(user, ReadPermission.class))
+            {
+                Container targetContainer = container.getContainerFor(ContainerType.DataType.folderManagement);
+                adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(targetContainer)));
+            }
+        });
     }
 
     @Override

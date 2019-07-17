@@ -30,7 +30,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
@@ -42,10 +41,6 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.AssayBatchDomainKind;
-import org.labkey.api.exp.property.AssayResultDomainKind;
-import org.labkey.api.exp.property.AssayRunDomainKind;
-import org.labkey.api.exp.property.DefaultAssayDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -79,7 +74,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.ExperimentListenerImpl;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
@@ -155,7 +149,6 @@ import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.security.permissions.ManageStudyPermission;
-import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
@@ -256,10 +249,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new DateDatasetDomainKind());
         PropertyService.get().registerDomainKind(new ContinuousDatasetDomainKind());
         PropertyService.get().registerDomainKind(new TestDatasetDomainKind());
-        PropertyService.get().registerDomainKind(new DefaultAssayDomainKind());
-        PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
-        PropertyService.get().registerDomainKind(new AssayRunDomainKind());
-        PropertyService.get().registerDomainKind(new AssayResultDomainKind());
         PropertyService.get().registerDomainKind(new CohortDomainKind());
         PropertyService.get().registerDomainKind(new StudyDomainKind());
         PropertyService.get().registerDomainKind(new LocationDomainKind());
@@ -294,7 +283,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         // Register early so these roles are available to Java code at upgrade time
         RoleManager.registerRole(new SpecimenCoordinatorRole());
         RoleManager.registerRole(new SpecimenRequesterRole());
-        RoleManager.registerRole(new AssayDesignerRole());
 
         AttachmentService.get().registerAttachmentType(ProtocolDocumentType.get());
         AttachmentService.get().registerAttachmentType(SpecimenRequestEventType.get());
@@ -421,14 +409,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
-            // Need only read permissions to view manage assays page
-            if (container.hasPermission(user, ReadPermission.class))
+            if (container.hasPermission(user, ReadPermission.class) && container.getActiveModules().contains(StudyModule.this) && container.hasPermission(user, ManageStudyPermission.class))
             {
-                Container targetContainer = container.getContainerFor(ContainerType.DataType.folderManagement);
-                adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(targetContainer)));
-
-                if (container.getActiveModules().contains(StudyModule.this) && container.hasPermission(user, ManageStudyPermission.class))
-                    adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
+                adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
             }
         });
 
