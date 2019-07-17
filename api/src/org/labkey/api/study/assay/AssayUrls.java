@@ -34,9 +34,9 @@ public interface AssayUrls extends UrlProvider
 {
     ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action);
 
-    @AssayMigration // Move these URL generators and the underlying actions to the study/PublishController
+    @AssayMigration // Remove this once FlowQueryView change is pushed
     ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
-    ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
+
     @Nullable
     ActionURL getDesignerURL(Container container, String providerName, @Nullable ActionURL returnURL);
 

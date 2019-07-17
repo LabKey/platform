@@ -28,6 +28,8 @@ import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.actions.AssayRunsAction;
 import org.labkey.api.study.actions.BaseAssayAction;
 import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.study.assay.PublishConfirmAction;
+import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -53,7 +55,10 @@ import java.util.List;
 
 public class PublishController extends SpringActionController
 {
-    private static final ActionResolver _resolver = new DefaultActionResolver(PublishController.class);
+    private static final ActionResolver _resolver = new DefaultActionResolver(PublishController.class,
+        PublishStartAction.class,
+        PublishConfirmAction.class
+    );
 
     public PublishController()
     {
@@ -79,6 +84,8 @@ public class PublishController extends SpringActionController
     public class PublishHistoryAction extends BaseAssayAction<PublishHistoryForm>
     {
         private ExpProtocol _protocol;
+
+        @Override
         public ModelAndView getView(PublishHistoryForm form, BindException errors)
         {
             ContainerFilter containerFilter = ContainerFilter.CURRENT;
@@ -108,6 +115,7 @@ public class PublishController extends SpringActionController
             return view;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer())).addChild(_protocol.getName(),

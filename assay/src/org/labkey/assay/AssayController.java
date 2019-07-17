@@ -86,6 +86,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
@@ -163,8 +164,6 @@ public class AssayController extends SpringActionController
             GetAssayBatchAction.class,
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
-            PublishStartAction.class,
-            PublishConfirmAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
             TransformResultsAction.class,
@@ -930,17 +929,6 @@ public class AssayController extends SpringActionController
             return url;
         }
 
-        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
-        {
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            return getProtocolURL(container, protocol, PublishStartAction.class);
-        }
-
-        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
-        {
-            return getProtocolURL(container, protocol, PublishConfirmAction.class);
-        }
-
         public ActionURL getAssayRunsURL(Container container, ExpProtocol protocol)
         {
             return getAssayRunsURL(container, protocol, null);
@@ -1134,6 +1122,12 @@ public class AssayController extends SpringActionController
         public ActionURL getChooseAssayTypeURL(Container container)
         {
             return new ActionURL(ChooseAssayTypeAction.class, container);
+        }
+
+        @Override
+        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
+        {
+            return PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(container, protocol);
         }
     }
 

@@ -126,7 +126,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.study.assay.PublishConfirmAction;
+import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -317,6 +320,18 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageFileWatchersURL(Container container)
         {
             return new ActionURL(StudyController.ManageFilewatchersAction.class, container);
+        }
+
+        @Override
+        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishStartAction.class);
+        }
+
+        @Override
+        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishConfirmAction.class);
         }
     }
 
