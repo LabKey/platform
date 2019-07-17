@@ -57,7 +57,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
@@ -82,7 +81,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.ExperimentListenerImpl;
-import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.usageMetrics.UsageMetricsService;
@@ -103,7 +101,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.pipeline.xml.AssayImportRunTaskType;
 import org.labkey.study.assay.AssayMigrationServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
@@ -134,7 +131,6 @@ import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.model.*;
-import org.labkey.study.pipeline.AssayImportRunTask;
 import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -288,8 +284,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ExperimentService.get().addExperimentListener(new ExperimentListenerImpl());
         
-        // Register early so file-based assays are available to Java code at upgrade time
-        ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         DataViewService.get().registerProvider(DatasetViewProvider.TYPE, new DatasetViewProvider());
         DataViewService.get().registerProvider(ReportViewProvider.TYPE, new ReportViewProvider());
 
@@ -355,8 +349,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         PipelineService.get().registerPipelineProvider(new StudyPipeline(this));
         PipelineService.get().registerPipelineProvider(new StudyImportProvider(this));
-
-        PipelineJobService.get().registerTaskFactoryFactory(AssayImportRunTaskType.type, new AssayImportRunTask.FactoryFactory());
 
         // This is in the First group because when a container is deleted,
         // the Experiment listener needs to be called after the Study listener,

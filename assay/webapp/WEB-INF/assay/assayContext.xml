@@ -6,7 +6,7 @@
     <bean id="assayPipelineRegistry" class="org.labkey.api.pipeline.TaskPipelineRegistrar">
         <property name="factoryImpls">
             <list>
-                <bean class="org.labkey.study.pipeline.AssayImportRunTask$Factory"/>
+                <bean class="org.labkey.assay.pipeline.AssayImportRunTask$Factory"/>
             </list>
         </property>
     </bean>

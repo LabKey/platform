@@ -17,7 +17,9 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.assay.AssayToStudyMigrationService;
@@ -46,6 +48,8 @@ import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.assay.query.AssaySchemaImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.pipeline.AssayImportRunTask;
+import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -104,12 +108,16 @@ public class AssayModule extends SpringModule
         FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
 
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
+
+        // Register early so file-based assays are available to Java code at upgrade time
+        ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
     }
 
     @Override
     protected void startupAfterSpringConfig(ModuleContext moduleContext)
     {
+        PipelineJobService.get().registerTaskFactoryFactory(AssayImportRunTaskType.type, new AssayImportRunTask.FactoryFactory());
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentRunTypeSource(container -> {
             Set<ExperimentRunType> result = new HashSet<>();
