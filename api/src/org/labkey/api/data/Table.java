@@ -548,16 +548,8 @@ public class Table
         col = table.getColumn(CREATED_BY_COLUMN_NAME);
         if (null != col && null != user )
         {
-//            version 1
-//            Object UserID = (fields.get(CREATED_BY_COLUMN_NAME) != null) ? fields.get(CREATED_BY_COLUMN_NAME) : user.getUserId();
-//            fields.put(CREATED_BY_COLUMN_NAME, UserID);
-
-//            version 2
-            if (fields.get(CREATED_BY_COLUMN_NAME) != null){
-                fields.put(CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
-            } else {
+            if (fields.get(CREATED_BY_COLUMN_NAME) == null)
                 fields.put(CREATED_BY_COLUMN_NAME, user.getUserId());
-            }
         }
         col = table.getColumn(CREATED_COLUMN_NAME);
         if (null != col)
