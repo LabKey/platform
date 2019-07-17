@@ -3,7 +3,6 @@ package org.labkey.assay;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.assay.ModuleAssayCollections;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -45,7 +44,7 @@ public class ModuleAssayCache
         synchronized (PROVIDER_LOCK)
         {
             if (null == _moduleAssayCollections)
-                _moduleAssayCollections = new ModuleAssayCollectionsImpl();
+                _moduleAssayCollections = new ModuleAssayCollections();
 
             return _moduleAssayCollections;
         }
@@ -59,13 +58,13 @@ public class ModuleAssayCache
         }
     }
 
-    private class ModuleAssayCollectionsImpl implements ModuleAssayCollections
+    class ModuleAssayCollections
     {
         private final List<AssayProvider> _assayProviders = new LinkedList<>();
         private final Map<String, PipelineProvider> _pipelineProviders = new HashMap<>();
         private final Set<String> _runLsidPrefixes = new HashSet<>();
 
-        private ModuleAssayCollectionsImpl()
+        private ModuleAssayCollections()
         {
             for (Module module : ModuleLoader.getInstance().getModules())
             {
@@ -94,19 +93,16 @@ public class ModuleAssayCache
             }
         }
 
-        @Override
         public List<AssayProvider> getAssayProviders()
         {
             return _assayProviders;
         }
 
-        @Override
         public Map<String, PipelineProvider> getPipelineProviders()
         {
             return _pipelineProviders;
         }
 
-        @Override
         public Set<String> getRunLsidPrefixes()
         {
             return _runLsidPrefixes;

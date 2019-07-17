@@ -17,9 +17,6 @@
 package org.labkey.assay.plate;
 
 import org.labkey.api.assay.dilution.DilutionCurve;
-import org.labkey.api.assay.dilution.EmptyCurveImpl;
-import org.labkey.api.assay.dilution.ParameterCurveImpl;
-import org.labkey.api.assay.dilution.PolynomialCurveImpl;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.WellGroup;

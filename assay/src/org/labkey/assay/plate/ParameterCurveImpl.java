@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.assay.dilution;
+package org.labkey.assay.plate;
 
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
@@ -30,7 +30,7 @@ import java.util.List;
  */
 public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 {
-    public ParameterCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType fitType) throws FitFailedException
+    public ParameterCurveImpl(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator, StatsService.CurveFitType fitType) throws FitFailedException
     {
         super(wellGroups, assumeDecreasing, percentCalculator, fitType);
     }
@@ -56,7 +56,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 
     public static class FourParameterCurve extends ParameterCurveImpl
     {
-        public FourParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator) throws FitFailedException
+        public FourParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
         {
             super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.FOUR_PARAMETER);
         }
@@ -64,7 +64,7 @@ public abstract class ParameterCurveImpl extends WellGroupCurveImpl
 
     public static class FiveParameterCurve extends ParameterCurveImpl
     {
-        public FiveParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator) throws FitFailedException
+        public FiveParameterCurve(List<? extends WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
         {
             super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.FIVE_PARAMETER);
         }

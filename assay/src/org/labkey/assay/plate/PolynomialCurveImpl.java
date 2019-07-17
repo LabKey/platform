@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.assay.dilution;
+
+package org.labkey.assay.plate;
 
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
@@ -24,13 +25,14 @@ import org.labkey.api.study.WellGroup;
 import java.util.List;
 
 /**
- * Created by klum on 10/10/2014.
+ * User: klum
+ * Date: Sep 2, 2009
  */
-public class EmptyCurveImpl extends WellGroupCurveImpl
+public class PolynomialCurveImpl extends WellGroupCurveImpl
 {
-    public EmptyCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
+    public PolynomialCurveImpl(List<WellGroup> wellGroups, boolean assumeDecreasing, PercentCalculator percentCalculator) throws FitFailedException
     {
-        super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.NONE);
+        super(wellGroups, assumeDecreasing, percentCalculator, StatsService.CurveFitType.POLYNOMIAL);
     }
 
     @Override

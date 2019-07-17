@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.labkey.api.study.assay;
+package org.labkey.assay.plate;
 
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 
 /*
 * User: adam

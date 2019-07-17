@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.labkey.api.assay.dilution;
+package org.labkey.assay.plate;
 
+import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
