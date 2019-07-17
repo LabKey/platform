@@ -17,6 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -33,6 +34,7 @@ public interface AssayUrls extends UrlProvider
 {
     ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action);
 
+    @AssayMigration // Move these URL generators and the underlying actions to the study/PublishController
     ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
     ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
     @Nullable

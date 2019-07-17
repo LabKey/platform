@@ -108,7 +108,7 @@
                 });
 
                 LABKEY.Ajax.request({
-                    url : LABKEY.ActionURL.buildURL('assay', 'autoCopyRun.api', null),
+                    url : LABKEY.ActionURL.buildURL('publish', 'autoCopyRun.api', null),
                     method : 'POST',
                     jsonData : data,
                     success: LABKEY.Utils.getCallbackWrapper(function(response)
