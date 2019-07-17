@@ -96,10 +96,11 @@ export class App extends React.PureComponent<any, StateProps> {
                 //const newDomain = clearFieldDetails(savedDomain);
                 this.navigate();
             })
-            .catch(error => {
+            .catch(badDomain => {
                 this.setState(() => ({
+                    domain: badDomain,
                     submitting: false,
-                    message: error.exception,
+                    message: (badDomain.domainException && badDomain.domainException.exception ? badDomain.domainException.exception : '') ,
                     messageType: 'danger'
                 }));
             });
