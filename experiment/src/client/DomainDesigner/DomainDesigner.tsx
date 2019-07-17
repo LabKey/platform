@@ -15,7 +15,7 @@
  */
 import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
-import {ActionURL} from "@labkey/api";
+import {ActionURL, Utils} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
 import {DomainForm, DomainDesign, fetchDomain, saveDomain} from "@glass/domainproperties"
 
@@ -93,9 +93,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             .then((savedDomain) => {
                 this.navigate();
             })
-            .catch((error) => this.showMessage(error.exception, 'danger', {
-                submitting: false
-            }))
+            .catch((error) => {
+                const msg = Utils.isObject(error) ? error.exception : error;
+                this.showMessage(msg, 'danger', {
+                    submitting: false
+                });
+            })
     };
 
     onChangeHandler = (newDomain, dirty) => {
