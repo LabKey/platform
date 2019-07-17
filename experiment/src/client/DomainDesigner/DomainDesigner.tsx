@@ -110,10 +110,11 @@ export class App extends React.PureComponent<any, StateProps> {
                     this.dismissAlert();
                 }, 5000);
             })
-            .catch(error => {
+            .catch(badDomain => {
                 this.setState(() => ({
+                    domain: badDomain,
                     submitting: false,
-                    message: error.exception,
+                    message: (badDomain.domainException && badDomain.domainException.exception ? badDomain.domainException.exception : '') ,
                     messageType: 'danger'
                 }));
             });
