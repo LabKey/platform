@@ -210,23 +210,13 @@ public class PipelineServiceImpl implements PipelineService
                         // File root is in the cloud
                         return new PipeRootImpl(createPipelineRoot(container, FileContentService.CLOUD_ROOT_PREFIX + "/" + svc.getCloudRootName(container)));
                     }
-                    else if (!svc.isUseDefaultRoot(container.getProject()))
+                    else
                     {
-                        // File root has been overridden, so set the pipeline root to the same place
                         Path root = svc.getFileRootPath(container);
                         if (root != null)
                         {
-                            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                            if (null != dir)
-                                return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir.getFileSystemDirectoryPath())), false);
-                        }
-                    }
-                    else
-                    {
-                        Path root = svc.getDefaultRootPath(container, true);
-                        if (root != null)
-                        {
                             Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
+                            // Create the @files subdirectory if needed
                             if (!Files.exists(dir))
                                 Files.createDirectories(dir);
                             return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir)), true);
