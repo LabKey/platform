@@ -202,16 +202,26 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends BaseAssayAction<ProtocolIdForm>
     {
+        @Override
         public ModelAndView getView(ProtocolIdForm o, BindException errors)
         {
             setHelpTopic(new HelpTopic("adminAssays"));
             return AssayService.get().createAssayListView(getViewContext(), false, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Assays", new ActionURL(BeginAction.class, getContainer())).addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
         }
+    }
+
+    // Action for the "Assay" tab. Same as BeginAction, but tricks AppBar into leaving BeginAction links in the NavTrail,
+    // which keeps the tests happy. Assay refactor necessitated this. We might want to update the tests to click the tab,
+    // then remove this hack.
+    @RequiresPermission(ReadPermission.class)
+    public class TabAction extends BeginAction
+    {
     }
 
     public static class AssayListForm
@@ -263,6 +273,7 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class AssayListAction extends MutatingApiAction<AssayListForm>
     {
+        @Override
         public ApiResponse execute(AssayListForm form, BindException errors)
         {
             Container c = getContainer();
@@ -512,13 +523,13 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
     {
-        ExpProtocol _protocol;
+        @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors)
         {
-            _protocol = form.getProtocol();
-            throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+            throw new RedirectException(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
@@ -528,8 +539,8 @@ public class AssayController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class AssayBeginAction extends BaseAssayAction<ProtocolIdForm>
     {
-        ExpProtocol _protocol;
-        boolean _hasCustomView = false;
+        private ExpProtocol _protocol;
+        private boolean _hasCustomView = false;
 
         @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors)
@@ -579,7 +590,7 @@ public class AssayController extends SpringActionController
 
     public static class ChooseAssayBean
     {
-        ActionURL returnURL;
+        private ActionURL _actionURL;
 
         public List<AssayProvider> getProviders()
         {
@@ -593,14 +604,14 @@ public class AssayController extends SpringActionController
 
         public ActionURL getReturnURL()
         {
-            return returnURL;
+            return _actionURL;
         }
     }
 
     @RequiresPermission(DesignAssayPermission.class)
     public class ChooseAssayTypeAction extends FormViewAction<CreateAssayForm>
     {
-        Container createIn;
+        private Container _createIn;
 
         public void validateCommand(CreateAssayForm form, Errors errors)
         {
@@ -613,7 +624,7 @@ public class AssayController extends SpringActionController
                 errors.addError(new LabKeyError("Please select an assay type."));
                 return false;
             }
-            this.createIn = form.getCreateContainer();
+            _createIn = form.getCreateContainer();
 
             return true;
         }
@@ -621,13 +632,13 @@ public class AssayController extends SpringActionController
         public ActionURL getSuccessURL(CreateAssayForm form)
         {
             ActionURL returnURL = form.getReturnActionURL();
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(createIn, form.getProviderName(), returnURL);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_createIn, form.getProviderName(), returnURL);
         }
 
         public ModelAndView getView(CreateAssayForm form, boolean reshow, BindException errors)
         {
             ChooseAssayBean bean = new ChooseAssayBean();
-            bean.returnURL = form.getReturnActionURL();
+            bean._actionURL = form.getReturnActionURL();
             return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
@@ -1165,10 +1176,10 @@ public class AssayController extends SpringActionController
 
     public static class SetResultFlagForm extends ProtocolIdForm
     {
-        Integer[] resultRowIds;
-        String[] lsids;
-        String comment;
-        String columnName = "flag";
+        private Integer[] _resultRowIds;
+        private String[] _lsids;
+        private String _comment;
+        private String _columnName = "flag";
 
         public SetResultFlagForm()
         {
@@ -1176,48 +1187,48 @@ public class AssayController extends SpringActionController
 
         public Integer[] getResultRowIds()
         {
-            return resultRowIds;
+            return _resultRowIds;
         }
 
         public void setResultRowIds(Integer[] rowIds)
         {
-            this.resultRowIds = rowIds;
+            _resultRowIds = rowIds;
         }
 
         // These LSIDS are not 'real', it's the Data lsid + ":" + result.rowid
         public void setLsid(String[] lsids)
         {
-            this.lsids = lsids;
+            _lsids = lsids;
         }
 
         public void setComment(String comment)
         {
-            this.comment = comment;
+            _comment = comment;
         }
 
         public String getComment()
         {
-            return this.comment;
+            return _comment;
         }
 
         public String getColumnName()
         {
-            return columnName;
+            return _columnName;
         }
 
         public void setColumnName(String columnName)
         {
-            this.columnName = columnName;
+            _columnName = columnName;
         }
 
         public List<Integer> getRowList()
         {
-            if (null != resultRowIds)
-                return Arrays.asList(resultRowIds);
-            if (null == lsids)
+            if (null != _resultRowIds)
+                return Arrays.asList(_resultRowIds);
+            if (null == _lsids)
                 return Collections.emptyList();
-            ArrayList<Integer> ret = new ArrayList<>(lsids.length);
-            for (String lsid : lsids)
+            ArrayList<Integer> ret = new ArrayList<>(_lsids.length);
+            for (String lsid : _lsids)
             {
                 try
                 {

@@ -17,6 +17,8 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
@@ -54,7 +56,7 @@ import java.util.stream.Collectors;
 
 public class AssayModule extends SpringModule
 {
-    public static final String NAME = "Assay";
+    private static final String NAME = "Assay";
 
     @Override
     public String getName()
@@ -93,15 +95,16 @@ public class AssayModule extends SpringModule
     protected void init()
     {
         AssayService.setInstance(new AssayManager());
+        PlateService.setInstance(new PlateManager());
+        AssayToStudyMigrationService.setInstance(new AssayToStudyMigrationServiceImpl());
         addController("assay", AssayController.class);
-        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
-        ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+        addController("plate", PlateController.class);
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
         DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
         FolderTypeManager.get().registerFolderType(this, new AssayFolderType(this));
-        addController("plate", PlateController.class);
-        PlateService.setInstance(new PlateManager());
-        AssayToStudyMigrationService.setInstance(new AssayToStudyMigrationServiceImpl());
+
+        PropertyService.get().registerDomainKind(new PlateBasedAssaySampleSetDomainKind());
+        ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
     }
 
     @Override
@@ -133,6 +136,12 @@ public class AssayModule extends SpringModule
 
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new AssayContainerListener());
+    }
+
+    @Override
+    public ActionURL getTabURL(Container c, User user)
+    {
+        return new ActionURL(AssayController.TabAction.class, c);
     }
 
     @Override
