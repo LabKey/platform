@@ -69,10 +69,10 @@
         COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS lsid,
         COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS rowId
 
-      FROM ($PARENTS_INNER$ AS I INNER JOIN exp.Object O on I.fromObjectId = O.objectid)
-      LEFT OUTER JOIN exp.material PM ON O.objecturi = PM.lsid
-      LEFT OUTER JOIN exp.data PD ON O.objecturi = PD.lsid
-      LEFT OUTER JOIN exp.experimentrun PR ON O.objecturi = PR.lsid
+      FROM $PARENTS_INNER$ AS I
+      LEFT OUTER JOIN exp.material PM ON I.fromObjectId = PM.ObjectId
+      LEFT OUTER JOIN exp.data PD ON I.fromObjectId = PD.ObjectId
+      LEFT OUTER JOIN exp.experimentrun PR ON I.fromObjectId = PR.ObjectId
   ),
 
   /* CTE */
@@ -126,10 +126,10 @@
         COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS lsid,
         COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS rowId
 
-      FROM ($CHILDREN_INNER$ AS I INNER JOIN exp.Object O on I.toObjectId = O.objectid)
-      LEFT OUTER JOIN exp.material CM ON O.objecturi = CM.lsid
-      LEFT OUTER JOIN exp.data CD ON O.objecturi = CD.lsid
-      LEFT OUTER JOIN exp.experimentrun CR ON O.objecturi = CR.lsid
+      FROM $CHILDREN_INNER$ AS I
+      LEFT OUTER JOIN exp.material CM ON I.toObjectId = CM.ObjectId
+      LEFT OUTER JOIN exp.data CD ON I.toObjectId = CD.ObjectId
+      LEFT OUTER JOIN exp.experimentrun CR ON I.toObjectId = CR.ObjectId
   )
 
 

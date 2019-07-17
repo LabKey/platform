@@ -2158,6 +2158,7 @@ public class PageFlowUtil
         json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "Labkey Server");
         json.put("versionString", appProps.getLabKeyVersionString());
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
+        json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
         json.put("notifications", getNotificationJson(user));

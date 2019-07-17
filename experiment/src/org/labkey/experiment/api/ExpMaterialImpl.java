@@ -160,6 +160,17 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return Collections.unmodifiableList(aliases);
     }
 
+    /** Get the ObjectId of the ExpSampleSet that this ExpMaterial belongs to. */
+    @Nullable
+    public Integer getParentObjectId()
+    {
+        ExpSampleSet ss = getSampleSet();
+        if (ss == null)
+            return null;
+
+        return ss.getObjectId();
+    }
+
     @Override
     public void save(User user)
     {
@@ -168,14 +179,23 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void save(User user, ExpSampleSetImpl ss)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoMaterial());
+        save(user, ExperimentServiceImpl.get().getTinfoMaterial(), true);
         if (null != ss)
         {
             TableInfo ti = ss.getTinfo();
             if (null != ti)
+            {
                 new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+            }
         }
         index(null);
+    }
+
+    @Override
+    protected void save(User user, TableInfo table, boolean ensureObject)
+    {
+        assert ensureObject;
+        super.save(user, table, true);
     }
 
     @Override

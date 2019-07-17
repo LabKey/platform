@@ -126,6 +126,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun createExperimentRun(Container container, String name);
 
+    void queueSyncRunEdges(int runId);
+
+    void queueSyncRunEdges(ExpRun run);
+
+    void syncRunEdges(int runId);
+
     void syncRunEdges(ExpRun run);
 
     void syncRunEdges(Collection<ExpRun> runs);
