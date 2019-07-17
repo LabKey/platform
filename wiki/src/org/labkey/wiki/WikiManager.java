@@ -187,14 +187,17 @@ public class WikiManager implements WikiService
             }
             wikiversion.setVersion(1);
             LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
-            Table.insert(user, comm.getTableInfoPageVersions(), wikiversion);
+
+            //if copying wiki with history, avoid overwriting 'created by' user
+            User userToInsert = (isCopyingHistory) ? null : user;
+            Table.insert(userToInsert, comm.getTableInfoPageVersions(), wikiversion);
 
             //get rowid for newly inserted version
             wikiversion = WikiSelectManager.getVersion(wikiInsert, 1);
 
             //store initial version reference in Pages table
             wikiInsert.setPageVersionId(wikiversion.getRowId());
-            Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
+            Table.update(userToInsert, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
             getAttachmentService().addAttachments(wikiInsert.getAttachmentParent(), files, user);
 
@@ -249,14 +252,16 @@ public class WikiManager implements WikiService
                   versionNew.setCreated(new Date(System.currentTimeMillis()));
                   versionNew.setCreatedBy(user.getUserId());
                 }
+                //if copying wiki with history, avoid overwriting 'created by' user
+                User userToInsert = (isCopyingHistory) ? null : user;
                 //get version number for new version
                 versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
                 //insert initial version for this page
-                versionNew = Table.insert(user, comm.getTableInfoPageVersions(), versionNew);
+                versionNew = Table.insert(userToInsert, comm.getTableInfoPageVersions(), versionNew);
 
                 //update version reference in Pages table.
                 wikiNew.setPageVersionId(versionNew.getRowId());
-                Table.update(user, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
+                Table.update(userToInsert, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
             }
 
             transaction.commit();

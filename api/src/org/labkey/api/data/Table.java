@@ -546,11 +546,8 @@ public class Table
         if (null != col && null != user)
             fields.put(OWNER_COLUMN_NAME, user.getUserId());
         col = table.getColumn(CREATED_BY_COLUMN_NAME);
-        if (null != col && null != user )
-        {
-            if (fields.get(CREATED_BY_COLUMN_NAME) == null)
-                fields.put(CREATED_BY_COLUMN_NAME, user.getUserId());
-        }
+        if (null != col && null != user)
+            fields.put(CREATED_BY_COLUMN_NAME, user.getUserId());
         col = table.getColumn(CREATED_COLUMN_NAME);
         if (null != col)
         {
