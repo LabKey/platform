@@ -37,7 +37,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     constructor(props) {
         super(props);
 
-        const { domainId, queryName, returnUrl, schemaName } = ActionURL.getParameters();
+        const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
         this.state = {
             schemaName,
@@ -91,18 +91,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         saveDomain(domain)
             .then((savedDomain) => {
-                this.showMessage('Domain saved successfully', 'success', {
-                    dirty: false,
-                    domain: savedDomain,
-                    submitting: false
-                });
-
-                window.setTimeout(() => {
-                    this.dismissAlert();
-                }, 5000);
-            }, (msg) => this.showMessage(msg, 'danger', {
-                submitting: false
-            }))
+                this.navigate();
+            })
             .catch((error) => this.showMessage(error.exception, 'danger', {
                 submitting: false
             }))
@@ -134,13 +124,14 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             this.setState(() => ({showConfirm: true}));
         }
         else {
-            this.onConfirm();
+            this.navigate();
         }
     };
 
-    onConfirm = () => {
+    navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
+            // TODO if we don't have a returnUrl, should we just do a goBack()?
             window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
         });
     };
@@ -155,7 +146,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 title='Confirm Leaving Page'
                 msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
                 confirmVariant='success'
-                onConfirm={this.onConfirm}
+                onConfirm={this.navigate}
                 onCancel={this.hideConfirm}
             />
         )
