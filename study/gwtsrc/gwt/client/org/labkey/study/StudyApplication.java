@@ -41,10 +41,11 @@ public class StudyApplication implements EntryPoint
         public final String className;
 
         private static final Set<GWTModule> MODULES = new HashSet<GWTModule>();
+
         static
         {
-            MODULES.add(new AssayDesigner());
-            MODULES.add(new AssayImporter());
+//            MODULES.add(new AssayDesigner());
+//            MODULES.add(new AssayImporter());
             MODULES.add(new DatasetImporter());
             MODULES.add(new DatasetDesigner());
             MODULES.add(new SpecimenDesigner());
@@ -72,39 +73,39 @@ public class StudyApplication implements EntryPoint
         }
     }
 
-    public static class AssayDesigner extends GWTModule
-    {
-        public AssayDesigner()
-        {
-            super("gwt.client.org.labkey.assay.designer.client.AssayDesigner");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.assay.designer.client.AssayDesigner().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
-        }
-    }
-    
-    public static class AssayImporter extends GWTModule
-    {
-        public AssayImporter()
-        {
-            super(("gwt.client.org.labkey.assay.designer.client.AssayImporter"));
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.assay.designer.client.AssayImporter().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.assay.designer.client.AssayImporter();
-        }
-    }
+//    public static class AssayDesigner extends GWTModule
+//    {
+//        public AssayDesigner()
+//        {
+//            super("gwt.client.org.labkey.assay.designer.client.AssayDesigner");
+//        }
+//
+//        public void onSuccess()
+//        {
+//            new gwt.client.org.labkey.assay.designer.client.AssayDesigner().onModuleLoad();
+//        }
+//        EntryPoint getEntryPoint()
+//        {
+//            return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
+//        }
+//    }
+//
+//    public static class AssayImporter extends GWTModule
+//    {
+//        public AssayImporter()
+//        {
+//            super(("gwt.client.org.labkey.assay.designer.client.AssayImporter"));
+//        }
+//
+//        public void onSuccess()
+//        {
+//            new gwt.client.org.labkey.assay.designer.client.AssayImporter().onModuleLoad();
+//        }
+//        EntryPoint getEntryPoint()
+//        {
+//            return new gwt.client.org.labkey.assay.designer.client.AssayImporter();
+//        }
+//    }
 
     public static class DatasetImporter extends GWTModule
     {
@@ -198,15 +199,17 @@ public class StudyApplication implements EntryPoint
         
         final String moduleName = PropertyUtil.getServerProperty("GWTModule");
         
-        if ("AssayDesigner".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new AssayDesigner());
-        }
-        else if ("AssayImporter".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new AssayImporter());
-        }
-        else if ("DatasetImporter".equalsIgnoreCase(moduleName))
+//        if ("AssayDesigner".equalsIgnoreCase(moduleName))
+//        {
+//            GWT.runAsync(new AssayDesigner());
+//        }
+//        else if ("AssayImporter".equalsIgnoreCase(moduleName))
+//        {
+//            GWT.runAsync(new AssayImporter());
+//        }
+//        else
+
+        if ("DatasetImporter".equalsIgnoreCase(moduleName))
         {
             GWT.runAsync(new DatasetImporter());
         }

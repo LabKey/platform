@@ -1,11 +1,6 @@
 package org.labkey.api.assay;
 
-import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.ViewContext;
-import org.springframework.web.servlet.ModelAndView;
-
-import java.util.Map;
 
 @AssayMigration
 public interface AssayMigrationService
@@ -19,10 +14,4 @@ public interface AssayMigrationService
     {
         ServiceRegistry.get().registerService(AssayMigrationService.class, impl);
     }
-
-    DomainImporterServiceBase getAssayImportService(ViewContext ctx);
-
-    ModelAndView createAssayDesignerView(Map<String, String> properties);
-
-    ModelAndView createAssayImportView(Map<String, String> properties);
 }

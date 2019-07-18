@@ -23,7 +23,6 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.util.ColorGenerator;

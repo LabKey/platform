@@ -34,7 +34,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
@@ -129,6 +128,7 @@ import org.labkey.assay.actions.SaveAssayBatchAction;
 import org.labkey.assay.actions.SaveProtocolAction;
 import org.labkey.assay.actions.TemplateAction;
 import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.study.assay.AssayImportServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1131,7 +1131,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
-            return AssayMigrationService.get().getAssayImportService(getViewContext());
+            return new AssayImportServiceImpl(getViewContext());
         }
     }
 
