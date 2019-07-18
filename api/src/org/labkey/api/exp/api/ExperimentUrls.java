@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -65,6 +66,8 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getAddRunsToExperimentURL(Container container, ExpExperiment expExperiment);
 
     ActionURL getDomainEditorURL(Container container, String domainURI, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings);
+
+    ActionURL getDomainEditorURL(Container container, Domain domain, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings);
 
     ActionURL getShowDataClassURL(Container container, int rowId);
 
