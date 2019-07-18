@@ -1123,12 +1123,6 @@ public class AssayController extends SpringActionController
         {
             return new ActionURL(ChooseAssayTypeAction.class, container);
         }
-
-        @Override
-        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
-        {
-            return PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(container, protocol);
-        }
     }
 
     @RequiresPermission(DesignAssayPermission.class)

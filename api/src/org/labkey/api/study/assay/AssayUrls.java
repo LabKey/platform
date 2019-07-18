@@ -17,11 +17,10 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.assay.AssayMigration;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -33,9 +32,6 @@ import java.io.File;
 public interface AssayUrls extends UrlProvider
 {
     ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action);
-
-    @AssayMigration // Remove this once FlowQueryView change is pushed
-    ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
 
     @Nullable
     ActionURL getDesignerURL(Container container, String providerName, @Nullable ActionURL returnURL);

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.study.permissions;
 
-import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.security.permissions.AbstractPermission;
 
 /*
@@ -23,7 +22,6 @@ import org.labkey.api.security.permissions.AbstractPermission;
 * Date: May 19, 2009
 * Time: 4:35:02 PM
 */
-@AssayMigration // Move to assay-api
 public class DesignAssayPermission extends AbstractPermission
 {
     public DesignAssayPermission()
