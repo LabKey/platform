@@ -775,6 +775,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
 
+    boolean useUXDomainDesigner();
+
     public static class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
