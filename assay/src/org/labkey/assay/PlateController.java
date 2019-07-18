@@ -49,7 +49,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.view.AssayGWTView;
-import org.labkey.study.plate.PlateDataServiceImpl;
+import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;

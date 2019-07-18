@@ -25,7 +25,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.assay.AssayMigrationService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -95,7 +94,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.study.assay.AssayMigrationServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
@@ -241,7 +239,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         addController("participant-group", ParticipantGroupController.class);
         addController("study-design", StudyDesignController.class);
 
-        AssayMigrationService.setInstance(new AssayMigrationServiceImpl());
         ServiceRegistry.get().registerService(StudyService.class, StudyServiceImpl.INSTANCE);
         DefaultSchema.registerProvider(StudyQuerySchema.SCHEMA_NAME, new StudySchemaProvider(this));
 

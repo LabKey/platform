@@ -40,7 +40,8 @@ public class AssayApplication implements EntryPoint
     {
         public final String className;
 
-        private static final Set<GWTModule> MODULES = new HashSet<GWTModule>();
+        private static final Set<GWTModule> MODULES = new HashSet<>();
+
         static
         {
             MODULES.add(new AssayDesigner());
@@ -58,6 +59,7 @@ public class AssayApplication implements EntryPoint
         //
         // RunAsyncCallback
         //
+        @Override
         public void onFailure(Throwable caught)
         {
             ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + getClass());
@@ -76,10 +78,13 @@ public class AssayApplication implements EntryPoint
             super("gwt.client.org.labkey.assay.designer.client.AssayDesigner");
         }
 
+        @Override
         public void onSuccess()
         {
             new gwt.client.org.labkey.assay.designer.client.AssayDesigner().onModuleLoad();
         }
+
+        @Override
         EntryPoint getEntryPoint()
         {
             return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
@@ -93,10 +98,13 @@ public class AssayApplication implements EntryPoint
             super(("gwt.client.org.labkey.assay.designer.client.AssayImporter"));
         }
 
+        @Override
         public void onSuccess()
         {
             new gwt.client.org.labkey.assay.designer.client.AssayImporter().onModuleLoad();
         }
+
+        @Override
         EntryPoint getEntryPoint()
         {
             return new gwt.client.org.labkey.assay.designer.client.AssayImporter();
@@ -110,10 +118,13 @@ public class AssayApplication implements EntryPoint
             super("gwt.client.org.labkey.plate.designer.client.TemplateDesigner");
         }
 
+        @Override
         public void onSuccess()
         {
             new gwt.client.org.labkey.plate.designer.client.TemplateDesigner().onModuleLoad();
         }
+
+        @Override
         EntryPoint getEntryPoint()
         {
             return new gwt.client.org.labkey.plate.designer.client.TemplateDesigner();
@@ -130,6 +141,7 @@ public class AssayApplication implements EntryPoint
     }
 
 
+    @Override
     public void onModuleLoad()
     {
         RootPanel panel = getRootPanel();

@@ -17,7 +17,6 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
@@ -107,7 +106,6 @@ public class AssayModule extends SpringModule
     {
         AssayService.setInstance(new AssayManager());
         PlateService.setInstance(new PlateManager());
-        AssayToStudyMigrationService.setInstance(new AssayToStudyMigrationServiceImpl());
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
         DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));

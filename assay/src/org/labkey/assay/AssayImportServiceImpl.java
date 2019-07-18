@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.study.assay;
+package org.labkey.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.assay.AssayToStudyMigrationService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -232,7 +231,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             if (location != null)
                 context.setContainer(location);
 
-            org.labkey.api.gwt.client.assay.AssayService svc = AssayToStudyMigrationService.get().getAssayService(context);
+            org.labkey.api.gwt.client.assay.AssayService svc = new AssayServiceImpl(context);
 
             GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
 
@@ -306,7 +305,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
 
         try
         {
-            org.labkey.api.gwt.client.assay.AssayService svc = AssayToStudyMigrationService.get().getAssayService(context);
+            org.labkey.api.gwt.client.assay.AssayService svc = new AssayServiceImpl(context);
 
             GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
 

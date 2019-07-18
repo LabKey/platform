@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.study.plate;
+package org.labkey.assay.plate;
 
 import gwt.client.org.labkey.plate.designer.client.PlateDataService;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
@@ -29,7 +29,6 @@ import org.labkey.api.study.Position;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.view.ViewContext;
-import org.labkey.assay.plate.PlateManager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
