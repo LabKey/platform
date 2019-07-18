@@ -49,13 +49,13 @@ import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
+import org.labkey.assay.security.AssayDesignerRole;
 import org.labkey.assay.view.AssayBatchesWebPartFactory;
 import org.labkey.assay.view.AssayList2WebPartFactory;
 import org.labkey.assay.view.AssayListWebPartFactory;
 import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
-import org.labkey.study.security.roles.AssayDesignerRole;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,7 +77,7 @@ public class AssayModule extends SpringModule
     @Override
     public double getVersion()
     {
-        return 19.21;
+        return 19.22;
     }
 
     @Override
