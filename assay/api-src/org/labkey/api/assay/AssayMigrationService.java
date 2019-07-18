@@ -1,9 +1,7 @@
 package org.labkey.api.assay;
 
 import org.labkey.api.exp.property.DomainImporterServiceBase;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -21,10 +19,6 @@ public interface AssayMigrationService
     {
         ServiceRegistry.get().registerService(AssayMigrationService.class, impl);
     }
-
-    BaseRemoteService getPlateDataServiceImpl(ViewContext ctx);
-
-    HttpView getStudyGWTView(Map<String, String> properties);
 
     DomainImporterServiceBase getAssayImportService(ViewContext ctx);
 

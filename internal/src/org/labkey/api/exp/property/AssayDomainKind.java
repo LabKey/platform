@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -41,6 +42,7 @@ import java.util.Set;
  * Date: June 25, 2007
  * Time: 1:01:43 PM
  */
+@AssayMigration // Move to assay-api
 public abstract class AssayDomainKind extends AbstractDomainKind
 {
     private final String _namespacePrefix;

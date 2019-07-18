@@ -49,6 +49,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.view.AssayGWTView;
+import org.labkey.study.plate.PlateDataServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -141,7 +143,7 @@ public class PlateController extends SpringActionController
         @Override
         protected BaseRemoteService createService() throws IllegalStateException
         {
-            return AssayMigrationService.get().getPlateDataServiceImpl(getViewContext());
+            return new PlateDataServiceImpl(getViewContext());
         }
     }
 
@@ -247,7 +249,7 @@ public class PlateController extends SpringActionController
                 PlateTemplate template = templates.get(i);
                 properties.put("templateName[" + i + "]", template.getName());
             }
-            return AssayMigrationService.get().getStudyGWTView(properties);
+            return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
         }
 
         @Override

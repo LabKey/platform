@@ -2,7 +2,6 @@ package org.labkey.api.assay;
 
 import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.PlateTypeHandler;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -20,8 +19,6 @@ public interface AssayToStudyMigrationService
     {
         ServiceRegistry.get().registerService(AssayToStudyMigrationService.class, impl);
     }
-
-    PlateTypeHandler getPlateTypeHandler(String plateTypeName);
 
     AssayService getAssayService(ViewContext context);
 }
