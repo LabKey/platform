@@ -165,7 +165,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean isCopyingHistory) throws IOException
+    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean copyHistory) throws IOException
     {
         DbScope scope = comm.getSchema().getScope();
 
@@ -180,7 +180,7 @@ public class WikiManager implements WikiService
 
             //insert initial version for this page
             wikiversion.setPageEntityId(entityId);
-            if (!isCopyingHistory)
+            if (!copyHistory)
             {
                 wikiversion.setCreated(wikiInsert.getCreated());
                 wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
@@ -189,7 +189,7 @@ public class WikiManager implements WikiService
             LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
 
             //if copying wiki with history, avoid overwriting 'created by' user
-            User userToInsert = (isCopyingHistory) ? null : user;
+            User userToInsert = (copyHistory) ? null : user;
             Table.insert(userToInsert, comm.getTableInfoPageVersions(), wikiversion);
 
             //get rowid for newly inserted version
@@ -216,7 +216,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean isCopyingHistory)
+    public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory)
     {
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
@@ -247,13 +247,13 @@ public class WikiManager implements WikiService
             {
                 String entityId = wikiNew.getEntityId();
                 versionNew.setPageEntityId(entityId);
-                if (!isCopyingHistory)
+                if (!copyHistory)
                 {
                   versionNew.setCreated(new Date(System.currentTimeMillis()));
                   versionNew.setCreatedBy(user.getUserId());
                 }
                 //if copying wiki with history, avoid overwriting 'created by' user
-                User userToInsert = (isCopyingHistory) ? null : user;
+                User userToInsert = (copyHistory) ? null : user;
                 //get version number for new version
                 versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
                 //insert initial version for this page
