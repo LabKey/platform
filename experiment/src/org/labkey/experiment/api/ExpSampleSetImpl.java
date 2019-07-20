@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.NameGenerator;
@@ -674,7 +675,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            TypeReference<HashMap<String, String>> typeRef = new TypeReference<>() {};
+            TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
 
             return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
         }

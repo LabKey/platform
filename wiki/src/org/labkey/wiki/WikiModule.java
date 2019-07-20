@@ -236,7 +236,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         try
         {
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
         }
         catch (IOException e)
         {
