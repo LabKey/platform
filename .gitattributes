@@ -886,7 +886,6 @@ api/src/org/labkey/api/module/SimpleModuleContainerListener.java -text
 api/src/org/labkey/api/module/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
 api/src/org/labkey/api/module/TomcatVersion.java -text
-api/src/org/labkey/api/nab/NabUrls.java -text
 api/src/org/labkey/api/notification/EmailMessage.java -text
 api/src/org/labkey/api/notification/EmailPref.java -text
 api/src/org/labkey/api/notification/EmailService.java -text
@@ -1831,6 +1830,8 @@ api/webapp/ext-theme/labkey-base/scss/Component.scss -text
 api/webapp/ext-theme/madison/ext-all-debug.css -text
 api/webapp/ext-theme/sage/ext-all-debug.css -text
 api/webapp/ext-theme/seattle/ext-all-debug.css -text
+ assay/api-src/org/labkey/api/exp/property/AssayDomainKind.java -text
+assay/api-src/org/labkey/api/nab/NabUrls.java -text
 audit/module.properties -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-16.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-16.30-17.10.sql -text
@@ -2697,7 +2698,6 @@ internal/src/org/labkey/api/exp/flag/FlagColumn.java -text
 internal/src/org/labkey/api/exp/flag/FlagColumnRenderer.java -text
 internal/src/org/labkey/api/exp/flag/FlagForeignKey.java -text
 internal/src/org/labkey/api/exp/property/AssayBatchDomainKind.java -text
-internal/src/org/labkey/api/exp/property/AssayDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayResultDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayRunDomainKind.java -text
 internal/src/org/labkey/api/exp/property/DefaultAssayDomainKind.java -text
