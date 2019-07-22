@@ -589,7 +589,7 @@ public class StudyExportTest extends StudyManualTest
                 .clickEditDefinition();
 
         PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
-        fieldRow.properties().selectDisplayTab().description.set(COLUMN_DESC);
+        fieldRow.properties().selectDisplayTab().setDescription(COLUMN_DESC);
         fieldRow.properties().selectAdvancedTab().mvEnabledCheckbox.check();
 
         editDatasetPage.save();
