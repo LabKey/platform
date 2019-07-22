@@ -71,6 +71,13 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         return (TableInsertDataIterator)create(builder, table, c, context, null, null, null, false);
     }
 
+    @Deprecated  // use TableInsertDataIteratorBuilder
+    public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
+                                      @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+    {
+        return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, false);
+    }
+
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
          @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, boolean commitRowsBeforeContinuing)
     {

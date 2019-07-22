@@ -38,10 +38,7 @@ export class App extends React.PureComponent<any, StateProps> {
     {
         super(props);
 
-        const schemaName = ActionURL.getParameter('schemaName');
-        const queryName = ActionURL.getParameter('queryName');
-        const domainId = ActionURL.getParameter('domainId');
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
         this.state = {
             schemaName,
@@ -96,19 +93,8 @@ export class App extends React.PureComponent<any, StateProps> {
         // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
-                const newDomain = clearFieldDetails(savedDomain);
-
-                this.setState(() => ({
-                    domain: newDomain,
-                    submitting: false,
-                    message: 'Domain saved successfully.',
-                    messageType: 'success',
-                    dirty: false
-                }));
-
-                window.setTimeout(() => {
-                    this.dismissAlert();
-                }, 5000);
+                //const newDomain = clearFieldDetails(savedDomain);
+                this.navigate();
             })
             .catch(badDomain => {
                 this.setState(() => ({
@@ -136,13 +122,14 @@ export class App extends React.PureComponent<any, StateProps> {
             this.setState(() => ({showConfirm: true}));
         }
         else {
-            this.onConfirm();
+            this.navigate();
         }
     };
 
-    onConfirm = () => {
+    navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
+            // TODO if we don't have a returnUrl, should we just do a goBack()?
             window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
         });
     };
@@ -157,7 +144,7 @@ export class App extends React.PureComponent<any, StateProps> {
                 title='Confirm Leaving Page'
                 msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
                 confirmVariant='success'
-                onConfirm={this.onConfirm}
+                onConfirm={this.navigate}
                 onCancel={this.hideConfirm}
             />
         )
