@@ -22,7 +22,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -56,6 +58,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
@@ -80,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -408,25 +412,29 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new LookupForeignKey("lsid")
+        ContainerFilter sampleSetFkContainerFilter;
+        if (ss != null)
         {
-            public TableInfo getLookupTableInfo()
-            {
-                ExpSchema expSchema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
-                if (ss != null)
-                {
-                    // Be sure that we can resolve the sample set if it's defined in a separate container
-                    expSchema.setContainerFilter(new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), ss.getContainer()));
-                }
-                return expSchema.getTable(ExpSchema.TableType.SampleSets);
-            }
+            // Be sure that we can resolve the sample set if it's defined in a separate container.
+            // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
+            // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
+            Set<Container> containers = new HashSet<>();
+            containers.add(ss.getContainer());
+            containers.add(getContainer());
+            if (getContainer().getProject() != null)
+                containers.add(getContainer().getProject());
+            containers.add(ContainerManager.getSharedContainer());
+            sampleSetFkContainerFilter = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+        }
+        else
+        {
+            sampleSetFkContainerFilter = new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
+        }
 
-            @Override
-            public StringExpression getURL(ColumnInfo parent)
-            {
-                return super.getURL(parent, true);
-            }
-        });
+        typeColumnInfo.setFk(QueryForeignKey.from(_userSchema, sampleSetFkContainerFilter)
+                .schema(ExpSchema.SCHEMA_NAME)
+                .table(ExpSchema.TableType.SampleSets.name())
+                .key("lsid"));
         typeColumnInfo.setReadOnly(true);
         typeColumnInfo.setShownInInsertView(false);
 
