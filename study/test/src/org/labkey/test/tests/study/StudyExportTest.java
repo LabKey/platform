@@ -590,7 +590,7 @@ public class StudyExportTest extends StudyManualTest
 
         PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
         fieldRow.properties().selectDisplayTab().setDescription(COLUMN_DESC);
-        fieldRow.properties().selectAdvancedTab().mvEnabledCheckbox.check();
+        fieldRow.properties().selectAdvancedTab().setMvEnabled(true);
 
         editDatasetPage.save();
         // TODO: add lookups for current & other folders
