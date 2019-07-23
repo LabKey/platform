@@ -16,6 +16,7 @@
 package org.labkey.api.study.actions;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.assay.AssayMigration;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -44,6 +45,7 @@ import java.util.Map;
  * Time: 2:16:07 PM
  */
 @RequiresPermission(DesignAssayPermission.class)
+@AssayMigration // Move after moving AssayImportServiceImpl from study
 public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 {
     public static class ImportForm extends ProtocolIdForm

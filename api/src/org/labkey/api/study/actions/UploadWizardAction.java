@@ -106,11 +106,11 @@ import java.util.Set;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
-    /**
+/**
  * User: brittp
-* Date: Jul 26, 2007
-* Time: 7:01:17 PM
-*/
+ * Date: Jul 26, 2007
+ * Time: 7:01:17 PM
+ */
 @RequiresPermission(InsertPermission.class)
 public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends FormViewAction<FormType>
 {
@@ -460,7 +460,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addCancelButton(bbar, returnURL);
         insertView.getDataRegion().setButtonBar(bbar, DataRegion.MODE_INSERT);
 
-        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/study/assay/view/newUploadAssayProperties.jsp", runForm);
+        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", runForm);
         assayPropsView.setTitle("Assay Properties");
 
         _stepDescription = "Batch Properties";
@@ -630,13 +630,13 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             warningsView.setTitle("Transform Warnings");
         vbox.addView(warningsView);
 
-        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/study/assay/view/newUploadAssayProperties.jsp", newRunForm);
+        JspView<AssayRunUploadForm> assayPropsView = new JspView<>("/org/labkey/assay/view/newUploadAssayProperties.jsp", newRunForm);
         assayPropsView.setTitle("Assay Properties");
         vbox.addView(assayPropsView);
 
         if (!newRunForm.getBatchProperties().isEmpty())
         {
-            JspView<AssayRunUploadForm> batchPropsView = new JspView<>("/org/labkey/study/assay/view/newUploadBatchProperties.jsp", newRunForm);
+            JspView<AssayRunUploadForm> batchPropsView = new JspView<>("/org/labkey/assay/view/newUploadBatchProperties.jsp", newRunForm);
             batchPropsView.setTitle("Batch Properties");
             vbox.addView(batchPropsView);
         }
