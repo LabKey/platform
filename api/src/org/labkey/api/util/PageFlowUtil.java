@@ -1572,23 +1572,28 @@ public class PageFlowUtil
 
     public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
     {
-        return _getStandardIncludes(context, null, resources, false, false);
+        return _getStandardIncludes(context, null, resources, false, false, null);
     }
 
 
     public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
-        return _getStandardIncludes(context, null, resources, true, includePostParameters);
+        return _getStandardIncludes(context, null, resources, true, includePostParameters, null);
     }
 
     public static String getStandardIncludes(ViewContext context, PageConfig config)
     {
-        return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters());
+        return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters(), null);
+    }
+
+    public static String getStandardIncludes(ViewContext context, PageConfig config, @Nullable Set<String> pushPaths)
+    {
+        return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters(), pushPaths);
     }
 
 
     private static String _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources,
-            boolean includeDefaultResources, boolean includePostParameters)
+            boolean includeDefaultResources, boolean includePostParameters, @Nullable Set<String> pushPaths)
 
     {
         if (resources == null)
@@ -1606,7 +1611,7 @@ public class PageFlowUtil
             }
         }
 
-        StringBuilder sb = new StringBuilder(getIncludes(context, config, resources, includeDefaultResources, includePostParameters));
+        StringBuilder sb = new StringBuilder(getIncludes(context, config, resources, includeDefaultResources, includePostParameters, pushPaths));
 
         if (currentId != -1)
         {
@@ -1639,7 +1644,7 @@ public class PageFlowUtil
     }
 
     private static String getIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
-              boolean includeDefaultResources, boolean includePostParameters)
+              boolean includeDefaultResources, boolean includePostParameters, @Nullable Set<String> pushPaths)
     {
         Container c = context.getContainer();
 
@@ -1671,9 +1676,9 @@ public class PageFlowUtil
         resources.removeIf(Objects::isNull);
 
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getLabkeyJS(context, config, resources, includePostParameters));
-        sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
-        sb.append(getJavaScriptIncludes(c, resources));
+        sb.append(getLabkeyJS(context, config, resources, includePostParameters, pushPaths));
+        sb.append(getStylesheetIncludes(c, resources, includeDefaultResources, pushPaths));
+        sb.append(getJavaScriptIncludes(c, resources, pushPaths));
 
         return sb.toString();
     }
@@ -1682,12 +1687,12 @@ public class PageFlowUtil
     // need to output a <base> element prior to calling.
     public static String getStylesheetIncludes(Container c)
     {
-        return getStylesheetIncludes(c, null, true);
+        return getStylesheetIncludes(c, null, true, null);
     }
 
     // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
-    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources)
+    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources, Set<String> pushPaths)
     {
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
@@ -1697,12 +1702,17 @@ public class PageFlowUtil
 
         Set<String> preIncludedCss = getExtJSStylesheets(c, resources);
         for (String cssPath : preIncludedCss)
-            F.format(link, staticResourceUrl(cssPath));
+            F.format(link, staticResourceUrl(cssPath, pushPaths));
 
         if (includeDefaultResources)
         {
-            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css")));
-            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css")));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css", pushPaths)));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css", pushPaths)));
+
+            staticResourceUrl("fonts/Roboto/Roboto-Regular.ttf", pushPaths);
+            staticResourceUrl("fonts/Roboto/Roboto-Bold.ttf", pushPaths);
+            staticResourceUrl("fonts/TitilliumWeb/TitilliumWeb-Regular.ttf", pushPaths);
+            staticResourceUrl("fonts/TitilliumWeb/TitilliumWeb-Bold.ttf", pushPaths);
 
             ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
 
@@ -1863,27 +1873,35 @@ public class PageFlowUtil
 
     public static String staticResourceUrl(String resourcePath)
     {
+        return staticResourceUrl(resourcePath, null);
+    }
+
+    public static String staticResourceUrl(String resourcePath, Set<String> pushPaths)
+    {
         String slash = resourcePath.startsWith("/") ? "" : "/";
         if (null != staticResourcePrefix)
         {
             return staticResourcePrefix + slash + resourcePath;
         }
-        return AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
+        String path = AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
+        if (null != pushPaths)
+            pushPaths.add(path);
+        return path;
     }
 
 
-    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters, Set<String> pushPaths)
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<script src=\"").append(staticResourceUrl("/labkey.js")).append("\" type=\"text/javascript\"></script>\n");
+        sb.append("<script src=\"").append(staticResourceUrl("/labkey.js",pushPaths)).append("\" type=\"text/javascript\"></script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
                 (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
-            sb.append("<script src=\"").append(staticResourceUrl("/stacktrace-1.3.0.min.js")).append("\" type=\"text/javascript\"></script>\n");
-            sb.append("<script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("<script src=\"").append(staticResourceUrl("/stacktrace-1.3.0.min.js",pushPaths)).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("<script src=\"").append(staticResourceUrl("/mothership.js",pushPaths)).append("\" type=\"text/javascript\"></script>\n");
         }
 
         sb.append("<script type=\"text/javascript\">\n");
@@ -1893,7 +1911,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources)
+    private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources, Set<String> pushPaths)
     {
         /*
            scripts: the scripts that should be explicitly included
@@ -1925,7 +1943,10 @@ public class PageFlowUtil
             if (ClientDependency.isExternalDependency(s))
                 sb.append(s);
             else
-                sb.append(filter(staticResourceUrl("/" + s)));
+            {
+                String url = staticResourceUrl(s, pushPaths);
+                sb.append(filter(url));
+            }
             sb.append("\" type=\"text/javascript\"></script>\n");
         }
 

@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     PageTemplate me = (PageTemplate) HttpView.currentView();
@@ -39,6 +41,12 @@
         onLoad += "(document." + model.getFocus() + "?document." + model.getFocus() + ".focus():null);";
     if (model.getShowPrintDialog())
         onLoad += "window.print(); ";
+
+    var pushPaths = new LinkedHashSet<String>();
+    var includes = me.isAppTemplate()
+            ? PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies() /* TODO , pushPaths */)
+            : PageFlowUtil.getStandardIncludes(getViewContext(), model, pushPaths);
+    pushServerResources(request, pushPaths);
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -48,11 +56,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <%= text(model.getMetaTags(url)) %>
     <title><%= h(model.getTitle()) %></title>
-    <% if (me.isAppTemplate()) { %>
-    <%= PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies()) %>
-    <% } else { %>
-    <%= PageFlowUtil.getStandardIncludes(getViewContext(), model) %>
-    <% } %>
+    <%= unsafe(includes) %>
     <% if (null != model.getRssUrl()) { %>
     <link href="<%=text(model.getRssUrl().getEncodedLocalURIString())%>" type="application/rss+xml" title="<%=h(model.getRssTitle())%>" rel="alternate"/>
     <% } %>

@@ -35,6 +35,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -50,14 +51,18 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.PushBuilder;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -746,5 +751,20 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
     @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(ClientDependencies dependencies)
     {
+    }
+
+    public void pushServerResources(HttpServletRequest request, Set<String> pathsToPush)
+    {
+        if (null == pathsToPush || pathsToPush.isEmpty())
+            return;
+        PushBuilder pushBuilder = request.newPushBuilder();
+        if (null == pushBuilder)
+            return;
+        final var pushed = SessionHelper.getAttribute(request, PushBuilder.class.getName(), () -> Collections.synchronizedSet(new HashSet<String>()));
+        if (null == pushed)
+            return;
+        pathsToPush.stream()
+                .filter(pushed::add)
+                .forEach(path -> pushBuilder.path(path).push());
     }
 }
