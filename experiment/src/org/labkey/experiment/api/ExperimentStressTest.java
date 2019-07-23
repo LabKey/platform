@@ -112,7 +112,7 @@ public class ExperimentStressTest
     @Test
     public void sampleSetInsertsWithLineage() throws Throwable
     {
-        Assume.assumeFalse("Test does not yet pass on SQL Server. Skipping.", CoreSchema.getInstance().getSqlDialect().isSqlServer());
+        Assume.assumeFalse("Issue 37518: Test does not yet pass on SQL Server. Skipping.", CoreSchema.getInstance().getSqlDialect().isSqlServer());
         _sampleSetInserts(true);
     }
 
