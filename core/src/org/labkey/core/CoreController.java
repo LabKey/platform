@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,6 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.file.PathMapper;
-import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.qc.AbstractDeleteQCStateAction;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
@@ -2210,12 +2209,13 @@ public class CoreController extends SpringActionController
 
                         PathMapper pathMap = def.getPathMap();
                         if (pathMap != null)
-                            record.put("pathMap", ((PathMapperImpl)pathMap).toJSON());
+                            record.put("pathMap", pathMap.toJSON());
                         else
                             record.put("pathMap", null);
 
                         record.put("user", def.getUser());
-                        record.put("password", def.getPassword());
+                        // don't send down password
+                        //record.put("password", def.getPassword());
                     }
                 }
                 views.add(record);
@@ -2358,6 +2358,7 @@ public class CoreController extends SpringActionController
 
     public static class TestCase extends AbstractActionPermissionTest
     {
+        @Override
         @Test
         public void testActionPermissions()
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,8 +88,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.controllers.QueryController;
-import org.labkey.query.design.DgQuery;
-import org.labkey.query.design.QueryDocument;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 
@@ -639,21 +637,6 @@ public class Query
             Logger.getLogger(Query.class).error("error", x);
             throw Query.wrapRuntimeException(x, _querySource);
         }
-    }
-
-
-    public QueryDocument getDesignDocument()
-    {
-        QuerySelect select = getQuerySelect();
-		return null == select ? null :  select.getDesignDocument();
-    }
-
-
-    public void update(DgQuery query, List<QueryException> errors)
-    {
-        QuerySelect select = getQuerySelect();
-		if (null != select)
-			select.update(query, errors);
     }
 
 

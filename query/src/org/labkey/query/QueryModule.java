@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,16 +140,19 @@ public class QueryModule extends DefaultModule
         ReportAndDatasetChangeDigestProvider.set(new ReportAndDatasetChangeDigestProviderImpl());
     }
 
+    @Override
     public String getName()
     {
         return "Query";
     }
 
+    @Override
     public double getVersion()
     {
-        return 19.10;
+        return 19.20;
     }
 
+    @Override
     protected void init()
     {
         DefaultSchema.registerProvider("rolap_test", new DefaultSchema.SchemaProvider(this)
@@ -160,6 +163,7 @@ public class QueryModule extends DefaultModule
                 return schema.getContainer().getParsedPath().equals(JunitUtil.getTestContainerPath());
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new RolapTestSchema(schema.getUser(), schema.getContainer());
@@ -216,6 +220,7 @@ public class QueryModule extends DefaultModule
     }
 
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -227,11 +232,13 @@ public class QueryModule extends DefaultModule
         ));
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         if (null != PipelineService.get())

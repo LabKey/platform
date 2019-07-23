@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.study.controllers;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
@@ -84,7 +85,7 @@ public class StudyDefinitionController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain.getTypeURI(), false, false, false);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain, false, false, false);
             form.propagateReturnURL(url);
             return url;
         }

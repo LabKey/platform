@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,11 +44,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
-import org.labkey.query.design.DgColumn;
-import org.labkey.query.design.DgOrderByString;
-import org.labkey.query.design.DgQuery;
-import org.labkey.query.design.DgValue;
-import org.labkey.query.design.QueryDocument;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.ArrayList;
@@ -1711,127 +1706,6 @@ groupByLoop:
     }
 
 
-
-    public QueryDocument getDesignDocument()
-    {
-        QueryDocument ret = QueryDocument.Factory.newInstance();
-        ret.addNewQuery();
-        DgQuery.Select select = ret.getQuery().addNewSelect();
-        DgQuery.Where dgWhere = ret.getQuery().addNewWhere();
-        DgQuery.OrderBy dgOrderBy = ret.getQuery().addNewOrderBy();
-        if (_columns == null)
-        {
-            return null;
-        }
-        for (SelectColumn column : _columns.values())
-        {
-            DgColumn dgColumn = select.addNewColumn();
-            if (column.getAlias() != null)
-            {
-                dgColumn.setAlias(column.getAlias());
-            }
-            DgValue dgValue = dgColumn.addNewValue();
-            QExpr value = column.getField();
-            FieldKey key = value.getFieldKey();
-            if (key != null)
-            {
-                dgValue.addNewField().setStringValue(key.toString());
-            }
-            else
-            {
-                dgValue.setSql(value.getSourceText());
-            }
-        }
-        if (dgWhere != null)
-        {
-            if (_where == null)
-            {
-                _where = new QWhere();
-            }
-            _where.fillWhere(dgWhere);
-        }
-        if (_orderBy != null)
-        {
-            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
-            {
-                DgOrderByString dgClause;
-                FieldKey field = entry.getKey().getFieldKey();
-                if (field != null)
-                {
-                    dgClause = dgOrderBy.addNewField();
-                    dgClause.setStringValue(field.toString());
-                }
-                else
-                {
-                    dgClause = dgOrderBy.addNewSql();
-                    dgClause.setStringValue(entry.getKey().getSourceText());
-                }
-                if (entry.getValue().booleanValue())
-                {
-                    dgClause.setDir("ASC");
-                }
-                else
-                {
-                    dgClause.setDir("DESC");
-                }
-            }
-        }
-        MemTracker.getInstance().put(ret);
-        return ret;
-    }
-
-
-    public void update(DgQuery query, List<QueryException> errors)
-    {
-        _columns.clear();
-        for (DgColumn dgColumn : query.getSelect().getColumnArray())
-        {
-            QExpr field = null;
-            DgValue value = dgColumn.getValue();
-            if (value.isSetField())
-            {
-                field = QIdentifier.of(FieldKey.fromString(value.getField().getStringValue()));
-            }
-            else if (value.isSetSql())
-            {
-                field = (new SqlParser()).parseExpr(value.getSql(), errors);
-            }
-            if (null == field)
-                continue;
-            SelectColumn column = new SelectColumn(field);
-            if (dgColumn.isSetAlias() && dgColumn.getAlias().trim().length() > 0)
-            {
-                column.setAlias(dgColumn.getAlias());
-            }
-            _columns.put(new FieldKey(null, column.getAlias()), column);
-        }
-        if (query.getWhere() != null)
-        {
-            if (_where == null)
-            {
-                _where = new QWhere();
-            }
-            _where.updateWhere(query.getWhere(), errors);
-        }
-        if (query.getOrderBy() != null)
-        {
-            if (_orderBy == null)
-            {
-                _orderBy = new QOrder();
-            }
-            _orderBy.removeChildren();
-            for (DgOrderByString field : query.getOrderBy().getFieldArray())
-            {
-                _orderBy.addOrderByClause(QIdentifier.of(FieldKey.fromString(field.getStringValue())), !"DESC".equals(field.getDir()));
-            }
-            for (DgOrderByString expr : query.getOrderBy().getSqlArray())
-            {
-                _orderBy.addOrderByClause((new SqlParser()).parseExpr(expr.getStringValue(), errors), !"DESC".equals(expr.getDir()));
-            }
-        }
-    }
-
-
     int getSelectedColumnCount()
     {
         return _columns.size();
@@ -1870,8 +1744,7 @@ groupByLoop:
         String title = in.getTableInfo().getTitleColumn();
         if (null == title)
             return null;
-        SelectColumn sc = findColumnInSelectList(in, title);
-        return sc;
+        return findColumnInSelectList(in, title);
     }
 
 

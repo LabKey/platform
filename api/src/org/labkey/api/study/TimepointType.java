@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package org.labkey.api.study;
 
+import org.labkey.api.util.EnumHasHtmlString;
+
 /**
  * User: markigra
  * Date: Oct 31, 2007
  * Time: 12:24:31 PM
  */
-public enum TimepointType
+public enum TimepointType implements EnumHasHtmlString<TimepointType>
 {
     VISIT(true),
     DATE(false),
@@ -29,7 +31,7 @@ public enum TimepointType
 
     private final boolean _visitBased;
 
-    private TimepointType(boolean visitBased)
+    TimepointType(boolean visitBased)
     {
         _visitBased = visitBased;
     }

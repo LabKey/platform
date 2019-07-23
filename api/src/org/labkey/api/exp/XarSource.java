@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 import org.apache.xmlbeans.XmlException;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -146,15 +147,14 @@ public abstract class XarSource implements Serializable
         existingMap.put(data.getLSID(), data);
     }
 
-    public void addMaterial(String experimentRunLSID, ExpMaterial material)
+    public void addMaterial(String experimentRunLSID, ExpMaterial material, @Nullable String additionalMaterialLSID)
     {
-        Map<String, ExpMaterial> existingMap = _materials.get(experimentRunLSID);
-        if (existingMap == null)
+        Map<String, ExpMaterial> map = _materials.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
+        map.put(material.getLSID(), material);
+        if (additionalMaterialLSID != null)
         {
-            existingMap = new HashMap<>();
-            _materials.put(experimentRunLSID, existingMap);
+            map.put(additionalMaterialLSID, material);
         }
-        existingMap.put(material.getLSID(), material);
     }
 
     public ExpData getData(ExpRun experimentRun, ExpProtocolApplication protApp, String dataLSID) throws XarFormatException
@@ -199,18 +199,18 @@ public abstract class XarSource implements Serializable
     public ExpMaterial getMaterial(ExpRun experimentRun, ExpProtocolApplication protApp, String materialLSID) throws XarFormatException
     {
         String experimentRunLSID = experimentRun == null ? null : experimentRun.getLSID();
-        Map<String, ExpMaterial> map = _materials.get(experimentRunLSID);
-        if (map == null)
-        {
-            map = new HashMap<>();
-            _materials.put(experimentRunLSID, map);
-        }
+        Map<String, ExpMaterial> map = _materials.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
         ExpMaterial result = map.get(materialLSID);
         if (result == null)
         {
             if (experimentRun == null)
             {
                 result = ExperimentService.get().getExpMaterial(materialLSID);
+            }
+            if (result == null)
+            {
+                // Try for a non-run scoped variant
+                result = _materials.computeIfAbsent(null, k -> new HashMap<>()).get(materialLSID);
             }
             if (result == null)
             {

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="64" height="64"
+	 viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:none;stroke:#0067C5;stroke-width:2.07;stroke-linecap:round;stroke-miterlimit:10;}
+	.st1{fill:none;stroke:#0067C5;stroke-width:2;stroke-linecap:round;stroke-miterlimit:10;}
+	.st2{fill:#96C3E5;}
+	.st3{fill:none;stroke:#96C3E5;stroke-miterlimit:10;}
+	.st4{fill:none;stroke:#96C3E5;stroke-linecap:round;stroke-miterlimit:10;}
+</style>
+<title>recipe</title>
+<g id="Alt">
+	<path id="Frame" class="st0" d="M14.4,6h35.2c0.3,0,0.5,0.2,0.5,0.4c0,0,0,0,0,0.1v50.9c0,0.3-0.2,0.5-0.4,0.5c0,0,0,0-0.1,0H14.4
+		c-0.3,0-0.5-0.2-0.5-0.4c0,0,0,0,0-0.1V6.5C13.9,6.2,14.1,6,14.4,6C14.4,6,14.4,6,14.4,6z"/>
+	<g id="Top_lines">
+		<line class="st1" x1="17.8" y1="12" x2="30.1" y2="12"/>
+		<line class="st1" x1="17.8" y1="20" x2="30.1" y2="20"/>
+		<line class="st1" x1="17.8" y1="28" x2="30.1" y2="28"/>
+	</g>
+	<g id="Bottom_lines">
+		<line class="st1" x1="17.8" y1="36" x2="34" y2="36"/>
+		<line class="st1" x1="17.8" y1="44" x2="46" y2="44"/>
+		<line class="st1" x1="17.8" y1="52" x2="42" y2="52"/>
+	</g>
+	<g id="Beaker">
+		<path class="st2" d="M39.4,18c0.2,0.4,0.6,0.5,1,0.3c0.4-0.2,0.5-0.6,0.3-1c-0.2-0.4-0.6-0.5-1-0.3c0,0,0,0,0,0
+			C39.4,17.2,39.2,17.6,39.4,18C39.4,17.9,39.4,18,39.4,18z"/>
+		<path class="st2" d="M41.1,15.8c0.2,0.4,0.6,0.5,1,0.3c0.4-0.2,0.5-0.6,0.3-1s-0.6-0.5-1-0.3c0,0,0,0,0,0
+			C41,15,40.9,15.4,41.1,15.8C41.1,15.8,41.1,15.8,41.1,15.8z"/>
+		<path class="st2" d="M40.9,20.3c-0.3,0.6-0.8,1-1.4,1.3c-0.2,0.1-0.3,0.3-0.3,0.5v6.1c0,0.7,0.5,1.4,1.2,1.5
+			c0.8,0.2,1.6-0.3,1.8-1.1c0-0.1,0-0.3,0-0.4v-7c0-0.4-0.2-0.8-0.5-1.1C41.4,19.9,41.1,20,40.9,20.3C40.9,20.3,40.9,20.3,40.9,20.3
+			z"/>
+		<path class="st3" d="M40.9,20.3c-0.3,0.6-0.8,1-1.4,1.3c-0.2,0.1-0.3,0.3-0.3,0.5v6.1c0,0.7,0.5,1.4,1.2,1.5
+			c0.8,0.2,1.6-0.3,1.8-1.1c0-0.1,0-0.3,0-0.4v-7c0-0.4-0.2-0.8-0.5-1.1C41.4,19.9,41.1,20,40.9,20.3C40.9,20.3,40.9,20.3,40.9,20.3
+			z"/>
+		<path class="st3" d="M44.3,12.4v16c0,1.7-1.3,3-3,3h-1c-1.7,0-3-1.3-3-3v-16H44.3z"/>
+		<line class="st4" x1="35.3" y1="11.4" x2="46.3" y2="11.4"/>
+	</g>
+</g>
+</svg>

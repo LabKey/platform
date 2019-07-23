@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@
         // ajax call to get report section names
         if (element)
         {
-            var url = "<%=urlProvider(ReportUrls.class).urlReportSections(c)%>";
+            var url = "<%=h(urlProvider(ReportUrls.class).urlReportSections(c))%>";
 
             url = url.concat("&<%=PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name())%>=");
             url = url.concat(element.value);

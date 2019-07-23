@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2016 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,9 +65,9 @@
 </table>
 
 <labkey:form method="post" action="<%=new ActionURL(ReportsController.SaveReportViewAction.class, getContainer())%>" onsubmit="return validateForm();">
-    <input type="hidden" name="<%=h(QueryParam.schemaName)%>" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
-    <input type="hidden" name="<%=h(QueryParam.queryName)%>" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
-    <input type="hidden" name="<%=h(QueryParam.viewName)%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
+    <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
+    <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
+    <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
     <input type="hidden" name="redirectUrl" value="<%=bean.getRedirectUrl()%>">
     <table>
     <tr>

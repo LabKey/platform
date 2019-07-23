@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 
 package org.labkey.experiment.api;
+
 import com.google.common.collect.Iterables;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -26,9 +27,6 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -69,13 +67,8 @@ import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
-import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.model.GWTConditionalFormat;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
-import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -108,7 +101,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
@@ -132,16 +124,14 @@ import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
 
-
-import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
-import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -161,18 +151,20 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
-import static org.labkey.api.exp.OntologyManager.ensurePropertyDomain;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
+import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
+import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
+import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
@@ -192,6 +184,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public static final String EXPERIMENTAL_LEGACY_LINEAGE = "legacy-lineage";
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
+    public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
@@ -697,6 +690,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
     }
 
+    public Collection<ExpSampleSetImpl> getIndexableSampleSets(Container container, @Nullable Date modifiedSince)
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterialSource() + " WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterialSource(), modifiedSince, null).toSQLFragment(null, null);
+        if (!modifiedSQL.isEmpty())
+            sql.append(" AND ").append(modifiedSQL);
+        return ExpSampleSetImpl.fromMaterialSources(new SqlSelector(getSchema(), sql).getArrayList(MaterialSource.class));
+    }
+
     public void setDataLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoData(), rowId, ms);
@@ -706,6 +708,12 @@ public class ExperimentServiceImpl implements ExperimentService
     {
         setLastIndexed(getTinfoMaterial(), rowId, ms);
     }
+
+    public void setMaterialSourceLastIndexed(int rowId, long ms)
+    {
+        setLastIndexed(getTinfoMaterialSource(), rowId, ms);
+    }
+
 
     private void setLastIndexed(TableInfo table, int rowId, long ms)
     {
@@ -2292,103 +2300,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return new Pair<>(parentsToken,childrenToken);
     }
 
-    MaterializedQueryHelper materializedNodes = null;
-    MaterializedQueryHelper materializedEdges = null;
-    final Object initEdgesLock = new Object();
-    public final AtomicLong expLineageCounter = new AtomicLong();
-
-    public void uncacheLineageGraph()
-    {
-        MaterializedQueryHelper nodes;
-        MaterializedQueryHelper edges;
-
-        // only lock on retrieving the object
-        synchronized (initEdgesLock)
-        {
-            nodes = materializedNodes;
-            edges = materializedEdges;
-        }
-
-        if (null != nodes)
-            nodes.uncache(null);
-        if (null != edges)
-            edges.uncache(null);
-
-        getExpSchema().getScope().addCommitTask(expLineageCounter::incrementAndGet, POSTCOMMIT);
-    }
-
-    /* TODO AND CONSIDER:
-     *
-     * remove the DataInput and MaterialInput tables and replace with a table that looks like this "edges" table
-     */
-    SQLFragment materializeNodesCTE(String selectNodes)
-    {
-        final DbSchema exp = getExpSchema();
-
-        synchronized (initEdgesLock)
-        {
-            if (null == materializedNodes)
-            {
-                String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
-                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.material)",
-                        "'/'",
-                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.data)",
-                        "'/'",
-                        "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.experimentrun)") + " AS \"key\"";
-
-                materializedNodes = (new MaterializedQueryHelper.Builder( "exp_nodes", getExpSchema().getScope(), new SQLFragment(selectNodes)))
-                        .upToDateSql(new SQLFragment(materializeKeySql))
-                        .addIndex("CREATE INDEX node_lsid_${NAME} ON temp.${NAME}  (lsid)")
-                        .maxTimeToCache(CacheManager.HOUR)
-                        .addInvalidCheck(() -> String.valueOf(expLineageCounter.get()))
-                        .build();
-                assert MemTracker.get().remove(materializedNodes);
-                CacheManager.addListener(materializedNodes);
-            }
-        }
-
-        SQLFragment sqlf = new SQLFragment("SELECT * FROM ").append(materializedNodes.getFromSql(null,null));
-        return sqlf;
-    }
-
-    /* TODO AND CONSIDER:
-     *
-     * remove the DataInput and MaterialInput tables and replace with a table that looks like this "edges" table
-     */
-    SQLFragment materializeEdgesCTE(String selectEdges)
-    {
-        final DbSchema exp = getExpSchema();
-        final long now = System.currentTimeMillis();
-
-        synchronized (initEdgesLock)
-        {
-            if (null == materializedEdges)
-            {
-                String materializeKeySql = "SELECT\n" + exp.getSqlDialect().concatenate(
-                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.materialinput)",
-                        "'/'",
-                        "(select coalesce(cast(count(*) as varchar(40)),'-') from exp.datainput)",
-                        "'/'",
-                        "(select coalesce(cast(max(rowid) as varchar(40)),'-') from exp.protocolapplication)") + " AS \"key\"";
-
-                materializedEdges = MaterializedQueryHelper.create( "exp_edges",
-                        getExpSchema().getScope(),
-                        new SQLFragment(selectEdges),
-                        new SQLFragment(materializeKeySql),
-                        Arrays.asList(
-                               "CREATE INDEX child_${NAME} ON temp.${NAME}  (child_lsid, parent_lsid, child_pathpart, parent_pathpart, role)",
-                               "CREATE INDEX parent_${NAME} ON temp.${NAME}  (parent_lsid, child_lsid, parent_pathpart, child_pathpart, role)"
-                        ),
-                        CacheManager.HOUR
-                        );
-                assert MemTracker.get().remove(materializedEdges);
-                CacheManager.addListener(materializedEdges);
-            }
-        }
-
-        SQLFragment sqlf = new SQLFragment("SELECT * FROM ").append(materializedEdges.getFromSql(null,null));
-        return sqlf;
-    }
 
 
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
@@ -2525,25 +2436,26 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public int removeEdgesForRun(int runId)
     {
-        int count = Table.delete(getTinfoEdge(), new SimpleFilter("runId", runId));
+        TableInfo edge = getTinfoEdge();
+        int count = new SqlExecutor(edge.getSchema().getScope()).execute("DELETE FROM " + edge /* + (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "")  */ + " WHERE runId="+runId);
         LOG.debug("Removed edges for run " + runId + "; count = " + count);
         return count;
     }
 
     // prepare for bulk insert of edges
-    private void prepEdgeForInsert(List<List<Object>> params, @NotNull String fromLsid, @NotNull String toLsid, int runId)
+    private void prepEdgeForInsert(List<List<Object>> params, int from, int to, int runId)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
         // ignore cycles from and to itself
-        if (fromLsid.equals(toLsid))
+        if (from == to)
             return;
 
-        params.add(Arrays.asList(fromLsid, toLsid, runId));
+        params.add(Arrays.asList(from, to, runId));
     }
 
     // insert objects for any LSIDs not yet in exp.object
-    private void ensureNodeObjects(Map<String, Map<String, Object>> allNodesByLsid, @NotNull Map<String, Integer> cpasTypeToObjectId)
+    private void ensureNodeObjects(TableInfo expTable, Map<String, Map<String, Object>> allNodesByLsid, @NotNull Map<String, Integer> cpasTypeToObjectId)
     {
         // Issue 33932: partition into groups of 1000 to avoid SQLServer parameter limit
         var allMissingObjectLsids = allNodesByLsid.entrySet().stream()
@@ -2551,21 +2463,49 @@ public class ExperimentServiceImpl implements ExperimentService
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
-        Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
+        if (allMissingObjectLsids.isEmpty())
+            return;
 
-            if (!missingObjectLsids.isEmpty())
+        DbScope scope = expTable.getSchema().getScope();
+        try (Connection conn = scope.getConnection())
+        {
+            try (PreparedStatement stmt = conn.prepareStatement("UPDATE " + expTable.getSelectName() + " SET ObjectId=? WHERE LSID=?"))
             {
-                LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes");
-                missingObjectLsids.forEach(missingObjectLsid -> {
-                    Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
-                    Container container = ContainerManager.getForId((String) missingObjectRow.get("container"));
-                    if (container == null)
-                        throw new IllegalArgumentException();
-                    String cpasType = (String) missingObjectRow.get("cpasType");
-                    ensureNodeObject(container, missingObjectLsid, cpasType, cpasTypeToObjectId);
+                Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
+
+                    if (!missingObjectLsids.isEmpty())
+                    {
+                        try
+                        {
+                            if (LOG.isDebugEnabled())
+                                LOG.debug("  creating exp.object for " + missingObjectLsids.size() + " nodes:\n" + StringUtils.join(missingObjectLsids));
+                            for (var missingObjectLsid : missingObjectLsids)
+                            {
+                                Map<String, Object> missingObjectRow = allNodesByLsid.get(missingObjectLsid);
+                                Container container = ContainerManager.getForId((String) missingObjectRow.get("container"));
+                                if (container == null)
+                                    throw new IllegalArgumentException();
+                                String cpasType = (String) missingObjectRow.get("cpasType");
+                                int objectid = ensureNodeObject(container, missingObjectLsid, cpasType, cpasTypeToObjectId);
+                                missingObjectRow.put("objectid", objectid);
+                                stmt.setInt(1, objectid);
+                                stmt.setString(2, missingObjectLsid);
+                                stmt.addBatch();
+                            }
+                            stmt.executeBatch();
+                        }
+                        catch (SQLException sqlx)
+                        {
+                            throw new RuntimeSQLException(sqlx);
+                        }
+                    }
                 });
             }
-        });
+        }
+        catch (SQLException sqlx)
+        {
+            throw new RuntimeSQLException(sqlx);
+        }
     }
 
     private int ensureNodeObject(@NotNull Container container, @NotNull String lsid, @Nullable String cpasType, @NotNull Map<String, Integer> cpasTypeToObjectId)
@@ -2604,21 +2544,6 @@ public class ExperimentServiceImpl implements ExperimentService
         });
     }
 
-    private void insertEdge(String fromLsid, String toLsid, int runId)
-    {
-        assert getExpSchema().getScope().isTransactionActive();
-        if (fromLsid == null || toLsid == null)
-            throw new IllegalArgumentException();
-
-        if (runId == 0)
-            throw new IllegalArgumentException();
-
-        Table.insert(null, getTinfoEdge(), CaseInsensitiveHashMap.of(
-                "fromLsid", fromLsid,
-                "toLsid", toLsid,
-                "runId", runId));
-    }
-
     private void insertEdges(List<List<Object>> params)
     {
         assert getExpSchema().getScope().isTransactionActive();
@@ -2627,8 +2552,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try
         {
-            String edgeSql = "INSERT INTO " + getTinfoEdge() + " (fromObjectId, toObjectId, runId)\n"+
-                    "VALUES ( (select objectid from exp.Object where objecturi=?), (select objectid from exp.Object where objecturi=?), ?)";
+// LSID VERSION
+//            String edgeSql = "INSERT INTO " + getTinfoEdge() + " (fromObjectId, toObjectId, runId)\n"+
+//                    "VALUES ( (select objectid from exp.Object where objecturi=?), (select objectid from exp.Object where objecturi=?), ?)";
+            TableInfo edge = getTinfoEdge();
+            String edgeSql = "INSERT INTO " + edge +
+                    /* (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "") + */
+                    " (fromObjectId, toObjectId, runId)\n"+
+                    "VALUES (?, ?, ?)";
             Table.batchExecute(getExpSchema(), edgeSql, params);
         }
         catch (SQLException e)
@@ -2637,26 +2568,110 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
-    // CONSIDER: Incrementally add/remove edges as they are created
+    private class SyncRunEdgesTask implements Runnable
+    {
+        protected final int _runId;
+        protected final Integer _runObjectId;
+        protected final @Nullable String _runLsid;
+        protected final @Nullable Container _runContainer;
+
+        public SyncRunEdgesTask(int runId)
+        {
+            this(runId, null, null, null);
+        }
+
+        public SyncRunEdgesTask(int runId, Integer runObjectId, String runLsid, Container runContainer)
+        {
+            _runId = runId;
+            _runObjectId = runObjectId;
+            _runLsid = runLsid;
+            _runContainer = runContainer;
+        }
+
+        @Override
+        public void run()
+        {
+            if (_runObjectId !=null && _runLsid != null && _runContainer != null)
+                syncRunEdges(_runId, _runObjectId, _runLsid, _runContainer);
+            else
+                syncRunEdges(_runId);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hashCode(_runId);
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            return _runId == ((SyncRunEdgesTask)o)._runId;
+        }
+    }
+
+    @Override
+    public void queueSyncRunEdges(int runId)
+    {
+        DbScope scope = getExpSchema().getScope();
+        if (scope.isTransactionActive())
+        {
+            LOG.debug("queueing syncRunEdges for run: " + runId);
+            DbScope.Transaction tx = scope.getCurrentTransaction();
+            tx.addCommitTask(new SyncRunEdgesTask(runId), POSTCOMMIT);
+        }
+        else
+        {
+            syncRunEdges(runId);
+        }
+    }
+
+    @Override
+    public void queueSyncRunEdges(ExpRun run)
+    {
+        DbScope scope = getExpSchema().getScope();
+        if (scope.isTransactionActive())
+        {
+            LOG.debug("queueing syncRunEdges for run: " + run.getRowId() + " - " + run.getName());
+            DbScope.Transaction tx = scope.getCurrentTransaction();
+            tx.addCommitTask(new SyncRunEdgesTask(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer()), POSTCOMMIT);
+        }
+        else
+        {
+            syncRunEdges(run);
+        }
+    }
+
+    @Override
+    public void syncRunEdges(int runId)
+    {
+        ExpRun run = getExpRun(runId);
+        if (run != null)
+            syncRunEdges(run);
+    }
+
     @Override
     public void syncRunEdges(ExpRun run)
     {
-        syncRunEdges(run.getRowId(), run.getLSID(), run.getContainer());
+        syncRunEdges(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer());
     }
 
     @Override
     public void syncRunEdges(Collection<ExpRun> runs)
     {
         for (ExpRun run : runs)
-            syncRunEdges(run.getRowId(), run.getLSID(), run.getContainer());
+            syncRunEdges(run.getRowId(), run.getObjectId(), run.getLSID(), run.getContainer());
     }
 
-    public void syncRunEdges(int runId, String runLsid, Container runContainer)
+    public void syncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer)
     {
-        syncRunEdges(runId, runLsid, runContainer, true, null);
+        syncRunEdges(runId, runObjectId, runLsid, runContainer, true, null);
     }
 
-    private void syncRunEdges(int runId, String runLsid, Container runContainer, boolean deleteFirst, @Nullable Map<String, Integer> cpasTypeToObjectId)
+    private void syncRunEdges(int runId, Integer runObjectId, String runLsid, Container runContainer, boolean deleteFirst, @Nullable Map<String, Integer> cpasTypeToObjectId)
     {
         CPUTimer timer = new CPUTimer("sync edges");
         timer.start();
@@ -2666,10 +2681,9 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
             SQLFragment datas = new SQLFragment()
-                    .append("SELECT d.Container, d.LSID, o.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
+                    .append("SELECT d.Container, d.LSID, d.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
                     .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                    .append("LEFT JOIN exp.Object o on d.lsid = o.objecturi\n")
                     .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
 
             Collection<Map<String, Object>> fromDataLsids = new ArrayList<>();
@@ -2682,10 +2696,9 @@ public class ExperimentServiceImpl implements ExperimentService
             });
 
             SQLFragment materials = new SQLFragment()
-                    .append("SELECT m.Container, m.LSID, m.CpasType, o.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
+                    .append("SELECT m.Container, m.LSID, m.CpasType, m.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.material m\n")
                     .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                    .append("LEFT JOIN exp.Object o on m.lsid = o.objecturi\n")
                     .append("WHERE pa.RunId = ").append(runId).append(" AND pa.CpasType IN ('").append(ExperimentRun.name()).append("','").append(ExperimentRunOutput.name()).append("')");
 
             Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
@@ -2708,15 +2721,26 @@ public class ExperimentServiceImpl implements ExperimentService
             if (edgeCount > 0)
             {
                 // ensure the run has an exp.object
-                OntologyManager.ensureObject(runContainer, runLsid, (Integer)null);
+                if (null == runObjectId || 0 == runObjectId)
+                {
+                    if (LOG.isDebugEnabled())
+                    {
+                        OntologyObject runObj = OntologyManager.getOntologyObject(runContainer, runLsid);
+                        if (runObj == null)
+                            LOG.debug("  run exp.object is null, creating: " + runLsid);
+                    }
+                    runObjectId = OntologyManager.ensureObject(runContainer, runLsid, (Integer) null);
+                }
 
-                Map<String, Map<String, Object>> allNodesByLsid = new HashMap<>();
-                fromDataLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
-                fromMaterialLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
-                toDataLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
-                toMaterialLsids.forEach(row -> allNodesByLsid.put((String) row.get("lsid"), row));
+                Map<String, Map<String, Object>> allDatasByLsid = new HashMap<>();
+                fromDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
+                toDataLsids.forEach(row -> allDatasByLsid.put((String) row.get("lsid"), row));
+                ensureNodeObjects(getTinfoData(), allDatasByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
 
-                ensureNodeObjects(allNodesByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
+                Map<String, Map<String, Object>> allMaterialsByLsid = new HashMap<>();
+                fromMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
+                toMaterialLsids.forEach(row -> allMaterialsByLsid.put((String) row.get("lsid"), row));
+                ensureNodeObjects(getTinfoMaterial(), allMaterialsByLsid, cpasTypeToObjectId != null ? cpasTypeToObjectId : new HashMap<>());
 
                 List<List<Object>> params = new ArrayList<>(edgeCount);
 
@@ -2724,19 +2748,21 @@ public class ExperimentServiceImpl implements ExperimentService
                 // from lsid -> run lsid
                 //
 
-                Set<String> seen = new HashSet<>();
+                Set<Integer> seen = new HashSet<>();
                 for (Map<String, Object> fromDataLsid : fromDataLsids)
                 {
-                    String lsid = (String) fromDataLsid.get("lsid");
-                    if (seen.add(lsid))
-                        prepEdgeForInsert(params, lsid, runLsid, runId);
+                    assert null != fromDataLsid.get("objectid");
+                    int objectid = (Integer)fromDataLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
                 for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
                 {
-                    String lsid = (String) fromMaterialLsid.get("lsid");
-                    if (seen.add(lsid))
-                        prepEdgeForInsert(params, lsid, runLsid, runId);
+                    assert null != fromMaterialLsid.get("objectid");
+                    int objectid = (Integer)fromMaterialLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
 
@@ -2747,16 +2773,16 @@ public class ExperimentServiceImpl implements ExperimentService
                 seen = new HashSet<>();
                 for (Map<String, Object> toDataLsid : toDataLsids)
                 {
-                    String lsid = (String) toDataLsid.get("lsid");
-                    if (seen.add(lsid))
-                        prepEdgeForInsert(params, runLsid, lsid, runId);
+                    int objectid = (Integer)toDataLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
                 {
-                    String lsid = (String) toMaterialLsid.get("lsid");
-                    if (seen.add(lsid))
-                        prepEdgeForInsert(params, runLsid, lsid, runId);
+                    int objectid = (Integer)toMaterialLsid.get("objectid");
+                    if (seen.add(objectid))
+                        prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
                 insertEdges(params);
@@ -2782,17 +2808,18 @@ public class ExperimentServiceImpl implements ExperimentService
             Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
 
             Collection<Map<String, Object>> runs = new TableSelector(getTinfoExperimentRun(),
-                    getTinfoExperimentRun().getColumns("rowId", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
+                    getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
             try (Timing t = MiniProfiler.step("create edges"))
             {
                 LOG.debug("Rebuilding edges for " + runs.size() + " runs");
                 for (Map<String, Object> run : runs)
                 {
                     Integer runId = (Integer)run.get("rowId");
+                    Integer runObjectId = (Integer)run.get("objectid");
                     String runLsid = (String)run.get("lsid");
                     String containerId = (String)run.get("container");
                     Container runContainer = ContainerManager.getForId(containerId);
-                    syncRunEdges(runId, runLsid, runContainer, false, cpasTypeToObjectId);
+                    syncRunEdges(runId, runObjectId, runLsid, runContainer, false, cpasTypeToObjectId);
                 }
             }
 
@@ -2856,6 +2883,7 @@ public class ExperimentServiceImpl implements ExperimentService
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
         run.deleteProtocolApplications(datasToDelete, user);
+        removeEdgesForRun(runId);
 
         //delete run properties and all children
         OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
@@ -3556,6 +3584,23 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
+    /**
+     * Finds the subset of materialIds that are used as inputs to runs.
+     *
+     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
+     * @param materialIds
+     * @return
+     */
+    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    {
+        if (materialIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, materialIds);
+        return new SqlSelector(getExpSchema(), getMaterialsUsedAsInputs(rowIdInFrag)).getArrayList(Integer.class);
+    }
+
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
     {
         deleteMaterialByRowIds(user, container, selectedMaterialIds, true, null);
@@ -3630,7 +3675,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment objectIdFrag = new SQLFragment("IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI ");
                 objectIdFrag.append(lsidInFrag).append(")");
 
-                SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoEdge())).append(" WHERE ")
+                TableInfo edge = getTinfoEdge();
+                SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(edge))
+                        .append(" WHERE ")
                         .append("fromObjectId ").append(objectIdFrag)
                         .append(" OR toObjectId ").append(objectIdFrag);
                 executor.execute(deleteEdgeSql);
@@ -3734,21 +3781,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void deleteRunsUsingInputs(User user, Collection<Data> dataItems, Collection<Material> materialItems)
     {
-//        var dataRowIds = new
-//
-//        List<? extends ExpRun> runsUsingItem;
-//        if (item instanceof Data)
-//            runsUsingItem = getRunsUsingDataIds(Arrays.asList(item.getRowId()));
-//        else if (item instanceof Material)
-//            runsUsingItem = getRunsUsingMaterials(item.getRowId());
-//        else
-//            throw new IllegalArgumentException("Expected Data or Material");
-
         var runsUsingItems = new ArrayList<ExpRun>();
         if (null != dataItems && !dataItems.isEmpty())
             runsUsingItems.addAll(getRunsUsingDataIds(dataItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+
         if (null != materialItems && !materialItems.isEmpty())
-            runsUsingItems.addAll(getRunsUsingMaterials(materialItems.stream().map(RunItem::getRowId).collect(Collectors.toList())));
+            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
         if (runsToDelete.isEmpty())
@@ -3784,6 +3822,51 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
         }
+    }
+
+    private Collection<? extends ExpRun> getDeleteableSourceRunsFromMaterials(Set<Integer> materialIds)
+    {
+        if (materialIds == null || materialIds.isEmpty())
+            return Collections.emptyList();
+
+        /* Ex. SQL
+        SELECT DISTINCT m.runId
+	    FROM exp.material m
+        WHERE m.rowId in (3592, 3593, 3594)
+            AND NOT EXIST (
+                -- Check for siblings
+                SELECT DISTINCT m2.runId
+                FROM exp.material m2
+                WHERE m.rowId in (3592, 3593, 3594)
+                    AND m.rowId != m2.rowId
+                    AND m.runId = m2.runId
+            );
+         */
+
+        SQLFragment idInclause = getAppendInClause(materialIds);
+
+        SQLFragment sql = new SQLFragment(
+                "SELECT DISTINCT m.runId\n")
+                .append("FROM ").append(getTinfoMaterial(), "m").append("\n")
+                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("AND NOT EXISTS (\n")
+                .append("SELECT DISTINCT m2.runId\n")
+                .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
+                .append("WHERE m.rowId ").append(idInclause).append("\n")
+                .append("AND m.rowId != m2.rowId\n")
+                .append("AND m.runId = m2.runId\n")
+                .append(")");
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
+
+    }
+
+    private Collection<? extends ExpRun> getDerivedRunsFromMaterial(Collection<Integer> materialIds)
+    {
+        if (materialIds == null || materialIds.isEmpty())
+            return Collections.emptyList();
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
     }
 
 
@@ -4236,7 +4319,17 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
         }
 
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids)));
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getAppendInClause(ids)));
+    }
+
+    /**
+     * Get sql IN clause using supplied ids
+     * @param ids to include within parentheses
+     * @return SQLFragment like: IN (1, 2, 3)
+     */
+    private SQLFragment getAppendInClause(Collection ids)
+    {
+        return getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ids);
     }
 
     // Get a map of run LSIDs to Roles used by the Material ids.
@@ -4346,27 +4439,120 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
 
-    private List<ExperimentRun> getRunsForMaterialList(SQLFragment materialRowIdSQL)
+    /**
+     * Get the Source and Target runs
+     * @param materialRowIdSQL
+     * @return
+     */
+    private List<ExperimentRun> getRunsForMaterialList(@NotNull SQLFragment materialRowIdSQL)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
-        sql.append(getTinfoExperimentRun(), "er");
-        sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
-        sql.append(getTinfoExperimentRun(), "er2");
-        sql.append(" WHERE RowId IN ((SELECT pa.RunId FROM ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoMaterialInput(), "mi");
-        sql.append(" WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID ");
-        sql.append(materialRowIdSQL);
-        sql.append(")");
-        sql.append("\n UNION \n (SELECT pa.RunId FROM ");
-        sql.append(getTinfoProtocolApplication(), "pa");
-        sql.append(", ");
-        sql.append(getTinfoMaterial(), "m");
-        sql.append(" WHERE m.SourceApplicationId = pa.RowId AND m.RowId ");
-        sql.append(materialRowIdSQL);
-        sql.append(")))");
+        SQLFragment sql = new SQLFragment("(\n");
+        sql.append(getTargetRunIdsFromMaterialIds(materialRowIdSQL));
+        sql.append("\n) UNION (\n");
+        sql.append(getSourceRunIdsFromMaterialIds(materialRowIdSQL));
+        sql.append("\n)");
+
+        return getRunsForRunIds(sql);
+    }
+
+    /**
+     * Get set ExperimentRuns from subquery
+     * @param runIdsSQL subquery providing runIds
+     * @return List of Experiment runs from subquery
+     */
+    private List<ExperimentRun> getRunsForRunIds(SQLFragment runIdsSQL)
+    {
+        SQLFragment sql = new SQLFragment("SELECT *\n");
+        sql.append("FROM ").append(getTinfoExperimentRun(), "er").append("\n");
+        sql.append("WHERE RowId IN (\n");
+        sql.append(runIdsSQL);
+        sql.append("\n)");
+
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
+    }
+
+    /**
+     * Generate a query to get the subset of rowids from the supplied set material RowIds
+     * that are inputs to runs.
+     *
+     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
+     * @param materialRowIdSQL --  SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve subset of materialIds
+     */
+    private SQLFragment getMaterialsUsedAsInputs(SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT DISTINCT m.materialId
+            FROM exp.MaterialInput m, exp.protocolapplication pa
+            WHERE m.targetapplicationId = pa.rowId
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
+             AND m.materialId <materialIdRowSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT mi.materialID\n");
+        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
+            .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
+            .append("AND mi.materialID ").append(materialRowIdSQL).append("\n");
+
+        return sql;
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
+     * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.materialinput mi
+            WHERE mi.TargetApplicationId = pa.RowId
+                AND pa.cpastype = 'ExperimentRun'  --Limit protocolapplications, where materials are inputs
+                AND mi.MaterialID <materialRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoMaterialInput(), "mi").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
+            .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+            .append("AND mi.MaterialID ").append(materialRowIdSQL);
+
+        return sql;
+    }
+
+    /**
+     * Get query to obtain the runIds that created the materials requested by parameter
+     * @param materialRowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve precursor runs based on supplied material ids.
+     */
+    private SQLFragment getSourceRunIdsFromMaterialIds(@NotNull SQLFragment materialRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT pa.RunId
+            FROM exp.protocolapplication pa,
+                exp.material m
+            WHERE m.SourceApplicationId = pa.RowId
+                AND m.rowId <materialRowIdSQL>
+        */
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT pa.RunId\n");
+        sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
+        sql.append(getTinfoMaterial(), "m").append("\n");
+        sql.append("WHERE m.SourceApplicationId = pa.RowId AND m.RowId ").append(materialRowIdSQL);
+
+        return sql;
     }
 
     void deleteDomainObjects(Container c, String lsid) throws ExperimentException
@@ -5360,6 +5546,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Timestamp ts = new Timestamp(System.currentTimeMillis());
             _runParams.add(Arrays.asList(
                     run.getLSID(),
+                    run.getLSID(),
                     run.getName(),
                     run.getProtocolLSID(),
                     run.getFilePathRoot(),
@@ -5379,7 +5566,7 @@ public class ExperimentServiceImpl implements ExperimentService
         public void saveBatch() throws SQLException, XarFormatException
         {
             // insert into the experimentrun table
-            Map<String, Integer> runLsidToRowId = saveExpRunsBatch(_container, _runParams);
+            Map<String, ExperimentRun> runLsidToRowId = saveExpRunsBatch(_container, _runParams);
 
             // insert into the protocolapplication table
             createProtocolAppParams(_container, _protAppRecords, _protAppParams, _context, runLsidToRowId);
@@ -5396,12 +5583,10 @@ public class ExperimentServiceImpl implements ExperimentService
             // clear the stored records
             resetState();
 
-            uncacheLineageGraph();
-
             Map<String, Integer> cpasTypeToObjectId = new HashMap<>();
-            for (Map.Entry<String, Integer> run : runLsidToRowId.entrySet())
+            for (var er : runLsidToRowId.values())
             {
-                syncRunEdges(run.getValue(), run.getKey(), _container, false, cpasTypeToObjectId);
+                syncRunEdges(er.getRowId(), er.getObjectId(), er.getLSID(), _container, false, cpasTypeToObjectId);
             }
         }
 
@@ -5410,29 +5595,41 @@ public class ExperimentServiceImpl implements ExperimentService
             return _runParams.isEmpty();
         }
 
-        private Map<String, Integer> saveExpRunsBatch(Container c, List<List<?>> params) throws SQLException
+        private Map<String,ExperimentRun> saveExpRunsBatch(Container c, List<List<?>> params) throws SQLException
         {
+            // insert into exp.object
+            List<List<?>> expObjectParams = params.stream().map(
+                    runParams -> List.of(/* LSID */ runParams.get(0), c.getId())
+            ).collect(toList());
+            StringBuilder expObjectSql = new StringBuilder("INSERT INTO ").append(OntologyManager.getTinfoObject())
+                    .append(" (ObjectUri, Container) VALUES (?, ?)");
+            Table.batchExecute(getExpSchema(), expObjectSql.toString(), expObjectParams);
+
             StringBuilder sql = new StringBuilder("INSERT INTO ").append(ExperimentServiceImpl.get().getTinfoExperimentRun().toString()).
-                    append(" (Lsid, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) VALUES (?,?,?,?,?,?,?,?,?, '").
+                    append(" (Lsid, ObjectId, Name, ProtocolLsid, FilePathRoot, EntityId, Created, CreatedBy, Modified, ModifiedBy, Container) " +
+                            "VALUES (?,(select objectid from exp.object where objecturi = ?),?,?,?,?,?,?,?,?, '").
                     append(c.getId()).append("')");
 
             Table.batchExecute(getExpSchema(), sql.toString(), params);
 
-            List<String> runLsids = _runParams.stream().map(p -> (String) p.get(0)).collect(toList());
+            List<String> runLsids = params.stream().map(p -> (String) p.get(0)).collect(toList());
             SimpleFilter filter = new SimpleFilter("LSID", runLsids, IN);
-            return new TableSelector(getTinfoExperimentRun(), getTinfoExperimentRun().getColumns("LSID", "RowId"), filter, null).getValueMap();
+            Map<String,ExperimentRun> ret = new CaseInsensitiveHashMap<>();
+            new TableSelector(getTinfoExperimentRun(), TableSelector.ALL_COLUMNS, filter, null).getCollection(ExperimentRun.class)
+                    .forEach(er -> ret.put(er.getLSID(), er));
+            return ret;
         }
 
         /**
          * Replace the placeholder run id with the actual run id
          */
-        private void createProtocolAppParams(Container c, List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context, Map<String, Integer> runLsidToRowId) throws XarFormatException
+        private void createProtocolAppParams(Container c, List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context, Map<String, ExperimentRun> runLsidToRowId) throws XarFormatException
         {
             for (ProtocolAppRecord rec : protAppRecords)
             {
                 assert runLsidToRowId.containsKey(rec._run.getLSID());
 
-                Integer runId = runLsidToRowId.get(rec._run.getLSID());
+                Integer runId = runLsidToRowId.get(rec._run.getLSID()).getRowId();
                 context.addSubstitution("ExperimentRun.RowId", Integer.toString(runId));
 
                 initializeProtocolApplication(rec._protApp, rec._activityDate, rec._action, rec._run, rec._protocol, context);
@@ -5457,7 +5654,10 @@ public class ExperimentServiceImpl implements ExperimentService
             for (ProtocolAppRecord rec : protAppRecords)
                 protAppRowMap.put(rec._protApp.getLSID(), null);
 
-            new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN), null).forEach(rs ->
+            TableInfo pa = getTinfoProtocolApplication();
+            SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, pa.getColumns());
+            new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa /* + (pa.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK, HOLDLOCK)" : "") */ + " ")
+                    .append(sqlfilter)).forEach(rs ->
             {
                 if (protAppRowMap.containsKey(rs.getString("Lsid")))
                     protAppRowMap.put(rs.getString("Lsid"), rs.getInt("RowId"));
@@ -6016,8 +6216,6 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             Table.insert(user, table, input);
         }
-
-        uncacheLineageGraph();
     }
 
     @NotNull
@@ -6343,211 +6541,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public GWTDomain convertJsonToDomain(JSONObject obj) throws JSONException
-    {
-        GWTDomain domain = new GWTDomain();
-        JSONObject jsonDomain = obj.getJSONObject("domainDesign");
-
-        domain.set_Ts(jsonDomain.optString("ts"));
-        domain.setDomainId(jsonDomain.optInt("domainId", -1));
-
-        domain.setName(jsonDomain.getString("name"));
-        domain.setDomainURI(jsonDomain.optString("domainURI", null));
-        domain.setContainer(jsonDomain.getString("container"));
-
-        // Description can be null
-        domain.setDescription(jsonDomain.optString("description", null));
-
-        JSONArray jsonFields = jsonDomain.getJSONArray("fields");
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        for (int i=0; i<jsonFields.length(); i++)
-        {
-            JSONObject jsonProp = jsonFields.getJSONObject(i);
-            GWTPropertyDescriptor prop = convertJsonToPropertyDescriptor(jsonProp);
-            props.add(prop);
-        }
-
-        domain.setFields(props);
-
-        JSONArray jsonIndices = jsonDomain.optJSONArray("indices");
-        if (jsonIndices != null)
-        {
-            List<GWTIndex> indices = new ArrayList<>();
-            for (JSONObject jsonIndex : jsonIndices.toJSONObjectArray())
-            {
-                List<String> columnNames = new ArrayList<>();
-                for (Object o : jsonIndex.getJSONArray("columns").toArray())
-                    columnNames.add(String.valueOf(o));
-
-                // Only unique is supported currently
-                boolean unique = TableInfo.IndexType.Unique.name().equalsIgnoreCase(jsonIndex.optString("type"));
-                GWTIndex index = new GWTIndex(columnNames, unique);
-                indices.add(index);
-            }
-            domain.setIndices(indices);
-        }
-
-        return domain;
-    }
-
-    @Override
-    public GWTPropertyDescriptor convertJsonToPropertyDescriptor(JSONObject obj) throws JSONException
-    {
-        GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
-
-        // copy over properties (listed in alphabetical order)
-        prop.setConceptURI((String)obj.get("conceptURI"));
-        prop.setDefaultValue((String)obj.get("defaultValue"));
-        if (!obj.isNull("defaultValueType"))
-            prop.setDefaultValueType(DefaultValueType.valueOf((String)obj.get("defaultValueType")));
-        prop.setDescription((String)obj.get("description"));
-        if (!obj.isNull("dimension"))
-            prop.setDimension((Boolean)obj.get("dimension"));
-        if (!obj.isNull("disableEditing"))
-            prop.setDisableEditing((Boolean)obj.get("disableEditing"));
-        if (!obj.isNull("excludeFromShifting"))
-            prop.setExcludeFromShifting((Boolean)obj.get("excludeFromShifting"));
-        if (!obj.isNull("facetingBehaviorType"))
-            prop.setFacetingBehaviorType(obj.getString("facetingBehaviorType"));
-        prop.setFormat((String)obj.get("format"));
-        if (!obj.isNull("hidden"))
-            prop.setHidden((Boolean)obj.get("hidden"));
-        prop.setImportAliases((String)obj.get("importAliases"));
-        prop.setLabel((String)obj.get("label"));
-        prop.setLookupContainer((String)obj.get("lookupContainer"));
-        prop.setLookupQuery((String)obj.get("lookupQuery"));
-        prop.setLookupSchema((String)obj.get("lookupSchema"));
-        if (!obj.isNull("measure"))
-            prop.setMeasure((Boolean)obj.get("measure"));
-        if (!obj.isNull("mvEnabled"))
-            prop.setMvEnabled((Boolean)obj.get("mvEnabled"));
-        prop.setName(obj.getString("name"));
-        prop.setOntologyURI((String)obj.get("ontologyURI"));
-        if (!obj.isNull("phi"))
-            prop.setPHI((String)obj.get("phi"));
-        if (!obj.isNull("propertyId"))
-            prop.setPropertyId((Integer)obj.get("propertyId"));
-        prop.setPropertyURI((String)obj.get("propertyURI"));
-        prop.setRangeURI(obj.getString("rangeURI"));
-        if (!obj.isNull("recommendedVariable"))
-            prop.setRecommendedVariable((Boolean)obj.get("recommendedVariable"));
-        prop.setRedactedText((String)obj.get("redactedText"));
-        if (!obj.isNull("required"))
-            prop.setRequired((Boolean)obj.get("required"));
-        if (!obj.isNull("scale"))
-            prop.setScale((Integer)obj.get("scale"));
-        prop.setSearchTerms((String)obj.get("searchTerms"));
-        prop.setSemanticType((String)obj.get("semanticType"));
-        if (!obj.isNull("shownInDetailsView"))
-            prop.setShownInDetailsView((Boolean)obj.get("shownInDetailsView"));
-        if (!obj.isNull("shownInInsertView"))
-            prop.setShownInInsertView((Boolean)obj.get("shownInInsertView"));
-        if (!obj.isNull("shownInUpdateView"))
-            prop.setShownInUpdateView((Boolean)obj.get("shownInUpdateView"));
-        prop.setURL((String)obj.get("url"));
-
-        // property validators
-        JSONArray jsonValidators = obj.optJSONArray("validators");
-        if(null != jsonValidators)
-        {
-            List<GWTPropertyValidator> validators = new ArrayList<>();
-            for (int i = 0; i < jsonValidators.length(); i++)
-            {
-                JSONObject jsonValidator = jsonValidators.getJSONObject(i);
-                if (null != jsonValidator)
-                {
-                    validators.add(convertJsonToPropertyValidator(jsonValidator));
-                }
-            }
-            prop.setPropertyValidators(validators);
-        }
-
-        //conditional formats
-        JSONArray conditionalFormats = obj.optJSONArray("conditionalFormats");
-        if (null != conditionalFormats)
-        {
-            List<GWTConditionalFormat> conditionalFormatters = new ArrayList<>();
-            for (int i = 0; i < conditionalFormats.length(); i++)
-            {
-                JSONObject conditionalFormatter = conditionalFormats.getJSONObject(i);
-                if (null != conditionalFormatter)
-                {
-                    conditionalFormatters.add(convertJsonToConditionalFormatter(conditionalFormatter));
-                }
-            }
-            prop.setConditionalFormats(conditionalFormatters);
-        }
-
-        return prop;
-    }
-
-    @Override
-    public GWTPropertyValidator convertJsonToPropertyValidator(JSONObject obj) throws JSONException
-    {
-        GWTPropertyValidator validator = new GWTPropertyValidator();
-        validator.setName(obj.optString("name", "Validator"));
-        validator.setDescription(obj.optString("description"));
-        validator.setType(PropertyValidatorType.getType(obj.getString("type")));
-        validator.setExpression(obj.optString("expression"));
-        validator.setErrorMessage(obj.optString("errorMessage"));
-
-        return validator;
-    }
-
-    @Override
-    public GWTConditionalFormat convertJsonToConditionalFormatter(JSONObject obj) throws JSONException
-    {
-        GWTConditionalFormat formatter = new GWTConditionalFormat();
-        formatter.setFilter(obj.getString("filter"));
-        formatter.setBold(obj.optBoolean("bold"));
-        formatter.setBold(obj.optBoolean("italic"));
-        formatter.setBold(obj.optBoolean("strikethrough"));
-        formatter.setTextColor(obj.optString("textColor"));
-        formatter.setTextColor(obj.optString("backgroundColor"));
-
-        return formatter;
-    }
-
-    @Override
-    public JSONArray convertPropertyValidatorsToJson(GWTPropertyDescriptor pd)
-    {
-        JSONArray json = new JSONArray();
-        JSONObject obj;
-        for (GWTPropertyValidator pv : pd.getPropertyValidators())
-        {
-            obj = new JSONObject();
-            obj.put("name", pv.getName());
-            obj.put("description", pv.getDescription());
-            obj.put("type", pv.getType().getTypeName());
-            obj.put("expression", pv.getExpression());
-            obj.put("errorMessage", pv.getErrorMessage());
-            json.put(obj);
-        }
-
-        return json;
-    }
-
-    public JSONObject convertPropertyDescriptorToJson(GWTPropertyDescriptor pd)
-    {
-        JSONObject json = new JSONObject();
-        json.put("propertyId", pd.getPropertyId());
-        json.put("name", pd.getName());
-        json.put("required", pd.isRequired());
-        json.put("label", pd.getLabel());
-        json.put("scale", pd.getScale());
-        json.put("format", pd.getFormat());
-        json.put("lookupSchema", pd.getLookupSchema());
-        json.put("lookupQuery", pd.getLookupQuery());
-        json.put("defaultValue", pd.getDefaultValue());
-        json.put("redactedText", pd.getRedactedText());
-        json.put("validators", convertPropertyValidatorsToJson(pd));
-        json.put("rangeURI", pd.getRangeURI());
-        json.put("conceptURI", pd.getConceptURI());
-
-        return json;
-    }
-
-    @Override
     public void addExperimentListener(ExperimentListener listener)
     {
         _listeners.add(listener);
@@ -6578,6 +6571,31 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             listener.afterMaterialCreated(materials, container, user);
         }
+    }
+
+    /**
+     * Get runs that can potentially be deleted based on supplied materials
+     * @param materials -- Set of materials to get runs for
+     * @return
+     */
+    @Override
+    public List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials)
+    {
+        var runsUsingItems = new ArrayList<ExpRun>();
+        if (null != materials && !materials.isEmpty())
+        {
+            Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            runsUsingItems.addAll(getDerivedRunsFromMaterial(materialIds));
+            runsUsingItems.addAll(getDeleteableSourceRunsFromMaterials(materialIds));
+        }
+
+        return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
+    }
+
+    @Override
+    public boolean useUXDomainDesigner()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
     }
 
     public static class TestCase extends Assert

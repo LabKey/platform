@@ -5,7 +5,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%--
 /*
- * Copyright (c) 2014-2015 LabKey Corporation
+ * Copyright (c) 2015-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

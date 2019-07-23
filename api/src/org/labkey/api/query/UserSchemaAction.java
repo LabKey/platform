@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
@@ -58,6 +59,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     protected UserSchema _schema;
     protected TableInfo _table;
 
+    @Override
     public BindException bindParameters(PropertyValues m) throws Exception
     {
         _form = createQueryForm(getViewContext());
@@ -88,6 +90,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         return form;
     }
 
+    @Override
     public void validateCommand(QueryUpdateForm target, Errors errors)
     {
     }
@@ -127,11 +130,14 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
      *
      * I changed getSuccessURL(null) to return cancelUrl if it is provided.
      */
+    @Override
     public ActionURL getSuccessURL(QueryUpdateForm form)
     {
-        ActionURL returnURL = null;
-        if (null == form)
-            returnURL = getActionURLParam(ActionURL.Param.cancelUrl);
+        return resolveReturnUrl(form == null ? getActionURLParam(ActionURL.Param.cancelUrl) : null, form);
+    }
+
+    private ActionURL resolveReturnUrl(@Nullable ActionURL returnURL, QueryUpdateForm form)
+    {
         if (null == returnURL)
             returnURL = getActionURLParam(ActionURL.Param.returnUrl);
         if (null == returnURL)
@@ -147,18 +153,10 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     public ActionURL getCancelURL(QueryUpdateForm form)
     {
         ActionURL cancelURL = getActionURLParam(ActionURL.Param.cancelUrl);
-        if (cancelURL == null)
-            cancelURL = getActionURLParam(ActionURL.Param.returnUrl);
-        if (cancelURL == null)
-        {
-            if (_schema != null && _table != null)
-                cancelURL = _schema.urlFor(QueryAction.executeQuery, _form.getQueryDef());
-            else
-                cancelURL = QueryService.get().urlDefault(form.getContainer(), QueryAction.executeQuery, null, null);
-        }
-        return cancelURL;
+        return resolveReturnUrl(cancelURL, form);
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         if (_table != null)

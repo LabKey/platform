@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,6 +212,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @param run The run to save
      * @return the run and batch that were inserted
      */
+    @Override
     public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> inputMaterials = new HashMap<>();
@@ -362,7 +363,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
 
-            ExperimentService.get().syncRunEdges(run);
+            ExperimentService.get().queueSyncRunEdges(run);
 
             transaction.commit();
             return batch;

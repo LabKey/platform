@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -419,7 +419,7 @@ public class QueryTable extends QueryRelation
         {
             assert ref.count() > 0;
             assert null != _generateSelectSQL : "Select SQL has not been generated";
-            if (_generateSelectSQL)
+            if (null != _generateSelectSQL && _generateSelectSQL.booleanValue())
                 return super.getValueSql();
             else
                 return _col.getValueSql(_innerAlias);

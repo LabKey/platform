@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.labkey.experiment.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.log4j.Logger;
@@ -59,6 +61,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -186,24 +190,51 @@ public class SampleSetServiceImpl implements SampleSetService
         SearchService.IndexTask task = ss.defaultTask();
 
         Runnable r = () -> {
-            // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
-            SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                    .append(getTinfoMaterial(), "m")
-                    .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
-                    .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
-                    .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
-                    .add(sampleSet.getModified());
 
-            new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(batch -> {
-                for (Material m : batch)
-                {
-                    ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                    impl.index(task);
-                }
-            }, Material.class, 1000);
+            indexSampleSet(sampleSet, task);
+            indexSampleSetMaterials(sampleSet, task);
+
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
+    }
+
+
+    private void indexSampleSet(ExpSampleSet sampleSet, SearchService.IndexTask task)
+    {
+        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                .append(getTinfoMaterialSource(), "ms")
+                .append(" WHERE ms.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" AND ms.LSID = ?").add(sampleSet.getLSID())
+                .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
+                .add(sampleSet.getModified());
+
+        MaterialSource materialSource = new SqlSelector(getExpSchema().getScope(), sql).getObject(MaterialSource.class);
+        if (materialSource != null)
+        {
+            ExpSampleSetImpl impl = new ExpSampleSetImpl(materialSource);
+            impl.index(task);
+        }
+    }
+
+    private void indexSampleSetMaterials(ExpSampleSet sampleSet, SearchService.IndexTask task)
+    {
+        // Index all ExpMaterial that have never been indexed OR where either the ExpSampleSet definition or ExpMaterial itself has changed since last indexed
+        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                .append(getTinfoMaterial(), "m")
+                .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" AND m.cpasType = ?").add(sampleSet.getLSID())
+                .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
+                .add(sampleSet.getModified());
+
+        new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(batch -> {
+            for (Material m : batch)
+            {
+                ExpMaterialImpl impl = new ExpMaterialImpl(m);
+                impl.index(task);
+            }
+        }, Material.class, 1000);
     }
 
 
@@ -263,6 +294,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return result;
     }
 
+    @Override
     public List<ExpSampleSetImpl> getSampleSets(@NotNull Container container, @Nullable User user, boolean includeOtherContainers)
     {
         List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, user, includeOtherContainers);
@@ -515,6 +547,16 @@ public class SampleSetServiceImpl implements SampleSetService
         SchemaKey expMaterialsSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, materials.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expMaterialsSchema, singleton(source.getName()));
 
+        // Remove SampleSet from search index
+        SearchService ss = SearchService.get();
+        if (null != ss)
+        {
+            try (Timing t = MiniProfiler.step("search docs"))
+            {
+                    ss.deleteResource(source.getDocumentId());
+            }
+        }
+
         timer.stop();
         LOG.info("Deleted SampleSet '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
@@ -539,6 +581,16 @@ public class SampleSetServiceImpl implements SampleSetService
     @Override
     public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                             String nameExpression, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException
+    {
+        return createSampleSet(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
+                parentCol, nameExpression, templateInfo, null);
+    }
+
+    @NotNull
+    @Override
+    public ExpSampleSetImpl createSampleSet(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                            String nameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases)
         throws ExperimentException
     {
         if (name == null)
@@ -628,6 +680,8 @@ public class SampleSetServiceImpl implements SampleSetService
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
+        String importAliasJson = getAliasJson(importAliases);
+
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid.toString());
         source.setName(name);
@@ -636,6 +690,7 @@ public class SampleSetServiceImpl implements SampleSetService
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         source.setContainer(c);
+        source.setMaterialParentImportAliasMap(importAliasJson);
 
         if (hasNameProperty)
         {
@@ -684,6 +739,24 @@ public class SampleSetServiceImpl implements SampleSetService
             throw lastException;
 
         return ss;
+    }
+
+    public String getAliasJson(Map<String, String> importAliases)
+    {
+        if (importAliases == null || importAliases.size() == 0)
+            return null;
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(importAliases);
+            return json;
+        }
+        catch (JsonProcessingException e)
+        {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@
 
 CREATE SCHEMA study;
 CREATE SCHEMA studyDataset;
+
+/* Managed by the assay module, as of 19.3
 CREATE SCHEMA assayresult;
+*/
 
 CREATE TABLE study.QCState
 (
@@ -526,6 +529,7 @@ CREATE TABLE study.UploadLog
     CONSTRAINT UQ_UploadLog_FilePath UNIQUE (FilePath)
 );
 
+/* Managed by the assay module, as of 19.3
 CREATE TABLE study.Plate
 (
     RowId SERIAL,
@@ -579,6 +583,7 @@ CREATE TABLE study.Well
 
 CREATE INDEX IX_Well_PlateId ON study.Well(PlateId);
 CREATE INDEX IX_Well_Container ON study.Well(Container);
+*/
 
 CREATE TABLE study.ParticipantVisit
 (
@@ -1175,16 +1180,13 @@ CREATE TABLE study.StudyDesignLabs
   CONSTRAINT pk_studydesignlabs PRIMARY KEY (Container, Name)
 );
 
--- Create an owner colunn to represent shared or private participant categories
+-- Create an owner column to represent shared or private participant categories
 ALTER TABLE study.ParticipantCategory ADD COLUMN OwnerId USERID NOT NULL DEFAULT -1;
 UPDATE study.ParticipantCategory SET OwnerId = CreatedBy WHERE NOT shared;
 
 ALTER TABLE study.ParticipantCategory DROP CONSTRAINT uq_label_container;
 ALTER TABLE study.ParticipantCategory DROP COLUMN shared;
 ALTER TABLE study.ParticipantCategory ADD CONSTRAINT uq_label_container_owner UNIQUE(Label, Container, OwnerId);
-
--- Default the template type to nab if one isn't explicitly set
-UPDATE study.Plate SET Type = 'NAb' WHERE Type IS NULL;
 
 /* study-13.30-14.10.sql */
 

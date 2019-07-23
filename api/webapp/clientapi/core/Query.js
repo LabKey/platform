@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2008-2018 LabKey Corporation
+ * @license Copyright (c) 2012-2019 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3262,6 +3262,8 @@ LABKEY.Query.Filter.DoesNotHaveMissingValue.prototype = new LABKEY.Query.Filter;
  * @param {String} [config.importIdentity] When true, auto-increment key columns may be imported from the data.
  * @param {String} [config.importLookupByAlternateKey] When true, lookup columns can be imported by their alternate keys instead of the primary key.
  *          For example, if a column is a lookup to a SampleSet, the imported value can be the Sample's name since names must be unique within a SampleSet.
+ * @param {String} [config.insertOption] If IMPORT, rows will be inserted and an error will be given is existing rows are present in the table.
+ *          If MERGE, new rows will be inserted and existing rows will be merged.
  * @param {Function} [config.success] Function called when the "importData" function executes successfully.
  Will be called with the following arguments:
  An object containing success and rowCount properties.

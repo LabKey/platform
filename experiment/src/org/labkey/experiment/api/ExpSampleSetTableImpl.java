@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
             case LSID:
             case MaterialLSIDPrefix:
             case Name:
+            case NameExpression:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
             case Created:
@@ -88,6 +89,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.RowId).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Name);
         addColumn(ExpSampleSetTable.Column.Description);
+        addColumn(ExpSampleSetTable.Column.NameExpression).setHidden(true);
         addColumn(ExpSampleSetTable.Column.LSID).setHidden(true);
         addColumn(ExpSampleSetTable.Column.MaterialLSIDPrefix).setHidden(true);
         addColumn(ExpSampleSetTable.Column.Created);

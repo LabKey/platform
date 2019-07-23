@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,6 +187,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         FileUtils.moveFile(tempDirFile, assayDirFile);
     }
 
+    @Override
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         Map<File, String> fileToName = new HashMap<>();

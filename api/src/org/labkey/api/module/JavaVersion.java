@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.SystemUtils;
@@ -9,6 +24,7 @@ public enum JavaVersion
 {
     JAVA_12(false, true),
     JAVA_13(false, false),
+    JAVA_14(false, false),
     JAVA_FUTURE(false, false);
 
     private final boolean _deprecated;
@@ -43,6 +59,7 @@ public enum JavaVersion
         {
             case 12: return JAVA_12;
             case 13: return JAVA_13;
+            case 14: return JAVA_14;
         }
 
         if (version < 12)

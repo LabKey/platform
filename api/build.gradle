@@ -134,7 +134,7 @@ dependencies {
 
   compile project.files(project.tasks.schemasJar)
 
-  implementation fileTree(dir: "$tomcatDir/lib", includes: ['*.jar'], excludes: ['servlet-api.jar', 'mail.jar'])
+  BuildUtils.addTomcatBuildDependencies(project, "implementation")
   // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
   // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
   compile "javax.servlet:servlet-api:${servletApiVersion}"

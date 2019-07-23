@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,21 +193,6 @@ public class PipelineQueryView extends QueryView
             completeStatus.setActionType(ActionButton.Action.POST);
             completeStatus.setDisplayPermission(UpdatePermission.class);
             bar.add(completeStatus);
-        }
-
-        if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
-        {
-            ActionButton btn = new ActionButton("Pause/Resume Status Update");
-            btn.setActionType(ActionButton.Action.SCRIPT);
-            btn.setScript("LABKEY.requiresExt4Sandbox(function() {\n" +
-                    "LABKEY.requiresScript('pipeline/StatusUpdate.js', function(){\n" +
-                    "if (LABKEY.pipeline.statusUpdateInstance)\n" +
-                    "LABKEY.pipeline.statusUpdateInstance.toggle();\n" +
-                    "});\n" +
-                    "});\n");
-            btn.setIconCls("pause");
-            btn.setTooltip("Pause status update");
-            bar.add(btn);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.actions.ShowSelectedDataAction;
 import org.labkey.api.util.PageFlowUtil;
@@ -73,7 +74,7 @@ public class AssayRunType extends ExperimentRunType
             Domain domain = provider.getResultsDomain(_protocol);
             if (domain != null && domain.getTypeId() > 0)
             {
-                ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
+                ActionURL copyURL = PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(context.getContainer(), _protocol);
                 copyURL.addParameter("runIds", true);
                 if (table.getContainerFilter() != null && table.getContainerFilter().getType() != null)
                     copyURL.addParameter("containerFilterName", table.getContainerFilter().getType().name());

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -127,7 +128,7 @@
             Data Cut Date:
         </td>
         <td>
-            <%=refreshDate != null && refreshDate.getTime() > 0 ? formatDate(refreshDate) : ""%>
+            <%=refreshDate != null && refreshDate.getTime() > 0 ? formatDate(refreshDate) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 
@@ -223,7 +224,7 @@
             Modified:
         </td>
         <td>
-            <%=modifiedDate != null && modifiedDate.getTime() > 0 ? formatDateTime(modifiedDate) : ""%>
+            <%=modifiedDate != null && modifiedDate.getTime() > 0 ? formatDateTime(modifiedDate) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 
@@ -232,7 +233,7 @@
             Content Modified:
         </td>
         <td>
-            <%=contentModifiedDate != null && contentModifiedDate.getTime() > 0 ? formatDateTime(contentModifiedDate) : ""%>
+            <%=contentModifiedDate != null && contentModifiedDate.getTime() > 0 ? formatDateTime(contentModifiedDate) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 

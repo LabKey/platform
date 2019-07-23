@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
 <labkey:form id="permissionsForm" action="<%= h(buildURL(PipelineController.UpdateRootPermissionsAction.class))%>" method="POST">
-<input type="hidden" name="<%= h(ActionURL.Param.returnUrl) %>" value="<%= h(getViewContext().getActionURL())%>" />
+<input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(getViewContext().getActionURL())%>" />
 <input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%
     List<Group> groups = SecurityManager.getGroups(c.getProject(), true);

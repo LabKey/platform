@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,13 +58,18 @@ public class HelpTopic
         return HELP_LINK_PREFIX;
     }
 
+    public static String getJdkJavaDocLinkPrefix()
+    {
+        return FormatItem.JDK_JAVADOC_BASE_URL;
+    }
+
     public String getHelpTopicHref()
     {
         return HELP_LINK_PREFIX + _topic;
     }
 
-    // Create a simple link (just an <a> tag with plain mixed case text, no graphics) that links to the help topic, displays
-    // the provided text, uses the standard target, etc. Use in cases where LabKey standard link style doesn't fit in.
+    // Create a simple link (just an <a> tag with plain mixed case text, no graphics) to the help topic, displaying
+    // the provided text, using the standard target, etc. Use in cases where LabKey standard link style doesn't fit in.
     public HtmlString getSimpleLinkHtml(String displayText)
     {
         return PageFlowUtil.link(displayText).href(getHelpTopicHref()).attributes(TARGET_MAP).clearClasses().getHtmlString();
@@ -77,7 +82,7 @@ public class HelpTopic
         return PageFlowUtil.link(displayText).href(getHelpTopicHref()).attributes(TARGET_MAP).getHtmlString();
     }
 
-    // Get create a NavTree for a menu item that to the help topic, displays the provided text, uses the standard target, etc.
+    // Create a NavTree for a menu item that links to the help topic, displaying the provided text, using the standard target, etc.
     public NavTree getNavTree(String displayText)
     {
         NavTree tree = new NavTree(displayText, getHelpTopicHref());
@@ -87,7 +92,7 @@ public class HelpTopic
     }
 
     /**
-     * @return a link to the Oracle JDK JavaDocs for whatever the current LabKey-supported JDK is
+     * @return a link to this class' JavaDoc in the current LabKey-supported Oracle JDK
      */
     public static String getJDKJavaDocLink(Class c)
     {

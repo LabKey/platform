@@ -78,11 +78,13 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
     private static final Logger _log = Logger.getLogger(WikiModule.class);
 
+    @Override
     public String getName()
     {
         return "Wiki";
     }
 
+    @Override
     protected void init()
     {
         addController("wiki", WikiController.class, "attachments");
@@ -92,6 +94,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         AttachmentService.get().registerAttachmentType(WikiType.get());
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -100,6 +103,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
                 new MenuWikiWebPartFactory()));
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new WikiContainerListener());
@@ -197,6 +201,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         }
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -231,7 +236,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         try
         {
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
         }
         catch (IOException e)
         {
@@ -250,6 +255,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     }
 
 
+    @Override
     public void enumerateDocuments(final SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince)
     {
         Runnable r = () -> getWikiManager().indexWikis(task, c, modifiedSince, null);
@@ -257,6 +263,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     }
 
 
+    @Override
     public void indexDeleted()
     {
         new SqlExecutor(CommSchema.getInstance().getSchema()).execute("UPDATE comm.pages SET lastIndexed=NULL");

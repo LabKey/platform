@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2014 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ public class TempQuerySettings extends QuerySettings
 
         // deep copy settings
         this.setMaxRows(settings.getMaxRows());
+        this.setContainerFilterName(settings.getContainerFilterName());
 
         // Other settings that are required can be added here.
     }

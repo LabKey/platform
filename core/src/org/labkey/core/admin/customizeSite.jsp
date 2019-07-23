@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2005-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
-<%@ page import="java.util.List" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -132,7 +133,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <%}%>
 <tr>
     <td>
-        <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
+        <%= hasAdminOpsPerms ? button("Save").submit(true) : HtmlString.EMPTY_STRING %>
         <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
     </td>
 </tr>
@@ -430,7 +431,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td>&nbsp;</td></tr>
 <tr>
     <td>
-        <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
+        <%= hasAdminOpsPerms ? button("Save").submit(true) : HtmlString.EMPTY_STRING %>
         <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
     </td>
 </tr>

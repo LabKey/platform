@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -109,7 +110,7 @@ abstract public class DomainKind implements Handler<String>
      * @param user User
      * @return A list of errors collected during the update.
      */
-    abstract public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
+    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
 
     /**
      * Delete a Domain and its associated data.
@@ -164,15 +165,10 @@ abstract public class DomainKind implements Handler<String>
     abstract public String getMetaDataTableName();
 
     /**
-     * Need to be able to tell if a domain has rows.
+     * Determines if the domain has any existing rows where the value is null for the given property
      * Perhaps DomainKind should have getTableInfo() method.
      */
     abstract public boolean hasNullValues(Domain domain, DomainProperty prop);
-
-    /**
-     * Determines if the domain has either no rows or row which are all null
-     */
-    abstract public boolean hasNullOrNoRows(Domain domain, DomainProperty prop);
 
     public DbSchemaType getSchemaType()
     {

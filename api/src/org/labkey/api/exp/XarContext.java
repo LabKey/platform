@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;

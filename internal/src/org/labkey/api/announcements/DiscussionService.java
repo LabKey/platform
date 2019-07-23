@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import java.util.Collection;
  */
 public interface DiscussionService
 {
-    public enum StatusOption
+    enum StatusOption
     {
         Active,
         Closed
@@ -186,7 +186,7 @@ public interface DiscussionService
             }
         }
 
-        // Set the defaults that will be used for un-customized message boards.  We must set them to false above to
+        // Set the defaults that will be used for un-customized message boards. We must set them to false above to
         // workaround the "checkbox doesn't post if false" problem.
         public void setDefaults()
         {

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.ResultSetUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -391,8 +390,10 @@
                 if (null == keyCount)
                     keyCount = 1;
     %>
-    <td class="labkey-participant-view-header"
-        colspan="<%=keyCount%>"><%=formatDate(date)%>
+    <td class="labkey-participant-view-header" colspan="<%=keyCount%>">
+        <%=formatDate(date)%>
+        <%=(study.getTimepointType().isVisitBased() && date != null ? HtmlString.unsafe("<br/>Visit: ") : "")%>
+        <%=(study.getTimepointType().isVisitBased() ? seqNum : "")%>
     </td>
     <%
             }

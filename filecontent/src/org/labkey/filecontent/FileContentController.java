@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1358,7 +1358,7 @@ public class FileContentController extends SpringActionController
                             if (null != column)
                             {
                                 Map<String, Object> map = new HashMap<>();
-                                map.put("value", data.get(property));
+                                map.put("value", data.get(column.getAlias()));
                                 StringExpression url = column.getEffectiveURL();
                                 if (null != url)
                                     map.put("url", url.eval(data));

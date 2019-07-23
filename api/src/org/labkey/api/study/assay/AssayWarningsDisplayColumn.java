@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
  */
 public class AssayWarningsDisplayColumn extends DataColumn
 {
-
     public AssayWarningsDisplayColumn(AssayRunUploadForm form)
     {
         super(createColumnInfo());
@@ -39,6 +38,7 @@ public class AssayWarningsDisplayColumn extends DataColumn
         return new BaseColumnInfo("ignoreWarnings");
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;

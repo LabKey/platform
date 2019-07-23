@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,21 +40,25 @@ import java.util.Set;
 
 public class DemoModule extends DefaultModule
 {
+    @Override
     public String getName()
     {
         return "Demo";
     }
 
+    @Override
     public double getVersion()
     {
-        return 19.10;
+        return 19.20;
     }
 
+    @Override
     protected void init()
     {
         addController("demo", DemoController.class);
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -64,6 +68,7 @@ public class DemoModule extends DefaultModule
                 addLegacyNames("Narrow Demo Summary");
             }
 
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new DemoWebPart();
@@ -71,11 +76,13 @@ public class DemoModule extends DefaultModule
         }));
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -89,6 +96,7 @@ public class DemoModule extends DefaultModule
         return Collections.emptyList();
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         // add a container listener so we'll know when our container is deleted:

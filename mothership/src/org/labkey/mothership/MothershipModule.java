@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,28 +53,33 @@ public class MothershipModule extends DefaultModule
 {
     public static final String NAME = "Mothership";
 
+    @Override
     public String getName()
     {
         return NAME;
     }
 
+    @Override
     public double getVersion()
     {
-        return 19.10;
+        return 19.20;
     }
 
+    @Override
     protected void init()
     {
         addController("mothership", MothershipController.class);
         MothershipSchema.register(this);
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
@@ -130,12 +135,14 @@ public class MothershipModule extends DefaultModule
         return PageFlowUtil.set(ExceptionStackTrace.TestCase.class);
     }
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         MothershipReport.setShowSelfReportExceptions(true);
 
         ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
         {
+            @Override
             public void containerDeleted(Container c, User user)
             {
                 MothershipManager.get().deleteForContainer(c);

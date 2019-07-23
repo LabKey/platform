@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2013 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class TableInfoForm extends QueryForm
     {
     }
 
+    @Override
     protected @NotNull BindException doBindParameters(PropertyValues in)
     {
         BindException errors = super.doBindParameters(in);
@@ -107,7 +108,7 @@ public class TableInfoForm extends QueryForm
         List<String> parts;
         if (target == null)
         {
-            parts = Collections.EMPTY_LIST;
+            parts = Collections.emptyList();
         }
         else
         {

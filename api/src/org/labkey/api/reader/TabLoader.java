@@ -1112,9 +1112,6 @@ public class TabLoader extends DataLoader
         @Test
         public void testSniff() throws IOException
         {
-            // File has comment headers
-            assertTrue(isType(TabLoader.TSV_FILE_TYPE, JunitUtil.getSampleData(null, "ms1/bvt/inspect/Find Features/msi-sample.peptides.tsv")));
-
             assertFalse(isType(TabLoader.TSV_FILE_TYPE, JunitUtil.getSampleData(null, "Nab/384well_highthroughput.csv")));
             assertTrue(isType(TabLoader.CSV_FILE_TYPE, JunitUtil.getSampleData(null, "Nab/384well_highthroughput.csv")));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,7 +202,8 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             }
             if (null != table && !forWrite)
                 table.setLocked(true);
-            if (null != table && null != cacheKey)
+            // TODO distinguish cases we can cache query/table with named parameters and when we can't (see 37732)
+            if (null != table && null != cacheKey && table.getNamedParameters().isEmpty())
                 tableInfoCache.put(cacheKey, table);
         }
         if (null == table)
@@ -398,6 +399,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     public ActionURL urlFor(QueryAction action, @NotNull QueryDefinition queryDef)
     {
+        assert queryDef != null;
         return queryDef.urlFor(action, getContainer());
     }
 
@@ -427,6 +429,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
     /** Override this method to return a schema specific QueryView for the given QuerySettings. */
+    @NotNull
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         QueryDefinition qdef = settings.getQueryDef(this);
@@ -440,6 +443,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return new QueryView(this, settings, errors);
     }
 
+    @NotNull
     public final QueryView createView(QueryForm form, BindException errors)
     {
         return createView(form.getViewContext(), form.getQuerySettings(), errors);

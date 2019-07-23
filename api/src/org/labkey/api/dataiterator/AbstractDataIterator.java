@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2016 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public abstract class AbstractDataIterator implements DataIterator
 {
     private String _debugName = "";
     private ValidationException _globalError = null;
-    final DataIteratorContext _context;
+    final protected DataIteratorContext _context;
     final BatchValidationException _errors;
     protected ValidationException _rowError = null;
 

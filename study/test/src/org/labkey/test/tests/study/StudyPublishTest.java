@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -864,7 +864,18 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         // Wizard page 10 : Folder Objects
         waitForElement(Locator.xpath("//div[@class = 'labkey-nav-page-header'][text() = 'Folder Objects']"));
-        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects, "Container specific module properties", "External schema definitions", "Folder type and active modules", "Full-text search settings", "Missing value indicators", "Notification settings", "Role assignments for users and groups", "Webpart properties and layout", "Wikis and their attachments", "Files");
+        verifyPublishWizardSelectedCheckboxes(StudyPublishWizardGrid.folderObjects,
+                "Container specific module properties",
+                "External schema definitions",
+                "Folder type and active modules",
+                "Full-text search settings",
+                "Missing value indicators",
+                "Notification settings",
+                "Role assignments for users and groups",
+                "Webpart properties and layout",
+                "Wikis and their attachments",
+                "Files",
+                "QC State Settings");
         clickButton("Next", 0);
 
         // Wizard page 11 : Publish Options

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@ package org.labkey.api.search;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.util.EnumHasHtmlString;
 
 /**
  * Options for how widely or narrowly to search on the server, based on the number of containers to include.
  * User: adam
  * Date: 2/18/12
  */
-public enum SearchScope
+public enum SearchScope implements EnumHasHtmlString<SearchScope>
 {
     All() {
         @Override

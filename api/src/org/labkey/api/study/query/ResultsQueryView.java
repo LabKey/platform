@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -128,7 +128,7 @@ public class ResultsQueryView extends AssayBaseQueryView
 
             if (!AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             {
-                ActionURL publishURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(getContainer(), _protocol);
+                ActionURL publishURL = PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(getContainer(), _protocol);
                 for (Pair<String, String> param : publishURL.getParameters())
                 {
                     if (!"rowId".equalsIgnoreCase(param.getKey()))

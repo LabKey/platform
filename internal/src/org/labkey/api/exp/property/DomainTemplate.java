@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -389,6 +389,10 @@ public class DomainTemplate
                 DomainTemplateGroup.LOG.debug("creating domain '" + domainName + "'");
                 d = DomainUtil.createDomain(this, c, u, domainName);
                 tx.commit();
+            }
+            catch (ValidationException ve)
+            {
+                throw new BatchValidationException(ve);
             }
         }
 

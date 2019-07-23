@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2017-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@
                 <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item">
                 <label for="approvedTermsOfUse">I agree to these terms</label>
             </div>
-            <input type="hidden" name="termsOfUseType" id="termsOfUseType" value="<%= h(bean.form.getTermsOfUseType())%>">
+            <input type="hidden" name="termsOfUseType" id="termsOfUseType" value="<%=bean.form.getTermsOfUseType()%>">
 
             <div class="auth-item">
                 <%= button("Agree").submit(true) %>

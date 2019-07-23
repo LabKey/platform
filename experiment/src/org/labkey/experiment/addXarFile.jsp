@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2005-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,4 +27,4 @@
     <%= button("Upload").submit(true) %>
 </labkey:form>
 </p>
-<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=urlProvider(PipelineUrls.class).urlSetup(getContainer())%>">Data Pipeline</a> instead.</p>
+<p>To import a <em>.xar</em> or <em>.xar.xml</em> file that is already on the server's disk, please use the <a href="<%=h(urlProvider(PipelineUrls.class).urlSetup(getContainer()))%>">Data Pipeline</a> instead.</p>

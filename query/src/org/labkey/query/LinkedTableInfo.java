@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,11 @@ import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -194,9 +197,11 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     public Collection<QueryService.ParameterDecl> getNamedParameters()
     {
         // LinkedTableInfo only exposes named parameters defined in the original TableInfo
-        // and removes named parameters that are added to the generated LinkedSchema.createQueryDef() query.
-        //return super.getNamedParameters();
-        return Collections.emptyList();
+        // and named parameters already have a value supplied via the template
+        List<QueryService.ParameterDecl> result = new ArrayList<>(getRealTable().getNamedParameters());
+        Map<String, Object> values = fireCustomizeParameterValues();
+        result.removeIf(param -> values.get(param.getName()) != null);
+        return result;
     }
 
     @NotNull

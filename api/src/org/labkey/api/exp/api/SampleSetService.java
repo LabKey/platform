@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,11 @@ public interface SampleSetService
     @NotNull
     ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                  String nameExpression, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException, SQLException;
+
+    @NotNull
+    ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                 String nameExpression, @Nullable TemplateInfo templateInfo, Map<String, String> importAliases)
             throws ExperimentException, SQLException;
 
     @NotNull

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,6 @@ public interface DataIterator extends Closeable
      * a) null
      * b) real value (e.g. 5.0, or "name")
      * c) MvFieldWrapper
-     *
-     * MSInspectFeaturesDataHandler uses error values as well, but that's what ValidationException is for
      */
     Object get(int i);
 

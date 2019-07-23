@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ * Copyright (c) 2009-2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+
+ -->
+<tables xsi:schemaLocation="http://labkey.org/data/xml ../../../api/schemas/tableInfo.xsd"
+        xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <table tableName="Plate" tableDbType="TABLE">
+    <description>Contains one row per defined plate template or uploaded plate instance.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="LSID"/>
+      <column columnName="Container"/>
+      <column columnName="Name">
+        <description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</description>
+      </column>
+      <column columnName="CreatedBy">
+        <datatype>int</datatype>
+        <columnTitle>Created By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Created">
+        <columnTitle>Created</columnTitle>
+        <inputType>text</inputType>
+        <formatString>DateTime</formatString>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
+      <column columnName="Template">
+        <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
+      </column>
+      <column columnName="Rows">
+        <description>The number of rows in each plate.</description>
+      </column>
+      <column columnName="Columns">
+        <description>The number of columns in each plate.</description>
+      </column>
+      <column columnName="DataFileId">
+        <description>A unique text identifier (a GUID) for the data file associated with each plate.</description>
+      </column>
+      <column columnName="Type">
+        <description>A text label of the plate type ("NAb", for example).</description>
+      </column>
+    </columns>
+  </table>
+  <table tableName="Well" tableDbType="TABLE">
+    <description>Contains one row per uploaded well data or defined plate template well.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="LSID"/>
+      <column columnName="Container"/>
+      <column columnName="Value">
+        <description>The data value associated with each well.</description>
+      </column>
+      <column columnName="Dilution">
+        <description>This well's dilution/concentration value.</description>
+      </column>
+      <column columnName="PlateId">
+        <description>The row ID of the plate with which each well is associated.</description>
+      </column>
+      <column columnName="Row">
+        <description>The zero-based row index of each well.</description>
+      </column>
+      <column columnName="Col">
+        <description>The zero-based column index of each well.</description>
+      </column>
+    </columns>
+  </table>
+  <table tableName="WellGroup" tableDbType="TABLE">
+    <description>Contains one row per well group in uploaded plate data or plate templates.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="PlateId">
+        <description>The row ID of the plate with which each well group is associated.</description>
+      </column>
+      <column columnName="LSID"/>
+      <column columnName="Container"/>
+      <column columnName="Name">
+        <description>The name of each well group.</description>
+      </column>
+      <column columnName="TypeName">
+        <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</description>
+      </column>
+      <column columnName="Template">
+        <description>Boolean indicating whether each well group is part of a plate template (versus a plate instance).</description>
+      </column>
+    </columns>
+  </table>
+</tables>

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -288,7 +288,7 @@
             <labkey:input type="hidden" name="showAdvanced" value="<%=h(form.isShowAdvanced())%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
-            <labkey:input type="hidden" name="scope" value="<%=h(form.getSearchScope())%>"/>
+            <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
             <% } %>
             <% if (null != form.getTemplate()) { %>
             <labkey:input type="hidden" name="template" value="<%=h(form.getTemplate())%>"/>

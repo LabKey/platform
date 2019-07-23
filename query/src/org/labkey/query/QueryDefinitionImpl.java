@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,16 +59,9 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
-import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.queryCustomView.NamedFiltersType;
-import org.labkey.query.design.DgColumn;
-import org.labkey.query.design.DgQuery;
-import org.labkey.query.design.DgTable;
-import org.labkey.query.design.DgValue;
-import org.labkey.query.design.QueryDocument;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
@@ -106,9 +99,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
 
-    // Cached the parsed TableInfos (with and without metadata)
-    private boolean _useCache = true;
-
     // todo: spec 25628 making _cache static prevents the entire map of all tableInfos from being reloaded each time GetQueryViewsAction instantiates a new copy of QueryDefintionImpl
     // but may make _cache susceptible to concurrency conflicts or security problems -- more investigation is needed
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
@@ -144,11 +134,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes = new ArrayList<>();
     }
 
+    @Override
     public boolean canInherit()
     {
         return (_queryDef.getFlags() & QueryManager.FLAG_INHERITABLE) != 0;
     }
 
+    @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
         String name="anonymous";
@@ -160,16 +152,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _containerFilter = containerFilter;
     }
 
+    @Override
     public ContainerFilter getContainerFilter()
     {
         return _containerFilter;
     }
 
+    @Override
     public void delete(User user)
     {
         delete(user, true);
     }
 
+    @Override
     public void delete(User user, boolean fireChangeEvent)
     {
         if (!canEdit(user))
@@ -187,11 +182,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef.getQueryDefId() == 0;
     }
 
+    @Override
     public boolean canEdit(User user)
     {
         return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
     }
 
+    @Override
     public CustomView getCustomView(@NotNull User owner, @Nullable HttpServletRequest request, String name)
     {
         CustomView result = getCustomViews(owner, request, true, false).get(name);
@@ -209,22 +206,26 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return result;
     }
 
+    @Override
     public CustomView getSharedCustomView(String name)
     {
         return getCustomViews(null, null, true, true).get(name);
     }
 
 
+    @Override
     public CustomView createCustomView()
     {
         return new CustomViewImpl(this, null, null);
     }
 
+    @Override
     public CustomView createCustomView(@NotNull User owner, String name)
     {
         return new CustomViewImpl(this, owner, name);
     }
 
+    @Override
     public CustomView createSharedCustomView(String name)
     {
         return new CustomViewImpl(this, null, name);
@@ -233,6 +234,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     Map<String, CustomView> _customViewMap = null;
 
+    @Override
     public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean includeHidden, boolean sharedOnly)
     {
         Map<String, CustomView> ret = new LinkedHashMap<>();
@@ -280,18 +282,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
         if (!includeHidden)
         {
-            for (Iterator<Map.Entry<String, CustomView>> i = ret.entrySet().iterator(); i.hasNext(); )
-            {
-                if (i.next().getValue().isHidden())
-                {
-                    i.remove();
-                }
-            }
+            ret.entrySet().removeIf(stringCustomViewEntry -> stringCustomViewEntry.getValue().isHidden());
         }
 
         return ret;
     }
 
+    @Override
     public User getUser()
     {
         return _user;
@@ -309,11 +306,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return ContainerManager.getForId(_queryDef.getContainerId());
     }
 
+    @Override
     public String getName()
     {
         return _queryDef.getName();
     }
 
+    @Override
     public void setName(String name)
     {
         if (getName().equals(name))
@@ -323,11 +322,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Name, oldName, name));
     }
 
+    @Override
     public String getTitle()
     {
         return getName();
     }
 
+    @Override
     public String getModuleName()
     {
         // TODO: In the future this could use the TableInfo if that ever has access to module information
@@ -337,6 +338,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
 
 
+    @Override
     public List<QueryParseException> getParseErrors(QuerySchema schema)
     {
         ArrayList<QueryParseException> ret = new ArrayList<>();
@@ -475,6 +477,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _schema = schema;
     }
 
+    @Override
     @NotNull
     public UserSchema getSchema()
     {
@@ -490,18 +493,21 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     }
 
 
+    @Override
     @Deprecated // Use .getSchemaPath()
     public String getSchemaName()
     {
         return _queryDef.getSchemaPath().toString();
     }
 
+    @Override
     public SchemaKey getSchemaPath()
     {
         return _queryDef.getSchemaPath();
     }
 
 
+    @Override
     @Nullable
     public TableInfo getTable(@Nullable List<QueryException> errors, boolean includeMetadata)
     {
@@ -519,42 +525,36 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public TableInfo getTable(@NotNull UserSchema schema, @Nullable List<QueryException> errors, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
-        if (_useCache)
+        // CONSIDER: define UserSchema.equals() ?
+        if (schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
+            schema.getContainer().equals(getSchema().getContainer()) &&
+            Objects.equals(schema.getUser(), getSchema().getUser()))
         {
-            // CONSIDER: define UserSchema.equals() ?
-            if (schema.getSchemaPath().equals(getSchema().getSchemaPath()) &&
-                schema.getContainer().equals(getSchema().getContainer()) &&
-                Objects.equals(schema.getUser(), getSchema().getUser()))
+            // Stash the schema because it's a match with the one we'd made for ourself
+            if (_schema == null)
             {
-                // Stash the schema because it's a match with the one we'd made for ourself
-                if (_schema == null)
-                {
-                    _schema = schema;
-                }
-                Pair<String,Boolean> key = new Pair<>(getName().toLowerCase(), includeMetadata);
-                TableInfo table = _cache.get(key);
-                if (table == null)
-                {
-                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
+                _schema = schema;
+            }
+            Pair<String,Boolean> key = new Pair<>(getName().toLowerCase(), includeMetadata);
+            TableInfo table = _cache.get(key);
+            if (table == null)
+            {
+                table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
 
-                    if (null == table)
-                        return null;
+                if (null == table)
+                    return null;
 
-                    log.debug("Caching table " + schema.getName() + "." + table.getName());
-                    _cache.put(key, table);
-                }
-                else
-                {
-                    log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
-                }
-
-                return table;
+                log.debug("Caching table " + schema.getName() + "." + table.getName());
+                _cache.put(key, table);
             }
             else
             {
-                log.debug("!! Not using cached table: schemas not equal");
+                log.debug("Returning cached table '" + getName() + "', " + (includeMetadata ? "with" : "without") + " metadata");
             }
+
+            return table;
         }
+        log.debug("!! Not using cached table: schemas not equal");
 
         return createTable(schema, errors, includeMetadata, null);
     }
@@ -650,11 +650,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         ret.loadFromXML(schema, Collections.singleton(xmlTable), errors);
     }
 
+    @Override
     public String getMetadataXml()
     {
         return _queryDef.getMetaData();
     }
 
+    @Override
     public void setDefinitionContainer(Container container)
     {
         if (container.equals(getDefinitionContainer()))
@@ -664,11 +666,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Container, oldContainer, container));
     }
 
+    @Override
     public Collection<QueryPropertyChange> save(User user, Container container)
     {
         return save(user, container, true);
     }
 
+    @Override
     public Collection<QueryPropertyChange> save(User user, Container container, boolean fireChangeEvent)
     {
         setDefinitionContainer(container);
@@ -702,6 +706,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return changes;
     }
 
+    @Override
     public void setCanInherit(boolean f)
     {
         if (canInherit() == f)
@@ -711,11 +716,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Inherit, oldValue, f));
     }
 
+    @Override
     public boolean isHidden()
     {
         return mgr.isHidden(_queryDef.getFlags());
     }
 
+    @Override
     public void setIsHidden(boolean f)
     {
         if (isHidden() == f)
@@ -725,6 +732,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         _changes.add(new QueryPropertyChange<>(this, QueryProperty.Hidden, oldValue, f));
     }
 
+    @Override
     public boolean isSnapshot()
     {
         return mgr.isSnapshot(_queryDef.getFlags());
@@ -749,17 +757,20 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         edit().setFlags(mgr.setIsSnapshot(_queryDef.getFlags(), f));
     }
 
+    @Override
     public void setMetadataXml(String xml)
     {
         edit().setMetaData(StringUtils.trimToNull(xml));
         // CONSIDER: Add metadata QueryPropertyChange to _changes
     }
 
+    @Override
     public ActionURL urlFor(QueryAction action)
     {
         return urlFor(action, getContainer());
     }
 
+    @Override
     public ActionURL urlFor(QueryAction action, Container container)
     {
         ActionURL url = null;
@@ -792,6 +803,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return url != null ? url : QueryService.get().urlDefault(container, action, getSchemaName(), getName());
     }
 
+    @Override
     public ActionURL urlFor(QueryAction action, Container container, Map<String, Object> pks)
     {
         ActionURL url = urlFor(action, container);
@@ -806,6 +818,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return url;
     }
 
+    @Override
     public StringExpression urlExpr(QueryAction action, Container container)
     {
         StringExpression expr = null;
@@ -872,11 +885,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return expr;
     }
 
+    @Override
     public String getDescription()
     {
         return _queryDef.getDescription();
     }
 
+    @Override
     public void setDescription(String description)
     {
         if (StringUtils.equals(getDescription(), description))
@@ -891,6 +906,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef;
     }
 
+    @Override
     public List<ColumnInfo> getColumns(CustomView view, TableInfo table)
     {
         if (table == null)
@@ -909,6 +925,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return new ArrayList<>(QueryService.get().getColumns(table, table.getDefaultVisibleColumns()).values());
     }
 
+    @Override
     public List<DisplayColumn> getDisplayColumns(CustomView view, TableInfo table)
     {
         if (table == null)
@@ -945,132 +962,6 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return ret;
     }
 
-    public QueryDocument getDesignDocument(QuerySchema schema)
-    {
-        Query query = getQuery(schema); 
-        QueryDocument ret = query.getDesignDocument();
-        if (ret == null)
-            return null;
-        Map<String, DgColumn> columns = new HashMap<>();
-        for (DgColumn dgColumn : ret.getQuery().getSelect().getColumnArray())
-        {
-            columns.put(dgColumn.getAlias(), dgColumn);
-        }
-        String strMetadata = getMetadataXml();
-        if (strMetadata != null)
-        {
-            try
-            {
-                TablesDocument doc = TablesDocument.Factory.parse(getMetadataXml());
-                for (ColumnType column : doc.getTables().getTableArray()[0].getColumns().getColumnArray())
-                {
-                    DgColumn dgColumn = columns.get(column.getColumnName());
-                    if (dgColumn != null)
-                    {
-                        dgColumn.setMetadata(column);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-
-            }
-        }
-        DgQuery.From from = ret.getQuery().addNewFrom();
-        for (FieldKey key : query.getFromTables())
-        {
-            DgTable dgTable = from.addNewTable();
-            dgTable.setAlias(key.toString());
-            TableXML.initTable(dgTable.addNewMetadata(), query.getFromTable(key), key);
-        }
-
-        return ret;
-    }
-
-    public boolean updateDesignDocument(QuerySchema schema, QueryDocument doc, List<QueryException> errors)
-    {
-        Map<String, DgColumn> columns = new LinkedHashMap<>();
-        DgQuery dgQuery = doc.getQuery();
-        DgQuery.Select select = dgQuery.getSelect();
-        for (DgColumn column : select.getColumnArray())
-        {
-            String alias = column.getAlias();
-            if (alias == null)
-            {
-                DgValue value = column.getValue();
-                if (value.getField() == null)
-                {
-                    errors.add(new QueryException("Expression column '" + value.getSql() + "' requires an alias."));
-                    return false;
-                }
-                FieldKey key = FieldKey.fromString(value.getField().getStringValue());
-                alias = key.getName();
-            }
-            if (columns.containsKey(alias))
-            {
-                errors.add(new QueryException("There is more than one column with the alias '" + alias + "'."));
-                return false;
-            }
-            columns.put(alias, column);
-        }
-        Query query = getQuery(schema);
-        query.update(dgQuery, errors);
-        setSql(query.getQueryText());
-        String xml = getMetadataXml();
-        TablesDocument tablesDoc;
-        TableType xbTable;
-        if (xml != null)
-        {
-            try
-            {
-                tablesDoc = TablesDocument.Factory.parse(xml);
-            }
-            catch (XmlException xmlException)
-            {
-                errors.add(new QueryException("There was an error parsing the query's original Metadata XML: " + xmlException.getMessage()));
-                return false;
-            }
-        }
-        else
-        {
-            tablesDoc = TablesDocument.Factory.newInstance();
-        }
-        TablesType tables = tablesDoc.getTables();
-        if (tables == null)
-        {
-            tables = tablesDoc.addNewTables();
-        }
-        if (tables.getTableArray().length < 1)
-        {
-            xbTable = tables.addNewTable();
-        }
-        else
-        {
-            xbTable = tables.getTableArray()[0];
-        }
-        
-        xbTable.setTableName(getName());
-        xbTable.setTableDbType("NOT_IN_DB");
-        TableType.Columns xbColumns = xbTable.getColumns();
-        if (xbColumns == null)
-        {
-            xbColumns = xbTable.addNewColumns();
-        }
-        List<ColumnType> lstColumns = new ArrayList<>();
-        for (Map.Entry<String, DgColumn> entry : columns.entrySet())
-        {
-            ColumnType xbColumn = entry.getValue().getMetadata();
-            if (xbColumn != null)
-            {
-                xbColumn.setColumnName(entry.getKey());
-                lstColumns.add(xbColumn);
-            }
-        }
-        xbColumns.setColumnArray(lstColumns.toArray(new ColumnType[lstColumns.size()]));
-        setMetadataXml(tablesDoc.toString());
-        return errors.size() == 0;
-    }
-
     protected QueryDef edit()
     {
         if (_dirty)
@@ -1081,11 +972,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _queryDef;
     }
 
+    @Override
     public boolean isTableQueryDefinition()
     {
         return false;
     }
 
+    @Override
     public Collection<String> getDependents(User user)
     {
         return QueryManager.get().getQueryDependents(user, getContainer(), null, getSchemaPath(), Collections.singleton(getName()));
@@ -1097,16 +990,19 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return true;
     }
 
+    @Override
     public boolean isMetadataEditable()
     {
         return true;
     }
 
+    @Override
     public void setMetadataTableMap(Map<String, TableType> metadataTableMap)
     {
         _metadataTableMap = metadataTableMap;
     }
 
+    @Override
     public ViewOptions getViewOptions()
     {
         return new ViewOptionsImpl(getMetadataXml());
@@ -1141,6 +1037,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
         }
 
+        @Override
         public List<ViewFilterItem> getViewFilterItems()
         {
             List<ViewFilterItem> items = new ArrayList<>();
@@ -1156,6 +1053,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             return items;
         }
 
+        @Override
         public void setViewFilterItems(List<ViewFilterItem> items)
         {
             List<org.labkey.data.xml.ViewOptions.ViewFilterItem> filterItems = new ArrayList<>();
@@ -1172,15 +1070,17 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             if (options == null)
                 options = _document.getTables().getTableArray()[0].addNewViewOptions();
 
-            options.setViewFilterItemArray(filterItems.toArray(new org.labkey.data.xml.ViewOptions.ViewFilterItem[filterItems.size()]));
+            options.setViewFilterItemArray(filterItems.toArray(new org.labkey.data.xml.ViewOptions.ViewFilterItem[0]));
         }
 
+        @Override
         public void save(User user)
         {
             setMetadataXml(_document.toString());
             QueryDefinitionImpl.this.save(user, getDefinitionContainer());
         }
 
+        @Override
         public void delete(User user)
         {
             _document.getTables().getTableArray()[0].unsetViewOptions();

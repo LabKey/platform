@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -371,6 +371,8 @@ if (!LABKEY.DataRegions) {
                 showPaginationCount: undefined,
 
                 showRecordSelectors: false,
+
+                showFilterDescription: true,
 
                 showReports: undefined,
 
@@ -3648,6 +3650,7 @@ if (!LABKEY.DataRegions) {
                 'showPaginationCount',
                 'showReports',
                 'showSurroundingBorder',
+                'showFilterDescription',
                 'showUpdateColumn',
                 'showViewPanel',
                 'timeout',
@@ -4449,6 +4452,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} [config.showRStudioButton] Show the export to RStudio button menu in the button bar.  Requires export button to work. (default false).
      * @param {boolean} [config.showBorders] Render the table with borders (default true).
      * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
+     * @param {boolean} [config.showFilterDescription] Include filter and parameter values in the grid header, if present (default true).
      * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default undefined, meaning they will be shown if the query is updatable by the current user).
      *  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
      * @param {boolean} [config.showPagination] Show the pagination links and count (default true).

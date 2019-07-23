@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2015 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,10 +76,12 @@ public class PublishedRecordQueryView extends DatasetQueryView
 
     protected TableInfo createTable()
     {
-        TableInfo table = super.createTable();
+        TableInfo table = getSchema().getTable(getSettings().getQueryName(), getContainerFilter(), true, true);
         var sourceLsidCol = table.getColumn("SourceLSID");
         if (sourceLsidCol != null)
             ((BaseColumnInfo)sourceLsidCol).setHidden(false);
+        table.setLocked(true);
+
         return table;
     }
 

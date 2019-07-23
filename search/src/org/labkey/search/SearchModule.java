@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,16 +57,19 @@ public class SearchModule extends DefaultModule
     // package logger for use with logger-manage.view
     static final Logger _logPackage = Logger.getLogger(SearchModule.class.getPackage().getName());
 
+    @Override
     public String getName()
     {
         return "Search";
     }
 
+    @Override
     public double getVersion()
     {
-        return 19.11;
+        return 19.20;
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
@@ -98,6 +101,7 @@ public class SearchModule extends DefaultModule
     }
 
     
+    @Override
     protected void init()
     {
         addController("search", SearchController.class);
@@ -106,6 +110,7 @@ public class SearchModule extends DefaultModule
         SearchService.setInstance(ss);
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
+            @Override
             public WebdavResource resolve(@NotNull String path)
             {
                 return WebdavService.get().lookup(path);
@@ -121,6 +126,7 @@ public class SearchModule extends DefaultModule
     }
 
 
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         final SearchService ss = SearchService.get();
@@ -169,6 +175,7 @@ public class SearchModule extends DefaultModule
                 return "Search Service: delete index";
             }
 
+            @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {
                 SearchService ss = SearchService.get();

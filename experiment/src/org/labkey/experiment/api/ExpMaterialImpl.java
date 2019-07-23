@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("material", "Material/Sample");
 
-    static public List<ExpMaterialImpl> fromMaterials(List<Material> materials)
+    static public List<ExpMaterialImpl> fromMaterials(Collection<Material> materials)
     {
         return materials.stream().map(ExpMaterialImpl::new).collect(Collectors.toList());
     }
@@ -83,7 +83,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         super(material);
     }
 
-
+    @Override
     public void setName(String name)
     {
         if (null != getLSID() && !name.equals(new Lsid(getLSID()).getObjectId()))
@@ -107,7 +107,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         super.setLSID(lsid);
     }
 
-
+    @Override
     public URLHelper detailsURL()
     {
         ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
@@ -117,7 +117,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
 
 
-    @Nullable
+    @Nullable @Override
     public ExpSampleSet getSampleSet()
     {
         String type = _object.getCpasType();
@@ -132,11 +132,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     }
 
+    @Override
     public List<ExpProtocolApplicationImpl> getTargetApplications()
     {
         return getTargetApplications(new SimpleFilter(FieldKey.fromParts("MaterialId"), getRowId()), ExperimentServiceImpl.get().getTinfoMaterialInput());
     }
 
+    @Override
     public String getCpasType()
     {
         String result = _object.getCpasType();
@@ -158,6 +160,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return Collections.unmodifiableList(aliases);
     }
 
+    /** Get the ObjectId of the ExpSampleSet that this ExpMaterial belongs to. */
+    @Nullable
+    public Integer getParentObjectId()
+    {
+        ExpSampleSet ss = getSampleSet();
+        if (ss == null)
+            return null;
+
+        return ss.getObjectId();
+    }
+
+    @Override
     public void save(User user)
     {
         save(user, (ExpSampleSetImpl)getSampleSet());
@@ -165,40 +179,53 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
     public void save(User user, ExpSampleSetImpl ss)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoMaterial());
+        save(user, ExperimentServiceImpl.get().getTinfoMaterial(), true);
         if (null != ss)
         {
             TableInfo ti = ss.getTinfo();
             if (null != ti)
+            {
                 new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid) SELECT ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getLSID());
+            }
         }
         index(null);
     }
 
+    @Override
+    protected void save(User user, TableInfo table, boolean ensureObject)
+    {
+        assert ensureObject;
+        super.save(user, table, true);
+    }
+
+    @Override
     public void delete(User user)
     {
         ExperimentServiceImpl.get().deleteMaterialByRowIds(user, getContainer(), Collections.singleton(getRowId()));
         // Deleting from search index is handled inside deleteMaterialByRowIds()
     }
 
+    @Override
     public List<ExpRunImpl> getTargetRuns()
     {
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId");
     }
 
-    private static final Map<String, CustomPropertyRenderer> RENDERER_MAP = new HashMap<String, CustomPropertyRenderer>()
+    private static final Map<String, CustomPropertyRenderer> RENDERER_MAP = new HashMap<>()
     {
+        @Override
         public CustomPropertyRenderer get(Object key)
         {
             // Special renderer used only for indexing material custom properties
-            return new CustomPropertyRenderer() {
+            return new CustomPropertyRenderer()
+            {
                 @Override
                 public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties)
                 {
                     Object value = prop.value();
 
                     // For now, index only non-null Strings and Integers
-                    return null != value && (value instanceof String || value instanceof Integer);
+                    return (value instanceof String || value instanceof Integer);
                 }
 
                 @Override
@@ -285,7 +312,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     String sampleSetName = ss.getName();
                     ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", ss.getRowId());
                     NavTree t = new NavTree("SampleSet - " + sampleSetName, show);
-                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                    String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                     props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                     // Add sample set name to body, if it's not already present
@@ -330,6 +357,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     }
 
+    @Override
     public String getDocumentId()
     {
         return "material:" + getRowId();
@@ -362,6 +390,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return ret;
     }
 
+    @Override
     public Map<PropertyDescriptor, Object> getPropertyValues()
     {
         ExpSampleSetImpl sampleSet = (ExpSampleSetImpl)getSampleSet();
@@ -390,7 +419,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             {
                 for (ColumnInfo c : ti.getColumns())
                 {
-                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid",c.getName()))
+                    if (c.getPropertyURI() == null || StringUtils.equalsIgnoreCase("lsid", c.getName()) || StringUtils.equalsIgnoreCase("genId", c.getName()))
                         continue;
                     if (c.isMvIndicatorColumn())
                         continue;
@@ -437,7 +466,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             setProperties(user, Collections.singletonMap(pd.getName(), value));
     }
 
-    public void setProperties(User user, Map<String,Object> values_) throws ValidationException
+    public void setProperties(User user, Map<String,?> values_) throws ValidationException
     {
         ExpSampleSetImpl ss = (ExpSampleSetImpl)getSampleSet();
         Map<String, Object> values = new HashMap<>(values_);
@@ -449,9 +478,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             Domain d = ss.getDomain();
             for (DomainProperty dp : d.getProperties())
             {
-                String key = null;
+                String key;
                 Object value;
-                String mvIndicator = null;
                 if (values.containsKey(dp.getName()))
                     value = values.get(key = dp.getName());
                 else if (values.containsKey(dp.getPropertyURI()))
@@ -462,7 +490,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                 {
                     // NOTE: ExpObjectImpl.setProperty() does not support MvIndicator and neither does Table.update().
                     // we could handle it here if we need to
-                    mvIndicator = ((ObjectProperty) value).getMvIndicator();
                     value = ((ObjectProperty) value).value();
                 }
                 try
@@ -482,7 +509,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), ss.getContainer());
             if (null != pd)
-            super.setProperty(user, pd, entry.getValue());
+                super.setProperty(user, pd, entry.getValue());
         }
     }
 }

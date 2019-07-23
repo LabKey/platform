@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -28,14 +31,17 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Serializes and deserializes experiment objects to and from JSON.
@@ -155,11 +161,13 @@ public class ExperimentJSONConverter
             jsonObject.put(COMMENT, object.getComment());
 
         // Add the custom properties
+        Set<String> seenPropertyURIs = new HashSet<>();
+        JSONObject propertiesObject = new JSONObject();
         if (properties != null)
         {
-            JSONObject propertiesObject = new JSONObject();
             for (DomainProperty dp : properties)
             {
+                seenPropertyURIs.add(dp.getPropertyURI());
                 Object value = object.getProperty(dp);
                 if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK && value instanceof File)
                 {
@@ -187,8 +195,24 @@ public class ExperimentJSONConverter
                 }
                 propertiesObject.put(dp.getName(), value);
             }
-            jsonObject.put(PROPERTIES, propertiesObject);
         }
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        {
+            var objectProps = object.getObjectProperties();
+            for (var propPair : objectProps.entrySet())
+            {
+                String propertyURI = propPair.getKey();
+                if (seenPropertyURIs.contains(propertyURI))
+                    continue;
+                seenPropertyURIs.add(propertyURI);
+                ObjectProperty op = propPair.getValue();
+                propertiesObject.put(propertyURI, op.value());
+            }
+        }
+
+        if (!propertiesObject.isEmpty())
+            jsonObject.put(PROPERTIES, propertiesObject);
 
         return jsonObject;
     }
@@ -245,32 +269,60 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static Map<DomainProperty, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties)
+    public static Map<PropertyDescriptor, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties)
     {
-        Map<DomainProperty, Object> properties = new HashMap<>();
-        for (DomainProperty dp : dps)
+        Map<PropertyDescriptor, Object> properties = new HashMap<>();
+
+        // map of domain property name
+        Map<String, DomainProperty> propertiesMap = new HashMap<>();
+        if (null != dps)
         {
-            if (propertiesJsonObject.containsKey(dp.getName()))
+            for (DomainProperty dp : dps)
             {
-                Object value = convertProperty(propertiesJsonObject.get(dp.getName()), dp, container);
-                properties.put(dp, value);
-            }
-            else if (propertiesJsonObject.containsKey(dp.getPropertyURI()))
-            {
-                Object value = convertProperty(propertiesJsonObject.get(dp.getPropertyURI()), dp, container);
-                properties.put(dp, value);
-            }
-            else if (!ignoreMissingProperties)
-            {
-                properties.put(dp, null);
+                propertiesMap.put(dp.getPropertyURI(), dp);
+                propertiesMap.put(dp.getName(), dp);
+
+                // initialize all properties in the domain with null values when not ignoring missing props
+                if (!ignoreMissingProperties)
+                    properties.put(dp.getPropertyDescriptor(), null);
             }
         }
+
+        for (String propName : propertiesJsonObject.keySet())
+        {
+            Object value = propertiesJsonObject.get(propName);
+            DomainProperty dp = propertiesMap.get(propName);
+            if (dp != null)
+            {
+                value = convertProperty(value, dp, container);
+                properties.put(dp.getPropertyDescriptor(), value);
+            }
+            else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+            {
+                // resolve propName by PropertyURI if propName looks like a URI
+                if (URIUtil.hasURICharacters(propName))
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
+                    if (pd != null)
+                    {
+                        value = convertProperty(value, pd, container);
+                        properties.put(pd, value);
+                    }
+                }
+            }
+        }
+
         return properties;
     }
 
     private static Object convertProperty(Object value, DomainProperty dp, Container container)
     {
-        Class javaType = dp.getPropertyDescriptor().getPropertyType().getJavaType();
+        return convertProperty(value, dp.getPropertyDescriptor(), container);
+    }
+
+    private static Object convertProperty(Object value, PropertyDescriptor pd, Container container)
+    {
+        Class javaType = pd.getPropertyType().getJavaType();
         Object convertedValue = ConvertUtils.lookup(javaType).convert(javaType, value);
 
         // We need to special case Files to apply extra checks based on the context from which they're being

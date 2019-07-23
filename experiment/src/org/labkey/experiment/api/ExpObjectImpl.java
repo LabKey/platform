@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
@@ -43,6 +45,8 @@ import java.util.Objects;
 abstract public class ExpObjectImpl implements ExpObject, Serializable
 {
     protected boolean _locked = false;
+    // TODO: add objectId column to the exp.* tables that need it and to IdentifiableBase java bean
+    protected int _objectId;
 
     // For serialization
     protected ExpObjectImpl() {}
@@ -58,6 +62,23 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         {
             throw new IllegalStateException("Cannot change a locked " + getClass());
         }
+    }
+
+    @Override
+    public final @Nullable Integer getObjectId()
+    {
+        // hasn't been inserted yet
+        if (getRowId() == 0)
+            return null;
+
+        if (_objectId == 0)
+        {
+            OntologyObject oo = OntologyManager.getOntologyObject(getContainer(), getLSID());
+            if (oo != null)
+                _objectId = oo.getObjectId();
+        }
+
+        return _objectId;
     }
 
     public String getLSIDNamespacePrefix()

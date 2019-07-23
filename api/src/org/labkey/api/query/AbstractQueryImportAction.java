@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;

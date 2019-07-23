@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2010 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         LSID,
         Name,
         Description,
+        NameExpression,
         MaterialLSIDPrefix,
         Created,
         Modified,

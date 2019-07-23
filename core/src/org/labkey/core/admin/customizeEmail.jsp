@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@
         <tr><td colspan="2"><table id="validSubstitutions" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on
-            the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
+            the <a href="<%=h(urlProvider(AdminUrls.class).getProjectSettingsURL(c))%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
         </tr>
     </table>
     <input id="emailDescriptionFF" type="hidden" name="templateDescription" value="<%=h(bean.getTemplateDescription())%>"/>

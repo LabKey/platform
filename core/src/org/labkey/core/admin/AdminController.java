@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
@@ -1594,7 +1595,7 @@ public class AdminController extends SpringActionController
         void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public enum MigrateFilesOption
+    public enum MigrateFilesOption implements EnumHasHtmlString<MigrateFilesOption>
     {
         leave {
             @Override
@@ -1870,7 +1871,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public enum FileRootProp
+    public enum FileRootProp implements EnumHasHtmlString<FileRootProp>
     {
         disable,
         siteDefault,
@@ -3827,12 +3828,14 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class DbCheckerAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/checkDatabase.jsp", new DataCheckForm());
         }
 
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Database Check Tools", this.getClass());
@@ -3843,6 +3846,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class DoCheckAction extends SimpleViewAction<DataCheckForm>
     {
+        @Override
         public ModelAndView getView(DataCheckForm form, BindException errors)
         {
             try (var ignore=SpringActionController.ignoreSqlUpdates())
@@ -3930,6 +3934,7 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Database Tools", this.getClass());
@@ -3956,6 +3961,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class GetSchemaXmlDocAction extends ExportAction<DataCheckForm>
     {
+        @Override
         public void export(DataCheckForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String fullyQualifiedSchemaName = form.getDbSchema();
@@ -7584,12 +7590,12 @@ public class AdminController extends SpringActionController
     }
 
 
-    enum ManageFilter
+    public enum ManageFilter
     {
         ManagedOnly
             {
                 @Override
-                boolean accept(Module module)
+                public boolean accept(Module module)
                 {
                     return module.shouldManageVersion();
                 }
@@ -7597,7 +7603,7 @@ public class AdminController extends SpringActionController
         UnmanagedOnly
             {
                 @Override
-                boolean accept(Module module)
+                public boolean accept(Module module)
                 {
                     return !module.shouldManageVersion();
                 }
@@ -7605,13 +7611,13 @@ public class AdminController extends SpringActionController
         All
             {
                 @Override
-                boolean accept(Module module)
+                public boolean accept(Module module)
                 {
                     return true;
                 }
             };
 
-        abstract boolean accept(Module module);
+        public abstract boolean accept(Module module);
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
@@ -7688,7 +7694,6 @@ public class AdminController extends SpringActionController
         private class ModulesView extends WebPartView
         {
             private final Collection<ModuleContext> _contexts;
-            private final String _type;
             private final String _descriptionHtml;
             private final String _noModulesDescriptionHtml;
             private final Set<Double> _ignoreVersions;
@@ -7701,12 +7706,11 @@ public class AdminController extends SpringActionController
                 sorted.sort(Comparator.comparing(ModuleContext::getName, String.CASE_INSENSITIVE_ORDER));
 
                 _contexts = sorted;
-                _type = type;
                 _descriptionHtml = descriptionHtml;
                 _noModulesDescriptionHtml = noModulesDescriptionHtml;
                 _ignoreVersions = ignoreVersions;
                 _manageFilter = manageFilter;
-                setTitle(_type + " Modules");
+                setTitle(type + " Modules");
             }
 
             @Override
@@ -7797,6 +7801,22 @@ public class AdminController extends SpringActionController
         {
             getPageConfig().setHelpTopic(new HelpTopic("defaultModules"));
             return appendAdminNavTrail(root, "Modules", getClass());
+        }
+    }
+
+
+    public static class ModuleVersionTestCase extends Assert
+    {
+        @Test
+        public void verifyMinimumModuleVersion()
+        {
+            List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
+                .filter(ManageFilter.ManagedOnly::accept)
+                .filter(m->m.getVersion() > 0.00 && m.getVersion() < Constants.getPreviousReleaseVersion())
+                .collect(Collectors.toList());
+
+            if (!modulesTooLow.isEmpty())
+                fail("The following module" + (1 == modulesTooLow.size() ? " needs its version number" : "s need their version numbers") + " increased to " + Constants.getPreviousReleaseVersion() + ": " + modulesTooLow);
         }
     }
 
@@ -9927,6 +9947,7 @@ public class AdminController extends SpringActionController
 
     public static class TestCase extends AbstractActionPermissionTest
     {
+        @Override
         @Test
         public void testActionPermissions()
         {

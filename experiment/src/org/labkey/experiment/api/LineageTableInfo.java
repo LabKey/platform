@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,7 +192,7 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass", () ->
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/DataClass/" + dc.getRowId() + "/" + dc.getName(), () ->
                         {
                             DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
                             var ret = dcus.createTable(dc, getLookupContainerFilter());
@@ -223,7 +223,7 @@ public class LineageTableInfo extends VirtualTable
                 public TableInfo getLookupTableInfo()
                 {
                     if (null == _table)
-                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Runs", () ->
+                        _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Runs/" + protocol.getRowId() + "/" + protocol.getName(), () ->
                         {
                             if (provider != null)
                             {

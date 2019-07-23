@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,40 +86,36 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.P
     protected QuerySnapshotDefinition createSnapshotDef(QuerySnapshotForm form)
     {
         QueryDefinition queryDef = form.getQueryDef();
-        if (queryDef != null)
+        QuerySnapshotDefinition snapshot = QueryService.get().createQuerySnapshotDef(queryDef,  form.getSnapshotName());
+
+        snapshot.setColumns(form.getFieldKeyColumns());
+        snapshot.setUpdateDelay(form.getUpdateDelay());
+
+        ViewContext context = form.getViewContext();
+        CustomView mergedFilterTempView = queryDef.createCustomView(context.getUser(), "tempCustomView");
+
+        if (form.getViewName() != null)
         {
-            QuerySnapshotDefinition snapshot = QueryService.get().createQuerySnapshotDef(queryDef,  form.getSnapshotName());
-
-            snapshot.setColumns(form.getFieldKeyColumns());
-            snapshot.setUpdateDelay(form.getUpdateDelay());
-
-            ViewContext context = form.getViewContext();
-            CustomView mergedFilterTempView = queryDef.createCustomView(context.getUser(), "tempCustomView");
-
-            if (form.getViewName() != null)
+            CustomView customSrc = queryDef.getCustomView(context.getUser(), context.getRequest(), form.getViewName());
+            if (customSrc != null)
             {
-                CustomView customSrc = queryDef.getCustomView(context.getUser(), context.getRequest(), form.getViewName());
-                if (customSrc != null)
-                {
-                    snapshot.setColumns(customSrc.getColumns());
+                snapshot.setColumns(customSrc.getColumns());
 
-                    if (customSrc.hasFilterOrSort())
-                        mergedFilterTempView.setFilterAndSort(customSrc.getFilterAndSort());
-                }
+                if (customSrc.hasFilterOrSort())
+                    mergedFilterTempView.setFilterAndSort(customSrc.getFilterAndSort());
             }
-
-            // Merge the custom view and URL filters together
-            ActionURL mergedFilterURL = context.cloneActionURL();
-            mergedFilterTempView.applyFilterAndSortToURL(mergedFilterURL, QueryView.DATAREGIONNAME_DEFAULT);
-
-            // The combined filters is what we want in this custom view
-            mergedFilterTempView.setFilterAndSortFromURL(mergedFilterURL, QueryView.DATAREGIONNAME_DEFAULT);
-
-            snapshot.setFilter(mergedFilterTempView.getFilterAndSort());
-
-            return snapshot;
         }
-        return null;
+
+        // Merge the custom view and URL filters together
+        ActionURL mergedFilterURL = context.cloneActionURL();
+        mergedFilterTempView.applyFilterAndSortToURL(mergedFilterURL, QueryView.DATAREGIONNAME_DEFAULT);
+
+        // The combined filters is what we want in this custom view
+        mergedFilterTempView.setFilterAndSortFromURL(mergedFilterURL, QueryView.DATAREGIONNAME_DEFAULT);
+
+        snapshot.setFilter(mergedFilterTempView.getFilterAndSort());
+
+        return snapshot;
     }
 
     public static DomainProperty addAsDomainProperty(Domain domain, ColumnInfo column)

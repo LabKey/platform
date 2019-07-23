@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2011-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -783,10 +783,14 @@ public class VisualizationController extends SpringActionController
             response.setContentType("application/pdf");
             response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("pdf") + "\"");
 
+            PDFTranscoder transcoder = new PDFTranscoder();
             TranscoderInput xIn = new TranscoderInput(new StringReader(getSVGSource()));
             TranscoderOutput xOut = new TranscoderOutput(response.getOutputStream());
 
-            new PDFTranscoder().transcode(xIn, xOut);
+            // Issue 37657: https://stackoverflow.com/questions/47664735/apache-batik-transcoder-inside-docker-container-blocking/50865994#50865994
+            transcoder.addTranscodingHint(PDFTranscoder.KEY_AUTO_FONTS, false);
+
+            transcoder.transcode(xIn, xOut);
 
             return null;
         }

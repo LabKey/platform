@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
+import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 
 /**
  * User: jeckels
@@ -53,17 +53,18 @@ public abstract class AbstractXarImporter
         }
     }
 
-    protected void checkMaterialCpasType(String declaredType)
+    protected ExpSampleSetImpl checkMaterialCpasType(String declaredType)
     {
+        ExpSampleSetImpl result = null;
         if (declaredType != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(declaredType))
         {
-            if (ExperimentService.get().getSampleSet(declaredType) != null)
+            result = SampleSetServiceImpl.get().getSampleSet(declaredType);
+            if (result == null)
             {
-                return;
+                _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
             }
-
-            _job.getLogger().warn("Unrecognized CpasType '" + declaredType + "' loaded for Material object.");
         }
+        return result;
     }
 
     protected void checkProtocolApplicationCpasType(String cpasType, Logger logger)

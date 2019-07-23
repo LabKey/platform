@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2015-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@
 
         propertiesList.addAll(Stream.of("type", "area", "priority", "milestone")
                 .filter(propertyMap::containsKey)
-                .map((Function<String, DomainProperty>) propertyMap::get)
+                .map(propertyMap::get)
                 .collect(Collectors.toList()));
 
 
@@ -255,20 +255,20 @@
         <%}%>
     </div>
     <%}%>
-</div>
 
-<div class="row">
+
+
     <%  String mainContentClassName;
         if (!bean.getCustomColumnConfiguration().getCustomProperties().isEmpty() ||
                 (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty()))
         {
-            mainContentClassName = "col-sm-10 col-sm-pull-2";
+            mainContentClassName = "col-sm-12";
     %>
-    <div class="col-sm-2 col-sm-push-10"><%
+    <div class="col-sm-2"><%
         if (!issue.getRelatedIssues().isEmpty())
         //vertical alignment with related boxes
         {%>
-        <br class="input-group-disappear-sm">
+        <%--<br class="input-group-disappear-sm">--%>
         <%}%>
         <div style="word-wrap: break-word">
             <%if (null != issue.getDuplicates() && !issue.getDuplicates().isEmpty())
@@ -292,7 +292,8 @@
             </tbody></table>
         </div>
     </div>
-
+</div>
+<div class="row">
     <%}
     else
     {
@@ -316,7 +317,7 @@
             <%
                 for (Issue.Comment comment : IssueManager.getCommentsForRelatedIssues(issue, user))
                 {
-                    String styleStr = !issue.getComments().contains(comment) ? "display: none; word-break: break-all" : "display: inline; word-break: break-all";
+                    String styleStr = !issue.getComments().contains(comment) ? "display: none; word-break: break-word" : "display: inline; word-break: break-word";
                     String classStr = !issue.getComments().contains(comment) ? relatedCommentsDivClassName : "currentIssue";
             %>
             <div class="<%=text(classStr)%>" style="<%=text(styleStr)%>">

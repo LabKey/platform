@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -384,10 +384,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public final void clearLastIndexed()
     {
+        _log.info("Clearing last indexed for all providers");
         for (DocumentProvider p : _documentProviders)
         {
             try
             {
+                _log.info("Clearing last indexed for provider : " + p.getClass().getName());
                 p.indexDeleted();
             }
             catch (Throwable t)

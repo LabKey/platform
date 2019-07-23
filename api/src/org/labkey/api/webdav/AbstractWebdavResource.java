@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2010-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -676,4 +676,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return ContainerManager.getForId(id);
     }
 
+    @Override
+    public void setLastModified(long time) throws IOException
+    {
+        // No-op
+    }
 }

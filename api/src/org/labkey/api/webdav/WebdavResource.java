@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2010-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,16 +226,20 @@ public interface WebdavResource extends Resource
      *
      * Note there are other checks that can cause an object to be skipped.
      * see LuceneSearchService.accept()
-     *
-     * @return
      */
     boolean shouldIndex();
 
     /**
      * Returns custom (user configured) properties for this resource
-     * @return
      */
     Map<String, String> getCustomProperties(User user);
 
     void notify(ContainerUser context, String message);
+
+    /**
+     * For file-backed resources, set the metadata for when it was last modified (like a 'touch' on a Unix machine file system.
+     * Other types of resources can ignore this call/
+     */
+    void setLastModified(long time) throws IOException;
+
 }

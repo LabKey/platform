@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);
-        JspView view = new JspView<>("/org/labkey/study/assay/view/dataUpload.jsp", _form);
+        JspView view = new JspView<>("/org/labkey/assay/view/dataUpload.jsp", _form);
         try
         {
             if (descriptionView != null)

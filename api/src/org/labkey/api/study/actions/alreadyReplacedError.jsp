@@ -1,14 +1,6 @@
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.api.exp.api.ExpRun" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.study.assay.AssayService" %>
-<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%
 /*
- * Copyright (c) 2012 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +15,14 @@
  * limitations under the License.
  */
 %>
-
+<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.study.assay.AssayService" %>
+<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();

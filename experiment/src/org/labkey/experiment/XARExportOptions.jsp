@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2005-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
         <td>
             <select name="lsidOutputType">
                 <% for(LSIDRelativizer lsidOutputType : LSIDRelativizer.values()) { %>
-                    <option value="<%=h(lsidOutputType)%>" <% if (lsidOutputType == bean.getSelectedRelativizer()) { %>selected<% } %>><%=h(lsidOutputType.getDescription())%></option>
+                    <option value="<%=lsidOutputType%>" <% if (lsidOutputType == bean.getSelectedRelativizer()) { %>selected<% } %>><%=h(lsidOutputType.getDescription())%></option>
                 <% } %>
             </select>
         </td>
@@ -44,7 +44,7 @@ ExperimentController.ExportBean bean = me.getModelBean();
         <td>
             <select name="exportType">
                 <% for(XarExportType exportType : XarExportType.values()) { %>
-                    <option value="<%=h(exportType)%>" <% if (exportType == bean.getSelectedExportType()) { %>selected<% } %>><%=h(exportType.getDescription())%></option>
+                    <option value="<%=exportType%>" <% if (exportType == bean.getSelectedExportType()) { %>selected<% } %>><%=h(exportType.getDescription())%></option>
                 <% } %>
             </select>
         </td>

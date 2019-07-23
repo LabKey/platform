@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -284,10 +284,13 @@ public class ListImporter
     {
         XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
 
+        //create list tables in the db as defined in lists.xml
         if (listXml != null)
             createDefinedLists(listsDir, listXml, c, user, errors, log);
 
         Map<String, String> fileTypeMap = new HashMap<>();
+
+        //get corresponding data file name and extension
         for (String f : listsDir.list())
         {
             if (f.endsWith(".tsv") || f.endsWith(".xlsx") || f.endsWith(".xls"))
@@ -302,6 +305,14 @@ public class ListImporter
         {
             ListDefinition def = lists.get(listName);
             String legalName = FileUtil.makeLegalName(listName);
+
+            //Issue 37324: Skip processing if a data file is missing during list archive import
+            //Case when a list exists in the db, but its corresponding data file is not present
+            if (!fileTypeMap.containsKey(legalName))
+            {
+                continue;
+            }
+
             String fileName = legalName + "." + fileTypeMap.remove(legalName);
 
             if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
@@ -540,22 +551,10 @@ public class ListImporter
             // Do a pass over the loader's columns
             for (ColumnDescriptor loaderCol : loader.getColumns())
             {
-                JdbcType jdbcType = JdbcType.valueOf(loaderCol.clazz);
-                if (currentColumns.containsKey(loaderCol.name))
+                if (!currentColumns.containsKey(loaderCol.name))
                 {
-                    // check for prop/type mismatches
-                    JdbcType listJdbcType = currentColumns.get(loaderCol.name).getPropertyDescriptor().getJdbcType();
-
-                    if (!(listJdbcType.equals(jdbcType) || allowableTypeConversion(jdbcType, listJdbcType)))
-                    {
-                        log.warn("Failed to import data for '" + listDef.getName() + "'. Column '" + loaderCol.name + "' in the incoming data has type " + jdbcType.name()
-                                + " which does not match existing type: " + listJdbcType.name() + " and can't be converted.");
-                        return false;
-                    }
-                }
-                //add new properties found in the incoming file
-                else
-                {
+                    // add the new field to the domain
+                    JdbcType jdbcType = JdbcType.valueOf(loaderCol.clazz);
                     PropertyType type = PropertyType.getFromJdbcType(jdbcType);
                     PropertyDescriptor pd = new PropertyDescriptor(domain.getTypeURI() + "." + loaderCol.name, type, loaderCol.name, c);
                     domain.addPropertyOfPropertyDescriptor(pd);
@@ -593,14 +592,5 @@ public class ListImporter
             }
         }
         return true;
-    }
-
-    private boolean allowableTypeConversion(JdbcType incomingType, JdbcType domainType)
-    {
-        // See if the inferred jdbc type can be cast e.g. date -> string, int -> double | 34517
-        //  - We can always convert to String
-        //  - We can take integers if the list column type is more precise
-        return domainType.getJavaClass().equals(String.class) ||
-                (incomingType.isInteger() && JdbcType.promote(domainType, incomingType).equals(domainType));
     }
 }

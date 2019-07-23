@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -496,7 +496,7 @@
 
     function editRecord(button, grid, record)
     {
-        var itemPath = {
+        let itemPath = {
             fieldLabel: 'Program Path',
             name: 'exePath',
             id: 'editEngine_exePath',
@@ -507,7 +507,7 @@
             width: 275
         };
 
-        var itemMachine = {
+        let itemMachine = {
             fieldLabel: 'Machine Name',
             name: 'machine',
             id: 'editEngine_machine',
@@ -518,7 +518,7 @@
             width: 275
         };
 
-        var itemCmd = {
+        let itemCmd = {
             fieldLabel: 'Program Command',
             name: 'exeCommand',
             id: 'editEngine_exeCommand',
@@ -528,7 +528,7 @@
             width: 275
         };
 
-        var itemPort = {
+        let itemPort = {
             fieldLabel: 'Port',
             name: 'port',
             id: 'editEngine_port',
@@ -538,7 +538,7 @@
             width: 275
         };
 
-        var pathMapStore = new Ext4.data.JsonStore({
+        let pathMapStore = new Ext4.data.JsonStore({
             fields: [
                 {
                     name: 'localURI',
@@ -558,11 +558,11 @@
             pathMapStore.loadData(record.pathMap.paths);
         }
 
-        var fieldDisplayRenderer = function(val){
+        let fieldDisplayRenderer = function(val){
             return Ext4.util.Format.htmlEncode(val);
         };
 
-        var itemPathGridInput = new Ext4.grid.Panel({
+        let itemPathGridInput = new Ext4.grid.Panel({
             xtype: 'grid',
             name: 'pathMap',
             id: 'editEngine_pathMap',
@@ -603,35 +603,49 @@
             viewConfig: {forceFit: true}
         });
 
-        var itemPathGrid = new Ext4.form.FieldContainer({
+        let itemPathGrid = new Ext4.form.FieldContainer({
             fieldLabel: 'Path Mapping',
             id: 'editEngine_pathMapContainer',
             labelAttrTpl: " data-qtitle='Local to Remote Path Mapping' data-qtip='Add or remove local to remote path mappings'",
             items: [itemPathGridInput]
         });
 
-        var itemUser = {
+        let itemChangePassword = {
+            xtype       : 'checkbox',
+            fieldLabel  : 'Change Password',
+            id          : 'editEngine_changePassword',
+            name        : 'changePassword',
+            uncheckedValue : 'false',
+            listeners : {
+                scope: this,
+                'change': function (cb, value){
+                    cb.up('panel').down('textfield[name=user]').setDisabled(!value);
+                    cb.up('panel').down('textfield[name=password]').setDisabled(!value);
+                }
+            }
+        };
+
+        let itemUser = {
             fieldLabel: 'Remote User',
             name: 'user',
             id: 'editEngine_user',
             labelAttrTpl: " data-qtitle='Remote User' data-qtip='The user for the remote service login'",
-            disabled: !record.external,
+            disabled: true,
             value: record.user,
             width: 275
         };
 
-        var itemPassword = {
+        let itemPassword = {
             fieldLabel: 'Remote Password',
             name: 'password',
             id: 'editEngine_password',
             labelAttrTpl: " data-qtitle='Remote Password' data-qtip='The password for the remote service login account'",
             inputType: 'password',
-            disabled: !record.external,
-            value: record.password,
+            disabled: true,
             width: 275
         };
 
-        var itemName = {
+        let itemName = {
             fieldLabel: "Name",
             name: 'name',
             id: 'editEngine_name',
@@ -640,7 +654,7 @@
             value: record.name
         };
 
-        var itemLanguageName = {
+        let itemLanguageName = {
             fieldLabel: 'Language',
             name: 'languageName',
             id: 'editEngine_languageName',
@@ -649,7 +663,7 @@
             value: record.languageName
         };
 
-        var itemLanguageVersion = {
+        let itemLanguageVersion = {
             fieldLabel: 'Language Version',
             name: 'languageVersion',
             id: 'editEngine_languageVersion',
@@ -657,7 +671,7 @@
             value: record.languageVersion
         };
 
-        var itemExtensions = {
+        let itemExtensions = {
             fieldLabel: 'File Extensions',
             name: 'extensions',
             id: 'editEngine_extensions',
@@ -667,7 +681,7 @@
             value: record.extensions
         };
 
-        var itemOutputFileName = {
+        let itemOutputFileName = {
             fieldLabel: 'Output File Name',
             name: 'outputFileName',
             id: 'editEngine_outputFileName',
@@ -677,7 +691,7 @@
             readOnly:  record.docker
         };
 
-        var itemEnabled = {
+        let itemEnabled = {
             fieldLabel: 'Enabled',
             name: 'enabled',
             id: 'editEngine_enabled',
@@ -686,32 +700,32 @@
             checked: record.enabled
         };
 
-        var itemExternal = {
+        let itemExternal = {
             name: 'external',
             xtype: 'hidden',
             value: record.external
         };
 
-        var itemKey = {
+        let itemKey = {
             name: 'rowId',
             xtype: 'hidden',
             value: record.rowId
         };
 
-        var itemType = {
+        let itemType = {
             name: 'type',
             xtype: 'hidden',
             value: record.type
         };
 
-        var itemRemote = {
+        let itemRemote = {
             name: 'remote',
             xtype: 'hidden',
             value: record.remote
         };
 
         // common items for both local and remote
-        var panelItems = [
+        let panelItems = [
             itemName,
             itemLanguageName
         ];
@@ -724,6 +738,7 @@
                 panelItems.push(itemMachine);
                 panelItems.push(itemPort);
                 panelItems.push(itemPathGrid);
+                panelItems.push(itemChangePassword);
                 panelItems.push(itemUser);
                 panelItems.push(itemPassword);
             }
@@ -737,7 +752,7 @@
         panelItems.push(itemOutputFileName);
 
         //add engine specific fields
-        var engineItems = getEngineSpecificItems(record);
+        let engineItems = getEngineSpecificItems(record);
         if (engineItems && engineItems.length > 0) {
             panelItems = panelItems.concat(engineItems);
         }
@@ -748,13 +763,13 @@
         panelItems.push(itemType);
         panelItems.push(itemRemote);
 
-        var formPanel = new Ext4.form.Panel({
+        let formPanel = new Ext4.form.Panel({
             bodyStyle:'padding:5px 5px 0',
             defaultType: 'textfield',
             items: panelItems
         });
 
-        var win = new Ext4.Window({
+        let win = new Ext4.Window({
             title: 'Edit Engine Configuration',
             layout:'form',
             border: false,

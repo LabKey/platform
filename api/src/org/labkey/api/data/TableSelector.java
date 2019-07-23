@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -629,21 +629,13 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             {
                 if (agg.isCountStar() || _columnMap.containsKey(agg.getFieldKey()))
                 {
-                    String sql = agg.getSQL(_table.getSqlDialect(), _columnMap, innerSql);
+                    SQLFragment sql = agg.getSQL(_table.getSqlDialect(), _columnMap, innerSql);
                     if (sql != null)
                     {
                         if (validAggregates > 0)
                             aggregateSql.append(",\n");
 
                         aggregateSql.append(sql);
-                        if (innerSql != null)
-                        {
-                            // If the aggregate uses subqueries, they need the same set of parameters as the outer sql.
-                            for (int i = 0; i < agg.getType().subQueryCount(_table.getSqlDialect()); i++)
-                            {
-                                aggregateSql.addAll(innerSql.getParams());
-                            }
-                        }
                         validAggregates++;
                     }
                 }

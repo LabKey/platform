@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class ErrorsTag extends TagSupport
             Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
             while (e.hasMoreElements())
             {
-                String s = (String)e.nextElement();
+                String s = e.nextElement();
                 if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
                 {
                     Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);

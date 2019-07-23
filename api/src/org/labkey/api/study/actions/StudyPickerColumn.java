@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2010-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     {
         super(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, inputName);
         _colInfo = col;
-        ((BaseColumnInfo)_colInfo).setInputType("select");
     }
 
     protected Object calculateValue(RenderContext ctx)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package org.labkey.experiment.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.NameGenerator;
@@ -28,12 +33,14 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -47,27 +54,46 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
-import java.sql.SQLException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
 {
+    private static final String categoryName = "materialSource";
+    public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Set of Samples");
+
     private Domain _domain;
     private NameGenerator _nameGen;
 
     // For serialization
     protected ExpSampleSetImpl() {}
+
+    static public Collection<ExpSampleSetImpl> fromMaterialSources(List<MaterialSource> materialSources)
+    {
+        return materialSources.stream().map(ExpSampleSetImpl::new).collect(Collectors.toList());
+    }
 
     public ExpSampleSetImpl(MaterialSource ms)
     {
@@ -472,7 +498,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials) throws SQLException
+    public void onSamplesChanged(User user, List<Material> materials)
     {
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length == 0)
@@ -511,7 +537,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
+        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
@@ -568,5 +594,111 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public String toString()
     {
         return "SampleSet " + getName() + " in " + getContainer().getPath();
+    }
+
+    public void index(SearchService.IndexTask task)
+    {
+        // Big hack to prevent study specimens from being indexed as part of sample sets
+        // Check needed on restart, as all documents are enumerated.
+        if (StudyService.SPECIMEN_NAMESPACE_PREFIX.equals(getLSIDNamespacePrefix()))
+        {
+            return;
+        }
+        if (task == null)
+        {
+            SearchService ss = SearchService.get();
+            if (null == ss)
+                return;
+            task = ss.defaultTask();
+        }
+
+        final SearchService.IndexTask indexTask = task;
+        final ExpSampleSetImpl me = this;
+        indexTask.addRunnable(
+                () -> me.indexSampleSet(indexTask)
+                , SearchService.PRIORITY.bulk
+        );
+    }
+
+    private void indexSampleSet(SearchService.IndexTask indexTask)
+    {
+        ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
+        ActionURL url = null;
+
+        if (urlProvider != null)
+        {
+            url = urlProvider.getShowSampleSetURL(this);
+            url.setExtraPath(getContainer().getId());
+        }
+
+        Map<String, Object> props = new HashMap<>();
+        Set<String> identifiersHi = new HashSet<>();
+
+        // Name is identifier with highest weight
+        identifiersHi.add(getName());
+
+        props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+        props.put(SearchService.PROPERTY.title.toString(), "Sample Set - " + getName());
+        props.put(SearchService.PROPERTY.summary.toString(), getDescription());
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set");      // Treat the words "Sample Set" as a low priority keyword
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+
+        String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
+        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                getContainer().getId(), "text/plain",
+                body, url,
+                getCreatedBy(), getCreated(),
+                getModifiedBy(), getModified(),
+                props)
+        {
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                ExperimentServiceImpl.get().setMaterialSourceLastIndexed(getRowId(), ms);
+            }
+        };
+
+        indexTask.addResource(sdr, SearchService.PRIORITY.item);
+    }
+
+    public String getDocumentId()
+    {
+        return categoryName + ":" + getRowId();
+    }
+
+    @Contract("null -> new")
+    private @NotNull Map<String, String> getImportAliases(MaterialSource ms) throws IOException
+    {
+        if (ms == null || StringUtils.isBlank(ms.getMaterialParentImportAliasMap()))
+            return Collections.emptyMap();
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
+
+            return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
+        }
+        catch (IOException e)
+        {
+            throw new IOException(String.format("Failed to parse MaterialSource [%1$s] import alias json", ms.getRowId()), e);
+        }
+    }
+
+    public String getImportAliasJson()
+    {
+        return _object.getMaterialParentImportAliasMap();
+    }
+
+    @Override
+    public @NotNull Map<String, String> getImportAliasMap() throws IOException
+    {
+            return Collections.unmodifiableMap(getImportAliases(_object));
+    }
+
+    @Override
+    public void setImportAliasMap(Map<String, String> aliasMap)
+    {
+        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap));
     }
 }

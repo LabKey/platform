@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.QueryLogging;
@@ -445,4 +446,6 @@ public interface QueryService
      * and enable custom database functions, for example.
      */
     void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
+
+    void registerMethod(String name, MethodInfo method, JdbcType returnType, int minArgs, int maxArgs);
 }

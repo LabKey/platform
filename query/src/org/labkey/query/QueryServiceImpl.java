@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,27 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.CustomViewChangeListener;
+import org.labkey.api.query.CustomViewInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidNamedSetException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -85,6 +105,7 @@ import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
 import org.labkey.query.sql.Method;
+import org.labkey.query.sql.QDot;
 import org.labkey.query.sql.QExpr;
 import org.labkey.query.sql.QField;
 import org.labkey.query.sql.QIfDefined;
@@ -263,11 +284,14 @@ public class QueryServiceImpl implements QueryService
                     methodName = null;
             }
 
-            for (QNode child : expr.children())
+            if (!(expr instanceof QDot))
             {
-                // skip identifier that is actually a method
-                if (child != methodName)
-                    collectKeys((QExpr)child, set);
+                for (QNode child : expr.children())
+                {
+                    // skip identifier that is actually a method
+                    if (child != methodName)
+                        collectKeys((QExpr) child, set);
+                }
             }
         }
 
@@ -2042,6 +2066,12 @@ public class QueryServiceImpl implements QueryService
     public void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect)
     {
         Method.addPassthroughMethod(name, declaringSchemaName, returnType, minArguments, maxArguments, dialect);
+    }
+
+    @Override
+    public void registerMethod(String name, MethodInfo info, JdbcType returnType, int minArgs, int maxArgs)
+    {
+        Method.addMethod(name, info, returnType, minArgs, maxArgs);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -38,39 +39,25 @@ public class JunitManager
 
     static
     {
-        Set<Class> allCases = new HashSet<>();
-
-        _testCases = new TreeMap<>();
+        Map<String, List<Class>> testCases = new TreeMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            List<Class> moduleClazzes = new ArrayList<>();
+            Set<Class> moduleClazzes = new HashSet<>();
 
-            for (Class clazz : module.getIntegrationTests())
-            {
-                if (allCases.contains(clazz))
-                    continue;
-
-                allCases.add(clazz);
-                moduleClazzes.add(clazz);
-            }
-
-            for (Class clazz : module.getUnitTests())
-            {
-                if (allCases.contains(clazz))
-                    continue;
-
-                allCases.add(clazz);
-                moduleClazzes.add(clazz);
-            }
+            moduleClazzes.addAll(module.getIntegrationTests());
+            moduleClazzes.addAll(module.getUnitTests());
 
             if (!moduleClazzes.isEmpty())
             {
-                moduleClazzes.sort(Comparator.comparing(Class::getName));
+                List<Class> moduleClazzList = new ArrayList<>(moduleClazzes);
+                moduleClazzList.sort(Comparator.comparing(Class::getName));
 
-                _testCases.put(module.getName(), moduleClazzes);
+                testCases.put(module.getName(), Collections.unmodifiableList(moduleClazzList));
             }
         }
+
+        _testCases = Collections.unmodifiableMap(testCases);
     }
 
     public static Map<String, List<Class>> getTestCases()

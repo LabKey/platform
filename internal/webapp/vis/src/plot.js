@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2012-2018 LabKey Corporation
+ * @license Copyright (c) 2012-2019 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,32 @@
  *      log scale wrapper for plots that contain <= 0 x value.
  * @param {Float} [config.minYPositiveValue] (Optional) Used to adjust domains with non-positive lower bound and generate y axis
  *      log scale wrapper for plots that contain <= 0 y value.
- *
+ * @param {Object} [config.brushing] (Optional) Configuration for brushing events on the plot.
+ *      The object may contain any of the following properties:
+ *      <ul>
+ *          <li><strong>brush:</strong> Callback function during the brush event.</li>
+ *          <li><strong>brushclear:</strong> Callback function for when the brush event is cleared.</li>
+ *          <li><strong>brushend:</strong> Callback function for when the brush event ends.</li>
+ *          <li><strong>brushstart:</strong> Callback function for when the brush event starts.</li>
+ *      </ul>
+ * @param {Array} [config.legendData] (Optional) An array of objects to be used for the plot legend. Each object can
+ *      include the legend item text, color, and shape.
+ * @param {Object} [config.disableAxis] (Optional) Object indicating which plot axes to disable. Options include
+ *      xTop, xBottom, yLeft, and yRight.
+ * @param {String} [config.gridLinesVisible] (Optional) String indicating if only the 'x' or 'y' axis grid lines
+ *      should be shown for this plot. Default, without this property, is to show both x and y grid lines.
+ * @param {String} [config.tickColor] (Optional) The string representation of the color to use for the tick marks on
+ *      the x and y axes. Defaults to black.
+ * @param {String} [config.borderColor] (Optional) The string representation of the color to use for the border (axes).
+ *      Defaults to black.
+ * @param {String} [config.tickTextColor] (Optional) The string representation of the color to use for the x and y
+ *      axis tick labels. Defaults to black.
+ * @param {Integer} [config.tickLength] (Optional) The length, in pixels for the x and y axis tick marks. Defaults to 8.
+ * @param {Integer} [config.tickWidth] (Optional) The x and y axis tick line width. Defaults to 1.
+ * @param {Integer} [config.tickOverlapRotation] (Optional) The degree of rotation for overlapping x axis tick labels.
+ *      Defaults to 15 degrees.
+ * @param {Integer} [config.gridLineWidth] (Optional) The line width for the grid lines of the plot. Defaults to 1.
+ * @param {Integer} [config.borderWidth] (Optional) The border line width with the x and y axis. Defaults to 1.
  *
   @example
  In this example we will create a simple scatter plot.

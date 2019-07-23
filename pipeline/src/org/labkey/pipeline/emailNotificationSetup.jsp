@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@
 </script>
 
 <labkey:form action="<%=h(buildURL(PipelineController.UpdateEmailNotificationAction.class))%>" method="post">
-    <input type="hidden" name="<%= h(ActionURL.Param.returnUrl) %>" value="<%= h(getViewContext().getActionURL())%>" />
+    <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(getViewContext().getActionURL())%>" />
     <table>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
             when a pipeline job succeeds and/or fails.<br/><%=text(c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration.")%>

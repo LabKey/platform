@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2012-2017 LabKey Corporation
+ * Copyright (c) 2012-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@
         %>
         <tr>
             <td style="padding-top: 10px;">
-                <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : "" %>
+                <%= hasAdminOpsPerms ? button("Save").submit(true).onClick("return validateForm();") : HtmlString.EMPTY_STRING %>
                 <%= button(!hasAdminOpsPerms ? "Done" : "Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %>
             </td>
         </tr>

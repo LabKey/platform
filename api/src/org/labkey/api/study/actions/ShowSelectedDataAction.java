@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,7 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
     }
 
 
+    @Override
     public ActionURL getURL(ShowSelectedForm form, Errors errors)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);

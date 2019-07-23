@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2013 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.URLHelper;
 
-public enum QueryParam
+public enum QueryParam implements EnumHasHtmlString<QueryParam>
 {
     schemaName,
     queryName,

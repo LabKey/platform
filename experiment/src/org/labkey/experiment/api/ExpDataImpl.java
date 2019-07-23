@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -125,6 +126,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         index(null);
     }
 
+    @Override
     @Nullable
     public URLHelper detailsURL()
     {
@@ -135,21 +137,25 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return dataType.getDetailsURL(this);
     }
 
+    @Override
     public List<ExpProtocolApplicationImpl> getTargetApplications()
     {
         return getTargetApplications(new SimpleFilter(FieldKey.fromParts("DataId"), getRowId()), ExperimentServiceImpl.get().getTinfoDataInput());
     }
 
+    @Override
     public List<ExpRunImpl> getTargetRuns()
     {
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId");
     }
 
+    @Override
     public DataType getDataType()
     {
         return ExperimentService.get().getDataType(getLSIDNamespacePrefix());
     }
 
+    @Override
     public void setDataFileURI(URI uri)
     {
         ensureUnlocked();
@@ -167,6 +173,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         _object.setDataFileUrl(s);
     }
 
+    @Override
     public void save(User user)
     {
         // Replace the default "Data" cpastype if the Data belongs to a DataClass
@@ -175,7 +182,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
            setCpasType(dataClass.getLSID());
 
         boolean isNew = getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoData());
+        save(user, ExperimentServiceImpl.get().getTinfoData(), true);
 
         if (isNew)
         {
@@ -189,6 +196,14 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         index(null);
     }
 
+    @Override
+    protected void save(User user, TableInfo table, boolean ensureObject)
+    {
+        assert ensureObject;
+        super.save(user, table, true);
+    }
+
+    @Override
     public URI getDataFileURI()
     {
         String url = _object.getDataFileUrl();
@@ -204,38 +219,45 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
     }
 
+    @Override
     public ExperimentDataHandler findDataHandler()
     {
         return Handler.Priority.findBestHandler(ExperimentServiceImpl.get().getExperimentDataHandlers(), this);
     }
 
+    @Override
     public String getDataFileUrl()
     {
         return _object.getDataFileUrl();
     }
 
+    @Override
     public boolean hasFileScheme()
     {
         return !FileUtil.hasCloudScheme(getDataFileUrl());
     }
 
+    @Override
     @Nullable
     public File getFile()
     {
         return _object.getFile();
     }
 
+    @Override
     @Nullable
     public java.nio.file.Path getFilePath()
     {
         return _object.getFilePath();
     }
 
+    @Override
     public boolean isInlineImage()
     {
         return null != getFile() && MIME_MAP.isInlineImageFor(getFile());
     }
 
+    @Override
     public String urlFlag(boolean flagged)
     {
         String ret = null;
@@ -256,11 +278,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return AppProps.getInstance().getContextPath() + "/Experiment/images/unflagData.png";
     }
 
+    @Override
     public void delete(User user)
     {
         delete(user, true);
     }
 
+    @Override
     public void delete(User user, boolean deleteRunsUsingData)
     {
         ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()), deleteRunsUsingData);
@@ -274,6 +298,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return null;
     }
 
+    @Override
     public boolean isFileOnDisk()
     {
         java.nio.file.Path f = getFilePath();
@@ -292,6 +317,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return (null != path && Files.exists(path));
     }
 
+    @Override
     public String getCpasType()
     {
         String result = _object.getCpasType();
@@ -334,6 +360,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return getDataClass(null);
     }
 
+    @Override
     @Nullable
     public ExpDataClassImpl getDataClass(@Nullable User user)
     {
@@ -348,6 +375,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return null;
     }
 
+    @Override
     public void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException
     {
         String dataFileURL = getDataFileUrl();
@@ -482,6 +510,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
     }
 
+    @Override
     @NotNull
     public Collection<String> getAliases()
     {
@@ -541,6 +570,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             return ExperimentServiceImpl.get().getExpData(rowId);
     }
 
+    @Override
     @Nullable
     public String getWebDavURL(@NotNull PathType type)
     {
@@ -570,7 +600,15 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 if (relPath == null)
                     return null;
 
-                relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                if(!FileContentService.get().isCloudRoot(getContainer()))
+                {
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).encode();
+                }
+                else
+                {
+                    // Do not encode path from S3 folder.  It is already encoded.
+                    relPath = Path.parse(FilenameUtils.separatorsToUnix(relPath)).toString();
+                }
                 switch (type)
                 {
                     case folderRelative: return relPath;

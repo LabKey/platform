@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2017 LabKey Corporation
+ * Copyright (c) 2017-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@
             <div><a class="labkey-text-link" target="_blank" href="<%=h(reportUrl)%>">Preview Link</a></div>
             <br/>
 
-            <input type="hidden" name="<%=h(ReportDescriptor.Prop.reportId)%>" value="<%=h(bean.getReportId())%>">
+            <input type="hidden" name="<%=ReportDescriptor.Prop.reportId%>" value="<%=h(bean.getReportId())%>">
             <input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>">
             <%= button("Submit").submit(true) %>
             <%= button("Cancel").href(returnUrl) %>

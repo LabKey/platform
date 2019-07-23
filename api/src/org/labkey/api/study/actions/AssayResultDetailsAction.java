@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     private ExpData _data;
     private Object _dataRowId;
 
+    @Override
     public ModelAndView getView(DataDetailsForm form, BindException errors)
     {
         ViewContext context = getViewContext();
@@ -70,6 +71,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         return provider.createResultDetailsView(context, _protocol, _data, _dataRowId);
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         Container c = getContainer();

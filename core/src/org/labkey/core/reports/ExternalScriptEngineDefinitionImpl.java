@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.core.reports;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
@@ -24,7 +25,10 @@ import org.labkey.api.docker.DockerService;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
@@ -50,6 +54,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private String _machine;
     private int _port;
     private String _user;
+    private boolean _changePassword;
     private String _password;
     private String _pathMap;
     private boolean _external;
@@ -115,8 +120,30 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "outputFileName", getOutputFileName());
         addIfNotNull(json, "machine", getMachine());
         addIfNotNull(json, "port", getPort());
-        addIfNotNull(json, "user", getUser());
-        addIfNotNull(json, "password", getPassword());
+
+        if (isChangePassword())
+        {
+            addIfNotNull(json, "user", getUser());
+            if (getPassword() != null)
+                addIfNotNull(json, "password", Base64.encodeBase64String(Encryption.getAES128().encrypt(getPassword())));
+        }
+        else
+        {
+            // if there is no change we still need to pop in the existing password value since the
+            // entire JSON object will get rewritten on update
+            if (getRowId() != null)
+            {
+                LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
+                ExternalScriptEngineDefinition existingDef = svc.getEngineDefinition(getRowId(), getType());
+
+                if (existingDef != null)
+                {
+                    addIfNotNull(json, "user", existingDef.getUser());
+                    if (existingDef.getPassword() != null)
+                        addIfNotNull(json, "password", Base64.encodeBase64String(Encryption.getAES128().encrypt(existingDef.getPassword())));
+                }
+            }
+        }
         addIfNotNull(json, "external", isExternal());
         addIfNotNull(json, "remote", isRemote());
         addIfNotNull(json, "docker", isDocker());
@@ -129,7 +156,15 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _configuration = json.toString();
     }
 
+    /**
+     * Setter from DB binding
+     */
     public void setConfiguration(String configuration) throws IOException
+    {
+        setConfiguration(configuration, true);
+    }
+
+    public void setConfiguration(String configuration, boolean decrypt) throws IOException
     {
         // parse the JSON object
         JSONObject json = new JSONObject(configuration);
@@ -153,7 +188,13 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         if (json.has("user"))
             setUser(json.getString("user"));
         if (json.has("password"))
-            setPassword(json.getString("password"));
+        {
+            String password = json.getString("password");
+            if (decrypt)
+                setPassword(Encryption.getAES128().decrypt(Base64.decodeBase64(password)));
+            else
+                setPassword(password);
+        }
         if (json.has("external"))
             setExternal(json.getBoolean("external"));
         if (json.has("remote"))
@@ -311,6 +352,16 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     public void setPort(int port)
     {
         _port = port;
+    }
+
+    public boolean isChangePassword()
+    {
+        return _changePassword;
+    }
+
+    public void setChangePassword(boolean changePassword)
+    {
+        _changePassword = changePassword;
     }
 
     @Override

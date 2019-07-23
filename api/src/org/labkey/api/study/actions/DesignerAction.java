@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     private DesignerForm _form;
     private ExpProtocol _protocol;
 
+    @Override
     public ModelAndView getView(DesignerForm form, BindException errors)
     {
         _form = form;
@@ -115,6 +116,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         return AssayService.get().createAssayDesignerView(properties);
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         NavTree result = super.appendNavTrail(root);

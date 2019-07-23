@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ViewContext;
@@ -271,7 +272,7 @@ public class MiniProfiler
         _collectTroubleshootingStackTraces = enabled;
     }
 
-    public static enum RenderPosition
+    public enum RenderPosition implements EnumHasHtmlString<RenderPosition>
     {
         TopLeft("left"),
         TopRight("right"),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -81,10 +82,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.study.controllers.PublishController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
-import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
@@ -776,7 +776,7 @@ public class AssayPublishManager implements AssayPublishService
     {
         if (protocol != null)
         {
-            ActionURL url = new ActionURL(AssayController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
+            ActionURL url = new ActionURL(PublishController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
             if (containerFilter != null && containerFilter.getType() != null)
                 url.addParameter("containerFilterName", containerFilter.getType().name());
             return url;

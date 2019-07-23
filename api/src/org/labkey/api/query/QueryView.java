@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -548,7 +548,7 @@ public class QueryView extends WebPartView<Object>
                 break;
         }
 
-        if (null == ret)
+        if (null == ret && null != getQueryDef())
             ret = _schema.urlFor(action, getQueryDef());
 
         if (ret == null)
@@ -2393,13 +2393,7 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView)
-    {
-        return getExcelTemplateWriter(respectView, Collections.emptyList());
-    }
-
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols)
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols, ExcelWriter.ExcelDocumentType docType)
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
@@ -2470,10 +2464,10 @@ public class QueryView extends WebPartView<Object>
             fieldKeys.addAll(requiredCols);
         }
 
-        return getExcelTemplateWriter(fieldKeys);
+        return getExcelTemplateWriter(fieldKeys, docType);
     }
 
-    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys)
+    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType)
     {
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
@@ -2506,7 +2500,7 @@ public class QueryView extends WebPartView<Object>
 
         // Need to remove special MV columns
         displayColumns.removeIf(col -> col.getColumnInfo() instanceof RawValueColumn);
-        return new ExcelWriter(null, displayColumns);
+        return new ExcelWriter(null, displayColumns, docType);
     }
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
@@ -2530,7 +2524,7 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response) throws IOException
     {
-        exportToExcel(response, getColumnHeaderType(), ExcelWriter.ExcelDocumentType.xls);
+        exportToExcel(response, getColumnHeaderType(), ExcelWriter.ExcelDocumentType.xlsx);
     }
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
@@ -2538,18 +2532,7 @@ public class QueryView extends WebPartView<Object>
         exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), null);
     }
 
-    public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly) throws IOException
-    {
-        exportToExcelTemplate(response, headerType, insertColumnsOnly, false, Collections.emptyList(), null);
-    }
-
-    // Export with no data rows -- just captions
-    public void exportToExcelTemplate(HttpServletResponse response, ColumnHeaderType headerType, boolean insertColumnsOnly, boolean respectView, @NotNull List<FieldKey> includeColumns, @Nullable String prefix) throws IOException
-    {
-        exportToExcel(response, true, headerType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, includeColumns, prefix);
-    }
-
-    protected void exportToExcel(HttpServletResponse response,
+    public void exportToExcel(HttpServletResponse response,
                                  boolean templateOnly,
                                  ColumnHeaderType headerType,
                                  boolean insertColumnsOnly,
@@ -2563,7 +2546,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns) : getExcelWriter(docType);
+            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType);
             if (headerType == null)
                 headerType = getColumnHeaderType();
             ew.setCaptionType(headerType);
@@ -2794,7 +2777,8 @@ public class QueryView extends WebPartView<Object>
 
     final public TableInfo getTable()
     {
-        if (_table != null)
+        // We'll have parseErrors if we already tried and failed to create the table
+        if (_table != null || !_parseErrors.isEmpty())
             return _table;
         _table = createTable();
 

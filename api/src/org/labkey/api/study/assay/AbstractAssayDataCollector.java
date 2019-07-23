@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,13 @@ import java.util.Map;
  */
 public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AssayFileWriter<ContextType> implements AssayDataCollector<ContextType>
 {
+    @Override
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         return context.getUploadedData();
     }
 
+    @Override
     public AdditionalUploadType getAdditionalUploadType(ContextType context)
     {
         return AdditionalUploadType.UploadRequired;

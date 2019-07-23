@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2014-2018 LabKey Corporation
+ * @license Copyright (c) 2014-2019 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -479,6 +479,8 @@ LABKEY.Query = new function(impl, $) {
             form.append('importLookupByAlternateKey', config.importLookupByAlternateKey);
         if (config.saveToPipeline !== undefined)
             form.append('saveToPipeline', config.saveToPipeline);
+        if (config.insertOption !== undefined)
+            form.append('insertOption', config.insertOption);
 
         if (config.file) {
             if (config.file instanceof File)

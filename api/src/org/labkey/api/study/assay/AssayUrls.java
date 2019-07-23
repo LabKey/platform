@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2012 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -33,8 +33,6 @@ public interface AssayUrls extends UrlProvider
 {
     ActionURL getProtocolURL(Container container, ExpProtocol protocol, Class<? extends Controller> action);
 
-    ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
-    ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
     @Nullable
     ActionURL getDesignerURL(Container container, String providerName, @Nullable ActionURL returnURL);
 
@@ -84,4 +82,9 @@ public interface AssayUrls extends UrlProvider
      * QC and the protocol must be configured to include the QC workflow.
      */
     ActionURL getUpdateQCStateURL(Container container, ExpProtocol protocol);
+
+    ActionURL getBeginURL(Container container);
+    ActionURL getSummaryRedirectURL(Container container);
+    ActionURL getSetResultFlagURL(Container container);
+    ActionURL getChooseAssayTypeURL(Container container);
 }
