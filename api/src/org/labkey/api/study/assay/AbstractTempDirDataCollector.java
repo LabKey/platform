@@ -187,6 +187,7 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
         FileUtils.moveFile(tempDirFile, assayDirFile);
     }
 
+    @Override
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         Map<File, String> fileToName = new HashMap<>();

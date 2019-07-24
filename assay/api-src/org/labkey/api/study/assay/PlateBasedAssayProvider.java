@@ -34,15 +34,14 @@ public interface PlateBasedAssayProvider extends AssayProvider
 {
     String VIRUS_NAME_PROPERTY_NAME = "VirusName";
 
-    public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
-    public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
-    public File getSampleMetadataFile(Container container, int runId);
-    @Nullable
-    public PlateReader getPlateReader(String readerName);
-    public SampleMetadataInputFormat[] getSupportedMetadataInputFormats();
-    public SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol);
-    public void setMetadataInputFormat(ExpProtocol protocol, SampleMetadataInputFormat format) throws ExperimentException;
+    void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
+    PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
+    File getSampleMetadataFile(Container container, int runId);
+    @Nullable PlateReader getPlateReader(String readerName);
+    SampleMetadataInputFormat[] getSupportedMetadataInputFormats();
+    SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol);
+    void setMetadataInputFormat(ExpProtocol protocol, SampleMetadataInputFormat format) throws ExperimentException;
 
-    public Domain getSampleWellGroupDomain(ExpProtocol protocol);
-    public PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType);
+    Domain getSampleWellGroupDomain(ExpProtocol protocol);
+    PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType);
 }

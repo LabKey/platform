@@ -205,6 +205,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         // Do not move the file
     }
 
+    @Override
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         Map<String, File> result = super.uploadComplete(context, run);
@@ -216,6 +217,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return result;
     }
 
+    @Override
     public AdditionalUploadType getAdditionalUploadType(ContextType context)
     {
         if (getFileQueue(context).size() > 1)

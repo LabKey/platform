@@ -25,7 +25,7 @@ import org.labkey.api.study.assay.PlateSamplePropertyHelper;
  */
 public interface PlateUploadForm<ProviderType extends PlateBasedAssayProvider> extends AssayRunUploadContext<ProviderType>
 {
-    public PlateSamplePropertyHelper getSamplePropertyHelper();
+    PlateSamplePropertyHelper getSamplePropertyHelper();
 
-    public void setSamplePropertyHelper(PlateSamplePropertyHelper helper);
+    void setSamplePropertyHelper(PlateSamplePropertyHelper helper);
 }

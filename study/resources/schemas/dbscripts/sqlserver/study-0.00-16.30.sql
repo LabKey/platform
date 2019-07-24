@@ -20,8 +20,11 @@ CREATE SCHEMA study;
 GO
 CREATE SCHEMA studyDataset;
 GO
+
+/* Managed by the assay module, as of 19.3
 CREATE SCHEMA assayresult;
 GO
+*/
 
 CREATE TABLE study.QCState
 (
@@ -531,6 +534,7 @@ CREATE TABLE study.UploadLog
     CONSTRAINT UQ_UploadLog_FilePath UNIQUE (FilePath)
 );
 
+/* Managed by the assay module, as of 19.3
 CREATE TABLE study.Plate
 (
     RowId INT IDENTITY(1,1),
@@ -584,6 +588,7 @@ CREATE TABLE study.Well
 
 CREATE INDEX IX_Well_PlateId ON study.Well(PlateId);
 CREATE INDEX IX_Well_Container ON study.Well(Container);
+*/
 
 CREATE TABLE study.ParticipantVisit
 (
@@ -1208,7 +1213,7 @@ CREATE TABLE study.StudyDesignLabs
   CONSTRAINT pk_studydesignlabs PRIMARY KEY (Container, Name)
 );
 
--- Create an owner colunn to represent shared or private participant categories
+-- Create an owner column to represent shared or private participant categories
 ALTER TABLE study.ParticipantCategory ADD OwnerId USERID NOT NULL DEFAULT -1;
 GO
 
@@ -1217,9 +1222,6 @@ UPDATE study.ParticipantCategory SET OwnerId = CreatedBy WHERE Shared <> 1;
 ALTER TABLE study.ParticipantCategory DROP CONSTRAINT uq_label_container;
 ALTER TABLE study.ParticipantCategory DROP COLUMN Shared;
 ALTER TABLE study.ParticipantCategory ADD CONSTRAINT uq_label_container_owner UNIQUE(Label, Container, OwnerId);
-
--- Default the template type to nab if one isn't explicitly set
-UPDATE study.Plate SET Type = 'NAb' WHERE Type IS NULL;
 
 /* study-13.30-14.10.sql */
 
