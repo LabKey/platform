@@ -34,7 +34,8 @@ public abstract class AssaySchema extends UserSchema
 {
     public static final String ASSAY_LIST_TABLE_NAME = "AssayList";
     public static final String ASSAY_PROVIDERS_TABLE_NAME = "AssayProviders";
-    public static String NAME = "assay";
+    public static final String NAME = "assay";
+
     private static final String DESCR = "Contains data about the set of defined assays and their associated batches and runs.";
 
     @Nullable
@@ -67,7 +68,7 @@ public abstract class AssaySchema extends UserSchema
         return protocol.getName() + " " + tableType;
     }
 
-        // UNDONE: need to check permissions here 8449
+    // UNDONE: need to check permissions here 8449
     @Override
     protected boolean canReadSchema()
     {
