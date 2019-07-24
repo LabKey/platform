@@ -30,11 +30,13 @@ import java.util.Map;
  */
 public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AssayFileWriter<ContextType> implements AssayDataCollector<ContextType>
 {
+    @Override
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         return context.getUploadedData();
     }
 
+    @Override
     public AdditionalUploadType getAdditionalUploadType(ContextType context)
     {
         return AdditionalUploadType.UploadRequired;
