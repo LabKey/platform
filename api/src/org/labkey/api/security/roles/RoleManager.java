@@ -70,7 +70,7 @@ public class RoleManager
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
         registerRole(new TroubleshooterRole());
-        registerRole(new SeeUserDetailsRole());
+        registerRole(new SeeUserAndGroupDetailsRole());
         registerRole(new CanSeeAuditLogRole());
         registerRole(new SharedViewEditorRole());
         registerRole(new EmailNonUsersRole(), false);
