@@ -17,6 +17,7 @@ package org.labkey.api.study;
 
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -35,4 +36,6 @@ public interface StudyUrls extends UrlProvider
     ActionURL getManageAssayScheduleURL(Container container, boolean useAlternateLookupFields);
     ActionURL getManageTreatmentsURL(Container container, boolean useSingleTableEditor);
     ActionURL getManageFileWatchersURL(Container container);
+    ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
+    ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
 }

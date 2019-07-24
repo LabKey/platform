@@ -34,6 +34,7 @@ import java.io.File;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category({DailyB.class, Assays.class})
@@ -157,7 +158,14 @@ public class TargetStudyTest extends AbstractAssayTest
         clickProject(TEST_ASSAY_PRJ_SECURITY);
 
         clickAndWait(Locator.linkWithText("Assay List"));
-        clickAndWait(Locator.linkWithText(ASSAY_NAME));
+
+        // Note: "Assay" is ambiguous, since there's now a tab with that name. Ensure "Assay" shows up in the first data row and click it.
+        DataRegionTable drt = new DataRegionTable("AssayList", this);
+        int idx = drt.getRowIndex("Name", ASSAY_NAME);
+        log("Found \"Assay\" at index " + idx);
+        assertEquals(idx, 0);
+        clickAndWait(drt.link(idx, 0));
+
         clickButton("Import Data");
 
         setFormElement(Locator.name("name"), TEST_RUN1);

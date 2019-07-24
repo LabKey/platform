@@ -20,9 +20,9 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
-<%@ page import="org.labkey.api.study.actions.PublishStartAction" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.study.assay.PublishStartAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
-<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Option" %>
@@ -51,7 +51,7 @@
             unambiguous = false;
     }
 
-    ActionURL postURL = urlProvider(AssayUrls.class).getCopyToStudyConfirmURL(getContainer(), bean.getProtocol());
+    ActionURL postURL = urlProvider(StudyUrls.class).getCopyToStudyConfirmURL(getContainer(), bean.getProtocol());
     List<Pair<String, String>> parameters = postURL.getParameters();
     postURL.deleteParameters();
 
@@ -108,7 +108,7 @@
                 });
 
                 LABKEY.Ajax.request({
-                    url : LABKEY.ActionURL.buildURL('assay', 'autoCopyRun.api', null),
+                    url : LABKEY.ActionURL.buildURL('publish', 'autoCopyRun.api', null),
                     method : 'POST',
                     jsonData : data,
                     success: LABKEY.Utils.getCallbackWrapper(function(response)
