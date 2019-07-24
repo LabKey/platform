@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.assay;
+package org.labkey.api.exp.property;
 
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.AssayDomainKind;

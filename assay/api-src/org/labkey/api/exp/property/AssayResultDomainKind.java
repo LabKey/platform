@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.assay;
+package org.labkey.api.exp.property;
 
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
