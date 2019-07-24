@@ -109,6 +109,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             return name;
     }
 
+    @Override
     public K fromMap(Map<String, ?> m)
     {
         try
