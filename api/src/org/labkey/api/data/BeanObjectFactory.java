@@ -109,6 +109,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             return name;
     }
 
+    @Override
     public K fromMap(Map<String, ?> m)
     {
         try
@@ -150,7 +151,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             }
             catch (IllegalArgumentException | ConversionException x)
             {
-                _log.warn("Bean [" + bean.getClass().getName() + "] could not set property: " + prop + "=" + String.valueOf(value) + ": " + x.getMessage());
+                _log.warn("Bean [" + bean.getClass().getName() + "] could not set property: " + prop + "=" + value + ": " + x.getMessage());
             }
         }
 
