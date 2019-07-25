@@ -14,8 +14,6 @@ public class DomTestCase extends Assert
     @Test
     public void test()
     {
-        // NOTE: I can't figure out how to do the equivalent of static import Attributes.* here
-        // so this is more verbose than
         HtmlString h;
 
         h = createHtml(
