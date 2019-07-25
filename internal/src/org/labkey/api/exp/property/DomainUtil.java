@@ -219,7 +219,7 @@ public class DomainUtil
             //set property as PK
             if (pkColMap.containsKey(p.getName()))
             {
-                p.setPrimaryKey(true);
+                p.setIsPrimaryKey(true);
             }
 
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
