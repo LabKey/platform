@@ -203,27 +203,21 @@ public class Button extends DisplayElement implements HasHtmlString
         final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
         final String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
 
-        var attrs = at(PageFlowUtil.mapFromQueryString(StringUtils.trimToEmpty(attributes))).putAll(
-                Attribute.id, getId(),
-                Attribute.href, getHref(),
-                title, tip,
-                onclick, generateOnClick(submitId));
-        attrs.data("tt", (null!=tip ? "tooltip" : null));
-        attrs.data("placement","top");
+        var attrs = at(PageFlowUtil.mapFromQueryString(StringUtils.trimToEmpty(attributes)))
+            .id(getId())
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId))
+            .data("tt", (null!=tip ? "tooltip" : null))
+            .data("placement","top")
+            .cl(CLS, typeCls, getCssClass())
+            .cl(!isEnabled(),DISABLEDCLS)
+            .cl(isSubmit(),PRIMARY_CLS)
+            .cl(isDropdown(),"labkey-down-arrow")
+            .cl(iconOnly,"icon-only");
 
-        var cls = cl(CLS, typeCls, getCssClass())
-            .add(!isEnabled(),DISABLEDCLS)
-            .add(isSubmit(),PRIMARY_CLS)
-            .add(isDropdown(),"labkey-down-arrow")
-            .add(iconOnly,"icon-only");
-
-        HtmlString ret;
-        ret = createHtmlFragment(
-            isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId),NOCLASS) : null,
-            A(attrs, cls,
-                    iconOnly ? FA(getIconCls()) : SPAN(null,null,text))
+        return createHtmlFragment(
+            isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
+            A(attrs, iconOnly ? FA(getIconCls()) : SPAN(text))
         );
-        return ret;
     }
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>

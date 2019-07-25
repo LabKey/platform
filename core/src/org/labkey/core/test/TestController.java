@@ -313,6 +313,20 @@ public class TestController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class DomAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            return jspView("dom.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return navTrail(root, "DOM Test");
+        }
+    }
+
 
     public static class TestBean
     {

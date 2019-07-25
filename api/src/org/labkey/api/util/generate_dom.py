@@ -134,36 +134,36 @@ tags = [
 
 
 for tag in empty_tags:
-	print("""	public static Renderable<Appendable> %s(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
-	{
-		return (html) -> Element.option.render(html, attrs, classNames);
-	}""" % (tag.upper()))
+	# print("""	public static Renderable<Appendable> %s(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+	# {
+	# 	return (html) -> Element.option.render(html, attrs, classNames);
+	# }""" % (tag.upper()))
 	print("""	public static Renderable<Appendable> %s(Iterable<Map.Entry<Object, Object>> attrs)
 	{
-		return (html) -> Element.option.render(html, attrs, NOCLASS);
-	}""" % (tag.upper()))
-	print("""	public static Renderable<Appendable> %s(ClassNames classNames)
-	{
-		return (html) -> Element.option.render(html, NOAT, classNames);
-	}""" % (tag.upper()))
+		return (html) -> Element.%s.render(html, attrs);
+	}""" % (tag.upper(),tag.lower()))
+	# print("""	public static Renderable<Appendable> %s(ClassNames classNames)
+	# {
+	# 	return (html) -> Element.option.render(html, NOAT, classNames);
+	# }""" % (tag.upper()))
 	print("""	public static Renderable<Appendable> %s()
 	{
-		return (html) -> Element.option.render(html, NOAT, NOCLASS);
-	}""" % (tag.upper()))
+		return (html) -> Element.%s.render(html, NOAT);
+	}""" % (tag.upper(),tag.lower()))
 for tag in tags:
-	print("""	public static Renderable<Appendable> %s(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-	{
-		return (html) -> Element.option.render(html, attrs, classNames, body);
-	}""" % (tag.upper()))
+	# print("""	public static Renderable<Appendable> %s(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+	# {
+	# 	return (html) -> Element.option.render(html, attrs, classNames, body);
+	# }""" % (tag.upper()))
 	print("""	public static Renderable<Appendable> %s(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
 	{
-		return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-	}""" % (tag.upper()))
-	print("""	public static Renderable<Appendable> %s(ClassNames classNames, Object... body)
-	{
-		return (html) -> Element.option.render(html, NOAT, classNames, body);
-	}""" % (tag.upper()))
+		return (html) -> Element.%s.render(html, attrs, body);
+	}""" % (tag.upper(),tag.lower()))
+	# print("""	public static Renderable<Appendable> %s(ClassNames classNames, Object... body)
+	# {
+	# 	return (html) -> Element.option.render(html, NOAT, classNames, body);
+	# }""" % (tag.upper()))
 	print("""	public static Renderable<Appendable> %s(Object... body)
 	{
-		return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-	}""" % (tag.upper()))
+		return (html) -> Element.%s.render(html, NOAT, body);
+	}""" % (tag.upper(),tag.lower()))

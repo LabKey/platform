@@ -15,16 +15,22 @@
  */
 package org.labkey.api.util;
 
-import java.util.function.Function;
+import java.io.IOException;
 
-public interface HasHtmlString extends Function<HtmlStream,HtmlStream>
+public interface HasHtmlString extends DOM.Renderable
 {
     HtmlString getHtmlString();
 
     @Override
-    default HtmlStream apply(HtmlStream builder)
+    default Appendable appendTo(Appendable builder)
     {
-        builder.append(this.getHtmlString());
-        return builder;
+        try
+        {
+            return builder.append(this.getHtmlString().toString());
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
     }
 }

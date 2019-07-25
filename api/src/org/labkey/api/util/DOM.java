@@ -5,19 +5,19 @@ import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 public class DOM
@@ -30,8 +30,9 @@ public class DOM
 
     public static ClassNames NOCLASS = null;
 
-    public interface Renderable<STREAM extends Appendable> extends Function<STREAM, STREAM>
+    public interface Renderable
     {
+        Appendable appendTo(Appendable sb);
     }
 
     public enum Element
@@ -92,14 +93,9 @@ public class DOM
         input
         {
             @Override
-            protected HtmlString _render(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body) throws IOException
+            protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
             {
-                return element(name(), attrs, classNames);
-            }
-            @Override
-            protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body) throws IOException
-            {
-                return element(builder, name(), attrs, classNames, null);
+                return appendElement(builder, name(), attrs);
             }
         },
         ins,
@@ -164,33 +160,16 @@ public class DOM
         wbr,
         webview;
 
-        protected HtmlString _render(Iterable<Map.Entry<Object,Object>> attrs, ClassNames classNames, Object...body) throws IOException
+        protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body) throws IOException
         {
-            return element(name(), attrs, classNames, body);
+            return appendElement(builder, name(), attrs, body);
         }
 
-        final HtmlString render(Iterable<Map.Entry<Object,Object>> attrs, ClassNames classNames, Object...body)
+        final Appendable render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body)
         {
             try
             {
-                return _render(attrs, classNames, body);
-            }
-            catch (IOException io)
-            {
-                throw new RuntimeException(io);
-            }
-        }
-
-        protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, ClassNames classNames, Object...body) throws IOException
-        {
-            return element(builder, name(), attrs, classNames, body);
-        }
-
-        final Appendable render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, ClassNames classNames, Object...body)
-        {
-            try
-            {
-                return _render(builder, attrs, classNames, body);
+                return _render(builder, attrs, body);
             }
             catch (IOException io)
             {
@@ -224,22 +203,6 @@ public class DOM
             }
         },
         cite,
-//        className
-//        {
-//            Joiner joyner = Joiner.on(" ").useForNull("");
-//            @Override
-//            HtmlStringBuilder render(HtmlStringBuilder builder, Object value)
-//            {
-//                String classNames = "";
-//                if (value instanceof Array)
-//                    classNames = joyner.join((Object[])value);
-//                else if (value instanceof Collection)
-//                    classNames = joyner.join((Collection)value);
-//                else if (value != null)
-//                    classNames = String.valueOf(value);
-//                return appendAttribute(builder, "class", classNames);
-//            }
-//        },
         color,
         cols,
         colspan,
@@ -431,35 +394,43 @@ public class DOM
 
     public static class _Attributes implements Attributes
     {
+        static Joiner j = Joiner.on(" ").skipNulls();
         ArrayList<Map.Entry<Attribute,Object>> attrs = new ArrayList<>();
+        Set<String> classes = new TreeSet<>();
         ArrayList<Map.Entry<String,Object>> expandos = null;
 
-        _Attributes(Map<Attribute,Object> map)
+        _Attributes()
         {
-            attrs.addAll( map.entrySet() );
         }
-        _Attributes(Object... keyvalues)
+        _Attributes(Attribute firstKey, Object firstValue, Object... keyvalues)
         {
-            putAll(keyvalues);
+            at(firstKey, firstValue, keyvalues);
         }
-        _Attributes putAll(Object... keyvalues)
+        public _Attributes at(Attribute firstKey, Object firstValue, Object... keyvalues)
         {
+            at(firstKey, firstValue);
             assert keyvalues.length % 2 == 0;
             for (int i=0 ; i<keyvalues.length ; i+=2)
-                put((Attribute)keyvalues[i], keyvalues[i+1]);
+                at((Attribute)keyvalues[i], keyvalues[i+1]);
             return this;
         }
-        _Attributes put(Attribute key, Object value)
+        public _Attributes at(Attribute key, Object value)
         {
             attrs.add(new Pair<>(key,value));
             return this;
         }
-        _Attributes id(String id)
+        public _Attributes at(boolean test, Attribute key, Object value)
         {
-            put(Attribute.id, id);
+            if (test)
+                attrs.add(new Pair<>(key,value));
             return this;
         }
-        _Attributes data(String datakey, Object value)
+        public _Attributes id(String id)
+        {
+            at(Attribute.id, id);
+            return this;
+        }
+        public _Attributes data(String datakey, Object value)
         {
             if (null == expandos)
                 expandos = new ArrayList<>();
@@ -467,15 +438,36 @@ public class DOM
             return this;
         }
 
+        public _Attributes cl(String...names)
+        {
+            if (null != names)
+                Arrays.stream(names).filter(Objects::nonNull).forEach(name -> classes.add(name));
+            return this;
+        }
+        public _Attributes cl(boolean test, String className)
+        {
+            if (test && null!=className)
+                classes.add(className);
+            return this;
+        }
+        public _Attributes cl(boolean test, String trueName, String falseName)
+        {
+            if (test && null != trueName)
+                classes.add(trueName);
+            else if (!test && null != falseName)
+                classes.add(falseName);
+            return this;
+        }
         @NotNull
         @Override
         public Iterator<Map.Entry<Object, Object>> iterator()
         {
             var it = (Iterator<Map.Entry<Object, Object>>)(Iterator)attrs.iterator();
-            if (null == expandos)
-                return it;
-            var exp = (Iterator<Map.Entry<Object, Object>>)(Iterator)expandos.iterator();
-            return Iterators.concat(it,exp);
+            if (!classes.isEmpty())
+                it = Iterators.concat(it, Iterators.singletonIterator(new Pair<>("class", j.join(classes))));
+            if (null != expandos)
+                it = Iterators.concat(it,(Iterator<Map.Entry<Object, Object>>)(Iterator)expandos.iterator());
+            return it;
         }
     }
 
@@ -484,76 +476,54 @@ public class DOM
         var ret = new _Attributes();
         map.forEach( (k,v) -> {
             Attribute a = k instanceof Attribute ? (Attribute)k : Attribute.valueOf((String)k);
-            ret.put(a, v);
+            ret.at(a, v);
         });
         return ret;
     }
 
     public static _Attributes at(Attribute firstKey, Object firstValue, Object... keyvalues)
     {
-        var ret = new _Attributes(firstKey,firstValue);
-        ret.putAll(keyvalues);
+        var ret = new _Attributes(firstKey,firstValue,keyvalues);
         return ret;
     }
 
-    public static _Attributes id(String id)
+    public static _Attributes cl(boolean f, String className)
     {
-        return new _Attributes("id", id);
+        return new _Attributes().cl(f, className);
     }
 
-    public static class _ClassNames implements ClassNames
+    public static _Attributes cl(String... classNames)
     {
-        static Joiner j = Joiner.on(" ").skipNulls();
-        TreeSet<String> classes = new TreeSet<>();
-
-        _ClassNames(String...names)
-        {
-            add(names);
-        }
-        public _ClassNames add(String...names)
-        {
-            if (null != names)
-                Arrays.stream(names).filter(Objects::nonNull).forEach(name -> classes.add(name));
-            return this;
-        }
-        public _ClassNames add(boolean test, String className)
-        {
-            if (test && null!=className)
-                classes.add(className);
-            return this;
-        }
-        public _ClassNames add(boolean test, String trueName, String falseName)
-        {
-            if (test && null != trueName)
-                classes.add(trueName);
-            else if (!test && null != falseName)
-                classes.add(falseName);
-            return this;
-        }
-        public String toString()
-        {
-            return j.join(classes);
-        }
+        var ret = new _Attributes();
+        Arrays.stream(classNames).filter(Objects::nonNull).forEach(ret::cl);
+        return ret;
     }
 
-    public static _ClassNames cl(String ...names)
+    public static _Attributes id(String value)
     {
-        return new _ClassNames(names);
+        return new _Attributes(Attribute.id, value);
     }
 
-    public static Renderable<Appendable> el(Element element, Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    // TODO parse css selector style strings e.g. css("#header1.bold")
+    public static _Attributes css(String selector)
+    {
+        // TODO
+        return new _Attributes();
+    }
+
+    public static Renderable el(Element element, Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
     {
         return (html) -> element.render(html, attrs, classNames, body);
     }
 
-    public static HtmlString createHtml(Renderable<Appendable> fn)
+    public static HtmlString createHtml(Renderable fn)
     {
-        return HtmlString.unsafe(fn.apply(new StringBuilder()).toString());
+        return unsafe(fn.appendTo(new StringBuilder()).toString());
     }
 
-    public static Appendable createHtml(Appendable html, Renderable<Appendable> fn)
+    public static Appendable createHtml(Appendable html, Renderable fn)
     {
-        fn.apply(html);
+        fn.appendTo(html);
         return html;
     }
 
@@ -561,7 +531,7 @@ public class DOM
     {
         try
         {
-            return element(null, null, null, body);
+            return unsafe(appendElement(new StringBuilder(), null, null, body).toString());
         }
         catch (IOException x)
         {
@@ -573,7 +543,7 @@ public class DOM
     {
         try
         {
-            return element(html, null, null, null, body);
+            return appendElement(html, null, null, body);
         }
         catch (IOException x)
         {
@@ -581,11 +551,34 @@ public class DOM
         }
     }
 
+    // eXtensions, any helpers that are not directly representations of native browser DOM
     public static class X
     {
-        public static Renderable<Appendable> FA(String icon)
+        /** font-awesome */
+        public static Renderable FA(String icon)
         {
-            return (html) -> Element.i.render(html, null, cl("fa", "fa-"+icon));
+            return (html) -> Element.i.render(html, cl("fa", "fa-"+icon));
+        }
+
+        public static Renderable FORM(Object... body)
+        {
+            return FORM(at(Attribute.method,"GET"), body);
+        }
+
+        public static Renderable FORM(Attributes attrs, Object... body)
+        {
+            boolean isPost = false;
+            if (null != attrs)
+                for (var attr : attrs)
+                {
+                    if (attr.getKey() == Attribute.method && "POST".equalsIgnoreCase(String.valueOf(attr.getValue())))
+                        isPost = true;
+                }
+            var csrfInput = !isPost ? null : DOM.INPUT(at(
+                    Attribute.type,"hidden",
+                    Attribute.name,CSRFUtil.csrfName,
+                    Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
+            return DOM.FORM(attrs, body, csrfInput);
         }
     }
 
@@ -619,21 +612,11 @@ public class DOM
         return html;
     }
 
+    // don't throw checked exception, because it makes using lambdas a big pain
     private static Appendable appendBody(Appendable builder, Object body)
     {
         if (null == body)
             return builder;
-        else if (body instanceof HtmlString)
-        {
-            try
-            {
-                builder.append(body.toString());
-            }
-            catch (IOException io)
-            {
-                throw new RuntimeException(io);
-            }
-        }
         else if (body instanceof CharSequence)
         {
             try
@@ -645,26 +628,25 @@ public class DOM
                 throw new RuntimeException(io);
             }
         }
-        else if (body instanceof Renderable)
-            return ((Renderable<Appendable>) body).apply(builder);
-        else if (body instanceof Array)
+        else if (body instanceof DOM.Renderable)
+        {
+            ((DOM.Renderable) body).appendTo(builder);
+        }
+        else if (body.getClass().isArray())
+        {
             for (var i : (Object[]) body)
                 appendBody(builder, i);
+        }
         else if (body instanceof Stream)
-            ((Stream)body).forEach(i -> appendBody(builder,i));
+        {
+            ((Stream<Object>) body).forEach(i -> appendBody(builder, i));
+        }
         else
             throw new IllegalArgumentException(body.getClass().getName());
         return builder;
     }
 
-    private static HtmlString element(String tagName, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object... body) throws IOException
-    {
-        StringBuilder builder = new StringBuilder();
-        element(builder, tagName, attrs, classNames, body);
-        return HtmlString.unsafe(builder.toString());
-    }
-
-    private static Appendable element(Appendable builder, String tagName, Iterable<Map.Entry<Object, Object>> attrs, DOM.ClassNames classNames, Object[] body) throws IOException
+    private static Appendable appendElement(Appendable builder, String tagName, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
     {
         if (null != tagName)
         {
@@ -687,12 +669,6 @@ public class DOM
                     }
                 }
             }
-            if (null != classNames)
-            {
-                String clsValue = classNames.toString();
-                if (!isBlank(clsValue))
-                    appendAttribute(builder, "class", clsValue);
-            }
             builder.append(">");
         }
         /* NOTE: we could have lots of overrides for different bodies, but it would get out of hand! */
@@ -710,2087 +686,1045 @@ public class DOM
 
 
     //-- generated code here --
-    public static Renderable<Appendable> AREA(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable AREA(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.area.render(html, attrs);
     }
-    public static Renderable<Appendable> AREA(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable AREA()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.area.render(html, NOAT);
     }
-    public static Renderable<Appendable> AREA(ClassNames classNames)
+    public static Renderable BASE(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.base.render(html, attrs);
     }
-    public static Renderable<Appendable> AREA()
+    public static Renderable BASE()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.base.render(html, NOAT);
     }
-    public static Renderable<Appendable> BASE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable BR(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.br.render(html, attrs);
     }
-    public static Renderable<Appendable> BASE(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable BR()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.br.render(html, NOAT);
     }
-    public static Renderable<Appendable> BASE(ClassNames classNames)
+    public static Renderable COL(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.col.render(html, attrs);
     }
-    public static Renderable<Appendable> BASE()
+    public static Renderable COL()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.col.render(html, NOAT);
     }
-    public static Renderable<Appendable> BR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable EMBED(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.embed.render(html, attrs);
     }
-    public static Renderable<Appendable> BR(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable EMBED()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.embed.render(html, NOAT);
     }
-    public static Renderable<Appendable> BR(ClassNames classNames)
+    public static Renderable HR(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.hr.render(html, attrs);
     }
-    public static Renderable<Appendable> BR()
+    public static Renderable HR()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.hr.render(html, NOAT);
     }
-    public static Renderable<Appendable> COL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable IMG(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.img.render(html, attrs);
     }
-    public static Renderable<Appendable> COL(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable IMG()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.img.render(html, NOAT);
     }
-    public static Renderable<Appendable> COL(ClassNames classNames)
+    public static Renderable INPUT(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.input.render(html, attrs);
     }
-    public static Renderable<Appendable> COL()
+    public static Renderable INPUT()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.input.render(html, NOAT);
     }
-    public static Renderable<Appendable> EMBED(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable KEYGEN(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.keygen.render(html, attrs);
     }
-    public static Renderable<Appendable> EMBED(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable KEYGEN()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.keygen.render(html, NOAT);
     }
-    public static Renderable<Appendable> EMBED(ClassNames classNames)
+    public static Renderable LINK(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.link.render(html, attrs);
     }
-    public static Renderable<Appendable> EMBED()
+    public static Renderable LINK()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.link.render(html, NOAT);
     }
-    public static Renderable<Appendable> HR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable META(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.meta.render(html, attrs);
     }
-    public static Renderable<Appendable> HR(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable META()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.meta.render(html, NOAT);
     }
-    public static Renderable<Appendable> HR(ClassNames classNames)
+    public static Renderable PARAM(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.param.render(html, attrs);
     }
-    public static Renderable<Appendable> HR()
+    public static Renderable PARAM()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.param.render(html, NOAT);
     }
-    public static Renderable<Appendable> IMG(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable SOURCE(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.source.render(html, attrs);
     }
-    public static Renderable<Appendable> IMG(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable SOURCE()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.source.render(html, NOAT);
     }
-    public static Renderable<Appendable> IMG(ClassNames classNames)
+    public static Renderable TRACK(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.track.render(html, attrs);
     }
-    public static Renderable<Appendable> IMG()
+    public static Renderable TRACK()
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.track.render(html, NOAT);
     }
-    public static Renderable<Appendable> INPUT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable WBR(Iterable<Map.Entry<Object, Object>> attrs)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.wbr.render(html, attrs);
     }
-    public static Renderable<Appendable> INPUT(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable WBR()
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.wbr.render(html, NOAT);
     }
-    public static Renderable<Appendable> INPUT(ClassNames classNames)
+    public static Renderable A(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.a.render(html, attrs, body);
     }
-    public static Renderable<Appendable> INPUT()
+    public static Renderable A(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.a.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> KEYGEN(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable ABBR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.abbr.render(html, attrs, body);
     }
-    public static Renderable<Appendable> KEYGEN(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable ABBR(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.abbr.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> KEYGEN(ClassNames classNames)
+    public static Renderable ADDRESS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.address.render(html, attrs, body);
     }
-    public static Renderable<Appendable> KEYGEN()
+    public static Renderable ADDRESS(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.address.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> LINK(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable AREA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.area.render(html, attrs, body);
     }
-    public static Renderable<Appendable> LINK(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable AREA(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.area.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> LINK(ClassNames classNames)
+    public static Renderable ARTICLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.article.render(html, attrs, body);
     }
-    public static Renderable<Appendable> LINK()
+    public static Renderable ARTICLE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.article.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> META(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable ASIDE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.aside.render(html, attrs, body);
     }
-    public static Renderable<Appendable> META(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable ASIDE(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.aside.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> META(ClassNames classNames)
+    public static Renderable AUDIO(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.audio.render(html, attrs, body);
     }
-    public static Renderable<Appendable> META()
+    public static Renderable AUDIO(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.audio.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> PARAM(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable B(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.b.render(html, attrs, body);
     }
-    public static Renderable<Appendable> PARAM(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable B(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.b.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> PARAM(ClassNames classNames)
+    public static Renderable BASE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.base.render(html, attrs, body);
     }
-    public static Renderable<Appendable> PARAM()
+    public static Renderable BASE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.base.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> SOURCE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable BDI(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.bdi.render(html, attrs, body);
     }
-    public static Renderable<Appendable> SOURCE(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable BDI(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.bdi.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> SOURCE(ClassNames classNames)
+    public static Renderable BDO(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.bdo.render(html, attrs, body);
     }
-    public static Renderable<Appendable> SOURCE()
+    public static Renderable BDO(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.bdo.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> TRACK(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable BIG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.big.render(html, attrs, body);
     }
-    public static Renderable<Appendable> TRACK(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable BIG(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.big.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> TRACK(ClassNames classNames)
+    public static Renderable BLOCKQUOTE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.blockquote.render(html, attrs, body);
     }
-    public static Renderable<Appendable> TRACK()
+    public static Renderable BLOCKQUOTE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.blockquote.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> WBR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames)
+    public static Renderable BODY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames);
+        return (html) -> Element.body.render(html, attrs, body);
     }
-    public static Renderable<Appendable> WBR(Iterable<Map.Entry<Object, Object>> attrs)
+    public static Renderable BODY(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS);
+        return (html) -> Element.body.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> WBR(ClassNames classNames)
+    public static Renderable BR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames);
+        return (html) -> Element.br.render(html, attrs, body);
     }
-    public static Renderable<Appendable> WBR()
+    public static Renderable BR(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS);
+        return (html) -> Element.br.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> A(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable BUTTON(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.button.render(html, attrs, body);
     }
-    public static Renderable<Appendable> A(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable BUTTON(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.button.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> A(ClassNames classNames, Object... body)
+    public static Renderable CANVAS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.canvas.render(html, attrs, body);
     }
-    public static Renderable<Appendable> A(Object... body)
+    public static Renderable CANVAS(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.canvas.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ABBR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable CAPTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.caption.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ABBR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable CAPTION(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.caption.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ABBR(ClassNames classNames, Object... body)
+    public static Renderable CITE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.cite.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ABBR(Object... body)
+    public static Renderable CITE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.cite.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ADDRESS(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable CODE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.code.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ADDRESS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable CODE(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.code.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ADDRESS(ClassNames classNames, Object... body)
+    public static Renderable COL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.col.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ADDRESS(Object... body)
+    public static Renderable COL(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.col.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> AREA(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable COLGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.colgroup.render(html, attrs, body);
     }
-    public static Renderable<Appendable> AREA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable COLGROUP(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.colgroup.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> AREA(ClassNames classNames, Object... body)
+    public static Renderable DATA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.data.render(html, attrs, body);
     }
-    public static Renderable<Appendable> AREA(Object... body)
+    public static Renderable DATA(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.data.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ARTICLE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable DATALIST(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.datalist.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ARTICLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable DATALIST(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.datalist.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ARTICLE(ClassNames classNames, Object... body)
+    public static Renderable DD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.dd.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ARTICLE(Object... body)
+    public static Renderable DD(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.dd.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ASIDE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable DEL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.del.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ASIDE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable DEL(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.del.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> ASIDE(ClassNames classNames, Object... body)
+    public static Renderable DETAILS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.details.render(html, attrs, body);
     }
-    public static Renderable<Appendable> ASIDE(Object... body)
+    public static Renderable DETAILS(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.details.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> AUDIO(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable DFN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.dfn.render(html, attrs, body);
     }
-    public static Renderable<Appendable> AUDIO(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable DFN(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.dfn.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> AUDIO(ClassNames classNames, Object... body)
+    public static Renderable DIALOG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.dialog.render(html, attrs, body);
     }
-    public static Renderable<Appendable> AUDIO(Object... body)
+    public static Renderable DIALOG(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.dialog.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> B(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable DIV(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.div.render(html, attrs, body);
     }
-    public static Renderable<Appendable> B(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable DIV(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.div.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> B(ClassNames classNames, Object... body)
+    public static Renderable DL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.dl.render(html, attrs, body);
     }
-    public static Renderable<Appendable> B(Object... body)
+    public static Renderable DL(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.dl.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BASE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable DT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.dt.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BASE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable DT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.dt.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BASE(ClassNames classNames, Object... body)
+    public static Renderable EM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.em.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BASE(Object... body)
+    public static Renderable EM(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.em.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BDI(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable EMBED(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.embed.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BDI(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable EMBED(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.embed.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BDI(ClassNames classNames, Object... body)
+    public static Renderable FIELDSET(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.fieldset.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BDI(Object... body)
+    public static Renderable FIELDSET(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.fieldset.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BDO(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable FIGCAPTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.figcaption.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BDO(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable FIGCAPTION(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.figcaption.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BDO(ClassNames classNames, Object... body)
+    public static Renderable FIGURE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.figure.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BDO(Object... body)
+    public static Renderable FIGURE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.figure.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BIG(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable FOOTER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.footer.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BIG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable FOOTER(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.footer.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BIG(ClassNames classNames, Object... body)
+    public static Renderable FORM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.form.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BIG(Object... body)
+    public static Renderable FORM(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.form.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BLOCKQUOTE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable H1(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.h1.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BLOCKQUOTE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable H1(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.h1.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BLOCKQUOTE(ClassNames classNames, Object... body)
+    public static Renderable H2(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.h2.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BLOCKQUOTE(Object... body)
+    public static Renderable H2(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.h2.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BODY(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable H3(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.h3.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BODY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable H3(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.h3.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BODY(ClassNames classNames, Object... body)
+    public static Renderable H4(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.h4.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BODY(Object... body)
+    public static Renderable H4(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.h4.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable H5(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.h5.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable H5(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.h5.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BR(ClassNames classNames, Object... body)
+    public static Renderable H6(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.h6.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BR(Object... body)
+    public static Renderable H6(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.h6.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BUTTON(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable HEAD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.head.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BUTTON(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable HEAD(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.head.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> BUTTON(ClassNames classNames, Object... body)
+    public static Renderable HEADER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.header.render(html, attrs, body);
     }
-    public static Renderable<Appendable> BUTTON(Object... body)
+    public static Renderable HEADER(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.header.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CANVAS(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable HGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.hgroup.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CANVAS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable HGROUP(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.hgroup.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CANVAS(ClassNames classNames, Object... body)
+    public static Renderable HR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.hr.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CANVAS(Object... body)
+    public static Renderable HR(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.hr.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CAPTION(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable HTML(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.html.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CAPTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable HTML(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.html.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CAPTION(ClassNames classNames, Object... body)
+    public static Renderable I(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.i.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CAPTION(Object... body)
+    public static Renderable I(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.i.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CITE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable IFRAME(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.iframe.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CITE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable IFRAME(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.iframe.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CITE(ClassNames classNames, Object... body)
+    public static Renderable IMG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.img.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CITE(Object... body)
+    public static Renderable IMG(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.img.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CODE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable INPUT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.input.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CODE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable INPUT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.input.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> CODE(ClassNames classNames, Object... body)
+    public static Renderable INS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.ins.render(html, attrs, body);
     }
-    public static Renderable<Appendable> CODE(Object... body)
+    public static Renderable INS(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.ins.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> COL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable KBD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.kbd.render(html, attrs, body);
     }
-    public static Renderable<Appendable> COL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable KBD(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.kbd.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> COL(ClassNames classNames, Object... body)
+    public static Renderable KEYGEN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.keygen.render(html, attrs, body);
     }
-    public static Renderable<Appendable> COL(Object... body)
+    public static Renderable KEYGEN(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.keygen.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> COLGROUP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable LABEL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.label.render(html, attrs, body);
     }
-    public static Renderable<Appendable> COLGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable LABEL(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.label.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> COLGROUP(ClassNames classNames, Object... body)
+    public static Renderable LEGEND(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.legend.render(html, attrs, body);
     }
-    public static Renderable<Appendable> COLGROUP(Object... body)
+    public static Renderable LEGEND(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.legend.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DATA(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable LI(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.li.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DATA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable LI(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.li.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DATA(ClassNames classNames, Object... body)
+    public static Renderable LINK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.link.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DATA(Object... body)
+    public static Renderable LINK(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.link.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DATALIST(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable MAIN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.main.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DATALIST(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable MAIN(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.main.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DATALIST(ClassNames classNames, Object... body)
+    public static Renderable MAP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.map.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DATALIST(Object... body)
+    public static Renderable MAP(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.map.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DD(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable MARK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.mark.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable MARK(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.mark.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DD(ClassNames classNames, Object... body)
+    public static Renderable MENU(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.menu.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DD(Object... body)
+    public static Renderable MENU(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.menu.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DEL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable MENUITEM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.menuitem.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DEL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable MENUITEM(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.menuitem.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DEL(ClassNames classNames, Object... body)
+    public static Renderable META(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.meta.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DEL(Object... body)
+    public static Renderable META(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.meta.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DETAILS(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable METER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.meter.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DETAILS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable METER(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.meter.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DETAILS(ClassNames classNames, Object... body)
+    public static Renderable NAV(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.nav.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DETAILS(Object... body)
+    public static Renderable NAV(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.nav.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DFN(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable NOINDEX(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.noindex.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DFN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable NOINDEX(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.noindex.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DFN(ClassNames classNames, Object... body)
+    public static Renderable NOSCRIPT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.noscript.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DFN(Object... body)
+    public static Renderable NOSCRIPT(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.noscript.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DIALOG(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable OBJECT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.object.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DIALOG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable OBJECT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.object.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DIALOG(ClassNames classNames, Object... body)
+    public static Renderable OL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.ol.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DIALOG(Object... body)
+    public static Renderable OL(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.ol.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DIV(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable OPTGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.optgroup.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DIV(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable OPTGROUP(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.optgroup.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DIV(ClassNames classNames, Object... body)
+    public static Renderable OPTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.option.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DIV(Object... body)
+    public static Renderable OPTION(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.option.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable OUTPUT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.output.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable OUTPUT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.output.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DL(ClassNames classNames, Object... body)
+    public static Renderable P(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.p.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DL(Object... body)
+    public static Renderable P(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.p.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable PARAM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.param.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable PARAM(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.param.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> DT(ClassNames classNames, Object... body)
+    public static Renderable PICTURE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.picture.render(html, attrs, body);
     }
-    public static Renderable<Appendable> DT(Object... body)
+    public static Renderable PICTURE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.picture.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> EM(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable PRE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.pre.render(html, attrs, body);
     }
-    public static Renderable<Appendable> EM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable PRE(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.pre.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> EM(ClassNames classNames, Object... body)
+    public static Renderable PROGRESS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.progress.render(html, attrs, body);
     }
-    public static Renderable<Appendable> EM(Object... body)
+    public static Renderable PROGRESS(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.progress.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> EMBED(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable Q(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.q.render(html, attrs, body);
     }
-    public static Renderable<Appendable> EMBED(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable Q(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.q.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> EMBED(ClassNames classNames, Object... body)
+    public static Renderable RP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.rp.render(html, attrs, body);
     }
-    public static Renderable<Appendable> EMBED(Object... body)
+    public static Renderable RP(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.rp.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FIELDSET(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable RT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.rt.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FIELDSET(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable RT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.rt.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FIELDSET(ClassNames classNames, Object... body)
+    public static Renderable RUBY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.ruby.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FIELDSET(Object... body)
+    public static Renderable RUBY(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.ruby.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FIGCAPTION(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable S(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.s.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FIGCAPTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable S(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.s.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FIGCAPTION(ClassNames classNames, Object... body)
+    public static Renderable SAMP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.samp.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FIGCAPTION(Object... body)
+    public static Renderable SAMP(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.samp.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FIGURE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable SCRIPT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.script.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FIGURE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable SCRIPT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.script.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FIGURE(ClassNames classNames, Object... body)
+    public static Renderable SECTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.section.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FIGURE(Object... body)
+    public static Renderable SECTION(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.section.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FOOTER(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable SELECT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.select.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FOOTER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable SELECT(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.select.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FOOTER(ClassNames classNames, Object... body)
+    public static Renderable SMALL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.small.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FOOTER(Object... body)
+    public static Renderable SMALL(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.small.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FORM(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable SOURCE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.source.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FORM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable SOURCE(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.source.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> FORM(ClassNames classNames, Object... body)
+    public static Renderable SPAN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.span.render(html, attrs, body);
     }
-    public static Renderable<Appendable> FORM(Object... body)
+    public static Renderable SPAN(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.span.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H1(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable STRONG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.strong.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H1(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable STRONG(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.strong.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H1(ClassNames classNames, Object... body)
+    public static Renderable STYLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.style.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H1(Object... body)
+    public static Renderable STYLE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.style.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H2(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable SUB(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.sub.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H2(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable SUB(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.sub.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H2(ClassNames classNames, Object... body)
+    public static Renderable SUMMARY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.summary.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H2(Object... body)
+    public static Renderable SUMMARY(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.summary.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H3(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable SUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.sup.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H3(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable SUP(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.sup.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H3(ClassNames classNames, Object... body)
+    public static Renderable TABLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.table.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H3(Object... body)
+    public static Renderable TABLE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.table.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H4(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable TBODY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.tbody.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H4(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable TBODY(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.tbody.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H4(ClassNames classNames, Object... body)
+    public static Renderable TD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.td.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H4(Object... body)
+    public static Renderable TD(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.td.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H5(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable TEXTAREA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.textarea.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H5(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable TEXTAREA(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.textarea.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H5(ClassNames classNames, Object... body)
+    public static Renderable TFOOT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.tfoot.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H5(Object... body)
+    public static Renderable TFOOT(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.tfoot.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H6(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable TH(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.th.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H6(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable TH(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.th.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> H6(ClassNames classNames, Object... body)
+    public static Renderable THEAD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.thead.render(html, attrs, body);
     }
-    public static Renderable<Appendable> H6(Object... body)
+    public static Renderable THEAD(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.thead.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HEAD(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable TIME(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.time.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HEAD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable TIME(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.time.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HEAD(ClassNames classNames, Object... body)
+    public static Renderable TITLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.title.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HEAD(Object... body)
+    public static Renderable TITLE(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.title.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HEADER(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable TR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.tr.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HEADER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable TR(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.tr.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HEADER(ClassNames classNames, Object... body)
+    public static Renderable TRACK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.track.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HEADER(Object... body)
+    public static Renderable TRACK(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.track.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HGROUP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable U(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.u.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable U(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.u.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HGROUP(ClassNames classNames, Object... body)
+    public static Renderable UL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.ul.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HGROUP(Object... body)
+    public static Renderable UL(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.ul.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable VAR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.var.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable VAR(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.var.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HR(ClassNames classNames, Object... body)
+    public static Renderable VIDEO(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.video.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HR(Object... body)
+    public static Renderable VIDEO(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.video.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HTML(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
+    public static Renderable WBR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
+        return (html) -> Element.wbr.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HTML(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    public static Renderable WBR(Object... body)
     {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
+        return (html) -> Element.wbr.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> HTML(ClassNames classNames, Object... body)
+    public static Renderable WEBVIEW(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
+        return (html) -> Element.webview.render(html, attrs, body);
     }
-    public static Renderable<Appendable> HTML(Object... body)
+    public static Renderable WEBVIEW(Object... body)
     {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
+        return (html) -> Element.webview.render(html, NOAT, body);
     }
-    public static Renderable<Appendable> I(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> I(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> I(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> I(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> IFRAME(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> IFRAME(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> IFRAME(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> IFRAME(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> IMG(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> IMG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> IMG(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> IMG(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> INPUT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> INPUT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> INPUT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> INPUT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> INS(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> INS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> INS(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> INS(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> KBD(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> KBD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> KBD(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> KBD(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> KEYGEN(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> KEYGEN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> KEYGEN(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> KEYGEN(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LABEL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> LABEL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LABEL(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> LABEL(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LEGEND(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> LEGEND(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LEGEND(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> LEGEND(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LI(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> LI(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LI(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> LI(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LINK(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> LINK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> LINK(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> LINK(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MAIN(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> MAIN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MAIN(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> MAIN(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MAP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> MAP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MAP(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> MAP(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MARK(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> MARK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MARK(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> MARK(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MENU(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> MENU(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MENU(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> MENU(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MENUITEM(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> MENUITEM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> MENUITEM(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> MENUITEM(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> META(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> META(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> META(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> META(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> METER(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> METER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> METER(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> METER(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> NAV(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> NAV(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> NAV(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> NAV(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> NOINDEX(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> NOINDEX(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> NOINDEX(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> NOINDEX(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> NOSCRIPT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> NOSCRIPT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> NOSCRIPT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> NOSCRIPT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OBJECT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> OBJECT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OBJECT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> OBJECT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> OL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OL(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> OL(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OPTGROUP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> OPTGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OPTGROUP(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> OPTGROUP(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OPTION(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> OPTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OPTION(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> OPTION(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OUTPUT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> OUTPUT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> OUTPUT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> OUTPUT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> P(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> P(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> P(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> P(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PARAM(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> PARAM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PARAM(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> PARAM(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PICTURE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> PICTURE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PICTURE(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> PICTURE(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PRE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> PRE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PRE(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> PRE(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PROGRESS(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> PROGRESS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> PROGRESS(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> PROGRESS(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> Q(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> Q(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> Q(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> Q(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> RP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> RP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> RP(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> RP(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> RT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> RT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> RT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> RT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> RUBY(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> RUBY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> RUBY(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> RUBY(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> S(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> S(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> S(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> S(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SAMP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SAMP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SAMP(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SAMP(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SCRIPT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SCRIPT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SCRIPT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SCRIPT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SECTION(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SECTION(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SECTION(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SECTION(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SELECT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SELECT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SELECT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SELECT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SMALL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SMALL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SMALL(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SMALL(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SOURCE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SOURCE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SOURCE(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SOURCE(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SPAN(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SPAN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SPAN(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SPAN(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> STRONG(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> STRONG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> STRONG(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> STRONG(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> STYLE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> STYLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> STYLE(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> STYLE(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SUB(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SUB(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SUB(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SUB(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SUMMARY(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SUMMARY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SUMMARY(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SUMMARY(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SUP(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> SUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> SUP(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> SUP(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TABLE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TABLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TABLE(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TABLE(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TBODY(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TBODY(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TBODY(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TBODY(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TD(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TD(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TD(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TEXTAREA(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TEXTAREA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TEXTAREA(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TEXTAREA(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TFOOT(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TFOOT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TFOOT(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TFOOT(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TH(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TH(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TH(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TH(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> THEAD(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> THEAD(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> THEAD(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> THEAD(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TIME(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TIME(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TIME(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TIME(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TITLE(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TITLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TITLE(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TITLE(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TR(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TR(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TRACK(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> TRACK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> TRACK(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> TRACK(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> U(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> U(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> U(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> U(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> UL(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> UL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> UL(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> UL(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> VAR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> VAR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> VAR(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> VAR(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> VIDEO(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> VIDEO(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> VIDEO(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> VIDEO(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> WBR(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> WBR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> WBR(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> WBR(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-    public static Renderable<Appendable> WEBVIEW(Iterable<Map.Entry<Object, Object>> attrs, ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, classNames, body);
-    }
-    public static Renderable<Appendable> WEBVIEW(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.option.render(html, attrs, NOCLASS, body);
-    }
-    public static Renderable<Appendable> WEBVIEW(ClassNames classNames, Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, classNames, body);
-    }
-    public static Renderable<Appendable> WEBVIEW(Object... body)
-    {
-        return (html) -> Element.option.render(html, NOAT, NOCLASS, body);
-    }
-
-
     //-- end generated code --
 }

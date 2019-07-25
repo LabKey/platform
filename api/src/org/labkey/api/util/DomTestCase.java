@@ -19,7 +19,7 @@ public class DomTestCase extends Assert
         HtmlString h;
 
         h = createHtml(
-                H1(at(id,"header1"), cl("bold").add(true,"t").add(false,"f"),
+                H1(at(id,"header1").cl("bold").cl(true,"t").cl(false,"f"),
                     "Hello World"));
         assertEquals("<h1 id=\"header1\" class=\"bold t\">Hello World</h1>", h.toString());
 
@@ -54,5 +54,13 @@ public class DomTestCase extends Assert
                 DIV(new Button.ButtonBuilder("button").build())
         );
         assertTrue(h.toString().contains("labkey-button"));
+
+
+        h = createHtml(
+                X.FORM(at(method,"POST"), new Button.ButtonBuilder("button").build())
+        );
+        assertTrue(h.toString().contains("labkey-button"));
+        assertTrue(h.toString().contains("POST"));
+        assertTrue(h.toString().contains(CSRFUtil.csrfName));
     }
 }
