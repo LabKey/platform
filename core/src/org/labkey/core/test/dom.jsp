@@ -23,56 +23,55 @@
         return HtmlString.of(s);
     }
 %>
+<% dom(out,
 
-<HR>
-<% dom(out,
-        A(DOM.id("id").cl("class").at(href,"https://www.google.com/"), "GOOGLE")
-); %>
-<HR>
-<% dom(out,
+        A(DOM.id("id").cl("class").at(href,"https://www.google.com/"), "GOOGLE"),
+
+        HR(),
+
         TABLE(TR(TD(cl("link").at(style,"border:solid 1px red"),
-            link("begin", ProjectController.BeginAction.class))))
-);%>
-<HR>
-<% dom(out,
-        H1(css("#header1.bold").cl(true,"t").cl(false,"f"), "Hello World")
-);%>
-<HR>
-<% dom(out,
+                link("begin", ProjectController.BeginAction.class)))),
+
+        HR(),
+
+        H1(css("#header1.bold").cl(true,"t").cl(false,"f"), "Hello World"),
+
+        HR(),
+
         DIV(
-            H1(css("#header1"),
-                "Hello", unsafe("&nbsp;"), "World",
-                H2(css("#header2"),
-                        "Hello Seattle & Tacoma")))
-);%>
-<HR>
-<% dom(out,
-        SPAN(A(at(onclick,"alert('hello world')"), "<>>click here<<>")));
-%>
-<HR>
-<% dom(out,
-        SPAN(css("a.b.c"), unsafe("A&nbsp;B&nbsp;C"))
-);%>
-<HR>
-<% dom(out,
+                H1(css("#header1"),
+                        "Hello", unsafe("&nbsp;"), "World",
+                        H2(css("#header2"),
+                                "Hello Seattle & Tacoma"))),
+
+        HR(),
+
+        SPAN(A(at(onclick,"alert('hello world')"), "<>>click here<<>")),
+
+        HR(),
+
+        SPAN(css("a.b.c"), unsafe("A&nbsp;B&nbsp;C")),
+
+        HR(),
+
         SELECT(css("#element"),
                 Stream.of("alice","bob","charles","denise").map(DOM::OPTION),
                 OPTION(at(selected,true), "A&W")
-        ));
-%>
-<HR>
-<% dom(out,
-        DIV(this.button("button").onClick("alert('hello world')"))
-);
-%>
-<HR>
-<% dom(out,
+        ),
+
+        HR(),
+
+        DIV(this.button("button").onClick("alert('hello world')")),
+
+        HR(),
+
         X.FORM(at(method,"POST"),
-                "This is a POST form ", X.FA("plus-square")));
-%>
-<HR>
-<% dom(out,
-       X.FORM(at(method,"GET"),
-                "This is a GET form ", X.FA("minus-square")));
-%>
-<HR>
+                "This is a POST form ", X.FA("plus-square")),
+
+        HR(),
+
+        X.FORM(at(method,"GET"),
+                "This is a GET form ", X.FA("minus-square")),
+
+        HR()
+);%>
