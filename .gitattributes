@@ -1,5 +1,5 @@
-* text=auto
 
+* text=auto
 announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-18.10-18.20.sql -text
@@ -1809,7 +1809,10 @@ assay/api-src/org/labkey/api/assay/nab/view/RunDetailOptions.java -text
 assay/api-src/org/labkey/api/assay/nab/view/RunDetailsAction.java -text
 assay/api-src/org/labkey/api/assay/nab/view/RunDetailsHeaderView.java -text
 assay/api-src/org/labkey/api/assay/PlateBasedRunCreator.java -text
+assay/api-src/org/labkey/api/exp/property/AssayBatchDomainKind.java -text
 assay/api-src/org/labkey/api/exp/property/AssayDomainKind.java -text
+assay/api-src/org/labkey/api/exp/property/AssayResultDomainKind.java -text
+assay/api-src/org/labkey/api/exp/property/AssayRunDomainKind.java -text
 assay/api-src/org/labkey/api/nab/NabUrls.java -text
 assay/api-src/org/labkey/api/qc/PlateBasedDataExchangeHandler.java -text
 assay/api-src/org/labkey/api/study/AbstractPlateTypeHandler.java -text
@@ -1890,14 +1893,11 @@ assay/src/org/labkey/assay/actions/PipelineDataCollectorRedirectAction.java -tex
 assay/src/org/labkey/assay/actions/SaveAssayBatchAction.java -text
 assay/src/org/labkey/assay/actions/TemplateAction.java -text
 assay/src/org/labkey/assay/actions/TsvImportAction.java -text
-assay/src/org/labkey/assay/AssayBatchDomainKind.java -text
 assay/src/org/labkey/assay/AssayFolderType.java -text
 assay/src/org/labkey/assay/AssayImportServiceImpl.java -text
 assay/src/org/labkey/assay/AssayListPortalView.java -text
 assay/src/org/labkey/assay/AssayListQueryView.java -text
 assay/src/org/labkey/assay/AssayManager.java -text
-assay/src/org/labkey/assay/AssayResultDomainKind.java -text
-assay/src/org/labkey/assay/AssayRunDomainKind.java -text
 assay/src/org/labkey/assay/AssayServiceImpl.java -text
 assay/src/org/labkey/assay/DefaultAssayDomainKind.java -text
 assay/src/org/labkey/assay/FileBasedModuleDataHandler.java -text

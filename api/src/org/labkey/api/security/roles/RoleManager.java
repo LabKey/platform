@@ -132,6 +132,10 @@ public class RoleManager
     public static void registerRole(Role role, boolean addPermissionsToAdminRoles)
     {
         _nameToRoleMap.put(role.getUniqueName(), role);
+
+        role.getSerializationAliases()
+            .forEach(alias->_nameToRoleMap.put(alias, role));
+
         _classToRoleMap.put(role.getClass(), role);
         _roles.add(role);
 
@@ -140,7 +144,7 @@ public class RoleManager
                 || role instanceof FolderAdminRole);
 
         //register all exposed permissions in the name and class maps
-        for(Class<? extends Permission> permClass : role.getPermissions())
+        for (Class<? extends Permission> permClass : role.getPermissions())
         {
             try
             {
@@ -182,6 +186,10 @@ public class RoleManager
     public static void registerPermission(Permission perm, boolean addToAdminRoles)
     {
         _nameToRoleMap.put(perm.getUniqueName(), perm);
+
+        perm.getSerializationAliases()
+            .forEach(alias->_nameToRoleMap.put(alias, perm));
+
         _classToRoleMap.put(perm.getClass(), perm);
         if (addToAdminRoles)
             addPermissionToAdminRoles(perm.getClass());
