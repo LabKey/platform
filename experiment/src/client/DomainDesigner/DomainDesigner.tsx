@@ -19,6 +19,7 @@ import {ActionURL, Utils} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
 import {DomainForm, DomainDesign, fetchDomain, saveDomain} from "@glass/domainproperties"
 
+
 interface IAppState {
     dirty: boolean
     domain: DomainDesign
