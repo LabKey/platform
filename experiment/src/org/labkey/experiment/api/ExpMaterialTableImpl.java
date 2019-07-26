@@ -412,29 +412,27 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        ContainerFilter sampleSetFkContainerFilter;
-        if (ss != null)
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, null, ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
-            // Be sure that we can resolve the sample set if it's defined in a separate container.
-            // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
-            // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
-            Set<Container> containers = new HashSet<>();
-            containers.add(ss.getContainer());
-            containers.add(getContainer());
-            if (getContainer().getProject() != null)
-                containers.add(getContainer().getProject());
-            containers.add(ContainerManager.getSharedContainer());
-            sampleSetFkContainerFilter = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
-        }
-        else
-        {
-            sampleSetFkContainerFilter = new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
-        }
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
+            {
+                if (ss == null)
+                    return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
 
-        typeColumnInfo.setFk(QueryForeignKey.from(_userSchema, sampleSetFkContainerFilter)
-                .schema(ExpSchema.SCHEMA_NAME)
-                .table(ExpSchema.TableType.SampleSets.name())
-                .key("lsid"));
+                // Be sure that we can resolve the sample set if it's defined in a separate container.
+                // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
+                // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
+                Set<Container> containers = new HashSet<>();
+                containers.add(ss.getContainer());
+                containers.add(getContainer());
+                if (getContainer().getProject() != null)
+                    containers.add(getContainer().getProject());
+                containers.add(ContainerManager.getSharedContainer());
+                return new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+            }
+        });
+
         typeColumnInfo.setReadOnly(true);
         typeColumnInfo.setShownInInsertView(false);
 
