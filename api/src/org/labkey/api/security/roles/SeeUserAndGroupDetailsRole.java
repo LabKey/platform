@@ -15,25 +15,37 @@
  */
 package org.labkey.api.security.roles;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /*
 * User: adam
 * Date: Jan 22, 2010
 * Time: 1:22:04 PM
 */
-public class SeeUserDetailsRole extends AbstractRootContainerRole
+public class SeeUserAndGroupDetailsRole extends AbstractRootContainerRole
 {
     public static final String NAME = "See User and Group Details";
 
-    public SeeUserDetailsRole()
+    public SeeUserAndGroupDetailsRole()
     {
         super(NAME, "Allows viewing email addresses and contact information of other users as well as information about security groups.",
                 SeeUserDetailsPermission.class, SeeGroupDetailsPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+    }
+
+    @Override
+    public @NotNull Collection<String> getSerializationAliases()
+    {
+        // This role previously provided access to just user details; it was later expanded to add group details and renamed.
+        // Treat old name as a valid serialization alias to continue resolving old assignments in the database and folder archives.
+        return Collections.singleton("org.labkey.api.security.roles.SeeUserDetailsRole");
     }
 }
