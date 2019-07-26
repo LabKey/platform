@@ -65,10 +65,7 @@
             %>
                 <td valign="center">
                     <label>
-                    <input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/>
-
-                        <%= h(entry.getKey())%></label></td><%
-
+                    <input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/><%= h(entry.getKey())%></label></td><%
                 first = false;
             }
         }
