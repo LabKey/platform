@@ -129,7 +129,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;

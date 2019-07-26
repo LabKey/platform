@@ -19,11 +19,15 @@ package org.labkey.assay.plate;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataRow;
 import org.labkey.api.assay.dilution.DilutionManager;
+import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.Well;
+import org.labkey.api.assay.plate.WellData;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.study.*;
 
 import java.util.*;
 

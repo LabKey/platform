@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.PlateTemplate" %>
+<%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController" %>

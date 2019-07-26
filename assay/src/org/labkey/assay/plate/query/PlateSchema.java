@@ -26,8 +26,8 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.study.PlateService;
-import org.labkey.api.study.WellGroup;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.WellGroup;
 
 import java.util.HashSet;
 import java.util.Set;

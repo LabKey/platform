@@ -43,10 +43,10 @@ import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.WellGroup;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 

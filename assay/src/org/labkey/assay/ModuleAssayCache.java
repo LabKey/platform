@@ -9,7 +9,7 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
