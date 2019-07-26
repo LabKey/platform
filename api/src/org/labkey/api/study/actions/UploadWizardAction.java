@@ -23,6 +23,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -37,11 +38,10 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -59,6 +59,7 @@ import org.labkey.api.study.assay.AssayColumnInfoRenderer;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
 import org.labkey.api.study.assay.AssayHeaderLinkProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
@@ -114,7 +115,9 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 @RequiresPermission(InsertPermission.class)
 public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends FormViewAction<FormType>
 {
+    protected AssayProvider _provider;
     protected ExpProtocol _protocol;
+    protected AssayProtocolSchema _protocolSchema;
     protected ExpRun _run;
 
     private Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
@@ -131,6 +134,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         super(formClass);
         addStepHandler(getBatchStepHandler());
         addStepHandler(getRunStepHandler());
+    }
+
+    protected AssayProtocolSchema getAssayProtocolSchema()
+    {
+        if (_protocolSchema == null)
+            _protocolSchema = _provider.createProtocolSchema(getUser(), getContainer(), _protocol, null);
+
+        return _protocolSchema;
     }
 
     protected StepHandler<FormType> getBatchStepHandler()
@@ -152,6 +163,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     public ModelAndView getView(FormType form, boolean reshow, BindException errors) throws Exception
     {
         _protocol = form.getProtocol();
+        _provider = form.getProvider();
+
         String currentStep = form.getUploadStep();
         setHelpTopic(new HelpTopic("uploadAssayRuns"));
 
@@ -271,11 +284,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private boolean isCloudAndUnsupported(@NotNull PipeRoot pipeRoot, ExpProtocol protocol)
     {
-        AssayProvider provider = AssayService.get().getProvider(protocol);
         return (pipeRoot.isCloudRoot() &&
-                null != provider &&
-                null != provider.getPipelineProvider() &&
-                !provider.getPipelineProvider().supportsCloud());
+                null != _provider &&
+                null != _provider.getPipelineProvider() &&
+                !_provider.getPipelineProvider().supportsCloud());
     }
 
     /** @return the URL to send the user to after they've exited with wizard by successfully uploading their final run in the batch */
@@ -543,9 +555,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected InsertView createRunInsertView(FormType newRunForm, boolean errorReshow, BindException errors) throws ExperimentException
     {
         List<DomainProperty> propertySet = new ArrayList<>(newRunForm.getRunProperties().keySet());
-
-        ExpSchema schema = new ExpSchema(getUser(), getContainer());
-        ExpRunTable runTable = schema.getRunsTable(true);
+        AssayProtocolSchema schema = getAssayProtocolSchema();
+        ExpRunTable runTable = (ExpRunTable)schema.createTable(AssayProtocolSchema.RUNS_TABLE_NAME);
         runTable.addAllowablePermission(InsertPermission.class);
 
         return createInsertView(runTable, "lsid", propertySet, errorReshow, RunStepHandler.NAME, newRunForm, errors);
@@ -554,7 +565,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected InsertView createBatchInsertView(FormType runForm, boolean reshow, BindException errors) throws ExperimentException
     {
         List<DomainProperty> propertySet = new ArrayList<>(runForm.getBatchProperties().keySet());
-        return createInsertView(ExperimentService.get().getTinfoExperimentRun(),
+        AssayProtocolSchema schema = getAssayProtocolSchema();
+        ExpExperimentTable batchTable = (ExpExperimentTable) schema.createTable(AssayProtocolSchema.BATCHES_TABLE_NAME);
+        batchTable.addAllowablePermission(InsertPermission.class);
+
+        return createInsertView(batchTable,
                 "lsid", propertySet, reshow, BatchStepHandler.NAME, runForm, errors);
     }
 
@@ -774,24 +789,27 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> domainProperties, Map<String, String> columnNameToPropertyName)
     {
+        Map<String, DomainProperty> propertiesMap = new HashMap<>();
+        for (DomainProperty dp : domainProperties)
+            propertiesMap.put(dp.getPropertyURI(), dp);
+
         DataRegion rgn = new DataRegion();
         rgn.setTable(baseTable);
-        for (DomainProperty dp : domainProperties)
+        for (ColumnInfo col : baseTable.getColumns())
         {
-            if (dp.isShownInInsertView())
-            {
-                var info = dp.getPropertyDescriptor().createColumnInfo(baseTable, lsidCol, getUser(), getContainer());
+            String propertyURI = col.getPropertyURI();
+            DomainProperty dp = propertiesMap.get(propertyURI);
+            if (dp == null || !dp.isShownInInsertView())
+                continue;
 
-                // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
-                AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, info, getContainer(), getUser());
-                if (renderer != null)
-                {
-                    renderer.fixupColumnInfo(_protocol, info);
-                }
-                rgn.addColumn(info);
-                if (columnNameToPropertyName != null)
-                    columnNameToPropertyName.put(info.getName(), dp.getName());
-            }
+            // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
+            AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, col, getContainer(), getUser());
+            if (renderer != null)
+                renderer.fixupColumnInfo(_protocol, (BaseColumnInfo)col);
+
+            rgn.addColumn(col);
+            if (columnNameToPropertyName != null)
+                columnNameToPropertyName.put(col.getName(), dp.getName());
         }
         return rgn;
     }
