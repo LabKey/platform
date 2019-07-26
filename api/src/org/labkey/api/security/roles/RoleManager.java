@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.lang.reflect.Constructor;
+import java.util.function.Predicate;
 
 /*
 * User: Dave
@@ -130,7 +131,8 @@ public class RoleManager
 
     public static void registerRole(Role role, boolean addPermissionsToAdminRoles)
     {
-        addToMaps(role, true);
+        // The isNull nameVerifier ensures that every role name is unique (registered only once)
+        addToMaps(role, Objects::isNull);
         _roles.add(role);
 
         boolean addToAdminRoles = addPermissionsToAdminRoles && !(role instanceof SiteAdminRole
@@ -156,20 +158,20 @@ public class RoleManager
         SecurityPolicyManager.removeAll();
     }
 
-    private static void addToMaps(Role role, boolean ensureUniqueName)
+    private static void addToMaps(Role role, Predicate<Role> nameVerifier)
     {
         _classToRoleMap.put(role.getClass(), role);
-        addToNameToRoleMap(role.getUniqueName(), role, ensureUniqueName);
+        addToNameToRoleMap(role.getUniqueName(), role, nameVerifier);
 
         role.getSerializationAliases()
-            .forEach(alias-> addToNameToRoleMap(alias, role, ensureUniqueName));
+            .forEach(alias-> addToNameToRoleMap(alias, role, nameVerifier));
     }
 
-    private static void addToNameToRoleMap(String name, Role role, boolean ensureUniqueName)
+    private static void addToNameToRoleMap(String name, Role role, Predicate<Role> nameVerifier)
     {
         Role previous = _nameToRoleMap.put(name, role);
 
-        if (ensureUniqueName && null != previous)
+        if (!nameVerifier.test(previous))
             throw new IllegalStateException("A role was already registered with name \"" + name + "\" by " + previous);
     }
 
@@ -196,8 +198,9 @@ public class RoleManager
      */
     public static void registerPermission(Permission perm, boolean addToAdminRoles)
     {
-        // Permissions are registered multiple times (e.g., once for each role that includes them), so don't check uniqueness
-        addToMaps(perm, false);
+        // Permissions are registered multiple times (e.g., once for each role that includes them), so nameVerifier
+        // simply ensures that any previously registered permission equals the current permission object
+        addToMaps(perm, p->null == p || p.equals(perm));
         if (addToAdminRoles)
             addPermissionToAdminRoles(perm.getClass());
     }
