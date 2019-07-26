@@ -47,7 +47,7 @@ public class AssayDesignerRole extends AbstractRole
     public @NotNull Collection<String> getSerializationAliases()
     {
         // This class was repackaged when the assay framework was moved out of study into a separate assay module.
-        // Add an alias for the old package to allow import of serialized role assignments in old folder archives
+        // Add an alias for the previous package to allow import of serialized role assignments in old folder archives
         // (e.g., QC Trend Report Testing.folder.zip).
         return Collections.singleton("org.labkey.study.security.roles.AssayDesignerRole");
     }
