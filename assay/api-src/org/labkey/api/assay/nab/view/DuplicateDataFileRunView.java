@@ -22,12 +22,12 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.nab.NabUrls;
+import org.labkey.api.assay.nab.NabUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.query.RunListQueryView;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 

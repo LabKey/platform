@@ -16,8 +16,8 @@
 
 package org.labkey.assay.plate;
 
-import org.labkey.api.study.PositionImpl;
-import org.labkey.api.study.Well;
+import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.assay.plate.Well;
 
 /**
  * User: brittp

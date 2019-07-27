@@ -17,11 +17,11 @@
 %>
 <%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
-<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.assay.actions.TemplateAction" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
-<%@ page import="org.labkey.api.study.assay.AssayUrls" %>
-<%@ page import="org.labkey.api.study.assay.PipelineDataCollector" %>
+<%@ page import="org.labkey.api.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.assay.PipelineDataCollector" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

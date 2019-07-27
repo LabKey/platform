@@ -16,9 +16,9 @@
 package org.labkey.assay.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.roles.AbstractRole;
-import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.assay.AssayModule;
 
 import java.util.Collection;

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.AbstractFileDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
