@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.defaults;
+package org.labkey.assay.actions;
 
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
@@ -23,6 +23,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.defaults.DefaultableDisplayColumn;
+import org.labkey.api.defaults.DomainIdForm;
+import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
@@ -84,11 +87,13 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
             return false;
         }
 
+        @Override
         public DefaultValueType getDefaultValueType()
         {
             return getColumnInfo().getDefaultValueType();
         }
 
+        @Override
         public Class getJavaType()
         {
             return getColumnInfo().getJavaClass();
@@ -117,11 +122,13 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
             return resolver instanceof ThawListResolverType ? RenderSubSelectors.PARTIAL : RenderSubSelectors.NONE;
         }
 
+        @Override
         public DefaultValueType getDefaultValueType()
         {
             return _boundColumn.getDefaultValueType();
         }
 
+        @Override
         public Class getJavaType()
         {
             return _boundColumn.getJavaClass();
@@ -137,6 +144,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
             _provider = provider;
         }
 
+        @Override
         public List<DisplayColumn> getDisplayColumns()
         {
             List<DisplayColumn> columns = super.getDisplayColumns();
@@ -185,6 +193,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         rgn.addHiddenFormField("providerName", domainIdForm.getProviderName());
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         return new AssayDefaultValueDataRegion(_provider);

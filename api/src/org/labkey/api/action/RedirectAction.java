@@ -39,6 +39,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
  */
 public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 {
+    @Override
     public final ModelAndView handleRequest() throws Exception
     {
         BindException errors = bindParameters(getPropertyValues());
@@ -67,6 +68,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     }
 
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "getURL";
@@ -80,6 +82,7 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     }
 
 
+    @Override
     public void validate(Object target, Errors errors)
     {
         validateCommand((FORM)target, errors);
@@ -95,17 +98,5 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
         return new SimpleErrorView(errors);
-    }
-
-    // TODO: Delete both these methods, after changes have propagated into all SVN branches (Feb, 2019)
-
-    final public URLHelper getSuccessURL(FORM form)
-    {
-        throw new IllegalStateException("Should not implement or call this method");
-    }
-
-    final public boolean doAction(FORM form, BindException errors)
-    {
-        throw new IllegalStateException("Should not implement or call this method");
     }
 }

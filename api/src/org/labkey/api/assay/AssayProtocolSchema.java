@@ -20,13 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.actions.AssayDetailRedirectAction;
+import org.labkey.api.assay.actions.AssayResultDetailsAction;
+import org.labkey.api.assay.actions.AssayRunDetailsAction;
 import org.labkey.api.assay.query.BatchListQueryView;
+import org.labkey.api.assay.query.ResultsQueryView;
+import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -75,16 +79,10 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.actions.AssayDetailRedirectAction;
-import org.labkey.api.assay.actions.AssayResultDetailsAction;
-import org.labkey.api.assay.actions.AssayRunDetailsAction;
-import org.labkey.api.assay.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.assay.query.ResultsQueryView;
-import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -344,13 +342,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
         result.populate();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol, result.getContainerFilter());
 
-        // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
-        ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, getContainer());
-        fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
-                AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-        String paramName = fakeURL.getParameters().get(0).getKey();
-
         Map<String, String> urlParams = new HashMap<>();
+        String paramName = PageFlowUtil.urlProvider(AssayUrls.class).getBatchIdFilterParam();
         urlParams.put(paramName, "RowId");
         result.setDetailsURL(new DetailsURL(runsURL, urlParams));
 
@@ -601,7 +594,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Nullable
     protected RunListQueryView createRunsQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        RunListQueryView queryView = new RunListQueryView(this, settings, new org.labkey.api.assay.AssayRunType(getProtocol(), getContainer()));
+        RunListQueryView queryView = new RunListQueryView(this, settings, new AssayRunType(getProtocol(), getContainer()));
 
         if (getProvider().hasCustomView(ExpProtocol.AssayDomainTypes.Run, true))
         {
@@ -622,7 +615,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             {
                 // need to create a new protocol schema with the contextual role added to the user
                 AssayProtocolSchema schema = AssayService.get().getProvider(getProtocol()).createProtocolSchema(context.getUser(), getContainer(), getProtocol(), getTargetStudy());
-                return new RunListQueryView(schema, settings, new org.labkey.api.assay.AssayRunType(getProtocol(), getContainer()));
+                return new RunListQueryView(schema, settings, new AssayRunType(getProtocol(), getContainer()));
             }
         };
         decorator.addQCWarningIndicator(queryView, context, settings, errors);
