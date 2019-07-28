@@ -16,22 +16,22 @@
 
 package org.labkey.assay.view;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.query.ExpExperimentTable;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayView;
 import org.labkey.api.assay.query.BatchListQueryView;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.assay.actions.AssayBatchDetailsAction;
 
 import java.util.Collections;
 import java.util.HashMap;
