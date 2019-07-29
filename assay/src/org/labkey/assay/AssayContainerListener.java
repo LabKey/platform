@@ -26,7 +26,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.assay.AssayService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,7 +78,7 @@ public class AssayContainerListener implements ContainerListener
         for (ExpProtocol protocol : ExperimentService.get().getExpProtocolsUsedByRuns(c, new ContainerFilter.CurrentAndSubfolders(user)))
         {
             // Not all protocols are assay designs, so filter them based on looking up their provider
-            if (org.labkey.api.study.assay.AssayService.get().getProvider(protocol) != null)
+            if (AssayService.get().getProvider(protocol) != null)
             {
                 assayProtocolsInUse.add(protocol);
             }

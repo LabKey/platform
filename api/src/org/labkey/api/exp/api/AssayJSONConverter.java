@@ -29,8 +29,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AbstractTsvAssayProvider;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
+import org.labkey.api.assay.AssayProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;

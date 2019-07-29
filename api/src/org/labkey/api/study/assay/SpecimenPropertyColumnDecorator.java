@@ -15,11 +15,13 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.query.PropertyColumnDecorator;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.data.ColumnInfo;
 
 /**
  * User: jeckels

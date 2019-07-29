@@ -20,7 +20,7 @@ import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.study.WellGroup;
+import org.labkey.api.assay.plate.WellGroup;
 
 import java.util.List;
 

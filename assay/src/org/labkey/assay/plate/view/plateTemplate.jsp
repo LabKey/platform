@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.study.PlateTemplate" %>
-<%@ page import="org.labkey.api.study.WellGroup" %>
-<%@ page import="org.labkey.api.study.WellGroupTemplate" %>
+<%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
+<%@ page import="org.labkey.api.assay.plate.WellGroup" %>
+<%@ page import="org.labkey.api.assay.plate.WellGroupTemplate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController" %>

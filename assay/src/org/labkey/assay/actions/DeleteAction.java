@@ -21,14 +21,14 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.study.actions.BaseAssayAction;
-import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.assay.actions.BaseAssayAction;
+import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 

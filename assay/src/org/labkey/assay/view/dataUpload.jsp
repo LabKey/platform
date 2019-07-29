@@ -16,9 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.exp.ExperimentException"%>
-<%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
-<%@ page import="org.labkey.api.study.assay.AssayDataCollector" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
+<%@ page import="org.labkey.api.assay.actions.AssayRunUploadForm" %>
+<%@ page import="org.labkey.api.assay.AssayDataCollector" %>
+<%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.io.File" %>
