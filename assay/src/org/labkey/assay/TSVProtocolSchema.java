@@ -31,10 +31,10 @@ import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.assay.AssayResultTable;
-import org.labkey.api.study.assay.AssayUrls;
-import org.labkey.api.study.assay.AssayWellExclusionService;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayResultTable;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 

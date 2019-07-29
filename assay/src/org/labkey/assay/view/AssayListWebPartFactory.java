@@ -16,8 +16,8 @@
 package org.labkey.assay.view;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
