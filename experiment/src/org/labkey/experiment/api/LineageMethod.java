@@ -84,11 +84,10 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
         TableInfo parentTable = _lsidColumn.getParentTable();
         UserSchema schema = parentTable.getUserSchema();
 
-        // TODO: Use the _lsidColumn instead of hard-coding 'lsid' from the parentTable
-        SQLFragment lsids = new SQLFragment();
-        lsids.append("(SELECT qq.").append("lsid").append(" FROM ");
-        lsids.append(parentTable.getFromSQL("qq"));
-        lsids.append(")");
+        SQLFragment objectids = new SQLFragment();
+        objectids.append("(SELECT qq.objectid FROM ");
+        objectids.append(parentTable.getFromSQL("qq"));
+        objectids.append(")");
 
         SQLFragment[] fragments = getSQLFragments(arguments);
         String expType = null;
@@ -113,7 +112,7 @@ import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
             catch (NumberFormatException ex) { /* ok */ }
         }
 
-        return new LineageTableInfo("Foo", schema, lsids, _parents, depth, expType, cpasType);
+        return new LineageTableInfo("Foo", schema, objectids, _parents, depth, expType, cpasType);
     }
 
     @Override
