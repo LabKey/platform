@@ -129,7 +129,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -2481,7 +2481,10 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getUser();
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def, null);
+            // Go through normal getTable() codepath to be sure all metadata is applied
+            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).getTable(_def.getName(), null);
+            if (t == null)
+                throw new NotFoundException("Dataset not found");
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())

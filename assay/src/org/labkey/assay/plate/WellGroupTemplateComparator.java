@@ -1,6 +1,6 @@
 package org.labkey.assay.plate;
 
-import org.labkey.api.study.Position;
+import org.labkey.api.assay.plate.Position;
 
 import java.util.Comparator;
 

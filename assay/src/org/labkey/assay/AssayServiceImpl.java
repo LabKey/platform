@@ -51,16 +51,16 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.PlateService;
-import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.DetectionMethodAssayProvider;
-import org.labkey.api.study.assay.PlateBasedAssayProvider;
+import org.labkey.api.assay.DetectionMethodAssayProvider;
+import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
-import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -98,7 +98,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         if (protocol != null)
         {
             Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> assayInfo;
-            AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
+            AssayProvider provider = org.labkey.api.assay.AssayService.get().getProvider(protocol);
             if (provider != null)
             {
                 if (copy)
@@ -115,7 +115,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     @Override
     public GWTProtocol getAssayTemplate(String providerName)
     {
-        AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(providerName);
+        AssayProvider provider = org.labkey.api.assay.AssayService.get().getProvider(providerName);
         if (provider == null)
         {
             throw new NotFoundException("Could not find assay provider " + providerName);
@@ -420,7 +420,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     }
                     protocol.setProtocolParameters(newParams.values());
 
-                    AssayProvider provider = org.labkey.api.study.assay.AssayService.get().getProvider(protocol);
+                    AssayProvider provider = org.labkey.api.assay.AssayService.get().getProvider(protocol);
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                     {
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;

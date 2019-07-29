@@ -22,7 +22,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayProvider;
 
 import java.util.HashMap;
 import java.util.List;

@@ -29,7 +29,7 @@ import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;

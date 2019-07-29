@@ -16,9 +16,9 @@
 
 package org.labkey.assay.plate;
 
-import org.labkey.api.study.WellGroup;
-import org.labkey.api.study.Position;
-import org.labkey.api.study.WellGroupTemplate;
+import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.WellGroupTemplate;
 
 import java.util.*;
 
