@@ -2005,7 +2005,7 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(EditWikiForm form, BindException errors)
         {
-            //get the wiki
+            //region get the wiki
             Wiki wiki = null;
             WikiVersion curVersion = null;
 
@@ -2018,8 +2018,9 @@ public class WikiController extends SpringActionController
                 }
 
             }
+            //endregion
 
-            //check permissions
+            //region check permissions
             BaseWikiPermissions perms = getPermissions();
 
             if (null == wiki)
@@ -2041,8 +2042,9 @@ public class WikiController extends SpringActionController
                 if (!perms.allowUpdate(wiki))
                     throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
             }
+            //endregion
 
-            //get the user's editor preference
+            //region get the user's editor preference
             Map<String, String> properties = PropertyManager.getProperties(getUser(),
                     getContainer(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
@@ -2054,10 +2056,12 @@ public class WikiController extends SpringActionController
             WikiEditModel model = new WikiEditModel(getContainer(), wiki, curVersion,
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
                     form.getWebPartId(), getUser());
+            //endregion
 
-            //stash the wiki so we can build the nav trail
+            //region stash the wiki so we can build the nav trail
             _wiki = wiki;
             _wikiVer = curVersion;
+            //endregion
 
             return new JspView<>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
