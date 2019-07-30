@@ -66,7 +66,6 @@ public class UserIdRenderer extends DataColumn
         {
             return "Guest";
         }
-
         return super.getFormattedValue(ctx);
     }
 
