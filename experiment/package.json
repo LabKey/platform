@@ -34,8 +34,8 @@
     }
   },
   "dependencies": {
-    "@glass/base": "0.11.1-fb-domain-lookups-deux.2",
-    "@glass/domainproperties": "0.0.24-fb-domain-lookups-deux.6"
+    "@glass/base": "0.11.1-fb-domain-lookups-deux.3",
+    "@glass/domainproperties": "0.0.24-fb-domain-lookups-deux.8"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
