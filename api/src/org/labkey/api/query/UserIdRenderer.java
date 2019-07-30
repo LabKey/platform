@@ -17,9 +17,19 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.UrlColumn;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Objects;
 
@@ -62,6 +72,21 @@ public class UserIdRenderer extends DataColumn
         {
             return "Guest";
         }
+
         return super.getFormattedValue(ctx);
+    }
+
+    @Override
+    public String renderURL(RenderContext ctx)
+    {
+        var container = ctx.getContainer();
+        var loggedInUser = ctx.getViewContext().getUser();
+        if(SecurityManager.canSeeUserDetails(container, loggedInUser))
+        {
+            int displayedUserId = (int)getBoundColumn().getValue(ctx);
+            ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
+            return userURL.toString();
+        }
+        return null;
     }
 }
