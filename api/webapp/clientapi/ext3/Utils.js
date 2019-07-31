@@ -211,7 +211,9 @@ LABKEY.ext.Utils = new function() {
          * Use LABKEY.Utils.handleTabsInTextArea instead
          * @deprecated
          */
-        handleTabsInTextArea: LABKEY.Utils.handleTabsInTextArea,
+        handleTabsInTextArea: function(event){
+            LABKEY.Utils.handleTabsInTextArea(event);
+        },
 
         /**
          * This method takes an object that is/extends an Ext.Container (e.g. Panels, Toolbars, Viewports, Menus) and
