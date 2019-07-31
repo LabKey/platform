@@ -30,7 +30,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.study.WellGroup;
+import org.labkey.api.assay.plate.WellGroup;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -16,9 +16,9 @@
 package org.labkey.assay.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.roles.AbstractRole;
-import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.assay.AssayModule;
 
 import java.util.Collection;
@@ -47,7 +47,7 @@ public class AssayDesignerRole extends AbstractRole
     public @NotNull Collection<String> getSerializationAliases()
     {
         // This class was repackaged when the assay framework was moved out of study into a separate assay module.
-        // Add an alias for the old package to allow import of serialized role assignments in old folder archives
+        // Add an alias for the previous package to allow import of serialized role assignments in old folder archives
         // (e.g., QC Trend Report Testing.folder.zip).
         return Collections.singleton("org.labkey.study.security.roles.AssayDesignerRole");
     }

@@ -27,26 +27,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -107,6 +91,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -160,9 +145,6 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -195,30 +177,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -2818,6 +2777,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
+        @Override
         public ApiResponse execute(DeleteRunForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
@@ -2834,12 +2794,35 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteRunsAction extends MutatingApiAction<DeleteForm>
+    {
+        @Override
+        public void validateForm(DeleteForm form, Errors errors)
+        {
+            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
+                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
+        }
+
+        @Override
+        public ApiResponse execute(DeleteForm form, BindException errors)
+        {
+            Set<Integer> ids = form.getIds(true);
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), ids);
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
     private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
     {
+        @Override
         public void validateCommand(DeleteForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(DeleteForm deleteForm, BindException errors) throws Exception
         {
             if (!deleteForm.isForceDelete())
@@ -2864,11 +2847,13 @@ public class ExperimentController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteForm form)
         {
             return form.getSuccessActionURL(ExperimentUrlsImpl.get().getOverviewURL(getContainer()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Confirm Deletion");
@@ -3600,22 +3585,26 @@ public class ExperimentController extends SpringActionController
 
     private void validateSampleSetForm(BaseSampleSetForm form, Errors errors)
     {
-        TableInfo ti = ExperimentService.get().getTinfoMaterialSource();
-        ExpSampleSet ss = null;
-        if (StringUtils.isEmpty(form.getName()))
+        // when this is a new sample set creation, we have some extra checks for the name
+        if (!form.isUpdate())
         {
-            errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+            if (StringUtils.isEmpty(form.getName()))
+            {
+                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+            }
+            else
+            {
+                ExpSampleSet ss = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName());
+                if (ss != null)
+                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+            }
         }
-        else
-        {
-            int nameMax = ti.getColumn("Name").getScale();
-            ss = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName());
 
-            if (form.getName().length() > nameMax)
-                errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
-            else if (!form.isUpdate() && ss != null)
-                errors.reject(ERROR_MSG, "A sample set with that name already exists.");
-        }
+        // verify the length of the Name and NameExpression values
+        TableInfo ti = ExperimentService.get().getTinfoMaterialSource();
+        int nameMax = ti.getColumn("Name").getScale();
+        if (!StringUtils.isEmpty(form.getName()) && form.getName().length() > nameMax)
+            errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
         int nameExpMax = ti.getColumn("NameExpression").getScale();
         if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
             errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
@@ -3623,7 +3612,6 @@ public class ExperimentController extends SpringActionController
         //Verify Aliases
         List<String> importHeadings = form.getImportAliasKeys();
         List<String> importParents = form.getImportAliasValues();
-
         if (importHeadings != null && importParents != null)
         {
             if (importHeadings.contains(null))
@@ -3637,36 +3625,35 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_MSG, msg);
             }
 
-            //check if heading is unique--alias isn't a field/reserved name
-            if (ss != null)
+            //check if alias header is unique and isn't a field/reserved name
+            DomainKind sampleSetDomainKind = PropertyService.get().getDomainKindByName(SampleSetDomainKind.NAME);
+            ExpSampleSet sampleSet = form.getRowId() != null ? ExperimentService.get().getSampleSet(getContainer(), form.getRowId()) : null;
+            Domain domain = sampleSet != null ? sampleSet.getDomain() : null;
+
+            // Contains both existingAliases and reserved property names
+            Set<String> reservedNames = new CaseInsensitiveHashSet(sampleSetDomainKind.getReservedPropertyNames(domain));
+            Set<String> existingAliases = new CaseInsensitiveHashSet();
+            try
             {
-                Domain domain = ss.getDomain();
+                if (sampleSet != null)
+                    existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
+            }
 
-                // Contains both existingAliases and reserved property names
-                Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
-                Set<String> existingAliases = null;
+            for (String heading : importHeadings)
+            {
+                //Skip if alias was added previously
+                if (existingAliases.contains(heading))
+                    continue;
 
-                try
-                {
-                    existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
-                }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
-                }
+                if (reservedNames.contains(heading))
+                    errors.reject(ERROR_MSG, String.format("Parent alias header is reserved: %1$s", heading));
 
-                for (String heading : importHeadings)
-                {
-                    //Skip if alias was added previously
-                    if (existingAliases.contains(heading))
-                        continue;
-
-                    if (reservedNames.contains(heading))
-                        errors.reject(ERROR_MSG, String.format("Heading [%1$s] is reserved", heading));
-
-                    if (domain.getPropertyByName(heading) != null)
-                        errors.reject(ERROR_MSG, String.format("Property exists with alias name: %1$s", heading));
-                }
+                if (domain != null && domain.getPropertyByName(heading) != null)
+                    errors.reject(ERROR_MSG, String.format("A sample set property already exists with parent alias header: %1$s", heading));
             }
 
             //Check for duplicates
@@ -3674,14 +3661,14 @@ public class ExperimentController extends SpringActionController
             for (String heading : importHeadings)
             {
                 if (!dupes.add(heading))
-                    errors.reject(ERROR_UNIQUE, String.format("Duplicate alias: %1$s", heading));
+                    errors.reject(ERROR_UNIQUE, String.format("Duplicate parent alias header found: %1$s", heading));
             }
 
             for (String parent : importParents)
             {
                 //check if it is of the expected format
                 if (!UploadSamplesHelper.isInputOutputHeader(parent))
-                    errors.reject(ERROR_MSG, String.format("Invalid parent heading: %1$s", parent));
+                    errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
             }
         }
     }

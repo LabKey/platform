@@ -23,8 +23,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
@@ -35,14 +33,12 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -55,7 +51,6 @@ import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.io.IOException;
 import java.util.*;
 
 /**

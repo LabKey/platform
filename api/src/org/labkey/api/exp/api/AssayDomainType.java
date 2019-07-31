@@ -15,7 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
-import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractAssayProvider;
 
 /**
  * User: kevink

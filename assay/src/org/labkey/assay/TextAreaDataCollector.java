@@ -19,9 +19,9 @@ package org.labkey.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.assay.AbstractTempDirDataCollector;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.assay.AbstractTempDirDataCollector;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 

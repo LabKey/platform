@@ -18,8 +18,6 @@ package org.labkey.api.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 
-import java.io.IOException;
-
 /**
 * User: jeckels
 * Date: May 15, 2012

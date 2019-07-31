@@ -56,7 +56,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;

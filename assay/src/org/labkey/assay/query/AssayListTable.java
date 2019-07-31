@@ -28,9 +28,9 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssaySchema;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.AssayController;
 
