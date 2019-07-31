@@ -242,6 +242,7 @@ public class AdminController extends SpringActionController
     );
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
+    @SuppressWarnings("LoggerInitializedWithForeignClass")
     private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
     private static final String HEAP_MEMORY_KEY = "Total Heap Memory";
 
@@ -401,11 +402,13 @@ public class AdminController extends SpringActionController
     @RequiresSiteAdmin
     public class ShowModuleErrors extends SimpleViewAction
     {
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Module Errors", this.getClass());
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/core/admin/moduleErrors.jsp");
@@ -663,6 +666,7 @@ public class AdminController extends SpringActionController
     {
         private String _title = "Maintenance in progress";
 
+        @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             if (!getUser().hasSiteAdminPermission())
@@ -717,6 +721,7 @@ public class AdminController extends SpringActionController
             return view;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(_title);
@@ -760,6 +765,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetModulesAction extends ReadOnlyApiAction<GetModulesForm>
     {
+        @Override
         public ApiResponse execute(GetModulesForm form, BindException errors)
         {
             Container c = ContainerManager.getForPath(getContainer().getPath());
@@ -804,9 +810,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
+    @RequiresPermission(ReadPermission.class)
     public class ContainerIdAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
@@ -816,9 +823,10 @@ public class AdminController extends SpringActionController
             return v;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Container Info");
         }
     }
 
@@ -840,10 +848,11 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
+    @RequiresPermission(ReadPermission.class)
     @AllowedDuringUpgrade  // This action is invoked by HttpsUtil.checkSslRedirectConfiguration(), often while upgrade is in progress
     public class GuidAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             response.getWriter().write(GUID.makeGUID());
@@ -906,6 +915,7 @@ public class AdminController extends SpringActionController
     @RequiresNoPermission
     public class CreditsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             VBox views = new VBox();
@@ -950,6 +960,7 @@ public class AdminController extends SpringActionController
             return views;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Credits", this.getClass());
@@ -1288,6 +1299,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
     {
+        @Override
         public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
         {
             if (form.isUpgradeInProgress())
@@ -1299,11 +1311,13 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/customizeSite.jsp", bean, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Customize Site", this.getClass());
         }
 
+        @Override
         public void validateCommand(SiteSettingsForm form, Errors errors)
         {
             if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessageHtml()))
@@ -1312,6 +1326,7 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
         {
             ModuleLoader.getInstance().setDeferUsageReport(false);
@@ -1411,6 +1426,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(SiteSettingsForm form)
         {
             if (form.isUpgradeInProgress())
@@ -1843,11 +1859,13 @@ public class AdminController extends SpringActionController
             _defaultNumberFormat = defaultNumberFormat;
         }
 
+        @Override
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
         }
 
+        @Override
         public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
@@ -1877,6 +1895,7 @@ public class AdminController extends SpringActionController
             return _fileRootChanged;
         }
 
+        @Override
         public void setFileRootChanged(boolean changed)
         {
             _fileRootChanged = changed;
@@ -1887,15 +1906,18 @@ public class AdminController extends SpringActionController
             return _enabledCloudStoresChanged;
         }
 
+        @Override
         public void setEnabledCloudStoresChanged(boolean enabledCloudStoresChanged)
         {
             _enabledCloudStoresChanged = enabledCloudStoresChanged;
         }
+        @Override
         public boolean isDisableFileSharing()
         {
             return FileRootProp.disable.name().equals(getFileRootOption());
         }
 
+        @Override
         public boolean hasSiteDefaultRoot()
         {
             return FileRootProp.siteDefault.name().equals(getFileRootOption());
@@ -1913,47 +1935,56 @@ public class AdminController extends SpringActionController
             _enabledCloudStore = enabledCloudStore;
         }
 
+        @Override
         public boolean isCloudFileRoot()
         {
             return FileRootProp.cloudRoot.name().equals(getFileRootOption());
         }
 
+        @Override
         @Nullable
         public String getCloudRootName()
         {
             return _cloudRootName;
         }
 
+        @Override
         public void setCloudRootName(String cloudRootName)
         {
             _cloudRootName = cloudRootName;
         }
 
+        @Override
         public String getMigrateFilesOption()
         {
             return _migrateFilesOption;
         }
 
+        @Override
         public void setMigrateFilesOption(String migrateFilesOption)
         {
             _migrateFilesOption = migrateFilesOption;
         }
 
+        @Override
         public String getFolderRootPath()
         {
             return _folderRootPath;
         }
 
+        @Override
         public void setFolderRootPath(String folderRootPath)
         {
             _folderRootPath = folderRootPath;
         }
 
+        @Override
         public String getFileRootOption()
         {
             return _fileRootOption;
         }
 
+        @Override
         public void setFileRootOption(String fileRootOption)
         {
             _fileRootOption = fileRootOption;
@@ -2301,6 +2332,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowThreadsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             // Log to labkey.log as well as showing through the browser
@@ -2308,6 +2340,7 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/threads.jsp", new ThreadsBean());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("runningThreads"));
@@ -2318,12 +2351,14 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class DumpHeapAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             File destination = DebugInfoDumper.dumpHeap();
             return new HtmlView(PageFlowUtil.filter("Heap dumped to " + destination.getAbsolutePath()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
@@ -2364,6 +2399,7 @@ public class AdminController extends SpringActionController
             validateNetworkDrive(form, errors);
         }
 
+        @Override
         public ModelAndView getView(SiteSettingsForm form, BindException errors)
         {
             NetworkDrive testDrive = new NetworkDrive();
@@ -2417,6 +2453,7 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/testNetworkDrive.jsp", bean, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Test Mapping Network Drive");
@@ -2459,6 +2496,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowErrorsSinceMarkAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             PageFlowUtil.streamLogFile(response, _errorMark, getErrorLogFile());
@@ -2469,6 +2507,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowAllErrorsAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             PageFlowUtil.streamLogFile(response, 0, getErrorLogFile());
@@ -2478,6 +2517,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ShowPrimaryLogAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             getPageConfig().setNoIndex();
@@ -2502,11 +2542,13 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ActionsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new ActionsTabStrip();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("actionsDiagnostics"));
@@ -2517,6 +2559,7 @@ public class AdminController extends SpringActionController
 
     private static class ActionsTabStrip extends TabStripView
     {
+        @Override
         public List<NavTree> getTabList()
         {
             List<NavTree> tabs = new ArrayList<>(3);
@@ -2528,6 +2571,7 @@ public class AdminController extends SpringActionController
             return tabs;
         }
 
+        @Override
         public HttpView getTabView(String tabId)
         {
             if ("exceptions".equals(tabId))
@@ -2539,6 +2583,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ExportActionsAction extends ExportAction<Object>
     {
+        @Override
         public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
         {
             ActionsTsvWriter writer = new ActionsTsvWriter();
@@ -2561,6 +2606,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class QueriesAction extends SimpleViewAction<QueriesForm>
     {
+        @Override
         public ModelAndView getView(QueriesForm form, BindException errors)
         {
             String buttonHTML = "";
@@ -2572,6 +2618,7 @@ public class AdminController extends SpringActionController
                     sql -> getQueryStackTracesURL(sql.hashCode()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("queryLogger"));
@@ -2607,11 +2654,13 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class QueryStackTracesAction extends SimpleViewAction<QueryForm>
     {
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), AdminController::getExecutionPlanURL);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             appendAdminNavTrail(root, "Queries", QueriesAction.class);
@@ -2634,12 +2683,14 @@ public class AdminController extends SpringActionController
     {
         private int _hashCode;
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             _hashCode = form.getSqlHashCode();
             return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             appendAdminNavTrail(root, "Queries", QueriesAction.class);
@@ -2676,6 +2727,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ExportQueriesAction extends ExportAction<Object>
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             try (QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter())
@@ -2718,6 +2770,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class CachesAction extends SimpleViewAction<MemForm>
     {
+        @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
             if (form.isClearCaches())
@@ -2878,6 +2931,7 @@ public class AdminController extends SpringActionController
                 html.append("<td align=\"right\">").append(Formats.percent.format(stat)).append("</td>");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("cachesDiagnostics"));
@@ -2888,11 +2942,13 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class EnvironmentVariablesAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/properties.jsp", System.getenv());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Environment Variables", this.getClass());
@@ -2902,11 +2958,13 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class SystemPropertiesAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView<Map<String, String>>("/org/labkey/core/admin/properties.jsp", new HashMap(System.getProperties()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "System Properties", this.getClass());
@@ -3142,6 +3200,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class MemTrackerAction extends SimpleViewAction<MemForm>
     {
+        @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
             Set<Object> objectsToIgnore = MemTracker.getInstance().beforeReport();
@@ -3203,6 +3262,7 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("memTracker"));
@@ -3475,6 +3535,7 @@ public class AdminController extends SpringActionController
             _mb = mb;
         }
 
+        @Override
         public int compareTo(@NotNull MemoryCategory o)
         {
             return Double.compare(getMb(), o.getMb());
@@ -3495,6 +3556,7 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class MemoryChartAction extends ExportAction<ChartForm>
     {
+        @Override
         public void export(ChartForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             MemoryUsage usage = null;
@@ -3614,6 +3676,7 @@ public class AdminController extends SpringActionController
             return vbox;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -4084,7 +4147,7 @@ public class AdminController extends SpringActionController
 
         public void setOverrideDefault(String overrideDefault)
         {
-            _overrideDefault = ((overrideDefault.equals("override")) ? true : false);
+            _overrideDefault = "override".equals(overrideDefault);
         }
     }
 
@@ -4700,41 +4763,49 @@ public class AdminController extends SpringActionController
         private String _defaultNumberFormat;
         private boolean _restrictedColumnsEnabled;
 
+        @Override
         public String getDefaultDateFormat()
         {
             return _defaultDateFormat;
         }
 
+        @Override
         public void setDefaultDateFormat(String defaultDateFormat)
         {
             _defaultDateFormat = defaultDateFormat;
         }
 
+        @Override
         public String getDefaultDateTimeFormat()
         {
             return _defaultDateTimeFormat;
         }
 
+        @Override
         public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
         {
             _defaultDateTimeFormat = defaultDateTimeFormat;
         }
 
+        @Override
         public String getDefaultNumberFormat()
         {
             return _defaultNumberFormat;
         }
 
+        @Override
         public void setDefaultNumberFormat(String defaultNumberFormat)
         {
             _defaultNumberFormat = defaultNumberFormat;
         }
 
+        @Override
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
         }
 
+        @Override
         public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
@@ -4931,21 +5002,25 @@ public class AdminController extends SpringActionController
         // cloud settings
         private String[] _enabledCloudStore;
         //file management
+        @Override
         public String getFolderRootPath()
         {
             return _folderRootPath;
         }
 
+        @Override
         public void setFolderRootPath(String folderRootPath)
         {
             _folderRootPath = folderRootPath;
         }
 
+        @Override
         public String getFileRootOption()
         {
             return _fileRootOption;
         }
 
+        @Override
         public void setFileRootOption(String fileRootOption)
         {
             _fileRootOption = fileRootOption;
@@ -4963,32 +5038,38 @@ public class AdminController extends SpringActionController
             _enabledCloudStore = enabledCloudStore;
         }
 
+        @Override
         public boolean isDisableFileSharing()
         {
             return FileRootProp.disable.name().equals(getFileRootOption());
         }
 
+        @Override
         public boolean hasSiteDefaultRoot()
         {
             return FileRootProp.siteDefault.name().equals(getFileRootOption());
         }
 
+        @Override
         public boolean isCloudFileRoot()
         {
             return FileRootProp.cloudRoot.name().equals(getFileRootOption());
         }
 
+        @Override
         @Nullable
         public String getCloudRootName()
         {
             return _cloudRootName;
         }
 
+        @Override
         public void setCloudRootName(String cloudRootName)
         {
             _cloudRootName = cloudRootName;
         }
 
+        @Override
         public boolean isFolderSetup()
         {
             return _isFolderSetup;
@@ -5004,6 +5085,7 @@ public class AdminController extends SpringActionController
             return _fileRootChanged;
         }
 
+        @Override
         public void setFileRootChanged(boolean changed)
         {
             _fileRootChanged = changed;
@@ -5014,16 +5096,19 @@ public class AdminController extends SpringActionController
             return _enabledCloudStoresChanged;
         }
 
+        @Override
         public void setEnabledCloudStoresChanged(boolean enabledCloudStoresChanged)
         {
             _enabledCloudStoresChanged = enabledCloudStoresChanged;
         }
 
+        @Override
         public String getMigrateFilesOption()
         {
             return _migrateFilesOption;
         }
 
+        @Override
         public void setMigrateFilesOption(String migrateFilesOption)
         {
             _migrateFilesOption = migrateFilesOption;
@@ -5057,6 +5142,7 @@ public class AdminController extends SpringActionController
             return handleFileRootsPost(form, errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(FileRootsForm form)
         {
             ActionURL url = new ActionURL(FileRootsStandAloneAction.class, getContainer())
@@ -5098,6 +5184,7 @@ public class AdminController extends SpringActionController
             return handleFileRootsPost(form, errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(FileRootsForm form)
         {
             ActionURL url = new AdminController.AdminUrlsImpl().getFileRootsURL(getContainer());
@@ -5816,15 +5903,18 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class FolderAliasesAction extends FormViewAction<FolderAliasesForm>
     {
+        @Override
         public void validateCommand(FolderAliasesForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(FolderAliasesForm form, boolean reshow, BindException errors)
         {
             return new JspView<ViewContext>("/org/labkey/core/admin/folderAliases.jsp");
         }
 
+        @Override
         public boolean handlePost(FolderAliasesForm form, BindException errors)
         {
             List<String> aliases = new ArrayList<>();
@@ -5850,11 +5940,13 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(FolderAliasesForm form)
         {
             return getManageFoldersURL();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendAdminNavTrail(root, "Folder Aliases: " + getContainer().getPath(), this.getClass());
@@ -5892,10 +5984,12 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeEmailAction extends FormViewAction<CustomEmailForm>
     {
+        @Override
         public void validateCommand(CustomEmailForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(CustomEmailForm form, boolean reshow, BindException errors)
         {
             JspView<CustomEmailForm> result = new JspView<>("/org/labkey/core/admin/customizeEmail.jsp", form, errors);
@@ -5903,6 +5997,7 @@ public class AdminController extends SpringActionController
             return result;
         }
 
+        @Override
         public boolean handlePost(CustomEmailForm form, BindException errors)
         {
             if (form.getTemplateClass() != null)
@@ -5924,6 +6019,7 @@ public class AdminController extends SpringActionController
             return !errors.hasErrors();
         }
 
+        @Override
         public ActionURL getSuccessURL(CustomEmailForm form)
         {
             ActionURL result = new ActionURL(CustomizeEmailAction.class, getContainer());
@@ -5935,6 +6031,7 @@ public class AdminController extends SpringActionController
             return result;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("customEmail"));
@@ -6270,6 +6367,7 @@ public class AdminController extends SpringActionController
     {
         private ActionURL _returnURL;
 
+        @Override
         public void validateCommand(ManageFoldersForm target, Errors errors)
         {
             Container c = getContainer();
@@ -6280,11 +6378,13 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/renameFolder.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -6359,11 +6459,13 @@ public class AdminController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
             return _returnURL;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
@@ -6475,6 +6577,7 @@ public class AdminController extends SpringActionController
             return new AdminUrlsImpl().getManageFoldersURL(c);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root = root.addChild("Folder Management", getManageFoldersURL());
@@ -6486,12 +6589,14 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ConfirmProjectMoveAction extends SimpleViewAction<ManageFoldersForm>
     {
+        @Override
         public ModelAndView getView(ManageFoldersForm form, BindException errors)
         {
             getPageConfig().setTemplate(Template.Dialog);
             return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -6504,10 +6609,12 @@ public class AdminController extends SpringActionController
     {
         private ActionURL _successURL;
 
+        @Override
         public void validateCommand(ManageFoldersForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
@@ -6539,6 +6646,7 @@ public class AdminController extends SpringActionController
             return vbox;
         }
 
+        @Override
         public boolean handlePost(ManageFoldersForm form, BindException errors) throws Exception
         {
             Container parent = getViewContext().getContainerNoTab();
@@ -6646,11 +6754,13 @@ public class AdminController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
             return _successURL;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -6663,11 +6773,13 @@ public class AdminController extends SpringActionController
     {
         private ActionURL _successURL;
 
+        @Override
         public void validateCommand(SetFolderPermissionsForm target, Errors errors)
         {
         }
 
 
+        @Override
         public ModelAndView getView(SetFolderPermissionsForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
@@ -6685,6 +6797,7 @@ public class AdminController extends SpringActionController
 
         }
 
+        @Override
         public boolean handlePost(SetFolderPermissionsForm form, BindException errors)
         {
             Container c = getContainer();
@@ -6779,11 +6892,13 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(SetFolderPermissionsForm form)
         {
             return _successURL;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
@@ -6833,10 +6948,12 @@ public class AdminController extends SpringActionController
     {
         private ActionURL _successURL;
 
+        @Override
         public void validateCommand(FilesForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(FilesForm form, boolean reshow, BindException errors)
         {
             VBox vbox = new VBox();
@@ -6854,6 +6971,7 @@ public class AdminController extends SpringActionController
             return vbox;
         }
 
+        @Override
         public boolean handlePost(FilesForm form, BindException errors)
         {
             Container c = getContainer();
@@ -6897,11 +7015,13 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(FilesForm form)
         {
             return _successURL;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
@@ -6944,6 +7064,7 @@ public class AdminController extends SpringActionController
     {
         private List<Container> _deleted = new ArrayList<>();
 
+        @Override
         public void validateCommand(ManageFoldersForm form, Errors errors)
         {
             try
@@ -6979,12 +7100,14 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public ModelAndView getView(ManageFoldersForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(Template.Dialog);
             return new JspView<>("/org/labkey/core/admin/deleteFolder.jsp", form);
         }
 
+        @Override
         public boolean handlePost(ManageFoldersForm form, BindException errors)
         {
             List<Container> targets = form.getTargetContainers(getContainer());
@@ -7015,6 +7138,7 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ManageFoldersForm form)
         {
             // Note: because in some scenarios we might be deleting children of the current contaner, in those cases we remain in this folder:
@@ -7040,6 +7164,7 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Confirm " + getContainer().getContainerNoun() + " deletion");
@@ -7050,20 +7175,24 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ReorderFoldersAction extends FormViewAction<FolderReorderForm>
     {
+        @Override
         public void validateCommand(FolderReorderForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(FolderReorderForm folderReorderForm, boolean reshow, BindException errors)
         {
             return new JspView<ViewContext>("/org/labkey/core/admin/reorderFolders.jsp");
         }
 
+        @Override
         public boolean handlePost(FolderReorderForm form, BindException errors)
         {
             return ReorderFolders(form, errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(FolderReorderForm folderReorderForm)
         {
             if (getContainer().isRoot())
@@ -7072,6 +7201,7 @@ public class AdminController extends SpringActionController
                 return getManageFoldersURL();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             String title = "Reorder " + (getContainer().isRoot() || getContainer().getParent().isRoot() ? "Projects" : "Folders");
@@ -7151,6 +7281,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class RevertFolderAction extends MutatingApiAction<RevertFolderForm>
     {
+        @Override
         public ApiResponse execute(RevertFolderForm form, BindException errors)
         {
             if (isBlank(form.getContainerPath()))
@@ -7350,6 +7481,7 @@ public class AdminController extends SpringActionController
             return new ActionURL(EmailTestAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
@@ -7361,6 +7493,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class RecreateViewsAction extends ConfirmAction
     {
+        @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
             getPageConfig().setShowHeader(false);
@@ -7368,16 +7501,19 @@ public class AdminController extends SpringActionController
             return new HtmlView("Are you sure you want to drop and recreate all module views?");
         }
 
+        @Override
         public boolean handlePost(Object o, BindException errors)
         {
             ModuleLoader.getInstance().recreateViews();
             return true;
         }
 
+        @Override
         public void validateCommand(Object o, Errors errors)
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(Object o)
         {
             return AppProps.getInstance().getHomePageActionURL();
@@ -7525,6 +7661,7 @@ public class AdminController extends SpringActionController
             return new JspView("/org/labkey/core/admin/memTrackerViewer.jsp");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
@@ -7544,6 +7681,7 @@ public class AdminController extends SpringActionController
                 throw new UnauthorizedException();
         }
 
+        @Override
         public boolean handlePost(LoggingForm form, BindException errors)
         {
             boolean on = SessionAppender.isLogging(getViewContext().getRequest());
@@ -7558,10 +7696,12 @@ public class AdminController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(LoggingForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(LoggingForm o, boolean reshow, BindException errors)
         {
             SessionAppender.setLoggingForSession(getViewContext().getRequest(), true);
@@ -7569,11 +7709,13 @@ public class AdminController extends SpringActionController
             return new LoggingView();
         }
 
+        @Override
         public ActionURL getSuccessURL(LoggingForm o)
         {
             return new ActionURL(SessionLoggingAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
@@ -8173,6 +8315,7 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeMenuAction extends MutatingApiAction<CustomizeMenuForm>
     {
+        @Override
         public ApiResponse execute(CustomizeMenuForm form, BindException errors)
         {
             if (null != form.getUrl())
@@ -8390,6 +8533,7 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(TabActionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -8500,11 +8644,13 @@ public class AdminController extends SpringActionController
             _pageId = pageId;
         }
 
+        @Override
         public ViewContext getViewContext()
         {
             return _viewContext;
         }
 
+        @Override
         public void setViewContext(ViewContext viewContext)
         {
             _viewContext = viewContext;
@@ -8626,6 +8772,7 @@ public class AdminController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(TabActionForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -9230,12 +9377,14 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DumpPipelineJobClassesSerializationAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             SerializeDumper.dumpPipelineJobClasses();
             return new HtmlView(PageFlowUtil.filter("Serialization info dumped to labkey.log."));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Serialization dumped", null);
