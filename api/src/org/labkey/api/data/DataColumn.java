@@ -596,29 +596,29 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            renderInputHtml_selectInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
-            renderInputHtml_textareaInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderTextAreaFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
-            renderInputHtml_fileInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderFileFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
-            renderInputHtml_checkboxInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderCheckboxFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else
         {
             if (getAutoCompleteURLPrefix() != null)
             {
-                renderInputHtml_textInputAutoComplete(ctx, out, formFieldName, value, strVal, disabledInput, getAutoCompleteURLPrefix());
+                renderAutoCompleteFormInput(ctx, out, formFieldName, value, strVal, disabledInput, getAutoCompleteURLPrefix());
             }
             else
             {
-                renderInputHtml_textInput(ctx, out, formFieldName, value, strVal, disabledInput);
+                renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
             }
         }
 
@@ -640,7 +640,7 @@ public class DataColumn extends DisplayColumn
         return ctx.getForm() == null || col == null ? "" : ctx.getErrors(col);
     }
 
-    protected void renderInputHtml_selectInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderSelectFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
@@ -648,7 +648,7 @@ public class DataColumn extends DisplayColumn
         {
             // When incomplete, there are too many select options to render -- use a simple text input instead.
             // TODO: if the FK target is public, we can generate an auto-complete input
-            renderInputHtml_textInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else
         {
@@ -683,7 +683,7 @@ public class DataColumn extends DisplayColumn
         }
     }
 
-    protected void renderInputHtml_fileInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderFileFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         Input.InputBuilder input = new Input.InputBuilder()
@@ -695,7 +695,7 @@ public class DataColumn extends DisplayColumn
         out.write(input.build().toString());
     }
 
-    protected void renderInputHtml_checkboxInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderCheckboxFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
@@ -727,7 +727,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");
     }
 
-    protected void renderInputHtml_textareaInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderTextAreaFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
@@ -744,7 +744,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 
-    protected void renderInputHtml_textInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+    protected void renderTextFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
             throws IOException
     {
         Input.InputBuilder input = new Input.InputBuilder()
@@ -761,7 +761,7 @@ public class DataColumn extends DisplayColumn
             renderHiddenFormInput(ctx, out, formFieldName, value);
     }
 
-    protected void renderInputHtml_textInputAutoComplete(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, String autoCompleteURLPrefix)
+    protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, String autoCompleteURLPrefix)
             throws IOException
     {
         String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
