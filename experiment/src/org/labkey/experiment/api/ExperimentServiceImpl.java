@@ -2401,7 +2401,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (options.isForLookup())
                 {
-                    children.append("\nGROUP BY self, lsid");
+                    children.append("\nGROUP BY self, objectid");
                 }
                 sqlf.append(children);
             }
