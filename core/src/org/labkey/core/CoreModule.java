@@ -78,6 +78,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.core.qc.QCStateImporter;
 import org.labkey.core.qc.QCStateWriter;
 import org.labkey.api.query.AliasManager;
@@ -1144,7 +1145,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 AdminController.SerializationTest.class,
                 ProductRegistry.TestCase.class,
                 ContainerFilter.TestCase.class,
-                AdminController.ModuleVersionTestCase.class
+                AdminController.ModuleVersionTestCase.class,
+                AbstractQueryUpdateService.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
