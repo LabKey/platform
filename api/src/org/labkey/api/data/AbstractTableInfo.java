@@ -356,25 +356,24 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             maxRows = MAX_SELECT_LIST;
 
         TableSelector ts = new TableSelector(this, cols, filter, sort).setMaxRows(maxRows);
-        CachedResultSet rs = (CachedResultSet)ts.getResultSet(true);
-        if (rs.isComplete())
+        try (TableResultSet rs = ts.getResultSet(true))
         {
-            try
+            if (rs.isComplete())
             {
                 while (rs.next())
                 {
                     ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex)));
                 }
             }
-            catch (SQLException e)
+            else
             {
-                throw new RuntimeSQLException(e);
+                // too many rows to render a <select> option list
+                return NamedObjectList.INCOMPLETE;
             }
         }
-        else
+        catch (SQLException e)
         {
-            // too many rows to render a <select> option list
-            return NamedObjectList.INCOMPLETE;
+            throw new RuntimeSQLException(e);
         }
 
         return ret;
