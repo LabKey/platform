@@ -587,10 +587,15 @@ public abstract class ContainerFilter
 
         public CurrentPlusExtras(User user, Container... extraContainers)
         {
+            this(user, Arrays.asList(extraContainers));
+        }
+
+        public CurrentPlusExtras(User user, Collection<Container> extraContainers)
+        {
             super(user);
 
             //Note: dont force upstream code to consider this
-            _extraContainers = new ArrayList<>(Arrays.asList(extraContainers));
+            _extraContainers = new ArrayList<>(extraContainers);
             _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
         }
 
