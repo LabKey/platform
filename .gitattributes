@@ -2190,7 +2190,7 @@ core/src/org/labkey/core/admin/AbstractFileSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/ActionsExceptionsView.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
-core/src/org/labkey/core/admin/addNewExternalRedirectURL.jsp -text
+core/src/org/labkey/core/admin/addNewExternalRedirectHost.jsp -text
 core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/AdminConsoleServiceImpl.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
@@ -2204,7 +2204,7 @@ core/src/org/labkey/core/admin/deleteFolder.jsp -text
 core/src/org/labkey/core/admin/emailProps.jsp -text
 core/src/org/labkey/core/admin/emailTest.jsp -text
 core/src/org/labkey/core/admin/enabledFolderTypes.jsp -text
-core/src/org/labkey/core/admin/existingExternalRedirectURLs.jsp -text
+core/src/org/labkey/core/admin/existingExternalRedirectHosts.jsp -text
 core/src/org/labkey/core/admin/existingShortURLs.jsp -text
 core/src/org/labkey/core/admin/exportFolder.jsp -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text
