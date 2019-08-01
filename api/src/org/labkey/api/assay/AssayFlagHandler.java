@@ -42,12 +42,22 @@ public interface AssayFlagHandler
     {
         if (provider != null)
         {
-            if (!_handlers.containsKey(provider.getName()))
+            registerHandler(provider.getClass().getName(), handler);
+        }
+        else
+            throw new RuntimeException("The specified assay provider is null");
+    }
+
+    static void registerHandler(String providerClassName, AssayFlagHandler handler)
+    {
+        if (providerClassName != null)
+        {
+            if (!_handlers.containsKey(providerClassName))
             {
-                _handlers.put(provider.getName(), handler);
+                _handlers.put(providerClassName, handler);
             }
             else
-                throw new RuntimeException("A Flag Handler for Assay provider : " + provider.getName() + " is already registered");
+                throw new RuntimeException("A Flag Handler for Assay provider : " + providerClassName + " is already registered");
         }
         else
             throw new RuntimeException("The specified assay provider is null");
@@ -57,7 +67,7 @@ public interface AssayFlagHandler
     static AssayFlagHandler getHandler(AssayProvider provider)
     {
         if (provider != null)
-            return _handlers.get(provider.getName());
+            return _handlers.get(provider.getClass().getName());
         else
             return null;
     }
