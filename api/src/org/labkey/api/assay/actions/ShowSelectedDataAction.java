@@ -52,7 +52,7 @@ public class ShowSelectedDataAction extends SimpleRedirectAction<ShowSelectedDat
     }
 
     @Override
-    public URLHelper getRedirectURL(ShowSelectedForm form) throws Exception
+    public URLHelper getRedirectURL(ShowSelectedForm form)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
         int[] selectedIds = PageFlowUtil.toInts(selection);
