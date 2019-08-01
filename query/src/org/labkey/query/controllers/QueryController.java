@@ -5840,12 +5840,6 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
-        public void validateCommand(QueryExportAuditForm form, Errors errors)
-        {
-            if (form.getRowId() == 0)
-                throw new NotFoundException("Query export audit rowid required");
-        }
-
         @Override
         public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
@@ -5885,6 +5879,12 @@ public class QueryController extends SpringActionController
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url;
+        }
+
+        public void validateCommand(QueryExportAuditForm form, Errors errors)
+        {
+            if (form.getRowId() == 0)
+                throw new NotFoundException("Query export audit rowid required");
         }
     }
 

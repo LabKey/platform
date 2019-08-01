@@ -35,6 +35,21 @@ import java.util.Set;
 @RequiresPermission(ReadPermission.class)
 public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRunsAction.ShowSelectedForm>
 {
+    public static class ShowSelectedForm extends ProtocolIdForm
+    {
+        private String containerFilterName;
+
+        public String getContainerFilterName()
+        {
+            return containerFilterName;
+        }
+
+        public void setContainerFilterName(String containerFilterName)
+        {
+            this.containerFilterName = containerFilterName;
+        }
+    }
+
     @Override
     public URLHelper getRedirectURL(ShowSelectedForm form)
     {
@@ -49,20 +64,5 @@ public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRun
         if (form.getContainerFilterName() != null)
             url.addParameter("containerFilterName", form.getContainerFilterName());
         return url;
-    }
-
-    public static class ShowSelectedForm extends ProtocolIdForm
-    {
-        private String containerFilterName;
-
-        public String getContainerFilterName()
-        {
-            return containerFilterName;
-        }
-
-        public void setContainerFilterName(String containerFilterName)
-        {
-            this.containerFilterName = containerFilterName;
-        }
     }
 }
