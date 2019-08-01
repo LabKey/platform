@@ -17,7 +17,7 @@ import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL, Utils} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
-import {DomainForm, DomainDesign, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 
 interface IAppState {
@@ -99,6 +99,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 this.showMessage(msg, 'danger', {
                     submitting: false
                 });
+                //TODO: fix
+                // this.setState(() => ({
+                //     domain: badDomain,
+                //     submitting: false,
+                //     message: (badDomain.domainException && badDomain.domainException.exception ? badDomain.domainException.exception : '') ,
+                //     messageType: 'danger'
+                // }));
             })
     };
 
