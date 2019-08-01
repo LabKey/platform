@@ -49,7 +49,7 @@ import static org.apache.commons.lang3.StringUtils.defaultString;
  */
 class LineageForeignKey extends AbstractForeignKey
 {
-    private static final boolean useLineageDisplayColumn = false;
+    private static final boolean useLineageDisplayColumn = true;
     private final ExpTableImpl _seedTable;
     private final UserSchema _schema;
     private final boolean _parents;
