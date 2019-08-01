@@ -15,9 +15,10 @@
  */
 package org.labkey.api.assay.actions;
 
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.*;
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ContainerFilter;
@@ -32,8 +33,24 @@ import java.util.Set;
 * Date: Dec 30, 2008
 */
 @RequiresPermission(ReadPermission.class)
-public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsAction.ShowSelectedForm>
+public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRunsAction.ShowSelectedForm>
 {
+    @Override
+    public URLHelper getRedirectURL(ShowSelectedForm form)
+    {
+        Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
+        int[] selectedIds = PageFlowUtil.toInts(selection);
+
+        ContainerFilter containerFilter = null;
+        if (form.getContainerFilterName() != null)
+            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
+
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        if (form.getContainerFilterName() != null)
+            url.addParameter("containerFilterName", form.getContainerFilterName());
+        return url;
+    }
+
     public static class ShowSelectedForm extends ProtocolIdForm
     {
         private String containerFilterName;
@@ -47,22 +64,5 @@ public class ShowSelectedRunsAction extends RedirectAction<ShowSelectedRunsActio
         {
             this.containerFilterName = containerFilterName;
         }
-    }
-
-
-    @Override
-    public ActionURL getURL(ShowSelectedForm form, Errors errors)
-    {
-        Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
-        int[] selectedIds = PageFlowUtil.toInts(selection);
-
-        ContainerFilter containerFilter = null;
-        if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
-
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
-        if (form.getContainerFilterName() != null)
-            url.addParameter("containerFilterName", form.getContainerFilterName());
-        return url;
     }
 }

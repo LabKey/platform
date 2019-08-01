@@ -6911,9 +6911,8 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteWorkbooksAction extends RedirectAction<ReturnUrlForm>
+    public class DeleteWorkbooksAction extends SimpleRedirectAction<ReturnUrlForm>
     {
-        @Override
         public void validateCommand(ReturnUrlForm target, Errors errors)
         {
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
@@ -6924,7 +6923,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public @Nullable URLHelper getURL(ReturnUrlForm form, Errors errors) throws Exception
+        public URLHelper getRedirectURL(ReturnUrlForm returnUrlForm)
         {
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
 
@@ -6933,7 +6932,7 @@ public class AdminController extends SpringActionController
                 ret.addParameter("targets", id);
             });
 
-            ret.replaceParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
+            ret.replaceParameter(ActionURL.Param.returnUrl, returnUrlForm.getReturnUrl());
 
             return ret;
         }

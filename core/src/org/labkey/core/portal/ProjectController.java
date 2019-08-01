@@ -410,10 +410,10 @@ public class ProjectController extends SpringActionController
     static final Path files = new Path("@files");
 
     @RequiresNoPermission
-    public class FileBrowserAction extends org.labkey.api.action.RedirectAction
+    public class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction
     {
         @Override
-        public URLHelper getURL(Object o, Errors errors)
+        public URLHelper getRedirectURL(Object o)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
             Path path = Path.decode(p);
@@ -1543,7 +1543,7 @@ public class ProjectController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class RedirectAction extends SimpleViewAction<ReturnUrlForm>
+    public class ProjectRedirectAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
