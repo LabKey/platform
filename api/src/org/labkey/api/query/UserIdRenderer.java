@@ -74,11 +74,13 @@ public class UserIdRenderer extends DataColumn
     {
         var container = ctx.getContainer();
         var loggedInUser = ctx.getViewContext().getUser();
-        if(SecurityManager.canSeeUserDetails(container, loggedInUser))
+        if (SecurityManager.canSeeUserDetails(container, loggedInUser))
         {
-            int displayedUserId = (int)getBoundColumn().getValue(ctx);
-            ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
-            return userURL.toString();
+            Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
+            if (displayedUserId != null){
+                ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
+                return userURL.toString();
+            }
         }
         return null;
     }
