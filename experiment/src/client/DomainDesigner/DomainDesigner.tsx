@@ -16,7 +16,7 @@
 import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
 import {ActionURL, Utils} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
+import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons, createNotification} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 
@@ -79,7 +79,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
-    submitHandler = () => {
+    submitHandler = (navigate : boolean) => {
         const { domain, submitting } = this.state;
 
         if (submitting) {
@@ -92,7 +92,19 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         saveDomain(domain)
             .then((savedDomain) => {
-                this.navigate();
+
+                this.setState(() => ({
+                    domain: savedDomain,
+                    submitting: false,
+                    dirty: false
+                }));
+
+                this.showMessage("Save Successful", 'info');
+                window.scrollTo(0, 0);
+
+                if (navigate) {
+                    this.navigate();
+                }
             })
             .catch((error) => {
                 const msg = Utils.isObject(error) ? error.exception : error;
@@ -163,8 +175,34 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         )
     }
 
+    renderButtons() {
+        const { submitting, dirty } = this.state;
+
+        return (
+            <WizardNavButtons
+                cancel={this.onCancelBtnHandler}
+                containerClassName=""
+                includeNext={false}>
+                <Button
+                    type='submit'
+                    bsClass='btn'
+                    onClick={() => this.submitHandler(false)}
+                    disabled={submitting || !dirty}>
+                    Save
+                </Button>
+                <Button
+                    type='submit'
+                    bsClass='btn btn-success'
+                    onClick={() => this.submitHandler(true)}
+                    disabled={submitting || !dirty}>
+                    Save And Finish
+                </Button>
+            </WizardNavButtons>
+        )
+    }
+
     render() {
-        const { domain, message, messageType, submitting, showConfirm, dirty } = this.state;
+        const { domain, message, messageType, showConfirm } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
@@ -173,29 +211,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         return (
             <>
-                { domain &&
-                <Row>
-                    <Col xs={12}>
-                        <ButtonToolbar>
-                            <Button
-                                type='button'
-                                className={'domain-designer-button'}
-                                bsClass='btn'
-                                onClick={this.onCancelBtnHandler}
-                                disabled={submitting}>
-                                Cancel
-                            </Button>
-                            <Button
-                                type='button'
-                                className={'domain-designer-button'}
-                                bsClass='btn btn-success'
-                                onClick={this.submitHandler}
-                                disabled={submitting || !dirty}>
-                                Save Changes
-                            </Button>
-                        </ButtonToolbar>
-                    </Col>
-                </Row>}
                 { showConfirm && this.renderNavigateConfirm() }
                 { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
                 { domain &&
@@ -203,6 +218,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     domain={domain}
                     onChange={this.onChangeHandler}
                 />}
+                { domain && this.renderButtons() }
             </>
         )
     }
