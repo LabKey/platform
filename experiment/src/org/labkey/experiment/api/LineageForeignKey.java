@@ -145,7 +145,7 @@ class LineageForeignKey extends AbstractForeignKey
         // and this column is not selectable anyway, so I'm just constructing a new ExprColumn
         // CONSIDER: we could consider adding a "really don't add any joins" flag to LookupForeignKey for this pattern
         SQLFragment sql = parent.getValueSql(ExprColumn.STR_TABLE_ALIAS);
-        var col = new ExprColumn(parent.getParentTable(), FieldKey.fromParts(displayField), sql, JdbcType.VARCHAR);
+        var col = new ExprColumn(parent.getParentTable(), new FieldKey(parent.getFieldKey(), displayField), sql, JdbcType.VARCHAR);
         col.setFk(lookup.getFk());
         col.setUserEditable(false);
         col.setReadOnly(true);
