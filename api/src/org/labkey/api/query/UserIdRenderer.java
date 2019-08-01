@@ -77,7 +77,8 @@ public class UserIdRenderer extends DataColumn
         if (SecurityManager.canSeeUserDetails(container, loggedInUser))
         {
             Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
-            if (displayedUserId != null){
+            if (displayedUserId != null)
+            {
                 ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
                 return userURL.toString();
             }
