@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -73,7 +74,7 @@ public class StatementUtils
     private TableInfo _table;
     private Set<String> _keyColumnNames = null;       // override the primary key of _table
     private Set<String> _skipColumnNames = null;
-    private Set<String> _dontUpdateColumnNames = new HashSet<>();
+    private Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
     private boolean _allowUpdateAutoIncrement = false;

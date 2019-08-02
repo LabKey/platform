@@ -210,23 +210,13 @@ public class PipelineServiceImpl implements PipelineService
                         // File root is in the cloud
                         return new PipeRootImpl(createPipelineRoot(container, FileContentService.CLOUD_ROOT_PREFIX + "/" + svc.getCloudRootName(container)));
                     }
-                    else if (!svc.isUseDefaultRoot(container.getProject()))
+                    else
                     {
-                        // File root has been overridden, so set the pipeline root to the same place
                         Path root = svc.getFileRootPath(container);
                         if (root != null)
                         {
-                            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, true);
-                            if (null != dir)
-                                return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir.getFileSystemDirectoryPath())), false);
-                        }
-                    }
-                    else
-                    {
-                        Path root = svc.getDefaultRootPath(container, true);
-                        if (root != null)
-                        {
                             Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
+                            // Create the @files subdirectory if needed
                             if (!Files.exists(dir))
                                 Files.createDirectories(dir);
                             return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir)), true);
@@ -942,7 +932,7 @@ public class PipelineServiceImpl implements PipelineService
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are set to defaults and they they point to the same place
-            assertEquals("The pipeline root isDefault flag was not set correctly.", true, pipelineRootSetting.isDefault());
+            assertEquals("The pipeline root isDefault flag was not set correctly.", true, pipelineRootSetting.isFileRoot());
             assertEquals("The default pipeline root was not set the same as the default file root.", pipelineRoot, fileRoot);
             assertTrue("The pipeline root uri was: " + FileUtil.uriToString(pipelineRootSetting.getUri()) + ", but expected: " + DEFAULT_ROOT_URI, FileUtil.uriToString(pipelineRootSetting.getUri()).contains(DEFAULT_ROOT_URI));
 
@@ -976,7 +966,7 @@ public class PipelineServiceImpl implements PipelineService
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are now both customized and set to the same customized location
-            assertEquals("The pipeline root isDefault flag was not set correctly.",false, pipelineRootSetting.isDefault());
+            assertEquals("The pipeline root isDefault flag was not set correctly.",true, pipelineRootSetting.isFileRoot());
             assertEquals("The default pipeline root was not set the same as the customized file root.",pipelineRoot, fileRoot);
             assertEquals("The pipeline root was not set to the customized file root location.", pipelineRoot.getParentFile(), getTestRoot(FILE_ROOT_SUFFIX));
 
@@ -1011,7 +1001,7 @@ public class PipelineServiceImpl implements PipelineService
             File fileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
 
             // verify pipeline root and file root are now both customized and set to different customized location
-            assertEquals("The pipeline root isDefault flag was not set correctly.",false, pipelineRootSetting.isDefault());
+            assertEquals("The pipeline root isDefault flag was not set correctly.",false, pipelineRootSetting.isFileRoot());
             assertNotEquals("The customized pipeline root was not set different than the customized file root.",pipelineRoot, fileRoot);
             assertEquals("The file root was not set to the customized file root location.", fileRoot.getParentFile(), getTestRoot(FILE_ROOT_SUFFIX));
             assertEquals("The pipeline root was not set to the customized pipeline root location.", pipelineRoot, getTestRoot(PIPELINE_ROOT_SUFFIX));
@@ -1054,7 +1044,7 @@ public class PipelineServiceImpl implements PipelineService
             File subfolderPipelineRoot = subfolderPipelineRootSetting.getRootPath();
 
             // verify subfolder pipeline root and file root are now both customized and set to the same subfolder of the project file root
-            assertEquals("The pipeline root isDefault flag was not set correctly.",false, subfolderPipelineRootSetting.isDefault());
+            assertEquals("The pipeline root isDefault flag was not set correctly.",true, subfolderPipelineRootSetting.isFileRoot());
             assertEquals("The pipeline root of this subfolder was not set the same as the file root of the subfolder.",subFolderFileRoot, subfolderPipelineRoot);
             assertEquals("The file root of this subfolder was not set to a subfolder of the file root of the parent project.",projectFileRoot.getParentFile(), subFolderFileRoot.getParentFile().getParentFile());
 
@@ -1105,8 +1095,8 @@ public class PipelineServiceImpl implements PipelineService
             File subfolderPipelineRoot = subfolderPipelineRootSetting.getRootPath();
 
             // verify subfolder pipeline root and project pipeline root are now both customized and set to the same location
-            assertEquals("The project pipeline root isDefault flag was not set correctly.",false, projectPipelineRootSetting.isDefault());
-            assertEquals("The subfolder pipeline root isDefault flag was not set correctly.",false, subfolderPipelineRootSetting.isDefault());
+            assertEquals("The project pipeline root isDefault flag was not set correctly.",false, projectPipelineRootSetting.isFileRoot());
+            assertEquals("The subfolder pipeline root isDefault flag was not set correctly.",false, subfolderPipelineRootSetting.isFileRoot());
             assertEquals("The file root of this subfolder was not set to a subfolder of the file root of the parent project.",projectFileRoot.getParentFile(), subFolderFileRoot.getParentFile().getParentFile());
             assertEquals("The pipeline root of this subfolder was not set the same as the pipeline root of the parent project.",projectPipelineRoot, subfolderPipelineRoot);
 

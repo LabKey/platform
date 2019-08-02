@@ -35,6 +35,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
@@ -285,6 +286,27 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return ExperimentJSONConverter.serializeData(data, user);
                 }
             });
+            ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
+                @Override
+                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("materialSource:", ""));
+                    if (rowId == 0)
+                        return null;
+
+                    ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(rowId);
+                    if (sampleSet == null)
+                        return null;
+
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null);
+
+                    //Need to map to proper Icon
+                    properties.put("type", "sampleSet");
+
+                    return properties;
+                }
+            });
+
             ss.addResourceResolver("material", new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
