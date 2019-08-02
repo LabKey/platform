@@ -214,9 +214,9 @@ public interface AppProps
 
     /**
      *
-     * @return List of configured external redirect host urls
+     * @return List of configured external redirect hosts
      */
     @NotNull
-    List<String> getExternalRedirectURLs();
+    List<String> getExternalRedirectHosts();
 
 }
