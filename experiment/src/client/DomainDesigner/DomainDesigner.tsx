@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import * as React from 'react'
-import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
-import {ActionURL, Utils} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons, createNotification} from "@glass/base";
+import {Button} from "react-bootstrap";
+import {ActionURL} from "@labkey/api";
+import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
 
@@ -90,6 +91,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: true
         });
 
+        let msgForMultipleServerSideErrors = "Multiple fields contain issues that need to be fixed. Review the red highlighted fields below for more information.";
+
+        // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
 
@@ -106,20 +110,36 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     this.navigate();
                 }
             })
-            .catch((error) => {
-                const msg = Utils.isObject(error) ? error.exception : error;
-                this.showMessage(msg, 'danger', {
+            .catch((badDomain) => {
+
+                const msg = this.getBannerMessage(badDomain, msgForMultipleServerSideErrors);
+
+                this.showMessage(msg, 'danger');
+                window.scrollTo(0, 0);
+
+                this.setState(() => ({
+                    domain: badDomain,
                     submitting: false
-                });
-                //TODO: fix
-                // this.setState(() => ({
-                //     domain: badDomain,
-                //     submitting: false,
-                //     message: (badDomain.domainException && badDomain.domainException.exception ? badDomain.domainException.exception : '') ,
-                //     messageType: 'danger'
-                // }));
+                }));
             })
     };
+
+    private getBannerMessage(domain: any, msgForMultipleErrors: string) {
+
+        let msg = undefined;
+        if (domain && domain.domainException && domain.domainException.errors)
+        {
+            if (domain.domainException.errors.size > 1)
+            {
+                msg = msgForMultipleErrors;
+            }
+            else
+            {
+                msg = domain.domainException.exception;
+            }
+        }
+        return msg;
+    }
 
     onChangeHandler = (newDomain, dirty) => {
         this.setState((state) => ({
@@ -223,4 +243,3 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         )
     }
 }
-
