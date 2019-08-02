@@ -25,7 +25,12 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ParameterMap implements AutoCloseable
+/**
+ * This is a wrapper over a Prepared statement that handles named (instead of positional) parameters.
+ * Named parameters can be updated using clearParameters(), put(String,Object), putAll(Map) or select(Map).
+ * Any unnamed parameters provided by SqlFragment are set once the constructor.
+ */
+public class ParameterMapStatement implements AutoCloseable
 {
     SQLFragment _sqlf;
     PreparedStatement _stmt;
@@ -40,32 +45,32 @@ public class ParameterMap implements AutoCloseable
     SqlDialect _dialect;
     boolean _closed = false;
 
-    protected ParameterMap()
+    protected ParameterMapStatement()
     {
         //for testing subclasses (see NoopParameterMap)
     }
 
-    public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
+    public ParameterMapStatement(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
     {
         this(scope, stmt, parameters, null);
     }
 
 
-    public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+    public ParameterMapStatement(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
     {
         init(scope, stmt, parameters, remap);
     }
 
 
-    public ParameterMap copy() throws SQLException
+    public ParameterMapStatement copy() throws SQLException
     {
         if (null == _sqlf || null == _conn)
             throw new IllegalStateException("Copy can only be used on ParameterMap constructed with SQL");
-        return new ParameterMap(this);
+        return new ParameterMapStatement(this);
     }
 
 
-    protected ParameterMap(ParameterMap from) throws SQLException
+    protected ParameterMapStatement(ParameterMapStatement from) throws SQLException
     {
         _sqlf = from._sqlf;
         _debugSql = from._debugSql;
@@ -84,7 +89,7 @@ public class ParameterMap implements AutoCloseable
     }
 
 
-    public ParameterMap(DbScope scope, SQLFragment sql, Map<String, String> remap) throws SQLException
+    public ParameterMapStatement(DbScope scope, SQLFragment sql, Map<String, String> remap) throws SQLException
     {
         this(scope, scope.getConnection(), sql, remap);
     }
@@ -93,7 +98,7 @@ public class ParameterMap implements AutoCloseable
     /**
      *  sql bound to constants or Parameters, compute the index array for each named Parameter
      */
-    public ParameterMap(DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
+    public ParameterMapStatement(DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
     {
         // TODO SQLFragment doesn't seem to actually handle CTE with named parameters, but we can "flatten" it
         _sqlf = sql; // new SQLFragment(sql.getSQL(), sql.getParams());

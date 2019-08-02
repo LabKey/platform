@@ -17,40 +17,25 @@
 package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
-import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.GregorianCalendar;
-import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -465,14 +450,14 @@ public class Parameter implements AutoCloseable
 
     // TODO: migrate name in separate cross repository commit
     @Deprecated
-    public static class ParameterMap extends org.labkey.api.data.ParameterMap
+    public static class ParameterMap extends ParameterMapStatement
     {
         public ParameterMap()
         {}
 
         public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
         {
-            super(scope, stmt, parameters, null);
+            super(scope, stmt, parameters);
         }
 
         public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
