@@ -19,6 +19,7 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -80,6 +81,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -95,7 +97,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -567,6 +568,77 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetFilePreviewAction extends ReadOnlyApiAction<GetFilePreviewForm>
+    {
+        @Override
+        public void validateForm(GetFilePreviewForm form, Errors errors)
+        {
+            if (form.getFile() == null)
+            {
+                errors.reject(ERROR_REQUIRED, "file is required, as either an id or a path");
+            }
+        }
+
+        @Override
+        public Object execute(GetFilePreviewForm form, BindException errors) throws Exception
+        {
+            File file = (File) ConvertUtils.convert(form.getFile().toString(), File.class);
+            DataLoader loader = null;
+
+            if (file.exists())
+            {
+                loader = DataLoader.get().createLoader(file, null, true, null, null);
+            }
+            return getFilePreviewResponse(loader, form.getNumLinesToInclude());
+        }
+    }
+
+    public static class GetFilePreviewForm extends InferDomainForm
+    {
+        private Object _file;
+
+        public Object getFile()
+        {
+            return _file;
+        }
+
+        public void setFile(Object file)
+        {
+            _file = file;
+        }
+    }
+
+    private ApiSimpleResponse getFilePreviewResponse(DataLoader loader, Integer numLinesToInclude) throws IOException
+    {
+        ApiSimpleResponse response = new ApiSimpleResponse();
+
+        List<GWTPropertyDescriptor> fields = new ArrayList<>();
+
+        if (loader != null)
+        {
+            ColumnDescriptor[] columns = loader.getColumns();
+            for (ColumnDescriptor col : columns)
+            {
+                GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
+                prop.setContainer(getContainer().getId());
+                prop.setMvEnabled(col.isMvEnabled());
+
+                fields.add(prop);
+            }
+
+            if (numLinesToInclude != null)
+            {
+                response.put("data", loader.getFirstNLines(numLinesToInclude));
+            }
+        }
+
+        response.put("fields", fields);
+        return response;
+
+    }
+
     /**
      * Infer the fields from the uploaded file and return the array of fields in a format that can
      * be used in the CreateDomainAction.
@@ -589,37 +661,23 @@ public class PropertyController extends SpringActionController
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
 
-            ApiSimpleResponse response = new ApiSimpleResponse();
             Map<String, MultipartFile> fileMap = getFileMap();
 
             if (fileMap.size() == 1)
             {
                 Optional<MultipartFile> opt = fileMap.values().stream().findAny();
-                MultipartFile file = opt.isPresent() ? opt.get() : null;
+                MultipartFile file = opt.orElse(null);
                 List<GWTPropertyDescriptor> fields = new ArrayList<>();
+                DataLoader loader = null;
 
                 if (file != null)
                 {
-                    DataLoader loader = DataLoader.get().createLoader(file, true, null, null);
-                    List<ColumnDescriptor> columns = Arrays.asList(loader.getColumns());
-                    for (ColumnDescriptor col : columns)
-                    {
-                        GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
-                        prop.setContainer(getContainer().getId());
-                        prop.setMvEnabled(col.isMvEnabled());
-
-                        fields.add(prop);
-                    }
-
-                    if (form.getNumLinesToInclude() != null)
-                    {
-                        response.put("data", loader.getFirstNLines(form.getNumLinesToInclude()));
-                    }
+                    loader = DataLoader.get().createLoader(file, true, null, null);
                 }
+                return getFilePreviewResponse(loader, form.getNumLinesToInclude());
 
-                response.put("fields", fields);
             }
-            return response;
+            return new ApiSimpleResponse();
         }
     }
 
@@ -648,6 +706,7 @@ public class PropertyController extends SpringActionController
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
 
+        @Override
         protected File getTargetFile(String filename) throws IOException
         {
             int dotIndex = filename.lastIndexOf(".");
@@ -667,6 +726,7 @@ public class PropertyController extends SpringActionController
             return tempFile;
         }
 
+        @Override
         public String getResponse(FileUploadForm form, Map<String, Pair<File, String>> files) throws UploadException
         {
             if (files.isEmpty())
@@ -703,6 +763,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class InferPropertiesAction extends ExportAction<InferForm>
     {
+        @Override
         public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception
         {
             response.reset();
