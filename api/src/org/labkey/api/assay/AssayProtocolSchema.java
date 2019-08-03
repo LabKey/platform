@@ -798,62 +798,67 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public Set<String> addCopiedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
     {
         Set<String> visibleColumnNames = new HashSet<>();
-        int datasetIndex = 0;
-        Set<String> usedColumnNames = new HashSet<>();
-        for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
+        StudyService svc = StudyService.get();
+
+        if (null != svc)
         {
-            if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
+            int datasetIndex = 0;
+            Set<String> usedColumnNames = new HashSet<>();
+            for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
             {
-                continue;
+                if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
+                {
+                    continue;
+                }
+
+                String datasetIdColumnName = "dataset" + datasetIndex++;
+                final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
+                datasetColumn.setHidden(true);
+                datasetColumn.setUserEditable(false);
+                datasetColumn.setShownInInsertView(false);
+                datasetColumn.setShownInUpdateView(false);
+                datasetColumn.setReadOnly(true);
+                table.addColumn(datasetColumn);
+
+                String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
+                        "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
+
+                String studyName = assayDataset.getStudy().getLabel();
+                if (studyName == null)
+                    continue; // No study in that folder
+                String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
+
+                // column names must be unique. Prevent collisions
+                while (usedColumnNames.contains(studyColumnName))
+                    studyColumnName = studyColumnName + datasetIndex;
+                usedColumnNames.add(studyColumnName);
+
+                final ExprColumn studyCopiedColumn = new ExprColumn(table,
+                        studyColumnName,
+                        new SQLFragment(studyCopiedSql),
+                        JdbcType.VARCHAR,
+                        datasetColumn);
+                final String copiedToStudyColumnCaption = "Copied to " + studyName;
+                studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
+                studyCopiedColumn.setUserEditable(false);
+                studyCopiedColumn.setReadOnly(true);
+                studyCopiedColumn.setShownInInsertView(false);
+                studyCopiedColumn.setShownInUpdateView(false);
+                studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
+
+                table.addColumn(studyCopiedColumn);
+
+                visibleColumnNames.add(studyCopiedColumn.getName());
             }
-
-            String datasetIdColumnName = "dataset" + datasetIndex++;
-            final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
-            datasetColumn.setHidden(true);
-            datasetColumn.setUserEditable(false);
-            datasetColumn.setShownInInsertView(false);
-            datasetColumn.setShownInUpdateView(false);
-            datasetColumn.setReadOnly(true);
-            table.addColumn(datasetColumn);
-
-            String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
-
-            String studyName = assayDataset.getStudy().getLabel();
-            if (studyName == null)
-                continue; // No study in that folder
-            String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
-
-            // column names must be unique. Prevent collisions
-            while (usedColumnNames.contains(studyColumnName))
-                studyColumnName = studyColumnName + datasetIndex;
-            usedColumnNames.add(studyColumnName);
-
-            final ExprColumn studyCopiedColumn = new ExprColumn(table,
-                studyColumnName,
-                new SQLFragment(studyCopiedSql),
-                JdbcType.VARCHAR,
-                datasetColumn);
-            final String copiedToStudyColumnCaption = "Copied to " + studyName;
-            studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
-            studyCopiedColumn.setUserEditable(false);
-            studyCopiedColumn.setReadOnly(true);
-            studyCopiedColumn.setShownInInsertView(false);
-            studyCopiedColumn.setShownInUpdateView(false);
-            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
-
-            table.addColumn(studyCopiedColumn);
-
-            visibleColumnNames.add(studyCopiedColumn.getName());
-        }
-        if (setVisibleColumns)
-        {
-            List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
-            for (String columnName : visibleColumnNames)
+            if (setVisibleColumns)
             {
-                visibleColumns.add(new FieldKey(null, columnName));
+                List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
+                for (String columnName : visibleColumnNames)
+                {
+                    visibleColumns.add(new FieldKey(null, columnName));
+                }
+                table.setDefaultVisibleColumns(visibleColumns);
             }
-            table.setDefaultVisibleColumns(visibleColumns);
         }
 
         return visibleColumnNames;

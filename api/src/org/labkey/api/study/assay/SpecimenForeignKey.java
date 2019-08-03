@@ -144,11 +144,9 @@ public class SpecimenForeignKey extends LookupForeignKey
             targetStudy = _schema.getTargetStudy();
         _defaultTargetContainer = null!=targetStudy ? targetStudy: _schema.getContainer();
 
-        UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _defaultTargetContainer, "study");
-
         if (null == _assayDataTable)
         {
-            AssayProtocolSchema assaySchema = _provider.createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
+            AssayProtocolSchema assaySchema = _provider.createProtocolSchema(_schema.getUser(), _schema.getContainer(), _protocol, null);
             _assayDataTable = assaySchema.createDataTable(ContainerFilter.EVERYTHING);
         }
 
