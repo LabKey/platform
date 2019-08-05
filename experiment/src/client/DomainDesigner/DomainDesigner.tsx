@@ -146,6 +146,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             domain: newDomain,
             dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
+
+        if (newDomain.domainException) {
+            let msgForMultipleClientSideErrors = "Multiple fields may require your attention. Review the yellow highlighted fields below for more information.";
+            const msg = this.getBannerMessage(newDomain, msgForMultipleClientSideErrors);
+
+            this.showMessage(msg, 'warning');
+        }
     };
 
     dismissAlert = () => {
