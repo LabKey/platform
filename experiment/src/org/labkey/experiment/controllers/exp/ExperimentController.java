@@ -5519,9 +5519,10 @@ public class ExperimentController extends SpringActionController
 
     @RequiresPermission(InsertPermission.class)
     @ActionNames("createRunGroup, createExperiment")
-    public class CreateRunGroupAction extends SimpleViewAction<CreateExperimentForm>
+    public class CreateRunGroupAction extends MutatingApiAction<CreateExperimentForm>
     {
-        public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
+        @Override
+        public ModelAndView execute(CreateExperimentForm form, BindException errors) throws Exception
         {
             // HACK - convert ExperimentForm to not be a BeanViewForm
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
