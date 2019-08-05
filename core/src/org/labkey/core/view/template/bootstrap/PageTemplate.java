@@ -26,6 +26,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.view.ActionURL;
@@ -102,7 +103,7 @@ public class PageTemplate extends JspView<PageConfig>
         page.setAppBar(generateAppBarModel(context, page));
 
         setView("navigation", getNavigationView(context, page));
-        setView("footer", getTemplateResource(new FooterProperties(getViewContext().getContainer())));
+        setView("footer", getTemplateResource(new FooterProperties(c)));
     }
 
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)
@@ -162,6 +163,12 @@ public class PageTemplate extends JspView<PageConfig>
     protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
         JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+
+        Container c = this.getViewContext().getContainer();
+        TemplateProperties banner = new BannerProperties(c);
+        if (!banner.isShowOnlyInProjectRoot() || (c.equals(c.getProject())))
+            view.setView("banner", getTemplateResource(banner));
+
         view.setBody(body);
         view.setFrame(FrameType.NONE);
         return view;

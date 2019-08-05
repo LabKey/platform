@@ -49,12 +49,6 @@ public class BannerProperties implements TemplateProperties
     @Override
     public String getShowByDefault()
     {
-        return "true";
-    }
-
-    @Override
-    public boolean showOnlyInProjectRoot()
-    {
-        return false;
+        return String.valueOf(false);
     }
 }

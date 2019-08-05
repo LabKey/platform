@@ -26,6 +26,8 @@ import java.util.Map;
  */
 public interface TemplateProperties
 {
+    String SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME = "ShowOnlyInProjectRoot";
+
     String getDisplayConfigs();
     String getDisplayPropertyName();
     String getModulePropertyName();
@@ -60,9 +62,17 @@ public interface TemplateProperties
         setProperty(getModulePropertyName(), module);
     }
 
-    default boolean showOnlyInProjectRoot()
+    /**
+     * Should this resource appear in all folders or only in the project root.
+     */
+    default boolean isShowOnlyInProjectRoot()
     {
-        return false;
+        return BooleanUtils.toBoolean(getProperty(SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME));
+    }
+
+    default void setIsShowOnlyInProjectRoot(boolean showOnlyInProjectRoot)
+    {
+        setProperty(SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME, String.valueOf(showOnlyInProjectRoot));
     }
 
     private void setProperty(String propName, String value)
