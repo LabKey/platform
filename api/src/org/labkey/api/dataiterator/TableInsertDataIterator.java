@@ -99,7 +99,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             dontUpdate.addAll(context.getDontUpdateColumnNames());
         }
 
-        if (context.getInsertOption() == InsertOption.MERGE)
+        if (context.getInsertOption().mergeRows && !context.getInsertOption().replace)
         {
             // If the target has additional columns that aren't present in the source, don't overwrite (update) existing values...
             Set<String> targetOnlyColumnNames = table.getColumns()
@@ -240,7 +240,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _conn = _scope.getConnection();
 
             Parameter.ParameterMap stmt;
-            if (_insertOption == InsertOption.MERGE)
+            if (_insertOption.mergeRows)
             {
                 stmt = getMergeStatement(constants);
             }
@@ -273,7 +273,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     protected Parameter.ParameterMap getInsertStatement(Map<String, Object> constants) throws SQLException
     {
         Parameter.ParameterMap stmt;
-        if (_insertOption == InsertOption.IMPORT_IDENTITY)
+        if (_insertOption.identity_insert)
             setAutoIncrement(INSERT.ON);
 
         StatementUtils utils = new StatementUtils(StatementUtils.Operation.insert, _table)
@@ -346,8 +346,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super.close();
         if (null != _scope && null != _conn)
         {
-            if (_insertOption == InsertOption.IMPORT_IDENTITY ||
-                (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
+            if (_insertOption.identity_insert ||
+                (_insertOption.mergeRows && _context.supportsAutoIncrementKey()))
             {
                 setAutoIncrement(INSERT.OFF);
             }
