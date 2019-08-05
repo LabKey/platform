@@ -16,13 +16,31 @@
 
 package org.labkey.api.settings;
 
+import org.labkey.api.data.Container;
+
 public class FooterProperties implements TemplateProperties
 {
-
     private final String FOOTER_CONFIGS = "FooterProperties";
     private final String SHOW_FOOTER_PROPERTY_NAME = "ShowFooter";
     private final String FOOTER_MODULE_PROPERTY_NAME = "FooterModule";
     private final String FILE_NAME = "_footer";
+
+    private Container _container;
+
+    // temporary
+    @Deprecated
+    public FooterProperties(){}
+
+    public FooterProperties(Container container)
+    {
+        _container = container;
+    }
+
+    @Override
+    public Container getContainer()
+    {
+        return _container;
+    }
 
     public String getDisplayConfigs()
     {

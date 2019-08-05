@@ -59,7 +59,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     boolean showSearch = hasUrlProvider(SearchUrls.class);
 
-    HtmlView headerHtml = PageTemplate.getTemplateResource(new HeaderProperties());
+    HtmlView headerHtml = PageTemplate.getTemplateResource(new HeaderProperties(getContainer()));
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 
     final NavTree optionsMenu = PopupAdminView.createNavTree(context);

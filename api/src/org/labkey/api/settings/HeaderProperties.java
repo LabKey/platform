@@ -15,6 +15,8 @@
  */
 package org.labkey.api.settings;
 
+import org.labkey.api.data.Container;
+
 /**
  * Created by marty on 7/5/2017.
  */
@@ -24,6 +26,22 @@ public class HeaderProperties implements TemplateProperties
     private final String SHOW_HEADER_PROPERTY_NAME = "ShowHeader";
     private final String HEADER_MODULE_PROPERTY_NAME = "HeaderModule";
     private final String FILE_NAME = "_header";
+
+    private Container _container;
+
+    @Deprecated
+    public HeaderProperties(){}
+
+    public HeaderProperties(Container container)
+    {
+        _container = container;
+    }
+
+    @Override
+    public Container getContainer()
+    {
+        return _container;
+    }
 
     public String getDisplayConfigs()
     {

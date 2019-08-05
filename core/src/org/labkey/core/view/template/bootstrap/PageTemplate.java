@@ -102,7 +102,7 @@ public class PageTemplate extends JspView<PageConfig>
         page.setAppBar(generateAppBarModel(context, page));
 
         setView("navigation", getNavigationView(context, page));
-        setView("footer", getTemplateResource(new FooterProperties()));
+        setView("footer", getTemplateResource(new FooterProperties(getViewContext().getContainer())));
     }
 
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)

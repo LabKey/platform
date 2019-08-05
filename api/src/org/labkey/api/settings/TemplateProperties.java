@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 
 import java.util.Map;
@@ -30,35 +31,78 @@ public interface TemplateProperties
     String getModulePropertyName();
     String getFileName();
     String getShowByDefault();
+    Container getContainer();
 
     default boolean isDisplay()
     {
         String isDisplay = getShowByDefault();
-        Map<String, String> map = PropertyManager.getProperties(getDisplayConfigs());
-        if (!map.isEmpty())
+        String displayProp = getProperty(getDisplayPropertyName());
+
+        if (displayProp != null)
         {
-            isDisplay = map.get(getDisplayPropertyName());
+            isDisplay = displayProp;
         }
         return BooleanUtils.toBoolean(isDisplay);
     }
 
     default void setDisplay(boolean isDisplay)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(getDisplayConfigs(), true);
-        map.put(getDisplayPropertyName(), BooleanUtils.toStringTrueFalse(isDisplay));
-        map.save();
+        setProperty(getDisplayPropertyName(), BooleanUtils.toStringTrueFalse(isDisplay));
     }
 
     default String getModule()
     {
-        Map<String, String> map = PropertyManager.getProperties(getDisplayConfigs());
-        return map.get(getModulePropertyName());
+        return getProperty(getModulePropertyName());
     }
 
     default void setModule(String module)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(getDisplayConfigs(), true);
-        map.put(getModulePropertyName(), module);
+        setProperty(getModulePropertyName(), module);
+    }
+
+    default boolean showOnlyInProjectRoot()
+    {
+        return false;
+    }
+
+    private void setProperty(String propName, String value)
+    {
+        PropertyManager.PropertyMap map;
+        Container container = getContainer();
+
+        if (container != null)
+        {
+            if (container.isRoot())
+                map = PropertyManager.getWritableProperties(getDisplayConfigs(), true);
+            else
+                // if not site level, default to project level
+                map = PropertyManager.getWritableProperties(container.getProject(), getDisplayConfigs(), true);
+        }
+        else
+            throw new IllegalStateException("Container is null for this TemplateProperty");
+
+        map.put(propName, value);
         map.save();
+    }
+
+    private String getProperty(String propName)
+    {
+        Map<String, String> map;
+        Container container = getContainer();
+
+        if (container != null)
+        {
+            // check to see if there is a project override, else get the site default
+            if (!container.isRoot())
+            {
+                map = PropertyManager.getProperties(container.getProject(), getDisplayConfigs());
+                if (map.containsKey(propName))
+                    return map.get(propName);
+            }
+            map = PropertyManager.getProperties(container, getDisplayConfigs());
+            return map.get(propName);
+        }
+        else
+            throw new IllegalStateException("Container is null for this TemplateProperty");
     }
 }
