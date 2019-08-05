@@ -2203,8 +2203,7 @@ public class LoginController extends SpringActionController
     // where the caller has a secrete (the authentication token).
     public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
-        @Override
-        public URLHelper getRedirectURL(TokenAuthenticationForm form)
+        public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());

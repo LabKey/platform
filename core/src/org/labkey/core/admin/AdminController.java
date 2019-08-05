@@ -6923,7 +6923,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public URLHelper getRedirectURL(ReturnUrlForm returnUrlForm)
+        public @Nullable URLHelper getRedirectURL(ReturnUrlForm form) throws Exception
         {
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
 
@@ -6932,7 +6932,7 @@ public class AdminController extends SpringActionController
                 ret.addParameter("targets", id);
             });
 
-            ret.replaceParameter(ActionURL.Param.returnUrl, returnUrlForm.getReturnUrl());
+            ret.replaceParameter(ActionURL.Param.returnUrl, form.getReturnUrl());
 
             return ret;
         }

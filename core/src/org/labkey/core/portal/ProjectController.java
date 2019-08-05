@@ -412,7 +412,6 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction
     {
-        @Override
         public URLHelper getRedirectURL(Object o)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));

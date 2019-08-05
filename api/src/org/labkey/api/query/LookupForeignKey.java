@@ -168,7 +168,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     {
         if (null != _baseURL)
         {
-            // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
+            // CONSIDER: set ContainerContext in AbstractForeignKey.getRedirectURL() so all subclasses can benefit
             DetailsURL url = new DetailsURL(_baseURL, _param.toString(), parent.getFieldKey());
             setURLContainerContext(url, getLookupTableInfo(), parent);
             return url;
@@ -207,7 +207,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             else
                 rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
 
-            // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
+            // CONSIDER: set ContainerContext in AbstractForeignKey.getRedirectURL() so all subclasses can benefit
             if (rewrite instanceof DetailsURL)
                 setURLContainerContext((DetailsURL)rewrite, lookupTable, parent);
 

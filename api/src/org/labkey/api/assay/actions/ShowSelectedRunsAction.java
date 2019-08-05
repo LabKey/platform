@@ -51,7 +51,7 @@ public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRun
     }
 
     @Override
-    public URLHelper getRedirectURL(ShowSelectedForm form)
+    public ActionURL getRedirectURL(ShowSelectedForm form)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
         int[] selectedIds = PageFlowUtil.toInts(selection);

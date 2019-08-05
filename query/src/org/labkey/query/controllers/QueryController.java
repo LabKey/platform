@@ -5840,7 +5840,6 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
-        @Override
         public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
