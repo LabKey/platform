@@ -262,7 +262,7 @@ LABKEY.Query = new function()
                 dataObject.maxRows = config.maxRows;
             if (config.offset && config.offset > 0)
                 dataObject.offset = config.offset;
-            if (config.includeTotalCount != undefined)
+            if (config.includeTotalCount !== undefined)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
             if (config.containerFilter)
@@ -504,7 +504,7 @@ LABKEY.Query = new function()
             if (config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
 
-            if (config.includeTotalCount)
+            if (config.includeTotalCount !== undefined)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
             if (config.includeDetailsColumn)
