@@ -34,9 +34,12 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
  * Base class for action that always redirects the client to a different URL.
  * TODO: Reconcile with SimpleRedirectAction?
  *
+ * TODO: This class is deprecated in favor of SimpleRedirectAction.
+ *
  * User: adamr
  * Date: September 19, 2007
  */
+@Deprecated
 public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 {
     public final ModelAndView handleRequest() throws Exception
