@@ -2365,31 +2365,6 @@ public class ExperimentServiceImpl implements ExperimentService
         return new Pair<>(parentsToken,childrenToken);
     }
 
-    MaterializedQueryHelper materializedNodes = null;
-    MaterializedQueryHelper materializedEdges = null;
-    final Object initEdgesLock = new Object();
-    public final AtomicLong expLineageCounter = new AtomicLong();
-
-    public void uncacheLineageGraph()
-    {
-        MaterializedQueryHelper nodes;
-        MaterializedQueryHelper edges;
-
-        // only lock on retrieving the object
-        synchronized (initEdgesLock)
-        {
-            nodes = materializedNodes;
-            edges = materializedEdges;
-        }
-
-        if (null != nodes)
-            nodes.uncache(null);
-        if (null != edges)
-            edges.uncache(null);
-
-        getExpSchema().getScope().addCommitTask(expLineageCounter::incrementAndGet, POSTCOMMIT);
-    }
-
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
