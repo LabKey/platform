@@ -312,6 +312,7 @@ public class DavController extends SpringActionController
     }
 
 
+    @Override
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
     {
         response.setCharacterEncoding("UTF-8");
