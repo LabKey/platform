@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,8 +123,8 @@ public interface PipeRoot extends SecurableResource
 
     void configureForm(SetupForm form);
 
-    /** @return true if this root is based on the site level root */
-    boolean isDefault();
+    /** @return true if this root is based a file root, whether it's set at the server, project, or folder level */
+    boolean isFileRoot();
 
     /** @return true if this root is based on cloud storage */
     boolean isCloudRoot();

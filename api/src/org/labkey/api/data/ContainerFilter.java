@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -587,10 +587,15 @@ public abstract class ContainerFilter
 
         public CurrentPlusExtras(User user, Container... extraContainers)
         {
+            this(user, Arrays.asList(extraContainers));
+        }
+
+        public CurrentPlusExtras(User user, Collection<Container> extraContainers)
+        {
             super(user);
 
             //Note: dont force upstream code to consider this
-            _extraContainers = new ArrayList<>(Arrays.asList(extraContainers));
+            _extraContainers = new ArrayList<>(extraContainers);
             _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
         }
 

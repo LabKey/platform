@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
+import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -204,6 +205,7 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ScriptsAction extends SimpleViewAction<ScriptsForm>
     {
+        @Override
         public ModelAndView getView(ScriptsForm form, BindException errors) throws Exception
         {
             StringBuilder html = new StringBuilder("<table>");
@@ -295,7 +297,7 @@ public class SqlScriptController extends SpringActionController
                 for (Module module : modules)
                 {
                     new FileSqlScriptProvider(module).getRequiredScripts(dialect)
-                        .forEach(filename -> requiredScripts.add(new Pair<String, Module>(filename, module)));
+                        .forEach(filename -> requiredScripts.add(new Pair<>(filename, module)));
                 }
 
                 StringBuilder warningHtml = new StringBuilder();
@@ -313,6 +315,7 @@ public class SqlScriptController extends SpringActionController
             return new HtmlView(html.toString());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "SQL Scripts", getURL());
@@ -471,6 +474,7 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
+        @Override
         public ModelAndView getView(ConsolidateForm form, BindException errors)
         {
             double _fromVersion = form.getFromVersion();
@@ -525,6 +529,7 @@ public class SqlScriptController extends SpringActionController
             return new HtmlView(html.toString());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendNavTrail(root, null);
@@ -791,10 +796,12 @@ public class SqlScriptController extends SpringActionController
         private double _toVersion;
         private boolean _includeSingleScripts;
 
+        @Override
         public void validateCommand(ConsolidateForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(ConsolidateForm form, boolean reshow, BindException errors)
         {
             _fromVersion = form.getFromVersion();
@@ -821,6 +828,7 @@ public class SqlScriptController extends SpringActionController
             return new HtmlView(html.toString());
         }
 
+        @Override
         public boolean handlePost(ConsolidateForm form, BindException errors) throws Exception
         {
             ScriptConsolidator consolidator = getConsolidator(form);
@@ -829,11 +837,13 @@ public class SqlScriptController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ConsolidateForm form)
         {
             return getConsolidateScriptsURL(form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new ConsolidateScriptsAction().appendNavTrail(root, getConsolidateScriptsURL(_fromVersion, _toVersion, _includeSingleScripts));
@@ -879,6 +889,7 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
+        @Override
         public ModelAndView getView(ConsolidateForm form, BindException errors)
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
@@ -952,7 +963,7 @@ public class SqlScriptController extends SpringActionController
             StringBuilder html = new StringBuilder();
             html.append("  <table>\n");
             html.append("    <tr><td>The SQL scripts listed below will never execute, because another script has the same" +
-                    " \"from\" version and a later \"to\" version.  These scripts can be \"obsoleted\" safely.</td></tr>\n");
+                    " \"from\" version and a later \"to\" version. These scripts can be \"obsoleted\" safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");
 
@@ -1030,6 +1041,7 @@ public class SqlScriptController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new ScriptsAction().appendNavTrail(root);
@@ -1044,6 +1056,7 @@ public class SqlScriptController extends SpringActionController
     {
         private String _filename;
 
+        @Override
         public ModelAndView getView(SqlScriptForm form, BindException errors) throws Exception
         {
             Module module = ModuleLoader.getInstance().getModule(form.getModuleName());
@@ -1063,6 +1076,7 @@ public class SqlScriptController extends SpringActionController
             return _filename;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new ScriptsAction().appendNavTrail(root);
@@ -1211,6 +1225,7 @@ public class SqlScriptController extends SpringActionController
             out.println("</table>");
         }
 
+        @Override
         protected void renderButtons(SqlScript script, PrintWriter out)
         {
             ActionURL reorderUrl = new ActionURL(SaveReorderedScriptAction.class, getViewContext().getContainer());
@@ -1229,50 +1244,48 @@ public class SqlScriptController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class UnreachableScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
+        @Override
         public ModelAndView getView(ConsolidateForm form, BindException errors)
         {
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-            Set<SqlScript> unreachableScripts = new TreeSet<>((s1, s2) -> {
-                // Order scripts by fromVersion.  If fromVersion is the same, use standard compare order (schema + from + to)
-                int fromCompare = Double.compare(s1.getFromVersion(), s2.getFromVersion());
+            // Order scripts by fromVersion. If fromVersion is the same, use standard compare order (schema + from + to)
+            Set<SqlScript> unreachableScripts = new TreeSet<>(Comparator.comparingDouble(SqlScript::getFromVersion).thenComparing(s -> s));
 
-                if (0 != fromCompare)
-                    return fromCompare;
+            Collection<Double> fromVersions = new LinkedList<>();
+            fromVersions.add(0.00);
+            fromVersions.addAll(Constants.getValidVersions());
 
-                return s1.compareTo(s2);
-            });
-
-            // Update this array after each release and each bump of ModuleLoader.EARLIEST_UPGRADE_VERSION
-            double[] fromVersions = new double[]{0.00, 15.2, 15.3, 16.1, 16.2, 17.1, 17.2};
             double toVersion = form.getToVersion();
 
-            for (Module module : modules)
-            {
-                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-                Collection<DbSchema> schemas = provider.getSchemas();
-
-                for (DbSchema schema : schemas)
-                {
-                    Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schema));
-                    Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
-                    SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-
-                    for (double fromVersion : fromVersions)
+            ModuleLoader.getInstance().getModules().stream()
+                .filter(AdminController.ManageFilter.ManagedOnly::accept)
+                .forEach(module->
                     {
-                        List<SqlScript> recommendedScripts = manager.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
-                        reachableScripts.addAll(recommendedScripts);
-                    }
+                        FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+                        Collection<DbSchema> schemas = provider.getSchemas();
 
-                    if (allSchemaScripts.size() != reachableScripts.size())
-                    {
-                        allSchemaScripts.removeAll(reachableScripts);
-                        unreachableScripts.addAll(allSchemaScripts);
+                        for (DbSchema schema : schemas)
+                        {
+                            Set<SqlScript> allSchemaScripts = new HashSet<>(provider.getScripts(schema));
+                            Set<SqlScript> reachableScripts = new HashSet<>(allSchemaScripts.size());
+                            SqlScriptManager manager = SqlScriptManager.get(provider, schema);
+
+                            for (double fromVersion : fromVersions)
+                            {
+                                List<SqlScript> recommendedScripts = manager.getRecommendedScripts(provider.getScripts(schema), fromVersion, toVersion);
+                                reachableScripts.addAll(recommendedScripts);
+                            }
+
+                            if (allSchemaScripts.size() != reachableScripts.size())
+                            {
+                                allSchemaScripts.removeAll(reachableScripts);
+                                unreachableScripts.addAll(allSchemaScripts);
+                            }
+                        }
                     }
-                }
-            }
+                );
 
             double previousRoundedVersion = -1;
-            List<SqlScript> batch = Collections.emptyList();
+            List<SqlScript> batch = new LinkedList<>();
 
             StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading from any of the following versions: ");
             html.append(ArrayUtils.toString(fromVersions)).append("<br>");
@@ -1306,6 +1319,7 @@ public class SqlScriptController extends SpringActionController
             html.append("<br>");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new ScriptsAction().appendNavTrail(root);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -216,16 +216,16 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(X_FRAME_OPTIONS, option);
     }
 
-    public void setExternalRedirectURLs(@NotNull List<String> externalRedirectURLs)
+    public void setExternalRedirectHosts(@NotNull List<String> externalRedirectHosts)
     {
         String urls = "";
-        if (null != externalRedirectURLs)
+        if (null != externalRedirectHosts)
         {
-            for (String externalRedirectURL : externalRedirectURLs)
+            for (String externalRedirectURL : externalRedirectHosts)
             {
-                urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_URL_DELIMITER;
+                urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_DELIMITER;
             }
         }
-        storeStringValue(EXTERNAL_REDIRECT_HOST_URLS, urls);
+        storeStringValue(EXTERNAL_REDIRECT_HOSTS, urls);
     }
 }

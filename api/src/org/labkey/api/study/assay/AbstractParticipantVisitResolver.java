@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.study.assay.ParticipantVisitImpl;
+import org.labkey.api.study.assay.ParticipantVisitResolver;
 
 import java.util.Date;
 import java.util.Map;

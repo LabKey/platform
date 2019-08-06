@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -447,7 +447,7 @@ public class PipelineController extends SpringActionController
         protected SecurableResource getSecurableResource()
         {
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-            if (pipeRoot != null && !pipeRoot.isDefault())
+            if (pipeRoot != null && !pipeRoot.isFileRoot())
                 return pipeRoot;
             return super.getSecurableResource();
         }

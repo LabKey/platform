@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
@@ -521,7 +522,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
     {
         // NOTE: it's a little ambiguous how to factor code between persistRows() and createImportDIB()
         data = new _DataIteratorBuilder(data, context);
-        return TableInsertDataIterator.create(data, this, null, context, new CaseInsensitiveHashSet(getPkColumnNames()), null, null);
+        return new TableInsertDataIteratorBuilder(data, this, null)
+                .setKeyColumns( new CaseInsensitiveHashSet(getPkColumnNames()));
     }
 
 

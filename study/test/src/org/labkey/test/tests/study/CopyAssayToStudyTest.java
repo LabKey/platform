@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,14 +227,14 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         designerPage.addDataField("Flags", "Flags", FieldDefinition.ColumnType.Flag);
 
         // Set some to required
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().required.set(true);
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT+1).properties().selectValidatorsTab().required.set(true);
-        designerPage.runFields().selectField(0).properties().selectValidatorsTab().required.set(true);
-        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().required.set(true);
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().required.set(true);
+        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().setRequired(true);
+        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 1).properties().selectValidatorsTab().setRequired(true);
+        designerPage.runFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
+        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
+        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().setRequired(true);
 
         // import aliases
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().importAliasesInput.set(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
+        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().setImportAliases(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
 
         designerPage.save();
     }

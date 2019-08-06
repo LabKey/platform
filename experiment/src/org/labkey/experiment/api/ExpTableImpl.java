@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
                         // use the property URI as the column's FieldKey name
                         pc.setFieldKey(FieldKey.fromParts(name));
-                        pc.setLabel(pd.getName());
+                        pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
                         return pc;
                     }
                 }

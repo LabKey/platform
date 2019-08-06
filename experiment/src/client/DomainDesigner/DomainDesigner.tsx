@@ -1,36 +1,44 @@
 /*
- * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
- * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
+ * Copyright (c) 2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 import * as React from 'react'
 import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
-import {ActionURL} from "@labkey/api";
+import {ActionURL, Utils} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
+import {DomainForm, DomainDesign, fetchDomain, saveDomain} from "@glass/domainproperties"
 
-interface StateProps {
-    schemaName?: string,
-    queryName?: string,
-    domainId?: number,
-    returnUrl?: string,
-    domain?: DomainDesign,
-    submitting: boolean,
-    message?: string,
-    messageType?: string,
-    showConfirm: boolean,
+
+interface IAppState {
     dirty: boolean
+    domain: DomainDesign
+    domainId: number
+    message: string
+    messageType: string
+    queryName: string
+    returnUrl: string
+    schemaName: string
+    showConfirm: boolean
+    submitting: boolean
 }
 
-export class App extends React.PureComponent<any, StateProps> {
+export class App extends React.PureComponent<any, Partial<IAppState>> {
 
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
-        const schemaName = ActionURL.getParameter('schemaName');
-        const queryName = ActionURL.getParameter('queryName');
-        const domainId = ActionURL.getParameter('domainId');
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
         this.state = {
             schemaName,
@@ -72,40 +80,26 @@ export class App extends React.PureComponent<any, StateProps> {
     }
 
     submitHandler = () => {
-        const { domain } = this.state;
+        const { domain, submitting } = this.state;
 
-        // NOTE: temp values for name and pk since those are not available inputs currently
-        // const name = 'list_' + Math.floor(Math.random() * 10000);
-        // const options = {
-        //     keyName: domain.fields.size > 0 ? domain.fields.get(0).name : undefined
-        // };
+        if (submitting) {
+            return;
+        }
 
-        this.setState(() => ({submitting: true}));
+        this.setState({
+            submitting: true
+        });
 
-        // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
-                const newDomain = clearFieldDetails(savedDomain);
-
-                this.setState(() => ({
-                    domain: newDomain,
-                    submitting: false,
-                    message: 'Domain saved successfully.',
-                    messageType: 'success',
-                    dirty: false
-                }));
-
-                window.setTimeout(() => {
-                    this.dismissAlert();
-                }, 5000);
+                this.navigate();
             })
-            .catch(error => {
-                this.setState(() => ({
-                    submitting: false,
-                    message: error.exception,
-                    messageType: 'danger'
-                }));
-            });
+            .catch((error) => {
+                const msg = Utils.isObject(error) ? error.exception : error;
+                this.showMessage(msg, 'danger', {
+                    submitting: false
+                });
+            })
     };
 
     onChangeHandler = (newDomain, dirty) => {
@@ -116,7 +110,17 @@ export class App extends React.PureComponent<any, StateProps> {
     };
 
     dismissAlert = () => {
-        this.setState(() => ({message: null, messageType: null}));
+        this.setState({
+            message: undefined,
+            messageType: undefined
+        });
+    };
+
+    showMessage = (message: string, messageType: string, additionalState?: Partial<IAppState>) => {
+        this.setState(Object.assign({}, additionalState, {
+            message,
+            messageType
+        }));
     };
 
     onCancelBtnHandler = () => {
@@ -124,13 +128,14 @@ export class App extends React.PureComponent<any, StateProps> {
             this.setState(() => ({showConfirm: true}));
         }
         else {
-            this.onConfirm();
+            this.navigate();
         }
     };
 
-    onConfirm = () => {
+    navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
+            // TODO if we don't have a returnUrl, should we just do a goBack()?
             window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
         });
     };
@@ -145,7 +150,7 @@ export class App extends React.PureComponent<any, StateProps> {
                 title='Confirm Leaving Page'
                 msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
                 confirmVariant='success'
-                onConfirm={this.onConfirm}
+                onConfirm={this.navigate}
                 onCancel={this.hideConfirm}
             />
         )

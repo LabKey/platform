@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.assay.dilution.SampleInfoMethod" %>
 <%@ page import="org.labkey.api.assay.nab.Luc5Assay" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
-<%@ page import="org.labkey.api.study.WellData" %>
+<%@ page import="org.labkey.api.assay.plate.WellData" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.text.DecimalFormat" %>

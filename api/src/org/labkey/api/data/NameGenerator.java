@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -404,19 +404,23 @@ public class NameGenerator
                     if (value == null)
                         continue;
 
-                    if (colName.startsWith(ExpData.DATA_INPUT_PARENT))
+                    String[] parts = colName.split("/", 2);
+                    if (parts.length == 2)
                     {
-                        parentNames(value, colName).forEach(parentName -> {
-                            allInputs.add(parentName);
-                            dataInputs.add(parentName);
-                        });
-                    }
-                    else if (colName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
-                    {
-                        parentNames(value, colName).forEach(parentName -> {
-                            allInputs.add(parentName);
-                            materialInputs.add(parentName);
-                        });
+                        if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
+                        {
+                            parentNames(value, colName).forEach(parentName -> {
+                                allInputs.add(parentName);
+                                dataInputs.add(parentName);
+                            });
+                        }
+                        else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
+                        {
+                            parentNames(value, colName).forEach(parentName -> {
+                                allInputs.add(parentName);
+                                materialInputs.add(parentName);
+                            });
+                        }
                     }
                 }
 

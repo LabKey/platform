@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package org.labkey.core.test;
 
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -485,6 +489,25 @@ public class TestController extends SpringActionController
         public void setBeans(ArrayList<TestBean> beans)
         {
             this.beans = beans;
+        }
+    }
+
+
+    /**
+     * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
+     * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
+     */
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.ALL)
+    public static class CsrfAction extends ReadOnlyApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors)
+        {
+            ApiSimpleResponse res = new ApiSimpleResponse();
+            res.put("success", true);
+            return res;
         }
     }
 

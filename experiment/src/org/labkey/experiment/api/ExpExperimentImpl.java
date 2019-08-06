@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,7 +202,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void save(User user)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoExperiment());
+        save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
     }
 
     public void delete(User user)

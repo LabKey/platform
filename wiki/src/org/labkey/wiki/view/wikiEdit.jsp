@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -180,15 +180,18 @@
                         <table>
                             <tr>
                                 <td>
-                                    <input type="checkbox" id="<%=ID_PREFIX%>showAttachments"/>
-                                    Show Attached Files
+                                    <label>
+                                        <input type="checkbox" id="<%=ID_PREFIX%>showAttachments"/>
+                                        Show Attached Files
+                                    </label>
                                 </td>
                             </tr>
                         </table>
                         <labkey:form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments"></table>
+                            <br>
                             <table id="wiki-new-attachments"></table>
-                            <a id="wiki-file-link"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a>
+                            <a href="javascript:addFilePicker('wiki-new-attachments','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a>
                         </labkey:form>
                     </td>
                 </tr>

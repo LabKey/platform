@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -5249,6 +5249,7 @@ public class QueryController extends SpringActionController
         private boolean _includeUserQueries = true;
         private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
+        private boolean _queryDetailColumns = false;
 
         public String getSchemaName()
         {
@@ -5289,6 +5290,16 @@ public class QueryController extends SpringActionController
         {
             _includeColumns = includeColumns;
         }
+
+        public boolean isQueryDetailColumns()
+        {
+            return _queryDetailColumns;
+        }
+
+        public void setQueryDetailColumns(boolean queryDetailColumns)
+        {
+            _queryDetailColumns = queryDetailColumns;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5313,14 +5324,12 @@ public class QueryController extends SpringActionController
             //user-defined queries
             if (form.isIncludeUserQueries())
             {
-                Map<String,QueryDefinition> queryDefMap = uschema.getQueryDefs();
-                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
+                for (QueryDefinition qdef : uschema.getQueryDefs().values())
                 {
-                    QueryDefinition qdef = entry.getValue();
                     if (!qdef.isTemporary())
                     {
                         ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
                     }
                 }
             }
@@ -5336,7 +5345,7 @@ public class QueryController extends SpringActionController
                     if (qdef != null)
                     {
                         ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
                     }
                 }
             }
@@ -5345,7 +5354,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
         {
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("name", qdef.getName());
@@ -5380,23 +5389,34 @@ public class QueryController extends SpringActionController
                 {
                     if (includeColumns)
                     {
-                        //enumerate the columns
-                        List<Map<String, Object>> cinfos = new ArrayList<>();
-                        for(ColumnInfo col : table.getColumns())
-                        {
-                            Map<String, Object> cinfo = new HashMap<>();
-                            cinfo.put("name", col.getName());
-                            if (null != col.getLabel())
-                                cinfo.put("caption", col.getLabel());
-                            if (null != col.getShortLabel())
-                                cinfo.put("shortCaption", col.getShortLabel());
-                            if (null != col.getDescription())
-                                cinfo.put("description", col.getDescription());
+                        Collection<Map<String, Object>> columns;
 
-                            cinfos.add(cinfo);
+                        if (useQueryDetailColumns)
+                        {
+                            columns = JsonWriter
+                                    .getNativeColProps(table, Collections.emptyList(), null, false, false)
+                                    .values();
                         }
-                        if (cinfos.size() > 0)
-                            qinfo.put("columns", cinfos);
+                        else
+                        {
+                            columns = new ArrayList<>();
+                            for (ColumnInfo col : table.getColumns())
+                            {
+                                Map<String, Object> cinfo = new HashMap<>();
+                                cinfo.put("name", col.getName());
+                                if (null != col.getLabel())
+                                    cinfo.put("caption", col.getLabel());
+                                if (null != col.getShortLabel())
+                                    cinfo.put("shortCaption", col.getShortLabel());
+                                if (null != col.getDescription())
+                                    cinfo.put("description", col.getDescription());
+
+                                columns.add(cinfo);
+                            }
+                        }
+
+                        if (columns.size() > 0)
+                            qinfo.put("columns", columns);
                     }
                     if (table instanceof DatasetTable)
                         title = table.getTitle();

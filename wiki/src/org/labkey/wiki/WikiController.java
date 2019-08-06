@@ -557,7 +557,7 @@ public class WikiController extends SpringActionController
                 _wikiVersion = null;
             }
 
-            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion);
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
 
             if (SHOW_CHILD_REORDERING)
             {
@@ -628,7 +628,7 @@ public class WikiController extends SpringActionController
                     if (sibling.getRowId() == order[i])
                     {
                         sibling.setDisplayOrder(i + 1);
-                        getWikiManager().updateWiki(getUser(), sibling, null);
+                        getWikiManager().updateWiki(getUser(), sibling, null, false);
                         break;
                     }
                 }
@@ -1604,7 +1604,7 @@ public class WikiController extends SpringActionController
                 throw new UnauthorizedException("You do not have permission to set the current version of this page.");
 
             //update wiki & insert new wiki version
-            getWikiManager().updateWiki(getUser(), _wiki, _wikiversion);
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiversion, false);
             return true;
         }
 
@@ -2005,7 +2005,7 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(EditWikiForm form, BindException errors)
         {
-            //get the wiki
+            //region get the wiki
             Wiki wiki = null;
             WikiVersion curVersion = null;
 
@@ -2018,8 +2018,9 @@ public class WikiController extends SpringActionController
                 }
 
             }
+            //endregion
 
-            //check permissions
+            //region check permissions
             BaseWikiPermissions perms = getPermissions();
 
             if (null == wiki)
@@ -2041,8 +2042,9 @@ public class WikiController extends SpringActionController
                 if (!perms.allowUpdate(wiki))
                     throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
             }
+            //endregion
 
-            //get the user's editor preference
+            //region get the user's editor preference
             Map<String, String> properties = PropertyManager.getProperties(getUser(),
                     getContainer(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
@@ -2054,10 +2056,12 @@ public class WikiController extends SpringActionController
             WikiEditModel model = new WikiEditModel(getContainer(), wiki, curVersion,
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
                     form.getWebPartId(), getUser());
+            //endregion
 
-            //stash the wiki so we can build the nav trail
+            //region stash the wiki so we can build the nav trail
             _wiki = wiki;
             _wikiVer = curVersion;
+            //endregion
 
             return new JspView<>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
@@ -2323,7 +2327,7 @@ public class WikiController extends SpringActionController
 
             //insert new wiki and new version
             User user = getUser();
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
@@ -2413,7 +2417,7 @@ public class WikiController extends SpringActionController
                 wikiversion.setTitle(title);
                 wikiversion.setBody(StringUtils.isEmpty(this.sanitizedHtml) ? form.getBody() : this.sanitizedHtml);
                 wikiversion.setRendererTypeEnum(currentRendererType);
-                getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion);
+                getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion, false);
             }
 
             //return an API response containing the current wiki and version data

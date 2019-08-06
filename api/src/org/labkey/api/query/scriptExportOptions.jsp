@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2010-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,9 +63,11 @@
             {
                 Map.Entry<String, ActionURL> entry = iter.next();
             %>
-                <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/></td>
-                <td valign="center"><%= h(entry.getKey())%></td><%
-
+                <td valign="center">
+                    <label><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType"<%=checked(first)%> value="<%=h(entry.getValue()) %>"/>
+                        <%= h(entry.getKey())%>
+                    </label>
+                </td><%
                 first = false;
             }
         }

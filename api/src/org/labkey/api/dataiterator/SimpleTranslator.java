@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -851,7 +851,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     public void selectAll(@NotNull Set<String> skipColumns)
     {
-        for (int i=1 ; i<=_data.getColumnCount() ; i++)
+        selectAll(skipColumns, Collections.emptyMap());
+    }
+
+    public void selectAll(@NotNull Set<String> skipColumns, @NotNull Map<String, String> translations)
+    {
+        Map<String, Integer> aliasColumns = new HashMap<>();
+        for (int i = 1; i <= _data.getColumnCount(); i++)
         {
             ColumnInfo c = _data.getColumnInfo(i);
             String name = c.getName();
@@ -859,7 +865,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 continue;
 
             addColumn(c, i);
+            if (translations.containsKey(name))
+                aliasColumns.put(translations.get(name),i);
         }
+
+        //Append new alias columns to prevent indexing errors
+        for(Map.Entry<String, Integer> alias : aliasColumns.entrySet())
+            addColumn(alias.getKey(), alias.getValue());
     }
 
 

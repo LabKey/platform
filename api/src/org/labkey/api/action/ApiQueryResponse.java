@@ -164,10 +164,30 @@ public class ApiQueryResponse implements ApiResponse
                     _rowCount = _dataRegion.getTotalRows();
                 }
             }
-            writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
 
+            long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
+            writer.writeProperty("rowCount", rowCount);
+
+            if (_includeMetaData)
+            {
+                // messages, but only if metadata is requested
+                _dataRegion.setTotalRows(rowCount);
+                _dataRegion.prepareMessages(_ctx);
+                List<DataRegion.Message> dataRegionMessages = _dataRegion.getMessages();
+
+                if (dataRegionMessages != null)
+                {
+                    List<Map<String, String>> messages = new ArrayList<>();
+                    for (DataRegion.Message msg : dataRegionMessages)
+                    {
+                        messages.add(PageFlowUtil.map("area", msg.getArea(),
+                                "content", msg.getContent(),
+                                "type", msg.getType().name()));
+                    }
+                    writer.writeProperty("messages", messages);
+                }
+            }
         }
-
         writer.endResponse();
     }
 

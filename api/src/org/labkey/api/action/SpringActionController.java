@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewService;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.BeansException;
@@ -214,11 +213,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return _applicationContext;
     }
 
+    @Override
     public void setViewContext(ViewContext context)
     {
         _viewContext = context;
     }
 
+    @Override
     public ViewContext getViewContext()
     {
         return _viewContext;
@@ -358,8 +359,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
        {
            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
            HttpView view = SimpleErrorView.fromMessage(x.getMessage());
-           view = ViewService.get().getTemplate(Dialog, getViewContext(), view, new PageConfig());
-           view.render(request,response);
+
+           PageConfig page = new PageConfig();
+           page.setTemplate(Dialog);
+           renderInTemplate(getViewContext(), null, page, view);
            return null;
        }
 
@@ -367,6 +370,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
        return null;
    }
 
+    @Override
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
     {
         request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getApplicationContext());

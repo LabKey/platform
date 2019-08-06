@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.assay.dilution.DilutionAssayRun" %>
 <%@ page import="org.labkey.api.assay.nab.RenderAssayBean" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.nab.NabUrls" %>
+<%@ page import="org.labkey.api.assay.nab.NabUrls" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>

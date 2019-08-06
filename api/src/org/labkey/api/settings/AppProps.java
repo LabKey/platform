@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,9 +214,9 @@ public interface AppProps
 
     /**
      *
-     * @return List of configured external redirect host urls
+     * @return List of configured external redirect hosts
      */
     @NotNull
-    List<String> getExternalRedirectURLs();
+    List<String> getExternalRedirectHosts();
 
 }

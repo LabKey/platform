@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import org.labkey.api.module.Module;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractPlateBasedAssayProvider;
-import org.labkey.api.study.assay.AssayDataType;
-import org.labkey.api.study.assay.AssaySchema;
-import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
+import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.Pair;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -548,7 +548,7 @@ public class QueryView extends WebPartView<Object>
                 break;
         }
 
-        if (null == ret)
+        if (null == ret && null != getQueryDef())
             ret = _schema.urlFor(action, getQueryDef());
 
         if (ret == null)

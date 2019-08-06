@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.study.AssayFolderType;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
@@ -44,7 +43,6 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.BaseStudyPage;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
 import java.util.Collection;
 
 /**
@@ -171,8 +169,7 @@ public abstract class BaseStudyController extends SpringActionController
         Study study = getStudyRedirectIfNull(container);
         ActionURL rootURL;
         FolderType folderType = container.getFolderType();
-        // AssayFolderType is defined in the study module, but it's not really a folder of type study
-        if (folderType.getDefaultModule() instanceof StudyModule && !(folderType instanceof AssayFolderType))
+        if (folderType.getDefaultModule() instanceof StudyModule)
         {
             rootURL = folderType.getStartURL(container, user);
         }

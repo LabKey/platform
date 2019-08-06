@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
                 if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
                 {
                     PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                    treeFileRoot = FilesWebPart.getRootPath(c, root != null && root.isDefault() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
+                    treeFileRoot = FilesWebPart.getRootPath(c, root != null && root.isFileRoot() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
                 }
                 else if (legacyFileRoot.startsWith(FileContentService.CLOUD_LINK))
                 {

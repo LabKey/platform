@@ -78,6 +78,9 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.core.qc.QCStateImporter;
+import org.labkey.core.qc.QCStateWriter;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -140,7 +143,7 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.ReplacedRunFilter;
+import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.*;
@@ -916,6 +919,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new ModulePropertiesWriterFactory(), new ModulePropertiesImporterFactory());
             fsr.addFactories(new SecurityGroupWriterFactory(), new SecurityGroupImporterFactory());
             fsr.addFactories(new RoleAssignmentsWriterFactory(), new RoleAssignmentsImporterFactory());
+            fsr.addFactories(new QCStateWriter.Factory(), new QCStateImporter.Factory());
             fsr.addImportFactory(new SubfolderImporterFactory());
         }
 
@@ -1140,7 +1144,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 PostgreSql92Dialect.TestCase.class,
                 AdminController.SerializationTest.class,
                 ProductRegistry.TestCase.class,
-                ContainerFilter.TestCase.class
+                ContainerFilter.TestCase.class,
+                AdminController.ModuleVersionTestCase.class,
+                AbstractQueryUpdateService.TestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

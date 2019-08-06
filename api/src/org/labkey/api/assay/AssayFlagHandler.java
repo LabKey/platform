@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
@@ -7,7 +22,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
-import org.labkey.api.study.assay.AssayProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,12 +42,22 @@ public interface AssayFlagHandler
     {
         if (provider != null)
         {
-            if (!_handlers.containsKey(provider.getName()))
+            registerHandler(provider.getClass().getName(), handler);
+        }
+        else
+            throw new RuntimeException("The specified assay provider is null");
+    }
+
+    static void registerHandler(String providerClassName, AssayFlagHandler handler)
+    {
+        if (providerClassName != null)
+        {
+            if (!_handlers.containsKey(providerClassName))
             {
-                _handlers.put(provider.getName(), handler);
+                _handlers.put(providerClassName, handler);
             }
             else
-                throw new RuntimeException("A Flag Handler for Assay provider : " + provider.getName() + " is already registered");
+                throw new RuntimeException("A Flag Handler for Assay provider : " + providerClassName + " is already registered");
         }
         else
             throw new RuntimeException("The specified assay provider is null");
@@ -42,7 +66,10 @@ public interface AssayFlagHandler
     @Nullable
     static AssayFlagHandler getHandler(AssayProvider provider)
     {
-        return _handlers.get(provider.getName());
+        if (provider != null)
+            return _handlers.get(provider.getClass().getName());
+        else
+            return null;
     }
 
     BaseColumnInfo createFlagColumn(ExpProtocol protocol, TableInfo parent, String schemaName, boolean editable);

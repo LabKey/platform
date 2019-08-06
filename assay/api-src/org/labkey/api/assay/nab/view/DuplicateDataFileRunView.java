@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2014 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.nab.NabUrls;
+import org.labkey.api.assay.nab.NabUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.query.RunListQueryView;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DataView;
 

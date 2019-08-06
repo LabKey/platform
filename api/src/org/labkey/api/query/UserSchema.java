@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -399,6 +399,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     public ActionURL urlFor(QueryAction action, @NotNull QueryDefinition queryDef)
     {
+        assert queryDef != null;
         return queryDef.urlFor(action, getContainer());
     }
 

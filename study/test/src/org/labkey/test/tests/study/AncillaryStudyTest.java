@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -372,7 +372,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         clickFolder(getFolderName());
         goToModule("Wiki");
         WikiHelper wh = new WikiHelper(this);
-        wh.createWikiPage("17021", "17021 Regression", new File(TestFileUtils.getApiScriptFolder(), "filterTest.html"));
+        wh.createWikiPage("17021", "17021 Regression", TestFileUtils.getSampleData("api/filterTest.html"));
         DataRegionTable regressionTable = DataRegion(getDriver()).withName("test17021").waitFor();
         regressionTable.setUpFacetedFilter("PrimaryType", "Blood (Whole)");
         assertElementNotPresent(Locator.linkWithText("Semen"));

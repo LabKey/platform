@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.labkey.api.exp.form;
 
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.assay.actions.ProtocolIdForm;
 
 import java.util.Set;
 

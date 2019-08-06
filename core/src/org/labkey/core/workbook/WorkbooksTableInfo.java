@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2010-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,11 +63,11 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.core.CoreController;
 import org.labkey.core.query.CoreQuerySchema;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -228,19 +228,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
         {
-            String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
-            Container workbook = null;
-            try
-            {
-                int id = Integer.parseInt(idString);
-                workbook = ContainerManager.getForRowId(id);
-            }
-            catch (NumberFormatException ignored) {}
-
-            if (null == workbook || !workbook.isWorkbook())
-                throw new NotFoundException("Could not find a workbook with id '" + idString + "'");
-            ContainerManager.delete(workbook, user);
-            return oldRow;
+            throw new UnauthorizedException("Deleting workbooks through the query service is not supported");
         }
 
         @Override
@@ -252,6 +240,13 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
     }
 
+    private static final DetailsURL _deleteUrl = DetailsURL.fromString("admin/deleteWorkbooks.view");
+
+    @Override
+    public ActionURL getDeleteURL(Container container)
+    {
+        return _deleteUrl.copy(container).getActionURL();
+    }
 
     @Override
     public boolean insertSupported()

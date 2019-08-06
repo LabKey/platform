@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 LabKey Corporation
+ * Copyright (c) 2013-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class ExpDataFileListener extends TableUpdaterFileListener
             data = ExperimentService.get().createData(c, new DataType("UploadedFile"));
         }
 
-        if (data != null && data.getFilePath().equals(src) && !src.equals(dest))
+        if (data != null && src.equals(data.getFilePath()) && !src.equals(dest))
         {
             // The file has been renamed, so rename the exp.data row if its name matches
             data.setName(FileUtil.getFileName(dest));

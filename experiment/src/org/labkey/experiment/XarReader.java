@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2018 LabKey Corporation
+* Copyright (c) 2008-2019 LabKey Corporation
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -68,14 +68,35 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.Data;
+import org.labkey.experiment.api.DataInput;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpExperimentImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolApplicationImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExpSampleSetImpl;
+import org.labkey.experiment.api.Experiment;
+import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.IdentifiableEntity;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.MaterialInput;
+import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.ProtocolAction;
+import org.labkey.experiment.api.ProtocolActionPredecessor;
+import org.labkey.experiment.api.ProtocolActionStepDetail;
+import org.labkey.experiment.api.ProtocolApplication;
+import org.labkey.experiment.api.RunItem;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -387,7 +408,7 @@ public class XarReader extends AbstractXarImporter
             try
             {
                 ExperimentService.get().onRunDataCreated(loadedRun.getProtocol(), loadedRun, getContainer(), getUser());
-                ExperimentService.get().syncRunEdges(loadedRun);
+                ExperimentService.get().queueSyncRunEdges(loadedRun);
             }
             catch (BatchValidationException e)
             {
@@ -802,7 +823,16 @@ public class XarReader extends AbstractXarImporter
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
             vals.setContainer(getContainer());
 
-            run = Table.insert(getUser(), tiExperimentRun, vals);
+            ExpRunImpl impl = new ExpRunImpl(vals);
+            try
+            {
+                impl.save(getUser());
+                run = impl.getDataObject();
+            }
+            catch (BatchValidationException x)
+            {
+                throw new ExperimentException(x);
+            }
         }
 
         if (experimentLSID != null)
@@ -1042,7 +1072,6 @@ public class XarReader extends AbstractXarImporter
         {
             loadData(d, experimentRun, protAppId, context);
         }
-        ExperimentServiceImpl.get().uncacheLineageGraph();
         getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
     }
 
@@ -1211,6 +1240,7 @@ public class XarReader extends AbstractXarImporter
 
         if (expData != null)
         {
+            Data data = expData.getDataObject();
             Path existingFile = expData.getFilePath();
             String uri = _xarSource.getCanonicalDataFileURL(trimString(xbData.getDataFileUrl()));
             if (uri != null && existingFile != null && !Files.isDirectory(existingFile))
@@ -1219,7 +1249,20 @@ public class XarReader extends AbstractXarImporter
                 if (null == newFile)
                     throw new ExperimentException("Unable to create path from URI: " + uri);
 
-                if (!Files.isDirectory(newFile) && !newFile.equals(existingFile))
+                boolean newFileExists = !Files.isDirectory(newFile) && Files.exists(newFile);
+                if (!newFileExists)
+                {
+                    getLog().warn("The data file with LSID " + dataLSID + " (referenced as "
+                            + xbData.getAbout() + " in the xar.xml, does not exist.");
+                }
+
+                // Issue 37561: if the existing file does not exist, don't try to keep using it or compare its contents
+                if (!Files.exists(existingFile))
+                {
+                    getLog().debug("Updating " + data.getClass().getSimpleName() + " with LSID '" + dataLSID + "', setting dataFileUrl");
+                    data.setDataFileUrl(uri);
+                }
+                else if (newFileExists && !newFile.equals(existingFile))
                 {
                     byte[] existingHash = hashFile(existingFile);
                     byte[] newHash = hashFile(newFile);
@@ -1238,8 +1281,9 @@ public class XarReader extends AbstractXarImporter
                 String containerDesc = otherContainer == null ? expData.getContainer().getPath() : otherContainer.getPath();
                 throw new XarFormatException("Cannot reference a data file (" + expData.getDataFileUrl() + ") that has already been loaded into another container, " + containerDesc);
             }
+
             Integer runId = experimentRun == null || sourceApplicationId == null ? null : experimentRun.getRowId();
-            updateSourceInfo(expData.getDataObject(), sourceApplicationId, runId, context, tiData);
+            updateSourceInfo(data, sourceApplicationId, runId, context, tiData);
         }
         else
         {
@@ -1279,10 +1323,8 @@ public class XarReader extends AbstractXarImporter
                 }
             }
 
-            Data insertedData = Table.insert(getUser(), tiData, data);
-            // Pull from the database so we get the magically filled-in fields,
-            // like Created, populated correctly
-            expData = new ExpDataImpl(new TableSelector(tiData).getObject(insertedData.getRowId(), Data.class));
+            expData = new ExpDataImpl(data);
+            expData.save(getUser());
 
             PropertyCollectionType xbProps = xbData.getProperties();
             if (null == xbProps)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2017 LabKey Corporation
+ * Copyright (c) 2014-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -36,6 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
@@ -43,6 +45,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -50,8 +53,10 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -349,6 +354,14 @@ public class QueryProfiler
         return new HttpView()
         {
             @Override
+            public @NotNull LinkedHashSet<ClientDependency> getClientDependencies()
+            {
+                LinkedHashSet result = super.getClientDependencies();
+                result.add(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js"));
+                return result;
+            }
+
+            @Override
             protected void renderInternal(Object model, PrintWriter out)
             {
                 // Don't update anything while we're rendering the report or vice versa
@@ -364,11 +377,19 @@ public class QueryProfiler
 
                     out.println("<table>\n");
                     out.println("  <tr>\n    <td><strong>SQL</strong></td>\n    <td style=\"padding-left: 1em;\"><strong>SQL&nbsp;With&nbsp;Parameters</strong></td>\n  </tr>\n");
+
+                    out.println("  <tr>\n    <td align=\"right\">");
+                    out.println(new Link.LinkBuilder("copy to clipboard").onClick("return false;").id("copyToClipboardNoParams").attributes(Collections.singletonMap("data-clipboard-target", "#sqlNoParams")).build().getHtmlString());
+                    out.println("</td>\n    <td align=\"right\">");
+                    out.println(new Link.LinkBuilder("copy to clipboard").onClick("return false;").id("copyToClipboardWithParams").attributes(Collections.singletonMap("data-clipboard-target", "#sqlWithParams")).build().getHtmlString());
+                    out.println("</td>\n  </tr>\n");
                     out.println("  <tr>\n");
-                    out.println("    <td>" + PageFlowUtil.filter(tracker.getSql(), true) + "</td>\n");
-                    out.println("    <td style=\"padding-left: 20px;\">" + PageFlowUtil.filter(tracker.getSqlAndParameters(), true) + "</td>\n");
+                    out.println("    <td id=\"sqlNoParams\">" + PageFlowUtil.filter(tracker.getSql(), true) + "</td>\n");
+                    out.println("    <td style=\"padding-left: 20px;\" id=\"sqlWithParams\">" + PageFlowUtil.filter(tracker.getSqlAndParameters(), true) + "</td>\n");
                     out.println("  </tr>\n");
                     out.println("</table>\n<br>\n");
+
+                    out.println("\n<script>new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');</script>\n");
 
                     if (tracker.canShowExecutionPlan())
                     {

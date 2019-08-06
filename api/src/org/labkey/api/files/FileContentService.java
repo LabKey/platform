@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2018 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ public interface FileContentService
     /**
      * Returns a list of Container in which the path resides.
      */
+    @NotNull
     List<Container> getContainersForFilePath(java.nio.file.Path path);
 
     /**

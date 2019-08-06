@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * @author <a href="https://www.labkey.org">LabKey</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
- * @license Copyright (c) 2008-2018 LabKey Corporation
+ * @license Copyright (c) 2012-2019 LabKey Corporation
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1079,6 +1079,9 @@ LABKEY.Query = new function()
          * the results. Default is true.
          * @param {Boolean} [config.includeColumns] If set to false, information about the available columns in this
          * query will not be included in the results. Default is true.
+         * @param {Boolean} [config.queryDetailColumns] If set to true, and includeColumns is set to true, information
+         * about the available columns will be the same details as specified by LABKEY.Query.getQueryDetails for columns.
+         * Defaults to false.
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -1096,7 +1099,8 @@ LABKEY.Query = new function()
                 schemaName: 'schemaName',
                 includeColumns: 'includeColumns',
                 includeUserQueries: 'includeUserQueries',
-                includeSystemQueries: 'includeSystemQueries'
+                includeSystemQueries: 'includeSystemQueries',
+                queryDetailColumns: 'queryDetailColumns'
             }, false, false);
 
             return LABKEY.Ajax.request({

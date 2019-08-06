@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -94,15 +93,16 @@ public class SampleSetWebPart extends QueryView
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
 
         ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set", ActionButton.Action.LINK);
-        createNewButton.setDisplayPermission(InsertPermission.class);
+        createNewButton.setDisplayPermission(DesignSampleSetPermission.class);
         createNewButton.setIconCls("plus");
         createNewButton.setURL(urlInsert);
         bar.add(createNewButton);
 
-        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", ActionButton.Action.GET);
-        deleteButton.setDisplayPermission(DeletePermission.class);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
         deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+
+        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", ActionButton.Action.GET);
+        deleteButton.setDisplayPermission(DesignSampleSetPermission.class);
         deleteButton.setIconCls("trash");
         deleteButton.setURL(deleteURL);
         deleteButton.setActionType(ActionButton.Action.POST);

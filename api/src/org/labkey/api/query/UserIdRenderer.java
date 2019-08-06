@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Objects;
 
@@ -63,5 +67,22 @@ public class UserIdRenderer extends DataColumn
             return "Guest";
         }
         return super.getFormattedValue(ctx);
+    }
+
+    @Override
+    public String renderURL(RenderContext ctx)
+    {
+        var container = ctx.getContainer();
+        var loggedInUser = ctx.getViewContext().getUser();
+        if (SecurityManager.canSeeUserDetails(container, loggedInUser))
+        {
+            Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
+            if (displayedUserId != null)
+            {
+                ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
+                return userURL.toString();
+            }
+        }
+        return null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2017 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.labkey.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -324,21 +323,6 @@ public class StudySchema
     public TableInfo getTableInfoUploadLog()
     {
         return getSchema().getTable("UploadLog");
-    }
-
-    public TableInfo getTableInfoPlate()
-    {
-        return getSchema().getTable("Plate");
-    }
-
-    public TableInfo getTableInfoWellGroup()
-    {
-        return getSchema().getTable("WellGroup");
-    }
-
-    public TableInfo getTableInfoWell()
-    {
-        return getSchema().getTable("Well");
     }
 
     public TableInfo getTableInfoCohort()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -43,8 +45,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -52,6 +53,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,6 +65,8 @@ import java.util.stream.Collectors;
 
 public class SampleSetDomainKind extends AbstractDomainKind
 {
+    private static final Logger logger;
+    public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -89,6 +93,8 @@ public class SampleSetDomainKind extends AbstractDomainKind
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec.Index(true, "lsid")
         )));
+
+        logger = Logger.getLogger(SampleSetDomainKind.class);
     }
 
     public SampleSetDomainKind()
@@ -97,7 +103,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     public String getKindName()
     {
-        return "SampleSet";
+        return NAME;
     }
 
     @Override
@@ -149,7 +155,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, true, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, false, true, false);
     }
 
     @Override
@@ -161,7 +167,27 @@ public class SampleSetDomainKind extends AbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return RESERVED_NAMES;
+        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+
+        if (domain == null)
+            return reserved;
+
+        ExpSampleSet ss = getSampleSet(domain);
+        if (ss == null)
+            return reserved;
+
+        try
+        {
+            Map<String, String> aliases = ss.getImportAliasMap();
+            if (aliases != null)
+                reserved.addAll(aliases.keySet());
+
+        }
+        catch (IOException e)
+        {
+            logger.error(String.format("Failed to parse SampleSet parent aliases for [%1$s]", ss.getRowId()), e);
+        }
+        return reserved;
     }
 
     @Override
@@ -202,13 +228,19 @@ public class SampleSetDomainKind extends AbstractDomainKind
         {
             return false;
         }
-        return domain.getContainer().hasPermission(user, UpdatePermission.class);
+        return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, DesignSampleSetPermission.class);
+    }
+
+    @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
     }
 
     @Override

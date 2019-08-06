@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2017 LabKey Corporation
+ * Copyright (c) 2014-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,8 +131,9 @@ function showSystemRows(value)
         Allowing users to build up specimen requests over multiple
         searches is generally more convenient, but requires the coordinator to watch for abandoned unsubmitted requests.
     </p>
+    <label>
     <input type="checkbox" name="useShoppingCart"<%=checked(settings.isUseShoppingCart())%> onclick='showSystemRows(this.checked);'>
-    Allow requests to be built over multiple searches before submission<br/>
+        Allow requests to be built over multiple searches before submission</label><br/>
 
     <br/>
 

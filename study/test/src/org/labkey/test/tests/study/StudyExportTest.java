@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2016-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -589,8 +589,8 @@ public class StudyExportTest extends StudyManualTest
                 .clickEditDefinition();
 
         PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
-        fieldRow.properties().selectDisplayTab().description.set(COLUMN_DESC);
-        fieldRow.properties().selectAdvancedTab().mvEnabledCheckbox.check();
+        fieldRow.properties().selectDisplayTab().setDescription(COLUMN_DESC);
+        fieldRow.properties().selectAdvancedTab().setMvEnabled(true);
 
         editDatasetPage.save();
         // TODO: add lookups for current & other folders

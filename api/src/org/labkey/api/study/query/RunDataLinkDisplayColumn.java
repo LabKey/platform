@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2015 LabKey Corporation
+ * Copyright (c) 2009-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package org.labkey.api.study.query;
 
+import org.labkey.api.assay.actions.AssayDetailRedirectAction;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.study.actions.AssayDetailRedirectAction;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
