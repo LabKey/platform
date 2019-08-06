@@ -46,27 +46,34 @@ import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
  */
 public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
 {
-    public static final Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
-    public static final Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class(\\?.*)?");
+    public static final Pattern classPattern = Pattern.compile("[\\w.$]+\\.class(\\?.*)?");
 
-    protected ContainerContext _containerContext;
+    private ContainerContext _containerContext;
 
     // constructor parameters
-    ActionURL _url;
-    String _urlSource;
+    private ActionURL _url;
+    private String _urlSource;
 
     // parsed fields
-    ActionURL _parsedUrl;
+    private ActionURL _parsedUrl;
     private boolean _strictContainerContextEval;
-    // _source from AbstractStringExpression            
 
 
     public static String validateURL(String str)
     {
-        if (DetailsURL.actionPattern.matcher(str).matches() || DetailsURL.classPattern.matcher(str).matches())
-            return null;
+        if (!DetailsURL.classPattern.matcher(str).matches())
+        {
+            try
+            {
+                new ActionURL(str);
+            }
+            catch (Exception e)
+            {
+                return "Invalid url pattern: " + str;
+            }
+        }
 
-        return "Invalid url pattern: " + str;
+        return null;
     }
 
     /**
@@ -236,8 +243,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     }
 
     @Override
-    protected void parse()
-            throws IllegalArgumentException
+    protected void parse() throws IllegalArgumentException
     {
         assert null == _url || null == _urlSource;
 
@@ -254,12 +260,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             if (protocol.contains("script"))
                 throw new IllegalArgumentException("Script not allowed in urls: " + expr);
 
-            if (actionPattern.matcher(expr).matches())
-            {
-                if (!expr.startsWith("/")) expr = "/" + expr;
-                _parsedUrl = new ActionURL(expr);
-            }
-            else if (classPattern.matcher(expr).matches())
+            if (classPattern.matcher(expr).matches())
             {
                 int indexClass = expr.indexOf(".class?");
                 int indexQuery = expr.length();
@@ -281,11 +282,22 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
                 _parsedUrl.setRawQuery(expr.substring(indexQuery));
             }
             else
-                throw new IllegalArgumentException(
-                        "Failed to parse url '" + _urlSource + "'.\n" +
-                        "Supported url formats:\n" +
-                        "\t/controller/action.view?id=${RowId}\n" +
-                        "\torg.labkey.package.MyController$ActionAction.class?id=${RowId}");
+            {
+                try
+                {
+                    if (!expr.startsWith("/")) expr = "/" + expr;
+                        _parsedUrl = new ActionURL(expr);
+                }
+                catch (Exception e)
+                {
+                    throw new IllegalArgumentException(
+                            "Failed to parse url '" + _urlSource + "'.\n" +
+                                    "Supported url formats:\n" +
+                                    "\t/controller/action.view?id=${RowId}\n" +
+                                    "\t/controller-action.view?id=${RowId}\n" +
+                                    "\torg.labkey.package.MyController$ActionAction.class?id=${RowId}", e);
+                }
+            }
         }
         else
             throw new IllegalArgumentException("URL required");
