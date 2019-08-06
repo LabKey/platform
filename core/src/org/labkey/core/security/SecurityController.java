@@ -357,21 +357,6 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public static class MaxPhiForm
-    {
-        String maxPhiLevel;
-
-        public String getMaxPhiLevel()
-        {
-            return maxPhiLevel;
-        }
-
-        public void setMaxPhiLevel(String maxPhiLevel)
-        {
-            this.maxPhiLevel = maxPhiLevel;
-        }
-    }
-
     @RequiresPermission(AdminPermission.class)
     @ActionNames("permissions,project")
     public class PermissionsAction extends SimpleViewAction<PermissionsForm>
