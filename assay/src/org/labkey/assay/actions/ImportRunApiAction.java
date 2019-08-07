@@ -16,6 +16,7 @@
 
 package org.labkey.assay.actions;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,10 +26,14 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -43,10 +48,6 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayRunUploadContext;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -55,13 +56,18 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.assay.AssayDataCollector.PRIMARY_FILE;
+import static org.labkey.api.assay.AssayFileWriter.createFile;
 
 /**
  * User: kevink
@@ -211,11 +217,45 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
         else if (rawData != null)
         {
-            factory.setRawData(rawData);
-            factory.setUploadedData(Collections.emptyMap());
+            if (!rawData.isEmpty())
+            {
+                try
+                {
+                    // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
+                    // the original (untransformed) data within, say, a sample management application.
+                    File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+                    // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
+                    file = createFile(protocol, dir, "tmp");
+                    StringBuilder builder = new StringBuilder();
 
-            // Create an ExpData for the results if none exists in the outputData map
-            ExpData newData = DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
+                    Set<String> headerFields = rawData.get(0).keySet();
+                    builder.append(String.join("\t", headerFields)).append("\n");
+
+                    for (Map<String, Object> rowMap : rawData)
+                    {
+                        List<String> values = new ArrayList<>();
+                        for (String header : headerFields) {
+                            values.add(rowMap.get(header).toString());
+                        }
+                        builder.append(String.join("\t", values));
+                        builder.append("\n");
+                    }
+                    ByteArrayInputStream inputStream = new ByteArrayInputStream(builder.toString().getBytes(getViewContext().getRequest().getCharacterEncoding()));
+
+                    FileUtils.copyInputStreamToFile(inputStream, file);
+                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+                }
+                catch (IOException e)
+                {
+                    logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
+                    factory.setRawData(rawData);
+                    factory.setUploadedData(Collections.emptyMap());
+
+                    // Create an ExpData for the results if none exists in the outputData map
+                    DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
+                }
+            }
+
         }
 
         factory.setInputDatas(inputData)
