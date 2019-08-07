@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
+import {List} from "immutable";
 import * as React from 'react'
 import {Button} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
-
+import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN} from "@glass/domainproperties"
 
 interface IAppState {
     dirty: boolean
     domain: DomainDesign
     domainId: number
-    message: string
-    messageType: string
+    messages?: List<BannerMessage>,
     queryName: string
     returnUrl: string
     schemaName: string
     showConfirm: boolean
     submitting: boolean
+}
+
+interface BannerMessage {
+    message?: string,
+    messageType?: string,
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
@@ -41,20 +45,28 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
+        let messages = List<BannerMessage>().asMutable();
+        if (!((schemaName && queryName) || domainId)) {
+            let msg =  'Missing required parameter: domainId or schemaName and queryName.';
+            let msgType = 'danger';
+            let bannerMsg ={message : msg, messageType : msgType};
+            messages.push(bannerMsg);
+        }
+
         this.state = {
             schemaName,
             queryName,
             domainId,
             returnUrl,
             submitting: false,
-            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.',
+            messages: messages.asImmutable(),
             showConfirm: false,
             dirty: false
         };
     }
 
     componentDidMount() {
-        const { schemaName, queryName, domainId } = this.state;
+        const { schemaName, queryName, domainId, messages } = this.state;
 
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
@@ -62,7 +74,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     this.setState(() => ({domain}));
                 })
                 .catch(error => {
-                    this.setState(() => ({message: error.exception, messageType: 'danger'}));
+                    this.setState(() => ({
+                        messages : messages.set(0, {message: error.exception, messageType: 'danger'})
+                    }));
                 });
         }
 
@@ -91,8 +105,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: true
         });
 
-        let msgForMultipleServerSideErrors = "Multiple fields contain issues that need to be fixed. Review the red highlighted fields below for more information.";
-
         // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
@@ -103,7 +115,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     dirty: false
                 }));
 
-                this.showMessage("Save Successful", 'info');
+                this.showMessage("Save Successful", 'info', 0);
                 window.scrollTo(0, 0);
 
                 if (navigate) {
@@ -112,9 +124,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             })
             .catch((badDomain) => {
 
-                const msg = this.getBannerMessage(badDomain, msgForMultipleServerSideErrors);
+                this.showBannerMessages(badDomain);
 
-                this.showMessage(msg, 'danger');
                 window.scrollTo(0, 0);
 
                 this.setState(() => ({
@@ -124,22 +135,70 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             })
     };
 
-    private getBannerMessage(domain: any, msgForMultipleErrors: string) {
 
-        let msg = undefined;
-        if (domain && domain.domainException && domain.domainException.errors)
-        {
-            if (domain.domainException.errors.size > 1)
-            {
-                msg = msgForMultipleErrors;
+    showBannerMessages = (domain: any) => {
+
+        if (domain.domainException && domain.domainException.errors && domain.domainException.errors.size > 0) {
+
+            let msgList = List<BannerMessage>().asMutable();
+            let errMsg = this.getErrorBannerMessage(domain);
+            if (errMsg !== undefined) {
+                msgList.push({message: errMsg, messageType: 'danger'});
             }
-            else
-            {
-                msg = domain.domainException.exception;
+
+            let warnMsg = this.getWarningBannerMessage(domain);
+            if (warnMsg !== undefined) {
+                msgList.push({message: warnMsg, messageType: 'warning'})
+            }
+
+            this.setState(() => ({
+                messages: msgList.asImmutable()
+            }));
+
+        }
+        else {
+
+            this.setState(() => ({
+                messages: List<BannerMessage>()
+            }));
+        }
+    };
+
+    getErrorBannerMessage = (domain: any) => {
+
+        if (domain && domain.domainException && domain.domainException.errors) {
+            let errors = domain.domainException.get('errors').filter(e => {
+                return e && (e.severity === SEVERITY_LEVEL_ERROR)
+            });
+
+            if (errors && errors.size > 0) {
+                if (errors.size > 1) {
+                    return "Multiple fields contain issues that need to be fixed. Review the red highlighted fields below for more information.";
+                }
+                else {
+                    return errors.get(0).message;
+                }
             }
         }
-        return msg;
-    }
+        return undefined;
+    };
+
+    getWarningBannerMessage = (domain: any) => {
+
+        if (domain && domain.domainException && domain.domainException.errors) {
+            let warnings = domain.domainException.get('errors').filter(e => {return e && (e.severity === SEVERITY_LEVEL_WARN)});
+
+            if (warnings && warnings.size > 0) {
+                if (warnings.size > 1) {
+                    return "Multiple fields may require your attention. Review the yellow highlighted fields below for more information.";
+                }
+                else {
+                    return (warnings.get(0).fieldName + " : " + warnings.get(0).message);
+                }
+            }
+        }
+        return undefined;
+    };
 
     onChangeHandler = (newDomain, dirty) => {
         this.setState((state) => ({
@@ -147,25 +206,21 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
 
-        if (newDomain.domainException) {
-            let msgForMultipleClientSideErrors = "Multiple fields may require your attention. Review the yellow highlighted fields below for more information.";
-            const msg = this.getBannerMessage(newDomain, msgForMultipleClientSideErrors);
-
-            this.showMessage(msg, 'warning');
-        }
+        this.showBannerMessages(newDomain);
     };
 
-    dismissAlert = () => {
-        this.setState({
-            message: undefined,
-            messageType: undefined
-        });
+    dismissAlert = (index: any) => {
+        this.setState(() => ({
+            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
+        }));
     };
 
-    showMessage = (message: string, messageType: string, additionalState?: Partial<IAppState>) => {
+    showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
+
+        const { messages } = this.state;
+
         this.setState(Object.assign({}, additionalState, {
-            message,
-            messageType
+            messages : messages.set(index, {message: message, messageType: messageType})
         }));
     };
 
@@ -229,8 +284,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, message, messageType, showConfirm } = this.state;
-        const isLoading = domain === undefined && message === undefined;
+        const { domain, messages, showConfirm } = this.state;
+        const isLoading = domain === undefined && messages === undefined;
 
         if (isLoading) {
             return <LoadingSpinner/>
@@ -239,7 +294,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <>
                 { showConfirm && this.renderNavigateConfirm() }
-                { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
+                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
+                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
+                }
                 { domain &&
                 <DomainForm
                     domain={domain}
