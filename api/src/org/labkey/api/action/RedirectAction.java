@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2018 LabKey Corporation
+ * Copyright (c) 2008-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.labkey.api.action;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.action.BaseViewAction;
-import org.labkey.api.action.SimpleErrorView;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
@@ -31,12 +31,8 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 
 /**
- * Forked from /server/api/src/org/labkey/api/action/RedirectAction.java
- *
+ * Base class for action that always redirects the client to a different URL.
  * TODO: Subclasses should extend FormHandlerAction instead, and this class should be deleted.
- *
- * Base class for actions that never want to serve up a regular HTTP response page, and always
- * want to redirect the client to a different URL, typically after performing some work.
  *
  * User: adamr
  * Date: September 19, 2007
@@ -44,10 +40,6 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 @Deprecated
 public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 {
-    public RedirectAction()
-    {
-    }
-
     public final ModelAndView handleRequest() throws Exception
     {
         BindException errors = bindParameters(getPropertyValues());
@@ -55,21 +47,21 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
         boolean success = !errors.hasErrors();
 
         if (success && null != form)
-            validate(form, errors);
-        success = !errors.hasErrors();
-
-        if (success)
         {
-            success = doAction(form, errors);
+            validate(form, errors);
+            success = !errors.hasErrors();
         }
 
         if (success)
         {
-            URLHelper s = getSuccessURL(form);
+            URLHelper s = getURL(form, errors);
             if (null != s)
                 throw new RedirectException(s);
-            Logger.getLogger(this.getClass()).warn("NULL redirect URL in action " + this.getClass().getName(), new NullPointerException());
-            errors.reject(ERROR_MSG, "Sorry, I seem to have lost my way and don't know where to go!");
+            if (!errors.hasErrors())
+            {
+                Logger.getLogger(this.getClass()).warn("NULL redirect URL with no error in " + this.getClass().getName(), new NullPointerException());
+                errors.reject(ERROR_MSG, "Sorry, I seem to have lost my way and don't know where to go!");
+            }
         }
 
         return getErrorView(form, errors);
@@ -78,19 +70,12 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 
     protected String getCommandClassMethodName()
     {
-        return "getSuccessURL";
+        return "getURL";
     }
 
-    // TODO: Pass in errors for failure cases?
-    public abstract URLHelper getSuccessURL(FORM form);
+    public abstract @Nullable URLHelper getURL(FORM form, Errors errors) throws Exception;
 
-    @Deprecated // TODO: We want to migrate most RedirectActions to FormHandlerAction and eliminate this method. See #36532.
-    public boolean doAction(FORM form, BindException errors) throws Exception
-    {
-        return true;
-    }
-
-    public BindException bindParameters(PropertyValues m) throws Exception
+    public @NotNull BindException bindParameters(PropertyValues m) throws Exception
     {
         return defaultBindParameters(getCommand(), m);
     }
@@ -111,5 +96,17 @@ public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
     {
         getPageConfig().setTemplate(PageConfig.Template.Dialog);
         return new SimpleErrorView(errors);
+    }
+
+    // TODO: Delete both these methods, after changes have propagated into all SVN branches (Feb, 2019)
+
+    final public URLHelper getSuccessURL(FORM form)
+    {
+        throw new IllegalStateException("Should not implement or call this method");
+    }
+
+    final public boolean doAction(FORM form, BindException errors)
+    {
+        throw new IllegalStateException("Should not implement or call this method");
     }
 }
