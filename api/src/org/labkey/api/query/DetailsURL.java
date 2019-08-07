@@ -285,8 +285,10 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             {
                 try
                 {
-                    if (!expr.startsWith("/")) expr = "/" + expr;
-                        _parsedUrl = new ActionURL(expr);
+                    if (!expr.startsWith("/"))
+                        expr = "/" + expr;
+
+                    _parsedUrl = new ActionURL(expr);
                 }
                 catch (Exception e)
                 {
