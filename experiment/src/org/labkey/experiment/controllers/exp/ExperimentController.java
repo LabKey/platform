@@ -2796,7 +2796,17 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteRunsAction extends MutatingApiAction<DeleteForm>
+    public class DeleteRunsAction extends AbstractDeleteAPIAction
+    {
+        @Override
+        protected void deleteObjects(DeleteForm form)
+        {
+            Set<Integer> ids = form.getIds(false);
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), ids);
+        }
+    }
+
+    private abstract class AbstractDeleteAPIAction extends MutatingApiAction<DeleteForm>
     {
         @Override
         public void validateForm(DeleteForm form, Errors errors)
@@ -2806,13 +2816,20 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(DeleteForm form, BindException errors)
+        public Object execute(DeleteForm form, BindException errors) throws Exception
         {
-            Set<Integer> ids = form.getIds(true);
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), ids);
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                tx.addCommitTask(form::clearSelected, POSTCOMMIT);
 
-            return new ApiSimpleResponse("success", true);
+                deleteObjects(form);
+                tx.commit();
+            }
+
+            return new ApiSimpleResponse("success", !errors.hasErrors());
         }
+
+        protected abstract void deleteObjects(DeleteForm deleteForm) throws Exception;
     }
 
     private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
@@ -2860,6 +2877,33 @@ public class ExperimentController extends SpringActionController
         }
 
         protected abstract void deleteObjects(DeleteForm deleteForm) throws Exception;
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteProtocolByRowIdsAPIAction extends AbstractDeleteAPIAction
+    {
+        private List<ExpProtocol> getProtocols(DeleteForm form)
+        {
+            List<ExpProtocol> protocols = new ArrayList<>();
+            for (int protocolId : form.getIds(false))
+            {
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
+                if (protocol != null)
+                {
+                    protocols.add(protocol);
+                }
+            }
+            return protocols;
+        }
+
+        @Override
+        protected void deleteObjects(DeleteForm deleteForm)
+        {
+            for (ExpProtocol protocol : getProtocols(deleteForm))
+            {
+                protocol.delete(getUser());
+            }
+        }
     }
 
     @RequiresPermission(DeletePermission.class)
