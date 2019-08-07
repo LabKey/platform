@@ -881,14 +881,16 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public void fixupRenderers(final ColumnRenderPropertiesImpl col, BaseColumnInfo columnInfo)
     {
-        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
+        StudyService svc = StudyService.get();
+
+        if (null != svc && AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
         {
             columnInfo.setFk(new LookupForeignKey("Folder", "Label")
             {
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    FilteredTable table = new FilteredTable<>(DbSchema.get("study", DbSchemaType.Module).getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
+                    FilteredTable table = new FilteredTable<>(svc.getDatasetSchema().getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
                     col.setKeyField(true);
                     ContainerForeignKey.initColumn(col, AssayProtocolSchema.this);
