@@ -172,12 +172,24 @@ LABKEY.internal.ZipLoad = new function () {
         var filePath = file.fullPath.split('/');
         filePath.shift();
         var zipProgressName = filePath[filePath.length-1];
+        var fileZipPath = '';
+
+        for(var fp=0; fp<filePath.length; fp++) {
+            if(this.directoryBeingZipped === filePath[fp]) {
+                var index = fp;
+                while(index+1 < filePath.length) {
+                    fileZipPath += '/' + filePath[index+1];
+                    index++;
+                }
+            }
+        }
 
         getCurrentZipFile().update("Adding file - " + zipProgressName);
         getCurrentFileNumber().update(addIndex + '/' + filesBeingZipped.length);
 
-        zipWriter.add(file.fullPath, new zip.BlobReader(file), function () {
+        zipWriter.add(fileZipPath, new zip.BlobReader(file), function () {
             addIndex++;
+            fileZipPath = '';
             if (addIndex < filesBeingZipped.length)
                 nextFile();
             else
