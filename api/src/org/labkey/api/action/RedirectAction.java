@@ -32,7 +32,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * Base class for action that always redirects the client to a different URL.
- * TODO: Subclasses should extend FormHandlerAction instead, and this class should be deleted.
+ * TODO: Subclasses should extend FormHandlerAction or SimpleRedirectAction instead, and this class should be deleted.
  *
  * User: adamr
  * Date: September 19, 2007
