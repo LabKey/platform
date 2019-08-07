@@ -178,14 +178,18 @@ LABKEY.internal.ZipLoad = new function () {
             if(this.directoryBeingZipped === filePath[fp]) {
                 var index = fp;
                 while(index+1 < filePath.length) {
-                    fileZipPath += '/' + filePath[index+1];
-                    index++;
+                    fileZipPath += '/' + filePath[++index];
                 }
             }
         }
 
         getCurrentZipFile().update("Adding file - " + zipProgressName);
         getCurrentFileNumber().update(addIndex + '/' + filesBeingZipped.length);
+
+        if(!fileZipPath.length>0) {
+            dropZone.uploadPanel.showErrorMsg("Relative path of file - " + file.name + " is incorrect");
+            fileZipPath = file.name;
+        }
 
         zipWriter.add(fileZipPath, new zip.BlobReader(file), function () {
             addIndex++;
