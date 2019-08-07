@@ -45,7 +45,7 @@ public class ExperimentRunGroupsView extends VBox
 
             protected void populateButtonBar(DataView view, ButtonBar bar)
             {
-                ActionButton createButton = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(c, currentURL, false), "Create new group");
+                ActionButton createButton = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(c, currentURL, false), "Create new group", ActionButton.Action.POST);
                 createButton.setDisplayPermission(UpdatePermission.class);
                 createButton.setActionType(ActionButton.Action.LINK);
                 bar.add(createButton);
