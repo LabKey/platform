@@ -188,6 +188,7 @@ LABKEY.internal.ZipLoad = new function () {
 
         if(!fileZipPath.length>0) {
             dropZone.uploadPanel.showErrorMsg("Relative path of file - " + file.name + " is incorrect");
+            console.log("Relative path of file - " + file.name + " is incorrect");
             fileZipPath = file.name;
         }
 
