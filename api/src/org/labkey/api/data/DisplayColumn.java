@@ -533,7 +533,10 @@ public abstract class DisplayColumn extends RenderColumn
             return "string";
         else if (Boolean.class.isAssignableFrom(valueClass) || boolean.class.isAssignableFrom(valueClass))
             return "boolean";
-        else if (Integer.class.isAssignableFrom(valueClass) || int.class.isAssignableFrom(valueClass))
+        else if (Integer.class.isAssignableFrom(valueClass) || int.class.isAssignableFrom(valueClass)
+                 || Long.class.isAssignableFrom(valueClass) || long.class.isAssignableFrom(valueClass)
+                 || Byte.class.isAssignableFrom(valueClass) || byte.class.isAssignableFrom(valueClass)
+                 || Short.class.isAssignableFrom(valueClass) || short.class.isAssignableFrom(valueClass))
             return "int";
         else if (Double.class.isAssignableFrom(valueClass) || double.class.isAssignableFrom(valueClass)
                 || Float.class.isAssignableFrom(valueClass) || float.class.isAssignableFrom(valueClass)
