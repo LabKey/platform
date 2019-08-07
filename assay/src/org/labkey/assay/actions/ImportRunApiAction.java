@@ -32,6 +32,8 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -219,6 +221,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         {
             if (!rawData.isEmpty())
             {
+                TSVWriter writer = null;
                 try
                 {
                     // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
@@ -226,23 +229,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
                     // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
                     file = createFile(protocol, dir, "tmp");
-                    StringBuilder builder = new StringBuilder();
-
-                    Set<String> headerFields = rawData.get(0).keySet();
-                    builder.append(String.join("\t", headerFields)).append("\n");
-
-                    for (Map<String, Object> rowMap : rawData)
-                    {
-                        List<String> values = new ArrayList<>();
-                        for (String header : headerFields) {
-                            values.add(rowMap.get(header).toString());
-                        }
-                        builder.append(String.join("\t", values));
-                        builder.append("\n");
-                    }
-                    ByteArrayInputStream inputStream = new ByteArrayInputStream(builder.toString().getBytes(getViewContext().getRequest().getCharacterEncoding()));
-
-                    FileUtils.copyInputStreamToFile(inputStream, file);
+                    writer = new TSVMapWriter(rawData);
+                    writer.write(file);
                     factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
                 }
                 catch (IOException e)
@@ -254,6 +242,14 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                     // Create an ExpData for the results if none exists in the outputData map
                     DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
                 }
+                finally
+                {
+                    if (writer != null)
+                    {
+                        writer.close();
+                    }
+                }
+
             }
 
         }
