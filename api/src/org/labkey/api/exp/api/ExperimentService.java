@@ -271,6 +271,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * (MAB) todo need a builder interface, or at least  parameter bean
      */
     @NotNull
+    @Deprecated
+    default ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
+                                         String nameExpression, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException, SQLException
+    {
+        return SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
+    }
+
+    /**
+     * Use {@link SampleSetService} instead.
+     * (MAB) todo need a builder interface, or at least  parameter bean
+     */
+    @NotNull
+    @Deprecated
     default ExpSampleSet createSampleSet(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                          String nameExpression, @Nullable TemplateInfo templateInfo, Map<String, String> importAliases)
             throws ExperimentException, SQLException
