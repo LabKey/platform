@@ -25,6 +25,7 @@ import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -310,7 +311,13 @@ public class AuthenticationManager
             else
             {
                 HttpServletRequest request = getViewContext().getRequest();
-                PrimaryAuthenticationResult primaryResult = AuthenticationManager.finalizePrimaryAuthentication(request, response);
+
+                PrimaryAuthenticationResult primaryResult = null;
+                // Use instances provide their own authentication
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    primaryResult = AuthenticationManager.finalizePrimaryAuthentication(request, response);
+                }
 
                 if (null != primaryResult.getUser())
                 {
