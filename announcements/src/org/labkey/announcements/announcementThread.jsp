@@ -168,10 +168,6 @@ if (!announcementModel.getResponses().isEmpty())
     <td width="2%">&nbsp;</td>
     <td colspan="2" width="100%">
         <table class="labkey-announcement-thread" width=100%><%
-            for(var a : announcementModel.getResponses()){
-                System.out.println(a.getCreatedBy());
-            }
-
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
