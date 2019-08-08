@@ -178,7 +178,7 @@ LABKEY.internal.ZipLoad = new function () {
             if(this.directoryBeingZipped === filePath[fp]) {
                 var index = fp;
                 while(index+1 < filePath.length) {
-                    fileZipPath += '/' + filePath[++index];
+                    fileZipPath += filePath[++index] +'/';
                 }
             }
         }
@@ -192,7 +192,7 @@ LABKEY.internal.ZipLoad = new function () {
             fileZipPath = file.name;
         }
 
-        zipWriter.add(fileZipPath, new zip.BlobReader(file), function () {
+        zipWriter.add(fileZipPath.slice(0,-1), new zip.BlobReader(file), function () {
             addIndex++;
             fileZipPath = '';
             if (addIndex < filesBeingZipped.length)
