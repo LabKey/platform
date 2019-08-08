@@ -217,41 +217,37 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             factory.setRawData(null);
             factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
         }
-        else if (rawData != null)
+        else if (rawData != null && !rawData.isEmpty())
         {
-            if (!rawData.isEmpty())
+            TSVWriter writer = null;
+            try
             {
-                TSVWriter writer = null;
-                try
-                {
-                    // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
-                    // the original (untransformed) data within, say, a sample management application.
-                    File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
-                    // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-                    file = createFile(protocol, dir, "tmp");
-                    writer = new TSVMapWriter(rawData);
-                    writer.write(file);
-                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
-                }
-                catch (IOException e)
-                {
-                    logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
-                    factory.setRawData(rawData);
-                    factory.setUploadedData(Collections.emptyMap());
-
-                    // Create an ExpData for the results if none exists in the outputData map
-                    DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
-                }
-                finally
-                {
-                    if (writer != null)
-                    {
-                        writer.close();
-                    }
-                }
-
+                // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
+                // the original (untransformed) data within, say, a sample management application.
+                File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+                // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
+                file = createFile(protocol, dir, "tmp");
+                writer = new TSVMapWriter(rawData);
+                writer.write(file);
+                factory.setRawData(null);
+                factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
             }
+            catch (IOException e)
+            {
+                logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
+                factory.setRawData(rawData);
+                factory.setUploadedData(Collections.emptyMap());
 
+                // Create an ExpData for the results if none exists in the outputData map
+                DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
+            }
+            finally
+            {
+                if (writer != null)
+                {
+                    writer.close();
+                }
+            }
         }
 
         factory.setInputDatas(inputData)
