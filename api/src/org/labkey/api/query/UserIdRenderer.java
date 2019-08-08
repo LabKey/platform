@@ -74,7 +74,8 @@ public class UserIdRenderer extends DataColumn
     {
         var container = ctx.getContainer();
         var loggedInUser = ctx.getViewContext().getUser();
-        if (SecurityManager.canSeeUserDetails(container, loggedInUser))
+        
+        if (SecurityManager.canSeeUserDetails(container, loggedInUser) && !isGuestUserId(getBoundColumn().getValue(ctx)))
         {
             Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
             if (displayedUserId != null)

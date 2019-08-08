@@ -184,28 +184,28 @@ public class AnnouncementModel extends Entity implements Serializable
     public String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail)
     {
         String result = UserManager.getDisplayNameOrUserId(getCreatedBy(), currentUser);
+        User createdByUser = UserManager.getUser(getCreatedBy());
 
-        if (includeGroups)
+        if (createdByUser != null)
         {
-            User user = UserManager.getUser(getCreatedBy());
+            Container container = ContainerManager.getForId(getContainerId());
 
-            if (null != user)
+            boolean hasPermissions = SecurityManager.canSeeUserDetails(container, currentUser);
+            if ((htmlFormatted && !forEmail) && !createdByUser.isGuest() && hasPermissions)
             {
-                Container container = ContainerManager.getForId(getContainerId());
-                String groupList = SecurityManager.getGroupList(container, user);
-
-                if (htmlFormatted && !forEmail)
-                {
-                    result = "<a class=\"announcement-title-link\" href=\"" +
-                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, user.getUserId(), null)) +
-                            "\">" + PageFlowUtil.filter(result) + "</a>";
-                }
-
-                if (groupList.length() > 0)
-                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
-
-                return result;
+                result = "<a class=\"announcement-title-link\" href=\"" +
+                        PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, createdByUser.getUserId(), null)) +
+                        "\">" + PageFlowUtil.filter(result) + "</a>";
             }
+
+            if (includeGroups)
+            {
+                String groupList = SecurityManager.getGroupList(container, createdByUser);
+                if (groupList.length() > 0){
+                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
+                }
+            }
+            return result;
         }
 
         return htmlFormatted ? PageFlowUtil.filter(result) : result;
