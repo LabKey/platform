@@ -37,8 +37,13 @@ public interface TemplateProperties
 
     default boolean isDisplay()
     {
+        return isDisplay(true);
+    }
+
+    default boolean isDisplay(boolean inherit)
+    {
         String isDisplay = getShowByDefault();
-        String displayProp = getProperty(getDisplayPropertyName());
+        String displayProp = getProperty(getDisplayPropertyName(), inherit);
 
         if (displayProp != null)
         {
@@ -54,7 +59,12 @@ public interface TemplateProperties
 
     default String getModule()
     {
-        return getProperty(getModulePropertyName());
+        return getModule(true);
+    }
+
+    default String getModule(boolean inherit)
+    {
+        return getProperty(getModulePropertyName(), inherit);
     }
 
     default void setModule(String module)
@@ -91,11 +101,25 @@ public interface TemplateProperties
         else
             throw new IllegalStateException("Container is null for this TemplateProperty");
 
-        map.put(propName, value);
+        if (value == null)
+            map.remove(propName);
+        else
+            map.put(propName, value);
         map.save();
     }
 
     private String getProperty(String propName)
+    {
+        return getProperty(propName, true);
+    }
+
+    /**
+     * Helper to pull property values from the appropriate scopes
+     *
+     * @param inherit if true will inherit from the site root if the property is not defined in the
+     *                container
+     */
+    private String getProperty(String propName, boolean inherit)
     {
         Map<String, String> map;
         Container container = getContainer();
@@ -106,10 +130,10 @@ public interface TemplateProperties
             if (!container.isRoot())
             {
                 map = PropertyManager.getProperties(container.getProject(), getDisplayConfigs());
-                if (map.containsKey(propName))
+                if (map.containsKey(propName) || !inherit)
                     return map.get(propName);
             }
-            map = PropertyManager.getProperties(container, getDisplayConfigs());
+            map = PropertyManager.getProperties(getDisplayConfigs());
             return map.get(propName);
         }
         else
