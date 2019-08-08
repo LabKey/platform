@@ -219,20 +219,18 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
         else if (rawData != null && !rawData.isEmpty())
         {
-            TSVWriter writer = null;
-            try
+            // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
+            // the original (untransformed) data within, say, a sample management application.
+            File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+            // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
+            file = createFile(protocol, dir, "tmp");
+            try (TSVMapWriter tsvWriter = new TSVMapWriter(rawData))
             {
-                // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
-                // the original (untransformed) data within, say, a sample management application.
-                File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
-                // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-                file = createFile(protocol, dir, "tmp");
-                writer = new TSVMapWriter(rawData);
-                writer.write(file);
+                tsvWriter.write(file);
                 factory.setRawData(null);
                 factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
             }
-            catch (IOException e)
+            catch (Exception e)
             {
                 logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
                 factory.setRawData(rawData);
@@ -240,13 +238,6 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
                 // Create an ExpData for the results if none exists in the outputData map
                 DefaultAssayRunCreator.generateResultData(getUser(), getContainer(), provider, rawData, outputData);
-            }
-            finally
-            {
-                if (writer != null)
-                {
-                    writer.close();
-                }
             }
         }
 
