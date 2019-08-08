@@ -216,8 +216,9 @@ LABKEY.internal.FileDrop = new function () {
         Dropzone.prototype.drop = function (e) {
             var patterns = Dropzone.patterns;
             var isFirefox;
+            var isEdge;
 
-            if (window.navigator.userAgent.indexOf("Edge") > -1 || patterns.length === 0) {
+            if (patterns.length === 0) {
                 Dropzone.prototype._originalDrop(e, this);
             }
             else {
@@ -225,6 +226,7 @@ LABKEY.internal.FileDrop = new function () {
                     return;
                 }
                 isFirefox = window.navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
+                isEdge = window.navigator.userAgent.indexOf("Edge") > -1;
 
                 var items = e.dataTransfer.items;
 
@@ -242,7 +244,7 @@ LABKEY.internal.FileDrop = new function () {
                     }
                 }
 
-                LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns, isFirefox);
+                LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns, isFirefox, isEdge);
             }
         };
 

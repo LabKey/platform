@@ -13,6 +13,7 @@ LABKEY.internal.ZipLoad = new function () {
     var dropZone;
     var filePattern =new RegExp(".*\\.zipme$");
     var checkReadEntriesByBatch;
+    var edgeBrowser;
     var testFile = false;
 
     var zipWriter, writer;
@@ -460,6 +461,11 @@ LABKEY.internal.ZipLoad = new function () {
                     }
                 }
                 tr.zip = true;
+                if(edgeBrowser) {
+                    getZipError().update('Zipping of Mass Spec directory, ' + parentItemName +', not supported in Edge.'+ '\\n' + 'Please manually create a Zip file for it, and upload that file instead.');
+                    getZipErrorWindow().show();
+                    zipFail();
+                }
             }
             else if (tr.directories.length > 0) { // pattern directory name not matched with tree's directory, check all the subDirs of tree
                 var dirMatch = false;
@@ -703,13 +709,14 @@ LABKEY.internal.ZipLoad = new function () {
     }
 
     return {
-        zipLoad: function (entries, me, patterns, isFirefox) {
+        zipLoad: function (entries, me, patterns, isFirefox, isEdge) {
             dirPatterns = patterns;
             dropZone = me;
             itemsDropped = entries;
             itemCount = itemsDropped.length-1;
             testFilesToZip = [];
             checkReadEntriesByBatch = isFirefox;
+            edgeBrowser = isEdge;
             _zipLoad(itemsDropped[itemCount]);
         }
     }
