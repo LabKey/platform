@@ -667,7 +667,6 @@ public class PropertyController extends SpringActionController
             {
                 Optional<MultipartFile> opt = fileMap.values().stream().findAny();
                 MultipartFile file = opt.orElse(null);
-                List<GWTPropertyDescriptor> fields = new ArrayList<>();
                 DataLoader loader = null;
 
                 if (file != null)
