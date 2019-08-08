@@ -1118,30 +1118,29 @@ public class UserManager
         return relationships.stream().anyMatch(existing::contains);
     }
 
-    public static String getFormattedName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail, int displayedUserId)
+    public static String getFormattedName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail, int formattedUserId)
     {
         String result = "";
+        User formattedUser = getUser(formattedUserId);
 
         if (currentUser != null)
         {
-            result = UserManager.getDisplayNameOrUserId(currentUser.getUserId(), currentUser);
-            User createdByUser = getUser(displayedUserId);
-
-            if (createdByUser != null)
+            result = formattedUser.getDisplayName(currentUser);
+            if (formattedUser != null)
             {
                 Container container = HttpView.currentContext().getContainer();
 
                 boolean hasPermissions = SecurityManager.canSeeUserDetails(container, currentUser);
-                if ((htmlFormatted && !forEmail) && !createdByUser.isGuest() && hasPermissions)
+                if ((htmlFormatted && !forEmail) && !formattedUser.isGuest() && hasPermissions)
                 {
                     result = "<a class=\"announcement-title-link\" href=\"" +
-                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, createdByUser.getUserId(), null)) +
+                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, formattedUser.getUserId(), null)) +
                             "\">" + PageFlowUtil.filter(result) + "</a>";
                 }
 
                 if (includeGroups)
                 {
-                    String groupList = SecurityManager.getGroupList(container, createdByUser);
+                    String groupList = SecurityManager.getGroupList(container, formattedUser);
                     if (groupList.length() > 0)
                     {
                         result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
