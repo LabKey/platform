@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -80,7 +81,7 @@ else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminP
 <table style="table-layout:fixed;width:100%">
 <tr>
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=text(announcementModel.getCreatedByName(bean.includeGroups, user, true, false))%></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=text(UserManager.getCreatedByName(bean.includeGroups, user, true, false, announcementModel.getCreatedBy()))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
@@ -171,7 +172,7 @@ if (!announcementModel.getResponses().isEmpty())
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
-                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=text(r.getCreatedByName(bean.includeGroups, user, true, false) + " responded:")%></td>
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=text(UserManager.getCreatedByName(bean.includeGroups, user, true, false, r.getCreatedBy()) + " responded:")%></td>
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {

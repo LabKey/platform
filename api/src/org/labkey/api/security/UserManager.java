@@ -1117,4 +1117,34 @@ public class UserManager
         Set<UserRelationships> existing = getRelationships(user, other);
         return relationships.stream().anyMatch(existing::contains);
     }
+
+    public static String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail, int createdByUserId)
+    {
+        String result = UserManager.getDisplayNameOrUserId(createdByUserId, currentUser);
+        User createdByUser = getUser(createdByUserId);
+
+        if (createdByUser != null)
+        {
+            Container container = HttpView.currentContext().getContainer();
+
+            boolean hasPermissions = SecurityManager.canSeeUserDetails(container, currentUser);
+            if ((htmlFormatted && !forEmail) && !createdByUser.isGuest() && hasPermissions)
+            {
+                result = "<a class=\"announcement-title-link\" href=\"" +
+                        PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, createdByUser.getUserId(), null)) +
+                        "\">" + PageFlowUtil.filter(result) + "</a>";
+            }
+
+            if (includeGroups)
+            {
+                String groupList = SecurityManager.getGroupList(container, createdByUser);
+                if (groupList.length() > 0){
+                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
+                }
+            }
+            return result;
+        }
+
+        return htmlFormatted ? PageFlowUtil.filter(result) : result;
+    }
 }
