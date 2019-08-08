@@ -2796,22 +2796,58 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteRunsAction extends MutatingApiAction<DeleteForm>
+    public class DeleteRunsAction extends MutatingApiAction<CascadeDeleteForm>
     {
         @Override
-        public void validateForm(DeleteForm form, Errors errors)
+        public void validateForm(CascadeDeleteForm form, Errors errors)
         {
             if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
                 errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
         }
 
         @Override
-        public ApiResponse execute(DeleteForm form, BindException errors)
+        public ApiResponse execute(CascadeDeleteForm form, BindException errors)
         {
-            Set<Integer> ids = form.getIds(true);
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), ids);
+            Set<Integer> runIdsToDelete = new HashSet<>(form.getIds(true));
 
-            return new ApiSimpleResponse("success", true);
+            if (form.isCascade())
+            {
+                for (int runId : runIdsToDelete)
+                {
+                    ExpRun run = ExperimentService.get().getExpRun(runId);
+                    if (run != null)
+                        addReplacesRuns(run, runIdsToDelete);
+                }
+            }
+
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), runIdsToDelete);
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            response.put("runIdsDeleted", runIdsToDelete);
+            return response;
+        }
+
+        private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+        {
+            for (ExpRun replacedRun : run.getReplacesRuns())
+            {
+                runIds.add(replacedRun.getRowId());
+                addReplacesRuns(replacedRun, runIds);
+            }
+        }
+    }
+
+    public static class CascadeDeleteForm extends DeleteForm
+    {
+        private boolean _cascade;
+
+        public boolean isCascade()
+        {
+            return _cascade;
+        }
+
+        public void setCascade(boolean cascade)
+        {
+            _cascade = cascade;
         }
     }
 
