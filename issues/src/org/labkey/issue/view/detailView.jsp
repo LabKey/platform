@@ -238,9 +238,9 @@
             <%=text(bean.renderAdditionalDetailInfo())%>
         </table></td>
         <td valign="top"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=text(UserManager.getCreatedByName(false, user, true, false, issue.getCreatedBy()))%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=text(UserManager.getCreatedByName(false, user, true, false, issue.getModifiedBy()))%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " + UserManager.getCreatedByName(false, user, true, false, issue.getResolvedBy()) : "")%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=text(UserManager.getFormattedName(false, user, true, false, issue.getCreatedBy()))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=text(UserManager.getFormattedName(false, user, true, false, issue.getModifiedBy()))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " + UserManager.getFormattedName(false, user, true, false, issue.getResolvedBy()) : "")%></td></tr>
             <tr><%=text(bean.renderLabel(bean.getLabel("Resolution", false)))%><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {%>
@@ -307,7 +307,7 @@ if (!issue.getComments().contains(comment))
         <table width="100%"><tr><td class="comment-created" align="left"><b>
             <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td class="comment-created-by" align="right"><b>
-            <%=text(UserManager.getCreatedByName(false, user, true, false, comment.getCreatedBy()))%>
+            <%=text(UserManager.getFormattedName(false, user, true, false, comment.getCreatedBy()))%>
         </b></td></tr></table>
         <%
             if (!issue.getComments().contains(comment))

@@ -1118,31 +1118,37 @@ public class UserManager
         return relationships.stream().anyMatch(existing::contains);
     }
 
-    public static String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail, int createdByUserId)
+    public static String getFormattedName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail, int displayedUserId)
     {
-        String result = UserManager.getDisplayNameOrUserId(createdByUserId, currentUser);
-        User createdByUser = getUser(createdByUserId);
+        String result = "";
 
-        if (createdByUser != null)
+        if (currentUser != null)
         {
-            Container container = HttpView.currentContext().getContainer();
+            result = UserManager.getDisplayNameOrUserId(currentUser.getUserId(), currentUser);
+            User createdByUser = getUser(displayedUserId);
 
-            boolean hasPermissions = SecurityManager.canSeeUserDetails(container, currentUser);
-            if ((htmlFormatted && !forEmail) && !createdByUser.isGuest() && hasPermissions)
+            if (createdByUser != null)
             {
-                result = "<a class=\"announcement-title-link\" href=\"" +
-                        PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, createdByUser.getUserId(), null)) +
-                        "\">" + PageFlowUtil.filter(result) + "</a>";
-            }
+                Container container = HttpView.currentContext().getContainer();
 
-            if (includeGroups)
-            {
-                String groupList = SecurityManager.getGroupList(container, createdByUser);
-                if (groupList.length() > 0){
-                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
+                boolean hasPermissions = SecurityManager.canSeeUserDetails(container, currentUser);
+                if ((htmlFormatted && !forEmail) && !createdByUser.isGuest() && hasPermissions)
+                {
+                    result = "<a class=\"announcement-title-link\" href=\"" +
+                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, createdByUser.getUserId(), null)) +
+                            "\">" + PageFlowUtil.filter(result) + "</a>";
                 }
+
+                if (includeGroups)
+                {
+                    String groupList = SecurityManager.getGroupList(container, createdByUser);
+                    if (groupList.length() > 0)
+                    {
+                        result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
+                    }
+                }
+                return result;
             }
-            return result;
         }
 
         return htmlFormatted ? PageFlowUtil.filter(result) : result;

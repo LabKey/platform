@@ -944,7 +944,7 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-                    return UserManager.getCreatedByName(notificationBean.includeGroups, notificationBean.recipient, false, true, notificationBean.announcementModel.getCreatedBy());
+                    return UserManager.getFormattedName(notificationBean.includeGroups, notificationBean.recipient, false, true, notificationBean.announcementModel.getCreatedBy());
                 }
             });
 
