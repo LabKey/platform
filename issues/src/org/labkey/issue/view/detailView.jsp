@@ -269,7 +269,7 @@
             }%>
         </table></td>
         <td valign="top" width="33%"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= text(issue.getClosedBy() != null ? " by " + UserManager.getFormattedName(false, user, true, false, issue.getClosedBy()) : "" )%></td></tr>
             <%
                 if (hasUpdatePerms)
                 {%>
