@@ -307,7 +307,7 @@ if (!issue.getComments().contains(comment))
         <table width="100%"><tr><td class="comment-created" align="left"><b>
             <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td class="comment-created-by" align="right"><b>
-            <%=text(UserManager.getCreatedByName(false, user, true, false, issue.getCreatedBy()))%>
+            <%=text(UserManager.getCreatedByName(false, user, true, false, comment.getCreatedBy()))%>
         </b></td></tr></table>
         <%
             if (!issue.getComments().contains(comment))
