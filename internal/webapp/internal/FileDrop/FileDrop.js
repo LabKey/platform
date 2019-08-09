@@ -216,7 +216,6 @@ LABKEY.internal.FileDrop = new function () {
         Dropzone.prototype.drop = function (e) {
             var patterns = Dropzone.patterns;
             var isFirefox;
-            var isEdge;
 
             if (patterns.length === 0) {
                 Dropzone.prototype._originalDrop(e, this);
@@ -226,8 +225,6 @@ LABKEY.internal.FileDrop = new function () {
                     return;
                 }
                 isFirefox = window.navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
-                isEdge = window.navigator.userAgent.indexOf("Edge") > -1;
-
                 var items = e.dataTransfer.items;
 
                 this.emit("drop", e);
@@ -244,7 +241,7 @@ LABKEY.internal.FileDrop = new function () {
                     }
                 }
 
-                LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns, isFirefox, isEdge);
+                LABKEY.internal.ZipLoad.zipLoad(this.entries, me, patterns, isFirefox);
             }
         };
 
