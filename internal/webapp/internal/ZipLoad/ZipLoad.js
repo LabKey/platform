@@ -249,18 +249,22 @@ LABKEY.internal.ZipLoad = new function () {
             }
         }
 
+        var zipBlobBlob = new Blob([zippedBlob], {type: 'application/zip'});
+        zipBlobBlob.lastModified = Date.now();
+        zipBlobBlob.name = dirName + '.zip';
+
         var zipBlobFile = new File([zippedBlob], dirName + '.zip', {
             type: 'application/zip',
             lastModified: Date.now()
         });
 
         if(testFile) {
-            zipBlobFile.fullPath = dirName + '.zip';
+            zipBlobBlob.fullPath = dirName + '.zip';
         }
         else {
-            zipBlobFile.fullPath = correctPath + '.zip';
+            zipBlobBlob.fullPath = correctPath + '.zip';
         }
-        dropZone.addFile(zipBlobFile);
+        dropZone.addFile(zipBlobBlob);
 
         moveToNextDirectory();
     }
