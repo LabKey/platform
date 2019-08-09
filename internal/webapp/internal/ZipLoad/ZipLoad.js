@@ -635,10 +635,9 @@ LABKEY.internal.ZipLoad = new function () {
                         _entry.file(function (file) {
                             fileCbCount--;
 
-                            var updatedFile = new File([file], file.name, {type: file.type, lastModified: file.lastModified, lastModifiedDate: file.lastModifiedDate});
-                            updatedFile.fullPath = entry.fullPath + "/" + file.name;
+                            file.fullPath = entry.fullPath + "/" + file.name;
 
-                            allFiles.push(updatedFile);
+                            allFiles.push(file);
 
                             if (dirCbCount === 0 && fileCbCount === 0) {
                                 callback();
