@@ -1468,8 +1468,8 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ModelAndView result = super.getView(form, errors);
             _print = true;
+            ModelAndView result = super.getView(form, errors);
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
                 title = form.getSchemaName();
