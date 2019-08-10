@@ -192,6 +192,7 @@ LABKEY.internal.ZipLoad = new function () {
             fileZipPath = file.name;
         }
 
+        //Issue 38826: removing extra slash from file path
         zipWriter.add(fileZipPath.slice(0,-1), new zip.BlobReader(file), function () {
             addIndex++;
             fileZipPath = '';
