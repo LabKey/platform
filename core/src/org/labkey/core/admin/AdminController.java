@@ -2565,7 +2565,7 @@ public class AdminController extends SpringActionController
         {
             String buttonHTML = "";
             if (getUser().hasRootAdminPermission())
-                buttonHTML += PageFlowUtil.button("Reset All Statistics").onClick(PageFlowUtil.postOnClickJavaScript(getResetQueryStatisticsURL())) + "&nbsp;";
+                buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()).usePost() + "&nbsp;";
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,

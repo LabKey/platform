@@ -199,7 +199,7 @@
 <% if (user != null && user.isImpersonated()) {
     ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()); %>
             <li>
-                <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(stopUrl))%>" class="btn btn-primary">Stop impersonating</a>
+                <%=button("Stop impersonating").href(stopUrl).addClass("btn btn-primary").primary(true).usePost()%>
             </li>
 <% } %>
 
@@ -207,7 +207,7 @@
     ActionURL exitUrl = urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()); %>
             <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
             <li>
-                <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(exitUrl))%>" class="btn btn-primary">Exit Admin Mode</a>
+                <%=button("Exit Admin Mode").href(exitUrl).addClass("btn btn-primary").primary(true).usePost()%>
             </li>
 <% } %>
         </ul>

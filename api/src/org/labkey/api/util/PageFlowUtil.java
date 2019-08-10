@@ -1249,29 +1249,17 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified href, provided a CSRF token. Use with ButtonBuilder to create
-     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
-     *  NavTree as an option (e.g., usePost()).
+     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. Use with NavTree to create a
+     *  menu item that posts. TODO: Integrate this into NavTree as an option (e.g., usePost()).
      */
     public static String postOnClickJavaScript(String href)
     {
-        return "var form = document.createElement('form');\n" +
-            "form.setAttribute('method', 'post');\n" +
-            "form.setAttribute('action', '" + href + "');\n" +
-            "var input = document.createElement('input');\n" +
-            "input.type = 'hidden';\n" +
-            "input.name = '" + CSRFUtil.csrfName + "';\n" +
-            "input.value = LABKEY.CSRF;\n" +
-            "form.appendChild(input);\n" +
-            "form.style.display = 'hidden';\n" +
-            "document.body.appendChild(form)\n" +
-            "form.submit();";
+        return "LABKEY.Utils.postToAction('" + href + "');";
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified url, providing a CSRF token. Use with ButtonBuilder to create
-     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
-     *  NavTree as an option (see LinkBuilder.usePost()).
+     *  Returns an onClick handler that posts to the specified url, providing a CSRF token. Use with NavTree to create a
+     *  menu item that posts. TODO: Integrate this into NavTree as an option (see LinkBuilder.usePost()).
      */
     public static String postOnClickJavaScript(ActionURL url)
     {

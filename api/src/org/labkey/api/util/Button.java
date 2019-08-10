@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
@@ -50,6 +51,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean enabled;
     private final boolean submit;
     private final boolean textAsHTML;
+    private final boolean usePost;
 
     private Button(ButtonBuilder builder)
     {
@@ -67,6 +69,10 @@ public class Button extends DisplayElement implements HasHtmlString
         this.submit = builder.submit;
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
+        this.usePost = builder.usePost;
+
+        if (this.usePost && null != this.onClick)
+            throw new IllegalStateException("Can't specify usePost and onClick");
     }
 
     public String getCssClass()
@@ -132,13 +138,12 @@ public class Button extends DisplayElement implements HasHtmlString
     private String generateOnClick(String id)
     {
         // prepare onclick method and overrides
-        final String onClick = getOnClick() == null ? "" : getOnClick();
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href) : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
 
         // quoted CSS classes used in scripting
-        final String qCls = quote + CLS + quote;
         final String qDisabledCls = quote + DISABLEDCLS + quote;
 
         // check if the disabled class is applied, if so, do nothing onclick
@@ -198,11 +203,12 @@ public class Button extends DisplayElement implements HasHtmlString
 
         if (isSubmit())
         {
-            sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position:absolute;left:-9999px;width:1px;height:1px;\" ");
-            sb.append("id=\"").append(submitId).append("\"/>");
+            sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position:absolute;left:-9999px;width:1px;height:1px;\"");
+            sb.append(" id=\"").append(submitId).append("\"/>");
         }
 
         sb.append("<a class=\"").append(CLS);
+
         if (!isEnabled())
             sb.append(" ").append(DISABLEDCLS);
 
@@ -222,26 +228,35 @@ public class Button extends DisplayElement implements HasHtmlString
 
         // id
         if (getId() != null)
-            sb.append("id=\"").append(PageFlowUtil.filter(getId())).append("\" ");
+            sb.append(" id=\"").append(PageFlowUtil.filter(getId())).append("\"");
         // -- id
 
         // href
         if (getHref() != null)
-            sb.append("href=\"").append(PageFlowUtil.filter(getHref())).append("\" ");
+        {
+            sb.append(" href=\"");
+
+            if (usePost)
+                sb.append("javascript:void(0);");
+            else
+                sb.append(PageFlowUtil.filter(getHref()));
+
+            sb.append("\"");
+        }
         //-- href
 
         // onclick
-        sb.append("onclick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
+        sb.append(" onclick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\"");
         //-- onclick
 
         // attributes -- expected to be pre-filtered
-        sb.append(getAttributes() == null ? "" : getAttributes());
+        sb.append(getAttributes() == null ? "" : " " + getAttributes());
         //-- attributes
 
         String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
         if (tip != null)
         {
-            sb.append("data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\" ");
+            sb.append(" data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\"");
         }
 
         sb.append(">");
@@ -327,12 +342,6 @@ public class Button extends DisplayElement implements HasHtmlString
         {
             this.textAsHTML = textAsHTML;
             return this;
-        }
-
-        @Override
-        public ButtonBuilder usePost()
-        {
-            throw new IllegalStateException("Not yet implemented for ButtonBuilder");
         }
 
         @NotNull
