@@ -19,23 +19,18 @@ import * as React from 'react'
 import {Button} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN} from "@glass/domainproperties"
+import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
 
 interface IAppState {
     dirty: boolean
     domain: DomainDesign
     domainId: number
-    messages?: List<BannerMessage>,
+    messages?: List<IBannerMessage>,
     queryName: string
     returnUrl: string
     schemaName: string
     showConfirm: boolean
     submitting: boolean
-}
-
-interface BannerMessage {
-    message?: string,
-    messageType?: string,
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
@@ -45,7 +40,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
-        let messages = List<BannerMessage>().asMutable();
+        let messages = List<IBannerMessage>().asMutable();
         if (!((schemaName && queryName) || domainId)) {
             let msg =  'Missing required parameter: domainId or schemaName and queryName.';
             let msgType = 'danger';
@@ -124,89 +119,27 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             })
             .catch((badDomain) => {
 
-                this.showBannerMessages(badDomain);
+                let bannerMsgs = getBannerMessages(badDomain);
 
                 window.scrollTo(0, 0);
 
                 this.setState(() => ({
                     domain: badDomain,
-                    submitting: false
+                    submitting: false,
+                    messages: bannerMsgs
                 }));
             })
     };
 
-
-    showBannerMessages = (domain: any) => {
-
-        if (domain.domainException && domain.domainException.errors && domain.domainException.errors.size > 0) {
-
-            let msgList = List<BannerMessage>().asMutable();
-            let errMsg = this.getErrorBannerMessage(domain);
-            if (errMsg !== undefined) {
-                msgList.push({message: errMsg, messageType: 'danger'});
-            }
-
-            let warnMsg = this.getWarningBannerMessage(domain);
-            if (warnMsg !== undefined) {
-                msgList.push({message: warnMsg, messageType: 'warning'})
-            }
-
-            this.setState(() => ({
-                messages: msgList.asImmutable()
-            }));
-
-        }
-        else {
-
-            this.setState(() => ({
-                messages: List<BannerMessage>()
-            }));
-        }
-    };
-
-    getErrorBannerMessage = (domain: any) => {
-
-        if (domain && domain.domainException && domain.domainException.errors) {
-            let errors = domain.domainException.get('errors').filter(e => {
-                return e && (e.severity === SEVERITY_LEVEL_ERROR)
-            });
-
-            if (errors && errors.size > 0) {
-                if (errors.size > 1) {
-                    return "Multiple fields contain issues that need to be fixed. Review the red highlighted fields below for more information.";
-                }
-                else {
-                    return errors.get(0).message;
-                }
-            }
-        }
-        return undefined;
-    };
-
-    getWarningBannerMessage = (domain: any) => {
-
-        if (domain && domain.domainException && domain.domainException.errors) {
-            let warnings = domain.domainException.get('errors').filter(e => {return e && (e.severity === SEVERITY_LEVEL_WARN)});
-
-            if (warnings && warnings.size > 0) {
-                if (warnings.size > 1) {
-                    return "Multiple fields may require your attention. Review the yellow highlighted fields below for more information.";
-                }
-                else {
-                    return (warnings.get(0).fieldName + " : " + warnings.get(0).message);
-                }
-            }
-        }
-        return undefined;
-    };
-
     onChangeHandler = (newDomain, dirty) => {
+
+        let bannerMsgs = getBannerMessages(newDomain);
+
         this.setState((state) => ({
             domain: newDomain,
-            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
+            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
+            messages: bannerMsgs
         }));
-
-        this.showBannerMessages(newDomain);
     };
 
     dismissAlert = (index: any) => {
