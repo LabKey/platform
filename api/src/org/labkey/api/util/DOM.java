@@ -663,7 +663,11 @@ public class DOM
             ((Stream<Object>) body).forEach(i -> appendBody(builder, i));
         }
         else
-            throw new IllegalArgumentException(body.getClass().getName());
+        {
+            if (body instanceof Attribute)
+                throw new IllegalArgumentException("Unexpected type in element contents: " + body.getClass().getName() + ".  Did you forget to wrap your attributes with 'at()'?");
+            throw new IllegalArgumentException("Unexpected type in element contents: " + body.getClass().getName());
+        }
         return builder;
     }
 
