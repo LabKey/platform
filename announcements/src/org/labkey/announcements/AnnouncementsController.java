@@ -2581,7 +2581,7 @@ public class AnnouncementsController extends SpringActionController
                         url.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                         url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                         url.addParameter("unsubscribe", true);
-                        buttons.addChild("unsubscribe").setScript(PageFlowUtil.postOnClickJavaScript(url));
+                        buttons.addChild("unsubscribe", url).usePost();
                     }
                     else
                     {
@@ -2619,7 +2619,7 @@ public class AnnouncementsController extends SpringActionController
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                             subscribeThreadURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                            subscribeTree.addChild("thread").setScript(PageFlowUtil.postOnClickJavaScript(subscribeThreadURL));
+                            subscribeTree.addChild("thread", subscribeThreadURL).usePost();
                             buttons.addChild(subscribeTree);
                         }
                     }
