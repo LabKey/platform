@@ -28,6 +28,7 @@ import org.labkey.api.defaults.DomainIdForm;
 import org.labkey.api.defaults.SetDefaultValuesAction;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
 import org.labkey.api.study.actions.StudyPickerColumn;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -152,7 +153,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
             for (DisplayColumn displayColumn : columns)
             {
                 ColumnInfo column = displayColumn.getColumnInfo();
-                if (column.getName().equals(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME))
+                if (column.getName().equals(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME) && StudyService.get() != null)
                     newColumns.add(new DefaultStudyPickerColumn(column));
                 else if (column.getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
                     newColumns.add(new DefaultParticipantVisitResolverChooser(displayColumn.getName(), _provider.getParticipantVisitResolverTypes(), column));
