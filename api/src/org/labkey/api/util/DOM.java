@@ -475,8 +475,19 @@ public class DOM
     {
         var ret = new _Attributes();
         map.forEach( (k,v) -> {
-            Attribute a = k instanceof Attribute ? (Attribute)k : Attribute.valueOf((String)k);
-            ret.at(a, v);
+            if (k instanceof Attribute)
+            {
+                ret.at((Attribute) k, v);
+            }
+            else
+            {
+                if (!(k instanceof String))
+                    throw new IllegalStateException("expected Attribute or String");
+                if (((String)k).startsWith("data-"))
+                    ret.data(((String)k).substring("data-".length()), v);
+                else
+                    ret.at(Attribute.valueOf((String)k), v);
+            }
         });
         return ret;
     }
