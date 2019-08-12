@@ -870,8 +870,20 @@ public class QueryPivot extends QueryRelation
         @Override
         public List<FieldKey> getDefaultVisibleColumns()
         {
-            ArrayList<FieldKey> list = new ArrayList<>();
+            // If we've been configured with default columns, use them
+            if (_defaultVisibleColumns != null)
+            {
+                // Translate from Iterable to List
+                List<FieldKey> result = new ArrayList<>();
+                for (FieldKey col : _defaultVisibleColumns)
+                {
+                    result.add(col);
+                }
+                return result;
+            }
 
+            // Otherwise calculate them
+            List<FieldKey> list = new ArrayList<>();
             for (ColumnInfo col : getColumns())
             {
                 if (_aggregates.containsKey(col.getFieldKey().getName()))
