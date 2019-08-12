@@ -171,6 +171,7 @@ public class PopupMenuView extends HttpView<PopupMenu>
         out.write("<li class=\"divider\"></li>");
     }
 
+    // TODO: Delegate to LinkBuilder instead of replicating all of its rendering code here. Call item.toLinkBuilder().
     protected static void renderLink(NavTree item, String cls, Writer out) throws IOException
     {
         // if the item is "selected" and doesn't have have an image cls to use, provide our default
