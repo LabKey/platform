@@ -890,7 +890,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    FilteredTable table = new FilteredTable<>(svc.getDatasetSchema().getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
+                    FilteredTable table = new FilteredTable<>(DbSchema.get("study", DbSchemaType.Module).getTable("study"), AssayProtocolSchema.this, getLookupContainerFilter());
                     ExprColumn col = new ExprColumn(table, "Folder", new SQLFragment("CAST (" + ExprColumn.STR_TABLE_ALIAS + ".Container AS VARCHAR(200))"), JdbcType.VARCHAR);
                     col.setKeyField(true);
                     ContainerForeignKey.initColumn(col, AssayProtocolSchema.this);
