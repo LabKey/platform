@@ -2816,7 +2816,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(DeleteForm form, BindException errors) throws Exception
+        public ApiResponse execute(DeleteForm form, BindException errors) throws Exception
         {
             try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
@@ -2882,28 +2882,28 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteProtocolByRowIdsAPIAction extends AbstractDeleteAPIAction
     {
-        private List<ExpProtocol> getProtocols(DeleteForm form)
-        {
-            List<ExpProtocol> protocols = new ArrayList<>();
-            for (int protocolId : form.getIds(false))
-            {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
-                if (protocol != null)
-                {
-                    protocols.add(protocol);
-                }
-            }
-            return protocols;
-        }
-
         @Override
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            for (ExpProtocol protocol : getProtocols(deleteForm))
+            for (ExpProtocol protocol : getProtocolsForDeletion(deleteForm))
             {
                 protocol.delete(getUser());
             }
         }
+    }
+
+    public static List<ExpProtocol> getProtocolsForDeletion(DeleteForm deleteForm)
+    {
+        List<ExpProtocol> protocols = new ArrayList<>();
+        for (int protocolId : deleteForm.getIds(false))
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
+            if (protocol != null)
+            {
+                protocols.add(protocol);
+            }
+        }
+        return protocols;
     }
 
     @RequiresPermission(DeletePermission.class)
@@ -2921,7 +2921,7 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
         {
             List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
-            List<ExpProtocol> protocols = getProtocols(deleteForm, false);
+            List<ExpProtocol> protocols = getProtocolsForDeletion(deleteForm);
             String noun = "Assay Design";
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
@@ -2951,24 +2951,10 @@ public class ExperimentController extends SpringActionController
             return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
-        private List<ExpProtocol> getProtocols(DeleteForm deleteForm, boolean clearSelection)
-        {
-            List<ExpProtocol> protocols = new ArrayList<>();
-            for (int protocolId : deleteForm.getIds(clearSelection))
-            {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
-                if (protocol != null)
-                {
-                    protocols.add(protocol);
-                }
-            }
-            return protocols;
-        }
-
         @Override
         protected void deleteObjects(DeleteForm deleteForm)
         {
-            for (ExpProtocol protocol : getProtocols(deleteForm, false))
+            for (ExpProtocol protocol : getProtocolsForDeletion(deleteForm))
             {
                 protocol.delete(getUser());
             }
