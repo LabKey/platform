@@ -22,58 +22,58 @@
 
 <script type="text/javascript">
 
-    function deleteExisting(urlToDelete) {
+    function deleteExisting(hostToDelete) {
 
         document.getElementById("delete").value = true;
         document.getElementById("saveAll").value = false;
-        document.getElementById("existingExternalURL").value = urlToDelete;
-        document.forms["existingRedirectURLS"].submit();
+        document.getElementById("existingExternalHost").value = hostToDelete;
+        document.forms["existingRedirectHosts"].submit();
     }
 
     function saveAll() {
 
         //clicking on save will save all the values - changed and unchanged values
         var num = 1;
-        var inputNameExisting = "existingExternalURL" + num;
-        var redirectURLs = "";
+        var inputNameExisting = "existingExternalHost" + num;
+        var redirectHosts = "";
 
         while (null != document.getElementById(inputNameExisting))
         {
-            redirectURLs += (document.getElementById(inputNameExisting).value + "\n");
+            redirectHosts += (document.getElementById(inputNameExisting).value + "\n");
             num++;
-            inputNameExisting = "existingExternalURL" + num;
+            inputNameExisting = "existingExternalHost" + num;
         }
 
         document.getElementById("saveAll").value = true;
-        document.getElementById("existingExternalRedirectURLs").value = redirectURLs;
-        document.forms["existingRedirectURLS"].submit();
+        document.getElementById("existingExternalRedirectHosts").value = redirectHosts;
+        document.forms["existingRedirectHosts"].submit();
     }
 </script>
 
-<labkey:form method="post" name="existingRedirectURLS">
+<labkey:form method="post" name="existingRedirectHosts">
 
     <%
         AdminController.ExternalRedirectForm bean = (AdminController.ExternalRedirectForm) HttpView.currentModel();
     %>
     <table class="labkey-data-region-legacy labkey-show-borders">
         <tr>
-            <th>External Host URL(s)</th>
+            <th>External Redirect Host(s)</th>
             <th></th>
         </tr>
-        <% if (bean.getExistingRedirectURLList().size() == 0) { %>
-            <tr><td colspan="2">No External Redirect Host URLs have been configured.</td></tr>
+        <% if (bean.getExistingRedirectHostList().size() == 0) { %>
+            <tr><td colspan="2">No External Redirect Hosts have been configured.</td></tr>
         <% } %>
 
         <%
             int num = 1;
-            for (String externalRedirectURL : bean.getExistingRedirectURLList()) {
-                String inputNameExisting = "existingExternalURL" + num;
+            for (String externalRedirectHost : bean.getExistingRedirectHostList()) {
+                String inputNameExisting = "existingExternalHost" + num;
         %>
         <tr>
 
-            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(externalRedirectURL)%>" size="80"/></td>
+            <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(externalRedirectHost)%>" size="80"/></td>
 
-            <td><%= button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalRedirectURL) + "\");") %>
+            <td><%= button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalRedirectHost) + "\");") %>
 
             </td>
         </tr>
@@ -82,10 +82,10 @@
             }
         %>
     </table>
-        <% if (bean.getExistingRedirectURLList().size() > 0) { %>
+        <% if (bean.getExistingRedirectHostList().size() > 0) { %>
             <input type="hidden" id="delete" name="delete" value="false" />
-            <input type="hidden" id="existingExternalURL" name="existingExternalURL" value="" />
-            <input type="hidden" id="existingExternalRedirectURLs" name="existingExternalRedirectURLs" value="" />
+            <input type="hidden" id="existingExternalHost" name="existingExternalHost" value="" />
+            <input type="hidden" id="existingExternalRedirectHosts" name="existingExternalRedirectHosts" value="" />
             <tr>
                 <td></td>
                 <td><br/><input type="hidden" id="saveAll" name="saveAll"><%= button("Save").primary(true).onClick("return saveAll();")%>
