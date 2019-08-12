@@ -15,13 +15,14 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.labkey.api.util.DOM.Attribute;
 import static org.labkey.api.util.DOM.*;
@@ -49,7 +50,8 @@ public class Button extends DisplayElement implements HasHtmlString
     private final String href;
     private final String onClick;
     private final String id;
-    private final String attributes;
+    private final Map<String,String> attributes;
+    private final String unsafeAttributes;
     private final String tooltip;
     private final String typeCls;
     private final boolean disableOnClick;
@@ -68,12 +70,14 @@ public class Button extends DisplayElement implements HasHtmlString
         this.onClick = builder.onClick;
         this.iconCls = builder.iconCls;
         this.id = builder.id;
-        this.attributes = builder.attributes;
+        this.attributes = builder.attributes == null ? Collections.emptyMap() : builder.attributes;
         this.disableOnClick = builder.disableOnClick;
         this.enabled = builder.enabled;
         this.submit = builder.submit;
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
+        // TODO kill this usage
+        this.unsafeAttributes = builder.unsafeAttributes;
     }
 
     public String getCssClass()
@@ -116,7 +120,7 @@ public class Button extends DisplayElement implements HasHtmlString
         return id;
     }
 
-    public String getAttributes()
+    public Map<String,String> getAttributes()
     {
         return attributes;
     }
@@ -145,7 +149,6 @@ public class Button extends DisplayElement implements HasHtmlString
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
 
         // quoted CSS classes used in scripting
-        final String qCls = quote + CLS + quote;
         final String qDisabledCls = quote + DISABLEDCLS + quote;
 
         // check if the disabled class is applied, if so, do nothing onclick
@@ -203,7 +206,7 @@ public class Button extends DisplayElement implements HasHtmlString
         final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
         final String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
 
-        var attrs = at(PageFlowUtil.mapFromQueryString(StringUtils.trimToEmpty(attributes)))
+        var attrs = at(attributes)
             .id(getId())
             .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId))
             .data("tt", (null!=tip ? "tooltip" : null))
@@ -213,6 +216,9 @@ public class Button extends DisplayElement implements HasHtmlString
             .cl(isSubmit(),PRIMARY_CLS)
             .cl(isDropdown(),"labkey-down-arrow")
             .cl(iconOnly,"icon-only");
+
+        if (unsafeAttributes != null)
+            attrs.callback(appendable -> { try {appendable.append(unsafeAttributes); } catch (IOException x) {throw new RuntimeException(x);}});
 
         return createHtmlFragment(
             isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
@@ -228,6 +234,8 @@ public class Button extends DisplayElement implements HasHtmlString
         private boolean enabled = true;
         private boolean submit;
         private boolean textAsHTML;
+        // TODO remove usages of attributes(String)
+        private String unsafeAttributes;
 
         public ButtonBuilder(@NotNull String text)
         {
@@ -249,7 +257,7 @@ public class Button extends DisplayElement implements HasHtmlString
         @Deprecated // use Map<String, String> version instead
         public ButtonBuilder attributes(String attributes)
         {
-            this.attributes = attributes;
+            this.unsafeAttributes = attributes;
             return this;
         }
 

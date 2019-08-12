@@ -32,44 +32,44 @@
     <table>
         <tr>
             <td><label for="buttontext">Text</label></td>
-            <td><input id="buttontext" name="text" type="text" value="<%= text(form.getText()) %>"></td>
+            <td><input id="buttontext" name="text" type="text" value="<%= h(form.getText()) %>"></td>
         </tr>
         <tr>
             <td><label for="buttonhtml">Text as HTML</label></td>
-            <td><input id="buttonhtml" name="html" type="checkbox" value="true" <%= form.isHtml() ? "checked=\"checked\"" : ""%>></td>
+            <td><input id="buttonhtml" name="html" type="checkbox" value="true" <%= checked(form.isHtml()) %>></td>
         </tr>
         <tr>
             <td><label for="buttonhref">HREF</label></td>
-            <td><input id="buttonhref" name="href" type="text" style="width: 400px;" value="<%= form.getHref() != null ? form.getHref() : formURL %>"></td>
+            <td><input id="buttonhref" name="href" type="text" style="width: 400px;" value="<%= h(form.getHref() != null ? form.getHref() : formURL) %>"></td>
         </tr>
         <tr>
             <td><label for="buttonenabled">Enabled</label></td>
-            <td><input id="buttonenabled" name="enabled" type="checkbox" value="true" <%= form.isEnabled() ? "checked=\"checked\"" : ""%>></td>
+            <td><input id="buttonenabled" name="enabled" type="checkbox" value="true" <%= checked(form.isEnabled()) %>></td>
         </tr>
         <tr>
             <td><label for="buttondoc">Disable on Click</label></td>
-            <td><input id="buttondoc" name="disableonclick" type="checkbox" value="true" <%= form.isDisableonclick() ? "checked=\"checked\"" : ""%>></td>
+            <td><input id="buttondoc" name="disableonclick" type="checkbox" value="true" <%= checked(form.isDisableonclick()) %>></td>
         </tr>
         <tr>
             <td><label for="buttonsubmit">Submit</label></td>
-            <td><input id="buttonsubmit" name="buttonsubmit" type="checkbox" value="true" <%= form.isButtonsubmit() ? "checked=\"checked\"" : ""%>></td>
+            <td><input id="buttonsubmit" name="buttonsubmit" type="checkbox" value="true" <%= h(form.isButtonsubmit() ? "checked=\"checked\"" : "") %>></td>
         </tr>
         <tr>
             <td><label for="buttonhref">onClick</label></td>
-            <td><textarea rows="15" cols="50" name="onclick"><%= text(form.getOnclick()) %></textarea></td>
+            <td><textarea rows="15" cols="50" name="onclick"><%= h(form.getOnclick()) %></textarea></td>
         </tr>
         <tr>
             <td><label>Attributes</label></td>
             <td>
-                <input name="attrkey1" type="text" placeholder="key" value="<%= text(form.getAttrkey1()) %>">
-                <input name="attrvalue1" type="text" placeholder="value" value="<%= text(form.getAttrvalue1()) %>">
+                <input name="attrkey1" type="text" placeholder="key" value="<%= h(form.getAttrkey1()) %>">
+                <input name="attrvalue1" type="text" placeholder="value" value="<%= h(form.getAttrvalue1()) %>">
             </td>
         </tr>
         <tr>
             <td></td>
             <td>
-                <input name="attrkey2" type="text" placeholder="key" value="<%= text(form.getAttrkey2()) %>">
-                <input name="attrvalue2" type="text" placeholder="value" value="<%= text(form.getAttrvalue2()) %>">
+                <input name="attrkey2" type="text" placeholder="key" value="<%= h(form.getAttrkey2()) %>">
+                <input name="attrvalue2" type="text" placeholder="value" value="<%= h(form.getAttrvalue2()) %>">
             </td>
         </tr>
     </table>

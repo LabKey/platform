@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.unsafe;
@@ -398,6 +399,7 @@ public class DOM
         ArrayList<Map.Entry<Attribute,Object>> attrs = new ArrayList<>();
         Set<String> classes = new TreeSet<>();
         ArrayList<Map.Entry<String,Object>> expandos = null;
+        Consumer<Appendable> callback = null;
 
         _Attributes()
         {
@@ -458,6 +460,14 @@ public class DOM
                 classes.add(falseName);
             return this;
         }
+
+        // horrible hack for temporary backward compatibility
+        public _Attributes callback(Consumer<Appendable> fn)
+        {
+            this.callback = fn;
+            return this;
+        }
+
         @NotNull
         @Override
         public Iterator<Map.Entry<Object, Object>> iterator()
@@ -678,6 +688,12 @@ public class DOM
                     {
                         throw new IllegalArgumentException(String.valueOf(key));
                     }
+                }
+                // TODO again horrible hack, make this go away
+                if (attrs instanceof _Attributes && null != ((_Attributes)attrs).callback)
+                {
+                    builder.append(" ");
+                    ((_Attributes) attrs).callback.accept(builder);
                 }
             }
             builder.append(">");

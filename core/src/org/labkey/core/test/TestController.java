@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TreeMap;
 
 /**
  * User: matthewb
@@ -806,13 +807,12 @@ public class TestController extends SpringActionController
                         .submit(form.isButtonsubmit())
                         .onClick(form.getOnclick());
 
-                String attr = "";
+                var attr = new TreeMap<String,String>();
                 if (form.getAttrkey1() != null)
-                    attr += form.getAttrkey1() + "=" + form.getAttrvalue1();
+                    attr.put(form.getAttrkey1(), form.getAttrvalue1());
                 if (form.getAttrkey2() != null)
-                    attr += form.getAttrkey2() + "=" + form.getAttrvalue2();
-                if (!"".equals(attr))
-                    button.attributes(attr);
+                    attr.put(form.getAttrkey2(), form.getAttrvalue2());
+                button.attributes(attr);
 
                 form.setBuiltButton(button);
             }
