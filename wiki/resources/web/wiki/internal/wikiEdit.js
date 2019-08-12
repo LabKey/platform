@@ -357,7 +357,8 @@ function tinyMceHandleEvent(evt) {
 
     var onCancel = function() {
         // per bug 5957, don't prompt about losing changes if the user clicks cancel
-        setClean();
+        // setClean();
+        LABKEY.setDirty(false);
         _finished = true;
         window.location = _cancelUrl ? _cancelUrl : getRedirUrl();
     };
@@ -373,7 +374,8 @@ function tinyMceHandleEvent(evt) {
                     icon: Ext4.MessageBox.WARNING,
                     fn: function(btnId) {
                         if (btnId == "yes") {
-                            setWikiDirty();
+                            // setWikiDirty();
+                            LABKEY.setDirty(true);
                             _redirUrl = ''; // clear the redir URL since it will be referring to the old name
                             onSave();
                         }
@@ -385,7 +387,8 @@ function tinyMceHandleEvent(evt) {
             });
         }
         else {
-            setWikiDirty();
+            // setWikiDirty();
+            LABKEY.setDirty(true);
         }
     };
 
@@ -407,7 +410,8 @@ function tinyMceHandleEvent(evt) {
             updateControl("body", respJson.body);
         }
 
-        setWikiDirty();
+        // setWikiDirty();
+        LABKEY.setDirty(true);
 
         // hide the convert window
         if (_convertWin) {
@@ -485,7 +489,7 @@ function tinyMceHandleEvent(evt) {
         _doingSave = true;
 
 
-        if (!isDirty() && _wikiProps.entityId && !LABKEY.isDirty()) {
+        if (_wikiProps.entityId && !LABKEY.isDirty()) {
             onSaveComplete();
             return;
         }
@@ -501,7 +505,8 @@ function tinyMceHandleEvent(evt) {
     };
 
     var onSaveComplete = function(statusMessage) {
-        setClean();
+        // setClean();
+        LABKEY.setDirty(false);
         _doingSave = false;
         if (!statusMessage) {
             statusMessage = "Saved.";
@@ -601,6 +606,7 @@ function tinyMceHandleEvent(evt) {
         });
     };
 
+    //delete
     var setClean = function() {
         _wikiProps.isDirty = false;
         _attachments.isDirty = false;
