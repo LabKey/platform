@@ -689,7 +689,7 @@ public class ExperimentController extends SpringActionController
 //    @RequiresLogin
 //    public class SaveMaterialsAction extends MutatingApiAction<SaveMaterialsForm>
 //    {
-//        public ApiResponse execute(SaveMaterialsForm form, BindException errors) throws Exception
+//        public ApiResponse getView(SaveMaterialsForm form, BindException errors) throws Exception
 //        {
 //            UploadMaterialSetForm uploadForm = new UploadMaterialSetForm();
 //            uploadForm.setContainer(getContainer());
@@ -5519,63 +5519,14 @@ public class ExperimentController extends SpringActionController
 
     @RequiresPermission(InsertPermission.class)
     @ActionNames("createRunGroup, createExperiment")
-    public class CreateRunGroupAction extends MutatingApiAction<CreateExperimentForm>
+    public class CreateRunGroupAction extends FormViewAction<CreateExperimentForm>
     {
         @Override
-        public ModelAndView execute(CreateExperimentForm form, BindException errors) throws Exception
+        public ModelAndView getView(CreateExperimentForm form, boolean reshow, BindException errors) throws Exception
         {
             // HACK - convert ExperimentForm to not be a BeanViewForm
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) && !"true".equals(getViewContext().getRequest().getParameter("noPost")))
-            {
-                Experiment exp = form.getBean();
-                if (exp.getName() == null || exp.getName().trim().length() == 0)
-                {
-                    errors.reject(ERROR_MSG, "You must specify a name for the experiment");
-                }
-                else
-                {
-                    int maxNameLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();
-                    if (exp.getName().length() > maxNameLength)
-                    {
-                        errors.reject(ERROR_MSG, "Name of the experiment must be " + maxNameLength + " characters or less.");
-                    }
-                }
-
-                String lsid;
-                int suffix = 1;
-                do
-                {
-                    String template = "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Experiment.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + exp.getName();
-                    if (suffix > 1)
-                    {
-                        template = template + suffix;
-                    }
-                    suffix++;
-                    lsid = LsidUtils.resolveLsidFromTemplate(template, new XarContext("Experiment Creation", getContainer(), getUser()), "Experiment");
-                }
-                while (ExperimentService.get().getExpExperiment(lsid) != null);
-                exp.setLSID(lsid);
-                exp.setContainer(getContainer());
-
-                if (errors.getErrorCount() == 0)
-                {
-                    ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
-                    wrapper.save(getUser());
-
-                    if (form.isAddSelectedRuns())
-                    {
-                        addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
-                    }
-
-                    if (form.getReturnUrl() != null)
-                    {
-                        throw new RedirectException(form.getReturnUrl());
-                    }
-                    throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
-                }
-            }
 
             DataRegion drg = new DataRegion();
 
@@ -5609,10 +5560,77 @@ public class ExperimentController extends SpringActionController
             return new InsertView(drg, errors);
         }
 
+
+        @Override
+        public boolean handlePost(CreateExperimentForm form, BindException errors) throws Exception
+        {
+            form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
+            form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+
+            Experiment exp = form.getBean();
+            if (exp.getName() == null || exp.getName().trim().length() == 0)
+            {
+                errors.reject(ERROR_MSG, "You must specify a name for the experiment");
+            }
+            else
+            {
+                int maxNameLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();
+                if (exp.getName().length() > maxNameLength)
+                {
+                    errors.reject(ERROR_MSG, "Name of the experiment must be " + maxNameLength + " characters or less.");
+                }
+            }
+
+            String lsid;
+            int suffix = 1;
+            do
+            {
+                String template = "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Experiment.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + exp.getName();
+                if (suffix > 1)
+                {
+                    template = template + suffix;
+                }
+                suffix++;
+                lsid = LsidUtils.resolveLsidFromTemplate(template, new XarContext("Experiment Creation", getContainer(), getUser()), "Experiment");
+            }
+            while (ExperimentService.get().getExpExperiment(lsid) != null);
+            exp.setLSID(lsid);
+            exp.setContainer(getContainer());
+
+            if (errors.getErrorCount() == 0)
+            {
+                ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
+                wrapper.save(getUser());
+
+                if (form.isAddSelectedRuns())
+                {
+                    addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
+                }
+
+                if (form.getReturnUrl() != null)
+                {
+                    throw new RedirectException(form.getReturnUrl());
+                }
+                throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
+            }
+            return true;
+        }
+
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
             return root.addChild("Create Run Group");
+        }
+
+        @Override
+        public void validateCommand(CreateExperimentForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CreateExperimentForm createExperimentForm)
+        {
+            return new ActionURL(CreateRunGroupAction.class, getContainer());
         }
     }
 
