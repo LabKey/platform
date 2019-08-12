@@ -48,11 +48,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Result;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -1118,38 +1120,25 @@ public class UserManager
         return relationships.stream().anyMatch(existing::contains);
     }
 
-    public static String getFormattedName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail, int formattedUserId)
+    public static String getUserDetailsHTMLLink(Container container, User currentUser, int formattedUserId)
     {
-        String result = "";
-        User formattedUser = getUser(formattedUserId);
+        String displayName = getUser(formattedUserId).getDisplayName(currentUser);
 
-        if (currentUser != null)
+        return "<a class=\"announcement-title-link\" href=\"" +
+                getUserDetailsURL(container, currentUser, formattedUserId) +
+                "\">" + PageFlowUtil.filter(displayName) + "</a>";
+    }
+
+    public static String getUserDetailsURL(Container container, User currentUser, Integer displayedUserId)
+    {
+        if (SecurityManager.canSeeUserDetails(container, currentUser) && !UserIdRenderer.isGuestUserId(displayedUserId))
         {
-            result = formattedUser.getDisplayName(currentUser);
-            if (formattedUser != null)
+            if (displayedUserId != null)
             {
-                Container container = HttpView.currentContext().getContainer();
-
-                boolean hasPermissions = SecurityManager.canSeeUserDetails(container, currentUser);
-                if ((htmlFormatted && !forEmail) && !formattedUser.isGuest() && hasPermissions)
-                {
-                    result = "<a class=\"announcement-title-link\" href=\"" +
-                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, formattedUser.getUserId(), null)) +
-                            "\">" + PageFlowUtil.filter(result) + "</a>";
-                }
-
-                if (includeGroups)
-                {
-                    String groupList = SecurityManager.getGroupList(container, formattedUser);
-                    if (groupList.length() > 0)
-                    {
-                        result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
-                    }
-                }
-                return result;
+                ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
+                return userURL.toString();
             }
         }
-
-        return htmlFormatted ? PageFlowUtil.filter(result) : result;
+        return null;
     }
 }

@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -193,7 +194,7 @@ for (AnnouncementModel a : bean.announcementModels)
         if (a.getResponseCount() > 0)
             out.print(" (" + a.getResponseCount() + (a.getResponseCount() == 1 ? "&nbsp;response)" : "&nbsp;responses)"));
         %></td>
-        <td width="20%" align="center" class="message-creator"><%=text(UserManager.getFormattedName(bean.includeGroups, user, true, false, a.getCreatedBy()))%></td>
+        <td width="20%" align="center" class="message-creator"><%=text(AnnouncementManager.getUserDetailsLink(c, user, a.getCreatedBy(), bean.includeGroups, false))%></td>
         <td width="40%" align="right" nowrap><%=formatDateTime(a.getCreated())%></td>
     </tr>
     <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
