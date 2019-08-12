@@ -1249,8 +1249,8 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. Use with NavTree to create a
-     *  menu item that posts. TODO: Integrate this into NavTree as an option (e.g., usePost()).
+     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. Used by NavTree, LinkBuilder,
+     *  and ButtonBuilder, this shouldn't be called directly by other code paths.
      */
     public static String postOnClickJavaScript(String href)
     {
@@ -1258,9 +1258,9 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified url, providing a CSRF token. Use with NavTree to create a
-     *  menu item that posts. TODO: Integrate this into NavTree as an option (see LinkBuilder.usePost()).
+     *  Returns an onClick handler that posts to the specified url, providing a CSRF token.
      */
+    @Deprecated // TODO: Remove soon
     public static String postOnClickJavaScript(ActionURL url)
     {
         return postOnClickJavaScript(url.getLocalURIString());
@@ -1274,6 +1274,47 @@ public class PageFlowUtil
     public static LinkBuilder link(String text)
     {
         return new LinkBuilder(text);
+    }
+
+    private static final String ARBITRARY_LETTER = "Q";
+
+    /**
+     * Converts the provided string into a legal HTML ID or Name, based on the HTML 4 rules:
+     * <ul>
+     * <li>Must begin with a letter ([A-Za-z])</li>
+     * <li>May be followed by any number of letters, digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".")</li>
+     * </ul>
+     * See <a href="https://www.w3.org/TR/html4/types.html#type-id">W3C HTML 4.01 Specification</a><br>
+     *
+     * Removes all illegal characters (e.g., whitespace and non-alphanumeric characters except the four mentioned above) and then
+     * pre-pends an arbitrary letter if the stripped version doesn't start with a letter. The return value is guaranteed to have
+     * a legal form, but of course it's not guaranteed to be unique on the page.
+     *
+     * @param s Any string
+     * @return A legal HTML ID produced from the string. Passing null is valid and returns a single letter ID.
+     */
+    public static @NotNull HtmlString makeHtmlId(@Nullable String s)
+    {
+        final String ret;
+
+        if (null == s)
+        {
+            ret = ARBITRARY_LETTER;
+        }
+        else
+        {
+            String stripped = s.replaceAll("[^0-9A-Za-z\\-_:.]", "");
+
+            if (stripped.isEmpty())
+                ret = ARBITRARY_LETTER;
+            else if (!Character.isLetter(stripped.charAt(0)))
+                ret = ARBITRARY_LETTER + stripped;
+            else
+                ret = stripped;
+        }
+
+        // We've stripped all characters that could possibly cause HTML problems
+        return HtmlString.unsafe(ret);
     }
 
     public static HtmlString generateBackButton()
@@ -2528,6 +2569,33 @@ public class PageFlowUtil
                 assertTrue(isRobotUserAgent(ua));
             for (String ua : nots)
                 assertFalse(isRobotUserAgent(ua));
+        }
+
+        @Test
+        public void testMakeHtmlId()
+        {
+            testMakeHtmlId(null);
+            testMakeHtmlId("");
+            testMakeHtmlId("!@#$");
+            testMakeHtmlId(")(*&^%$");
+            testMakeHtmlId("</html>");
+            testMakeHtmlId("123@#$%");
+            testMakeHtmlId("foo");
+            testMakeHtmlId("!@#1!@#");
+            testMakeHtmlId("ABC");
+            testMakeHtmlId("!BC234");
+            testMakeHtmlId("1A-34-FB-44");
+        }
+
+        private void testMakeHtmlId(@Nullable String id)
+        {
+            HtmlString legalId = makeHtmlId(id);
+            assertTrue(id + " was converted to " + legalId + ", which is not a legal HTML ID!", isLegalId(legalId.toString()));
+        }
+
+        private boolean isLegalId(String id)
+        {
+            return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
         }
     }
 

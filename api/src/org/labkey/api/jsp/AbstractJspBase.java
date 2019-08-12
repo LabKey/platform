@@ -428,6 +428,11 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
         return PageFlowUtil.button(text);
     }
 
+    public @NotNull HtmlString makeHtmlId(@Nullable String s)
+    {
+        return PageFlowUtil.makeHtmlId(s);
+    }
+
     public HtmlString generateReturnUrlFormField(URLHelper returnURL)
     {
         return ReturnUrlForm.generateHiddenFormField(returnURL);

@@ -31,7 +31,7 @@ public class Link extends DisplayElement implements HasHtmlString
         lb = linkBuilder;
 
         if (lb.usePost && null != lb.onClick)
-            throw new IllegalStateException("Can't specify usePost and onClick");
+            throw new IllegalStateException("Can't specify both usePost and onClick");
     }
 
     @Override

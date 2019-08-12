@@ -50,7 +50,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean dropdown;
     private final boolean enabled;
     private final boolean submit;
-    private final boolean textAsHTML;
+    private final boolean textAsHTML;  // TODO: Evil - get rid of this. Use HtmlString, if still needed.
     private final boolean usePost;
 
     private Button(ButtonBuilder builder)
@@ -72,7 +72,7 @@ public class Button extends DisplayElement implements HasHtmlString
         this.usePost = builder.usePost;
 
         if (this.usePost && null != this.onClick)
-            throw new IllegalStateException("Can't specify usePost and onClick");
+            throw new IllegalStateException("Can't specify both usePost and onClick");
     }
 
     public String getCssClass()
