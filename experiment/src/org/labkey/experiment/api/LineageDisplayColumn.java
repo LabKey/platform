@@ -7,10 +7,11 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -29,6 +31,7 @@ public class LineageDisplayColumn extends DataColumn
     final String displayField;
     final ExpLineageOptions options = new ExpLineageOptions();
     private TableInfo lookupTable;
+    private ParameterMapStatement parameterMap;
 
     LineageDisplayColumn(ColumnInfo objectid, String displayField, boolean parents, Integer depth, String expType, String cpasType)
     {
@@ -70,28 +73,37 @@ public class LineageDisplayColumn extends DataColumn
                     return;
                 }
             }
-            SQLFragment objectids = new SQLFragment("SELECT " + objectid + " AS objectid");
-            SQLFragment lineage = ExperimentServiceImpl.get().generateExperimentTreeSQL(objectids, options);
 
+            // construct explicit sql for column value only
+            // lame, but ParameterMap.selector() method is pretty cool
             if (true == false)
             {
-                var display = lookupTable.getColumn(displayField);
-                // NOTE: can not use ParameterMap (for PreparedStatementFunctionality) because we don't support CTE with parameter markers yet
-                // TODO optimize later
-                SQLFragment sql = new SQLFragment("SELECT ");
-                sql.append("CAST(").append(display.getValueSql("_ss_")).append(" AS " + (lookupTable.getSqlDialect().getSqlTypeName(JdbcType.VARCHAR)) + "(4000)) AS ").append(display.getAlias()).append("\n");
-                sql.append("FROM ").append(lookupTable.getFromSQL("_ss_")).append("\n");
-                sql.append("WHERE objectid IN (SELECT objectid FROM (").append(lineage).append(") _lineage_lookup_)");
-                var result = StringUtils.join(new SqlSelector(lookupTable.getSchema(), sql).getArrayList(String.class), ", ");
+                if (null == parameterMap)
+                {
+                    var display = lookupTable.getColumn(displayField);
+                    SQLFragment sql = new SQLFragment("SELECT ");
+                    sql.append("CAST(").append(display.getValueSql("_ss_")).append(" AS " + (lookupTable.getSqlDialect().getSqlTypeName(JdbcType.VARCHAR)) + "(4000)) AS ").append(display.getAlias()).append("\n");
+                    sql.append("FROM ").append(lookupTable.getFromSQL("_ss_")).append("\n");
+                    SQLFragment objectids = new SQLFragment("SELECT CAST(? AS INTEGER) AS objectid");
+                    objectids.add(new Parameter("objectid", JdbcType.INTEGER));
+                    SQLFragment lineage = ExperimentServiceImpl.get().generateExperimentTreeSQL(objectids, options);
+                    sql.append("WHERE objectid IN (SELECT objectid FROM (").append(lineage).append(") _lineage_lookup_)");
+                    parameterMap = new ParameterMapStatement(lookupTable.getSchema().getScope(), sql, null);
+                }
+                var result = StringUtils.join(
+                        parameterMap.selector(Collections.singletonMap("objectid", objectid)).getArrayList(String.class),
+                        ", ");
                 out.write(filter(result));
-                return;
             }
+            // nested DataRegion
             else
             {
                 // TODO make DataRegion parameterized and re-executable
                 FilteredTable drTable = new FilteredTable<>(lookupTable, (SamplesSchema) lookupTable.getUserSchema(), ContainerFilter.EVERYTHING);
                 drTable.wrapAllColumns(true);
                 var display = drTable.getColumn(displayField);
+                SQLFragment objectids = new SQLFragment("SELECT " + objectid + " AS objectid");
+                SQLFragment lineage = ExperimentServiceImpl.get().generateExperimentTreeSQL(objectids, options);
                 SQLFragment lineageFilter = new SQLFragment(" objectid IN (SELECT objectid FROM (").append(lineage).append(") _lineage_lookup_) ");
                 drTable.addCondition(lineageFilter);
                 DataRegion dr = new DataRegion();
