@@ -6,7 +6,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.DocumentProvider;
 import org.labkey.api.search.SearchService.IndexTask;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.assay.AssayService;
 
 import java.util.Date;
 

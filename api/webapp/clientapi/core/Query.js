@@ -1079,6 +1079,9 @@ LABKEY.Query = new function()
          * the results. Default is true.
          * @param {Boolean} [config.includeColumns] If set to false, information about the available columns in this
          * query will not be included in the results. Default is true.
+         * @param {Boolean} [config.queryDetailColumns] If set to true, and includeColumns is set to true, information
+         * about the available columns will be the same details as specified by LABKEY.Query.getQueryDetails for columns.
+         * Defaults to false.
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -1096,7 +1099,8 @@ LABKEY.Query = new function()
                 schemaName: 'schemaName',
                 includeColumns: 'includeColumns',
                 includeUserQueries: 'includeUserQueries',
-                includeSystemQueries: 'includeSystemQueries'
+                includeSystemQueries: 'includeSystemQueries',
+                queryDetailColumns: 'queryDetailColumns'
             }, false, false);
 
             return LABKEY.Ajax.request({

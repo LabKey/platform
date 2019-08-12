@@ -22,12 +22,12 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.study.PlateService;
-import org.labkey.api.study.PlateTemplate;
-import org.labkey.api.study.PlateTypeHandler;
-import org.labkey.api.study.Position;
-import org.labkey.api.study.WellGroup;
-import org.labkey.api.study.WellGroupTemplate;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.plate.PlateTypeHandler;
+import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;

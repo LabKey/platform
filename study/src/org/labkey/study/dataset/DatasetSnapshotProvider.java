@@ -57,7 +57,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;

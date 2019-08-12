@@ -15,9 +15,9 @@
  */
 package org.labkey.api.study.query;
 
+import org.labkey.api.assay.actions.AssayDetailRedirectAction;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.study.actions.AssayDetailRedirectAction;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 

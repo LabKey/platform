@@ -43,7 +43,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.security.roles.SeeUserDetailsRole;
+import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -230,7 +230,7 @@ public class CoreQuerySchema extends UserSchema
             addNullSetFilter(groups);
 
         groups.setDescription("Contains all site groups and groups defined in the current project." +
-            " This table is available only to administrators plus users who have been granted the '" + SeeUserDetailsRole.NAME + "' site role.");
+            " This table is available only to administrators plus users who have been granted the '" + SeeUserAndGroupDetailsRole.NAME + "' site role.");
         
         return groups;
     }

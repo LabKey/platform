@@ -18,7 +18,7 @@ package org.labkey.assay.view;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.*;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.assay.actions.ProtocolIdForm;
 
 public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 {

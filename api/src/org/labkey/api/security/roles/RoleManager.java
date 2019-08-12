@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.lang.reflect.Constructor;
+import java.util.function.Predicate;
 
 /*
 * User: Dave
@@ -70,7 +71,7 @@ public class RoleManager
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
         registerRole(new TroubleshooterRole());
-        registerRole(new SeeUserDetailsRole());
+        registerRole(new SeeUserAndGroupDetailsRole());
         registerRole(new CanSeeAuditLogRole());
         registerRole(new SharedViewEditorRole());
         registerRole(new EmailNonUsersRole(), false);
@@ -82,7 +83,7 @@ public class RoleManager
     public static Role getRole(String name)
     {
         Role role = _nameToRoleMap.get(name);
-        if(null == role)
+        if (null == role)
             Logger.getLogger(RoleManager.class).warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
         return role;
     }
@@ -90,7 +91,7 @@ public class RoleManager
     public static Role getRole(Class<? extends Role> clazz)
     {
         Role role = _classToRoleMap.get(clazz);
-        if(null == role)
+        if (null == role)
             Logger.getLogger(RoleManager.class).warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
         return role;
     }
@@ -103,19 +104,18 @@ public class RoleManager
 
     public static Permission getPermission(Class<? extends Permission> clazz)
     {
-        Permission perm = (Permission)_classToRoleMap.get(clazz);
-        if(null == perm)
+        Permission perm = (Permission) _classToRoleMap.get(clazz);
+        if (null == perm)
             Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
         return perm;
     }
 
     public static Permission getPermission(String uniqueName)
     {
-        Permission perm = (Permission)_nameToRoleMap.get(uniqueName);
-        if(null == perm)
+        Permission perm = (Permission) _nameToRoleMap.get(uniqueName);
+        if (null == perm)
             Logger.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
         return perm;
-
     }
 
 
@@ -131,8 +131,8 @@ public class RoleManager
 
     public static void registerRole(Role role, boolean addPermissionsToAdminRoles)
     {
-        _nameToRoleMap.put(role.getUniqueName(), role);
-        _classToRoleMap.put(role.getClass(), role);
+        // The isNull nameVerifier ensures that every role name is unique (registered only once)
+        addToMaps(role, Objects::isNull);
         _roles.add(role);
 
         boolean addToAdminRoles = addPermissionsToAdminRoles && !(role instanceof SiteAdminRole
@@ -140,14 +140,14 @@ public class RoleManager
                 || role instanceof FolderAdminRole);
 
         //register all exposed permissions in the name and class maps
-        for(Class<? extends Permission> permClass : role.getPermissions())
+        for (Class<? extends Permission> permClass : role.getPermissions())
         {
             try
             {
                 Permission perm = permClass.newInstance();
                 registerPermission(perm, addToAdminRoles);
             }
-            catch(InstantiationException | IllegalAccessException e)
+            catch (InstantiationException | IllegalAccessException e)
             {
                 Logger.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
             }
@@ -156,6 +156,23 @@ public class RoleManager
         // It's possible that a security policy refers to this role but it wasn't available when it was loaded.
         // Clear the cache so that it resolves correctly going forward.
         SecurityPolicyManager.removeAll();
+    }
+
+    private static void addToMaps(Role role, Predicate<Role> nameVerifier)
+    {
+        _classToRoleMap.put(role.getClass(), role);
+        addToNameToRoleMap(role.getUniqueName(), role, nameVerifier);
+
+        role.getSerializationAliases()
+            .forEach(alias-> addToNameToRoleMap(alias, role, nameVerifier));
+    }
+
+    private static void addToNameToRoleMap(String name, Role role, Predicate<Role> nameVerifier)
+    {
+        Role previous = _nameToRoleMap.put(name, role);
+
+        if (!nameVerifier.test(previous))
+            throw new IllegalStateException("A role was already registered with name \"" + name + "\" by " + previous);
     }
 
     /**
@@ -181,8 +198,9 @@ public class RoleManager
      */
     public static void registerPermission(Permission perm, boolean addToAdminRoles)
     {
-        _nameToRoleMap.put(perm.getUniqueName(), perm);
-        _classToRoleMap.put(perm.getClass(), perm);
+        // Permissions are registered multiple times (e.g., once for each role that includes them), so nameVerifier
+        // simply ensures that any previously registered permission equals the current permission object
+        addToMaps(perm, p->null == p || p.equals(perm));
         if (addToAdminRoles)
             addPermissionToAdminRoles(perm.getClass());
     }

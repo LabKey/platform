@@ -16,8 +16,7 @@
 package org.labkey.assay.actions;
 
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.study.actions.ImportAction;
-import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Map;

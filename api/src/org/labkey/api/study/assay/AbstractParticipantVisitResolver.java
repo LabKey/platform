@@ -22,6 +22,8 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.study.assay.ParticipantVisitImpl;
+import org.labkey.api.study.assay.ParticipantVisitResolver;
 
 import java.util.Date;
 import java.util.Map;

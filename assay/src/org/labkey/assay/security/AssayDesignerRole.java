@@ -15,10 +15,14 @@
  */
 package org.labkey.assay.security;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.roles.AbstractRole;
-import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.assay.AssayModule;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /*
 * User: Dave
@@ -37,5 +41,14 @@ public class AssayDesignerRole extends AbstractRole
         );
 
         excludeGuests();
+    }
+
+    @Override
+    public @NotNull Collection<String> getSerializationAliases()
+    {
+        // This class was repackaged when the assay framework was moved out of study into a separate assay module.
+        // Add an alias for the previous package to allow import of serialized role assignments in old folder archives
+        // (e.g., QC Trend Report Testing.folder.zip).
+        return Collections.singleton("org.labkey.study.security.roles.AssayDesignerRole");
     }
 }
