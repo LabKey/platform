@@ -81,7 +81,7 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
         {
             StringBuilder sAttributes = new StringBuilder();
             for (String attribute : attributes.keySet())
-                sAttributes.append(PageFlowUtil.filter(attribute)).append("=\"").append(PageFlowUtil.filter(attributes.get(attribute))).append("\"");
+                sAttributes.append(PageFlowUtil.encodeURIComponent(attribute)).append("=\"").append(PageFlowUtil.encodeURIComponent(attributes.get(attribute))).append("\"");
             this.attributes = sAttributes.toString();
         }
         else
