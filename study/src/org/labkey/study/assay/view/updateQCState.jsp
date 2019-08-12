@@ -30,12 +30,14 @@
 <%
     AssayController.UpdateQCStateForm form = (AssayController.UpdateQCStateForm) HttpView.currentView().getModelBean();
     String currentState = null;
+    String protocolContainerPath = null;
 
     if (form.getRuns().size() == 1)
     {
         ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
         if (run != null)
         {
+            protocolContainerPath = run.getProtocol().getContainer().getPath();
             QCState state = AssayQCService.getProvider().getQCState(run.getProtocol(), run.getRowId());
             currentState = state != null ? state.getLabel() : null;
         }
@@ -89,6 +91,7 @@
             LABKEY.Query.selectRows({
                 schemaName  : 'core',
                 queryName   : 'qcstate',
+                containerPath : <%=q(protocolContainerPath)%>,
                 scope       : this,
                 columns     : 'rowid, label',
                 success     : function(data){setQCStates(data);},
