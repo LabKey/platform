@@ -27,10 +27,6 @@ public class FooterProperties implements TemplateProperties
 
     private Container _container;
 
-    // temporary
-    @Deprecated
-    public FooterProperties(){}
-
     public FooterProperties(Container container)
     {
         _container = container;
@@ -42,25 +38,30 @@ public class FooterProperties implements TemplateProperties
         return _container;
     }
 
+    @Override
     public String getDisplayConfigs()
     {
         return FOOTER_CONFIGS;
     }
 
+    @Override
     public String getDisplayPropertyName()
     {
         return SHOW_FOOTER_PROPERTY_NAME;
     }
 
+    @Override
     public String getModulePropertyName()
     {
         return FOOTER_MODULE_PROPERTY_NAME;
     }
 
+    @Override
     public String getFileName()
     {
         return FILE_NAME;
     }
 
+    @Override
     public String getShowByDefault() { return "TRUE";}
 }

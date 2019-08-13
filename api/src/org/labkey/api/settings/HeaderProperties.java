@@ -29,9 +29,6 @@ public class HeaderProperties implements TemplateProperties
 
     private Container _container;
 
-    @Deprecated
-    public HeaderProperties(){}
-
     public HeaderProperties(Container container)
     {
         _container = container;
@@ -43,25 +40,30 @@ public class HeaderProperties implements TemplateProperties
         return _container;
     }
 
+    @Override
     public String getDisplayConfigs()
     {
         return HEADER_CONFIGS;
     }
 
+    @Override
     public String getDisplayPropertyName()
     {
         return SHOW_HEADER_PROPERTY_NAME;
     }
 
+    @Override
     public String getModulePropertyName()
     {
         return HEADER_MODULE_PROPERTY_NAME;
     }
 
+    @Override
     public String getFileName()
     {
         return FILE_NAME;
     }
 
+    @Override
     public String getShowByDefault() { return "FALSE";}
 }
