@@ -795,6 +795,7 @@ public class TestController extends SpringActionController
                         .onClick(form.getOnclick());
 
                 String attr = "";
+                // test that the attribute looks like an attribute (e.g. no special chars)
                 if (form.getAttrkey1() != null && form.getAttrkey1().equals(PageFlowUtil.filter(form.getAttrkey1())))
                     attr += form.getAttrkey1() + "='" + filter(form.getAttrvalue1()) + "'";
                 if (form.getAttrkey2() != null && form.getAttrkey2().equals(filter(form.getAttrkey2())))
