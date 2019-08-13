@@ -24,17 +24,23 @@ import org.labkey.api.util.ConfigurationException;
  */
 public enum TomcatVersion
 {
-    TOMCAT_7_0(false, "getMaxActive"),
-    TOMCAT_8_5(false, "getMaxTotal"),
-    TOMCAT_9_0(false, "getMaxTotal");
+    TOMCAT_7_0(false, "getMaxActive", "Connector", "keystoreFile", "keystorePass"),
+    TOMCAT_8_5(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword"),
+    TOMCAT_9_0(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword");
 
     private final boolean _deprecated;
     private final String _maxTotalMethodName;
+    private final String _sslConfigPropName;
+    private final String _keystoreFilePropertyName;
+    private final String _keystorePasswordPropertyName;
 
-    TomcatVersion(boolean deprecated, String maxTotalMethodName)
+    TomcatVersion(boolean deprecated, String maxTotalMethodName, String sslConfigPropName, String keystoreFilePropertyName, String keystorePasswordPropertyName)
     {
         _deprecated = deprecated;
         _maxTotalMethodName = maxTotalMethodName;
+        _sslConfigPropName = sslConfigPropName;
+        _keystoreFilePropertyName = keystoreFilePropertyName;
+        _keystorePasswordPropertyName =keystorePasswordPropertyName;
     }
 
     // Should LabKey warn administrators that support for this Tomcat version will be removed soon?
@@ -46,6 +52,21 @@ public enum TomcatVersion
     public String getMaxTotalMethodName()
     {
         return _maxTotalMethodName;
+    }
+
+    public String getSslConfigPropName()
+    {
+        return _sslConfigPropName;
+    }
+
+    public String getKeystoreFilePropertyName()
+    {
+        return _keystoreFilePropertyName;
+    }
+
+    public String getKeystorePasswordPropertyName()
+    {
+        return _keystorePasswordPropertyName;
     }
 
     private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
