@@ -39,14 +39,10 @@ public class Link extends DisplayElement implements HasHtmlString
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<a href=\"");
+        sb.append("<a");
 
-        if (lb.usePost)
-            sb.append("javascript:void(0);");
-        else
-            sb.append(PageFlowUtil.filter(lb.href));
-
-        sb.append("\"");
+        if (null != lb.href && !lb.usePost)
+            sb.append(" href=\"").append(PageFlowUtil.filter(lb.href)).append("\"");
 
         boolean icon = lb.iconCls != null;
 
