@@ -530,7 +530,7 @@ function tinyMceHandleEvent(evt) {
             }
 
             if (isDirty()) {
-                setStatus("Saving file attachments...");
+                setStatus("Saving...");
                 getExt4(function() {
                     // bah, for now we have to use Ext4 to do this post since it is an upload
                     Ext4.Ajax.request({
