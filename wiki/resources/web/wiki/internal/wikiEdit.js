@@ -171,12 +171,12 @@ function tinyMceHandleEvent(evt) {
      */
     var bindControls = function(props) {
         // form controls
-        $(_idSel + 'name').keypress(setWikiDirty).change(onChangeName);
-        $(_idSel + 'title').keypress(setWikiDirty).change(setWikiDirty);
-        $(_idSel + 'parent').keypress(setWikiDirty).change(setWikiDirty);
-        $(_idSel + 'body').keypress(setWikiDirty).change(setWikiDirty);
-        $(_idSel + 'shouldIndex').keypress(setWikiDirty).change(setWikiDirty);
-        $(_idSel + 'showAttachments').keypress(setWikiDirty).change(setWikiDirty);
+        var setDirty = function(){LABKEY.setDirty(true)};
+        $(_idSel + 'name').keypress(setDirty).change(onChangeName);
+        $(_idSel + 'title').keypress(setDirty).change(setDirty);
+        $(_idSel + 'parent').keypress(setDirty).change(setDirty);
+        $(_idSel + 'shouldIndex').keypress(setDirty).change(setDirty);
+        $(_idSel + 'showAttachments').keypress(setDirty).change(setDirty);
         $('#wiki-file-link').click(addNewAttachmentInput);
 
         // active tab
@@ -288,10 +288,8 @@ function tinyMceHandleEvent(evt) {
     };
 
     var isDirty = function() {
-        if (_wikiProps.isDirty || _attachments.isDirty) {
-            return true;
-        }
-        return (_tinyMCEInitialized && tinyMCE.get(_idPrefix + 'body') && tinyMCE.get(_idPrefix + 'body').isDirty());
+        var isBodyDirty = _tinyMCEInitialized && tinyMCE.get(_idPrefix + 'body') && tinyMCE.get(_idPrefix + 'body').isDirty();
+        return isBodyDirty || LABKEY.isDirty();
     };
 
     var loadToc = function() {
@@ -321,7 +319,7 @@ function tinyMceHandleEvent(evt) {
         var cell = $('#wiki-na-name-' + index).attr('nobreak', '1').html('<a class="labkey-button"><span>remove</span></a>&nbsp;' + getFileName(fileInput.value));
 
         // mark the attachments as dirty
-        _attachments.isDirty = true;
+        LABKEY.setDirty(true);
     };
 
     var onAttachmentSuccess = function(response) {
@@ -357,8 +355,9 @@ function tinyMceHandleEvent(evt) {
 
     var onCancel = function() {
         // per bug 5957, don't prompt about losing changes if the user clicks cancel
-        // setClean();
         LABKEY.setDirty(false);
+        setBodyClean();
+
         _finished = true;
         window.location = _cancelUrl ? _cancelUrl : getRedirUrl();
     };
@@ -374,7 +373,6 @@ function tinyMceHandleEvent(evt) {
                     icon: Ext4.MessageBox.WARNING,
                     fn: function(btnId) {
                         if (btnId == "yes") {
-                            // setWikiDirty();
                             LABKEY.setDirty(true);
                             _redirUrl = ''; // clear the redir URL since it will be referring to the old name
                             onSave();
@@ -387,7 +385,6 @@ function tinyMceHandleEvent(evt) {
             });
         }
         else {
-            // setWikiDirty();
             LABKEY.setDirty(true);
         }
     };
@@ -410,7 +407,6 @@ function tinyMceHandleEvent(evt) {
             updateControl("body", respJson.body);
         }
 
-        // setWikiDirty();
         LABKEY.setDirty(true);
 
         // hide the convert window
@@ -433,7 +429,7 @@ function tinyMceHandleEvent(evt) {
                 + "<input type='hidden' name='toDelete' value=\"" + LABKEY.Utils.encodeHtml(_attachments[index].name) + "\"/>";
 
         //add a prop so we know we need to save the attachments
-        _attachments.isDirty = true;
+        LABKEY.setDirty(true);
     };
 
     var getNewAttachmentsTable = function() {
@@ -489,7 +485,7 @@ function tinyMceHandleEvent(evt) {
         _doingSave = true;
 
 
-        if (_wikiProps.entityId && !LABKEY.isDirty()) {
+        if (_wikiProps.entityId && !isDirty()) {
             onSaveComplete();
             return;
         }
@@ -505,8 +501,8 @@ function tinyMceHandleEvent(evt) {
     };
 
     var onSaveComplete = function(statusMessage) {
-        // setClean();
         LABKEY.setDirty(false);
+        setBodyClean();
         _doingSave = false;
         if (!statusMessage) {
             statusMessage = "Saved.";
@@ -533,7 +529,7 @@ function tinyMceHandleEvent(evt) {
                 updateControls(_wikiProps);
             }
 
-            if (_attachments.isDirty || LABKEY.isDirty()) {
+            if (isDirty()) {
                 setStatus("Saving file attachments...");
                 getExt4(function() {
                     // bah, for now we have to use Ext4 to do this post since it is an upload
@@ -606,11 +602,7 @@ function tinyMceHandleEvent(evt) {
         });
     };
 
-    //delete
-    var setClean = function() {
-        _wikiProps.isDirty = false;
-        _attachments.isDirty = false;
-
+    var setBodyClean = function() {
         if (tinyMCE.get(_idPrefix + 'body')) {
             tinyMCE.get(_idPrefix + 'body').isNotDirty = 1;
         }
@@ -640,10 +632,6 @@ function tinyMceHandleEvent(evt) {
             getSourceTab().hide();
             $('#wiki-tab-strip-spacer').hide();
         }
-    };
-
-    var setWikiDirty = function() {
-        _wikiProps.isDirty = true;
     };
 
     var showConvertWindow = function() {
