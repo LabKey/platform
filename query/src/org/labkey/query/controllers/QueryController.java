@@ -5842,6 +5842,9 @@ public class QueryController extends SpringActionController
     {
         public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
+            if (form.getRowId() == 0)
+                throw new NotFoundException("Query export audit rowid required");
+
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
 
@@ -5878,12 +5881,6 @@ public class QueryController extends SpringActionController
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url;
-        }
-
-        public void validateCommand(QueryExportAuditForm form, Errors errors)
-        {
-            if (form.getRowId() == 0)
-                throw new NotFoundException("Query export audit rowid required");
         }
     }
 

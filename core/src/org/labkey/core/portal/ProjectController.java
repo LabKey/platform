@@ -1541,24 +1541,6 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
-    public class ProjectRedirectAction extends SimpleViewAction<ReturnUrlForm>
-    {
-        @Override
-        public ModelAndView getView(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
-        {
-            URLHelper r = returnUrlForm.getReturnURLHelper(new URLHelper(AppProps.getInstance().getHomePageUrl()));
-            throw new RedirectException(r);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
-
-
     @RequiresSiteAdmin
     public class SetWebPartPermissionsAction extends MutatingApiAction<WebPartPermissionsForm>
     {

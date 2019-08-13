@@ -2200,7 +2200,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
-    // where the caller has a secrete (the authentication token).
+    // where the caller has a secret (the authentication token).
     public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
