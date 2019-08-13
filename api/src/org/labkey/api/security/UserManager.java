@@ -1120,15 +1120,31 @@ public class UserManager
         return relationships.stream().anyMatch(existing::contains);
     }
 
-    public static String getUserDetailsHTMLLink(Container container, User currentUser, int formattedUserId)
+    /**
+     * Return the HTML tag for the user details page of the displayedUserId.
+     * @param container The current container
+     * @param currentUser The current logged in user
+     * @param displayedUserId The user id of the url we want to navigate to
+     * @return The HTML string to navigate to the displayedUserId's user details page
+     */
+    public static String getUserDetailsHTMLLink(Container container, User currentUser, int displayedUserId)
     {
-        String displayName = getUser(formattedUserId).getDisplayName(currentUser);
+        String displayName = getUser(displayedUserId).getDisplayName(currentUser);
 
         return "<a class=\"announcement-title-link\" href=\"" +
-                getUserDetailsURL(container, currentUser, formattedUserId) +
+                getUserDetailsURL(container, currentUser, displayedUserId) +
                 "\">" + PageFlowUtil.filter(displayName) + "</a>";
     }
 
+    /**
+     * Return the URL as a string for the user details page of the displayedUserId.
+     * If the user does not have permissions to see the user details page or the displayed
+     * user id is a guest, return the URL an empty URL.
+     * @param container The current container
+     * @param currentUser The current logged in user
+     * @param displayedUserId The user id of the url we want to navigate to
+     * @return A string URL to navigate to the displayedUserIds user details page.
+     */
     public static String getUserDetailsURL(Container container, User currentUser, Integer displayedUserId)
     {
         if (SecurityManager.canSeeUserDetails(container, currentUser) && !UserIdRenderer.isGuestUserId(displayedUserId))
@@ -1139,6 +1155,7 @@ public class UserManager
                 return userURL.toString();
             }
         }
+
         return null;
     }
 }
