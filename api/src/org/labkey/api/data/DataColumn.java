@@ -548,7 +548,7 @@ public class DataColumn extends DisplayColumn
             // CONSIDER: stringify values in collection?
             return ((Collection)value).contains(entryName);
         }
-        return null != valueStr && entryName.equals(valueStr);
+        return null != entryName && entryName.equals(valueStr);
     }
 
     protected String getSelectInputDisplayValue(NamedObject entry)
