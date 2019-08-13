@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
@@ -203,26 +204,27 @@ public class Button extends DisplayElement implements HasHtmlString
     {
         boolean iconOnly = getIconCls() != null;
         String submitId = GUID.makeGUID();
-        final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
-        final String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
+        String text = getText() == null ? "" : getText();
+        final HtmlString html = isTextAsHTML() ? HtmlString.unsafe(text) : HtmlString.of(text);
+        final String tip = StringUtils.defaultString(tooltip, iconOnly && !isTextAsHTML() && !text.isBlank() ? text : null);
 
         var attrs = at(attributes)
             .id(getId())
             .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId))
-            .data("tt", (null!=tip ? "tooltip" : null))
-            .data("placement","top")
+            .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
+            .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
-            .cl(!isEnabled(),DISABLEDCLS)
-            .cl(isSubmit(),PRIMARY_CLS)
-            .cl(isDropdown(),"labkey-down-arrow")
-            .cl(iconOnly,"icon-only");
+            .cl(!isEnabled(), DISABLEDCLS)
+            .cl(isSubmit(), PRIMARY_CLS)
+            .cl(isDropdown(), "labkey-down-arrow")
+            .cl(iconOnly, "icon-only");
 
         if (unsafeAttributes != null)
             attrs.callback(appendable -> { try {appendable.append(unsafeAttributes); } catch (IOException x) {throw new RuntimeException(x);}});
 
         return createHtmlFragment(
             isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
-            A(attrs, iconOnly ? FA(getIconCls()) : SPAN(text))
+            A(attrs, iconOnly ? FA(getIconCls()) : SPAN(html))
         );
     }
 
