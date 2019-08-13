@@ -41,7 +41,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
         let messages = List<IBannerMessage>().asMutable();
-        if (!((schemaName && queryName) || domainId)) {
+        if ((!schemaName && !queryName) || !domainId) {
             let msg =  'Missing required parameter: domainId or schemaName and queryName.';
             let msgType = 'danger';
             let bannerMsg ={message : msg, messageType : msgType};
@@ -100,7 +100,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: true
         });
 
-        // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
 
