@@ -25,6 +25,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -539,7 +540,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             TableInfo table = _cache.get(key);
             if (table == null)
             {
-                table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
+                }
 
                 if (null == table)
                     return null;
