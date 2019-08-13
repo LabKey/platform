@@ -1131,7 +1131,7 @@ public class UserManager
     {
         String displayName = getUser(displayedUserId).getDisplayName(currentUser);
 
-        return "<a class=\"announcement-title-link\" href=\"" +
+        return "<a class=\"labkey-link\" href=\"" +
                 getUserDetailsURL(container, currentUser, displayedUserId) +
                 "\">" + PageFlowUtil.filter(displayName) + "</a>";
     }
