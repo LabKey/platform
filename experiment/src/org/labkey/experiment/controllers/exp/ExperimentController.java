@@ -5552,7 +5552,7 @@ public class ExperimentController extends SpringActionController
 
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit");
+            ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit", ActionButton.Action.POST);
             bb.add(insertButton);
 
             drg.setButtonBar(bb);
@@ -5623,15 +5623,13 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public void validateCommand(CreateExperimentForm target, Errors errors)
-        {
-        }
-
-        @Override
         public URLHelper getSuccessURL(CreateExperimentForm createExperimentForm)
         {
             return new ActionURL(CreateRunGroupAction.class, getContainer());
         }
+
+        @Override
+        public void validateCommand(CreateExperimentForm target, Errors errors) { }
     }
 
     public static class MoveRunsForm implements DataRegionSelection.DataSelectionKeyForm
