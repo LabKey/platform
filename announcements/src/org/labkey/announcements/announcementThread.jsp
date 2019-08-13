@@ -82,7 +82,7 @@ else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminP
 <table style="table-layout:fixed;width:100%">
 <tr>
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=text(AnnouncementManager.getUserDetailsLink(c, user,  announcementModel.getCreatedBy(),bean.includeGroups, false))%></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=text(AnnouncementManager.getUserDetailsLink(c, user, announcementModel.getCreatedBy(), bean.includeGroups, false))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
