@@ -800,7 +800,6 @@ public class TestController extends SpringActionController
             if (isPost())
             {
                 Button.ButtonBuilder button = PageFlowUtil.button(form.getText())
-                        .textAsHTML(form.isHtml())
                         .href(form.getHref())
                         .enabled(form.isEnabled())
                         .disableOnClick(form.isDisableonclick())
@@ -846,7 +845,6 @@ public class TestController extends SpringActionController
         private String _attrvalue1;
         private String _attrvalue2;
         private boolean _disableonclick;
-        private boolean _html;
         private boolean _enabled;
         private boolean _buttonsubmit;
         private Button.ButtonBuilder builtButton;
@@ -950,16 +948,6 @@ public class TestController extends SpringActionController
         public void setHref(String href)
         {
             _href = href;
-        }
-
-        public boolean isHtml()
-        {
-            return _html;
-        }
-
-        public void setHtml(boolean html)
-        {
-            _html = html;
         }
 
         public String getText()

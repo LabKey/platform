@@ -47,7 +47,8 @@ public class Button extends DisplayElement implements HasHtmlString
     // Composable members
     private final String cssClass;
     private final String iconCls;
-    private final String text; // required
+    private final String text;
+    private final HtmlString html; // required
     private final String href;
     private final String onClick;
     private final String id;
@@ -59,14 +60,13 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean dropdown;
     private final boolean enabled;
     private final boolean submit;
-    private final boolean textAsHTML;
 
     private Button(ButtonBuilder builder)
     {
         this.cssClass = builder.cssClass;
         this.dropdown = builder.dropdown;
-        this.text = builder.text;
-        this.textAsHTML = builder.textAsHTML;
+        this.text     = builder.text;   // used as tooltip if tooltip not provided
+        this.html     = builder.html;
         this.href = builder.href;
         this.onClick = builder.onClick;
         this.iconCls = builder.iconCls;
@@ -94,11 +94,6 @@ public class Button extends DisplayElement implements HasHtmlString
     public boolean isDropdown()
     {
         return dropdown;
-    }
-
-    public boolean isTextAsHTML()
-    {
-        return textAsHTML;
     }
 
     public String getHref()
@@ -204,9 +199,7 @@ public class Button extends DisplayElement implements HasHtmlString
     {
         boolean iconOnly = getIconCls() != null;
         String submitId = GUID.makeGUID();
-        String text = getText() == null ? "" : getText();
-        final HtmlString html = isTextAsHTML() ? HtmlString.unsafe(text) : HtmlString.of(text);
-        final String tip = StringUtils.defaultString(tooltip, iconOnly && !isTextAsHTML() && !text.isBlank() ? text : null);
+        final String tip = StringUtils.defaultString(tooltip, !iconOnly ? null : StringUtils.trimToNull(getText()));
 
         var attrs = at(attributes)
             .id(getId())
@@ -235,13 +228,20 @@ public class Button extends DisplayElement implements HasHtmlString
         private boolean dropdown;
         private boolean enabled = true;
         private boolean submit;
-        private boolean textAsHTML;
+        private HtmlString html;
         // TODO remove usages of attributes(String)
         private String unsafeAttributes;
 
         public ButtonBuilder(@NotNull String text)
         {
             this.text = text;
+            this.html = HtmlString.of(text);
+        }
+
+        public ButtonBuilder(@NotNull HtmlString html)
+        {
+            this.text = null;
+            this.html = html;
         }
 
         @Override
@@ -288,12 +288,6 @@ public class Button extends DisplayElement implements HasHtmlString
         public ButtonBuilder submit(boolean submit)
         {
             this.submit = submit;
-            return this;
-        }
-
-        public ButtonBuilder textAsHTML(boolean textAsHTML)
-        {
-            this.textAsHTML = textAsHTML;
             return this;
         }
 

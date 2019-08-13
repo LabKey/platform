@@ -25,6 +25,7 @@ public final class HtmlString implements DOM.Renderable
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
     public static HtmlString NBSP = HtmlString.unsafe("&nbsp;");
+    public static HtmlString NDASH = HtmlString.unsafe("&ndash;");
 
     private final String _s;
 

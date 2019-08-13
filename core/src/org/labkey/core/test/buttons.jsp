@@ -35,10 +35,6 @@
             <td><input id="buttontext" name="text" type="text" value="<%= h(form.getText()) %>"></td>
         </tr>
         <tr>
-            <td><label for="buttonhtml">Text as HTML</label></td>
-            <td><input id="buttonhtml" name="html" type="checkbox" value="true" <%= checked(form.isHtml()) %>></td>
-        </tr>
-        <tr>
             <td><label for="buttonhref">HREF</label></td>
             <td><input id="buttonhref" name="href" type="text" style="width: 400px;" value="<%= h(form.getHref() != null ? form.getHref() : formURL) %>"></td>
         </tr>
