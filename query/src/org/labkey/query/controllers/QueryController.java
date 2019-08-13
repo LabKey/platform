@@ -5838,11 +5838,13 @@ public class QueryController extends SpringActionController
      * Action used to redirect QueryAuditProvider [details] column to the exported table's grid view.
      */
     @RequiresPermission(AdminPermission.class)
-    public class QueryExportAuditRedirectAction extends RedirectAction<QueryExportAuditForm>
+    public class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
-        @Override
-        public URLHelper getURL(QueryExportAuditForm form, Errors errors)
+        public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
+            if (form.getRowId() == 0)
+                throw new NotFoundException("Query export audit rowid required");
+
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
 
@@ -5879,13 +5881,6 @@ public class QueryController extends SpringActionController
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url;
-        }
-
-        @Override
-        public void validateCommand(QueryExportAuditForm form, Errors errors)
-        {
-            if (form.getRowId() == 0)
-                throw new NotFoundException("Query export audit rowid required");
         }
     }
 

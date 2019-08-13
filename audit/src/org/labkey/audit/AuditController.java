@@ -15,7 +15,7 @@
  */
 package org.labkey.audit;
 
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -65,10 +65,10 @@ public class AuditController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class BeginAction extends RedirectAction
+    public class BeginAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getURL(Object o, Errors errors)
+        public URLHelper getRedirectURL(Object o)
         {
             if (getContainer() != null && getContainer().isRoot())
                 return new ActionURL(ShowAuditLogAction.class, getContainer());
