@@ -94,7 +94,8 @@ public interface PremiumService
         }
 
         @Override
-        public ActionURL getConfCustomPageElements(Container c) {
+        public ActionURL getConfCustomPageElements(Container c)
+        {
             return null;
         }
     }
