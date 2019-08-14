@@ -24,23 +24,25 @@ import org.labkey.api.util.ConfigurationException;
  */
 public enum TomcatVersion
 {
-    TOMCAT_7_0(false, "getMaxActive", "Connector", "keystoreFile", "keystorePass"),
-    TOMCAT_8_5(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword"),
-    TOMCAT_9_0(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword");
+    TOMCAT_7_0(false, "getMaxActive", "Connector", "keystoreFile", "keystorePass", "keystoreType"),
+    TOMCAT_8_5(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword", "certificateKeystoreType"),
+    TOMCAT_9_0(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword" , "certificateKeystoreType");
 
     private final boolean _deprecated;
     private final String _maxTotalMethodName;
     private final String _sslConfigPropName;
     private final String _keystoreFilePropertyName;
     private final String _keystorePasswordPropertyName;
+    private final String _keystoreTypePropertyName;
 
-    TomcatVersion(boolean deprecated, String maxTotalMethodName, String sslConfigPropName, String keystoreFilePropertyName, String keystorePasswordPropertyName)
+    TomcatVersion(boolean deprecated, String maxTotalMethodName, String sslConfigPropName, String keystoreFilePropertyName, String keystorePasswordPropertyName, String keystoreTypePropertyName)
     {
         _deprecated = deprecated;
         _maxTotalMethodName = maxTotalMethodName;
         _sslConfigPropName = sslConfigPropName;
         _keystoreFilePropertyName = keystoreFilePropertyName;
-        _keystorePasswordPropertyName =keystorePasswordPropertyName;
+        _keystorePasswordPropertyName = keystorePasswordPropertyName;
+        _keystoreTypePropertyName = keystoreTypePropertyName;
     }
 
     // Should LabKey warn administrators that support for this Tomcat version will be removed soon?
@@ -67,6 +69,11 @@ public enum TomcatVersion
     public String getKeystorePasswordPropertyName()
     {
         return _keystorePasswordPropertyName;
+    }
+
+    public String getKeystoreTypePropertyName()
+    {
+        return _keystoreTypePropertyName;
     }
 
     private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
