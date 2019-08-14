@@ -1261,35 +1261,11 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class GetContainersForm
+    public static class BasicGetContainersForm
     {
         private Container[] _container;
-        private boolean _multipleContainers = false;
         private boolean _includeSubfolders = false;
-        private boolean _includeEffectivePermissions = true;
         private int _depth = Integer.MAX_VALUE;
-        private String[] _moduleProperties;
-        private ContainerFilter.Type _containerFilter = null;
-
-        public Container[] getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(Container[] container)
-        {
-            _container = container;
-        }
-
-        public boolean isMultipleContainers()
-        {
-            return _multipleContainers;
-        }
-
-        public void setMultipleContainers(boolean multipleContainers)
-        {
-            _multipleContainers = multipleContainers;
-        }
 
         public boolean isIncludeSubfolders()
         {
@@ -1309,6 +1285,35 @@ public class ProjectController extends SpringActionController
         public void setDepth(int depth)
         {
             _depth = depth;
+        }
+
+        public Container[] getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(Container[] container)
+        {
+            _container = container;
+        }
+
+    }
+
+    public static class GetContainersForm extends BasicGetContainersForm
+    {
+        private boolean _multipleContainers = false;
+        private boolean _includeEffectivePermissions = true;
+        private String[] _moduleProperties;
+        private ContainerFilter.Type _containerFilter = null;
+
+        public boolean isMultipleContainers()
+        {
+            return _multipleContainers;
+        }
+
+        public void setMultipleContainers(boolean multipleContainers)
+        {
+            _multipleContainers = multipleContainers;
         }
 
         public String[] getModuleProperties()

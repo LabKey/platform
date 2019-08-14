@@ -256,6 +256,54 @@ LABKEY.Security = new function()
         },
 
         /**
+         * Returns information about the container paths visible to the current user
+         * @param config A configuration object containing the following properties
+         * @param {boolean} [config.includeSubfolders] If set to true, the entire branch of containers will be returned.
+         * If false, only the immediate children of the starting container will be returned (defaults to false).
+         * @param {int} [config.depth] May be used to control the depth of recursion if includeSubfolders is set to true.
+         * @param {Mixed} [config.container] A container id or full-path String or an Array of container id/full-path
+         * Strings (only the first will be used). If not present, the current container is used.
+         * @param {Function} config.success A reference to a function to call with the API results. This
+         * function will be passed an array of container paths as strings
+         */
+        getReadableContainers : function(config)
+        {
+            var params = {};
+            config = config || {};
+            if (undefined !== config.container)
+            {
+                if (LABKEY.Utils.isArray(config.container))
+                {
+                    if (config.container.length > 0)
+                    {
+                        config.container = [config.container[0]];
+                    }
+                    else
+                    {
+                        delete config.container;
+                    }
+                }
+                else
+                {
+                    config.container = [ config.container ];
+                }
+                params.container = config.container;
+            }
+            if (undefined !== config.includeSubfolders)
+                params.includeSubfolders = config.includeSubfolders;
+            if (undefined !== config.depth)
+                params.depth = config.depth;
+
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("project", "getReadableContainers", config.containerPath),
+                method : 'GET',
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false, function(o) { return o.containers; }),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+        },
+
+        /**
          * Returns information about a user's permissions within a container. If you don't specify a user id, this
          * will return information about the current user.
          * @param config A configuration object containing the following properties

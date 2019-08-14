@@ -351,8 +351,9 @@ LABKEY.Utils = new function()
          * @param fn The callback function to wrap
          * @param scope The scope for the callback function
          * @param {boolean} [isErrorCallback=false] Set to true if the function is an error callback.  If true, and you do not provide a separate callback, alert will popup showing the error message
+         * @param {function} [responseTransformer] function to be invoked to transform the response object before invoking the primary callback function
          */
-        getCallbackWrapper : function(fn, scope, isErrorCallback) {
+        getCallbackWrapper : function(fn, scope, isErrorCallback, responseTransformer) {
             return function(response, options)
             {
                 var json = response.responseJSON;
@@ -384,9 +385,12 @@ LABKEY.Utils = new function()
                     json.exception = (response && response.statusText ? response.statusText : "Communication failure.");
                 }
 
+                if (responseTransformer)
+                    json = responseTransformer.call(scope || this, json);
+
                 if (fn)
                     fn.call(scope || this, json, response, options);
-                else if (isErrorCallback && response.status != 0)
+                else if (isErrorCallback && response.status !== 0)
                 {
                     // Don't show an error dialog if the user cancelled the request in the browser, like navigating
                     // to another page
