@@ -175,6 +175,11 @@ public class Input extends DisplayElement
         return "checkbox".equalsIgnoreCase(_type);
     }
 
+    private boolean isRadio()
+    {
+        return "radio".equalsIgnoreCase(_type);
+    }
+
     public boolean isChecked()
     {
         return _checked;
@@ -608,7 +613,7 @@ public class Input extends DisplayElement
 
     protected void doValue(StringBuilder sb)
     {
-        if (isCheckbox() && isChecked())
+        if ((isCheckbox() || isRadio()) && isChecked())
         {
             sb.append(" checked");
         }
