@@ -45,9 +45,11 @@ public class DefragmentParticipantVisitIndexesTask implements MaintenanceTask
         DbSchema schema = ti.getSchema();
         SqlDialect dialect = ti.getSqlDialect();
 
+        log.info("Starting to defrag PK_ParticipantVisit ix_participantvisit_sequencenum ix_participantvisit_visitrowid UQ_ParticipantVisit_ParticipantSequenceNum");
         dialect.defragmentIndex(schema, ti.getSelectName(), "PK_ParticipantVisit");
         dialect.defragmentIndex(schema, ti.getSelectName(), "ix_participantvisit_sequencenum");
         dialect.defragmentIndex(schema, ti.getSelectName(), "ix_participantvisit_visitrowid");
         dialect.defragmentIndex(schema, ti.getSelectName(), "UQ_ParticipantVisit_ParticipantSequenceNum");
+        log.info("Index defragging complete.");
     }
 }
