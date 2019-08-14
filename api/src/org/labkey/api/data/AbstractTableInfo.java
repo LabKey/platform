@@ -41,7 +41,6 @@ import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
@@ -81,6 +80,7 @@ import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -98,6 +98,12 @@ import static java.util.Collections.unmodifiableCollection;
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
+
+    /**
+     * Default lookup select list max size.
+     * @see TableInfo#getSelectList(String, List, Integer)
+     */
+    private static final int MAX_SELECT_LIST = 10_000;
 
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final ActionURL LINK_DISABLER_ACTION_URL;
@@ -296,14 +302,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     abstract protected SQLFragment getFromSQL();
 
     @Override
-    public NamedObjectList getSelectList(String columnName)
-    {
-        return getSelectList(columnName, Collections.emptyList());
-    }
-
-
-    @Override
-    public NamedObjectList getSelectList(String columnName, List<FilterType> filters)
+    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows)
     {
         if (columnName == null)
         {
@@ -311,15 +310,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
             else
-                return getSelectList(pkColumns.get(0), Collections.emptyList());
+                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows);
         }
 
         ColumnInfo column = getColumn(columnName);
-        return getSelectList(column, filters);
+        return getSelectList(column, filters, maxRows);
     }
 
-
-    public NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters)
+    private @NotNull NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters, Integer maxRows)
     {
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
@@ -352,7 +350,31 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
-        new TableSelector(this, cols, filter, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
+
+        // If no maxRows is specified, use the default MAX_SELECT_LIST
+        if (maxRows == null)
+            maxRows = MAX_SELECT_LIST;
+
+        TableSelector ts = new TableSelector(this, cols, filter, sort).setMaxRows(maxRows);
+        try (TableResultSet rs = ts.getResultSet(true))
+        {
+            if (rs.isComplete())
+            {
+                while (rs.next())
+                {
+                    ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex)));
+                }
+            }
+            else
+            {
+                // too many rows to render a <select> option list
+                return NamedObjectList.INCOMPLETE;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         return ret;
     }
