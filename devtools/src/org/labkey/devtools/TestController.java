@@ -302,22 +302,6 @@ public class TestController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class DomAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object form, BindException errors)
-        {
-            return jspView("dom.jsp", form, errors);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return navTrail(root, "DOM Test");
-        }
-    }
-
 
     public static class TestBean
     {
