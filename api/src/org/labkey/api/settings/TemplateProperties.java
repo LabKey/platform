@@ -40,7 +40,7 @@ public interface TemplateProperties
         return isDisplay(true);
     }
 
-    default boolean isDisplay(boolean inherit)
+    default Boolean isDisplay(boolean inherit)
     {
         String isDisplay = getShowByDefault();
         String displayProp = getProperty(getDisplayPropertyName(), inherit);
@@ -52,9 +52,9 @@ public interface TemplateProperties
         return BooleanUtils.toBoolean(isDisplay);
     }
 
-    default void setDisplay(boolean isDisplay)
+    default void setDisplay(Boolean isDisplay)
     {
-        setProperty(getDisplayPropertyName(), BooleanUtils.toStringTrueFalse(isDisplay));
+        setProperty(getDisplayPropertyName(), isDisplay != null ? String.valueOf(isDisplay) : null);
     }
 
     default String getModule()
