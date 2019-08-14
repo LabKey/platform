@@ -1594,6 +1594,50 @@ public class ProjectController extends SpringActionController
         }
     }
 
+    /**
+     * Just get the paths the user has read permission for
+     */
+    @RequiresNoPermission
+    public class GetReadableContainersAction extends ReadOnlyApiAction<BasicGetContainersForm>
+    {
+        private int _index = 0;
+
+        @Override
+        public ApiResponse execute(BasicGetContainersForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            int requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
+
+            Container c = getContainer();
+            if (form.getContainer() != null && form.getContainer().length > 0)
+                c = form.getContainer()[0];
+
+            List<String> containerPaths = c == null ? Collections.emptyList() : getVisibleChildren(c, 0, requestedDepth);
+            response.put("containers", containerPaths);
+
+            return response;
+        }
+
+        protected List<String> getVisibleChildren(Container parent, int currentDepth, int requestedDepth)
+        {
+            List<String> result = new ArrayList<>();
+            if (currentDepth == requestedDepth)
+                return result;
+
+            if (parent.hasPermission(getUser(), ReadPermission.class))
+            {
+                result.add(parent.getPath());
+            }
+
+            for (Container child : parent.getChildren())
+            {
+                result.addAll(getVisibleChildren(child, currentDepth + 1, requestedDepth));
+            }
+
+            return result;
+        }
+    }
+
     public static class WebPartPermissionsForm implements HasViewContext
     {
         private String _pageId;
