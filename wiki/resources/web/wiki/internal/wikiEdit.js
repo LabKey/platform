@@ -175,6 +175,7 @@ function tinyMceHandleEvent(evt) {
         $(_idSel + 'name').keypress(setDirty).change(onChangeName);
         $(_idSel + 'title').keypress(setDirty).change(setDirty);
         $(_idSel + 'parent').keypress(setDirty).change(setDirty);
+        $(_idSel + 'body').keypress(setDirty).change(setDirty);
         $(_idSel + 'shouldIndex').keypress(setDirty).change(setDirty);
         $(_idSel + 'showAttachments').keypress(setDirty).change(setDirty);
         $('#wiki-file-link').click(addNewAttachmentInput);
