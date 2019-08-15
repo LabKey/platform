@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.module.FolderTypeManager" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -132,7 +133,7 @@ function getSelectedFolderType()
 
 function updateDefaultOptions(cb)
 {
-    var dependencyMap = <%=dependencyMapJson.getHtmlString()%>;
+    var dependencyMap = <%=HtmlString.unsafe(dependencyMapJson.toString())%>;
     //if this module is required by others, we alert before disabling it
     if(cb)
     {

@@ -1140,8 +1140,6 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
         return ja;
     }
 
-
-
     /**
      * Make a JSON text of this JSONObject. For compactness, no whitespace
      * is added. If this would not result in a syntactically correct JSON text,
@@ -1166,7 +1164,7 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
     public HtmlString getHtmlString()
     {
         try {
-            return HtmlString.unsafe(toStringHelper());
+            return HtmlString.of(toStringHelper());
         } catch (Exception e) {
             return null;
         }
@@ -1188,6 +1186,7 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
         sb.append('}');
         return sb.toString();
     }
+
 
     /**
      * Make a prettyprinted JSON text of this JSONObject.
