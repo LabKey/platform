@@ -24,6 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
@@ -84,7 +87,8 @@ import static org.json.JSONObject.NULL;
  * @author JSON.org
  * @version 2
  */
-public class JSONArray {
+public class JSONArray implements HasHtmlString
+{
 
 
     /**
@@ -807,6 +811,16 @@ public class JSONArray {
         }
     }
 
+
+    @Override
+    public HtmlString getHtmlString()
+    {
+        try {
+            return HtmlString.of('[' + join(",") + ']');
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /**
      * Make a prettyprinted JSON text of this JSONArray.

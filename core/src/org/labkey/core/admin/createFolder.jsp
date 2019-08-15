@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -74,11 +75,11 @@
         var moduleTypes;
         var moduleTypesMap = {};
         var templateFolders = [];
-        var selectedModules = <%=modulesOut%>;
+        var selectedModules = <%=modulesOut.getHtmlString()%>;
         var hasLoaded = <%=text(form.getHasLoaded()?"true":"false")%>;
         var defaultTab = <%=q(form.getDefaultModule())%>;
         var selectedTemplateFolder = <%=q(form.getTemplateSourceId())%>;
-        var selectedTemplateWriters = <%=templateWriterTypes%>;
+        var selectedTemplateWriters = <%=templateWriterTypes.getHtmlString()%>;
         var userHasEnableRestrictedModulesPermission = <%=userHasEnableRestrictedModulesPermission%>;
         var isParentRoot = <%=isContainerRoot%>;
 

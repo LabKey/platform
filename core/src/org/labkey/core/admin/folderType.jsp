@@ -133,7 +133,7 @@ function getSelectedFolderType()
 
 function updateDefaultOptions(cb)
 {
-    var dependencyMap = <%=HtmlString.unsafe(dependencyMapJson.toString())%>;
+    var dependencyMap = <%=dependencyMapJson.getHtmlString()%>;
     //if this module is required by others, we alert before disabling it
     if(cb)
     {
