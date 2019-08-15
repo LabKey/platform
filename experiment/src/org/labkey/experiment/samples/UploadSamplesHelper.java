@@ -679,6 +679,7 @@ public abstract class UploadSamplesHelper
         @Override
         public void close() throws IOException
         {
+            super.close();
             if (null != nameState)
                 nameState.close();
         }
