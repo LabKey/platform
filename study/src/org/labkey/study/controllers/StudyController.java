@@ -6322,10 +6322,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
+    public class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
-        @Override
-        public URLHelper getURL(DatasetDetailRedirectForm form, Errors errors)
+        public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)

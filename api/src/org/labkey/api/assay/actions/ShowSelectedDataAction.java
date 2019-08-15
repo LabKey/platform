@@ -15,7 +15,7 @@
  */
 package org.labkey.api.assay.actions;
 
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.security.RequiresPermission;
@@ -23,6 +23,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.Errors;
 
@@ -33,7 +34,7 @@ import java.util.Set;
 * Date: Dec 30, 2008
 */
 @RequiresPermission(ReadPermission.class)
-public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataAction.ShowSelectedForm>
+public class ShowSelectedDataAction extends SimpleRedirectAction<ShowSelectedDataAction.ShowSelectedForm>
 {
     public static class ShowSelectedForm extends ProtocolIdForm
     {
@@ -50,9 +51,8 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
         }
     }
 
-
     @Override
-    public ActionURL getURL(ShowSelectedForm form, Errors errors)
+    public ActionURL getRedirectURL(ShowSelectedForm form)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
         int[] selectedIds = PageFlowUtil.toInts(selection);
