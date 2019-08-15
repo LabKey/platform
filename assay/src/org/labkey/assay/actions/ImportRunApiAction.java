@@ -219,20 +219,30 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         }
         else if (rawData != null && !rawData.isEmpty())
         {
-            // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
-            // the original (untransformed) data within, say, a sample management application.
-            File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
-            // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
-            file = createFile(protocol, dir, "tmp");
-            try (TSVMapWriter tsvWriter = new TSVMapWriter(rawData))
+            boolean saveDataAsFile = form.isSaveDataAsFile();
+
+            if (saveDataAsFile)
             {
-                tsvWriter.write(file);
-                factory.setRawData(null);
-                factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+                // try to write out a tmp file containing the imported data so it can be used for transforms or for previewing
+                // the original (untransformed) data within, say, a sample management application.
+                File dir = AssayFileWriter.ensureUploadDirectory(getContainer());
+                // NOTE: We use a 'tmp' file extension so that DataLoaderService will sniff the file type by parsing the file's header.
+                file = createFile(protocol, dir, "tmp");
+                try (TSVMapWriter tsvWriter = new TSVMapWriter(rawData))
+                {
+                    tsvWriter.write(file);
+                    factory.setRawData(null);
+                    factory.setUploadedData(Collections.singletonMap(PRIMARY_FILE, file));
+                }
+                catch (Exception e)
+                {
+                    logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
+                    saveDataAsFile = false;
+                }
             }
-            catch (Exception e)
+
+            if (!saveDataAsFile)
             {
-                logger.warn("Unable to create temporary file for raw data. Creating result data using the data map.", e);
                 factory.setRawData(rawData);
                 factory.setUploadedData(Collections.emptyMap());
 
@@ -296,6 +306,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private JSONArray _dataRows;
         private String _runFilePath;
         private String _module;
+        private boolean _saveDataAsFile;
 
         public JSONObject getJson()
         {
@@ -415,6 +426,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setModule(String module)
         {
             _module = module;
+        }
+
+        public boolean isSaveDataAsFile()
+        {
+            return _saveDataAsFile;
+        }
+
+        public void setSaveDataAsFile(boolean saveDataAsFile)
+        {
+            _saveDataAsFile = saveDataAsFile;
         }
     }
 
