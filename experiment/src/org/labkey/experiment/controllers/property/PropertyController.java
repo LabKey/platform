@@ -60,6 +60,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -568,85 +569,23 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
-    public class GetFilePreviewAction extends ReadOnlyApiAction<GetFilePreviewForm>
-    {
-        @Override
-        public void validateForm(GetFilePreviewForm form, Errors errors)
-        {
-            if (form.getFile() == null)
-            {
-                errors.reject(ERROR_REQUIRED, "file is required, as either an id or a path");
-            }
-        }
-
-        @Override
-        public Object execute(GetFilePreviewForm form, BindException errors) throws Exception
-        {
-            File file = (File) ConvertUtils.convert(form.getFile().toString(), File.class);
-            DataLoader loader = null;
-
-            if (file.exists())
-            {
-                loader = DataLoader.get().createLoader(file, null, true, null, null);
-            }
-            return getFilePreviewResponse(loader, form.getNumLinesToInclude());
-        }
-    }
-
-    public static class GetFilePreviewForm extends InferDomainForm
-    {
-        private Object _file;
-
-        public Object getFile()
-        {
-            return _file;
-        }
-
-        public void setFile(Object file)
-        {
-            _file = file;
-        }
-    }
-
-    private ApiSimpleResponse getFilePreviewResponse(DataLoader loader, Integer numLinesToInclude) throws IOException
-    {
-        ApiSimpleResponse response = new ApiSimpleResponse();
-
-        List<GWTPropertyDescriptor> fields = new ArrayList<>();
-
-        if (loader != null)
-        {
-            ColumnDescriptor[] columns = loader.getColumns();
-            for (ColumnDescriptor col : columns)
-            {
-                GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
-                prop.setContainer(getContainer().getId());
-                prop.setMvEnabled(col.isMvEnabled());
-
-                fields.add(prop);
-            }
-
-            if (numLinesToInclude != null)
-            {
-                response.put("data", loader.getFirstNLines(numLinesToInclude));
-            }
-        }
-
-        response.put("fields", fields);
-        return response;
-
-    }
-
     /**
      * Infer the fields from the uploaded file and return the array of fields in a format that can
      * be used in the CreateDomainAction.
      */
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
+    @ActionNames("inferDomain, getFilePreview")
     public class InferDomainAction extends ReadOnlyApiAction<InferDomainForm>
     {
+        @Override
+        public void validateForm(InferDomainForm form, Errors errors)
+        {
+            // expect to either have a file posted or a param with the file id/path
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest) && form.getFile() == null)
+                errors.reject(ERROR_REQUIRED, "Either a file is required to be posted or the id/path to a file that exists on the server must be supplied.");
+        }
+
         @Override
         protected ObjectMapper createObjectMapper()
         {
@@ -658,25 +597,55 @@ public class PropertyController extends SpringActionController
         @Override
         public Object execute(InferDomainForm form, BindException errors) throws Exception
         {
-            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
-                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
-
             Map<String, MultipartFile> fileMap = getFileMap();
+            File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
+            DataLoader loader = null;
 
-            if (fileMap.size() == 1)
+            if (file != null && file.exists())
+            {
+                loader = DataLoader.get().createLoader(file, null, true, null, null);
+            }
+            else if (fileMap.size() == 1)
             {
                 Optional<MultipartFile> opt = fileMap.values().stream().findAny();
-                MultipartFile file = opt.orElse(null);
-                DataLoader loader = null;
-
-                if (file != null)
-                {
-                    loader = DataLoader.get().createLoader(file, true, null, null);
-                }
-                return getFilePreviewResponse(loader, form.getNumLinesToInclude());
-
+                MultipartFile postedFile = opt.orElse(null);
+                if (postedFile != null)
+                    loader = DataLoader.get().createLoader(postedFile, true, null, null);
             }
-            return new ApiSimpleResponse();
+            else
+            {
+                throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
+            }
+
+            return getInferDomainResponse(loader, form.getNumLinesToInclude());
+        }
+
+        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude) throws IOException
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
+
+            if (loader != null)
+            {
+                ColumnDescriptor[] columns = loader.getColumns();
+                for (ColumnDescriptor col : columns)
+                {
+                    GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
+                    prop.setContainer(getContainer().getId());
+                    prop.setMvEnabled(col.isMvEnabled());
+
+                    fields.add(prop);
+                }
+
+                if (numLinesToInclude != null)
+                {
+                    response.put("data", loader.getFirstNLines(numLinesToInclude));
+                }
+            }
+
+            response.put("fields", fields);
+            return response;
         }
     }
 
@@ -684,6 +653,7 @@ public class PropertyController extends SpringActionController
     {
         // TODO should -1 allow you to get all data?
         private Integer _numLinesToInclude;
+        private Object _file;
 
         public Integer getNumLinesToInclude()
         {
@@ -693,6 +663,16 @@ public class PropertyController extends SpringActionController
         public void setNumLinesToInclude(Integer numLinesToInclude)
         {
             _numLinesToInclude = numLinesToInclude;
+        }
+
+        public Object getFile()
+        {
+            return _file;
+        }
+
+        public void setFile(Object file)
+        {
+            _file = file;
         }
     }
 
