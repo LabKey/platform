@@ -845,7 +845,8 @@ public class AnnouncementManager
     {
         String result = "";
 
-        if(!forEmail){
+        if (!forEmail)
+        {
             result = UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId);
         }
 
