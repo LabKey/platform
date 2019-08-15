@@ -1137,7 +1137,7 @@ public class UserManager
     }
 
     /**
-     * Return the URL as a string for the user details page of the displayedUserId.
+     * Return the ActionURL for the user details page of the displayedUserId.
      * If the user does not have permissions to see the user details page or the displayed
      * user id is a guest, return the URL an empty URL.
      * @param container The current container
@@ -1145,14 +1145,13 @@ public class UserManager
      * @param displayedUserId The user id of the url we want to navigate to
      * @return A string URL to navigate to the displayedUserIds user details page.
      */
-    public static String getUserDetailsURL(Container container, User currentUser, Integer displayedUserId)
+    public static ActionURL getUserDetailsURL(Container container, User currentUser, Integer displayedUserId)
     {
         if (SecurityManager.canSeeUserDetails(container, currentUser) && !UserIdRenderer.isGuestUserId(displayedUserId))
         {
             if (displayedUserId != null)
             {
-                ActionURL userURL = PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
-                return userURL.toString();
+                return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
             }
         }
 
