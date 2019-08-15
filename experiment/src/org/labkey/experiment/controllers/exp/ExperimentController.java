@@ -2809,6 +2809,7 @@ public class ExperimentController extends SpringActionController
         public ApiResponse execute(CascadeDeleteForm form, BindException errors)
         {
             Set<Integer> runIdsToDelete = new HashSet<>(form.getIds(true));
+            Set<Integer> runIdsCascadeDeleted = new HashSet<>();
 
             if (form.isCascade())
             {
@@ -2816,13 +2817,19 @@ public class ExperimentController extends SpringActionController
                 {
                     ExpRun run = ExperimentService.get().getExpRun(runId);
                     if (run != null)
-                        addReplacesRuns(run, runIdsToDelete);
+                        addReplacesRuns(run, runIdsCascadeDeleted);
                 }
+
+                if (runIdsCascadeDeleted.size() > 0)
+                    runIdsToDelete.addAll(runIdsCascadeDeleted);
             }
 
             ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), runIdsToDelete);
+
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             response.put("runIdsDeleted", runIdsToDelete);
+            if (runIdsCascadeDeleted.size() > 0)
+                response.put("runIdsCascadeDeleted", runIdsCascadeDeleted);
             return response;
         }
 
