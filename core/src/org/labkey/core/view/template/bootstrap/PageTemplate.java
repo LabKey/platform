@@ -325,8 +325,7 @@ public class PageTemplate extends JspView<PageConfig>
     public static HtmlView getTemplateResource(TemplateProperties prop)
     {
         HtmlView view = null;
-        // todo: maybe this isn't right.
-        if (prop.isDisplay(false))
+        if (prop.isDisplay() != null && prop.isDisplay())
         {
             Module coreModule = ModuleLoader.getInstance().getCoreModule();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());

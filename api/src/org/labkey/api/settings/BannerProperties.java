@@ -8,6 +8,7 @@ public class BannerProperties implements TemplateProperties
     private final String SHOW_BANNER_PROPERTY_NAME = "ShowBanner";
     private final String BANNER_MODULE_PROPERTY_NAME = "BannerModule";
     private final String FILE_NAME = "_banner";
+    private final String PROPERTY_DISPLAY_TYPE = "Banner";
 
     private Container _container;
 
@@ -50,5 +51,11 @@ public class BannerProperties implements TemplateProperties
     public String getShowByDefault()
     {
         return String.valueOf(false);
+    }
+
+    @Override
+    public String getPropertyDisplayType()
+    {
+        return PROPERTY_DISPLAY_TYPE;
     }
 }

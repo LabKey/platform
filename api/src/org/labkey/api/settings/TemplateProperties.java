@@ -33,23 +33,18 @@ public interface TemplateProperties
     String getModulePropertyName();
     String getFileName();
     String getShowByDefault();
+    String getPropertyDisplayType();
     Container getContainer();
 
-    default boolean isDisplay()
+    default Boolean isDisplay()
     {
         return isDisplay(true);
     }
 
     default Boolean isDisplay(boolean inherit)
     {
-        String isDisplay = getShowByDefault();
         String displayProp = getProperty(getDisplayPropertyName(), inherit);
-
-        if (displayProp != null)
-        {
-            isDisplay = displayProp;
-        }
-        return BooleanUtils.toBoolean(isDisplay);
+        return BooleanUtils.toBooleanObject(displayProp);
     }
 
     default void setDisplay(Boolean isDisplay)

@@ -26,6 +26,7 @@ public class HeaderProperties implements TemplateProperties
     private final String SHOW_HEADER_PROPERTY_NAME = "ShowHeader";
     private final String HEADER_MODULE_PROPERTY_NAME = "HeaderModule";
     private final String FILE_NAME = "_header";
+    private final String PROPERTY_DISPLAY_TYPE = "Header";
 
     private Container _container;
 
@@ -66,4 +67,10 @@ public class HeaderProperties implements TemplateProperties
 
     @Override
     public String getShowByDefault() { return "FALSE";}
+
+    @Override
+    public String getPropertyDisplayType()
+    {
+        return PROPERTY_DISPLAY_TYPE;
+    }
 }

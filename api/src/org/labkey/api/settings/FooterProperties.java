@@ -24,6 +24,7 @@ public class FooterProperties implements TemplateProperties
     private final String SHOW_FOOTER_PROPERTY_NAME = "ShowFooter";
     private final String FOOTER_MODULE_PROPERTY_NAME = "FooterModule";
     private final String FILE_NAME = "_footer";
+    private final String PROPERTY_DISPLAY_TYPE = "Footer";
 
     private Container _container;
 
@@ -64,4 +65,10 @@ public class FooterProperties implements TemplateProperties
 
     @Override
     public String getShowByDefault() { return "TRUE";}
+
+    @Override
+    public String getPropertyDisplayType()
+    {
+        return PROPERTY_DISPLAY_TYPE;
+    }
 }
