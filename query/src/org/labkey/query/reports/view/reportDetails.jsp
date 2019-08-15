@@ -199,7 +199,7 @@
             Created:
         </td>
         <td>
-             <%=createdDate != null && createdDate.getTime() > 0 ? formatDateTime(createdDate) : ""%>
+             <%=createdDate != null && createdDate.getTime() > 0 ? formatDateTime(createdDate) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 

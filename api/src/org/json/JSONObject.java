@@ -25,6 +25,8 @@ SOFTWARE.
 */
 
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -85,7 +87,7 @@ import java.util.*;
  * @author JSON.org
  * @version 2
  */
-public class JSONObject extends HashMap<String, Object>
+public class JSONObject extends HashMap<String, Object> implements HasHtmlString
 {
     // kevink: restore the Null class removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
     /**
@@ -1138,6 +1140,8 @@ public class JSONObject extends HashMap<String, Object>
         return ja;
     }
 
+
+
     /**
      * Make a JSON text of this JSONObject. For compactness, no whitespace
      * is added. If this would not result in a syntactically correct JSON text,
@@ -1152,25 +1156,38 @@ public class JSONObject extends HashMap<String, Object>
      */
     public String toString() {
         try {
-            Iterator     keys = keySet().iterator();
-            StringBuffer sb = new StringBuffer("{");
-
-            while (keys.hasNext()) {
-                if (sb.length() > 1) {
-                    sb.append(',');
-                }
-                Object o = keys.next();
-                sb.append(quote(o.toString()));
-                sb.append(':');
-                sb.append(valueToString(get(o)));
-            }
-            sb.append('}');
-            return sb.toString();
+            return toStringHelper();
         } catch (Exception e) {
             return null;
         }
     }
 
+    @Override
+    public HtmlString getHtmlString()
+    {
+        try {
+            return HtmlString.unsafe(toStringHelper());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String toStringHelper(){
+        Iterator     keys = keySet().iterator();
+        StringBuffer sb = new StringBuffer("{");
+
+        while (keys.hasNext()) {
+            if (sb.length() > 1) {
+                sb.append(',');
+            }
+            Object o = keys.next();
+            sb.append(quote(o.toString()));
+            sb.append(':');
+            sb.append(valueToString(get(o)));
+        }
+        sb.append('}');
+        return sb.toString();
+    }
 
     /**
      * Make a prettyprinted JSON text of this JSONObject.
