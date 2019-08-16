@@ -1,11 +1,10 @@
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page import="org.labkey.api.util.DOM" %>
-<%@ page import="org.labkey.core.portal.ProjectController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%!
@@ -30,7 +29,7 @@
         HR(),
 
         TABLE(TR(TD(cl("link").at(style,"border:solid 1px red"),
-                link("begin", ProjectController.BeginAction.class)))),
+                link("begin", getContainer().getStartURL(getUser()))))),
 
         HR(),
 
