@@ -235,7 +235,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                     if (run != null)
                     {
                         // check if there is a QC state associated with this flag
-                        QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(container, qcId) : null;
+                        QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), qcId) : null;
                         if (state != null)
                         {
                             ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), comment);
