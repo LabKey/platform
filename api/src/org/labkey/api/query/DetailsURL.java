@@ -61,16 +61,13 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     public static String validateURL(String str)
     {
-        if (!DetailsURL.classPattern.matcher(str).matches())
+        try
         {
-            try
-            {
-                new ActionURL(str);
-            }
-            catch (Exception e)
-            {
-                return "Invalid url pattern: " + str;
-            }
+            DetailsURL.fromString(str);
+        }
+        catch (Exception e)
+        {
+            return "Invalid url pattern: " + str;
         }
 
         return null;
@@ -242,6 +239,12 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         this(baseURL, Collections.singletonMap(param,subst));
     }
 
+    private static final String SUPPORTED_URL_FORMATS = "\n" +
+        "Supported url formats:\n" +
+        "\t/controller/action.view?id=${RowId}\n" +
+        "\t/controller-action.view?id=${RowId}\n" +
+        "\torg.labkey.package.MyController$ActionAction.class?id=${RowId}";
+
     @Override
     protected void parse() throws IllegalArgumentException
     {
@@ -289,15 +292,13 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
                         expr = "/" + expr;
 
                     _parsedUrl = new ActionURL(expr);
+
+                    if (null == _parsedUrl.getPath())
+                        throw new IllegalArgumentException("Url '" + _urlSource + "' included a container path." + SUPPORTED_URL_FORMATS);
                 }
                 catch (Exception e)
                 {
-                    throw new IllegalArgumentException(
-                            "Failed to parse url '" + _urlSource + "'.\n" +
-                                    "Supported url formats:\n" +
-                                    "\t/controller/action.view?id=${RowId}\n" +
-                                    "\t/controller-action.view?id=${RowId}\n" +
-                                    "\torg.labkey.package.MyController$ActionAction.class?id=${RowId}", e);
+                    throw new IllegalArgumentException("Failed to parse url '" + _urlSource + "'." + SUPPORTED_URL_FORMATS);
                 }
             }
         }
@@ -488,7 +489,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         String action = _url.getAction();
         if (!action.endsWith(".view"))
             action = action + ".view";
-        String to = "/" + encode(controller) + "/" + encode(action) + "?" + _url.getQueryString(true);
+        String to = "/" + encode(controller) + "-" + encode(action) + "?" + _url.getQueryString(true);
         assert null == DetailsURL.validateURL(to) : DetailsURL.validateURL(to);
         return to;
     }
