@@ -28,7 +28,7 @@
     ButtonForm form = me.getModelBean();
     ActionURL formURL = new ActionURL(TestController.ButtonAction.class, getContainer());
 %>
-<labkey:form method="POST" action="button.view?">
+<labkey:form method="POST">
     <table>
         <tr>
             <td><label for="buttontext">Text</label></td>
@@ -48,7 +48,7 @@
         </tr>
         <tr>
             <td><label for="buttonsubmit">Submit</label></td>
-            <td><input id="buttonsubmit" name="buttonsubmit" type="checkbox" value="true" <%= h(form.isButtonsubmit() ? "checked=\"checked\"" : "") %>></td>
+            <td><input id="buttonsubmit" name="buttonsubmit" type="checkbox" value="true" <%= checked(form.isButtonsubmit()) %>></td>
         </tr>
         <tr>
             <td><label for="buttonhref">onClick</label></td>
