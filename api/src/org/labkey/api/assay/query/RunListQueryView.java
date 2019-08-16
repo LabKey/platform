@@ -24,6 +24,7 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
@@ -149,9 +150,10 @@ public class RunListQueryView extends ExperimentRunListView
                 addButton = true;
             }
 
-            if (getContainer().hasPermission(getUser(), AdminPermission.class))
+            Container protocolContainer = schema.getProtocol().getContainer();
+            if (protocolContainer.hasPermission(getUser(), AdminPermission.class))
             {
-                button.addMenuItem("Manage states", PageFlowUtil.urlProvider(CoreUrls.class).getManageQCStatesURL(getContainer())
+                button.addMenuItem("Manage states", PageFlowUtil.urlProvider(CoreUrls.class).getManageQCStatesURL(protocolContainer)
                         .addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
                 addButton = true;
             }

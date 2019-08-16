@@ -234,7 +234,6 @@ import org.labkey.core.security.validators.PermissionsValidator;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
-import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
@@ -324,7 +323,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("login", LoginController.class);
         addController("junit", JunitController.class);
         addController("core", CoreController.class);
-        addController("test", TestController.class);
         addController("analytics", AnalyticsController.class);
         addController("project", ProjectController.class);
         addController("util", UtilController.class);

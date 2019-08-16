@@ -1271,9 +1271,10 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class RawTableMetaDataAction extends QueryViewAction
     {
-        private String _schemaName;
-        private String _tableName;
+        private String _dbSchemaName;
+        private String _dbTableName;
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
@@ -1282,53 +1283,56 @@ public class QueryController extends SpringActionController
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
 
-            DbSchema schema = ti.getSchema();
-            DbScope scope = schema.getScope();
-            _schemaName = schema.getName();
+            DbScope scope = ti.getSchema().getScope();
 
-            // Try to get the underlying schema table and use the meta data name, #12015
-            if (ti instanceof FilteredTable)
-                ti = ((FilteredTable) ti).getRealTable();
-
-            if (ti instanceof SchemaTableInfo)
-                _tableName = ti.getMetaDataName();
-            else if (ti instanceof LinkedTableInfo)
-                _tableName = ti.getName();
-            else
-                _tableName = ti.getSelectName();
-
-            if (null == _tableName)
-            {
-                TableInfo tableInfo = schema.getTable(ti.getName());
-                if (null != tableInfo)
-                    _tableName = tableInfo.getMetaDataName();
-            }
-
-            ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
-            url.addParameter("schemaName", userSchemaName);
-
+            // Test for provisioned table
             if (ti.getDomain() != null)
             {
                 Domain domain = ti.getDomain();
                 if (domain.getStorageTableName() != null)
                 {
                     // Use the real table and schema names for getting the metadata
-                    _tableName = domain.getStorageTableName();
-                    _schemaName = domain.getDomainKind().getStorageSchemaName();
+                    _dbTableName = domain.getStorageTableName();
+                    _dbSchemaName = domain.getDomainKind().getStorageSchemaName();
                 }
             }
 
+            // No domain or domain with non-provisioned storage (e.g., core.Users)
+            if (null == _dbSchemaName || null == _dbTableName)
+            {
+                DbSchema dbSchema = ti.getSchema();
+                _dbSchemaName = dbSchema.getName();
 
-            SqlDialect dialect = scope.getSqlDialect();
+                // Try to get the underlying schema table and use the meta data name, #12015
+                if (ti instanceof FilteredTable)
+                    ti = ((FilteredTable) ti).getRealTable();
 
-            if (null != _tableName)
+                if (ti instanceof SchemaTableInfo)
+                    _dbTableName = ti.getMetaDataName();
+                else if (ti instanceof LinkedTableInfo)
+                    _dbTableName = ti.getName();
+
+                if (null == _dbTableName)
+                {
+                    TableInfo tableInfo = dbSchema.getTable(ti.getName());
+                    if (null != tableInfo)
+                        _dbTableName = tableInfo.getMetaDataName();
+                }
+            }
+
+            if (null != _dbTableName)
             {
                 VBox result = new VBox();
-                HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url, _tableName);
+
+                ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
+                url.addParameter("schemaName", userSchemaName);
+
+                SqlDialect dialect = scope.getSqlDialect();
+                HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _dbSchemaName, url, _dbTableName);
 
                 result.addView(scopeInfo);
 
-                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
+                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _dbSchemaName, _dbTableName))
                 {
                     JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
@@ -1362,11 +1366,12 @@ public class QueryController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root);
-            if (null != _tableName)
-                root.addChild("JDBC Meta Data For Table \"" + _schemaName + "." + _tableName + "\"");
+            if (null != _dbTableName)
+                root.addChild("JDBC Meta Data For Table \"" + _dbSchemaName + "." + _dbTableName + "\"");
             return root;
         }
     }
@@ -1468,8 +1473,8 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ModelAndView result = super.getView(form, errors);
             _print = true;
+            ModelAndView result = super.getView(form, errors);
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
                 title = form.getSchemaName();
@@ -5838,11 +5843,13 @@ public class QueryController extends SpringActionController
      * Action used to redirect QueryAuditProvider [details] column to the exported table's grid view.
      */
     @RequiresPermission(AdminPermission.class)
-    public class QueryExportAuditRedirectAction extends RedirectAction<QueryExportAuditForm>
+    public class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
-        @Override
-        public URLHelper getURL(QueryExportAuditForm form, Errors errors)
+        public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
+            if (form.getRowId() == 0)
+                throw new NotFoundException("Query export audit rowid required");
+
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
 
@@ -5879,13 +5886,6 @@ public class QueryController extends SpringActionController
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url;
-        }
-
-        @Override
-        public void validateCommand(QueryExportAuditForm form, Errors errors)
-        {
-            if (form.getRowId() == 0)
-                throw new NotFoundException("Query export audit rowid required");
         }
     }
 

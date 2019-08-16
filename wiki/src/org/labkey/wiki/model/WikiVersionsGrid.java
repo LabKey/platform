@@ -26,6 +26,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.view.GridView;
 import org.labkey.wiki.WikiController;
 import org.springframework.validation.Errors;
@@ -67,7 +68,7 @@ public class WikiVersionsGrid extends GridView
 
         ColumnInfo colCreatedBy = tinfoVersions.getColumn("CreatedBy");
         // Set a custom renderer for the CreatedBy column
-        DisplayColumn dc = new WikiController.DisplayColumnCreatedBy(colCreatedBy);
+        DisplayColumn dc = new UserIdRenderer(colCreatedBy);
         dr.addDisplayColumn(dc);
 
         dr.addDisplayColumn(new DataColumn(tinfoVersions.getColumn("Created")));
