@@ -816,7 +816,7 @@ public class JSONArray implements HasHtmlString
     public HtmlString getHtmlString()
     {
         try {
-            return HtmlString.of('[' + join(",") + ']');
+            return HtmlString.unsafe('[' + join(",") + ']');
         } catch (Exception e) {
             return null;
         }

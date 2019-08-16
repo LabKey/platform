@@ -1164,9 +1164,9 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
     public HtmlString getHtmlString()
     {
         try {
-            return HtmlString.of(toStringHelper());
+            return HtmlString.unsafe(toStringHelper());
         } catch (Exception e) {
-            return HtmlString.EMPTY_STRING;
+            return null;
         }
     }
 
