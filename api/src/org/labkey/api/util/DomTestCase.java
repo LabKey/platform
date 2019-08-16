@@ -42,8 +42,8 @@ public class DomTestCase extends Assert
 
         h = createHtml(
             SELECT(id("element"),
-                    Arrays.stream(Element.values()).map(el -> OPTION(NOAT, NOCLASS, el.name())),
-                    OPTION(at(selected,true), NOCLASS, "A&W"))
+                    Arrays.stream(Element.values()).map(el -> OPTION(el.name())),
+                    OPTION(at(selected,true), "A&W"))
         );
         assertTrue(h.toString().startsWith("<select id=\"element\"><option>a</option>"));
         assertTrue(h.toString().endsWith("<option selected>A&amp;W</option></select>"));

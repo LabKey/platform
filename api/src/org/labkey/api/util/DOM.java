@@ -29,8 +29,6 @@ public class DOM
 
     public interface ClassNames {} // just a marker interface for better typing since this is used as .toString() at runtime
 
-    public static ClassNames NOCLASS = null;
-
     public interface Renderable
     {
         Appendable appendTo(Appendable sb);

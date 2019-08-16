@@ -15,10 +15,7 @@
  */
 package org.labkey.api.util;
 
-import static org.labkey.api.util.PageFlowUtil.filter;
-
-
-public class HtmlStringBuilder implements HtmlStream, HasHtmlString
+public class HtmlStringBuilder implements HasHtmlString
 {
     private final StringBuilder _sb = new StringBuilder();
 
@@ -37,21 +34,18 @@ public class HtmlStringBuilder implements HtmlStream, HasHtmlString
         return new HtmlStringBuilder().append(hhs);
     }
 
-    @Override
     public HtmlStringBuilder append(String s)
     {
         _sb.append(h(s));
         return this;
     }
 
-    @Override
     public HtmlStringBuilder append(HtmlString hs)
     {
         _sb.append(hs.toString());
         return this;
     }
 
-    @Override
     public HtmlStringBuilder append(HasHtmlString hhs)
     {
         _sb.append(hhs.getHtmlString());
@@ -66,6 +60,6 @@ public class HtmlStringBuilder implements HtmlStream, HasHtmlString
 
     private static String h(String s)
     {
-        return filter(s);
+        return PageFlowUtil.filter(s);
     }
 }
