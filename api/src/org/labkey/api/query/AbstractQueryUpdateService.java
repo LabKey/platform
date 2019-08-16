@@ -266,7 +266,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             if (null != rows)
             {
-                MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(context), false);
+                MapDataIterator maps = DataIteratorUtil.wrapMap(it, false);
                 it = new WrapperDataIterator(maps)
                 {
                     @Override
