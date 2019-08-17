@@ -62,9 +62,15 @@ public class FolderManagement
                 action.setHelpTopic(new HelpTopic("customizeLook"));
 
                 if (c.isRoot())
-                    root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL()).addChild("Look and Feel Settings");
+                {
+                    root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
+                    root.addChild("Look and Feel Settings");
+                }
                 else
+                {
                     root.addChild("Project Settings");
+                }
+
                 return root;
             }
         };

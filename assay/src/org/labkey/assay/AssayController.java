@@ -224,7 +224,9 @@ public class AssayController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assays", new ActionURL(BeginAction.class, getContainer())).addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Assays", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            return root;
         }
     }
 
@@ -527,8 +529,11 @@ public class AssayController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
-                    new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
+            root.addChild("Copy Assay Design");
+
+            return root;
         }
     }
 

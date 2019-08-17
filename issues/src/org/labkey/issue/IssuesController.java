@@ -269,6 +269,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             if (IssueManager.getIssueListDefs(getContainer()).size() > 1)
@@ -280,9 +281,11 @@ public class IssuesController extends SpringActionController
                 return HttpView.redirect(getListURL(getContainer()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Issues", getListURL(getContainer()));
+            root.addChild("Issues", getListURL(getContainer()));
+            return root;
         }
     }
 

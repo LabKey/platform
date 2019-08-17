@@ -489,7 +489,11 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return appendRootNavTrail(root).addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer())).addChild(_experiment.getName());
+            appendRootNavTrail(root);
+            root.addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
+            root.addChild(_experiment.getName());
+
+            return root;
         }
     }
 
@@ -508,7 +512,10 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("Sample Sets");
+            appendRootNavTrail(root);
+            root.addChild("Sample Sets");
+
+            return root;
         }
     }
 
@@ -654,7 +661,10 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             ActionURL url = new ActionURL(ListMaterialSourcesAction.class, getContainer());
-            return appendRootNavTrail(root).addChild("Sample Sets", url).addChild("Sample Set " + _source.getName());
+            appendRootNavTrail(root).addChild("Sample Sets", url);
+            root.addChild("Sample Set " + _source.getName());
+
+            return root;
         }
     }
 
@@ -680,7 +690,10 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("All Materials");
+            appendRootNavTrail(root);
+            root.addChild("All Materials");
+
+            return root;
         }
     }
 
@@ -967,7 +980,11 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("dataClass");
             ActionURL url = new ActionURL(ListDataClassAction.class, getContainer());
-            return appendRootNavTrail(root).addChild("Data Class", url).addChild(_dataClass.getName());
+            appendRootNavTrail(root);
+            root.addChild("Data Class", url);
+            root.addChild(_dataClass.getName());
+
+            return root;
         }
     }
 
@@ -2394,7 +2411,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run)).addChild("Protocol Application " + _app.getName());
+            appendRootNavTrail(root);
+            root.addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run));
+            root.addChild("Protocol Application " + _app.getName());
+
+            return root;
         }
     }
 
@@ -2465,7 +2486,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).addChild("Protocol: " + _protocol.getName());
+            appendRootNavTrail(root);
+            root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
+            root.addChild("Protocol: " + _protocol.getName());
+
+            return root;
         }
     }
 
@@ -2547,6 +2572,7 @@ public class ExperimentController extends SpringActionController
         private ExpProtocol _parentProtocol;
         private ProtocolActionStepDetail _actionStep;
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL url = getViewContext().getActionURL();
@@ -2596,12 +2622,15 @@ public class ExperimentController extends SpringActionController
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, protocolDetails);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).
-                    addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).
-                    addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol)).
-                    addChild("Protocol Step: " + _actionStep.getName());
+            appendRootNavTrail(root);
+            root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
+            root.addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol));
+            root.addChild("Protocol Step: " + _actionStep.getName());
+
+            return root;
         }
     }
 

@@ -276,7 +276,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
+            root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
+            return root;
         }
     }
 
@@ -2819,7 +2820,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
+            root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
+            return root;
         }
 
         @Override

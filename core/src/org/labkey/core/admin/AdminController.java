@@ -6556,8 +6556,10 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root = root.addChild("Folder Management", getManageFoldersURL());
-            return root.addChild("Move Folder");
+            root.addChild("Folder Management", getManageFoldersURL());
+            root.addChild("Move Folder");
+
+            return root;
         }
     }
 

@@ -342,7 +342,8 @@ public class WikiController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Start Page", getUrl());
+            root.addChild("Start Page", getUrl());
+            return root;
         }
     }
 
@@ -2012,6 +2013,7 @@ public class WikiController extends SpringActionController
         private WikiVersion _wikiVer = null;
         private Wiki _wiki = null;
 
+        @Override
         public ModelAndView getView(EditWikiForm form, BindException errors)
         {
             //region get the wiki
@@ -2075,6 +2077,7 @@ public class WikiController extends SpringActionController
             return new JspView<>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#edit");
@@ -2082,10 +2085,15 @@ public class WikiController extends SpringActionController
             {
                 ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getContainer());
                 pageUrl.addParameter("name", _wiki.getName());
-                return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
+                root.addChild(_wikiVer.getTitle(), pageUrl);
+                root.addChild("Edit");
             }
             else
-                return root.addChild("New Page");
+            {
+                root.addChild("New Page");
+            }
+
+            return root;
         }
     }
 
