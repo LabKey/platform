@@ -292,14 +292,14 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
                         expr = "/" + expr;
 
                     _parsedUrl = new ActionURL(expr);
-
-                    if (null == _parsedUrl.getPath())
-                        throw new IllegalArgumentException("Url '" + _urlSource + "' included a container path." + SUPPORTED_URL_FORMATS);
                 }
                 catch (Exception e)
                 {
                     throw new IllegalArgumentException("Failed to parse url '" + _urlSource + "'." + SUPPORTED_URL_FORMATS);
                 }
+
+                if (!_parsedUrl.getExtraPath().isEmpty())
+                    throw new IllegalArgumentException("Url '" + _urlSource + "' included a container path." + SUPPORTED_URL_FORMATS);
             }
         }
         else
