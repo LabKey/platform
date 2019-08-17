@@ -606,8 +606,10 @@ public class WikiController extends SpringActionController
             setHelpTopic("wikiUserGuide#manage");
             if (null == _wikiVersion)
                 _wikiVersion = _wiki.getLatestVersion();
-            return (new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root))
-                    .addChild("Manage \"" + _wikiVersion.getTitle() + "\"");
+            new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root);
+            root.addChild("Manage \"" + _wikiVersion.getTitle() + "\"");
+
+            return root;
         }
 
         public ActionURL getUrl()
@@ -1322,8 +1324,10 @@ public class WikiController extends SpringActionController
             String pageTitle = _wikiversion.getTitle();
             pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiSelectManager.getVersionCount(_wiki) + ")");
 
-            return new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root)
-                    .addChild(pageTitle, getUrl());
+            new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            root.addChild(pageTitle, getUrl());
+
+            return root;
         }
 
         public ActionURL getUrl()
@@ -1430,7 +1434,10 @@ public class WikiController extends SpringActionController
             String pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            return new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
+            new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root);
+            root.addChild(pageTitle);
+
+            return root;
         }
     }
 
@@ -1554,8 +1561,10 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#history");
-            return new PageAction(getViewContext(), _wiki,_wikiversion).appendNavTrail(root).
-                    addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
+            new PageAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            root.addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
+
+            return root;
         }
 
         public ActionURL getUrl()

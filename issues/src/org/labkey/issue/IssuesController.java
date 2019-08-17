@@ -366,7 +366,8 @@ public class IssuesController extends SpringActionController
                     addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, getIssueDefName()).
                     addParameter(DataRegion.LAST_FILTER_PARAM, "true");
 
-            return root.addChild(names.pluralName + " List", url);
+            root.addChild(names.pluralName + " List", url);
+            return root;
         }
     }
 
@@ -541,7 +542,10 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild(names.singularName + " Details");
+            new ListAction(getViewContext()).appendNavTrail(root);
+            root.addChild(names.singularName + " Details");
+
+            return root;
         }
     }
 
@@ -612,7 +616,10 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            return new ListAction(getViewContext()).appendNavTrail(root).addChild("Insert New " + names.singularName);
+            new ListAction(getViewContext()).appendNavTrail(root);
+            root.addChild("Insert New " + names.singularName);
+
+            return root;
         }
 
         @Override
@@ -1644,8 +1651,10 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return new DetailsAction(_issue, getViewContext()).appendNavTrail(root)
-                    .addChild("Update " + getSingularEntityName() + ": " + StringUtils.trimToEmpty(_issue.getTitle()));
+            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            root.addChild("Update " + getSingularEntityName() + ": " + StringUtils.trimToEmpty(_issue.getTitle()));
+
+            return root;
         }
     }
 
@@ -1697,7 +1706,10 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Resolve " + names.singularName);
+            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            root.addChild("Resolve " + names.singularName);
+
+            return root;
         }
     }
 
@@ -1741,7 +1753,10 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Close " + names.singularName);
+            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            root.addChild("Close " + names.singularName);
+
+            return root;
         }
     }
 
@@ -1788,7 +1803,10 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            return (new DetailsAction(_issue, getViewContext()).appendNavTrail(root)).addChild("Reopen " + names.singularName);
+            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            root.addChild("Reopen " + names.singularName);
+
+            return root;
         }
     }
 
@@ -1825,7 +1843,10 @@ public class IssuesController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (new ListAction(getViewContext())).appendNavTrail(root).addChild("Email preferences");
+            new ListAction(getViewContext()).appendNavTrail(root);
+            root.addChild("Email preferences");
+
+            return root;
         }
 
 
@@ -1978,7 +1999,10 @@ public class IssuesController extends SpringActionController
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
-            return (new ListAction(getViewContext())).appendNavTrail(root).addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
+            new ListAction(getViewContext()).appendNavTrail(root);
+            root.addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
+
+            return root;
         }
     }
 

@@ -181,6 +181,9 @@ public class NavTree implements Collapsible
         addChild(MENU_SEPARATOR);
     }
 
+    /**
+     * @return The child, not the parent!
+     */
     public NavTree addChild(NavTree child)
     {
         if (null != child._text)
@@ -190,35 +193,52 @@ public class NavTree implements Collapsible
         return child;
     }
 
+    /**
+     * @return The child, not the parent!
+     */
     public NavTree addChild(int pos, NavTree child)
     {
         _children.add(pos, child);
         return child;
     }
 
+    /**
+     * @return The child, not the parent!
+     */
     public NavTree addChild(String text)
     {
         return addChild(new NavTree(text));
     }
 
 
+    /**
+     * @return The child, not the parent!
+     */
     public NavTree addChild(String text, String href)
     {
         return addChild(new NavTree(text, href));
     }
 
 
+    /**
+     * @return The child, not the parent! (NOTE: this method used to return the parent; changed for consistency with other addChild() methods.)
+     */
     public NavTree addChild(String text, String href, String imageSrc)
     {
         return addChild(new NavTree(text, href, imageSrc));
     }
 
+    /**
+     * @return The child, not the parent! (NOTE: this method used to return the parent; changed for consistency with other addChild() methods.)
+     */
     public NavTree addChild(String text, String href, String imageSrc, String imageCls)
     {
         return addChild(new NavTree(text, href, imageSrc, imageCls));
     }
 
-
+    /**
+     * @return The child, not the parent! (NOTE: this method used to return the parent; changed for consistency with other addChild() methods.)
+     */
     public NavTree addChild(String text, @NotNull URLHelper urlhelp)
     {
         return addChild(text, urlhelp.getLocalURIString());

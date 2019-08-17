@@ -247,7 +247,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
+            root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
+            return root;
         }
     }
 
@@ -1332,6 +1333,7 @@ public class AnnouncementsController extends SpringActionController
     {
         private String _title;
 
+        @Override
         public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
         {
             ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());
@@ -1358,6 +1360,7 @@ public class AnnouncementsController extends SpringActionController
             return tv;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root).addChild(_title, getActionURL());
