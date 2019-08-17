@@ -1476,7 +1476,7 @@ public class AssayController extends SpringActionController
 
                 if (run != null)
                 {
-                    QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
+                    QCState state = QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), form.getState());
                     if (state != null)
                         svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }
