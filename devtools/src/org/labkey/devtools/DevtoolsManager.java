@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.util;
 
-import java.io.IOException;
+package org.labkey.devtools;
 
-public interface HasHtmlString extends DOM.Renderable
+public class DevtoolsManager
 {
-    HtmlString getHtmlString();
+    private static final DevtoolsManager _instance = new DevtoolsManager();
 
-    @Override
-    default Appendable appendTo(Appendable builder)
+    private DevtoolsManager()
     {
-        try
-        {
-            return builder.append(this.getHtmlString().toString());
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
+        // prevent external construction with a private default constructor
+    }
+
+    public static DevtoolsManager get()
+    {
+        return _instance;
     }
 }

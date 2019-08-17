@@ -81,7 +81,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.remoteapi.assay.Batch;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -90,7 +89,6 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -266,7 +264,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             if (null != rows)
             {
-                MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(context), false);
+                MapDataIterator maps = DataIteratorUtil.wrapMap(it, false);
                 it = new WrapperDataIterator(maps)
                 {
                     @Override

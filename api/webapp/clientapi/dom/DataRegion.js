@@ -2447,7 +2447,7 @@ if (!LABKEY.DataRegions) {
      */
 
     LABKEY.DataRegion.prototype.toggleButtonPanelHandler = function(panelButton) {
-        _toggleButtonPanel( this, $(panelButton).attr('panel-toggle'), null, true);
+        _toggleButtonPanel( this, $(panelButton).attr('data-labkey-panel-toggle'), null, true);
     };
 
     LABKEY.DataRegion.prototype.showButtonPanel = function(panel, optionalTab) {
@@ -3784,14 +3784,14 @@ if (!LABKEY.DataRegions) {
         if (!region._requiresSelectionButtons) {
             // escape ', ", and \
             var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
-            region._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
+            region._requiresSelectionButtons = $("a[data-labkey-requires-selection='" + escaped + "']");
         }
 
         region._requiresSelectionButtons.each(function() {
             var el = $(this);
 
             // handle min-count
-            var minCount = el.attr('labkey-requires-selection-min-count');
+            var minCount = el.attr('data-labkey-requires-selection-min-count');
             if (minCount) {
                 minCount = parseInt(minCount);
             }
@@ -3800,7 +3800,7 @@ if (!LABKEY.DataRegions) {
             }
 
             // handle max-count
-            var maxCount = el.attr('labkey-requires-selection-max-count');
+            var maxCount = el.attr('data-labkey-requires-selection-max-count');
             if (maxCount) {
                 maxCount = parseInt(maxCount);
             }
