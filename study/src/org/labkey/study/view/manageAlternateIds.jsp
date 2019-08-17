@@ -24,7 +24,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
@@ -63,8 +63,8 @@
 
 <div style="max-width: 1000px">
 <h2><%= h(subjectNounSingular)%> Aliases</h2>
-<p>You may link <%= h(subjectNounPlural).toLowerCase()%> in this study with <%= h(subjectNounPlural).toLowerCase()%> from another source
-    by specifying a dataset that contains aliases for each <%= h(subjectNounSingular).toLowerCase()%>.
+<p>You may link <%= h(subjectNounPlural.toLowerCase())%> in this study with <%= h(subjectNounPlural.toLowerCase())%> from another source
+    by specifying a dataset that contains aliases for each <%= h(subjectNounSingular.toLowerCase())%>.
     You must also specify which dataset columns contain the aliases and source organization names that use the aliases.
 </p>
 </div>

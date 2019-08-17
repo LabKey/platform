@@ -23,7 +23,6 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.annotations.RemoveIn19_3;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -57,7 +56,6 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -142,7 +140,6 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
         return HtmlString.unsafe(s);
     }
 
-
     /**
      * Pass-through -- this eases the process of migrating our helpers from String to HtmlString, since existing
      * code that uses text(String) will continue to compile and run when the parameter becomes an HtmlString.
@@ -156,7 +153,6 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
         return s;
     }
 
-
     /**
      * Pass-through -- this eases the process of migrating our helpers from String to HasHtmlString, since existing
      * code that uses text(String) will continue to compile and run when the parameter becomes a HasHtmlString.
@@ -169,7 +165,6 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
     {
         return s.getHtmlString();
     }
-
 
     /**
      * Html escape an object.toString().
@@ -335,70 +330,6 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
         return PageFlowUtil.urlProvider(inter);
     }
 
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, Class<? extends Controller> action)
-    {
-        return link(text, action).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, URLHelper url)
-    {
-        return link(text, url).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, URLHelper url, String id)
-    {
-        return link(text, url).id(id).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, URLHelper url, String onClickScript, String id)
-    {
-        return link(text, url).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, URLHelper url, String onClickScript, @Nullable String id, Map<String, String> props)
-    {
-        return link(text, url).onClick(onClickScript).id(id).attributes(props).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, String href)
-    {
-        return link(text).href(href).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, String href, String onClickScript, String id)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, String href, String onClickScript, @Nullable String id, Map<String, String> props)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).attributes(props).build().toString();
-    }
-
-    @Deprecated // Use link() builder pattern
-    @RemoveIn19_3
-    public String textLink(String text, URLHelper url, boolean targetBlank)
-    {
-        return textLink(text, url, null, null,
-                targetBlank ? Collections.singletonMap("target", "_blank") : Collections.emptyMap());
-    }
-
     public HasHtmlString iconLink(String iconCls, String tooltip, URLHelper url)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url);
@@ -439,6 +370,13 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
     public ButtonBuilder button(HtmlString html)
     {
         return new ButtonBuilder(html);
+    }
+
+    // TODO: Switch to real impl after merging it from CSRF branch
+    public @NotNull HtmlString makeHtmlId(@Nullable String s)
+    {
+        return null == s ? HtmlString.EMPTY_STRING : HtmlString.unsafe(s.replaceAll(" ", ""));
+//        return PageFlowUtil.makeHtmlId(s);
     }
 
     public HtmlString generateReturnUrlFormField(URLHelper returnURL)
