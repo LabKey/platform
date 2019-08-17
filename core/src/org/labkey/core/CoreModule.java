@@ -1144,7 +1144,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ProductRegistry.TestCase.class,
                 ContainerFilter.TestCase.class,
                 AdminController.ModuleVersionTestCase.class,
-                AbstractQueryUpdateService.TestCase.class
+                AbstractQueryUpdateService.TestCase.class,
+                DomTestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
