@@ -919,7 +919,7 @@ public class DomainUtil
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
+            if (null != reservedNames && reservedNames.contains(name))
             {
                 exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
                 continue;
