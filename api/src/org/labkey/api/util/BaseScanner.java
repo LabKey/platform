@@ -160,9 +160,9 @@ public abstract class BaseScanner
         scan(0, new Handler()
         {
             @Override
-            public boolean comment(int beginIndex, int endIndex)
+            public boolean comment(int startIndex, int endIndex)
             {
-                ret.append(_text, previous.getValue(), beginIndex);
+                ret.append(_text, previous.getValue(), startIndex);
                 previous.setValue(endIndex);
 
                 return true;
@@ -197,22 +197,22 @@ public abstract class BaseScanner
 
         /**
          * Called for every comment detected.
-         * @param beginIndex   the beginning index, inclusive
+         * @param startIndex   the starting index, inclusive
          * @param endIndex     the ending index, inclusive
          * @return             true to continue scanning, false to stop
          */
-        default boolean comment(int beginIndex, int endIndex)
+        default boolean comment(int startIndex, int endIndex)
         {
             return true;
         }
 
         /**
          * Called for every quoted string detected.
-         * @param beginIndex   the beginning index, inclusive
+         * @param startIndex   the starting index, inclusive
          * @param endIndex     the ending index, inclusive
          * @return             true to continue scanning, false to stop
          */
-        default boolean string(int beginIndex, int endIndex)
+        default boolean string(int startIndex, int endIndex)
         {
             return true;
         }

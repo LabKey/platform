@@ -38,6 +38,7 @@
 <%@ page import="org.labkey.study.model.VisitDataset" %>
 <%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.view.TypeSummaryView" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="java.util.ArrayList" %>
@@ -48,6 +49,7 @@
 <%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
@@ -214,7 +216,7 @@ if (!pipelineSet)
 
     <labkey:panel title="Dataset Fields">
         <%
-            JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
+            JspView typeSummary = new TypeSummaryView(study, dataset, (BindException)me.getErrors());
             me.include(typeSummary, out);
         %>
     </labkey:panel>

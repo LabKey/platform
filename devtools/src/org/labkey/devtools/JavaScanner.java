@@ -58,6 +58,7 @@ public class JavaScanner extends BaseScanner
             {
                 String escapedBackslash = "\\\\";   // Backslash + backslash
                 String escapedQuote = "\\" + c;     // Backslash + opening quote
+                int startIndex = i;
 
                 while (++i < _text.length())
                 {
@@ -68,9 +69,17 @@ public class JavaScanner extends BaseScanner
                         twoChars = _text.substring(i, i + 2);
 
                     if (escapedBackslash.equals(twoChars) || escapedQuote.equals(twoChars))
+                    {
                         i++;
+                    }
                     else if (c == c2)
+                    {
+                        // Call string() handler method for all double-quoted strings
+                        if ('"' == c && !handler.string(startIndex, i + 1))
+                            return;
+
                         break next;
+                    }
                 }
 
                 throw new NotFoundException("Expected ending quote (" + c + ") was not found");

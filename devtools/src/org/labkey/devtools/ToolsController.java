@@ -1,5 +1,6 @@
 package org.labkey.devtools;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -7,8 +8,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -204,11 +205,22 @@ public class ToolsController extends SpringActionController
                 jspFiles.forEach(path->out.println(filter(path)));
 
                 out.println();
-                out.println("JSP references that couldn't be resolved to JSP files:");
+                out.println("JSP references that couldn't be resolved to JSP files (plus any candidates for resolution):");
                 out.println();
 
                 jspReferences.removeAll(copyOfJspFiles);
-                jspReferences.forEach(path->out.println(filter(path)));
+                jspReferences.forEach(path-> {
+                    List<String> candidates = jspFiles.stream()
+                        .filter(s->s.endsWith(path))
+                        .collect(Collectors.toUnmodifiableList());
+                    out.println(filter(path + (candidates.isEmpty() ? "" : StringUtils.repeat(' ', Math.max(50 - path.length(), 0)) + " " + candidates)));
+                    jspFiles.removeAll(candidates);
+                });
+
+                out.println();
+                out.println("The following " + jspFiles.size() + " JSP files are strong candidates for removal:");
+                out.println();
+                jspFiles.forEach(path->out.println(filter(path)));
 
                 out.println("</pre>");
                 out.flush();
@@ -237,6 +249,7 @@ public class ToolsController extends SpringActionController
                 return root;
             }
 
+            // TODO: warn for duplicates - suspicious
             private Collection<String> findJspReferences(Module module, PrintWriter out)
             {
                 List<String> ret = new LinkedList<>();
@@ -251,42 +264,24 @@ public class ToolsController extends SpringActionController
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             {
-                                if (file.toString().endsWith(".java"))
-                                {
-                                    String code = PageFlowUtil.getFileContentsAsString(file.toFile());
-                                    JavaScanner scanner = new JavaScanner(code);
+                            if (file.toString().endsWith(".java"))
+                            {
+                                String code = PageFlowUtil.getFileContentsAsString(file.toFile());
+                                JavaScanner scanner = new JavaScanner(code);
 
-                                    // TODO: super("org/labkey/*.jsp")
-                                    // TODO: warn for duplicates - suspicious
-                                    int idx = scanner.indexOf("new JspView");
-
-                                    while (-1 != idx)
+                                scanner.scan(0, new Handler(){
+                                    @Override
+                                    public boolean string(int beginIndex, int endIndex)
                                     {
-                                        // We've found a JspView constructor; extract its parameters
-                                        Pair<Integer, Integer> startEnd = findParameters(code, idx);
-                                        String parameters = code.substring(startEnd.first, startEnd.second);
-
-                                        // JspView() parameters usually include a path to the JSP, but not always. Try to find a string...
-                                        int openingQuote = parameters.indexOf('"');
-
-                                        if (-1 != openingQuote)
-                                        {
-                                            // TODO: find multiple strings, see ProteinSearchWebPart
-                                            int closingQuote = parameters.indexOf('"', openingQuote + 1);
-                                            String jspPath = parameters.substring(openingQuote + 1, closingQuote);
-                                            handleJspPath(out, root, file, jspPath);
-                                            ret.add(jspPath);
-                                        }
-                                        else
-                                        {
-                                            out.println(filter(module.getName() + ": Could not extract a JSP path from: " + parameters + " [" + file + "]"));
-                                        }
-
-                                        idx = scanner.indexOf("new JspView", startEnd.second + 1);
+                                    String s = code.substring(beginIndex + 1, endIndex - 1);
+                                    if (s.length() > 4 && s.endsWith(".jsp"))
+                                        ret.add(s);
+                                    return true;
                                     }
-                                }
+                                });
+                            }
 
-                                return FileVisitResult.CONTINUE;
+                            return FileVisitResult.CONTINUE;
                             }
                         });
                     }
@@ -313,18 +308,18 @@ public class ToolsController extends SpringActionController
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             {
-                                String filePath = file.toString().replaceAll("\\\\", "/");
-                                if (filePath.endsWith(".jsp"))
-                                {
-                                    int idx = filePath.indexOf("/org/labkey");
+                            String filePath = file.toString().replaceAll("\\\\", "/");
+                            if (filePath.endsWith(".jsp"))
+                            {
+                                int idx = filePath.indexOf("/org/labkey");
 
-                                    if (-1 != idx)
-                                        ret.add(filePath.substring(idx));
-                                    else
-                                        out.println(filter("Can't find \"/org/labkey\": " + filePath));
-                                }
+                                if (-1 != idx)
+                                    ret.add(filePath.substring(idx));
+                                else
+                                    out.println(filter("Can't find \"/org/labkey\": " + filePath));
+                            }
 
-                                return FileVisitResult.CONTINUE;
+                            return FileVisitResult.CONTINUE;
                             }
                         });
                     }
@@ -335,33 +330,6 @@ public class ToolsController extends SpringActionController
                 }
 
                 return ret;
-            }
-
-            // Return start and end characters of the parameters
-            private Pair<Integer, Integer> findParameters(String code, int idx)
-            {
-                int start = idx = code.indexOf('(', idx);
-                assert -1 != start;
-                int openingCount = 1;
-
-                while (openingCount > 0)
-                {
-                    char c = code.charAt(++idx);
-                    if (c == '(')
-                        openingCount++;
-                    else if (c == ')')
-                        openingCount--;
-                }
-
-                return Pair.of(start, idx + 1);
-            }
-
-            private void handleJspPath(PrintWriter out, Path root, Path file, String jspPath)
-            {
-                File jsp = new File(root.resolve("src").toFile(), jspPath);
-
-                if (!jsp.exists())
-                    out.println(filter(jspPath + " not found [" + file + "]"));
             }
         }
 
