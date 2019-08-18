@@ -128,8 +128,16 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
      * No-op encoding
      * Indicate that you explicitly want to include a string in the page WITHOUT encoding
      * TODO: HtmlString - Eventually, remove this method and all usages.
+     *
+     * Use HtmlString.unsafe() instead, or even better use h() if possible
      */
+    @Deprecated
     public HtmlString text(String s)
+    {
+        return HtmlString.unsafe(s);
+    }
+
+    public HtmlString unsafe(String s)
     {
         return HtmlString.unsafe(s);
     }
@@ -425,7 +433,12 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
 
     public ButtonBuilder button(String text)
     {
-        return PageFlowUtil.button(text);
+        return new ButtonBuilder(text);
+    }
+
+    public ButtonBuilder button(HtmlString html)
+    {
+        return new ButtonBuilder(html);
     }
 
     public HtmlString generateReturnUrlFormField(URLHelper returnURL)

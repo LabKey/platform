@@ -15,7 +15,7 @@
  */
 package org.labkey.api.assay.actions;
 
-import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.data.DataRegionSelection;
@@ -35,10 +35,10 @@ import java.util.Set;
  * Date: 8/24/12
  */
 @RequiresPermission(InsertPermission.class)
-public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
+public class ReimportRedirectAction extends SimpleRedirectAction<ProtocolIdForm>
 {
     @Override
-    public URLHelper getURL(ProtocolIdForm form, Errors errors)
+    public URLHelper getRedirectURL(ProtocolIdForm form)
     {
         Set<String> selectedRunIds = DataRegionSelection.getSelected(getViewContext(), true);
         if (selectedRunIds.isEmpty())
