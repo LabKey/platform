@@ -183,7 +183,7 @@
                 message.value = this.emailTemplates[i].message;
                 Ext4.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
                 Ext4.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
-                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].supportsMultipleContentTypes ? "" : "none";
+                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].hasMultipleContentTypes ? "" : "none";
 
                 changeValidSubstitutions(this.emailTemplates[i]);
                 return;
