@@ -115,7 +115,7 @@ the vaccine study.
 else
 {
 %>
-    <input type="hidden" name="beginDate" value="<%=DateUtil.formatDateISO8601(form.getBeginDate())%>">
+    <input type="hidden" name="beginDate" value="<%=h(DateUtil.formatDateISO8601(form.getBeginDate()))%>">
     <input type="hidden" name="subjectNounSingular" value="<%=h(form.getSubjectNounSingular())%>">
     <input type="hidden" name="subjectNounPlural" value="<%=h(form.getSubjectNounPlural())%>">
     <input type="hidden" name="subjectColumnName" value="<%=h(form.getSubjectColumnName())%>">
