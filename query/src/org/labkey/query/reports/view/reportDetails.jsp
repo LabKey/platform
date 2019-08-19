@@ -257,7 +257,7 @@
     <tr>
         <td colspan="2">
             <%= button("View Report").href(vewReportURL).attributes(reportURLAttributes) %>
-            <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : ""%>
+            <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : HtmlString.EMPTY_STRING%>
             <%= report.allowShareButton(getUser(), getContainer()) && (shareReportURL != null) ? button("Share Report").href(shareReportURL) : ""%>
         </td>
     </tr>
