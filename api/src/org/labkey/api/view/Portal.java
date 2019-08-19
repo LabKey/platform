@@ -415,6 +415,7 @@ public class Portal
             super(WebPart.class);
         }
 
+        @Override
         protected void fixupBean(WebPart part)
         {
             if (null == part.location || part.location.length() == 0)

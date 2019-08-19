@@ -170,8 +170,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             dupePolicy = DatasetDefinition.CheckForDuplicates.never;
         }
-        else
-        if (context.getInsertOption() == InsertOption.MERGE)
+        else if (context.getInsertOption().mergeRows)
         {
             dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
         }

@@ -16,7 +16,7 @@
 package org.labkey.pipeline.api;
 
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.study.assay.DefaultDataTransformer;
+import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
 import org.apache.xmlbeans.XmlObject;

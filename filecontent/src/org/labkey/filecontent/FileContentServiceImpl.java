@@ -141,6 +141,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
+    @NotNull
     public List<Container> getContainersForFilePath(java.nio.file.Path path)
     {
         // Ignore cloud files for now
@@ -182,7 +183,7 @@ public class FileContentServiceImpl implements FileContentService
 
         // TODO: Create cache of file root and pipeline root paths -> list of containers
 
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

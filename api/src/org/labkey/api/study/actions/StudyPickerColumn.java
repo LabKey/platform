@@ -16,7 +16,7 @@
 package org.labkey.api.study.actions;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -24,7 +24,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option;
@@ -53,11 +53,6 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
     {
         super(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION, inputName);
         _colInfo = col;
-        BaseColumnInfo baseColumnInfo = (BaseColumnInfo) _colInfo;
-        if (baseColumnInfo.isLocked())
-        {
-            baseColumnInfo.setLocked(false);
-        }
     }
 
     protected Object calculateValue(RenderContext ctx)

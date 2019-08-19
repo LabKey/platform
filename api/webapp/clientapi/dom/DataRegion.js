@@ -372,6 +372,8 @@ if (!LABKEY.DataRegions) {
 
                 showRecordSelectors: false,
 
+                showFilterDescription: true,
+
                 showReports: undefined,
 
                 /**
@@ -2445,7 +2447,7 @@ if (!LABKEY.DataRegions) {
      */
 
     LABKEY.DataRegion.prototype.toggleButtonPanelHandler = function(panelButton) {
-        _toggleButtonPanel( this, $(panelButton).attr('panel-toggle'), null, true);
+        _toggleButtonPanel( this, $(panelButton).attr('data-labkey-panel-toggle'), null, true);
     };
 
     LABKEY.DataRegion.prototype.showButtonPanel = function(panel, optionalTab) {
@@ -3648,6 +3650,7 @@ if (!LABKEY.DataRegions) {
                 'showPaginationCount',
                 'showReports',
                 'showSurroundingBorder',
+                'showFilterDescription',
                 'showUpdateColumn',
                 'showViewPanel',
                 'timeout',
@@ -3781,14 +3784,14 @@ if (!LABKEY.DataRegions) {
         if (!region._requiresSelectionButtons) {
             // escape ', ", and \
             var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
-            region._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
+            region._requiresSelectionButtons = $("a[data-labkey-requires-selection='" + escaped + "']");
         }
 
         region._requiresSelectionButtons.each(function() {
             var el = $(this);
 
             // handle min-count
-            var minCount = el.attr('labkey-requires-selection-min-count');
+            var minCount = el.attr('data-labkey-requires-selection-min-count');
             if (minCount) {
                 minCount = parseInt(minCount);
             }
@@ -3797,7 +3800,7 @@ if (!LABKEY.DataRegions) {
             }
 
             // handle max-count
-            var maxCount = el.attr('labkey-requires-selection-max-count');
+            var maxCount = el.attr('data-labkey-requires-selection-max-count');
             if (maxCount) {
                 maxCount = parseInt(maxCount);
             }
@@ -4449,6 +4452,7 @@ if (!LABKEY.DataRegions) {
      * @param {boolean} [config.showRStudioButton] Show the export to RStudio button menu in the button bar.  Requires export button to work. (default false).
      * @param {boolean} [config.showBorders] Render the table with borders (default true).
      * @param {boolean} [config.showSurroundingBorder] Render the table with a surrounding border (default true).
+     * @param {boolean} [config.showFilterDescription] Include filter and parameter values in the grid header, if present (default true).
      * @param {boolean} [config.showRecordSelectors] Render the select checkbox column (default undefined, meaning they will be shown if the query is updatable by the current user).
      *  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
      * @param {boolean} [config.showPagination] Show the pagination links and count (default true).

@@ -78,6 +78,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.core.qc.QCStateImporter;
 import org.labkey.core.qc.QCStateWriter;
 import org.labkey.api.query.AliasManager;
@@ -142,7 +143,7 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.assay.ReplacedRunFilter;
+import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.*;
@@ -233,7 +234,6 @@ import org.labkey.core.security.validators.PermissionsValidator;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
-import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
 import org.labkey.core.view.ShortURLServiceImpl;
@@ -323,7 +323,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("login", LoginController.class);
         addController("junit", JunitController.class);
         addController("core", CoreController.class);
-        addController("test", TestController.class);
         addController("analytics", AnalyticsController.class);
         addController("project", ProjectController.class);
         addController("util", UtilController.class);
@@ -1143,7 +1142,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 PostgreSql92Dialect.TestCase.class,
                 AdminController.SerializationTest.class,
                 ProductRegistry.TestCase.class,
-                ContainerFilter.TestCase.class
+                ContainerFilter.TestCase.class,
+                AdminController.ModuleVersionTestCase.class,
+                AbstractQueryUpdateService.TestCase.class,
+                DomTestCase.class
         ));
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());

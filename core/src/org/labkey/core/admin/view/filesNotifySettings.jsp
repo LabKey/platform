@@ -38,7 +38,7 @@
                         <option value="individual">Individual</option>
                         <option value="none">None</option>
                     </select></td>
-                    <td><%= button("Configure selected users").submit(true).attributes(Map.of("labkey-requires-selection", "users")) %></td>
+                    <td><%= button("Configure selected users").submit(true).attributes(Map.of("data-labkey-requires-selection", "users")) %></td>
                 </tr>
             </table>
         </td>
