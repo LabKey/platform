@@ -147,7 +147,7 @@ function orderModule(listName, hiddenElName, down)
                     }
                 %>
                 </select>
-                <input type="hidden" name="displayOrder" value="<%= orderedList %>">
+                <input type="hidden" name="displayOrder" value="<%= h(orderedList) %>">
             </td>
             <td align="center" valign="center">
                 <%= button("Move Up").href("#").onClick("return orderModule('displayOrderItems', 'displayOrder', 0);") %><br><br>
