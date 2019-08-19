@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@glass/base": "0.11.1",
+    "@glass/base": "0.14.0",
     "@glass/domainproperties": "0.0.30"
   },
   "devDependencies": {
