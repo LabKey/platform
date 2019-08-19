@@ -37,7 +37,7 @@
         color: #999999;
     }
 </style>
-<div id="wb-description" class="labkey-edit-in-place"><%=null != container.getDescription() ? h(container.getDescription()) : "&nbsp;"%></div>
+<div id="wb-description" class="labkey-edit-in-place"><%=null != container.getDescription() ? h(container.getDescription()) : h(" ")%></div>
 <script type="text/javascript">
     var _wb_titleId = Ext4.id();
     LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
