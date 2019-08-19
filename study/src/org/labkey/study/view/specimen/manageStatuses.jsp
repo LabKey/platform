@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -66,7 +67,8 @@ function showSystemRows(value)
             {
         %>
                 <tr <%= text(status.isSystemStatus() ? "id=\"systemStatusRow\"" : "") %> <%= text(!showSystemStatuses && status.isSystemStatus() ? "style=\"display:none\"" : "") %>>
-                    <td align="center"><%= status.isSystemStatus() ? "1" : status.getSortOrder() + 1 %></td>
+                    <% String incrementedStatus = String.valueOf(status.getSortOrder() + 1);%>
+                    <td align="center"><%= status.isSystemStatus() ? "1" : HtmlString.of(incrementedStatus)%></td>
                     <td>
                         <%
                             if (!status.isSystemStatus())
