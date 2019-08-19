@@ -1154,7 +1154,20 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
      */
     public String toString() {
         try {
-            return toStringHelper();
+            Iterator     keys = keySet().iterator();
+            StringBuffer sb = new StringBuffer("{");
+
+            while (keys.hasNext()) {
+                if (sb.length() > 1) {
+                    sb.append(',');
+                }
+                Object o = keys.next();
+                sb.append(quote(o.toString()));
+                sb.append(':');
+                sb.append(valueToString(get(o)));
+            }
+            sb.append('}');
+            return sb.toString();
         } catch (Exception e) {
             return null;
         }
@@ -1163,30 +1176,8 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
     @Override
     public HtmlString getHtmlString()
     {
-        try {
-            return HtmlString.unsafe(toStringHelper());
-        } catch (Exception e) {
-            return null;
-        }
+        return HtmlString.unsafe(toString());
     }
-
-    public String toStringHelper(){
-        Iterator     keys = keySet().iterator();
-        StringBuffer sb = new StringBuffer("{");
-
-        while (keys.hasNext()) {
-            if (sb.length() > 1) {
-                sb.append(',');
-            }
-            Object o = keys.next();
-            sb.append(quote(o.toString()));
-            sb.append(':');
-            sb.append(valueToString(get(o)));
-        }
-        sb.append('}');
-        return sb.toString();
-    }
-
 
     /**
      * Make a prettyprinted JSON text of this JSONObject.
