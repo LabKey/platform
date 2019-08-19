@@ -42,7 +42,7 @@
     LABKEY._tour.title = <%=PageFlowUtil.jsString(model.getTitle())%>;
     LABKEY._tour.description = <%=PageFlowUtil.jsString(model.getDescription())%>;
     LABKEY._tour.mode = <%=model.getMode()%>;
-    LABKEY._tour.json = <%=model.toJSON().getHtmlString()%>;
+    LABKEY._tour.json = <%=model.toJSON()%>;
     LABKEY._tour.rowId = <%=model.getRowId()%>;
 </script>
 
