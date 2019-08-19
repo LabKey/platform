@@ -34,8 +34,8 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
     private final String DOMAIN_NAME = "Study";//schemaName
     private final String STUDY_DATASET_NAME = "vampireBloodLevels";
 
-    private final String BLANK_PROPERTY_ERROR_MSG = "Name field must not be blank.";
-    private final String DUPLICATE_FIELD_ERROR_MSG = "All property names must be unique. Duplicate found: bloodLevel.";
+    private final String BLANK_PROPERTY_ERROR_MSG = "Please provide a name for each field.";
+    private final String DUPLICATE_FIELD_ERROR_MSG = "The field name 'bloodLevel' is already taken. Please provide a unique name for each field.";
     private final String TYPE_CHANGE_ERROR_MSG = "Cannot convert an instance of VARCHAR to INTEGER.";
 
     @Override
