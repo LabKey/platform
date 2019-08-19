@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button, ButtonToolbar, Form, Panel } from "react-bootstrap";
+import { Button, ButtonToolbar, Panel } from "react-bootstrap";
 import {Map, List, fromJS} from 'immutable';
 import {ActionURL, Security, Utils} from '@labkey/api'
 import {
@@ -13,14 +13,12 @@ import {
     QueryColumn,
     PermissionTypes,
     User,
-    createGeneralAssayDesign,
     fetchAllAssays,
     importGeneralAssayRun,
     naturalSort,
-    hasAllPermissions,
-    AssayProtocolModel
+    hasAllPermissions
 } from "@glass/base";
-import {AssayPropertiesPanel} from '@glass/domainproperties'
+import {AssayProtocolModel, AssayPropertiesPanel, createGeneralAssayDesign} from '@glass/domainproperties'
 
 import {AssayRunForm} from "./AssayRunForm";
 
