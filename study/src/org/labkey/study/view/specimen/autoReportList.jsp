@@ -112,7 +112,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="padding-right: 10px;"><%= h(factory.getLabel())%></td>
                         <td style="text-align: right;">
-                            <%=link("show options").href("#").onClick("return showOrHide('" + showHideSuffix + "')").id("showOptionsLink" + showHideSuffix)%>
+                            <%=link("show options").href("#").onClick("return showOrHide('" + unsafe(showHideSuffix) + "')").id("showOptionsLink" + showHideSuffix)%>
                             <%= button("View").submit(true) %>
                         </td>
                     </tr>
@@ -123,7 +123,7 @@ This folder does not contain a study.
         %>
         <div class="<%=rowClass%>">
             <div>
-                <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
+                <span id="reportParameters<%= unsafe(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
                 <table>
                 <%
                     if (showCohorts && factory.allowsCohortFilter())
@@ -166,7 +166,7 @@ This folder does not contain a study.
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
                             %>
-                                <option value="<%= type.name() %>"<%=selected(type == selectedCohortType)%>>
+                                <option value="<%= h(type.name()) %>"<%=selected(type == selectedCohortType)%>>
                                     <%= h(type.getTitle()) %>
                                 </option>
                             <%
@@ -239,7 +239,7 @@ This folder does not contain a study.
                                 for (SpecimenVisitReportParameters.Status status : SpecimenVisitReportParameters.Status.values())
                                 {
                             %>
-                                <option value="<%= status.name() %>"<%=selected(factory.getStatusFilter() == status)%>>
+                                <option value="<%= h(status.name()) %>"<%=selected(factory.getStatusFilter() == status)%>>
                                     <%= h(status.getCaption()) %>
                                 </option>
                             <%
@@ -252,7 +252,7 @@ This folder does not contain a study.
                     }
                     if (factory.allowsCustomViewFilter())
                     {
-                        String viewPickerHtml = factory.getCustomViewPicker(views);
+                        HtmlString viewPickerHtml = factory.getCustomViewPicker(views);
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>">Base</td>
@@ -269,7 +269,7 @@ This folder does not contain a study.
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>"><%= h(inputPair.getKey()) %></td>
-                        <td><%= inputPair.getValue() %></td>
+                        <td><%= h(inputPair.getValue()) %></td>
                     </tr>
                 <%
                     }

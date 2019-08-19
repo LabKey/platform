@@ -23,6 +23,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -350,7 +351,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return new Pair<>("Enrollment site", builder.toString());
     }
 
-    public String getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
+    public HtmlString getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"baseCustomViewName\">");
@@ -379,7 +380,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             }
         }
         builder.append("</select>");
-        return builder.toString();
+        return HtmlString.unsafe(builder.toString());
     }
 
     private String _allString = null;
