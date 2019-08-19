@@ -225,7 +225,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
-                WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
+                WebPartView view = new JspView<>("/org/labkey/experiment/samplesAndAnalytes.jsp", webPart);
                 view.setTitle("Samples");
                 return view;
             }

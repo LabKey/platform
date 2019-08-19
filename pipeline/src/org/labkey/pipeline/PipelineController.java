@@ -773,7 +773,7 @@ public class PipelineController extends SpringActionController
     {
         PermissionView(SecurityPolicy policy)
         {
-            super(PipelineController.class, "permission.jsp", policy);
+            super("/org/labkey/pipeline/permission.jsp", policy);
         }
     }
 

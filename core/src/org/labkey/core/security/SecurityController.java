@@ -373,7 +373,7 @@ public class SecurityController extends SpringActionController
         
         FolderPermissionsView(String resource, ActionURL doneURL)
         {
-            super(SecurityController.class, "permissions.jsp", null);
+            super("/org/labkey/core/security/permissions.jsp", null);
             this.setModelBean(this);
             this.setFrame(FrameType.NONE);
             this.resource = resource;

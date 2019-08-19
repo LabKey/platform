@@ -7699,11 +7699,11 @@ public class AdminController extends SpringActionController
     }
 
 
-    class LoggingView extends JspView
+    static class LoggingView extends JspView<Object>
     {
         LoggingView()
         {
-            super(AdminController.class, "logging.jsp", null);
+            super("/org/labkey/core/admin/logging.jsp", null);
         }
     }
 

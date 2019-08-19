@@ -24,11 +24,20 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
 {
     public FORM __form;
     
+    static public <F extends HasViewContext> FormPage<F> get(FormPage<F> formPage, F form)
+    {
+        formPage.setForm(form);
+        return formPage;
+    }
+
     static public <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
     {
-        FormPage<F> ret = (FormPage<F>) JspLoader.createPage(clazzPackage, name);
-        ret.setForm(form);
-        return ret;
+        return get((FormPage<F>) JspLoader.createPage(clazzPackage, name), form);
+    }
+
+    static public <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
+    {
+        return get((FormPage<F>) JspLoader.createPage((String)null, jspPath), form);
     }
 
     static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)

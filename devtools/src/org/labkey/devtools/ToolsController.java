@@ -264,22 +264,32 @@ public class ToolsController extends SpringActionController
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
                             {
-                            if (file.toString().endsWith(".java"))
-                            {
-                                String code = PageFlowUtil.getFileContentsAsString(file.toFile());
-                                JavaScanner scanner = new JavaScanner(code);
+                                String filePath = file.toString();
+                                if (filePath.endsWith(".java"))
+                                {
+                                    String code = PageFlowUtil.getFileContentsAsString(file.toFile());
+                                    JavaScanner scanner = new JavaScanner(code);
 
-                                scanner.scan(0, new Handler(){
-                                    @Override
-                                    public boolean string(int beginIndex, int endIndex)
-                                    {
-                                    String s = code.substring(beginIndex + 1, endIndex - 1);
-                                    if (s.length() > 4 && s.endsWith(".jsp"))
-                                        ret.add(s);
-                                    return true;
-                                    }
-                                });
-                            }
+                                    scanner.scan(0, new Handler(){
+                                        @Override
+                                        public boolean string(int beginIndex, int endIndex)
+                                        {
+                                            String s = code.substring(beginIndex + 1, endIndex - 1);
+                                            if (s.length() > 4 && s.endsWith(".jsp"))
+                                            {
+                                                if (!s.startsWith("/org/labkey"))
+                                                {
+                                                    // Temp hack... assume that unqualified JSPs references from study are in /org/labkey/study/view/
+                                                    if (filePath.contains("study"))
+                                                        s = "/org/labkey/study/view/" + s;
+                                                }
+
+                                                ret.add(s);
+                                            }
+                                            return true;
+                                        }
+                                    });
+                                }
 
                             return FileVisitResult.CONTINUE;
                             }
