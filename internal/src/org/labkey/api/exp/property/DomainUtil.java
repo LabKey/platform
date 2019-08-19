@@ -219,7 +219,7 @@ public class DomainUtil
             //set property as PK
             if (pkColMap.containsKey(p.getName()))
             {
-                p.setPrimaryKey(true);
+                p.setIsPrimaryKey(true);
             }
 
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
@@ -915,19 +915,19 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Name field must not be blank."));
+                exception.addError(new SimpleValidationError("Please provide a name for each field."));
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
+            if (null != reservedNames && reservedNames.contains(name))
             {
-                exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "All property names must be unique. Duplicate found: " + name + ".";
+                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;

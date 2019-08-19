@@ -38,7 +38,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -49,12 +48,9 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.TreeMap;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -102,7 +98,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new ActionListView();
+            return new ActionListView(TestController.this);
         }
 
         @Override
@@ -156,26 +152,6 @@ public class TestController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "Clear Leaks");
-        }
-    }
-
-
-    public class ActionListView extends HttpView
-    {
-        @Override
-        protected void renderInternal(Object model, PrintWriter out)
-        {
-            List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());
-            descriptors.sort(Comparator.comparing(ActionDescriptor::getPrimaryName));
-
-            for (ActionDescriptor ad : descriptors)
-            {
-                out.print("<a href=\"");
-                out.print(filter(actionURL(ad.getActionClass())));
-                out.print("\">");
-                out.print(filter(ad.getPrimaryName()));
-                out.print("</a><br>");
-            }
         }
     }
 

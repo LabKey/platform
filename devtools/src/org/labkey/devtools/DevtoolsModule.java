@@ -47,6 +47,7 @@ public class DevtoolsModule extends CodeOnlyModule
     protected void init()
     {
         addController(TestController.NAME, TestController.class);
+        addController(ToolsController.NAME, ToolsController.class);
     }
 
     @Override
