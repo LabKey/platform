@@ -44,6 +44,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -237,9 +238,9 @@
             <%=text(bean.renderAdditionalDetailInfo())%>
         </table></td>
         <td valign="top"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=h(issue.getCreatedByName(user))%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=h(issue.getModifiedByName(user))%></td></tr>
-            <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Opened", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getCreated()))%> by <%=text(UserManager.getUserDetailsHTMLLink(c, user, issue.getCreatedBy()))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Changed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getModified()))%> by <%=text(UserManager.getUserDetailsHTMLLink(c, user, issue.getModifiedBy()))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Resolved", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=text(issue.getResolvedBy() != null ? " by " + UserManager.getUserDetailsHTMLLink(c, user, issue.getResolvedBy()) : "")%></td></tr>
             <tr><%=text(bean.renderLabel(bean.getLabel("Resolution", false)))%><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {%>
@@ -268,7 +269,7 @@
             }%>
         </table></td>
         <td valign="top" width="33%"><table class="lk-fields-table">
-            <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
+            <tr><%=text(bean.renderLabel(bean.getLabel("Closed", false)))%><td nowrap="true"><%=h(bean.writeDate(issue.getClosed()))%><%= text(issue.getClosedBy() != null ? " by " + UserManager.getUserDetailsHTMLLink(c, user, issue.getClosedBy()) : "" )%></td></tr>
             <%
                 if (hasUpdatePerms)
                 {%>
@@ -306,7 +307,7 @@ if (!issue.getComments().contains(comment))
         <table width="100%"><tr><td class="comment-created" align="left"><b>
             <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td class="comment-created-by" align="right"><b>
-            <%=h(comment.getCreatedByName(user))%>
+            <%=text(UserManager.getUserDetailsHTMLLink(c, user, comment.getCreatedBy()))%>
         </b></td></tr></table>
         <%
             if (!issue.getComments().contains(comment))

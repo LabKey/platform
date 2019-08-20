@@ -1285,6 +1285,7 @@ public class QueryController extends SpringActionController
 
             DbScope scope = ti.getSchema().getScope();
 
+            // Test for provisioned table
             if (ti.getDomain() != null)
             {
                 Domain domain = ti.getDomain();
@@ -1295,7 +1296,9 @@ public class QueryController extends SpringActionController
                     _dbSchemaName = domain.getDomainKind().getStorageSchemaName();
                 }
             }
-            else
+
+            // No domain or domain with non-provisioned storage (e.g., core.Users)
+            if (null == _dbSchemaName || null == _dbTableName)
             {
                 DbSchema dbSchema = ti.getSchema();
                 _dbSchemaName = dbSchema.getName();
