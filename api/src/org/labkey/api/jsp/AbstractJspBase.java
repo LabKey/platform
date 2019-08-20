@@ -441,11 +441,6 @@ abstract public class AbstractJspBase extends JspContext implements HasViewConte
         return new ButtonBuilder(html);
     }
 
-    public @NotNull HtmlString makeHtmlId(@Nullable String s)
-    {
-        return PageFlowUtil.makeHtmlId(s);
-    }
-
     public HtmlString generateReturnUrlFormField(URLHelper returnURL)
     {
         return ReturnUrlForm.generateHiddenFormField(returnURL);
