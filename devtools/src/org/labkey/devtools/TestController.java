@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.core.test;
+package org.labkey.devtools;
 
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -38,7 +38,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -49,9 +48,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -74,12 +71,12 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 public class TestController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(TestController.class);
+    public static final String NAME = "test";
 
     public TestController()
     {
         setActionResolver(_actionResolver);
     }
-
 
     private NavTree navTrail(NavTree root, String currentActionName)
     {
@@ -88,26 +85,6 @@ public class TestController extends SpringActionController
 
         return root;
     }
-
-    // Test action
-    @RequiresPermission(ReadPermission.class)
-    public class TestAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            // Add code here
-
-            return null;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
-
 
     private ActionURL actionURL(Class<? extends Controller> actionClass)
     {
@@ -118,11 +95,13 @@ public class TestController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new ActionListView();
+            return new ActionListView(TestController.this);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Test Actions", actionURL(BeginAction.class));
@@ -139,6 +118,7 @@ public class TestController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class LeakAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             ViewContext ctx = getViewContext();
@@ -146,6 +126,7 @@ public class TestController extends SpringActionController
             return new HtmlView("One ViewContext leaked: " + ctx.toString());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "Leak");
@@ -159,6 +140,7 @@ public class TestController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ClearLeaksAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             int count = LEAKED_VIEW_CONTEXTS.size();
@@ -166,29 +148,10 @@ public class TestController extends SpringActionController
             return new HtmlView("Cleared " + count + " leaked ViewContexts");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "Clear Leaks");
-        }
-    }
-
-
-    public class ActionListView extends HttpView
-    {
-        @Override
-        protected void renderInternal(Object model, PrintWriter out)
-        {
-            List<ActionDescriptor> descriptors = new ArrayList<>(_actionResolver.getActionDescriptors());
-            descriptors.sort(Comparator.comparing(ActionDescriptor::getPrimaryName));
-
-            for (ActionDescriptor ad : descriptors)
-            {
-                out.print("<a href=\"");
-                out.print(filter(actionURL(ad.getActionClass())));
-                out.print("\">");
-                out.print(filter(ad.getPrimaryName()));
-                out.print("</a><br>");
-            }
         }
     }
 
@@ -197,28 +160,33 @@ public class TestController extends SpringActionController
     public class SimpleFormAction extends FormViewAction<SimpleForm>
     {
         String _enctype = "application/x-www-form-urlencoded";
-        
+
+        @Override
         public void validateCommand(SimpleForm form, Errors errors)
         {
             form.validate(errors);
         }
 
+        @Override
         public ModelAndView getView(SimpleForm form, boolean reshow, BindException errors)
         {
             form.encType = _enctype;
             return jspView("form.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(SimpleForm simpleForm, BindException errors)
         {
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(SimpleForm form)
         {
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "Form Test (" + _enctype + ")");
@@ -229,27 +197,32 @@ public class TestController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class TagsAction extends FormViewAction<SimpleForm>
     {
+        @Override
         public void validateCommand(SimpleForm target, Errors errors)
         {
             target.validate(errors);
         }
 
+        @Override
         public ModelAndView getView(SimpleForm simpleForm, boolean reshow, BindException errors)
         {
             ModelAndView mv = jspView("tags.jsp", simpleForm, errors);
             return mv;
         }
 
+        @Override
         public boolean handlePost(SimpleForm simpleForm, BindException errors)
         {
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(SimpleForm simpleForm)
         {
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "Spring tags test");
@@ -265,6 +238,7 @@ public class TestController extends SpringActionController
             _enctype ="multipart/form-data";
         }
 
+        @Override
         public boolean handlePost(SimpleForm simpleForm, BindException errors)
         {
             return false;
@@ -275,6 +249,7 @@ public class TestController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ComplexFormAction extends FormViewAction<ComplexForm>
     {
+        @Override
         public void validateCommand(ComplexForm target, Errors errors)
         {
             ArrayList<TestBean> beans = target.getBeans();
@@ -286,6 +261,7 @@ public class TestController extends SpringActionController
             }
         }
 
+        @Override
         public ModelAndView getView(ComplexForm complexForm, boolean reshow, BindException errors)
         {
             if (complexForm.getBeans().size() == 0)
@@ -299,16 +275,19 @@ public class TestController extends SpringActionController
             return jspView("complex.jsp", complexForm, errors);
         }
 
+        @Override
         public boolean handlePost(ComplexForm complexForm, BindException errors)
         {
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(ComplexForm complexForm)
         {
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "Form Test");
@@ -454,7 +433,7 @@ public class TestController extends SpringActionController
         void validate(Errors errors)
         {
             if (_positive < 0)
-                    errors.rejectValue("positive", ERROR_MSG, "Value must not be less than zero");
+                errors.rejectValue("positive", ERROR_MSG, "Value must not be less than zero");
             if (null == _required)
                 errors.rejectValue("required", ERROR_REQUIRED);
         }
@@ -523,12 +502,13 @@ public class TestController extends SpringActionController
             _action = action;
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new HtmlView("SUCCESS you can " + _action);
         }
 
-
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "perm " + _action + " test");
@@ -621,6 +601,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class NpeAction extends SimpleViewAction<ExceptionForm>
     {
+        @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             NullPointerException npe;
@@ -632,6 +613,7 @@ public class TestController extends SpringActionController
             throw npe;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -642,6 +624,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class NpeOtherAction extends SimpleViewAction<ExceptionForm>
     {
+        @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             NullPointerException npe;
@@ -653,6 +636,7 @@ public class TestController extends SpringActionController
             throw npe;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -663,6 +647,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class MultiExceptionAction extends SimpleViewAction<ExceptionForm>
     {
+        @Override
         public ModelAndView getView(ExceptionForm form, BindException errors) throws Exception
         {
             Exception exception;
@@ -684,6 +669,7 @@ public class TestController extends SpringActionController
             throw exception;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -694,6 +680,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class IllegalStateAction extends SimpleViewAction<ExceptionForm>
     {
+        @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             IllegalStateException ise;
@@ -705,6 +692,7 @@ public class TestController extends SpringActionController
             throw ise;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -715,11 +703,13 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class ConfigurationExceptionAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             throw new ConfigurationException("You have a configuration problem.", "What will make things better is if you stop visiting this action.");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -730,6 +720,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class NotFoundAction extends SimpleViewAction<ExceptionForm>
     {
+        @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             if (null == form.getMessage())
@@ -738,6 +729,7 @@ public class TestController extends SpringActionController
                 throw new NotFoundException(form.getMessage());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -748,6 +740,7 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class UnauthorizedAction extends SimpleViewAction<ExceptionForm>
     {
+        @Override
         public ModelAndView getView(ExceptionForm form, BindException errors)
         {
             if (null == form.getMessage())
@@ -756,6 +749,7 @@ public class TestController extends SpringActionController
                 throw new UnauthorizedException(form.getMessage());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -766,12 +760,14 @@ public class TestController extends SpringActionController
     @RequiresSiteAdmin
     public class HtmlViewAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             String title = getViewContext().getActionURL().getParameter("title");
             return new HtmlView(title, "This is my HTML");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -787,7 +783,6 @@ public class TestController extends SpringActionController
             if (isPost())
             {
                 Button.ButtonBuilder button = PageFlowUtil.button(form.getText())
-                        .textAsHTML(form.isHtml())
                         .href(form.getHref())
                         .enabled(form.isEnabled())
                         .disableOnClick(form.isDisableonclick())
@@ -835,7 +830,6 @@ public class TestController extends SpringActionController
         private String _attrvalue1;
         private String _attrvalue2;
         private boolean _disableonclick;
-        private boolean _html;
         private boolean _enabled;
         private boolean _buttonsubmit;
         private Button.ButtonBuilder builtButton;
@@ -941,16 +935,6 @@ public class TestController extends SpringActionController
             _href = href;
         }
 
-        public boolean isHtml()
-        {
-            return _html;
-        }
-
-        public void setHtml(boolean html)
-        {
-            _html = html;
-        }
-
         public String getText()
         {
             return _text;
@@ -959,6 +943,22 @@ public class TestController extends SpringActionController
         public void setText(String text)
         {
             _text = text;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class DomAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            return jspView("view/dom.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return navTrail(root, "DOM Test");
         }
     }
 }
