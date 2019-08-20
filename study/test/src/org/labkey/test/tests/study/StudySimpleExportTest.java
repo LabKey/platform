@@ -29,7 +29,6 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
-import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -257,13 +256,14 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitForElement(Locator.name("text"));
 
         log("Verify required field for imported study");
-        ImportDataPage importDataPage = new ImportDataPage(getDriver());
-        importDataPage.setText("ParticipantId\tSequenceNum\nPTID123\t999");
-        importDataPage.submitExpectingError("Data does not contain required field: TestString");
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\nPTID123\t999");
+        click(Locator.button("Submit"));
+        waitForText("Data does not contain required field: TestString");
 
         log("Verify field validator for imported study");
-        importDataPage.setText( "ParticipantId\tSequenceNum\tTestString\tTestInt\nPTID123\t999\tZZZ\t333");
-        importDataPage.submitExpectingError("Value '333' for field 'TestInt' is invalid. TestInt must equals '999'.");
+        setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestString\tTestInt\nPTID123\t999\tZZZ\t333");
+        click(Locator.button("Submit"));
+        waitForText("Value '333' for field 'TestInt' is invalid. TestInt must equals '999'.");
     }
 
     @Test

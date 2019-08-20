@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
@@ -129,6 +130,7 @@ import java.util.stream.Collectors;
  */
 public class ModuleLoader implements Filter
 {
+    private static final double EARLIEST_UPGRADE_VERSION = 16.3;
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
@@ -139,7 +141,6 @@ public class ModuleLoader implements Filter
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
 
-    public static final double EARLIEST_UPGRADE_VERSION = 16.3;
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
@@ -1616,7 +1617,6 @@ public class ModuleLoader implements Filter
         return _newInstall;
     }
 
-    @Override
     public void destroy()
     {
         // In the case of a startup failure, _modules may be null. We want to allow a context reload to succeed in this case,

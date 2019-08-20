@@ -1062,7 +1062,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         {
             editor.selectField(field);
             PropertiesEditor.FieldPropertyDock.AdvancedTabPane advancedTabPane = editor.fieldProperties().selectAdvancedTab();
-            advancedTabPane.setPhiLevel(PropertiesEditor.PhiSelectType.PHI);
+            advancedTabPane.phi.set(PropertiesEditor.PhiSelectType.PHI);
         }
         clickButton("Save", 0);
         waitForText("Save successful.");

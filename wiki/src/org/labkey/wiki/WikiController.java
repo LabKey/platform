@@ -557,7 +557,7 @@ public class WikiController extends SpringActionController
                 _wikiVersion = null;
             }
 
-            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion, false);
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiVersion);
 
             if (SHOW_CHILD_REORDERING)
             {
@@ -628,7 +628,7 @@ public class WikiController extends SpringActionController
                     if (sibling.getRowId() == order[i])
                     {
                         sibling.setDisplayOrder(i + 1);
-                        getWikiManager().updateWiki(getUser(), sibling, null, false);
+                        getWikiManager().updateWiki(getUser(), sibling, null);
                         break;
                     }
                 }
@@ -1604,7 +1604,7 @@ public class WikiController extends SpringActionController
                 throw new UnauthorizedException("You do not have permission to set the current version of this page.");
 
             //update wiki & insert new wiki version
-            getWikiManager().updateWiki(getUser(), _wiki, _wikiversion, false);
+            getWikiManager().updateWiki(getUser(), _wiki, _wikiversion);
             return true;
         }
 
@@ -1838,6 +1838,35 @@ public class WikiController extends SpringActionController
      }
 
 
+    /**
+     * Don't display a name for CreatedBy "0" (Guest)
+     */
+    public static class DisplayColumnCreatedBy extends DataColumn
+    {
+        public DisplayColumnCreatedBy(ColumnInfo col)
+        {
+            super(col);
+        }
+
+        public Object getValue(RenderContext ctx)
+        {
+            Map rowMap = ctx.getRow();
+            String displayName = (String)rowMap.get("createdBy$displayName");
+            return (null != displayName ? displayName : "Guest");
+        }
+
+        public Class getValueClass()
+        {
+            return String.class;
+        }
+
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+        {
+            out.write(PageFlowUtil.filter(getValue(ctx).toString()));
+        }
+    }
+
+
     public static class ContainerForm
     {
         private String _id;
@@ -1976,7 +2005,7 @@ public class WikiController extends SpringActionController
 
         public ModelAndView getView(EditWikiForm form, BindException errors)
         {
-            //region get the wiki
+            //get the wiki
             Wiki wiki = null;
             WikiVersion curVersion = null;
 
@@ -1989,9 +2018,8 @@ public class WikiController extends SpringActionController
                 }
 
             }
-            //endregion
 
-            //region check permissions
+            //check permissions
             BaseWikiPermissions perms = getPermissions();
 
             if (null == wiki)
@@ -2013,9 +2041,8 @@ public class WikiController extends SpringActionController
                 if (!perms.allowUpdate(wiki))
                     throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
             }
-            //endregion
 
-            //region get the user's editor preference
+            //get the user's editor preference
             Map<String, String> properties = PropertyManager.getProperties(getUser(),
                     getContainer(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
@@ -2027,12 +2054,10 @@ public class WikiController extends SpringActionController
             WikiEditModel model = new WikiEditModel(getContainer(), wiki, curVersion,
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
                     form.getWebPartId(), getUser());
-            //endregion
 
-            //region stash the wiki so we can build the nav trail
+            //stash the wiki so we can build the nav trail
             _wiki = wiki;
             _wikiVer = curVersion;
-            //endregion
 
             return new JspView<>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
@@ -2298,7 +2323,7 @@ public class WikiController extends SpringActionController
 
             //insert new wiki and new version
             User user = getUser();
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
+            getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
 
             //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
@@ -2388,7 +2413,7 @@ public class WikiController extends SpringActionController
                 wikiversion.setTitle(title);
                 wikiversion.setBody(StringUtils.isEmpty(this.sanitizedHtml) ? form.getBody() : this.sanitizedHtml);
                 wikiversion.setRendererTypeEnum(currentRendererType);
-                getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion, false);
+                getWikiManager().updateWiki(getUser(), wikiUpdate, wikiversion);
             }
 
             //return an API response containing the current wiki and version data

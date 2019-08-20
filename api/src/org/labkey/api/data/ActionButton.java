@@ -402,11 +402,11 @@ public class ActionButton extends DisplayElement implements Cloneable
         {
             DataRegion dataRegion = ctx.getCurrentRegion();
             assert dataRegion != null : "ActionButton.setRequiresSelection() needs to be rendered in context of a DataRegion";
-            attributes.put("data-labkey-requires-selection", dataRegion.getName());
+            attributes.put("labkey-requires-selection", dataRegion.getName());
             if (_requiresSelectionMinCount != null)
-                attributes.put("data-labkey-requires-selection-min-count", _requiresSelectionMinCount.toString());
+                attributes.put("labkey-requires-selection-min-count", _requiresSelectionMinCount.toString());
             if (_requiresSelectionMaxCount != null)
-                attributes.put("data-labkey-requires-selection-max-count", _requiresSelectionMaxCount.toString());
+                attributes.put("labkey-requires-selection-max-count", _requiresSelectionMaxCount.toString());
         }
         
         if (_noFollow)

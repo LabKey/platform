@@ -18,14 +18,11 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-
-public final class HtmlString implements DOM.Renderable
+public final class HtmlString
 {
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
     public static HtmlString NBSP = HtmlString.unsafe("&nbsp;");
-    public static HtmlString NDASH = HtmlString.unsafe("&ndash;");
 
     private final String _s;
 
@@ -66,18 +63,5 @@ public final class HtmlString implements DOM.Renderable
     public String toString()
     {
         return _s;
-    }
-
-    @Override
-    public Appendable appendTo(Appendable sb)
-    {
-        try
-        {
-            return sb.append(_s);
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
     }
 }

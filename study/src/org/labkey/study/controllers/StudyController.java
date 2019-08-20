@@ -126,10 +126,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.study.assay.PublishConfirmAction;
-import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -320,18 +317,6 @@ public class StudyController extends BaseStudyController
         public ActionURL getManageFileWatchersURL(Container container)
         {
             return new ActionURL(StudyController.ManageFilewatchersAction.class, container);
-        }
-
-        @Override
-        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
-        {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishStartAction.class);
-        }
-
-        @Override
-        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
-        {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishConfirmAction.class);
         }
     }
 
@@ -2481,10 +2466,7 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getUser();
-            // Go through normal getTable() codepath to be sure all metadata is applied
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).getTable(_def.getName(), null);
-            if (t == null)
-                throw new NotFoundException("Dataset not found");
+            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def, null);
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -6322,9 +6304,10 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
+    public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
     {
-        public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
+        @Override
+        public URLHelper getURL(DatasetDetailRedirectForm form, Errors errors)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)

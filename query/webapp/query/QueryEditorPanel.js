@@ -74,7 +74,6 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                 flex: 1,
                 border: false,
                 frame: false,
-                minHeight: 60,
                 items: [{
                     id: this.display,
                     xtype : 'box',

@@ -27,9 +27,9 @@ import org.labkey.api.data.statistics.StatsService.CurveFitType;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayProviderSchema;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayProviderSchema;
+import org.labkey.api.study.assay.AssayService;
 
 import java.util.ArrayList;
 import java.util.HashMap;

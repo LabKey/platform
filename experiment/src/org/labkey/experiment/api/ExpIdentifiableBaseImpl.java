@@ -16,12 +16,10 @@
 
 package org.labkey.experiment.api;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.security.User;
 
 /**
@@ -38,8 +36,6 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
     public ExpIdentifiableBaseImpl(Type object)
     {
         _object = object;
-        if (null != _object && null != _object.getObjectId())
-            _objectId = _object.getObjectId();
     }
 
     public String getLSID()
@@ -75,15 +71,6 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         _object.setName(name);
     }
 
-    /**
-     * Get the objectId used as the value in the exp.object.ownerObjectId column
-     * e.g., for Material in a SampleSet, this value is the SampleSet's objectId.
-     */
-    public @Nullable Integer getParentObjectId()
-    {
-        return null;
-    }
-
     public boolean equals(Object o)
     {
         if (this == o) return true;
@@ -102,18 +89,11 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         return result;
     }
 
-    protected void save(User user, TableInfo table, boolean ensureObject)
+    protected void save(User user, TableInfo table)
     {
         if (getRowId() == 0)
         {
-            if (ensureObject)
-            {
-                assert !(_object instanceof IdentifiableEntity) || null == ((IdentifiableEntity)_object).getObjectId();
-                _objectId = OntologyManager.ensureObject(getContainer(), getLSID(), getParentObjectId());
-                _object.setObjectId(_objectId);
-            }
             _object = Table.insert(user, table, _object);
-            assert !ensureObject || !(_object instanceof IdentifiableEntity) || _objectId == ((IdentifiableEntity)_object).getObjectId();
         }
         else
         {

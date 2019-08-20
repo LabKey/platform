@@ -29,7 +29,6 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.announcements.DiscussionService.Settings;
 import org.labkey.api.announcements.EmailOption;
-import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -55,7 +54,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
@@ -841,27 +839,6 @@ public class AnnouncementManager
         }
     }
 
-    public static String getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
-    {
-        String result = "";
-
-        if (!forEmail)
-        {
-            result = UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId);
-        }
-
-        if (includeGroups)
-        {
-            String groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
-            if (groupList.length() > 0)
-            {
-                result += " (" + (groupList) + ")";
-            }
-        }
-
-        return result;
-    }
-
 
     public static class TestCase extends Assert
     {
@@ -967,8 +944,7 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-
-                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true);
+                    return notificationBean.announcementModel.getCreatedByName(notificationBean.includeGroups, notificationBean.recipient, false, true);
                 }
             });
 

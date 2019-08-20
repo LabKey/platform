@@ -165,7 +165,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files, boolean copyHistory) throws IOException
+    public void insertWiki(User user, Container c, Wiki wikiInsert, WikiVersion wikiversion, List<AttachmentFile> files) throws IOException
     {
         DbScope scope = comm.getSchema().getScope();
 
@@ -180,24 +180,18 @@ public class WikiManager implements WikiService
 
             //insert initial version for this page
             wikiversion.setPageEntityId(entityId);
-            if (!copyHistory)
-            {
-                wikiversion.setCreated(wikiInsert.getCreated());
-                wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
-            }
+            wikiversion.setCreated(wikiInsert.getCreated());
+            wikiversion.setCreatedBy(wikiInsert.getCreatedBy());
             wikiversion.setVersion(1);
             LOG.debug("Table.insert() for wiki version " + wikiInsert.getName());
-
-            //if copying wiki with history, avoid overwriting 'created by' user
-            User userToInsert = (copyHistory) ? null : user;
-            Table.insert(userToInsert, comm.getTableInfoPageVersions(), wikiversion);
+            Table.insert(user, comm.getTableInfoPageVersions(), wikiversion);
 
             //get rowid for newly inserted version
             wikiversion = WikiSelectManager.getVersion(wikiInsert, 1);
 
             //store initial version reference in Pages table
             wikiInsert.setPageVersionId(wikiversion.getRowId());
-            Table.update(userToInsert, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
+            Table.update(user, comm.getTableInfoPages(), wikiInsert, wikiInsert.getEntityId());
 
             getAttachmentService().addAttachments(wikiInsert.getAttachmentParent(), files, user);
 
@@ -216,7 +210,7 @@ public class WikiManager implements WikiService
     }
 
 
-    public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew, boolean copyHistory)
+    public boolean updateWiki(User user, Wiki wikiNew, WikiVersion versionNew)
     {
         DbScope scope = comm.getSchema().getScope();
         Container c = wikiNew.lookupContainer();
@@ -247,21 +241,16 @@ public class WikiManager implements WikiService
             {
                 String entityId = wikiNew.getEntityId();
                 versionNew.setPageEntityId(entityId);
-                if (!copyHistory)
-                {
-                  versionNew.setCreated(new Date(System.currentTimeMillis()));
-                  versionNew.setCreatedBy(user.getUserId());
-                }
-                //if copying wiki with history, avoid overwriting 'created by' user
-                User userToInsert = (copyHistory) ? null : user;
+                versionNew.setCreated(new Date(System.currentTimeMillis()));
+                versionNew.setCreatedBy(user.getUserId());
                 //get version number for new version
                 versionNew.setVersion(WikiSelectManager.getNextVersionNumber(wikiNew));
                 //insert initial version for this page
-                versionNew = Table.insert(userToInsert, comm.getTableInfoPageVersions(), versionNew);
+                versionNew = Table.insert(user, comm.getTableInfoPageVersions(), versionNew);
 
                 //update version reference in Pages table.
                 wikiNew.setPageVersionId(versionNew.getRowId());
-                Table.update(userToInsert, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
+                Table.update(user, comm.getTableInfoPages(), wikiNew, wikiNew.getEntityId());
             }
 
             transaction.commit();
@@ -378,7 +367,7 @@ public class WikiManager implements WikiService
                 {
                     child.setParent(parentId);
                     child.setDisplayOrder(reorder++);
-                    updateWiki(user, child, null, false);
+                    updateWiki(user, child, null);
                 }
 
                 //if there are subsequent siblings, reorder them as well.
@@ -389,7 +378,7 @@ public class WikiManager implements WikiService
                     {
                         Wiki lowerSib = siblings.get(i);
                         lowerSib.setDisplayOrder(reorder++);
-                        updateWiki(user, lowerSib, null, false);
+                        updateWiki(user, lowerSib, null);
                     }
                 }
             }
@@ -497,18 +486,16 @@ public class WikiManager implements WikiService
             WikiVersion newWikiVersion = new WikiVersion(destName);
             newWikiVersion.setTitle(wikiVersion.getTitle());
             newWikiVersion.setBody(wikiVersion.getBody());
-            newWikiVersion.setCreatedBy(wikiVersion.getCreatedBy());
-            newWikiVersion.setCreated((wikiVersion.getCreated()));
             newWikiVersion.setRendererTypeEnum(wikiVersion.getRendererTypeEnum());
 
             if(firstVersion)
             {
-                insertWiki(user, cDest, newWikiPage, newWikiVersion, files, isCopyingHistory);
+                insertWiki(user, cDest, newWikiPage, newWikiVersion, files);
                 firstVersion = false;
             }
             else
             {
-                updateWiki(user, newWikiPage, newWikiVersion, isCopyingHistory);
+                updateWiki(user, newWikiPage, newWikiVersion);
             }
         }
 
@@ -811,7 +798,7 @@ public class WikiManager implements WikiService
 
         try
         {
-            insertWiki(user, c, wiki, wikiversion, null, false);
+            insertWiki(user, c, wiki, wikiversion, null);
         }
         catch (IOException e)
         {
@@ -1027,7 +1014,7 @@ public class WikiManager implements WikiService
             wikiversion.setTitle("Topic A");
             wikiversion.setBody("[pageA]");
 
-            _m.insertWiki(user, c, wikiA, wikiversion, null, false);
+            _m.insertWiki(user, c, wikiA, wikiversion, null);
 
             // verify objects
             wikiA = WikiSelectManager.getWikiFromDatabase(c, "pageA");

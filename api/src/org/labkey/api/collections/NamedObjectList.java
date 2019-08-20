@@ -20,25 +20,7 @@ import java.util.Iterator;
 
 public class NamedObjectList implements Collection<NamedObject>
 {
-    public static final NamedObjectList INCOMPLETE = new NamedObjectList(false);
-
-    private final ArrayListMap<String, NamedObject> _map = new ArrayListMap<>();
-    private final boolean _complete;
-
-    public NamedObjectList()
-    {
-        this(true);
-    }
-
-    public NamedObjectList(boolean complete)
-    {
-        _complete = complete;
-    }
-
-    public boolean isComplete()
-    {
-        return _complete;
-    }
+    private ArrayListMap<String, NamedObject> _map = new ArrayListMap<>();
 
     public void put(NamedObject obj)
     {

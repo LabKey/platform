@@ -26,10 +26,10 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.assay.actions.PlateUploadFormImpl;
-import org.labkey.api.assay.AssayDataCollector;
-import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.assay.plate.PlateSamplePropertyHelper;
+import org.labkey.api.study.actions.PlateUploadFormImpl;
+import org.labkey.api.study.assay.AssayDataCollector;
+import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.study.assay.PlateSamplePropertyHelper;
 import org.labkey.api.study.assay.ThawListResolverType;
 
 import java.io.File;

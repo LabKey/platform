@@ -25,8 +25,10 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -45,8 +47,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.experiment.ExperimentAuditProvider;
 
 import java.sql.SQLException;
@@ -235,7 +237,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                     if (run != null)
                     {
                         // check if there is a QC state associated with this flag
-                        QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), qcId) : null;
+                        QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(container, qcId) : null;
                         if (state != null)
                         {
                             ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), comment);

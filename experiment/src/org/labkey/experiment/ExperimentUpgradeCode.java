@@ -122,22 +122,19 @@ public class ExperimentUpgradeCode implements UpgradeCode
         return mvColumn;
     }
 
-    /**
-     * Called from multiple experiment upgrade scripts,
-     * uses @DeferredUpgrade and local flag to make sure we don't run this multiple times, when a server is upgraded
-     * multiple versions in at one go.
-     */
-    static private boolean rebuildEdgesHasRun = false;
-
-    @DeferredUpgrade
+    /** Called from exp-17.30-17.31.sql */
     public static void rebuildAllEdges(ModuleContext context)
     {
-        if (context.isNewInstall() || rebuildEdgesHasRun)
+        if (context.isNewInstall())
             return;
 
-        rebuildEdgesHasRun = true;
-        ExperimentServiceImpl.get().rebuildAllEdges();
+        // skip this invocation if we're not at latest version of exp.Edges
+        DbSchema schema = ExperimentServiceImpl.get().getSchema();
+        TableInfo edge = schema.getTable("Edge");
+        if (null != edge.getColumn("toObjectId") && null != edge.getColumn("fromObjectId"))
+            ExperimentServiceImpl.get().rebuildAllEdges();
     }
+
 
     private static void materializeSampleSet(ExpSampleSetImpl ss)
     {

@@ -721,7 +721,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
             // prepare a multimap of config properties to test with that has properties assigned for the ScriptEngineDefinition
             MultiValuedMap<String, ConfigProperty> testConfigPropertyMap = new HashSetValuedHashMap<>();
 
-            // prepare test Script Engine Definition properties - requires multiple lines in the property file for each script engine being setup
+            // prepare test Script Engine Definition properties - requries multiple lines in the propertry file for each script engine being setup
             ConfigProperty scriptEngineDefinition1 = new ConfigProperty("Rtest.external", "True", "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);
             testConfigPropertyMap.put(ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION, scriptEngineDefinition1);
             ConfigProperty scriptEngineDefinition2 = new ConfigProperty("Rtest.name", SCRIPT_ENGINE_NAME, "bootstrap", ConfigProperty.SCOPE_SCRIPT_ENGINE_DEFINITION);

@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Writes out a TSV-style file (can also be configured to use other delimiters)
+ * Writes out a TSV-style file (can also be configured to use other delimeters)
  */
 public abstract class TSVWriter extends TextWriter
 {

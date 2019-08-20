@@ -16,10 +16,8 @@
 package org.labkey.experiment;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
@@ -37,7 +35,7 @@ import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyType;
@@ -53,8 +51,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
-import org.labkey.experiment.api.ExpDataClassDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.SampleSetUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
@@ -203,7 +199,7 @@ public class ExpDataIterators
         Map<String, Object> _lsidAliasMap = new HashMap<>();
         private final TableInfo _expAliasTable;
 
-        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, TableInfo expTable)
+        protected AliasDataIterator(DataIterator di, DataIteratorContext context, Container container,  User user, TableInfo expTable)
         {
             super(di);
             _context = context;
@@ -379,7 +375,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _pre.getDataIterator(context);
-            if (null != context.getConfigParameters() && context.getConfigParameters().containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
+            if (null!=context.getConfigParameters() && context.getConfigParameters().containsKey(SampleSetUpdateServiceDI.Options.SkipDerivation))
             {
                 return pre;
             }
@@ -505,12 +501,13 @@ public class ExpDataIterators
                         if (pair.first == null && pair.second == null)
                             continue;
 
+                        ExpMaterial sample = null;
                         Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
                         ExpData data = null;
                         Map<ExpData, String> currentDataMap = Collections.emptyMap();
                         if (_isSample)
                         {
-                            ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
+                            sample = ExperimentService.get().getExpMaterial(lsid);
                             if (null == sample)
                                 continue;
 
@@ -649,7 +646,7 @@ public class ExpDataIterators
         Supplier[] suppliers;
         String[] savedFileName;
 
-        FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, String file_link_dir_name)
+        FileLinkDataIterator(final DataIterator in,  final DataIteratorContext context, Container c, String file_link_dir_name)
         {
             super(in);
             suppliers = new Supplier[in.getColumnCount() + 1];
@@ -717,22 +714,19 @@ public class ExpDataIterators
         private final TableInfo _propertiesTable;
         private final Container _container;
         private final User _user;
-        private final Integer _ownerObjectId;
-
         private String _fileLinkDirectory = null;
         Function<List<String>, Runnable> _indexFunction;
         Map<String, String> _importAliases;
 
 
         // expTable is the shared experiment table e.g. exp.Data or exp.Materials
-        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user, Map<String, String> importAliases, @Nullable Integer ownerObjectId)
+        public PersistDataIteratorBuilder(@NotNull DataIteratorBuilder in, TableInfo expTable, TableInfo propsTable, Container container, User user, Map<String, String> importAliases)
         {
             _in = in;
             _expTable = expTable;
             _propertiesTable = propsTable;
             _container = container;
             _user = user;
-            _ownerObjectId = ownerObjectId;
             _importAliases = importAliases;
         }
 
@@ -769,25 +763,25 @@ public class ExpDataIterators
 
             Map<String, String> aliases = _importAliases != null ?
                     _importAliases :
-                    new CaseInsensitiveHashMap<>();
+                    new HashMap<>();
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             step0.setDebugName("drop alias");
 
             // Insert into exp.data then the provisioned table
-            // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step2 = new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"))
-                    .setAddlSkipColumns(Set.of("generated","sourceapplicationid"))     // generated has database DEFAULT 0
-                    .setCommitRowsBeforeContinuing(true)
-                    ;
+            // Temporary work around for Issue 26082 (row at a time, reselect rowid)
+            // mucking with the context like this is not UL approved
+            context.setSelectIds(true);
+            // The PK is rowid, switch to use lsid
+            DataIteratorBuilder step2 = TableInsertDataIterator.create(DataIteratorBuilder.wrap(step0), _expTable, _container, context,
+                    Collections.singleton("lsid"), null, null);
+            context.setSelectIds(false);
+            // TODO the lsid is a unique key, but is not recognized as the PK in the schema table
+            DataIteratorBuilder step3 = TableInsertDataIterator.create(step2, _propertiesTable, _container, context,
+                Collections.singleton("lsid"), null, null);
 
-            DataIteratorBuilder step3 = new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"));
-
-            assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
-            boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
+            boolean isSample = "Material".equalsIgnoreCase(_expTable.getName());
 
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))

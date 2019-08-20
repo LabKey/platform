@@ -1573,10 +1573,4 @@ public abstract class SqlDialect
     {
         return isLabKeyWithSupported();
     }
-
-    // return true if Statement.RETURN_GENERATED_KEYS can be used with PreparedStatement.addBatch()
-    public boolean supportsBatchGeneratedKeys()
-    {
-        return false;
-    }
 }

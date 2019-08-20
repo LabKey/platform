@@ -29,7 +29,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
@@ -43,6 +42,7 @@ import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
@@ -50,7 +50,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
@@ -101,8 +101,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public ExpRunImpl(ExperimentRun run)
     {
         super(run);
-        if (null != run && null != run.getObjectId())
-            _objectId = run.getObjectId();
     }
 
     @Override
@@ -282,18 +280,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             boolean newRun = getRowId() == 0;
             ExperimentService.get().onBeforeRunSaved(getProtocol(), this, getContainer(), user);
-            save(user, ExperimentServiceImpl.get().getTinfoExperimentRun(), true);
+            save(user, ExperimentServiceImpl.get().getTinfoExperimentRun());
             if (newRun)
                 ExperimentServiceImpl.get().auditRunEvent(user, this.getProtocol(), this, null, this.getProtocol().getName() + " run loaded");
             t.commit();
         }
-    }
-
-    @Override
-    protected void save(User user, TableInfo table, boolean ensureObject)
-    {
-        assert ensureObject;
-        super.save(user, table, true);
     }
 
     @Override
@@ -520,6 +511,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         deleteRunProtocolApps();
 
         ExperimentRunGraph.clearCache(getContainer());
+        ExperimentServiceImpl.get().syncRunEdges(getRowId(), getLSID(), getContainer());
     }
 
     // Clean up DataInput and MaterialInput exp.object and properties

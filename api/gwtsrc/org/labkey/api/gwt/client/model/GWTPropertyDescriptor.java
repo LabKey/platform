@@ -137,7 +137,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setDisableEditing(s.getDisableEditing());
         setScale(s.getScale());
         setRedactedText(s.getRedactedText());
-        setIsPrimaryKey(s.getIsPrimaryKey());
+        setPrimaryKey(s.isPrimaryKey());
         setLockType(s.getLockType());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
@@ -532,7 +532,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.redactedText.set(redactedText);
     }
 
-    public boolean getIsPrimaryKey()
+    public boolean isPrimaryKey()
     {
         return isPrimaryKey.booleanValue();
     }
@@ -540,7 +540,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     /** This method is for informational purpose only so that the client can identify column as a PK column.
      * Setting PK on a column via this method will not get preserved in the domain's table.
      */
-    public void setIsPrimaryKey(boolean isPrimaryKey)
+    public void setPrimaryKey(boolean isPrimaryKey)
     {
         this.isPrimaryKey.setBool(isPrimaryKey);
     }

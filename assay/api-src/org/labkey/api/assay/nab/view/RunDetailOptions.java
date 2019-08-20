@@ -15,7 +15,7 @@
  */
 package org.labkey.api.assay.nab.view;
 
-import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 
 /**
  * Created by klum on 2/17/14.

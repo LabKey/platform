@@ -38,7 +38,6 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
     // Update the below constant whenever we add support for a new major Java version so we always point at the current docs.
     // Why is this global constant defined in such an obscure class? Ideally, we would define it in HelpTopic, but that class
     // is not available to GWT client code. Defining it here allows us to use it in both GWT and server code.
-    // TODO: When the GWT domain designer is removed, move this constant to HelpTopic.java
     public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/12/docs/api/java.base/";
 
     // Should match Formats.getDecimalFormatDocumentationURL()

@@ -437,7 +437,7 @@ public class FileUtil
         if (!FileUtil.hasCloudScheme(str))
             return new File(createUri(str, isEncoded)).toPath();
         else
-            return CloudStoreService.get().getPathFromUrl(container, PageFlowUtil.decode(str)/*decode everything not just the space*/);
+            return CloudStoreService.get().getPathFromUrl(container, decodeSpaces(str));
     }
 
     public static String getCloudRootPathString(String cloudName)

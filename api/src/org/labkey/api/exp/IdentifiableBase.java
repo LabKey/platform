@@ -26,8 +26,6 @@ public class IdentifiableBase implements Identifiable, Serializable
 {
     private String _lsid;
     private String _name;
-    // some entities copy the exp.object.objectid value
-    private Integer objectId;
 
     public IdentifiableBase()
     {
@@ -60,17 +58,5 @@ public class IdentifiableBase implements Identifiable, Serializable
             _name = new Lsid(getLSID()).getObjectId();
 
         return _name;
-    }
-
-    public Integer getObjectId()
-    {
-        return objectId;
-    }
-
-    public void setObjectId(Integer objectId)
-    {
-        if (this.objectId != null && !this.objectId.equals(objectId))
-            throw new IllegalStateException("can't change objectId");
-        this.objectId = objectId;
     }
 }

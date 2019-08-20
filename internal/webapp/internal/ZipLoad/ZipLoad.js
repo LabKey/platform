@@ -172,30 +172,12 @@ LABKEY.internal.ZipLoad = new function () {
         var filePath = file.fullPath.split('/');
         filePath.shift();
         var zipProgressName = filePath[filePath.length-1];
-        var fileZipPath = '';
-
-        for(var fp=0; fp<filePath.length; fp++) {
-            if(this.directoryBeingZipped === filePath[fp]) {
-                var index = fp;
-                while(index+1 < filePath.length) {
-                    fileZipPath += filePath[++index] +'/';
-                }
-            }
-        }
 
         getCurrentZipFile().update("Adding file - " + zipProgressName);
         getCurrentFileNumber().update(addIndex + '/' + filesBeingZipped.length);
 
-        if(!fileZipPath.length>0) {
-            dropZone.uploadPanel.showErrorMsg("Relative path of file - " + file.name + " is incorrect");
-            console.log("Relative path of file - " + file.name + " is incorrect");
-            fileZipPath = file.name;
-        }
-
-        //Issue 38826: removing extra slash from file path
-        zipWriter.add(fileZipPath.slice(0,-1), new zip.BlobReader(file), function () {
+        zipWriter.add(file.fullPath, new zip.BlobReader(file), function () {
             addIndex++;
-            fileZipPath = '';
             if (addIndex < filesBeingZipped.length)
                 nextFile();
             else
@@ -266,17 +248,18 @@ LABKEY.internal.ZipLoad = new function () {
             }
         }
 
-        var zipBlobBlob = new Blob([zippedBlob], {type: 'application/zip'});
-        zipBlobBlob.lastModified = Date.now();
-        zipBlobBlob.name = dirName + '.zip';
+        var zipBlobFile = new File([zippedBlob], dirName + '.zip', {
+            type: 'application/zip',
+            lastModified: Date.now()
+        });
 
         if(testFile) {
-            zipBlobBlob.fullPath = dirName + '.zip';
+            zipBlobFile.fullPath = dirName + '.zip';
         }
         else {
-            zipBlobBlob.fullPath = correctPath + '.zip';
+            zipBlobFile.fullPath = correctPath + '.zip';
         }
-        dropZone.addFile(zipBlobBlob);
+        dropZone.addFile(zipBlobFile);
 
         moveToNextDirectory();
     }
@@ -651,9 +634,10 @@ LABKEY.internal.ZipLoad = new function () {
                         _entry.file(function (file) {
                             fileCbCount--;
 
-                            file.fullPath = entry.fullPath + "/" + file.name;
+                            var updatedFile = new File([file], file.name, {type: file.type, lastModified: file.lastModified, lastModifiedDate: file.lastModifiedDate});
+                            updatedFile.fullPath = entry.fullPath + "/" + file.name;
 
-                            allFiles.push(file);
+                            allFiles.push(updatedFile);
 
                             if (dirCbCount === 0 && fileCbCount === 0) {
                                 callback();

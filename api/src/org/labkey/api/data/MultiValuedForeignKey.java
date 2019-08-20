@@ -239,7 +239,7 @@ public class MultiValuedForeignKey implements ForeignKey
                 return junctionFK.getSelectList(ctx);
             }
         }
-        return new NamedObjectList();
+        return null;
     }
 
     @Override

@@ -144,7 +144,7 @@ public class PopupMenu extends DisplayElement
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
             if (requiresSelection)
-                attributes.put("data-labkey-requires-selection", dataRegionName);
+                attributes.put("labkey-requires-selection", dataRegionName);
 
             Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
                     .dropdown(true)

@@ -21,9 +21,9 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.PrintWriters;
 

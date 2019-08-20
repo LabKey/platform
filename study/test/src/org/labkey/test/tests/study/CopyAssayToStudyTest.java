@@ -227,14 +227,14 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         designerPage.addDataField("Flags", "Flags", FieldDefinition.ColumnType.Flag);
 
         // Set some to required
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().setRequired(true);
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 1).properties().selectValidatorsTab().setRequired(true);
-        designerPage.runFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
-        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().setRequired(true);
+        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().required.set(true);
+        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT+1).properties().selectValidatorsTab().required.set(true);
+        designerPage.runFields().selectField(0).properties().selectValidatorsTab().required.set(true);
+        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().required.set(true);
+        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().required.set(true);
 
         // import aliases
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().setImportAliases(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
+        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().importAliasesInput.set(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
 
         designerPage.save();
     }

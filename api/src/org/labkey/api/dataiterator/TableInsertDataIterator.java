@@ -16,6 +16,7 @@
 
 package org.labkey.api.dataiterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// TODO: convert usages to TableInsertDataIteratorBuilder and stop extending DataIteratorBuilder
 public class TableInsertDataIterator extends StatementDataIterator implements DataIteratorBuilder
 {
     private DbScope _scope = null;
@@ -57,31 +57,24 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     private final Set<String> _keyColumns = new CaseInsensitiveHashSet();
 
 
-    @Deprecated // use TableInsertDataIteratorBuilder
-    public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
+    public static DataIteratorBuilder create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
-        DataIteratorBuilder builder = DataIteratorBuilder.wrap(data);
-        return (TableInsertDataIterator)create(builder, table, null, context, null, null, null, false);
+        TableInsertDataIterator it;
+        it = new TableInsertDataIterator(data, table, null, context, null, null, null);
+        return it;
     }
+
 
     /** If container != null, it will be set as a constant in the insert statement */
-    @Deprecated // use TableInsertDataIteratorBuilder
-    public static TableInsertDataIterator create(DataIteratorBuilder builder, TableInfo table, @Nullable Container c, DataIteratorContext context)
+    public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
-        return (TableInsertDataIterator)create(builder, table, c, context, null, null, null, false);
+        return create(data, table, c, context, null, null, null);
     }
 
-    @Deprecated  // use TableInsertDataIteratorBuilder
+
     public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
-                                      @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
-        return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, false);
-    }
-
-    public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
-         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, boolean commitRowsBeforeContinuing)
-    {
-        // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
         DataIterator di = data.getDataIterator(context);
         if (null == di)
         {
@@ -99,7 +92,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             dontUpdate.addAll(context.getDontUpdateColumnNames());
         }
 
-        if (context.getInsertOption().mergeRows && !context.getInsertOption().replace)
+        if (context.getInsertOption() == InsertOption.MERGE)
         {
             // If the target has additional columns that aren't present in the source, don't overwrite (update) existing values...
             Set<String> targetOnlyColumnNames = table.getColumns()
@@ -127,25 +120,14 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             keyColumns.addAll(context.getAlternateKeys());
         }
-        TableInsertDataIterator ti = new TableInsertDataIterator(di, table, c, context, keyColumns, addlSkipColumns, dontUpdate);
-        DataIterator ret = ti;
-
-
-        // UNFORTUNATELY I can't tell if TableInsertDataIterator is row at a time until AFTER init()
-        // However, _selectIds is set during construction, and will force row-at-time
-        if (commitRowsBeforeContinuing && !ti._selectIds)
-        {
-            var emb = new EmbargoDataIterator(context, ti, null, null);
-            ti.setEmbargoDataIterator(emb);
-            ret = emb;
-        }
-
-        return ret;
+        TableInsertDataIterator it;
+        it = new TableInsertDataIterator(di, table, c, context, keyColumns, addlSkipColumns, dontUpdate);
+        return it;
     }
 
 
     protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
-                                      @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+          @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
         super(data, context);
         setDebugName(table.getName());
@@ -240,13 +222,17 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _conn = _scope.getConnection();
 
             Parameter.ParameterMap stmt;
-            if (_insertOption.mergeRows)
+            if (_insertOption == InsertOption.MERGE)
             {
-                stmt = getMergeStatement(constants);
+                if (_context.supportsAutoIncrementKey())
+                    setAutoIncrement(INSERT.ON);
+                stmt = StatementUtils.mergeStatement(_conn, _table, _keyColumns, _skipColumnNames, _dontUpdate, _c, null, _selectIds, false, _context.supportsAutoIncrementKey());
             }
             else
             {
-                stmt = getInsertStatement(constants);
+                if (_insertOption == InsertOption.IMPORT_IDENTITY)
+                    setAutoIncrement(INSERT.ON);
+                stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
             }
 
             if (_context.getInsertOption().batch && null == _rowIdIndex && null == _objectIdIndex)
@@ -270,38 +256,19 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         }
     }
 
-    protected Parameter.ParameterMap getInsertStatement(Map<String, Object> constants) throws SQLException
+    public TableInsertDataIterator setMaxBatchSize(int size)
     {
-        Parameter.ParameterMap stmt;
-        if (_insertOption.identity_insert)
-            setAutoIncrement(INSERT.ON);
-
-        StatementUtils utils = new StatementUtils(StatementUtils.Operation.insert, _table)
-                .skip(_skipColumnNames)
-                .allowSetAutoIncrement(_context.supportsAutoIncrementKey())
-                .updateBuiltinColumns(false)
-                .selectIds(_selectIds)
-                .constants(constants);
-        stmt = utils.createStatement(_conn, _c, null);
-        return stmt;
+        if (!_selectIds)
+            _batchSize = size;
+        return this;
     }
 
-    protected Parameter.ParameterMap getMergeStatement(Map<String, Object> constants) throws SQLException
+    public TableInsertDataIterator setSelectIds(boolean selectIds)
     {
-        Parameter.ParameterMap stmt;
-        if (_context.supportsAutoIncrementKey())
-            setAutoIncrement(INSERT.ON);
-
-        StatementUtils util = new StatementUtils(StatementUtils.Operation.merge, _table)
-                    .keys(_keyColumns)
-                    .skip(_skipColumnNames)
-                    .allowSetAutoIncrement(_context.supportsAutoIncrementKey())
-                    .noupdate(_dontUpdate)
-                    .updateBuiltinColumns(false)
-                    .selectIds(_selectIds)
-                    .constants(constants);
-        stmt = util.createStatement(_conn, _c, null);
-        return stmt;
+        _selectIds = selectIds;
+        if (_selectIds)
+            _batchSize = 1;
+        return this;
     }
 
 
@@ -346,8 +313,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super.close();
         if (null != _scope && null != _conn)
         {
-            if (_insertOption.identity_insert ||
-                (_insertOption.mergeRows && _context.supportsAutoIncrementKey()))
+            if (_insertOption == InsertOption.IMPORT_IDENTITY ||
+                (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
             {
                 setAutoIncrement(INSERT.OFF);
             }

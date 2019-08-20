@@ -399,7 +399,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     @Nullable
     public ActionURL urlFor(QueryAction action, @NotNull QueryDefinition queryDef)
     {
-        assert queryDef != null;
         return queryDef.urlFor(action, getContainer());
     }
 

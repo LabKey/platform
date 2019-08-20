@@ -177,7 +177,7 @@ public abstract class ExpProtocolInputImpl<T extends AbstractProtocolInput, I ex
             }
         }
 
-        save(user, getTinfo(), false);
+        save(user, getTinfo());
     }
 
     @Override

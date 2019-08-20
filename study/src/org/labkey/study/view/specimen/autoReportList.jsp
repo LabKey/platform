@@ -281,31 +281,17 @@ This folder does not contain a study.
                     <tr>
                         <td>&nbsp;</td>
                         <td>
-                            <label>
-                                <input type="checkbox" name="hideEmptyColumns"<%=checked(factory.isHideEmptyColumns())%>> Hide Empty Columns
-                            </label>
-                            <br>
-                            <label>
-                                <input type="checkbox" name="viewVialCount"<%=checked(!atLeastOneChecked || factory.isViewVialCount())%>> Vial Counts
-                            </label>
-                            <br>
-                            <label>
-                                <input type="checkbox" name="viewVolume"<%=checked(factory.isViewVolume())%>> Total Volume
-                            </label>
-                            <br>
+                            <input type="checkbox" name="hideEmptyColumns"<%=checked(factory.isHideEmptyColumns())%>> Hide Empty Columns<br>
+                            <input type="checkbox" name="viewVialCount"<%=checked(!atLeastOneChecked || factory.isViewVialCount())%>> Vial Counts<br>
+                            <input type="checkbox" name="viewVolume"<%=checked(factory.isViewVolume())%>> Total Volume<br>
                 <%
                     if (factory.allowsParticipantAggregegates())
                     {
                 %>
-                            <label>
-                                <input type="checkbox" name="viewParticipantCount"<%=checked(factory.isViewParticipantCount())%>>
-                                <%= h(StudyService.get().getSubjectNounSingular(container)) %> Counts
-                            </label>
-                            <br>
-                            <label>
-                                <input type="checkbox" name="viewPtidList"<%=checked(factory.isViewPtidList())%>>
-                                <%= h(StudyService.get().getSubjectColumnName(container)) %>  List
-                            </label>
+                            <input type="checkbox" name="viewParticipantCount"<%=checked(factory.isViewParticipantCount())%>>
+                            <%= h(StudyService.get().getSubjectNounSingular(container)) %> Counts<br>
+                            <input type="checkbox" name="viewPtidList"<%=checked(factory.isViewPtidList())%>>
+                            <%= h(StudyService.get().getSubjectColumnName(container)) %>  List
                 <%
                     }
                 %>

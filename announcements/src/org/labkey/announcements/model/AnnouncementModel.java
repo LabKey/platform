@@ -181,6 +181,37 @@ public class AnnouncementModel extends Entity implements Serializable
         _parentId = parentId;
     }
 
+    public String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail)
+    {
+        String result = UserManager.getDisplayNameOrUserId(getCreatedBy(), currentUser);
+
+        if (includeGroups)
+        {
+            User user = UserManager.getUser(getCreatedBy());
+
+            if (null != user)
+            {
+                Container container = ContainerManager.getForId(getContainerId());
+                String groupList = SecurityManager.getGroupList(container, user);
+
+                if (htmlFormatted && !forEmail)
+                {
+                    result = "<a class=\"announcement-title-link\" href=\"" +
+                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, user.getUserId(), null)) +
+                            "\">" + PageFlowUtil.filter(result) + "</a>";
+                }
+
+                if (groupList.length() > 0)
+                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
+
+                return result;
+            }
+        }
+
+        return htmlFormatted ? PageFlowUtil.filter(result) : result;
+    }
+
+
     public String getAssignedToName(User currentUser)
     {
         return UserManager.getDisplayNameOrUserId(getAssignedTo(), currentUser);

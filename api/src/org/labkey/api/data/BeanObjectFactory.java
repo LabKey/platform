@@ -109,7 +109,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             return name;
     }
 
-    @Override
     public K fromMap(Map<String, ?> m)
     {
         try
@@ -134,43 +133,24 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
 
         for (String prop : _writeableProperties)
         {
-            // If the map contains the key, assuming that we should use the map's value, even if it's null.
-            // Otherwise, don't set a value on the bean.
-            if (m.containsKey(prop))
+            Object value = null;
+            try
             {
-                Object value = m.get(prop);
-                try
+                // If the map contains the key, assuming that we should use the map's value, even if it's null.
+                // Otherwise, don't set a value on the bean.
+                if (m.containsKey(prop))
                 {
-                    try
-                    {
-                        BeanUtils.copyProperty(bean, prop, value);
-                    }
-                    catch (InvocationTargetException x)
-                    {
-                        // Unwrap exceptions for bad parameters
-                        Throwable targetException = x.getTargetException();
-                        if (targetException instanceof IllegalArgumentException)
-                        {
-                            throw (IllegalArgumentException) targetException;
-                        }
-                        else if (targetException instanceof ConversionException)
-                        {
-                            throw (ConversionException) targetException;
-                        }
-                        else
-                        {
-                            throw x;
-                        }
-                    }
+                    value = m.get(prop);
+                    BeanUtils.copyProperty(bean, prop, value);
                 }
-                catch (IllegalAccessException | InvocationTargetException x)
-                {
-                    throw new UnexpectedException(x);
-                }
-                catch (IllegalArgumentException | ConversionException x)
-                {
-                    _log.warn("Bean [" + bean.getClass().getName() + "] could not set property: " + prop + "=" + value + ": " + x.getMessage());
-                }
+            }
+            catch (IllegalAccessException | InvocationTargetException x)
+            {
+                throw new UnexpectedException(x);
+            }
+            catch (IllegalArgumentException | ConversionException x)
+            {
+                _log.warn("Bean [" + bean.getClass().getName() + "] could not set property: " + prop + "=" + String.valueOf(value) + ": " + x.getMessage());
             }
         }
 

@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -222,10 +223,10 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
     public static final String guidRegEx = "\\p{XDigit}{8}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{4}-\\p{XDigit}{12}";
     public static final Pattern guidPattern = Pattern.compile(guidRegEx);
 
-    public static boolean isGUID(@Nullable String s)
+    public static boolean isGUID(String s)
     {
         // quick check
-        if (null == s || s.length() != 36 || s.charAt(8) != '-' || s.charAt(13) != '-' || s.charAt(18) != '-' || s.charAt(23) != '-')
+        if (s.length() != 36 || s.charAt(8) != '-' || s.charAt(13) != '-' || s.charAt(18) != '-' || s.charAt(23) != '-')
             return false;
         return guidPattern.matcher(s).find();
     }

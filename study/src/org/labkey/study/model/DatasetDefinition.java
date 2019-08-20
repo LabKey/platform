@@ -1930,11 +1930,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         try
         {
-            if (transaction.getConnection().isClosed())
-            {
-                ((ConnectionWrapper)transaction.getConnection()).logAndCheckException(new SQLException("Connection should not be closed! see https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=34735"));
-                assert false : "Connection should not be closed!";
-            }
+            assert !transaction.getConnection().isClosed() : "Connection should not be closed!";
         }
         catch (SQLException e)
         {
@@ -1958,8 +1954,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 Pump p = new Pump(insert.getDataIterator(context), context);
                 checkConnection(transaction);
                 p.run();
-                if (!context.getErrors().hasErrors())
-                    checkConnection(transaction);
+                checkConnection(transaction);
             }
             long end = System.currentTimeMillis();
 

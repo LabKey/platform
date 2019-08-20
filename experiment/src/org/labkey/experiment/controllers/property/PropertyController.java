@@ -19,7 +19,6 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -60,7 +59,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.ExcelFormatException;
 import org.labkey.api.reader.TabLoader;
-import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -82,7 +80,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -98,6 +95,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -575,17 +573,8 @@ public class PropertyController extends SpringActionController
      */
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    @ActionNames("inferDomain, getFilePreview")
     public class InferDomainAction extends ReadOnlyApiAction<InferDomainForm>
     {
-        @Override
-        public void validateForm(InferDomainForm form, Errors errors)
-        {
-            // expect to either have a file posted or a param with the file id/path
-            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest) && form.getFile() == null)
-                errors.reject(ERROR_REQUIRED, "Either a file is required to be posted or the id/path to a file that exists on the server must be supplied.");
-        }
-
         @Override
         protected ObjectMapper createObjectMapper()
         {
@@ -597,54 +586,39 @@ public class PropertyController extends SpringActionController
         @Override
         public Object execute(InferDomainForm form, BindException errors) throws Exception
         {
-            Map<String, MultipartFile> fileMap = getFileMap();
-            File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
-            DataLoader loader = null;
+            if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
+                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Expected MultipartHttpServletRequest when posting files.", null);
 
-            if (file != null && file.exists())
-            {
-                loader = DataLoader.get().createLoader(file, null, true, null, null);
-            }
-            else if (fileMap.size() == 1)
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Map<String, MultipartFile> fileMap = getFileMap();
+
+            if (fileMap.size() == 1)
             {
                 Optional<MultipartFile> opt = fileMap.values().stream().findAny();
-                MultipartFile postedFile = opt.orElse(null);
-                if (postedFile != null)
-                    loader = DataLoader.get().createLoader(postedFile, true, null, null);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
-            }
+                MultipartFile file = opt.isPresent() ? opt.get() : null;
+                List<GWTPropertyDescriptor> fields = new ArrayList<>();
 
-            return getInferDomainResponse(loader, form.getNumLinesToInclude());
-        }
-
-        private ApiSimpleResponse getInferDomainResponse(DataLoader loader, Integer numLinesToInclude) throws IOException
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            List<GWTPropertyDescriptor> fields = new ArrayList<>();
-
-            if (loader != null)
-            {
-                ColumnDescriptor[] columns = loader.getColumns();
-                for (ColumnDescriptor col : columns)
+                if (file != null)
                 {
-                    GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
-                    prop.setContainer(getContainer().getId());
-                    prop.setMvEnabled(col.isMvEnabled());
+                    DataLoader loader = DataLoader.get().createLoader(file, true, null, null);
+                    List<ColumnDescriptor> columns = Arrays.asList(loader.getColumns());
+                    for (ColumnDescriptor col : columns)
+                    {
+                        GWTPropertyDescriptor prop = new GWTPropertyDescriptor(col.getColumnName(), col.getRangeURI());
+                        prop.setContainer(getContainer().getId());
+                        prop.setMvEnabled(col.isMvEnabled());
 
-                    fields.add(prop);
+                        fields.add(prop);
+                    }
+
+                    if (form.getNumLinesToInclude() != null)
+                    {
+                        response.put("data", loader.getFirstNLines(form.getNumLinesToInclude()));
+                    }
                 }
 
-                if (numLinesToInclude != null)
-                {
-                    response.put("data", loader.getFirstNLines(numLinesToInclude));
-                }
+                response.put("fields", fields);
             }
-
-            response.put("fields", fields);
             return response;
         }
     }
@@ -653,7 +627,6 @@ public class PropertyController extends SpringActionController
     {
         // TODO should -1 allow you to get all data?
         private Integer _numLinesToInclude;
-        private Object _file;
 
         public Integer getNumLinesToInclude()
         {
@@ -663,16 +636,6 @@ public class PropertyController extends SpringActionController
         public void setNumLinesToInclude(Integer numLinesToInclude)
         {
             _numLinesToInclude = numLinesToInclude;
-        }
-
-        public Object getFile()
-        {
-            return _file;
-        }
-
-        public void setFile(Object file)
-        {
-            _file = file;
         }
     }
 
@@ -685,7 +648,6 @@ public class PropertyController extends SpringActionController
     {
         private static final String SESSION_ATTR_NAME = "org.labkey.domain.tempFile";
 
-        @Override
         protected File getTargetFile(String filename) throws IOException
         {
             int dotIndex = filename.lastIndexOf(".");
@@ -705,7 +667,6 @@ public class PropertyController extends SpringActionController
             return tempFile;
         }
 
-        @Override
         public String getResponse(FileUploadForm form, Map<String, Pair<File, String>> files) throws UploadException
         {
             if (files.isEmpty())
@@ -742,7 +703,6 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class InferPropertiesAction extends ExportAction<InferForm>
     {
-        @Override
         public void export(InferForm inferForm, HttpServletResponse response, BindException errors) throws Exception
         {
             response.reset();

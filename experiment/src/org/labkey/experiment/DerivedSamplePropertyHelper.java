@@ -30,7 +30,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 

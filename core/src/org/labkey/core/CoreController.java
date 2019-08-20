@@ -2358,7 +2358,6 @@ public class CoreController extends SpringActionController
 
     public static class TestCase extends AbstractActionPermissionTest
     {
-        @Override
         @Test
         public void testActionPermissions()
         {

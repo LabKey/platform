@@ -26,7 +26,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.message.digest.MessageDigest;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MailHelper;
@@ -256,7 +255,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
                 int attachmentCount = ann.getAttachments().size();
                 sb.append("<tr><td>");
-                sb.append(AnnouncementManager.getUserDetailsLink(getContainer(), dailyDigestBean.recipient, ann.getCreatedBy(), dailyDigestBean.includeGroups, true));
+                sb.append(ann.getCreatedByName(dailyDigestBean.includeGroups, dailyDigestBean.recipient, true, true));
 
                 if (null == ann.getParent())
                 {

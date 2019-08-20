@@ -35,7 +35,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
@@ -58,8 +57,8 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
@@ -81,9 +80,8 @@ import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExpSampleSetTestCase;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExperimentStressTest;
-import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.LineagePerfTest;
+import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
@@ -136,7 +134,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public double getVersion()
     {
-        return 19.21;
+        return 19.13;
     }
 
     @Nullable
@@ -178,9 +176,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
-
-        AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
-                "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
     }
 
     public boolean hasScripts()
@@ -286,27 +281,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return ExperimentJSONConverter.serializeData(data, user);
                 }
             });
-            ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
-                @Override
-                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
-                {
-                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("materialSource:", ""));
-                    if (rowId == 0)
-                        return null;
-
-                    ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(rowId);
-                    if (sampleSet == null)
-                        return null;
-
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null);
-
-                    //Need to map to proper Icon
-                    properties.put("type", "sampleSet");
-
-                    return properties;
-                }
-            });
-
             ss.addResourceResolver("material", new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
@@ -467,8 +441,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 ExpSampleSetTestCase.class,
                 UniqueValueCounterTestCase.class,
                 ExperimentServiceImpl.TestCase.class,
-                ExpDataTableImpl.TestCase.class,
-                ExperimentStressTest.class
+                ExpDataTableImpl.TestCase.class
                 , LineagePerfTest.class));
     }
 

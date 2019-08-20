@@ -563,7 +563,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
             try
             {
-                WikiManager.get().updateWiki(user, _wiki, version, false);
+                WikiManager.get().updateWiki(user, _wiki, version);
                 _version = null;
                 return len;
             }

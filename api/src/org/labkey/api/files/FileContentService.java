@@ -61,7 +61,6 @@ public interface FileContentService
     /**
      * Returns a list of Container in which the path resides.
      */
-    @NotNull
     List<Container> getContainersForFilePath(java.nio.file.Path path);
 
     /**

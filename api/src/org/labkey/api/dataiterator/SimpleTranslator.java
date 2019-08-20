@@ -871,7 +871,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         //Append new alias columns to prevent indexing errors
         for(Map.Entry<String, Integer> alias : aliasColumns.entrySet())
-            addColumn(alias.getKey(), alias.getValue());
+            addAliasColumn(alias.getKey(), alias.getValue());
     }
 
 

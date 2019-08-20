@@ -56,7 +56,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -219,7 +219,7 @@ public class DomainUtil
             //set property as PK
             if (pkColMap.containsKey(p.getName()))
             {
-                p.setIsPrimaryKey(true);
+                p.setPrimaryKey(true);
             }
 
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
@@ -915,19 +915,19 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Please provide a name for each field."));
+                exception.addError(new SimpleValidationError("Name field must not be blank."));
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name))
+            if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
             {
-                exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
+                exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
+                String errorMsg = "All property names must be unique. Duplicate found: " + name + ".";
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;

@@ -36,6 +36,7 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -65,6 +66,7 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -90,6 +92,7 @@ import org.labkey.experiment.ExpDataIterators.PersistDataIteratorBuilder;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -444,10 +447,49 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     // UpdatableTableInfo
     //
 
+
     @Override
-    public @Nullable CaseInsensitiveHashSet skipProperties()
+    public boolean insertSupported()
     {
-        return super.skipProperties();
+        return true;
+    }
+
+    @Override
+    public boolean updateSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean deleteSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public TableInfo getSchemaTableInfo()
+    {
+        return ((FilteredTable)getRealTable()).getRealTable();
+    }
+
+    @Override
+    public ObjectUriType getObjectUriType()
+    {
+        return ObjectUriType.schemaColumn;
+    }
+
+    @Nullable
+    @Override
+    public String getObjectURIColumnName()
+    {
+        return "lsid";
+    }
+
+    @Nullable
+    @Override
+    public String getObjectIdColumnName()
+    {
+        return null;
     }
 
     @Nullable
@@ -463,11 +505,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         return null;
     }
 
+    @Nullable
+    @Override
+    public CaseInsensitiveHashSet skipProperties()
+    {
+        return null;
+    }
+
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
+        TableInfo expTable = ExperimentService.get().getTinfoData();
         TableInfo propertiesTable = _dataClass.getTinfo();
-        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap(), null)
+        PersistDataIteratorBuilder step0 = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), Collections.emptyMap())
             .setIndexFunction( lsids -> () ->
             {
                 List<ExpDataImpl> expDatas = ExperimentServiceImpl.get().getExpDatasByLSID(lsids);
@@ -478,6 +528,24 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             });
         return new AliasDataIteratorBuilder(step0, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap());
+    }
+
+    @Override
+    public Parameter.ParameterMap insertStatement(Connection conn, User user)
+    {
+        return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    {
+        return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap deleteStatement(Connection conn)
+    {
+        return null;
     }
 
     private class PreTriggerDataIteratorBuilder implements DataIteratorBuilder

@@ -22,15 +22,14 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -38,7 +37,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -56,12 +54,13 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -76,16 +75,14 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static java.util.Objects.requireNonNull;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
@@ -169,7 +166,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 columnInfo.setHidden(true);
-                columnInfo.setAutoIncrement(false);
                 return columnInfo;
             }
 
@@ -412,27 +408,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, null, ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
+        typeColumnInfo.setFk(new LookupForeignKey("lsid")
         {
-            @Override
-            protected ContainerFilter getLookupContainerFilter()
+            public TableInfo getLookupTableInfo()
             {
-                if (ss == null)
-                    return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
+                ExpSchema expSchema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
+                if (ss != null)
+                {
+                    // Be sure that we can resolve the sample set if it's defined in a separate container
+                    expSchema.setContainerFilter(new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), ss.getContainer()));
+                }
+                return expSchema.getTable(ExpSchema.TableType.SampleSets);
+            }
 
-                // Be sure that we can resolve the sample set if it's defined in a separate container.
-                // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
-                // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
-                Set<Container> containers = new HashSet<>();
-                containers.add(ss.getContainer());
-                containers.add(getContainer());
-                if (getContainer().getProject() != null)
-                    containers.add(getContainer().getProject());
-                containers.add(ContainerManager.getSharedContainer());
-                return new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return super.getURL(parent, true);
             }
         });
-
         typeColumnInfo.setReadOnly(true);
         typeColumnInfo.setShownInInsertView(false);
 
@@ -488,6 +482,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         nameCol.setURL(url);
         rowIdCol.setURL(url);
         setDetailsURL(url);
+
+        ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteMaterialsURL(getContainer(), null);
+        setDeleteURL(new DetailsURL(deleteUrl));
 
         setTitleColumn(Column.Name.toString());
 
@@ -666,9 +663,47 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
 
     @Override
-    public @Nullable Integer getOwnerObjectId()
+    public boolean insertSupported()
     {
-        return OntologyManager.ensureObject(_ss.getContainer(), _ss.getLSID(), (Integer) null);
+        return true;
+    }
+
+    @Override
+    public boolean updateSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean deleteSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public TableInfo getSchemaTableInfo()
+    {
+        return ((FilteredTable)getRealTable()).getRealTable();
+    }
+
+    @Override
+    public ObjectUriType getObjectUriType()
+    {
+        return ObjectUriType.schemaColumn;
+    }
+
+    @Nullable
+    @Override
+    public String getObjectURIColumnName()
+    {
+        return "lsid";
+    }
+
+    @Nullable
+    @Override
+    public String getObjectIdColumnName()
+    {
+        return null;
     }
 
     @Nullable
@@ -684,17 +719,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return null;
     }
 
+    @Nullable
+    @Override
+    public CaseInsensitiveHashSet skipProperties()
+    {
+        return null;
+    }
+
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
+        TableInfo expTable = ExperimentService.get().getTinfoMaterial();
         TableInfo propertiesTable = _ss.getTinfo();
-
-        int sampleSetObjectId = requireNonNull(getOwnerObjectId());
 
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
+            DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, expTable, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap())
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {
@@ -712,5 +753,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public Parameter.ParameterMap insertStatement(Connection conn, User user)
+    {
+        return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns)
+    {
+        return null;
+    }
+
+    @Override
+    public Parameter.ParameterMap deleteStatement(Connection conn)
+    {
+        return null;
     }
 }

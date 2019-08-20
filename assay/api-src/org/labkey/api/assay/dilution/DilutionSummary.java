@@ -25,11 +25,11 @@ import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.WellData;
-import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
+import org.labkey.api.study.PlateService;
+import org.labkey.api.study.WellData;
+import org.labkey.api.study.WellGroup;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractPlateBasedAssayProvider;
 
 import java.io.Serializable;
 import java.util.ArrayList;

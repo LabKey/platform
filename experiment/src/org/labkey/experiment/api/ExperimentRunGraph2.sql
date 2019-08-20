@@ -62,7 +62,7 @@
         END                                                   AS parent_expType,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
-        COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS parent_lsid,
+        PO.objectURI                                          AS parent_lsid,
         COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS parent_rowId,
 
         -- child columns
@@ -77,18 +77,20 @@
         END                                                   AS child_expType,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
-        COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS child_lsid,
+        CO.objectURI                                          AS child_lsid,
         COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS child_rowId
 
       FROM $PARENTS_INNER$ AS I
+            INNER JOIN exp.Object PO ON I.fromObjectId = PO.objectId
+            INNER JOIN exp.Object CO ON I.toObjectId   = CO.objectId
 
-        LEFT OUTER JOIN exp.material PM      ON I.fromObjectId = PM.ObjectId
-        LEFT OUTER JOIN exp.data PD          ON I.fromObjectId = PD.ObjectId
-        LEFT OUTER JOIN exp.experimentrun PR ON I.fromObjectId = PR.ObjectId
+        LEFT OUTER JOIN exp.material PM      ON PO.objectUri = PM.lsid
+        LEFT OUTER JOIN exp.data PD          ON PO.objectUri = PD.lsid
+        LEFT OUTER JOIN exp.experimentrun PR ON PO.objectUri = PR.lsid
 
-        LEFT OUTER JOIN exp.material CM      ON I.toObjectId  = CM.ObjectId
-        LEFT OUTER JOIN exp.data CD          ON I.toObjectId  = CD.ObjectId
-        LEFT OUTER JOIN exp.experimentrun CR ON I.toObjectId  = CR.ObjectId
+        LEFT OUTER JOIN exp.material CM      ON CO.objectUri = CM.lsid
+        LEFT OUTER JOIN exp.data CD          ON CO.objectUri = CD.lsid
+        LEFT OUTER JOIN exp.experimentrun CR ON CO.objectUri = CR.lsid
 
   ),
 
@@ -136,7 +138,7 @@
         END                                                   AS parent_expType,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
-        COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS parent_lsid,
+        PO.objectUri                                          AS parent_lsid,
         COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS parent_rowId,
 
         -- child columns
@@ -151,18 +153,20 @@
         END                                                   AS child_expType,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
-        COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS child_lsid,
+        CO.objectUri                                          AS child_lsid,
         COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS child_rowId
 
       FROM $CHILDREN_INNER$ AS I
+            INNER JOIN exp.Object PO ON I.fromObjectId = PO.objectId
+            INNER JOIN exp.Object CO ON I.toObjectId   = CO.objectId
 
-        LEFT OUTER JOIN exp.material PM      ON I.fromObjectId = PM.ObjectId
-        LEFT OUTER JOIN exp.data PD          ON I.fromObjectId = PD.ObjectId
-        LEFT OUTER JOIN exp.experimentrun PR ON I.fromObjectId = PR.ObjectId
+        LEFT OUTER JOIN exp.material PM      ON PO.objectUri = PM.lsid
+        LEFT OUTER JOIN exp.data PD          ON PO.objectUri = PD.lsid
+        LEFT OUTER JOIN exp.experimentrun PR ON PO.objectUri = PR.lsid
 
-        LEFT OUTER JOIN exp.material CM      ON I.toObjectId = CM.ObjectId
-        LEFT OUTER JOIN exp.data CD          ON I.toObjectId = CD.ObjectId
-        LEFT OUTER JOIN exp.experimentrun CR ON I.toObjectId = CR.ObjectId
+        LEFT OUTER JOIN exp.material CM      ON CO.objectUri = CM.lsid
+        LEFT OUTER JOIN exp.data CD          ON CO.objectUri = CD.lsid
+        LEFT OUTER JOIN exp.experimentrun CR ON CO.objectUri = CR.lsid
 
   )
 

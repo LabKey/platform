@@ -39,7 +39,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.assay.plate.WellData;
+import org.labkey.api.study.WellData;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 

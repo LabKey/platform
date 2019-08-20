@@ -15,7 +15,6 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.permissions.ReadPermission;

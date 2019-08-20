@@ -75,6 +75,7 @@ function tinyMceHandleEvent(evt) {
 }
 
 (function($) {
+
     //
     // CONSTANTS
     //
@@ -171,13 +172,12 @@ function tinyMceHandleEvent(evt) {
      */
     var bindControls = function(props) {
         // form controls
-        var setDirty = function(){LABKEY.setDirty(true)};
-        $(_idSel + 'name').keypress(setDirty).change(onChangeName);
-        $(_idSel + 'title').keypress(setDirty).change(setDirty);
-        $(_idSel + 'parent').keypress(setDirty).change(setDirty);
-        $(_idSel + 'body').keypress(setDirty).change(setDirty);
-        $(_idSel + 'shouldIndex').keypress(setDirty).change(setDirty);
-        $(_idSel + 'showAttachments').keypress(setDirty).change(setDirty);
+        $(_idSel + 'name').keypress(setWikiDirty).change(onChangeName);
+        $(_idSel + 'title').keypress(setWikiDirty).change(setWikiDirty);
+        $(_idSel + 'parent').keypress(setWikiDirty).change(setWikiDirty);
+        $(_idSel + 'body').keypress(setWikiDirty).change(setWikiDirty);
+        $(_idSel + 'shouldIndex').keypress(setWikiDirty).change(setWikiDirty);
+        $(_idSel + 'showAttachments').keypress(setWikiDirty).change(setWikiDirty);
         $('#wiki-file-link').click(addNewAttachmentInput);
 
         // active tab
@@ -289,8 +289,10 @@ function tinyMceHandleEvent(evt) {
     };
 
     var isDirty = function() {
-        var isBodyDirty = _tinyMCEInitialized && tinyMCE.get(_idPrefix + 'body') && tinyMCE.get(_idPrefix + 'body').isDirty();
-        return isBodyDirty || LABKEY.isDirty();
+        if (_wikiProps.isDirty || _attachments.isDirty) {
+            return true;
+        }
+        return (_tinyMCEInitialized && tinyMCE.get(_idPrefix + 'body') && tinyMCE.get(_idPrefix + 'body').isDirty());
     };
 
     var loadToc = function() {
@@ -318,9 +320,10 @@ function tinyMceHandleEvent(evt) {
     var onAddAttachment = function(fileInput, index) {
         // update the name column
         var cell = $('#wiki-na-name-' + index).attr('nobreak', '1').html('<a class="labkey-button"><span>remove</span></a>&nbsp;' + getFileName(fileInput.value));
+        cell.click(function() { onRemoveNewAttachment(index); });
 
         // mark the attachments as dirty
-        LABKEY.setDirty(true);
+        _attachments.isDirty = true;
     };
 
     var onAttachmentSuccess = function(response) {
@@ -356,9 +359,7 @@ function tinyMceHandleEvent(evt) {
 
     var onCancel = function() {
         // per bug 5957, don't prompt about losing changes if the user clicks cancel
-        LABKEY.setDirty(false);
-        setBodyClean();
-
+        setClean();
         _finished = true;
         window.location = _cancelUrl ? _cancelUrl : getRedirUrl();
     };
@@ -374,7 +375,7 @@ function tinyMceHandleEvent(evt) {
                     icon: Ext4.MessageBox.WARNING,
                     fn: function(btnId) {
                         if (btnId == "yes") {
-                            LABKEY.setDirty(true);
+                            setWikiDirty();
                             _redirUrl = ''; // clear the redir URL since it will be referring to the old name
                             onSave();
                         }
@@ -386,7 +387,7 @@ function tinyMceHandleEvent(evt) {
             });
         }
         else {
-            LABKEY.setDirty(true);
+            setWikiDirty();
         }
     };
 
@@ -408,7 +409,7 @@ function tinyMceHandleEvent(evt) {
             updateControl("body", respJson.body);
         }
 
-        LABKEY.setDirty(true);
+        setWikiDirty();
 
         // hide the convert window
         if (_convertWin) {
@@ -426,11 +427,19 @@ function tinyMceHandleEvent(evt) {
 
         getExistingAttachmentIconImg(index).src = LABKEY.ActionURL.getContextPath() + "/_icons/_deleted.gif";
         row.cells[1].style.textDecoration = "line-through";
-        row.cells[2].innerHTML = "<a onclick='LABKEY._wiki.onUndeleteAttachment(" + index + ")'><span>&nbsp; un-delete</span></a>"
-                + "<input type='hidden' name='toDelete' value=\"" + LABKEY.Utils.encodeHtml(_attachments[index].name) + "\"/>";
+        row.cells[2].innerHTML = "<a class='labkey-button' onclick='LABKEY._wiki.onUndeleteAttachment(" + index + ")'><span>undelete</span></a>"
+        + "<input type='hidden' name='toDelete' value=\"" + LABKEY.Utils.encodeHtml(_attachments[index].name) + "\"/>";
 
         //add a prop so we know we need to save the attachments
-        LABKEY.setDirty(true);
+        _attachments.isDirty = true;
+    };
+
+    var onRemoveNewAttachment = function(index)
+    {
+        //delete the entire table row
+        var row = document.getElementById("wiki-na-" + index);
+        if (row)
+            getNewAttachmentsTable().deleteRow(row.rowIndex);
     };
 
     var getNewAttachmentsTable = function() {
@@ -445,7 +454,7 @@ function tinyMceHandleEvent(evt) {
 
         getExistingAttachmentIconImg(index).src = _attachments[index].iconUrl;
         row.cells[1].style.textDecoration = "";
-        row.cells[2].innerHTML = "<a href='javascript:onDeleteAttachment("+ index +")'>&nbsp; delete</a>";
+        row.cells[2].innerHTML = "<a class='labkey-button' onclick='LABKEY._wiki.onDeleteAttachment(" + index + ")'><span>delete</span></a>";
     };
 
     var onDeletePage = function() {
@@ -485,8 +494,7 @@ function tinyMceHandleEvent(evt) {
             return;
         _doingSave = true;
 
-
-        if (_wikiProps.entityId && !isDirty()) {
+        if (!isDirty() && _wikiProps.entityId) {
             onSaveComplete();
             return;
         }
@@ -502,8 +510,7 @@ function tinyMceHandleEvent(evt) {
     };
 
     var onSaveComplete = function(statusMessage) {
-        LABKEY.setDirty(false);
-        setBodyClean();
+        setClean();
         _doingSave = false;
         if (!statusMessage) {
             statusMessage = "Saved.";
@@ -530,8 +537,8 @@ function tinyMceHandleEvent(evt) {
                 updateControls(_wikiProps);
             }
 
-            if (isDirty()) {
-                setStatus("Saving...");
+            if (_attachments.isDirty) {
+                setStatus("Saving file attachments...");
                 getExt4(function() {
                     // bah, for now we have to use Ext4 to do this post since it is an upload
                     Ext4.Ajax.request({
@@ -603,7 +610,10 @@ function tinyMceHandleEvent(evt) {
         });
     };
 
-    var setBodyClean = function() {
+    var setClean = function() {
+        _wikiProps.isDirty = false;
+        _attachments.isDirty = false;
+
         if (tinyMCE.get(_idPrefix + 'body')) {
             tinyMCE.get(_idPrefix + 'body').isNotDirty = 1;
         }
@@ -633,6 +643,10 @@ function tinyMceHandleEvent(evt) {
             getSourceTab().hide();
             $('#wiki-tab-strip-spacer').hide();
         }
+    };
+
+    var setWikiDirty = function() {
+        _wikiProps.isDirty = true;
     };
 
     var showConvertWindow = function() {
@@ -809,11 +823,11 @@ function tinyMceHandleEvent(evt) {
                 cell = row.insertCell(1);
                 cell.id = "wiki-ea-name-" + idx;
                 cell.innerHTML = "<a target='_blank' href='" + attachments[idx].downloadUrl + "'>"
-                    + "&nbsp;" + (encodeNames ? LABKEY.Utils.encodeHtml( attachments[idx].name) : attachments[idx].name) + "</a>";
+                + (encodeNames ? LABKEY.Utils.encodeHtml(attachments[idx].name) : attachments[idx].name) + "</a>";
 
                 cell = row.insertCell(2);
                 cell.id = "wiki-ea-del-" + idx;
-                cell.innerHTML = "<a href='javascript:LABKEY._wiki.onDeleteAttachment(" + idx + ")'>&nbsp; delete</a>";
+                cell.innerHTML = "<a class='labkey-button' onclick='LABKEY._wiki.onDeleteAttachment(" + idx + ")'><span>delete</span></a>";
             }
         }
     };

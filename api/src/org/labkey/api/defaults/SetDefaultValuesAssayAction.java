@@ -15,10 +15,6 @@
  */
 package org.labkey.api.defaults;
 
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -27,8 +23,12 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
 import org.labkey.api.study.actions.StudyPickerColumn;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;

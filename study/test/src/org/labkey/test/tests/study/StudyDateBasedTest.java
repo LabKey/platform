@@ -65,8 +65,7 @@ public class StudyDateBasedTest extends AbstractStudyTimeKeyFieldTest
 
         testCanUploadWithOnlyTimeDifferentIfTimeKey(DIFFERENT_TIME, "APX-1: Abbreviated Physical Exam", getFolderName());
 
-        // TODO: 37997: Investigate and evaluate coverage of dataset time key field tests
-        // testCanChangeExtraKeyFromTimeIfDoesNotViolateUnique(getFolderName(), "RCB-1: Reactogenicity-Baseline", DIFFERENT_DATES_DIFFERENT_TIMES);
+        testCanChangeExtraKeyFromTimeIfDoesNotViolateUnique(getFolderName(), "RCB-1: Reactogenicity-Baseline", DIFFERENT_DATES_DIFFERENT_TIMES);
 
         testDateFieldDisplaysTimeIfTimeKey();
 

@@ -39,7 +39,7 @@ import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
-import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -2261,33 +2261,21 @@ public class SpecimenImporter
             + "\" or \"" + SPEC_NUMBER_TSV_COL + "\" must be present in the set of specimen columns.");
         }
 
-        String insertObjectSQL = "INSERT INTO exp.Object (ObjectURI, Container)  \n" +
-                "SELECT DISTINCT T.LSID AS ObjectURI, ? AS Container\n" +
-                "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Object O ON T.LSID = O.ObjectURI\n" +
-                "WHERE O.ObjectURI IS NULL\n";
+        String insertSQL = "INSERT INTO exp.Material (LSID, Name, Container, CpasType, Created)  \n" +
+                "SELECT " + info.getTempTableName() + ".LSID, " + info.getTempTableName() + "." + columnName +
+                ", ?, ?, ? FROM " + info.getTempTableName() + "\nLEFT OUTER JOIN exp.Material ON\n" +
+                info.getTempTableName() + ".LSID = exp.Material.LSID WHERE exp.Material.RowId IS NULL\n" +
+                "GROUP BY " + info.getTempTableName() + ".LSID, " + info.getTempTableName() + "." + columnName;
 
-        String insertMaterialSQL = "INSERT INTO exp.Material (LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
-                "SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ?, ?, CAST(? AS " + _dialect.getDefaultDateTimeDataType()+ ")\n" +
-                "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
-                "WHERE M.LSID IS NULL\n";
-
-        /* NOTE: Not really necessary to delete and recreate the object rows
-        String deleteObjectSQL = "DELETE FROM exp.Object WHERE ObjectURI IN (SELECT M.LSID FROM exp.Material M\n" +
-                "LEFT OUTER JOIN " + info.getTempTableName() + " T ON M.LSID = T.LSID\n" +
-                "LEFT OUTER JOIN exp.MaterialInput MI ON M.RowId = MI.MaterialId\n" +
-                "WHERE T.LSID IS NULL\n" +
-                "AND MI.MaterialId IS NULL\n" +
-                "AND M.CpasType IN (?, '" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "') \n" +
-                "AND M.Container = ?)";
-         */
-
-        String deleteMaterialSQL = "DELETE FROM exp.Material WHERE RowId IN (SELECT M.RowId FROM exp.Material M\n" +
-                "LEFT OUTER JOIN " + info.getTempTableName() + " T ON M.LSID = T.LSID\n" +
-                "LEFT OUTER JOIN exp.MaterialInput MI ON M.RowId = MI.MaterialId\n" +
-                "WHERE T.LSID IS NULL\n" +
-                "AND MI.MaterialId IS NULL\n" +
-                "AND M.CpasType IN (?, '" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "') \n" +
-                "AND M.Container = ?)";
+        String deleteSQL = "DELETE FROM exp.Material WHERE RowId IN (SELECT exp.Material.RowId FROM exp.Material \n" +
+                "LEFT OUTER JOIN " + info.getTempTableName() + " ON\n" +
+                "\texp.Material.LSID = " + info.getTempTableName() + ".LSID\n" +
+                "LEFT OUTER JOIN exp.MaterialInput ON\n" +
+                "\texp.Material.RowId = exp.MaterialInput.MaterialId\n" +
+                "WHERE " + info.getTempTableName() + ".LSID IS NULL\n" +
+                "AND exp.MaterialInput.MaterialId IS NULL\n" +
+                "AND (exp.Material.CpasType = ? OR exp.Material.CpasType = '" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "') \n" +
+                "AND exp.Material.Container = ?)";
 
         String prefix = new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + info.getContainer().getRowId(), "").toString();
         String cpasType;
@@ -2309,13 +2297,13 @@ public class SpecimenImporter
             cpasType = sampleSet.getLSID();
         }
 
-        var createdTimestamp = new Parameter.TypedValue(new Timestamp(System.currentTimeMillis()), JdbcType.TIMESTAMP);
+        Timestamp createdTimestamp = new Timestamp(System.currentTimeMillis());
 
         int affected;
         if (!merge)
         {
             info("exp.Material: Deleting entries for removed specimens...");
-            SQLFragment deleteFragment = new SQLFragment(deleteMaterialSQL, cpasType, info.getContainer().getId());
+            SQLFragment deleteFragment = new SQLFragment(deleteSQL, cpasType, info.getContainer().getId());
             if (DEBUG)
                 logSQLFragment(deleteFragment);
             affected = executeSQL(info.getSchema(), deleteFragment);
@@ -2325,15 +2313,10 @@ public class SpecimenImporter
 
         // NOTE: No need to update existing Materials when merging -- just insert any new materials not found.
         info("exp.Material: Inserting new entries from temp table...");
-        SQLFragment insertObjectFragment = new SQLFragment(insertObjectSQL, info.getContainer().getId());
+        SQLFragment insertFragment = new SQLFragment(insertSQL, info.getContainer().getId(), cpasType, createdTimestamp);
         if (DEBUG)
-            logSQLFragment(insertObjectFragment);
-        executeSQL(info.getSchema(), insertObjectFragment);
-
-        SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, info.getContainer().getId(), cpasType, createdTimestamp);
-        if (DEBUG)
-            logSQLFragment(insertMaterialFragment);
-        affected = executeSQL(info.getSchema(), insertMaterialFragment);
+            logSQLFragment(insertFragment);
+        affected = executeSQL(info.getSchema(), insertFragment);
         if (affected >= 0)
             info("exp.Material: " + affected + " rows inserted.");
         info("exp.Material: Update complete.");
@@ -2787,10 +2770,7 @@ public class SpecimenImporter
 
         DataIteratorBuilder specimenIter = new SpecimenImportBuilder(target, new DataIteratorBuilder.Wrapper(iter), potentialColumns, Collections.singletonList(idCol));
         DataIteratorBuilder std = StandardDataIteratorBuilder.forInsert(target, specimenIter, _container, getUser(), dix);
-        DataIteratorBuilder tableIter = new TableInsertDataIteratorBuilder(std, target, _container)
-                .setKeyColumns(keyColumns)
-                .setAddlSkipColumns(skipColumns)
-                .setDontUpdate(dontUpdate);
+        DataIteratorBuilder tableIter = TableInsertDataIterator.create(std, target, _container, dix, keyColumns, skipColumns, dontUpdate);
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
         info(tableName + ": Starting merge of data...");

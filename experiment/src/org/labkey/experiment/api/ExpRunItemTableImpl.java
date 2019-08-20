@@ -16,30 +16,16 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.Parameter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.dataiterator.DataIteratorBuilder;
-import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Set;
-
-import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
-
-public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
+public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C>
 {
     protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, @Nullable ExpObjectImpl objectType, ContainerFilter cf)
     {
@@ -68,8 +54,6 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         col.setUserEditable(false);
         col.setReadOnly(true);
         col.setHidden(true);
-        col.setAutoIncrement(false);
-        col.setCalculated(true);
         return col;
     }
 
@@ -91,95 +75,4 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
         return ret;
     }
 
-
-    //
-    // UpdateableTableInfo
-    //
-
-    @Override
-    public boolean insertSupported()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean updateSupported()
-    {
-        return true;
-    }
-
-    @Override
-    public boolean deleteSupported()
-    {
-        return true;
-    }
-
-    @Override
-    public TableInfo getSchemaTableInfo()
-    {
-        TableInfo t = getRealTable();
-        if (t instanceof FilteredTable)
-            t = ((FilteredTable)t).getRealTable();
-        return t;
-    }
-
-    @Override
-    public ObjectUriType getObjectUriType()
-    {
-        return schemaColumn;
-    }
-
-    @Override
-    public @Nullable String getObjectURIColumnName()
-    {
-        return "lsid";
-    }
-
-    @Override
-    public @Nullable String getObjectIdColumnName()
-    {
-        return "objectid";
-    }
-
-    @Override
-    public @Nullable CaseInsensitiveHashMap<String> remapSchemaColumns()
-    {
-        return null;
-    }
-
-    @Override
-    public @Nullable CaseInsensitiveHashSet skipProperties()
-    {
-        return null;
-    }
-
-    @Override
-    public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
-    {
-        return null;
-    }
-
-    @Override
-    public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
-    {
-        return null;
-    }
-
-    @Override
-    public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
-    {
-        return null;
-    }
-
-    @Override
-    public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
-    {
-        return null;
-    }
-
-    @Override
-    public boolean isAlwaysInsertExpObject()
-    {
-        return true;
-    }
 }

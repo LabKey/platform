@@ -2113,11 +2113,12 @@ public class AnnouncementsController extends SpringActionController
             email.addChild("Site-Wide Email Template", bean.siteEmailTemplateURL);
         if (bean.containerEmailTemplateURL != null)
             email.addChild(StringUtils.capitalize(context.getContainer().getContainerNoun()) + " Email Template", bean.containerEmailTemplateURL);
-        if (email.hasChildren())
-            menu.addChild(email);
 
         if (bean.adminURL != null)
             menu.addChild("Admin", bean.adminURL);
+
+        if (email.hasChildren())
+            menu.addChild(email);
     }
 
 
@@ -2171,19 +2172,14 @@ public class AnnouncementsController extends SpringActionController
             setTitle(settings.getBoardName());
             setTitleHref(getBeginURL(c));
 
-            ViewContext context = getViewContext();
-            boolean isAdminMode = PageFlowUtil.isPageAdminMode(context);
             MessagesBean bean = getModelBean(); 
             NavTree menu = new NavTree("");
             if (bean.insertURL != null)
                 menu.addChild("New", bean.insertURL);
             if (bean.listURL != null)
                 menu.addChild("View List", bean.listURL);
-            if ((bean.emailPrefsURL != null) && !isAdminMode)
-                menu.addChild("Email Preferences", bean.emailPrefsURL);
 
-            if (isAdminMode)
-                addAdminMenus(bean, menu, context);
+            addAdminMenus(bean, menu, getViewContext());
 
             setIsWebPart(asWebPart);
             setNavMenu(menu);

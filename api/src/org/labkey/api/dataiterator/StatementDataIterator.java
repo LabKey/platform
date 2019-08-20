@@ -58,7 +58,7 @@ import java.util.function.Supplier;
 
 public class StatementDataIterator extends AbstractDataIterator
 {
-    protected ParameterMap[] _stmts;
+    ParameterMap[] _stmts;
     Triple[][] _bindings = null;
 
     ParameterMap _currentStmt;
@@ -71,17 +71,15 @@ public class StatementDataIterator extends AbstractDataIterator
     Thread _asyncThread = null;
     AtomicReference<Exception> _backgroundException = new AtomicReference<>();
 
-    protected DataIterator _data;
-    int _currentRowNumber = -1;
-    int _backgroundRowNumber = -1;
-    protected EmbargoDataIterator _embargoDataIterator = null;
+    DataIterator _data;
+
 
     // NOTE all columns are passed through to the source iterator, except for key columns
     ArrayList<ColumnInfo> _keyColumnInfo;
     ArrayList<Object> _keyValues;
     Integer _rowIdIndex = null;
     Integer _objectIdIndex = null;
-    protected int _batchSize = -1;
+    int _batchSize = -1;
     int _currentBatchSize = 0;
     int _currentTxSize = 0;
     int _txSize = -1;
@@ -117,24 +115,9 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
 
-    void setUseAsynchronousExecute(boolean useAsynchronousExecute)
+    void setUseAsynchronousExecute(boolean b)
     {
-        _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex;
-    }
-
-
-    /*
-     * EmbargoDataIterator and a StatementDataIterator can be paired such that the EmbargoDataIterator
-     * does not 'release' rows until the statement that operates on that row (e.g. inserts it) has been
-     * executed.
-     *
-     * This is different than the normal flow of control where 'later' data iterators only call 'earlier' data iterators.
-     * In this case the StatementDataIterator is passing some internal state information forward to to the EmbargoDataIterator
-     * This is actually fine, since it's the DataIteratorBuilder's job to set up a correct pipeline.
-     */
-    public void setEmbargoDataIterator(EmbargoDataIterator cache)
-    {
-        _embargoDataIterator = cache;
+        _useAsynchronousExecute = b && null == _rowIdIndex && null == _objectIdIndex;
     }
 
 
@@ -218,11 +201,6 @@ public class StatementDataIterator extends AbstractDataIterator
         }
     }
 
-    protected void setBatchSize(int batchSize)
-    {
-        this._batchSize = batchSize;
-    }
-
 
     private static class Triple
     {
@@ -265,11 +243,6 @@ public class StatementDataIterator extends AbstractDataIterator
         init();
     }
 
-    protected void afterExecute(ParameterMap stmt, int batchSize, int rowNumber)
-    {
-        if (null != _embargoDataIterator)
-            _embargoDataIterator.setReleasedRowNumber(rowNumber);
-    }
 
 
     @Override
@@ -293,9 +266,17 @@ public class StatementDataIterator extends AbstractDataIterator
             if (!ret)
             {
                 log("<close() on _queue>");
-                joinBackgroundThread();
-                if (null != _embargoDataIterator)
-                    _embargoDataIterator.setReleasedRowNumber(Integer.MAX_VALUE);
+                _queue.close();
+                log("</close() on _queue>");
+                if (null != _asyncThread)
+                {
+                    log("<join() on _asyncThread>");
+                    try {_asyncThread.join();} catch (InterruptedException x) {
+                        log("join() was interrupted!", x);
+                    }
+                    _asyncThread = null;
+                    log("</join() on _asyncThread>");
+                }
                 checkBackgroundException();
             }
             log("</next>");
@@ -303,20 +284,6 @@ public class StatementDataIterator extends AbstractDataIterator
         return ret;
     }
 
-    void joinBackgroundThread()
-    {
-        _queue.close();
-        log("</close() on _queue>");
-        if (null != _asyncThread)
-        {
-            log("<join() on _asyncThread>");
-            try {_asyncThread.join();} catch (InterruptedException x) {
-                log("join() was interrupted!", x);
-            }
-            _asyncThread = null;
-            log("</join() on _asyncThread>");
-        }
-    }
 
     private boolean _next() throws BatchValidationException
     {
@@ -326,10 +293,6 @@ public class StatementDataIterator extends AbstractDataIterator
 
             if (hasNextRow)
             {
-                int n = (Integer)_data.get(0);
-                assert( n > _currentRowNumber);
-                _currentRowNumber = n;
-
                 log("<clear and set parameters on " + _currentStmt + ">");
                 _currentStmt.clearParameters();
                 for (Triple binding : _currentBinding)
@@ -358,13 +321,11 @@ public class StatementDataIterator extends AbstractDataIterator
                 _currentTxSize++;
             }
             else if (_errors.getExtraContext() != null)
-            {
                 _errors.getExtraContext().put("hasNextRow", false);
-            }
 
-            if ((_currentBatchSize == _batchSize || !hasNextRow) && _currentBatchSize > 0)
+            if (_currentBatchSize == _batchSize || !hasNextRow && _currentBatchSize > 0)
             {
-                processBatch(_currentBatchSize, _currentRowNumber);
+                processBatch();
             }
 
             // This allows specifying more granular commits than the transaction wrapping the entire operation
@@ -372,7 +333,7 @@ public class StatementDataIterator extends AbstractDataIterator
             {
                 _currentTxSize = 0;
                 if (_currentBatchSize > 0) // flush the statement batch buffer
-                    processBatch(_currentBatchSize, _currentRowNumber);
+                    processBatch();
                 if (_log != null)
                     _log.info("Committing " + Integer.toString(_txSize) + " rows");
                 _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();
@@ -408,17 +369,15 @@ public class StatementDataIterator extends AbstractDataIterator
         }
     }
 
-    private void processBatch(int batchSize, int rowNumber) throws SQLException, BatchValidationException
+    private void processBatch() throws SQLException, BatchValidationException
     {
         assert _execute.start();
 
         if (_batchSize == 1)
         {
-            assert batchSize == 1;
             /* use .execute() for handling keys */
             log("<execute() on " + _currentStmt + ">");
             _currentStmt.execute();
-            afterExecute(_currentStmt, batchSize, rowNumber);
             log("</execute() on " + _currentStmt + ">");
         }
         else if (_useAsynchronousExecute && _stmts.length > 1 && _txSize==-1)
@@ -428,16 +387,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 try
                 {
                     log("<swap() - old: " + _currentStmt + ">");
-                    int previousBackgroundRowNumber = _backgroundRowNumber;
-                    _backgroundRowNumber = rowNumber;
                     _currentStmt = _queue.swapFullForEmpty(_currentStmt);
-                    if (previousBackgroundRowNumber >= 0)
-                    {
-                        // TODO remember background batchsize if afterExecute() impl needs it
-                        afterExecute(_currentStmt, -1, rowNumber);
-                    }
-                    if (previousBackgroundRowNumber >= 0 && null != _embargoDataIterator)
-                        _embargoDataIterator.setReleasedRowNumber(previousBackgroundRowNumber);
                     log("</swap() - new: " + _currentStmt + ">");
                     break;
                 }
@@ -451,7 +401,6 @@ public class StatementDataIterator extends AbstractDataIterator
         {
             log("<executeBatch() on " + _currentStmt + ">");
             _currentStmt.executeBatch();
-            afterExecute(_currentStmt, batchSize, rowNumber);
             log("</executeBatch() on " + _currentStmt + ">");
         }
 
@@ -505,7 +454,23 @@ public class StatementDataIterator extends AbstractDataIterator
             log("<close() on _data>");
             _data.close();
             log("</close() on _data>");
-            joinBackgroundThread();
+            log("<close() on _queue>");
+            _queue.close();
+            log("</close() on _queue>");
+            if (_asyncThread != null)
+            {
+                log("<join() on _asyncThread>");
+                try
+                {
+                    _asyncThread.join();
+                }
+                catch (InterruptedException x)
+                {
+                    log("join() was interrupted!", x);
+                }
+                _asyncThread = null;
+                log("</join() on _asyncThread>");
+            }
             for (ParameterMap stmt : _stmts)
             {
                 if (stmt != null)
@@ -585,15 +550,65 @@ public class StatementDataIterator extends AbstractDataIterator
     }
 
 
-
-
-
     public static class TestCase extends Assert
     {
-        private DataIterator getSource(DataIteratorContext context, int rowlimit)
+        private DataIterator getSource(final int rowlimit)
         {
-            return new DummyDataIterator(context, rowlimit);
+            return new DataIterator()
+            {
+                private int row=0;
+
+                @Override
+                public String getDebugName()
+                {
+                    return null;
+                }
+
+                @Override
+                public int getColumnCount()
+                {
+                    return 1;
+                }
+
+                @Override
+                public ColumnInfo getColumnInfo(int i)
+                {
+                    return i==0 ?
+                        new BaseColumnInfo("rownumber",JdbcType.INTEGER) :
+                        new BaseColumnInfo("I",JdbcType.INTEGER);
+                }
+
+                @Override
+                public boolean isConstant(int i)
+                {
+                    return false;
+                }
+
+                @Override
+                public Object getConstantValue(int i)
+                {
+                    return null;
+                }
+
+                @Override
+                public boolean next()
+                {
+                    return row++ < rowlimit;
+                }
+
+                @Override
+                public Object get(int i)
+                {
+                    return 0==i ? row : i;
+                }
+
+                @Override
+                public void close()
+                {
+                }
+            };
         }
+
 
         @Test
         public void testAsyncStatements() throws Exception
@@ -633,7 +648,7 @@ public class StatementDataIterator extends AbstractDataIterator
                 ParameterMap pm2 = new ParameterMap(tempdb.getScope(), conn, updateY, null);
 
                 DataIteratorContext context = new DataIteratorContext();
-                DataIterator source = getSource(context, rowCount);
+                DataIterator source = getSource(rowCount);
                 StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
                 {
                     @Override
@@ -731,7 +746,7 @@ public class StatementDataIterator extends AbstractDataIterator
             ParameterMap pm2 = new NoopParameterMap(intWhen);
 
             DataIteratorContext context = new DataIteratorContext();
-            DataIterator source = getSource(context, 100);
+            DataIterator source = getSource(100);
             StatementDataIterator sdi = new StatementDataIterator(source, context, pm1, pm2)
             {
                 @Override
@@ -747,78 +762,6 @@ public class StatementDataIterator extends AbstractDataIterator
             assertTrue(pm1.isClosed());
             assertTrue(pm2.isClosed());
             assertEquals(1, context.getErrors().getRowErrors().size());
-        }
-
-        @Test
-        public void testEmbargoDI() throws BatchValidationException
-        {
-            DataIteratorContext context = new DataIteratorContext();
-            DummyDataIterator generator = new DummyDataIterator(context, 23);
-            EmbargoDataIterator edi = new EmbargoDataIterator(context, generator, null, null);
-            generator._embargoDataIterator = edi;
-            int count = 0;
-            while (edi.next())
-            {
-                assertEquals(count, edi.get(0));
-                count++;
-            }
-            assertEquals(count, generator.totalRows);
-        }
-    }
-
-    static class DummyDataIterator extends AbstractDataIterator
-    {
-        public final int totalRows;
-        public final int rowsPerBatch = 5;
-        int currentRow = -1;
-        public EmbargoDataIterator _embargoDataIterator;
-
-        DummyDataIterator(DataIteratorContext context, int limit)
-        {
-            super(context);
-            totalRows = limit;
-        }
-
-        @Override
-        public int getColumnCount()
-        {
-            return 1;
-        }
-
-        @Override
-        public ColumnInfo getColumnInfo(int i)
-        {
-            if (i==0)
-                return new BaseColumnInfo("rownumber", JdbcType.INTEGER );
-            else if (i==1)
-                return new BaseColumnInfo("I", JdbcType.INTEGER );
-            else
-                return new BaseColumnInfo("col"+i, JdbcType.INTEGER );
-        }
-
-        @Override
-        public boolean next() throws BatchValidationException
-        {
-            currentRow++;
-            if (currentRow == totalRows || (currentRow % rowsPerBatch == (rowsPerBatch-1)))
-            {
-                if (null != _embargoDataIterator)
-                    _embargoDataIterator.setReleasedRowNumber(currentRow);
-            }
-            return currentRow < totalRows;
-        }
-
-        @Override
-        public Object get(int i)
-        {
-            if (i==0)
-                return currentRow;
-            return i;
-        }
-
-        @Override
-        public void close() throws IOException
-        {
         }
     }
 }

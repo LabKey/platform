@@ -22,7 +22,7 @@ import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.assay.AssayService;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;

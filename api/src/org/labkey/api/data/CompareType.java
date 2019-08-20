@@ -34,7 +34,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserIdForeignKey;
-import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -770,51 +769,49 @@ public abstract class CompareType
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            final String escapedValue = escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */);
-            if (_selectColumns == null || _selectColumns.isEmpty() || escapedValue.isEmpty())
-                return new SQLFragment("1=1");
-
-            boolean hasResult = false;
-            SQLFragment sql = new SQLFragment();
-            String sep = "";
-
-            for (ColumnInfo column : _selectColumns)
+            if (_selectColumns != null && _selectColumns.size() > 0)
             {
-                if (column == null)
-                    continue;
+                boolean hasResult = false;
+                SQLFragment sql = new SQLFragment();
+                String sep = "";
+                final String escapedValue = escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */);
 
-                // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
-                if (column.isHidden())
-                    continue;
+                if (escapedValue.length() > 0)
+                {
+                    for (ColumnInfo column : _selectColumns)
+                    {
+                        if (column != null)
+                        {
+                            ColumnInfo targetColumn = column.getDisplayField();
 
-                // skip uninteresting things like 'Folder' and 'CreatedBy'
-                ForeignKey fk = column.getFk();
-                if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
-                    continue;
+                            if (targetColumn == null)
+                                targetColumn = column;
 
-                ColumnInfo targetColumn = column.getDisplayField();
-                if (targetColumn == null)
-                    targetColumn = column;
+                            if (targetColumn.isStringType() && columnMap.containsKey(targetColumn.getFieldKey()))
+                            {
+                                ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
 
-                // skip more uninteresting columns
-                if (!targetColumn.isStringType() || targetColumn.getName().equalsIgnoreCase("lsid") || targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") || targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
-                    continue;
+                                if (mappedColumn != null)
+                                {
+                                    hasResult = true;
+                                    sql.append(sep);
+                                    sep = " OR ";
 
-                ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
-                if (mappedColumn == null)
-                    continue;
+                                    sql.append(dialect.getColumnSelectName(mappedColumn.getAlias()));
+                                    sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
+                                    sql.append("'%").append(LikeClause.escapeLikePattern(escapedValue)).append("%'");
+                                    sql.append(LikeClause.sqlEscape());
+                                }
+                            }
+                        }
+                    }
+                }
 
-                hasResult = true;
-                sql.append(sep);
-                sep = " OR ";
-
-                sql.append(dialect.getColumnSelectName(mappedColumn.getAlias()));
-                sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
-                sql.append("'%").append(LikeClause.escapeLikePattern(escapedValue)).append("%'");
-                sql.append(LikeClause.sqlEscape());
+                if (hasResult)
+                    return sql;
             }
 
-            return hasResult ? sql : new SQLFragment("1=1");
+            return new SQLFragment("1=1");
         }
     }
 

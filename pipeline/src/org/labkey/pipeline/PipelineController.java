@@ -447,7 +447,7 @@ public class PipelineController extends SpringActionController
         protected SecurableResource getSecurableResource()
         {
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-            if (pipeRoot != null && !pipeRoot.isFileRoot())
+            if (pipeRoot != null && !pipeRoot.isDefault())
                 return pipeRoot;
             return super.getSecurableResource();
         }

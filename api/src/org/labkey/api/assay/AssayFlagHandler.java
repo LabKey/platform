@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayProvider;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,22 +43,12 @@ public interface AssayFlagHandler
     {
         if (provider != null)
         {
-            registerHandler(provider.getClass().getName(), handler);
-        }
-        else
-            throw new RuntimeException("The specified assay provider is null");
-    }
-
-    static void registerHandler(String providerClassName, AssayFlagHandler handler)
-    {
-        if (providerClassName != null)
-        {
-            if (!_handlers.containsKey(providerClassName))
+            if (!_handlers.containsKey(provider.getName()))
             {
-                _handlers.put(providerClassName, handler);
+                _handlers.put(provider.getName(), handler);
             }
             else
-                throw new RuntimeException("A Flag Handler for Assay provider : " + providerClassName + " is already registered");
+                throw new RuntimeException("A Flag Handler for Assay provider : " + provider.getName() + " is already registered");
         }
         else
             throw new RuntimeException("The specified assay provider is null");
@@ -67,7 +58,7 @@ public interface AssayFlagHandler
     static AssayFlagHandler getHandler(AssayProvider provider)
     {
         if (provider != null)
-            return _handlers.get(provider.getClass().getName());
+            return _handlers.get(provider.getName());
         else
             return null;
     }

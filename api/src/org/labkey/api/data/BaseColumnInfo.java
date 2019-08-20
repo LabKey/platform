@@ -2105,8 +2105,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
 
     public void setLocked(boolean b)
     {
-        if (_locked && !b)
-            throw new IllegalStateException("Can't unlock a ColumnInfo: " + getName());
         _locked = b;
     }
 

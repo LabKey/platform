@@ -217,7 +217,7 @@ LABKEY.internal.FileDrop = new function () {
             var patterns = Dropzone.patterns;
             var isFirefox;
 
-            if (patterns.length === 0) {
+            if (window.navigator.userAgent.indexOf("Edge") > -1 || patterns.length === 0) {
                 Dropzone.prototype._originalDrop(e, this);
             }
             else {

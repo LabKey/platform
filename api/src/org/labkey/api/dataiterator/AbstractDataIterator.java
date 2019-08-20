@@ -36,7 +36,7 @@ public abstract class AbstractDataIterator implements DataIterator
 {
     private String _debugName = "";
     private ValidationException _globalError = null;
-    final protected DataIteratorContext _context;
+    final DataIteratorContext _context;
     final BatchValidationException _errors;
     protected ValidationException _rowError = null;
 

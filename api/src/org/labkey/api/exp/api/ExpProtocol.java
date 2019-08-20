@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 
 import java.util.Collection;
 import java.util.List;

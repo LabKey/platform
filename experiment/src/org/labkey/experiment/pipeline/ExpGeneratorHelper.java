@@ -375,7 +375,7 @@ public class ExpGeneratorHelper
             }
         }
 
-        ExperimentServiceImpl.get().queueSyncRunEdges(run);
+        ExperimentServiceImpl.get().syncRunEdges(run);
 
         return run;
     }

@@ -23,7 +23,6 @@ import org.labkey.api.view.DisplayElement;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Map;
-import java.util.TreeMap;
 
 public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlString, BUILDER extends DisplayElementBuilder<T, BUILDER>> implements HasHtmlString
 {
@@ -31,7 +30,7 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     String href;
     String id;
     String onClick;
-    Map<String,String> attributes;
+    String attributes;
     String cssClass;
     String tooltip;
     String iconCls;
@@ -79,9 +78,15 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     public BUILDER attributes(Map<String, String> attributes)
     {
         if (attributes != null && !attributes.isEmpty())
-            this.attributes = new TreeMap<>(attributes);
+        {
+            StringBuilder sAttributes = new StringBuilder();
+            for (String attribute : attributes.keySet())
+                sAttributes.append(PageFlowUtil.filter(attribute)).append("=\"").append(PageFlowUtil.filter(attributes.get(attribute))).append("\"");
+            this.attributes = sAttributes.toString();
+        }
         else
             this.attributes = null;
+
         return getThis();
     }
 

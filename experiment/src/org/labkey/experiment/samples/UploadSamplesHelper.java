@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.samples;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -204,7 +203,7 @@ public abstract class UploadSamplesHelper
             if (outputApp != null)
                 outputApp.removeMaterialInput(user, material);
             existingSourceApp.removeMaterialInput(user, material);
-            ExperimentService.get().queueSyncRunEdges(existingDerivationRun);
+            ExperimentService.get().syncRunEdges(existingDerivationRun);
         }
     }
 
@@ -418,50 +417,25 @@ public abstract class UploadSamplesHelper
 
 
     private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
-            throws ValidationException
     {
         Integer rowId;
-        try
-        {
-            if (sampleSetName == null)
-                rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-            else
-                rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+        if (sampleSetName == null)
+            rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+        else
+            rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
 
-            if (rowId == null)
-                return null;
-        }
-        catch (ConversionException e)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
-            if (sampleSetName == null)
-            {
-                sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
-            }
-            sb.append(" " + e.getMessage());
-            throw new ValidationException(sb.toString());
-        }
+        if (rowId == null)
+            return null;
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
     }
 
-    private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
-            throws ValidationException
+    private static ExpData findData(Container c, User user, String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
     {
-        Integer rowId;
-
-        try
-        {
-            rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-            if (rowId == null)
-                return null;
-        }
-        catch (ConversionException e)
-        {
-            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e.getMessage());
-        }
+        Integer rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+        if (rowId == null)
+            return null;
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         return dataCache.computeIfAbsent(rowId, svc::getExpData);

@@ -23,8 +23,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.UserPrincipal;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 /*
@@ -46,21 +44,6 @@ public interface Role extends Parameter.JdbcParameterValue
      */
     @NotNull
     String getUniqueName();
-
-    /**
-     * Returns serialization aliases, additional names that should resolve to this role for serialization purposes.
-     * Typically empty, this is useful in cases where a role or permission class is renamed or repackaged. If an old
-     * name is returned here, then roles/permissions that have been serialized with that name will continue to resolve
-     * to the intended class. Note that Roles are typically persisted in the database (core.RoleAssignments table) and
-     * with assignments exported to folder archives. Permissions are persisted as part of the webpart permissions
-     * feature, both to core.PortalWebParts.Permissions in the database and pages.xml in folder archives.
-     * @return A collection of aliases that can be used to deserialize this role
-     */
-    @NotNull
-    default Collection<String> getSerializationAliases()
-    {
-        return Collections.emptyList();
-    }
 
     /**
      * @return The role's name.

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;

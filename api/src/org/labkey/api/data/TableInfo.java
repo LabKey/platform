@@ -45,7 +45,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -181,18 +180,13 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     DatabaseTableType getTableType();
 
     /** Get select list for named (hopefully unique!) column to title column. */
-    default @NotNull NamedObjectList getSelectList(String columnName)
-    {
-        return getSelectList(columnName, Collections.emptyList(), null);
-    }
+    NamedObjectList getSelectList(String columnName);
 
-    /**
-     * Get select list for named (hopefully unique!) column to title column, including filter on table.
-     * If maxRows is exceeded, the NamedObjectList will be marked as incomplete.
-     * When maxRows is null a default maxRows will be used. To select all rows, set maxRows to {@link Table#ALL_ROWS}.
-     * @see NamedObjectList#isComplete()
-     */
-    @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows);
+    /** Get select list for named (hopefully unique!) column to title column, including filter on table. */
+    default NamedObjectList getSelectList(String columnName, List<FilterType> filters)
+    {
+        return getSelectList(columnName);       // If not overridden; ignore filter
+    }
 
     ColumnInfo getColumn(@NotNull String colName);
 

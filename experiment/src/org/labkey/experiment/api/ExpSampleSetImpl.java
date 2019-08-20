@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.NameGenerator;
@@ -33,7 +32,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -537,7 +535,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
-        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource(), true);
+        save(user, ExperimentServiceImpl.get().getTinfoMaterialSource());
         if (isNew)
         {
             Domain domain = PropertyService.get().getDomain(getContainer(), getLSID());
@@ -675,7 +673,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
+            TypeReference<HashMap<String, String>> typeRef = new TypeReference<>() {};
 
             return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
         }

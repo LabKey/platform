@@ -216,16 +216,16 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(X_FRAME_OPTIONS, option);
     }
 
-    public void setExternalRedirectHosts(@NotNull List<String> externalRedirectHosts)
+    public void setExternalRedirectURLs(@NotNull List<String> externalRedirectURLs)
     {
         String urls = "";
-        if (null != externalRedirectHosts)
+        if (null != externalRedirectURLs)
         {
-            for (String externalRedirectURL : externalRedirectHosts)
+            for (String externalRedirectURL : externalRedirectURLs)
             {
-                urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_DELIMITER;
+                urls += externalRedirectURL.trim() + EXTERNAL_REDIRECT_HOST_URL_DELIMITER;
             }
         }
-        storeStringValue(EXTERNAL_REDIRECT_HOSTS, urls);
+        storeStringValue(EXTERNAL_REDIRECT_HOST_URLS, urls);
     }
 }

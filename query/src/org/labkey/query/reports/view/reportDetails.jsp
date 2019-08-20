@@ -29,8 +29,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Date" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -53,9 +51,7 @@
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
     ActionURL shareReportURL = urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
-    Map<String,String> reportURLAttributes = report.getRunReportTarget() != null
-            ? Map.of("target", report.getRunReportTarget())
-            : Collections.emptyMap();
+    String reportURLAttributes = report.getRunReportTarget() != null ? "target=\"" + report.getRunReportTarget() + "\"": "";
 
     String type = report.getTypeDescription();
     String category = "";

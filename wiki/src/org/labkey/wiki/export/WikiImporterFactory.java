@@ -42,6 +42,7 @@ import org.labkey.wiki.model.WikiVersion;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -153,7 +154,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
                 {
                     Wiki childWiki = entry.getKey();
                     childWiki.setParent(parentWiki.getRowId());
-                    WikiManager.get().updateWiki(ctx.getUser(), childWiki, childWiki.getLatestVersion(), false);
+                    WikiManager.get().updateWiki(ctx.getUser(), childWiki, childWiki.getLatestVersion());
                 }
             }
         }
@@ -203,11 +204,11 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             wikiversion.setTitle(title == null ? wiki.getName() : title);
             if (existingWiki == null)
             {
-                WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments, false);
+                WikiManager.get().insertWiki(ctx.getUser(), ctx.getContainer(), wiki, wikiversion, attachments);
             }
             else
             {
-                WikiManager.get().updateWiki(ctx.getUser(), wiki, wikiversion, false);
+                WikiManager.get().updateWiki(ctx.getUser(), wiki, wikiversion);
                 WikiManager.get().updateAttachments(ctx.getUser(), wiki, existingAttachmentNames, attachments);
             }
             return wiki;

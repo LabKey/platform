@@ -75,19 +75,13 @@
             return false;
         }
     </script>
-    <label>
-        <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport" id="simpleCohorts"
-               value="false"<%=checked(!study.isAdvancedCohorts())%>>Simple: <%= h(subjectNounPlural) %> are
-        assigned to a single cohort throughout the study.
-    </label>
-    <br>
-    <label>
-        <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts"
-               value="true" <%=checked(study.isAdvancedCohorts())%>>Advanced: <%= h(subjectNounPlural) %> may
-        change cohorts mid-study. Note that advanced cohort management requires automatic assignment via a study
-        dataset.
-    </label>
-    <br>
+    <input type="radio" onclick="return setAdvanced(false);" name="advancedCohortSupport" id="simpleCohorts"
+           value="false"<%=checked(!study.isAdvancedCohorts())%>>Simple: <%= h(subjectNounPlural) %> are
+    assigned to a single cohort throughout the study.<br>
+    <input type="radio" onclick="return setAdvanced(true);" name="advancedCohortSupport" id="advancedCohorts"
+           value="true" <%=checked(study.isAdvancedCohorts())%>>Advanced: <%= h(subjectNounPlural) %> may
+    change cohorts mid-study. Note that advanced cohort management requires automatic assignment via a study
+    dataset.<br>
     <%
         }
 
@@ -97,19 +91,15 @@
     <div class="labkey-announcement-title">
         <span>Assignment Type</span>
     </div>
-    <label>
-        <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
-               id="manualCohortAssignmentDisabled"
-               value="false"<%=checked(!study.isManualCohortAssignment())%>>Automatic: cohort assignments will be
-        read from an existing study dataset.
-    </label>
-    <br>
-    <label>
-        <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
-               id="manualCohortAssignmentEnabled"
-               value="true"<%=checked(study.isManualCohortAssignment())%>>Manual: cohort assignments will be made
-        by hand.
-    </label>
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
+           id="manualCohortAssignmentDisabled"
+           value="false"<%=checked(!study.isManualCohortAssignment())%>>Automatic: cohort assignments will be
+    read from an existing study dataset.<br>
+    <input type="radio" onclick="document.manageCohorts.submit();" name="manualCohortAssignment"
+           id="manualCohortAssignmentEnabled"
+           value="true"<%=checked(study.isManualCohortAssignment())%>>Manual: cohort assignments will be made
+    by hand.
+
     <%
         }
         if (!study.isManualCohortAssignment())

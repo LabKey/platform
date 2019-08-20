@@ -30,7 +30,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 
 public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
 {

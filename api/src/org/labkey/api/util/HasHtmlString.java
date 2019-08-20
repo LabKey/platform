@@ -15,22 +15,7 @@
  */
 package org.labkey.api.util;
 
-import java.io.IOException;
-
-public interface HasHtmlString extends DOM.Renderable
+public interface HasHtmlString
 {
     HtmlString getHtmlString();
-
-    @Override
-    default Appendable appendTo(Appendable builder)
-    {
-        try
-        {
-            return builder.append(this.getHtmlString().toString());
-        }
-        catch (IOException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
 }
