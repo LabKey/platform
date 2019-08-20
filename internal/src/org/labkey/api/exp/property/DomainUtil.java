@@ -948,7 +948,8 @@ public class DomainUtil
         return exception;
     }
 
-    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(GWTDomain orig)
+    @Nullable
+    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain orig)
     {
         if (null != orig)
         {
