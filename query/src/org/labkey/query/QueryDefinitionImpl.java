@@ -540,6 +540,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             TableInfo table = _cache.get(key);
             if (table == null)
             {
+                // Occasionally called with a get, but simple table creation is not a serious vector for CSRF attacks
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
                     table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);

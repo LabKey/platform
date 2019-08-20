@@ -313,7 +313,7 @@ public class AuthenticationManager
                 HttpServletRequest request = getViewContext().getRequest();
 
                 PrimaryAuthenticationResult primaryResult = null;
-                // Use instances provide their own authentication
+                // Some SSO protocols allow GET, but validation requires a secret so it's not susceptible to CSRF attacks
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
                     primaryResult = AuthenticationManager.finalizePrimaryAuthentication(request, response);

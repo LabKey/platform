@@ -702,7 +702,7 @@ public class ExperimentController extends SpringActionController
 //    @RequiresLogin
 //    public class SaveMaterialsAction extends MutatingApiAction<SaveMaterialsForm>
 //    {
-//        public ApiResponse getView(SaveMaterialsForm form, BindException errors) throws Exception
+//        public ApiResponse execute(SaveMaterialsForm form, BindException errors) throws Exception
 //        {
 //            UploadMaterialSetForm uploadForm = new UploadMaterialSetForm();
 //            uploadForm.setContainer(getContainer());
