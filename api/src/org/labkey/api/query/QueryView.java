@@ -822,6 +822,14 @@ public class QueryView extends WebPartView<Object>
         return table != null && table.hasPermission(getUser(), DeletePermission.class);
     }
 
+    protected boolean hasInsertUrlFromMetadata()
+    {
+        TableInfo table = getTable();
+
+        // todo: make sure if it's a query relation / select
+        return table.hasXMLInsertOverride();
+    }
+
     protected boolean canInsert()
     {
         TableInfo table = getTable();
@@ -911,7 +919,7 @@ public class QueryView extends WebPartView<Object>
 
         populateChartsReports(bar);
 
-        if (canInsert() && (showInsertNewButton() || showImportDataButton()))
+        if ((canInsert() || hasInsertUrlFromMetadata()) && (showInsertNewButton() || showImportDataButton()))
         {
             bar.add(createInsertMenuButton());
         }

@@ -144,6 +144,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
     private FieldKey _auditRowPk;
 
+    private boolean _hasInsertXMLOverride;
+    // TODO: other overrides
+
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     @NotNull
@@ -1113,7 +1116,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             _importURL = DetailsURL.fromXML(xmlTable.getImportUrl(), errors);
 
         if (xmlTable.isSetInsertUrl())
+        {
+            _hasInsertXMLOverride = true;
             _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), errors);
+        }
 
         if (xmlTable.isSetUpdateUrl())
             _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), errors);
@@ -1760,6 +1766,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
     {
         return new HashSet<>(selectColumns);
+    }
+
+    @Override
+    public boolean hasXMLInsertOverride()
+    {
+        return _hasInsertXMLOverride;
     }
 
     public static class TestCase extends Assert{

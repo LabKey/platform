@@ -589,4 +589,8 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
         return null;
     }
 
+    default boolean hasXMLInsertOverride()
+    {
+        return false;
+    }
 }
