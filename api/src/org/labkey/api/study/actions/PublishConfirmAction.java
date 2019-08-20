@@ -125,6 +125,7 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         private List<Integer> _objectId;
         private boolean _attemptPublish;
         private boolean _validate;
+        private boolean _includeTimestamp;
         private String _dataRegionSelectionKey;
         private String _containerFilterName;
         private PublishResultsQueryView.DefaultValueSource _defaultValueSource = PublishResultsQueryView.DefaultValueSource.Assay;
@@ -217,6 +218,16 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
             _validate = validate;
         }
 
+        public boolean isIncludeTimestamp()
+        {
+            return _includeTimestamp;
+        }
+
+        public void setIncludeTimestamp(boolean includeTimestamp)
+        {
+            _includeTimestamp = includeTimestamp;
+        }
+
         public String getContainerFilterName()
         {
             return _containerFilterName;
@@ -279,7 +290,7 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
     @Override
     public boolean handlePost(PublishConfirmForm form, BindException errors) throws Exception
     {
-        if (form.isAttemptPublish() && form.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
+        if (!form.isIncludeTimestamp() && form.isAttemptPublish() && form.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
         {
             _postedVisits = new HashMap<>();
             _postedDates = new HashMap<>();
@@ -316,7 +327,8 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         if (publishConfirmForm.getContainerFilterName() != null)
             settings.setContainerFilterName(publishConfirmForm.getContainerFilterName());
         PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
-                _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
+                _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched,
+                publishConfirmForm.isIncludeTimestamp());
 
         List<ActionButton> buttons = new ArrayList<>();
         URLHelper returnURL = publishConfirmForm.getReturnURLHelper();
@@ -338,6 +350,19 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         validateButton.setScript("return assayPublish_onCopyToStudy(this)", true);
         buttons.add(validateButton);
 
+        TimepointType timepointType = null;
+        if (_targetStudy != null)
+            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
+
+        if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
+        {
+            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("includeTimestamp", "true");
+            ActionButton includeTimeButton = new ActionButton(publishURL, "Display DateTime");
+            includeTimeButton.setScript("return assayPublish_onCopyToStudy(this)", true);
+            buttons.add(includeTimeButton);
+        }
+
         if (mismatched)
         {
             publishURL.deleteParameter("validate");
@@ -355,10 +380,6 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         buttons.add(cancelButton);
 
         queryView.setButtons(buttons);
-
-        TimepointType timepointType = null;
-        if (_targetStudy != null)
-            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
 
         return new VBox(new JspView<>("/org/labkey/api/study/actions/publishHeader.jsp",
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
