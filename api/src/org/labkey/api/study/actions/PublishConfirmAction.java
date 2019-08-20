@@ -290,7 +290,7 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
     @Override
     public boolean handlePost(PublishConfirmForm form, BindException errors) throws Exception
     {
-        if (!form.isIncludeTimestamp() && form.isAttemptPublish() && form.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
+        if (form.isAttemptPublish() && form.getDefaultValueSourceEnum() == PublishResultsQueryView.DefaultValueSource.UserSpecified)
         {
             _postedVisits = new HashMap<>();
             _postedDates = new HashMap<>();
