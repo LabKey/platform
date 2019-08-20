@@ -896,7 +896,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     @Override
     public HtmlString getHtmlString()
     {
-        return HtmlString.of(getURIString());
+        return HtmlString.of(toString());
     }
 
     public static class TestCase extends Assert

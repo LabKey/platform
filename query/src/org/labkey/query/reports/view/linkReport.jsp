@@ -140,7 +140,7 @@
                     refreshDate: <%=q(DateUtil.formatDate(getContainer(), form.getRefreshDate()))%>,
                     category: {rowid : <%=form.getCategory()%>},
                     description: <%=q(form.getDescription())%>,
-                    shared: <%=HtmlString.of(form.getShared().toString())%>
+                    shared: <%=h(form.getShared())%>
                 }
             },
 
