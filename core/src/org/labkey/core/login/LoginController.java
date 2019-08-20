@@ -25,8 +25,8 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
@@ -2200,11 +2200,10 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
-    // where the caller has a secrete (the authentication token).
-    public class InvalidateTokenAction extends RedirectAction<TokenAuthenticationForm>
+    // where the caller has a secret (the authentication token).
+    public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
-        @Override
-        public @Nullable URLHelper getURL(TokenAuthenticationForm form, Errors errors)
+        public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());

@@ -55,10 +55,10 @@ public class PanelButton extends ActionButton
         String panelId = getId();
         Map<String, String> attributes = new HashMap<>();
 
-        attributes.put("panel-toggle", panelId);
+        attributes.put("data-labkey-panel-toggle", panelId);
 
         if (requiresSelectionDataRegion != null)
-            attributes.put("labkey-requires-selection", requiresSelectionDataRegion);
+            attributes.put("data-labkey-requires-selection", requiresSelectionDataRegion);
 
         boolean active = true;
         // Remember that we've already rendered the content once
