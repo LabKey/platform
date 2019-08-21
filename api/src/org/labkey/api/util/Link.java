@@ -22,6 +22,8 @@ import org.labkey.api.view.DisplayElement;
 import java.io.IOException;
 import java.io.Writer;
 
+import static org.labkey.api.util.DOM.at;
+
 public class Link extends DisplayElement implements HasHtmlString
 {
     private LinkBuilder lb;
@@ -54,7 +56,12 @@ public class Link extends DisplayElement implements HasHtmlString
             sb.append(" class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\"");
 
         if (null != lb.attributes)
-            sb.append(" ").append(lb.attributes);
+        {
+            var attrs = at(lb.attributes);
+            attrs.forEach(a -> {
+                sb.append(" ").append(PageFlowUtil.filter(a.getKey())).append("=\"").append(PageFlowUtil.filter(a.getValue())).append("\"");
+            });
+        }
 
         if (null != lb.id)
             sb.append(" id=\"").append(lb.id).append("\"");
