@@ -27,6 +27,8 @@ import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.CohortFilter;
@@ -233,7 +235,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     protected void addBaseFilters(SimpleFilter filter)
     {
         if (allowsAvailabilityFilter() && getStatusFilter() != null)
-             addAvailabilityFilter(filter, getStatusFilter());
+            addAvailabilityFilter(filter, getStatusFilter());
 
         if (allowsCohortFilter() && getCohortFilter() != null)
             addCohortFilter(filter, getCohortFilter());
@@ -244,10 +246,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public static final String COMPLETED_REQUESTS_FILTER_SQL =
             "SELECT SpecimenGlobalUniqueId FROM study.SampleRequestSpecimen\n" +
-                "\tJOIN study.SampleRequest ON study.SampleRequestSpecimen.SampleRequestId = study.SampleRequest.RowId\n" +
-                "\tJOIN study.SampleRequestStatus ON study.SampleRequest.StatusId = study.SampleRequestStatus.RowId\n" +
-                "\tWHERE study.SampleRequestStatus.SpecimensLocked = ? AND study.SampleRequestStatus.FinalState = ?\n" +
-                "\tAND study.SampleRequest.Container = ?";
+                    "\tJOIN study.SampleRequest ON study.SampleRequestSpecimen.SampleRequestId = study.SampleRequest.RowId\n" +
+                    "\tJOIN study.SampleRequestStatus ON study.SampleRequest.StatusId = study.SampleRequestStatus.RowId\n" +
+                    "\tWHERE study.SampleRequestStatus.SpecimensLocked = ? AND study.SampleRequestStatus.FinalState = ?\n" +
+                    "\tAND study.SampleRequest.Container = ?";
 
     protected void addAvailabilityFilter(SimpleFilter filter, Status status)
     {
@@ -268,7 +270,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 filter.addCondition(FieldKey.fromParts("LockedInRequest"), Boolean.FALSE);
                 break;
             case REQUESTED_COMPLETE:
-                filter.addWhereClause("GlobalUniqueId IN (\n" + COMPLETED_REQUESTS_FILTER_SQL + ")", 
+                filter.addWhereClause("GlobalUniqueId IN (\n" + COMPLETED_REQUESTS_FILTER_SQL + ")",
                         new Object[] { Boolean.TRUE, Boolean.TRUE, getContainer().getId()});
                 break;
             case NOT_REQUESTED_COMPLETE:
@@ -296,9 +298,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         if (cohortFilter == CohortFilterFactory.UNASSIGNED)
         {
             filter.addWhereClause("(" + StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
-                    "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId IS NULL AND Container = ?)" +
-                    "OR (" + StudyService.get().getSubjectColumnName(getContainer()) +
-                    " NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))",
+                            "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId IS NULL AND Container = ?)" +
+                            "OR (" + StudyService.get().getSubjectColumnName(getContainer()) +
+                            " NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))",
                     new Object[] { getContainer().getId(), getContainer().getId()});
         }
         else if (cohortFilter != null)
@@ -314,12 +316,12 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                     break;
                 case PTID_CURRENT:
                     filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
-                            "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId = ? AND Container = ?)",
+                                    "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId = ? AND Container = ?)",
                             new Object[] { cohortId, getContainer().getId()});
                     break;
                 case PTID_INITIAL:
                     filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
-                            "(SELECT ParticipantId FROM study.participant WHERE InitialCohortId = ? AND Container = ?)",
+                                    "(SELECT ParticipantId FROM study.participant WHERE InitialCohortId = ? AND Container = ?)",
                             new Object[] { cohortId, getContainer().getId()});
                     break;
             }
@@ -328,67 +330,81 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected Pair<String, String> getEnrollmentSitePicker(String inputName, Set<LocationImpl> locations, Integer selectedSiteId)
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<select name=\"").append(inputName).append("\">");
-        builder.append("<option value=\"\">All enrollment locations</option>");
+        Select.SelectBuilder sb = new Select.SelectBuilder();
+
+        sb
+        .name(inputName)
+        .addOption(new Option.OptionBuilder().value("All enrollment locations").build());
+
         for (LocationImpl location : locations)
         {
-            if (location == null)
+            String label = "Unassigned enrollment location";
+            String value = "-1";
+            int currentSelectedSide = -1;
+
+            if (location != null)
             {
-                builder.append("<option value=\"-1\"");
-                if (selectedSiteId != null && selectedSiteId == -1)
-                    builder.append(" SELECTED");
-                builder.append(">Unassigned enrollment location</option>");
+                label = PageFlowUtil.filter(location.getLabel());
+                value = Integer.toString(location.getRowId());
+                currentSelectedSide = location.getRowId();
             }
-            else
-            {
-                builder.append("<option value=\"").append(location.getRowId()).append("\"");
-                if (selectedSiteId != null && selectedSiteId == location.getRowId())
-                    builder.append(" SELECTED");
-                builder.append(">").append(PageFlowUtil.filter(location.getLabel())).append("</option");
-            }
+
+            boolean selected = selectedSiteId != null && selectedSiteId == currentSelectedSide;
+            Option.OptionBuilder ob = new Option.OptionBuilder()
+                .value(value)
+                .label(label)
+                .selected(selected);
+
+            sb.addOption(ob.build());
         }
-        builder.append("</select>");
-        return new Pair<>("Enrollment site", builder.toString());
+
+        return new Pair<>("Enrollment site", sb.toString());
     }
 
     public HtmlString getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<select name=\"baseCustomViewName\">");
-        builder.append("<option value=\"\">Base report on all vials</option>");
+        Select.SelectBuilder sb = new Select.SelectBuilder()
+            .name("baseCustomViewName")
+            .addOption(
+                    new Option.OptionBuilder()
+                    .value("Base report on all vials")
+                    .build()
+                );
 
         for (Map.Entry<String, CustomView> viewEntry : specimenDetailViews.entrySet())
         {
+            Option.OptionBuilder ob = new Option.OptionBuilder();
             String name = viewEntry.getKey();
             CustomView view = viewEntry.getValue();
+
             if (view.getFilterAndSort() != null)
             {
-                if (name == null)
+                String viewName = DEFAULT_VIEW_ID;
+                String label = "Base on default view (filtered)";
+
+                if (name != null)
                 {
-                    builder.append("<option value=\"").append(PageFlowUtil.filter(DEFAULT_VIEW_ID)).append("\"");
-                    if (_baseCustomViewName != null && _baseCustomViewName.equals(DEFAULT_VIEW_ID))
-                        builder.append(" SELECTED");
-                    builder.append(">Base on default view (filtered)</option>");
+                    viewName = view.getName();
+                    label = "Base on view: " + view.getName();
                 }
-                else
-                {
-                    builder.append("<option value=\"").append(PageFlowUtil.filter(view.getName())).append("\"");
-                    if (_baseCustomViewName != null && _baseCustomViewName.equals(view.getName()))
-                        builder.append(" SELECTED");
-                    builder.append(">Base on view: ").append(PageFlowUtil.filter(view.getName())).append("</option>");
-                }
+
+                boolean selected = _baseCustomViewName != null && _baseCustomViewName.equals(viewName);
+                sb.addOption(ob
+                    .value(viewName)
+                    .label(label)
+                    .selected(selected)
+                    .build());
             }
         }
-        builder.append("</select>");
-        return HtmlString.unsafe(builder.toString());
+
+        return HtmlString.unsafe(sb.toString());
     }
 
     private String _allString = null;
     protected String getAllString()
     {
-       if (_allString == null)
-           _allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer())) + " (Large Report)";
+        if (_allString == null)
+            _allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer())) + " (Large Report)";
         return _allString;
     }
 
@@ -466,7 +482,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
         return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
     }
-    
+
     protected abstract List<? extends SpecimenVisitReport> createReports();
 
     public abstract String getLabel();
