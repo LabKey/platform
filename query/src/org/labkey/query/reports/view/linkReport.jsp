@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.reports.ReportsController.LinkReportForm" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -139,7 +140,7 @@
                     refreshDate: <%=q(DateUtil.formatDate(getContainer(), form.getRefreshDate()))%>,
                     category: {rowid : <%=form.getCategory()%>},
                     description: <%=q(form.getDescription())%>,
-                    shared: <%=form.getShared()%>
+                    shared: <%=h(form.getShared())%>
                 }
             },
 
