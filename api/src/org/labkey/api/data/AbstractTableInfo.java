@@ -1795,11 +1795,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _hasDeleteXMLOverride;
     }
 
-    public boolean canOverridePermissions()
-    {
-        return false;
-    }
-
     public static class TestCase extends Assert{
         @Test
         public void testEnum()
