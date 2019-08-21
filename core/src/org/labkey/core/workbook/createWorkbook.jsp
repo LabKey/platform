@@ -117,7 +117,7 @@
                 <td class="labkey-form-label">Type:</td>
                 <td>
                     <select id="workbookFolderType" name="folderType">
-                        <option value="<%=HtmlString.EMPTY_STRING%>" />
+                        <option value="" />
                         <% for (FolderType folderType : folderTypes) { %>
                             <option value="<%=h(folderType.getName()) %>" <% if (folderType.getName().equals(bean.getFolderType())) { %>selected="true" <% } %>><%=h(folderType.getLabel()) %></option>
                         <% } %>
