@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 /**
  * Represents a URL, typically within this instance of LabKey Server.
  */
-public class URLHelper implements Cloneable, Serializable, Taintable
+public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlString
 {
     private static final Logger LOG = Logger.getLogger(URLHelper.class);
 
@@ -891,6 +891,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         {
             return AppProps.getInstance().getContextPath() + resourcePath;
         }
+    }
+
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return HtmlString.of(toString());
     }
 
     public static class TestCase extends Assert
