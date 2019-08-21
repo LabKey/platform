@@ -166,7 +166,7 @@ This folder does not contain a study.
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
                             %>
-                                <option value="<%= h(type.name()) %>"<%=selected(type == selectedCohortType)%>>
+                                <option value="<%=type%>"<%=selected(type == selectedCohortType)%>>
                                     <%= h(type.getTitle()) %>
                                 </option>
                             <%
@@ -239,7 +239,7 @@ This folder does not contain a study.
                                 for (SpecimenVisitReportParameters.Status status : SpecimenVisitReportParameters.Status.values())
                                 {
                             %>
-                                <option value="<%= h(status.name()) %>"<%=selected(factory.getStatusFilter() == status)%>>
+                                <option value="<%=status%>"<%=selected(factory.getStatusFilter() == status)%>>
                                     <%= h(status.getCaption()) %>
                                 </option>
                             <%
@@ -263,13 +263,14 @@ This folder does not contain a study.
                 <%
                     }
 
+                    // AdditionalFormInputs values are html generated in classes that extend SpecimenVisitReportParameters
                     List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml();
                     for (Pair<String, String> inputPair : additionalFormInputs)
                     {
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>"><%= h(inputPair.getKey()) %></td>
-                        <td><%= h(inputPair.getValue()) %></td>
+                        <td><%= unsafe(inputPair.getValue()) %></td>
                     </tr>
                 <%
                     }
