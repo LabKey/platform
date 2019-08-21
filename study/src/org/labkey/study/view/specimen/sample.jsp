@@ -56,7 +56,7 @@
     </tr>
     <tr>
         <th align="right">Collection Date</th>
-        <td><%=vial.getDrawTimestamp() != null ? formatDateTime(vial.getDrawTimestamp()) : HtmlString.of("Unknown")%></td>
+        <td><%=vial.getDrawTimestamp() != null ? formatDateTime(vial.getDrawTimestamp()) : h("Unknown")%></td>
     </tr>
     <tr>
         <th align="right">Collection Location</th>

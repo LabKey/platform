@@ -68,7 +68,7 @@ function showSystemRows(value)
         %>
                 <tr <%= text(status.isSystemStatus() ? "id=\"systemStatusRow\"" : "") %> <%= text(!showSystemStatuses && status.isSystemStatus() ? "style=\"display:none\"" : "") %>>
                     <% String incrementedStatus = String.valueOf(status.getSortOrder() + 1);%>
-                    <td align="center"><%= status.isSystemStatus() ? "1" : HtmlString.of(incrementedStatus)%></td>
+                    <td align="center"><%= status.isSystemStatus() ? "1" : h(incrementedStatus)%></td>
                     <td>
                         <%
                             if (!status.isSystemStatus())

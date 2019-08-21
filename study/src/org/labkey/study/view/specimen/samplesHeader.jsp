@@ -82,7 +82,7 @@
         boolean usePlural = bean.getFilteredPtidVisits().size() != 1;
         if (bean.isSingleVisitFilter())
         {
-            filterString.append(HtmlString.of((usePlural?subjectNounPlural:subjectNounSingle).toLowerCase())).append(" ");
+            filterString.append(h((usePlural?subjectNounPlural:subjectNounSingle).toLowerCase())).append(" ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 String ptid = it.next().getKey();
