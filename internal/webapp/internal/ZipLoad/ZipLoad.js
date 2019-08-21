@@ -622,6 +622,12 @@ LABKEY.internal.ZipLoad = new function () {
             zipDirectory(filesToZipPerDirectoryParts[zipDirectoryCount]);
         }
         else {
+            //Issue 37867: Row creation in Exp.Data in Panorama Folder
+            var entry = itemsDropped[itemCount];
+            if (entry.isDirectory) {
+                if (dropZone.options.acceptDirectory)
+                    dropZone.options.acceptDirectory.call(dropZone, entry);
+            }
             for (var up = 0; up < filesToUpload.length; up++) {
                 dropZone.addFile(filesToUpload[up].file);
             }
