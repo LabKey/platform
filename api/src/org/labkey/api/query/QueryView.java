@@ -837,19 +837,19 @@ public class QueryView extends WebPartView<Object>
     private boolean hasInsertOverridePermissions()
     {
         TableInfo table = getTable();
-        return table.hasXMLInsertOverride() && table.canOverridePermissions();
+        return table != null && table.hasXMLInsertOverride() && table.canOverridePermissions();
     }
 
     private boolean hasUpdateOverridePermissions()
     {
         TableInfo table = getTable();
-        return table.hasXMLUpdateOverride() && table.canOverridePermissions();
+        return table != null && table.hasXMLUpdateOverride() && table.canOverridePermissions();
     }
 
     private boolean hasDeleteOverridePermissions()
     {
         TableInfo table = getTable();
-        return table.hasXMLDeleteOverride() && table.canOverridePermissions();
+        return table != null && table.hasXMLDeleteOverride() && table.canOverridePermissions();
     }
 
     private boolean hasInsertPermissions()

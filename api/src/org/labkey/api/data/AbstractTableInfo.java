@@ -1128,14 +1128,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             _hasUpdateXMLOverride = true;
         }
 
-
         if (xmlTable.isSetDeleteUrl())
         {
             _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), errors);
             _hasDeleteXMLOverride = true;
         }
-
-
+        
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
 
