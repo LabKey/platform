@@ -404,7 +404,7 @@ public class QueryView extends WebPartView<Object>
                     editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
                 editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
                 addMenuItem(editQueryItem);
-                if (getQueryDef().isMetadataEditable() || hasUpdateUrlFromMetadata())
+                if (getQueryDef().isMetadataEditable())
                 {
                     NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
                     editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
@@ -816,36 +816,6 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected boolean canDelete()
-    {
-        TableInfo table = getTable();
-        return table != null && table.hasPermission(getUser(), DeletePermission.class);
-    }
-
-    protected boolean hasInsertUrlFromMetadata()
-    {
-        TableInfo table = getTable();
-
-        // todo: make sure if it's a query relation / select
-        return table.hasXMLInsertOverride();
-    }
-
-    protected boolean hasDeleteUrlFromMetadata()
-    {
-        TableInfo table = getTable();
-
-        // todo: make sure if it's a query relation / select
-        return table.hasXMLDeleteOverride();
-    }
-
-    protected boolean hasUpdateUrlFromMetadata()
-    {
-        TableInfo table = getTable();
-
-        // todo: make sure if it's a query relation / select
-        return table.hasXMLUpdateOverride();
-    }
-
     protected boolean canInsert()
     {
         TableInfo table = getTable();
@@ -856,6 +826,45 @@ public class QueryView extends WebPartView<Object>
     {
         TableInfo table = getTable();
         return table != null && table.hasPermission(getUser(), UpdatePermission.class) && table.getUpdateService() != null;
+    }
+
+    protected boolean canDelete()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), DeletePermission.class);
+    }
+
+    private boolean hasInsertOverridePermissions()
+    {
+        TableInfo table = getTable();
+        return table.hasXMLInsertOverride() && table.canOverridePermissions();
+    }
+
+    private boolean hasUpdateOverridePermissions()
+    {
+        TableInfo table = getTable();
+        return table.hasXMLUpdateOverride() && table.canOverridePermissions();
+    }
+
+    private boolean hasDeleteOverridePermissions()
+    {
+        TableInfo table = getTable();
+        return table.hasXMLDeleteOverride() && table.canOverridePermissions();
+    }
+
+    private boolean hasInsertPermissions()
+    {
+        return canInsert() || hasInsertOverridePermissions();
+    }
+
+    private boolean hasUpdatePermissions()
+    {
+        return canUpdate() || hasUpdateOverridePermissions();
+    }
+
+    private boolean hasDeletePermissions()
+    {
+        return canDelete() || hasDeleteOverridePermissions();
     }
 
     public boolean showInsertNewButton()
@@ -935,19 +944,13 @@ public class QueryView extends WebPartView<Object>
 
         populateChartsReports(bar);
 
-        if ((canInsert() || hasInsertUrlFromMetadata()) && (showInsertNewButton() || showImportDataButton()))
+
+        if (hasInsertPermissions() && (showInsertNewButton() || showImportDataButton()))
         {
             bar.add(createInsertMenuButton());
         }
 
-//        if (/* showUpdateButton() && */canUpdate())
-//        {
-//            ActionButton editMultipleButton = createEditMultipleButton();
-//            if (editMultipleButton != null)
-//                bar.add(editMultipleButton);
-//        }
-
-        if ((canDelete() || hasDeleteUrlFromMetadata()) && showDeleteButton())
+        if (hasDeletePermissions() && showDeleteButton())
         {
             bar.add(createDeleteButton());
         }
@@ -2912,7 +2915,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showUpdateColumn && (canUpdate() || table.hasXMLUpdateOverride()))
+        if (_showUpdateColumn && hasUpdatePermissions())
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
 

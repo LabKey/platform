@@ -603,4 +603,10 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     {
         return false;
     }
+
+    default boolean canOverridePermissions()
+    {
+        return false;
+    };
+
 }

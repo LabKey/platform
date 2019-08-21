@@ -187,4 +187,10 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     {
         return _relation.getResolvedTables();
     }
+
+    @Override
+    public boolean canOverridePermissions()
+    {
+        return true;
+    }
 }
