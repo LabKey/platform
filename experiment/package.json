@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.30-fb-domain-advanced-settings.3",
+    "@glass/domainproperties": "0.0.30-fb-domain-advanced-settings.4",
     "@glass/base": "0.14.0"
   },
   "devDependencies": {
