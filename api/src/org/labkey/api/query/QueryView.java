@@ -2912,7 +2912,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showUpdateColumn && canUpdate())
+        if (_showUpdateColumn && (canUpdate() || table.hasXMLUpdateOverride()))
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
 
