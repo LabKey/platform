@@ -111,7 +111,7 @@
 %>
     <p>
         <table width="700px">
-            <tr><td><%= HtmlString.unsafe(filterString.toString()) %></td></tr>
+            <tr><td><%= unsafe(filterString.toString()) %></td></tr>
         </table>
     </p>
 <%= link("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl)%><%
