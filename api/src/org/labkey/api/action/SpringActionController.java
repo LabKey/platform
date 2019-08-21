@@ -1211,20 +1211,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return;
 
             boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
-            String message = "MUTATING SQL executed as part of handling action: " +
+            _log.warn("MUTATING SQL executed as part of handling action: " +
                     (null == vc ? "" : vc.getRequest().getMethod()) + " " +
-                    c.getName() + (verbose ? ("\n" + sql) : "");
-            IllegalStateException e = new IllegalStateException(message);
-
-            if (AppProps.getInstance().isDevMode())
-            {
-                throw e;
-            }
-            else
-            {
-                HttpServletRequest request = null != vc ? vc.getRequest() : null;
-                ExceptionUtil.logExceptionToMothership(request, e);
-            }
+                    c.getName() + (verbose ? ("\n" + sql) : ""),
+                    verbose ? new Throwable() : null);
         }
     }
 
