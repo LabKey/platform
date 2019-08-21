@@ -97,12 +97,12 @@
                                     .append(HtmlString.unsafe("</span>"));
                             if (!task.canDisable())
                             {
-                %><tr><td><input type="checkbox" disabled checked/><%=text(description)%></td></tr><%
+                %><tr><td><input type="checkbox" disabled checked/><%=description%></td></tr><%
                             }
                             else
                             {
                                 String checkboxDisabled = hasAdminOpsPerms ? "" : "disabled";
-                %><tr><td><input name="enable" <%=text(checkboxDisabled)%> value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=text(description)%></td></tr><%
+                %><tr><td><input name="enable" <%=text(checkboxDisabled)%> value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=description%></td></tr><%
                             }
                         }
                     }
