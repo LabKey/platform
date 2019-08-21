@@ -2476,7 +2476,6 @@ public class WikiController extends SpringActionController
                 names = Collections.emptyList();
             else
                 names = Arrays.asList(deleteNames);
-
             String message = getWikiManager().updateAttachments(getUser(), wiki, names, getAttachmentFileList());
 
             if (null != message)
