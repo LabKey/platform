@@ -67,7 +67,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
             {
                 obj = ((HasHtmlString) obj).getHtmlString();
             }
-            else if (!(obj instanceof Number))
+            else if (!(obj instanceof Number) && !(obj instanceof Boolean))
             {
                 OBJECT_INVOCATIONS.incrementAndGet();
                 if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
