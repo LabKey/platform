@@ -404,7 +404,7 @@ public class QueryView extends WebPartView<Object>
                     editQueryItem = new NavTree("View Definition", getSchema().urlFor(QueryAction.schemaBrowser, getQueryDef()));
                 editQueryItem.setId(getDataRegionName() + ":Query:EditSource");
                 addMenuItem(editQueryItem);
-                if (getQueryDef().isMetadataEditable())
+                if (getQueryDef().isMetadataEditable() || hasUpdateUrlFromMetadata())
                 {
                     NavTree editMetadataItem = new NavTree("Edit Metadata", getSchema().urlFor(QueryAction.metadataQuery, getQueryDef()));
                     editMetadataItem.setId(getDataRegionName() + ":Query:EditMetadata");
@@ -830,6 +830,22 @@ public class QueryView extends WebPartView<Object>
         return table.hasXMLInsertOverride();
     }
 
+    protected boolean hasDeleteUrlFromMetadata()
+    {
+        TableInfo table = getTable();
+
+        // todo: make sure if it's a query relation / select
+        return table.hasXMLDeleteOverride();
+    }
+
+    protected boolean hasUpdateUrlFromMetadata()
+    {
+        TableInfo table = getTable();
+
+        // todo: make sure if it's a query relation / select
+        return table.hasXMLUpdateOverride();
+    }
+
     protected boolean canInsert()
     {
         TableInfo table = getTable();
@@ -931,7 +947,7 @@ public class QueryView extends WebPartView<Object>
 //                bar.add(editMultipleButton);
 //        }
 
-        if (showDeleteButton() && canDelete())
+        if ((canDelete() || hasDeleteUrlFromMetadata()) && showDeleteButton())
         {
             bar.add(createDeleteButton());
         }

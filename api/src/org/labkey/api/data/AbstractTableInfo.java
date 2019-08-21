@@ -145,7 +145,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private FieldKey _auditRowPk;
 
     private boolean _hasInsertXMLOverride;
-    // TODO: other overrides
+    private boolean _hasUpdateXMLOverride;
+    private boolean _hasDeleteXMLOverride;
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
@@ -1117,15 +1118,23 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (xmlTable.isSetInsertUrl())
         {
-            _hasInsertXMLOverride = true;
             _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), errors);
+            _hasInsertXMLOverride = true;
         }
 
         if (xmlTable.isSetUpdateUrl())
+        {
             _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), errors);
+            _hasUpdateXMLOverride = true;
+        }
+
 
         if (xmlTable.isSetDeleteUrl())
+        {
             _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), errors);
+            _hasDeleteXMLOverride = true;
+        }
+
 
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
@@ -1772,6 +1781,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean hasXMLInsertOverride()
     {
         return _hasInsertXMLOverride;
+    }
+
+    @Override
+    public boolean hasXMLUpdateOverride()
+    {
+        return _hasUpdateXMLOverride;
+    }
+
+    @Override
+    public boolean hasXMLDeleteOverride()
+    {
+        return _hasDeleteXMLOverride;
     }
 
     public static class TestCase extends Assert{

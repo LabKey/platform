@@ -593,4 +593,14 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     {
         return false;
     }
+
+    default boolean hasXMLUpdateOverride()
+    {
+        return false;
+    }
+
+    default boolean hasXMLDeleteOverride()
+    {
+        return false;
+    }
 }
