@@ -3898,12 +3898,45 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ViewPreferencesAction extends SimpleViewAction<ViewPreferencesForm>
+    public class ViewPreferencesAction extends FormViewAction<ViewPreferencesForm>
     {
         private StudyImpl _study;
         private Dataset _def;
 
-        public ModelAndView getView(ViewPreferencesForm form, BindException errors)
+        @Override
+        public ModelAndView getView(ViewPreferencesForm form, boolean reshow, BindException errors) throws Exception
+        {
+            _study = getStudyRedirectIfNull();
+
+            int dsid = form.getDatasetId();
+            String defaultView = form.getDefaultView();
+
+            _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+            if (_def != null)
+            {
+                List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
+
+                defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
+                if (!StringUtils.isEmpty(defaultView))
+                {
+                    boolean defaultExists = false;
+                    for (Pair<String, String> view : views)
+                    {
+                        if (StringUtils.equals(view.getValue(), defaultView))
+                        {
+                            defaultExists = true;
+                            break;
+                        }
+                    }
+                }
+                ViewPrefsBean bean = new ViewPrefsBean(views, _def);
+                return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
+            }
+            throw new NotFoundException("Invalid dataset ID");
+        }
+
+        @Override
+        public boolean handlePost(ViewPreferencesForm form, BindException errors) throws Exception
         {
             _study = getStudyRedirectIfNull();
 
@@ -3936,9 +3969,7 @@ public class StudyController extends BaseStudyController
                             setDefaultView(dsid, "");
                     }
                 }
-
-                ViewPrefsBean bean = new ViewPrefsBean(views, _def);
-                return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
+                return true;
             }
             throw new NotFoundException("Invalid dataset ID");
         }
@@ -3958,6 +3989,12 @@ public class StudyController extends BaseStudyController
             root.addChild(new NavTree("Preferences"));
             return root;
         }
+
+        @Override
+        public URLHelper getSuccessURL(ViewPreferencesForm viewPreferencesForm) { return null; }
+
+        @Override
+        public void validateCommand(ViewPreferencesForm target, Errors errors) { }
     }
 
     @RequiresPermission(AdminPermission.class)
