@@ -1146,9 +1146,9 @@ public class Portal
             int count = 0;
             for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet())
             {
-                if (partsSeen.add(entry.getKey()))
+                if (partsSeen.add(entry.getValue()))
                 {
-                    sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
+                    sb.append("<option value=\"").append(entry.getValue()).append("\">").append(entry.getKey()).append("</option>\n");
                     count++;
                 }
             }
@@ -1160,7 +1160,7 @@ public class Portal
         for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet())
         {
             if (partsSeen.add(entry.getKey()))
-                sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
+                sb.append("<option value=\"").append(entry.getValue()).append("\">").append(entry.getKey()).append("</option>\n");
         }
         sb.append("</select>\n");
         sb.append("<span class=\"input-group-btn\">\n");
@@ -1468,7 +1468,7 @@ public class Portal
             for (WebPartFactory factory : module.getWebPartFactories())
             {
                 if (factory.isAvailable(c, scope, location))
-                    webPartNames.put(factory.getName(), factory.getDisplayName(c, location));
+                    webPartNames.put(factory.getDisplayName(c, location), factory.getName());
             }
         }
 
