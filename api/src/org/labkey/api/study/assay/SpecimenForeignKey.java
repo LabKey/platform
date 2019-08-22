@@ -97,7 +97,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     // SpecimenForeignKey joins to the vial table AND the specimen table
     // The SpecimenForeignKey that the caller creates appears to join to vial (_joinToSpecimen=false),
-    // the one we create here (see SpecimenForiegnKey.createLookupColumn()) joins to Specimen (_joinToSpecimen=true)
+    // the one we create here (see SpecimenForeignKey.createLookupColumn()) joins to Specimen (_joinToSpecimen=true)
     //boolean _joinToSpecimen = false;
 
 
@@ -109,6 +109,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         _protocol = protocol;
         _tableMetadata = provider.getTableMetadata(protocol);
         _studyContainerFilter = new StudyContainerFilter(schema);
+        assert null != StudyService.get() : "Should not be using SpecimenForeignKey when study module is not present";
     }
 
 
@@ -121,6 +122,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         _protocol = null;
         _tableMetadata = tableMetadata;
         _studyContainerFilter = new StudyContainerFilter(schema);
+        assert null != StudyService.get() : "Should not be using SpecimenForeignKey when study module is not present";
     }
 
 
