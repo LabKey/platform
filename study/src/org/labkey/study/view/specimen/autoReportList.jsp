@@ -264,13 +264,13 @@ This folder does not contain a study.
                     }
 
                     // AdditionalFormInputs values are html generated in classes that extend SpecimenVisitReportParameters
-                    List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml();
-                    for (Pair<String, String> inputPair : additionalFormInputs)
+                    List<Pair<String, HtmlString>> additionalFormInputs = factory.getAdditionalFormInputHtml();
+                    for (Pair<String, HtmlString> inputPair : additionalFormInputs)
                     {
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>"><%= h(inputPair.getKey()) %></td>
-                        <td><%= unsafe(inputPair.getValue()) %></td>
+                        <td><%= inputPair.getValue() %></td>
                     </tr>
                 <%
                     }

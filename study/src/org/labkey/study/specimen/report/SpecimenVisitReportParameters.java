@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.HtmlString.unsafe;
+
 /**
  * User: brittp
  * Created: Jan 14, 2008 12:26:17 PM
@@ -142,7 +144,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             _cohortFilter = cohortFilter;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         return Collections.emptyList();
     }
@@ -328,7 +330,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         }
     }
 
-    protected Pair<String, String> getEnrollmentSitePicker(String inputName, Set<LocationImpl> locations, Integer selectedSiteId)
+    protected Pair<String, HtmlString> getEnrollmentSitePicker(String inputName, Set<LocationImpl> locations, Integer selectedSiteId)
     {
         Select.SelectBuilder sb = new Select.SelectBuilder();
 
@@ -358,7 +360,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             sb.addOption(ob.build());
         }
 
-        return new Pair<>("Enrollment site", sb.toString());
+        return new Pair<>("Enrollment site", unsafe(sb.toString()));
     }
 
     public HtmlString getCustomViewPicker(Map<String, CustomView> specimenDetailViews)
@@ -397,7 +399,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             }
         }
 
-        return HtmlString.unsafe(sb.toString());
+        return unsafe(sb.toString());
     }
 
     private String _allString = null;
@@ -419,36 +421,37 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return allString.startsWith(subject);
     }
 
-    protected Pair<String, String> getParticipantPicker(String inputName, String selectedParticipantId)
+    protected Pair<String, HtmlString> getParticipantPicker(String inputName, String selectedParticipantId)
     {
         Study study = StudyManager.getInstance().getStudy(getContainer());
-        StringBuilder builder = new StringBuilder();
+        Select.SelectBuilder builder = new Select.SelectBuilder();
+
 
         String allString = getAllString();
-
         Collection<Participant> participants = StudyManager.getInstance().getParticipants(study);
+        HtmlString particpantPickerValues;
         if (participants.size() <= 200)
         {
-            builder.append("<select name=\"").append(inputName).append("\">\n");
-            builder.append("<option value=\"").append(allString).append("\"");
-            if (isAllSubjectsOption(selectedParticipantId))
-                builder.append(" SELECTED");
-            builder.append(">").append(allString).append("</option>\n");
+            builder.name(inputName)
+                .addOption(new Option.OptionBuilder()
+                    .value(allString)
+                    .label(allString)
+                    .selected(isAllSubjectsOption(selectedParticipantId))
+                    .build());
             boolean first = true;
             for (Participant participant : participants)
             {
-                builder.append("<option value=\"").append(PageFlowUtil.filter(participant.getParticipantId())).append("\"");
-                // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
-                // by default, since these reports are extremely expensive to generate.
-                if ((selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
-                        (selectedParticipantId == null && first))
-                    builder.append(" SELECTED");
-                builder.append(">");
-                builder.append(PageFlowUtil.filter(DemoMode.id(participant.getParticipantId(), getContainer(), getUser())));
-                builder.append("</option>\n");
+                boolean isSelected = (selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
+                        (selectedParticipantId == null && first);
                 first = false;
+
+                builder.addOption(new Option.OptionBuilder()
+                    .value(participant.getParticipantId())
+                    .label(DemoMode.id(participant.getParticipantId(), getContainer(), getUser()))
+                    .selected(isSelected)
+                    .build());
             }
-            builder.append("</select>");
+            particpantPickerValues = unsafe(builder.toString());
         }
         else
         {
@@ -477,10 +480,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                 throw new RuntimeException(e);
             }
 
-            builder.append(writer.toString());
+            particpantPickerValues = unsafe(writer.toString());
         }
 
-        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
+        return new Pair<>(StudyService.get().getSubjectColumnName(getContainer()), particpantPickerValues);
     }
 
     protected abstract List<? extends SpecimenVisitReport> createReports();
