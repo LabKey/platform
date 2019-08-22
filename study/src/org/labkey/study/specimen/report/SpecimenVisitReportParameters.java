@@ -370,11 +370,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     {
         Select.SelectBuilder sb = new Select.SelectBuilder()
             .name("baseCustomViewName")
-            .addOption(
-                    new Option.OptionBuilder()
-                    .value("Base report on all vials")
-                    .build()
-                );
+            .addOption(new Option.OptionBuilder()
+                .value("")
+                .label("Base report on all vials")
+                .build());
 
         for (Map.Entry<String, CustomView> viewEntry : specimenDetailViews.entrySet())
         {
