@@ -202,9 +202,9 @@
             });
 
         <%
-            if (bean.getRowId() != null && StringUtils.isNotBlank(bean.getImportAliasJson())) {
+            if (bean.getRowId() != null && StringUtils.isNotBlank(bean.getImportAliasJSON())) {
         %>
-            let aliases = JSON.parse(<%=q(bean.getImportAliasJson())%>);
+            let aliases = JSON.parse(<%=q(bean.getImportAliasJSON())%>);
             processAliasJson(aliases);
         <%
             }

@@ -17,6 +17,8 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -3408,7 +3410,14 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(BaseSampleSetForm form, BindException errors)
         {
-            form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
+            try
+            {
+                form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
+            }
+            catch (IOException e)
+            {
+                errors.reject("Unable to update SampleSet: ", e.getMessage());
+            }
             return true;
         }
 
@@ -3483,6 +3492,33 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class GetSampleSetApiAction extends ReadOnlyApiAction<BaseSampleSetForm>
+    {
+        @Override
+        public void validateForm(BaseSampleSetForm form, Errors errors)
+        {
+            if (form.getRowId() == null && form.getLSID() == null)
+                errors.reject(ERROR_REQUIRED, "RowId or LSID must be provided");
+        }
+
+        @Override
+        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
+        {
+            ExpSampleSetImpl ss = form.getSampleSet(getContainer());
+
+            Map<String,Object> sampleSet = new HashMap<>();
+            sampleSet.put("name", ss.getName());
+            sampleSet.put("nameExpression", ss.getNameExpression());
+            sampleSet.put("description", ss.getDescription());
+            sampleSet.put("importAliases", ss.getImportAliasMap());
+            sampleSet.put("lsid", ss.getLSID());
+            sampleSet.put("rowId", ss.getRowId());
+
+            return new ApiSimpleResponse(Collections.singletonMap("sampleSet", sampleSet));
+        }
+    }
+
     private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
     {
         ActionURL _successUrl;
@@ -3507,7 +3543,7 @@ public class ExperimentController extends SpringActionController
             form.setLSID(source.getLSID());
             form.setName(source.getName());
             form.setNameExpression(source.getNameExpression());
-            form.setImportAliasJson(source.getImportAliasJson());
+            form.setImportAliasJSON(source.getImportAliasJson());
         }
 
         @Override
@@ -3543,7 +3579,7 @@ public class ExperimentController extends SpringActionController
         private List<String> importAliasValues;
 
         /** */
-        private String importAliasJson;
+        private String importAliasJSON;
 
         public String getName()
         {
@@ -3625,26 +3661,35 @@ public class ExperimentController extends SpringActionController
             this.lsid = lsid;
         }
 
-        public @NotNull  Map<String, String> getAliasMap()
+        public @NotNull  Map<String, String> getAliasMap() throws IOException
         {
-            Map<String, String> aliases = new HashMap<>();
-            if (getImportAliasKeys() == null)
-                return aliases;
+            Map<String, String> aliases;
+            if (StringUtils.isNotBlank(getImportAliasJSON()))
+            {
+                ObjectMapper mapper = new ObjectMapper();
+                TypeReference<HashMap<String, String>> typeRef = new TypeReference<>() {};
+                aliases = mapper.readValue(getImportAliasJSON(), typeRef);
+            }
+            else
+            {
+                aliases = new HashMap<>();
+                if (getImportAliasKeys() == null)
+                    return aliases;
 
-            for (int i = 0; i < getImportAliasKeys().size(); i++)
-                aliases.put(getImportAliasKeys().get(i), getImportAliasValues().get(i));
-
+                for (int i = 0; i < getImportAliasKeys().size(); i++)
+                    aliases.put(getImportAliasKeys().get(i), getImportAliasValues().get(i));
+            }
             return aliases;
         }
 
-        public String getImportAliasJson()
+        public String getImportAliasJSON()
         {
-            return importAliasJson;
+            return importAliasJSON;
         }
 
-        public void setImportAliasJson(String importAliasJson)
+        public void setImportAliasJSON(String importAliasJSON)
         {
-            this.importAliasJson = importAliasJson;
+            this.importAliasJSON = importAliasJSON;
         }
 
         public Boolean isNameReadOnly()
@@ -3676,7 +3721,7 @@ public class ExperimentController extends SpringActionController
             return sampleSet;
         }
 
-        public void updateSampleSet(Container container, User user, ExpSampleSetImpl sampleSet)
+        public void updateSampleSet(Container container, User user, ExpSampleSetImpl sampleSet) throws IOException
         {
             sampleSet.setDescription(getDescription());
             sampleSet.setNameExpression(getNameExpression());
@@ -3694,11 +3739,17 @@ public class ExperimentController extends SpringActionController
             descriptor.setName(ExpMaterialTable.Column.Name.name());
             properties.add(descriptor);
 
-            return ExperimentService.get().createSampleSet(
-                    container, user, getName(), getDescription(),
-                    properties, Collections.emptyList(), -1, -1, -1, -1, getNameExpression(),
-                    null, getAliasMap()
-            );
+            try
+            {
+                return SampleSetService.get().createSampleSet(container, user, getName(), getDescription(),
+                        properties, Collections.emptyList(), -1, -1, -1, -1, getNameExpression(),
+                        null, getAliasMap()
+                );
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException("Couldn't create sample set: ", e);
+            }
         }
     }
 
