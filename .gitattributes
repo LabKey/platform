@@ -2342,11 +2342,11 @@ core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
 core/src/org/labkey/core/statistics/SummaryStatisticRegistryImpl.java -text
-core/src/org/labkey/core/test/buttons.jsp -text
-core/src/org/labkey/core/test/complex.jsp -text
-core/src/org/labkey/core/test/form.jsp -text
-core/src/org/labkey/core/test/tags.jsp -text
-core/src/org/labkey/core/test/TestController.java -text
+devtools/src/org/labkey/devtools/view/buttons.jsp -text
+devtools/src/org/labkey/devtools/view/complex.jsp -text
+devtools/src/org/labkey/devtools/view/form.jsp -text
+devtools/src/org/labkey/devtools/view/tags.jsp -text
+devtools/src/org/labkey/devtools/TestController.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailCache.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailServiceImpl.java -text
 core/src/org/labkey/core/user/changeEmail.jsp -text

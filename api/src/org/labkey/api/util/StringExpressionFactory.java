@@ -119,6 +119,7 @@ public class StringExpressionFactory
      *  a) http[s]://*?param=${Column}
      *
      *  b) /Controller/Action.view?param=${Column}
+     *     /Controller-Action.view?param=${Column}
      *     org.labkey.module.Controller$Action.class?param=${Column}\s
      *     special w/ some container support
      *
@@ -1472,6 +1473,12 @@ public class StringExpressionFactory
             assertTrue(e instanceof DetailsURL);
             ((DetailsURL)e).setContainerContext(container);
             s = e.eval(Collections.emptyMap());
+            assertEquals(url.getLocalURIString(), s);
+
+            StringExpression e2 = StringExpressionFactory.createURL("/controller-action.view");
+            assertTrue(e2 instanceof DetailsURL);
+            ((DetailsURL)e2).setContainerContext(container);
+            s = e2.eval(Collections.emptyMap());
             assertEquals(url.getLocalURIString(), s);
 
             StringExpression f = StringExpressionFactory.createURL("org.labkey.core.portal.ProjectController$BeginAction.class");

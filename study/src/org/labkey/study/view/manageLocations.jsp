@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> me = (JspView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
@@ -47,10 +47,10 @@
                     <input type="hidden" name="ids" value="<%= location.getRowId()%>">
                 </td>
                 <td>
-                    <input type="text" name="labels" size="40" value="<%= text(location.getLabel() != null ? h(location.getLabel()) : "") %>">
+                    <input type="text" name="labels" size="40" value="<%=h(location.getLabel())%>">
                 </td>
                 <td>
-                    <input type="text" name="descriptions" size="40" value="<%= text(location.getDescription() != null ? h(location.getDescription()) : "") %>">
+                    <input type="text" name="descriptions" size="40" value="<%=h(location.getDescription())%>">
                 </td>
                 <td>
                     <%= h(location.getTypeString()) %>

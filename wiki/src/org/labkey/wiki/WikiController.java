@@ -1838,35 +1838,6 @@ public class WikiController extends SpringActionController
      }
 
 
-    /**
-     * Don't display a name for CreatedBy "0" (Guest)
-     */
-    public static class DisplayColumnCreatedBy extends DataColumn
-    {
-        public DisplayColumnCreatedBy(ColumnInfo col)
-        {
-            super(col);
-        }
-
-        public Object getValue(RenderContext ctx)
-        {
-            Map rowMap = ctx.getRow();
-            String displayName = (String)rowMap.get("createdBy$displayName");
-            return (null != displayName ? displayName : "Guest");
-        }
-
-        public Class getValueClass()
-        {
-            return String.class;
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            out.write(PageFlowUtil.filter(getValue(ctx).toString()));
-        }
-    }
-
-
     public static class ContainerForm
     {
         private String _id;
@@ -2488,7 +2459,6 @@ public class WikiController extends SpringActionController
                 names = Collections.emptyList();
             else
                 names = Arrays.asList(deleteNames);
-
             String message = getWikiManager().updateAttachments(getUser(), wiki, names, getAttachmentFileList());
 
             if (null != message)

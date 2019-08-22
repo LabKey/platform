@@ -2796,22 +2796,87 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteRunsAction extends MutatingApiAction<DeleteForm>
+    public class DeleteRunsAction extends AbstractDeleteAPIAction
     {
         @Override
-        public void validateForm(DeleteForm form, Errors errors)
+        protected ApiSimpleResponse deleteObjects(CascadeDeleteForm form)
+        {
+            Set<Integer> runIdsToDelete = new HashSet<>(form.getIds(true));
+            Set<Integer> runIdsCascadeDeleted = new HashSet<>();
+
+            if (form.isCascade())
+            {
+                for (int runId : runIdsToDelete)
+                {
+                    ExpRun run = ExperimentService.get().getExpRun(runId);
+                    if (run != null)
+                        addReplacesRuns(run, runIdsCascadeDeleted);
+                }
+
+                if (runIdsCascadeDeleted.size() > 0)
+                    runIdsToDelete.addAll(runIdsCascadeDeleted);
+            }
+
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), runIdsToDelete);
+
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            response.put("runIdsDeleted", runIdsToDelete);
+            if (runIdsCascadeDeleted.size() > 0)
+                response.put("runIdsCascadeDeleted", runIdsCascadeDeleted);
+            return response;
+        }
+
+        private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+        {
+            for (ExpRun replacedRun : run.getReplacesRuns())
+            {
+                runIds.add(replacedRun.getRowId());
+                addReplacesRuns(replacedRun, runIds);
+            }
+        }
+    }
+
+    private abstract class AbstractDeleteAPIAction extends MutatingApiAction<CascadeDeleteForm>
+    {
+        @Override
+        public void validateForm(CascadeDeleteForm form, Errors errors)
         {
             if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
                 errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
         }
 
         @Override
-        public ApiResponse execute(DeleteForm form, BindException errors)
+        public ApiResponse execute(CascadeDeleteForm form, BindException errors) throws Exception
         {
-            Set<Integer> ids = form.getIds(true);
-            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), ids);
+            ApiSimpleResponse response;
 
-            return new ApiSimpleResponse("success", true);
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                tx.addCommitTask(form::clearSelected, POSTCOMMIT);
+
+                response = deleteObjects(form);
+                tx.commit();
+            }
+
+            response.putIfAbsent("success", !errors.hasErrors());
+            return new ApiSimpleResponse();
+        }
+
+        protected abstract ApiSimpleResponse deleteObjects(CascadeDeleteForm form) throws Exception;
+    }
+
+    public static class CascadeDeleteForm extends DeleteForm
+    {
+        private boolean _cascade;
+
+        public boolean isCascade()
+        {
+            return _cascade;
+        }
+
+        public void setCascade(boolean cascade)
+        {
+            _cascade = cascade;
         }
     }
 
@@ -2859,7 +2924,36 @@ public class ExperimentController extends SpringActionController
             return appendRootNavTrail(root).addChild("Confirm Deletion");
         }
 
-        protected abstract void deleteObjects(DeleteForm deleteForm) throws Exception;
+        protected abstract void deleteObjects(DeleteForm form) throws Exception;
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteProtocolByRowIdsAPIAction extends AbstractDeleteAPIAction
+    {
+        @Override
+        protected ApiSimpleResponse deleteObjects(CascadeDeleteForm form)
+        {
+            for (ExpProtocol protocol : getProtocolsForDeletion(form))
+            {
+                protocol.delete(getUser());
+            }
+
+            return new ApiSimpleResponse();
+        }
+    }
+
+    public static List<ExpProtocol> getProtocolsForDeletion(DeleteForm form)
+    {
+        List<ExpProtocol> protocols = new ArrayList<>();
+        for (int protocolId : form.getIds(false))
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
+            if (protocol != null)
+            {
+                protocols.add(protocol);
+            }
+        }
+        return protocols;
     }
 
     @RequiresPermission(DeletePermission.class)
@@ -2874,10 +2968,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
+        public ModelAndView getView(DeleteForm form, boolean reshow, BindException errors)
         {
-            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
-            List<ExpProtocol> protocols = getProtocols(deleteForm, false);
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, form.getIds(false));
+            List<ExpProtocol> protocols = getProtocolsForDeletion(form);
             String noun = "Assay Design";
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
@@ -2904,27 +2998,13 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
-        }
-
-        private List<ExpProtocol> getProtocols(DeleteForm deleteForm, boolean clearSelection)
-        {
-            List<ExpProtocol> protocols = new ArrayList<>();
-            for (int protocolId : deleteForm.getIds(clearSelection))
-            {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
-                if (protocol != null)
-                {
-                    protocols.add(protocol);
-                }
-            }
-            return protocols;
+            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, form, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
         @Override
-        protected void deleteObjects(DeleteForm deleteForm)
+        protected void deleteObjects(DeleteForm form)
         {
-            for (ExpProtocol protocol : getProtocols(deleteForm, false))
+            for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
                 protocol.delete(getUser());
             }
