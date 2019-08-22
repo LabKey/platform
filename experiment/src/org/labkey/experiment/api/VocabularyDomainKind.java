@@ -3,17 +3,28 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,10 +33,12 @@ import java.util.Set;
 * */
 public class VocabularyDomainKind extends AbstractDomainKind
 {
+    public static final String KIND_NAME = "Vocabulary";
+
     @Override
     public String getKindName()
     {
-        return null;
+        return KIND_NAME;
     }
 
     @Override
@@ -70,12 +83,6 @@ public class VocabularyDomainKind extends AbstractDomainKind
         return reservedProperties;
     }
 
-    @Override
-    public @Nullable Priority getPriority(String object)
-    {
-        return null;
-    }
-
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignVocabularyPermission.class);
@@ -96,7 +103,33 @@ public class VocabularyDomainKind extends AbstractDomainKind
     @Override
     public void deleteDomain(User user, Domain domain)
     {
+        try
+        {
+            if (domain.getContainer().hasPermission(user, DesignVocabularyPermission.class))
+                domain.delete(user);
+        }
+        catch (DomainNotFoundException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
+    @Override
+    public Priority getPriority(String domainURI)
+    {
+        Lsid lsid = new Lsid(domainURI);
+        return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
+    }
+
+    public String generateDomainURI(String vocabularyName, Container container)
+    {
+        StringBuilder baseURI = new StringBuilder();
+        baseURI.append("urn:lsid:")
+                .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
+                .append(":").append(getKindName())
+                .append(".Folder-").append(container.getRowId())
+                .append(":").append(vocabularyName);
+        return new Lsid(baseURI.toString()).toString();
     }
 
     @Override
@@ -104,12 +137,32 @@ public class VocabularyDomainKind extends AbstractDomainKind
     {
         String name = domain.getName();
         if (name == null)
-            throw new IllegalArgumentException("SampleSet name required");
-        if(container.isWorkbook()) // add labbook
+            throw new IllegalArgumentException("Vocabulary name required");
+
+        if(container.getContainerType() instanceof WorkbookContainerType)  //check with Susan if domain defns should be allowed in labbook container
         {
             throw new IllegalArgumentException("Vocabulary can not be created in Workbook folder.");
         }
+        String domainURI = generateDomainURI( name, container);
 
-        return PropertyService.get().createDomain(container, "", domain.getName(), templateInfo);
+        List<GWTPropertyDescriptor> properties = domain.getFields();
+        Domain vocabularyDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
+
+        Set<String> propertyUris = new HashSet<>();
+        Map<DomainProperty, Object> defaultValues = new HashMap<>();
+        try
+        {
+            for (GWTPropertyDescriptor pd : properties)
+            {
+                DomainUtil.addProperty(vocabularyDomain, pd, defaultValues, propertyUris, null);
+            }
+            vocabularyDomain.save(user);
+        }
+        catch (ChangePropertyDescriptorException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return PropertyService.get().getDomain(container, domainURI);
     }
 }
