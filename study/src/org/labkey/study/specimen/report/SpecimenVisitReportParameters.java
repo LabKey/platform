@@ -336,7 +336,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
         sb
         .name(inputName)
-        .addOption(new Option.OptionBuilder().value("All enrollment locations").build());
+        .addOption(new Option.OptionBuilder()
+                .value("")
+                .label("All enrollment locations")
+                .build());
 
         for (LocationImpl location : locations)
         {
@@ -346,7 +349,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
             if (location != null)
             {
-                label = PageFlowUtil.filter(location.getLabel());
+                label = location.getLabel();
                 value = Integer.toString(location.getRowId());
                 currentSelectedSide = location.getRowId();
             }
@@ -438,6 +441,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                     .label(allString)
                     .selected(isAllSubjectsOption(selectedParticipantId))
                     .build());
+
             boolean first = true;
             for (Participant participant : participants)
             {
