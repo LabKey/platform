@@ -3903,14 +3903,18 @@ public class StudyController extends BaseStudyController
         private StudyImpl _study;
         private Dataset _def;
 
+        private int SetterHelper(ViewPreferencesForm form)
+        {
+            int dsid = form.getDatasetId();
+            _study = getStudyRedirectIfNull();
+            _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+            return dsid;
+        }
+
         @Override
         public ModelAndView getView(ViewPreferencesForm form, boolean reshow, BindException errors) throws Exception
         {
-            _study = getStudyRedirectIfNull();
-
-            int dsid = form.getDatasetId();
-
-            _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+            SetterHelper(form);
             if (_def != null)
             {
                 List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
@@ -3923,37 +3927,11 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(ViewPreferencesForm form, BindException errors) throws Exception
         {
-            _study = getStudyRedirectIfNull();
-
-            int dsid = form.getDatasetId();
+            int dsid = SetterHelper(form);
             String defaultView = form.getDefaultView();
-
-            _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
-            if (_def != null)
+            if ((_def != null) && (defaultView != null))
             {
-                List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
-                if (defaultView != null)
-                {
-                    setDefaultView(dsid, defaultView);
-                }
-                else
-                {
-                    defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
-                    if (!StringUtils.isEmpty(defaultView))
-                    {
-                        boolean defaultExists = false;
-                        for (Pair<String, String> view : views)
-                        {
-                            if (StringUtils.equals(view.getValue(), defaultView))
-                            {
-                                defaultExists = true;
-                                break;
-                            }
-                        }
-                        if (!defaultExists)
-                            setDefaultView(dsid, "");
-                    }
-                }
+                setDefaultView(dsid, defaultView);
                 return true;
             }
             throw new NotFoundException("Invalid dataset ID");
