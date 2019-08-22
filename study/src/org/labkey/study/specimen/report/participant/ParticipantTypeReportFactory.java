@@ -101,7 +101,11 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         {
             String label = getLabel(type);
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
-            builder.addOption(new Option.OptionBuilder().value(id).selected(id.equals(selectedId)).build());
+            builder.addOption(new Option.OptionBuilder()
+                    .value(id)
+                    .label(label)
+                    .selected(id.equals(selectedId))
+                    .build());
             appendOptions(type.getChildren(), builder, id, selectedId, indent + 1);
         }
     }
