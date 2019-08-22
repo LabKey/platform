@@ -3909,26 +3909,11 @@ public class StudyController extends BaseStudyController
             _study = getStudyRedirectIfNull();
 
             int dsid = form.getDatasetId();
-            String defaultView = form.getDefaultView();
 
             _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
             if (_def != null)
             {
                 List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
-
-                defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
-                if (!StringUtils.isEmpty(defaultView))
-                {
-                    boolean defaultExists = false;
-                    for (Pair<String, String> view : views)
-                    {
-                        if (StringUtils.equals(view.getValue(), defaultView))
-                        {
-                            defaultExists = true;
-                            break;
-                        }
-                    }
-                }
                 ViewPrefsBean bean = new ViewPrefsBean(views, _def);
                 return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
             }
