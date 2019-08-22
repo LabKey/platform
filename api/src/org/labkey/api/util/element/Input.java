@@ -648,7 +648,7 @@ public class Input extends DisplayElement implements HasHtmlString
     }
 
     @SuppressWarnings("unchecked")
-    public static class InputBuilder<T extends InputBuilder<T>> // TODO: extends DisplayElementBuilder? HtmlString?
+    public static class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString// TODO: extends DisplayElementBuilder?
     {
         private String _autoComplete;
         private Boolean _autoFocus;
@@ -955,6 +955,12 @@ public class Input extends DisplayElement implements HasHtmlString
         public String toString()
         {
             return build().toString();
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            return HtmlString.unsafe(toString());
         }
     }
 }
