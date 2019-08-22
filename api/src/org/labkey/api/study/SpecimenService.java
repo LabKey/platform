@@ -19,20 +19,16 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
-import org.labkey.security.xml.GroupEnumType;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -121,8 +117,8 @@ public interface SpecimenService
         /** @return null if users should always supply a destination site for a given request, or the site's id if they should all be the same */
         Integer getDefaultDestinationSiteId();
 
-        /** @return true if reports shouldn't give the option to filter on additive or derivative types (only on the primary type) */
-        boolean onlyShowPrimaryReportOptions();
+        /** @return true if reports shouldn't give the option to group based on primary, additive, or derivative types */
+        boolean omitTypeGroupingsWhenReporting();
 
         /** @return whether the current user can make changes to the status of the request */
         boolean canChangeStatus(User user);

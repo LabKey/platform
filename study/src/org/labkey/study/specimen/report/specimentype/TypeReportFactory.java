@@ -36,14 +36,9 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
     {
         List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
 
-        StringBuilder builder = new StringBuilder();
-
-        if (SpecimenService.get().getRequestCustomizer().onlyShowPrimaryReportOptions())
+        if (!SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting())
         {
-            builder.append("<input type='hidden' name='").append(PARAMS.typeLevel.name()).append("' value='PrimaryType'>");
-        }
-        else
-        {
+            StringBuilder builder = new StringBuilder();
             builder.append("<select name=\"").append(PARAMS.typeLevel.name()).append("\">");
             for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
             {
@@ -55,9 +50,9 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
                 builder.append(PageFlowUtil.filter(level.getLabel())).append("</option>");
             }
             builder.append("</select>");
+            inputs.add(new Pair<>("Type breakdown", builder.toString()));
         }
 
-        inputs.add(new Pair<>("Type breakdown", builder.toString()));
         return inputs;
     }
 }

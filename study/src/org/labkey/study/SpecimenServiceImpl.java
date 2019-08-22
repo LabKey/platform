@@ -91,7 +91,7 @@ public class SpecimenServiceImpl implements SpecimenService
         }
 
         @Override
-        public boolean onlyShowPrimaryReportOptions()
+        public boolean omitTypeGroupingsWhenReporting()
         {
             return false;
         }
