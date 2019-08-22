@@ -30,6 +30,7 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -127,7 +128,12 @@ function setDefaults()
         </tr>
     <%
         }
-    %>
+        if (SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId() != null)
+        { %>
+        <input type='hidden' id='destinationLocation' name='destinationLocation' value='<%= SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId() %>'/>
+        <% }
+        else
+        { %>
         <tr>
             <th align="left">Requesting Location (Required):</th>
         </tr>
@@ -149,6 +155,7 @@ function setDefaults()
 
             </td>
         </tr>
+        <% } %>
         <%
             for (int i = 0; i < inputs.length; i++)
             {

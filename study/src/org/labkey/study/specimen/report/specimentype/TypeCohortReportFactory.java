@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report.specimentype;
 
+import org.labkey.api.data.Container;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
@@ -38,19 +39,22 @@ import java.util.ArrayList;
  */
 public class TypeCohortReportFactory extends TypeReportFactory
 {
+    @Override
     public boolean allowsCohortFilter()
     {
         return false;
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.TypeCohortReportAction.class;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
     {
-        List<Pair<String, String>> inputs = super.getAdditionalFormInputHtml();
+        List<Pair<String, String>> inputs = super.getAdditionalFormInputHtml(container);
         StudyImpl study =  StudyManager.getInstance().getStudy(getContainer());
         if (study.isAdvancedCohorts())
         {
@@ -72,6 +76,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         return inputs;
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<CohortFilter> reportCohorts = new ArrayList<>();
@@ -94,6 +99,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         return reports;
     }
 
+    @Override
     public String getLabel()
     {
         CohortFilter filter = getCohortFilter();

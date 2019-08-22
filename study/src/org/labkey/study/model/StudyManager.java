@@ -112,6 +112,7 @@ import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -273,27 +274,13 @@ public class StudyManager
                 // Make sure the misses are cached
                 for (Container studylessChild : siblingsWithNoStudies)
                 {
-                    StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), new CacheLoader<String, Object>()
-                    {
-                        @Override
-                        public Object load(String key, @Nullable Object argument)
-                        {
-                            return Collections.emptyList();
-                        }
-                    });
+                    StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), (key, argument) -> Collections.emptyList());
                 }
 
                 // Make sure the sibling hits are cached
                 for (final Study study : siblingsStudies)
                 {
-                    StudyCache.get(getTableInfo(), study.getContainer(), getCacheId(filterArg), new CacheLoader<String, Object>()
-                    {
-                        @Override
-                        public Object load(String key, @Nullable Object argument)
-                        {
-                            return Collections.singletonList(study);
-                        }
-                    });
+                    StudyCache.get(getTableInfo(), study.getContainer(), getCacheId(filterArg), (key, argument) -> Collections.singletonList(study));
                 }
 
                 return result;
@@ -314,13 +301,7 @@ public class StudyManager
             }
         };
 
-        _visitHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoVisit();
-            }
-        }, VisitImpl.class);
+        _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
 
 //        _locationHelper = new QueryHelper<>(new TableInfoGetter()
 //        {
@@ -396,7 +377,7 @@ public class StudyManager
         // NOTE: We really don't want to have multiple instances of DatasetDefinitions in-memory, only return the
         // datasets that are cached under container.containerId/ds.entityId
 
-        private QueryHelper<DatasetDefinition> helper = new QueryHelper<DatasetDefinition>(
+        private QueryHelper<DatasetDefinition> helper = new QueryHelper<>(
                 () -> StudySchema.getInstance().getTableInfoDataset(),
                 DatasetDefinition.class)
         {
@@ -1756,7 +1737,16 @@ public class StudyManager
     @Nullable
     public LocationImpl getLocation(Container container, int id)
     {
-//        return _locationHelper.get(container, id);
+        // If a default ID has been registered, just use that
+        Integer defaultSiteId = SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId();
+        if(defaultSiteId != null && id == defaultSiteId.intValue())
+        {
+            LocationImpl location = new LocationImpl(container, "User Request");
+            location.setRowId(defaultSiteId);
+            location.setDescription("User requested location.");
+            return location;
+        }
+
         List<LocationImpl> locations = getLocations(container, new SimpleFilter(FieldKey.fromParts("RowId"), id), null);
         if (!locations.isEmpty())
             return locations.get(0);

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report.request;
 
+import org.labkey.api.data.Container;
 import org.labkey.study.specimen.report.specimentype.TypeReportFactory;
 import org.labkey.api.util.Pair;
 
@@ -39,9 +40,10 @@ public abstract class BaseRequestReportFactory extends TypeReportFactory
         _completedRequestsOnly = completedRequestsOnly;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
     {
-        List<Pair<String, String>> superInputs = super.getAdditionalFormInputHtml();
+        List<Pair<String, String>> superInputs = super.getAdditionalFormInputHtml(container);
 
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"completedRequestsOnly\">\n");

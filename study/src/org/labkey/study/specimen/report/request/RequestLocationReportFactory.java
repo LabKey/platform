@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report.request;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.PageFlowUtil;
@@ -48,11 +49,13 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         _locationId = locationId;
     }
 
+    @Override
     public boolean allowsAvailabilityFilter()
     {
         return false;
     }
 
+    @Override
     public String getLabel()
     {
         Location location = _locationId != null ? StudyManager.getInstance().getLocation(getContainer(), _locationId) : null;
@@ -65,6 +68,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         return "RequestedByRequestingLocation";
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         LocationImpl[] locations;
@@ -101,12 +105,14 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         return reports;
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.RequestSiteReportAction.class;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"locationId\">\n" +
@@ -121,7 +127,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
             builder.append("</option>\n");
         }
         builder.append("</select>");
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
         inputs.add(new Pair<>("Requesting location(s)", builder.toString()));
         return inputs;
     }

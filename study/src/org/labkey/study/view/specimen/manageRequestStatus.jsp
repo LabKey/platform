@@ -22,12 +22,19 @@
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus"%>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.GroupManager" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.security.xml.GroupEnumType" %>
+<%@ page import="org.labkey.api.security.Group" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
+
+    // trialshare: heavily edit this form to better elaborate the specimen request logic we use.
 %>
 <labkey:errors />
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>" enctype="multipart/form-data" method="POST">
@@ -40,20 +47,28 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Status</th>
+            <th align="right">Current Status</th>
             <td>
-                <select name="status">
-                    <%
+                <% if (SpecimenService.get().getRequestCustomizer().canChangeStatus(getUser())) { %>
+                <select name="status"><%
                         for (SpecimenRequestStatus status : statuses)
                         {
                     %>
                     <option value="<%= status.getRowId() %>"<%=selected(bean.getSpecimenRequest().getStatusId() == status.getRowId())%>>
                         <%= h(status.getLabel()) %>
-                    </option>
-                    <%
-                        }
-                    %>
-                </select>
+                    </option><% } %>
+                </select> <%
+            }
+            else
+            {
+                for (SpecimenRequestStatus status : statuses)
+                {
+                    if(bean.getSpecimenRequest().getStatusId() == status.getRowId())
+                    { %>
+                        <input type='hidden' name='status' value="<%= bean.getSpecimenRequest().getStatusId() %>"/><%= h(status.getLabel()) %><%
+                    }
+                }
+            } %>
             </td>
         </tr>
         <tr>

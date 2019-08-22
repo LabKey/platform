@@ -263,7 +263,7 @@ This folder does not contain a study.
                 <%
                     }
 
-                    List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml();
+                    List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml(container);
                     for (Pair<String, String> inputPair : additionalFormInputs)
                     {
                 %>
@@ -294,7 +294,7 @@ This folder does not contain a study.
                             </label>
                             <br>
                 <%
-                    if (factory.allowsParticipantAggregegates())
+                    if (factory.allowsParticipantAggregates())
                     {
                 %>
                             <label>

@@ -15,9 +15,11 @@
  */
 package org.labkey.study.specimen.report.specimentype;
 
-import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
-import org.labkey.study.SpecimenManager;
+import org.labkey.api.data.Container;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
@@ -25,27 +27,36 @@ import java.util.ArrayList;
 
 /**
  * User: brittp
- * Created: Feb 1, 2008 4:53:25 PM
+ * Created: Feb 1, 2008
  */
 public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 {
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
     {
-        List<Pair<String, String>> inputs = new ArrayList<>();
-        inputs.addAll(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
 
         StringBuilder builder = new StringBuilder();
-        builder.append("<select name=\"").append(PARAMS.typeLevel.name()).append("\">");
-        for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
+
+        if (SpecimenService.get().getRequestCustomizer().onlyShowPrimaryReportOptions())
         {
-            builder.append("<option value=\"").append(PageFlowUtil.filter(level.name())).append("\"");
-            if (getTypeLevelEnum() == level)
-                builder.append(" SELECTED");
-            builder.append(">");
-            builder.append("Show results by: ");
-            builder.append(PageFlowUtil.filter(level.getLabel())).append("</option>");
+            builder.append("<input type='hidden' name='country' value='PrimaryType'>");
         }
-        builder.append("</select>");
+        else
+        {
+            builder.append("<select name=\"").append(PARAMS.typeLevel.name()).append("\">");
+            for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
+            {
+                builder.append("<option value=\"").append(PageFlowUtil.filter(level.name())).append("\"");
+                if (getTypeLevelEnum() == level)
+                    builder.append(" SELECTED");
+                builder.append(">");
+                builder.append("Show results by: ");
+                builder.append(PageFlowUtil.filter(level.getLabel())).append("</option>");
+            }
+            builder.append("</select>");
+        }
+
         inputs.add(new Pair<>("Type breakdown", builder.toString()));
         return inputs;
     }

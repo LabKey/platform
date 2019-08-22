@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report.specimentype;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DemoMode;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
@@ -48,6 +49,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         _participantId = participantId;
     }
 
+    @Override
     public String getLabel()
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
@@ -60,16 +62,19 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         return "TypeByParticipant";
     }
 
+    @Override
     public boolean allowsCohortFilter()
     {
         return false;
     }
 
-    public boolean allowsParticipantAggregegates()
+    @Override
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         String[] participantIds;
@@ -126,14 +131,16 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         return reports;
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.TypeParticipantReportAction.class;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;
     }
