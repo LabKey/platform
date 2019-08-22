@@ -90,6 +90,7 @@ import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -163,6 +164,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExpSchema.register(this);
         PropertyService.get().registerDomainKind(new SampleSetDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
+        PropertyService.get().registerDomainKind(new VocabularyDomainKind());
 
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
