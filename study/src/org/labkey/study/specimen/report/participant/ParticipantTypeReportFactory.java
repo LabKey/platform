@@ -81,14 +81,15 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     {
         for (SpecimenTypeSummary.TypeCount type : types)
         {
-            // Spacing to indent
-            String label =  " ".repeat(indent * 5) + getLabel(type);
+            // Add spacing to label
+            String label = " ".repeat(indent * 5) + getLabel(type);
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
             builder.addOption(new Option.OptionBuilder()
                     .value(id)
                     .label(label)
                     .selected(id.equals(selectedId))
                     .build());
+
             appendOptions(type.getChildren(), builder, id, selectedId, indent + 1);
         }
     }
