@@ -1201,8 +1201,6 @@ public class Portal
                 )
         );
 
-
-
         return h;
     }
 
