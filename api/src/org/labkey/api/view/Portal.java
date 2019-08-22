@@ -1137,20 +1137,22 @@ public class Portal
         Set<String> partsSeen = new HashSet<>();
 
         List<Renderable> options = new ArrayList<>();
-        Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet().forEach(entry ->
-        {
-            if (partsSeen.add(entry.getValue()))
-            {
-                options.add(OPTION(
-                        at(value, entry.getValue()),
-                        entry.getKey()
-                ));
-            }
-        });
+        HtmlString h = HtmlString.EMPTY_STRING;
 
-        if(options.size() == 0)
+        if (null != bean.scope && !"folder".equals(bean.scope))
         {
-            options.add(OPTION(at(value, ""), HR()));
+            Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet().forEach(entry ->
+            {
+                if (partsSeen.add(entry.getValue()))
+                {
+                    options.add(OPTION(
+                            at(value, entry.getValue()),
+                            entry.getKey()));
+                }
+            });
+
+            if (options.size() == 0)
+                options.add(OPTION(at(value, ""), HR()));
         }
 
         Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet().forEach(entry ->
@@ -1164,40 +1166,42 @@ public class Portal
             }
         });
 
-        HtmlString h = createHtml(
-            DIV(
-                X.FORM(
-                    at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
-                    .cl("form-inline").cl(pullClass).cl(visibilityClass),
+        h = createHtml(
+                DIV(
+                        X.FORM(
+                                at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
+                                        .cl("form-inline").cl(pullClass).cl(visibilityClass),
 
-                    INPUT(
-                        at(type, "hidden", name, "X-LABKEY-CSRF", value, CSRFUtil.getExpectedToken(viewContext))
-                    ),
-                    INPUT(
-                        at(type, "hidden", name, "pageId", value, bean.pageId)
-                    ),
-                    INPUT(
-                        at(type, "hidden", name, "location", value, bean.location)
-                    ),
-                    ReturnUrlForm.generateHiddenFormField(currentURL),
-                    DIV(
-                        cl("input-group"),
-                        SELECT(
-                            at(name, "name").cl("form-control"),
-                            OPTION(
-                                at(value, ""),
-                        "<Select Web Part>"),
-                            options.stream()
+                                INPUT(
+                                        at(type, "hidden", name, "X-LABKEY-CSRF", value, CSRFUtil.getExpectedToken(viewContext))
+                                ),
+                                INPUT(
+                                        at(type, "hidden", name, "pageId", value, bean.pageId)
+                                ),
+                                INPUT(
+                                        at(type, "hidden", name, "location", value, bean.location)
+                                ),
+                                ReturnUrlForm.generateHiddenFormField(currentURL),
+                                DIV(
+                                        cl("input-group"),
+                                        SELECT(
+                                                at(name, "name").cl("form-control"),
+                                                OPTION(
+                                                        at(value, ""),
+                                                        "<Select Web Part>"),
+                                                options.stream()
 
-                        ),
-                        SPAN(
-                            cl("input-group-button"),
-                            new Button.ButtonBuilder("Add").submit(true).build()
+                                        ),
+                                        SPAN(
+                                                cl("input-group-button"),
+                                                new Button.ButtonBuilder("Add").submit(true).build()
+                                        )
+                                )
                         )
-                    )
                 )
-            )
         );
+
+
 
         return h;
     }
