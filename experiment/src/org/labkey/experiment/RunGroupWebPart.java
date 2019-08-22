@@ -113,7 +113,7 @@ public class RunGroupWebPart extends QueryView
             addXarFile.setDisplayPermission(InsertPermission.class);
             bb.add(addXarFile);
 
-            ActionButton createExperiment = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), false), "Create Run Group", ActionButton.Action.POST);
+            ActionButton createExperiment = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(getViewContext().getContainer(), getReturnURL(), false), "Create Run Group");
             createExperiment.setActionType(ActionButton.Action.LINK);
             createExperiment.setDisplayPermission(InsertPermission.class);
             bb.add(createExperiment);

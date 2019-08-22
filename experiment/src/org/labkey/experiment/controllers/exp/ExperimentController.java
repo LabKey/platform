@@ -5633,7 +5633,7 @@ public class ExperimentController extends SpringActionController
     public class CreateRunGroupAction extends FormViewAction<CreateExperimentForm>
     {
         @Override
-        public ModelAndView getView(CreateExperimentForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(CreateExperimentForm form, boolean reshow, BindException errors)
         {
             // HACK - convert ExperimentForm to not be a BeanViewForm
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
@@ -5675,58 +5675,65 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(CreateExperimentForm form, BindException errors) throws Exception
         {
-            form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
-            form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+            // This is strange... but the "Create new run group..." menu item on the run grid always POSTs, probably to
+            // allow for long lists of run IDs. This "noPost" parameter on the initial POST is used to inform the action
+            // that it wants to display the form, not try to save anything yet.
+            if (!"true".equals(getViewContext().getRequest().getParameter("noPost")))
+            {
+                form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
+                form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
 
-            Experiment exp = form.getBean();
-            if (exp.getName() == null || exp.getName().trim().length() == 0)
-            {
-                errors.reject(ERROR_MSG, "You must specify a name for the experiment");
-            }
-            else
-            {
-                int maxNameLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();
-                if (exp.getName().length() > maxNameLength)
+                Experiment exp = form.getBean();
+                if (exp.getName() == null || exp.getName().trim().length() == 0)
                 {
-                    errors.reject(ERROR_MSG, "Name of the experiment must be " + maxNameLength + " characters or less.");
+                    errors.reject(ERROR_MSG, "You must specify a name for the experiment");
                 }
-            }
-
-            String lsid;
-            int suffix = 1;
-            do
-            {
-                String template = "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Experiment.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + exp.getName();
-                if (suffix > 1)
+                else
                 {
-                    template = template + suffix;
-                }
-                suffix++;
-                lsid = LsidUtils.resolveLsidFromTemplate(template, new XarContext("Experiment Creation", getContainer(), getUser()), "Experiment");
-            }
-            while (ExperimentService.get().getExpExperiment(lsid) != null);
-            exp.setLSID(lsid);
-            exp.setContainer(getContainer());
-
-            if (errors.getErrorCount() == 0)
-            {
-                ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
-                wrapper.save(getUser());
-
-                if (form.isAddSelectedRuns())
-                {
-                    addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
+                    int maxNameLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();
+                    if (exp.getName().length() > maxNameLength)
+                    {
+                        errors.reject(ERROR_MSG, "Name of the experiment must be " + maxNameLength + " characters or less.");
+                    }
                 }
 
-                if (form.getReturnUrl() != null)
+                String lsid;
+                int suffix = 1;
+                do
                 {
-                    throw new RedirectException(form.getReturnUrl());
+                    String template = "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Experiment.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + exp.getName();
+                    if (suffix > 1)
+                    {
+                        template = template + suffix;
+                    }
+                    suffix++;
+                    lsid = LsidUtils.resolveLsidFromTemplate(template, new XarContext("Experiment Creation", getContainer(), getUser()), "Experiment");
                 }
-                throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
+                while (ExperimentService.get().getExpExperiment(lsid) != null);
+                exp.setLSID(lsid);
+                exp.setContainer(getContainer());
+
+                if (errors.getErrorCount() == 0)
+                {
+                    ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
+                    wrapper.save(getUser());
+
+                    if (form.isAddSelectedRuns())
+                    {
+                        addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
+                    }
+
+                    if (form.getReturnUrl() != null)
+                    {
+                        throw new RedirectException(form.getReturnUrl());
+                    }
+                    throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
+                }
             }
             return true;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
@@ -5736,7 +5743,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CreateExperimentForm createExperimentForm)
         {
-            return new ActionURL(CreateRunGroupAction.class, getContainer());
+            return null; // null is used to show the form in the case where IDs are POSTed from the grid
         }
 
         @Override
