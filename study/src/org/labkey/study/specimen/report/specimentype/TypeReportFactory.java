@@ -40,7 +40,7 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 
         if (SpecimenService.get().getRequestCustomizer().onlyShowPrimaryReportOptions())
         {
-            builder.append("<input type='hidden' name='country' value='PrimaryType'>");
+            builder.append("<input type='hidden' name='").append(PARAMS.typeLevel.name()).append("' value='PrimaryType'>");
         }
         else
         {
