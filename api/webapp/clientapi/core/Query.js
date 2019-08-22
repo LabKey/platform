@@ -893,10 +893,16 @@ LABKEY.Query = new function()
         deleteRows : function(config)
         {
             if (arguments.length > 1)
-            {
                 config = configFromArgs(arguments);
-            }
             config.action = "deleteRows.api";
+            return sendJsonQueryRequest(config);
+        },
+
+        truncateTables : function(config)
+        {
+            if (arguments.length > 1)
+                config = configFromArgs(arguments);
+            config.action = "truncateTable.api";
             return sendJsonQueryRequest(config);
         },
 
