@@ -77,29 +77,12 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return Collections.singletonList(getSpecimenTypePicker());
     }
 
-    @Deprecated
-    private void appendOptions(List<? extends SpecimenTypeSummary.TypeCount> types, StringBuilder builder, String parentId, String selectedId, int indent)
-    {
-        for (SpecimenTypeSummary.TypeCount type : types)
-        {
-            String label = getLabel(type);
-            String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
-            builder.append("<option value=\"").append(id).append("\"");
-            if (id.equals(selectedId))
-                builder.append(" SELECTED");
-            builder.append(">");
-            for (int i = 0; i < indent*5; i++)
-                builder.append("&nbsp;");
-            builder.append(PageFlowUtil.filter(label)).append("</option>\n");
-            appendOptions(type.getChildren(), builder, id, selectedId, indent + 1);
-        }
-    }
-
     private void appendOptions(List<? extends SpecimenTypeSummary.TypeCount> types, Select.SelectBuilder builder, String parentId, String selectedId, int indent)
     {
         for (SpecimenTypeSummary.TypeCount type : types)
         {
-            String label = getLabel(type);
+            // Spacing to indent
+            String label =  " ".repeat(indent * 5) + getLabel(type);
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
             builder.addOption(new Option.OptionBuilder()
                     .value(id)
