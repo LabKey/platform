@@ -98,8 +98,10 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
 
     public NavTree appendNavTrail(NavTree root)
     {
-        return super.appendNavTrail(root)
-            .addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null))
-            .addChild(_protocol.getName() + " Runs");
+        NavTree ret = super.appendNavTrail(root);
+        ret.addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null));
+        ret.addChild(_protocol.getName() + " Runs");
+
+        return ret;
     }
 }

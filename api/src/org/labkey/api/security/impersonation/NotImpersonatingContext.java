@@ -118,8 +118,8 @@ public class NotImpersonatingContext implements ImpersonationContext
             menu.addChild(impersonateMenu);
         }
 
-        NavTree signOut = new NavTree("Sign Out");
-        signOut.setScript(PageFlowUtil.postOnClickJavaScript(PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c)));
+        NavTree signOut = new NavTree("Sign Out", PageFlowUtil.urlProvider(LoginUrls.class).getLogoutURL(c));
+        signOut.usePost();
         menu.addChild(signOut);
     }
 }

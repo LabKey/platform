@@ -352,7 +352,8 @@ public class StudyController extends BaseStudyController
 
         sb.append(getVisitLabelPlural());
 
-        return root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
+        root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
+        return root;
     }
 
     @RequiresPermission(ReadPermission.class)
