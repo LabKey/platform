@@ -337,9 +337,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         sb
         .name(inputName)
         .addOption(new Option.OptionBuilder()
-                .value("")
-                .label("All enrollment locations")
-                .build());
+            .value("")
+            .label("All enrollment locations")
+            .build());
 
         for (LocationImpl location : locations)
         {
