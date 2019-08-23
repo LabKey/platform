@@ -2572,7 +2572,7 @@ public class AdminController extends SpringActionController
         {
             String buttonHTML = "";
             if (getUser().hasRootAdminPermission())
-                buttonHTML += PageFlowUtil.button("Reset All Statistics").onClick(PageFlowUtil.postOnClickJavaScript(getResetQueryStatisticsURL())) + "&nbsp;";
+                buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()).usePost() + "&nbsp;";
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
@@ -6556,8 +6556,10 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root = root.addChild("Folder Management", getManageFoldersURL());
-            return root.addChild("Move Folder");
+            root.addChild("Folder Management", getManageFoldersURL());
+            root.addChild("Move Folder");
+
+            return root;
         }
     }
 
