@@ -305,7 +305,7 @@
         if (confirm('Are you sure you want to clear <%=text(clearMessage)%>?'))
         {
             _form.setClean();
-            <%=PageFlowUtil.postOnClickJavaScript(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>
+            LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c).toString())%>);
             return true;
         }
         else

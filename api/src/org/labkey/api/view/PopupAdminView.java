@@ -43,7 +43,6 @@ import java.util.TreeSet;
  */
 public class PopupAdminView
 {
-
     private static void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)
     {
         List<NavTree> moduleItems = new ArrayList<>();
@@ -117,8 +116,7 @@ public class PopupAdminView
             {
                 String pageAdminTxt = PageFlowUtil.isPageAdminMode(context) ? "Exit Page Admin Mode" : "Page Admin Mode";
                 ActionURL pageAdminUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, context.getActionURL());
-                NavTree pageAdmin = new NavTree(pageAdminTxt);
-                pageAdmin.setScript(PageFlowUtil.postOnClickJavaScript(pageAdminUrl));
+                NavTree pageAdmin = new NavTree(pageAdminTxt, pageAdminUrl).usePost();
                 navTree.addChild(pageAdmin);
             }
 

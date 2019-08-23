@@ -224,7 +224,9 @@ public class AssayController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assays", new ActionURL(BeginAction.class, getContainer())).addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Assays", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            return root;
         }
     }
 
@@ -527,8 +529,11 @@ public class AssayController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
-                    new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
+            root.addChild("Copy Assay Design");
+
+            return root;
         }
     }
 
@@ -1170,7 +1175,9 @@ public class AssayController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             NavTree result = super.appendNavTrail(root);
-            return result.addChild(_protocol.getName() + " Upload Jobs");
+            result.addChild(_protocol.getName() + " Upload Jobs");
+
+            return result;
         }
     }
 
@@ -1474,7 +1481,7 @@ public class AssayController extends SpringActionController
 
                 if (run != null)
                 {
-                    QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
+                    QCState state = QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), form.getState());
                     if (state != null)
                         svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }
@@ -1510,9 +1517,11 @@ public class AssayController extends SpringActionController
             Container c = getContainer();
             ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-            return super.appendNavTrail(root)
-                    .addChild(_protocol.getName() + " Batches", batchListURL)
-                    .addChild("Data Import");
+            NavTree ret = super.appendNavTrail(root);
+            ret.addChild(_protocol.getName() + " Batches", batchListURL);
+            ret.addChild("Data Import");
+
+            return ret;
         }
     }
 }

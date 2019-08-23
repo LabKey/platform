@@ -78,6 +78,7 @@ public class DemoController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
+    @Override
     public PageConfig defaultPageConfig()
     {
         return new PageConfig();
@@ -95,9 +96,11 @@ public class DemoController extends SpringActionController
             return gridView;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Demo", getURL());
+            root.addChild("Demo", getURL());
+            return root;
         }
 
         public ActionURL getURL()
@@ -146,16 +149,19 @@ public class DemoController extends SpringActionController
             return new ActionURL(BeginAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Demo", new ActionURL(BeginAction.class, getContainer())).addChild("Insert Person");
+            root.addChild("Demo", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Insert Person");
+
+            return root;
         }
 
         public ActionURL getURL()
         {
             return new ActionURL(InsertAction.class, getContainer());
         }
-
     }
 
 
@@ -167,6 +173,7 @@ public class DemoController extends SpringActionController
     {
         private Person _person = null;
         
+        @Override
         public boolean handlePost(PersonForm form, BindException errors)
         {
             // Pass in timestamp for optimistic concurrency
@@ -187,6 +194,7 @@ public class DemoController extends SpringActionController
             }
         }
 
+        @Override
         public HttpView getView(PersonForm form, boolean reshow, BindException errors)
         {
             // handles case where handlePost wants to force reselect
@@ -201,19 +209,25 @@ public class DemoController extends SpringActionController
             return new UpdateView(form, errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(PersonForm personForm)
         {
             return new BeginAction().getURL();
         }
 
+        @Override
         public void validateCommand(PersonForm personForm, Errors errors)
         {
             DemoManager.validate(personForm.getBean(), errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Demo", new ActionURL(BeginAction.class, getContainer())).addChild(getPageTitle());
+            root.addChild("Demo", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild(getPageTitle());
+
+            return root;
         }
 
         public String getPageTitle()
@@ -222,11 +236,6 @@ public class DemoController extends SpringActionController
             if (_person != null)
                 name = " -- " + _person.getLastName() + ", " + _person.getFirstName();
             return "Update Record" + name;
-        }
-
-        public ActionURL getURL(Person p)
-        {
-            return new ActionURL(UpdateAction.class, getContainer()).addParameter("rowId", ""+p.getRowId());
         }
     }
 
@@ -249,12 +258,14 @@ public class DemoController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(BulkUpdateForm form, boolean reshow, BindException errors)
         {
             List<Person> people = Arrays.asList(DemoManager.getInstance().getPeople(getContainer()));
             return new JspView<>("/org/labkey/demo/view/bulkUpdate.jsp", people, errors);
         }
 
+        @Override
         public boolean handlePost(BulkUpdateForm form, BindException errors)
         {
             int[] rowIds = form.getRowId();
@@ -282,19 +293,25 @@ public class DemoController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(BulkUpdateForm form, Errors errors)
         {
             form.validate(errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(BulkUpdateForm o)
         {
             return new BeginAction().getURL();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Demo", new ActionURL(BeginAction.class, getContainer())).addChild("Bulk Update");
+            root.addChild("Demo", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Bulk Update");
+
+            return root;
         }
 
         public ActionURL getURL()

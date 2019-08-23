@@ -31,6 +31,7 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Formatter" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -75,8 +76,8 @@
             <td></td><td>
             <%= button("Save").submit(true) %>
             <%= button("Cancel").href(bean.getReturnURLHelper(urlProvider(AdminUrls.class).getAdminConsoleURL())) %>
-            <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='siteResetButton' style='display: none;'")%>
-            <%= button("Delete " + getContainer().getContainerNoun() + "-Level Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes("id='folderResetButton' style='display: none;'")%>
+            <%= button("Reset to Default Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes(Map.of("id","siteResetButton","style","display: none;"))%>
+            <%= button("Delete " + getContainer().getContainerNoun() + "-Level Template").submit(true).onClick("this.form.action=" + qh(buildURL(AdminController.DeleteCustomEmailAction.class)) + ";").attributes(Map.of("id","folderResetButton","style","display: none;"))%>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td colspan="2"><hr></td></tr>
@@ -183,7 +184,7 @@
                 message.value = this.emailTemplates[i].message;
                 Ext4.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
                 Ext4.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
-                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].supportsMultipleContentTypes ? "" : "none";
+                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].hasMultipleContentTypes ? "" : "none";
 
                 changeValidSubstitutions(this.emailTemplates[i]);
                 return;
