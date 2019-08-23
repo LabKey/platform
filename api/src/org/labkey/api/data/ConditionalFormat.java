@@ -109,7 +109,7 @@ public class ConditionalFormat extends GWTConditionalFormat
         {
             sb.append("background-color: #");
             sb.append(getBackgroundColor());
-            sb.append(";");
+            sb.append(" !important;");
         }
 
         return sb.toString();
