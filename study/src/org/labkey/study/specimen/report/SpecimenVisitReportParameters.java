@@ -27,7 +27,7 @@ import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewForm;
@@ -332,30 +332,28 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     protected Pair<String, HtmlString> getEnrollmentSitePicker(String inputName, Set<LocationImpl> locations, Integer selectedSiteId)
     {
-        Select.SelectBuilder sb = new Select.SelectBuilder();
-
-        sb
-        .name(inputName)
-        .addOption(new Option.OptionBuilder()
-            .value("")
-            .label("All enrollment locations")
-            .build());
+        Select.SelectBuilder sb = new Select.SelectBuilder()
+            .name(inputName)
+            .addOption(new OptionBuilder()
+                .value("")
+                .label("All enrollment locations")
+                .build());
 
         for (LocationImpl location : locations)
         {
             String label = "Unassigned enrollment location";
             String value = "-1";
-            int currentSelectedSide = -1;
+            int currentSelectedSite = -1;
 
             if (location != null)
             {
                 label = location.getLabel();
                 value = Integer.toString(location.getRowId());
-                currentSelectedSide = location.getRowId();
+                currentSelectedSite = location.getRowId();
             }
 
-            boolean selected = selectedSiteId != null && selectedSiteId == currentSelectedSide;
-            Option.OptionBuilder ob = new Option.OptionBuilder()
+            boolean selected = selectedSiteId != null && selectedSiteId == currentSelectedSite;
+            OptionBuilder ob = new OptionBuilder()
                 .value(value)
                 .label(label)
                 .selected(selected);
@@ -370,14 +368,14 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     {
         Select.SelectBuilder sb = new Select.SelectBuilder()
             .name("baseCustomViewName")
-            .addOption(new Option.OptionBuilder()
+            .addOption(new OptionBuilder()
                 .value("")
                 .label("Base report on all vials")
                 .build());
 
         for (Map.Entry<String, CustomView> viewEntry : specimenDetailViews.entrySet())
         {
-            Option.OptionBuilder ob = new Option.OptionBuilder();
+            OptionBuilder ob = new OptionBuilder();
             String name = viewEntry.getKey();
             CustomView view = viewEntry.getValue();
 
@@ -434,8 +432,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         HtmlString particpantPickerValues;
         if (participants.size() <= 200)
         {
+            // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
+            // by default, since these reports are extremely expensive to generate.
             builder.name(inputName)
-                .addOption(new Option.OptionBuilder()
+                .addOption(new OptionBuilder()
                     .value(allString)
                     .label(allString)
                     .selected(isAllSubjectsOption(selectedParticipantId))
@@ -448,7 +448,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
                         (selectedParticipantId == null && first);
                 first = false;
 
-                builder.addOption(new Option.OptionBuilder()
+                builder.addOption(new OptionBuilder()
                     .value(participant.getParticipantId())
                     .label(DemoMode.id(participant.getParticipantId(), getContainer(), getUser()))
                     .selected(isSelected)
