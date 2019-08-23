@@ -27,7 +27,6 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
@@ -81,17 +80,29 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     {
         for (SpecimenTypeSummary.TypeCount type : types)
         {
-            // Add spacing to label
-            String label = " ".repeat(indent * 5) + getLabel(type);
+            String spacing = generateSpacing(indent);
+            String label = getLabel(type);
+            HtmlString encodedLabel = unsafe(spacing.concat(HtmlString.of(label).toString()));
+
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
             builder.addOption(new Option.OptionBuilder()
                     .value(id)
-                    .label(label)
+                    .label(encodedLabel)
                     .selected(id.equals(selectedId))
                     .build());
 
             appendOptions(type.getChildren(), builder, id, selectedId, indent + 1);
         }
+    }
+
+    private String generateSpacing(int indent)
+    {
+        String spacing = HtmlString.EMPTY_STRING.toString();
+        for (int i = 0; i < indent * 5; i++)
+        {
+            spacing = spacing.concat(HtmlString.NBSP.toString());
+        }
+        return spacing;
     }
 
     public String getSelectedType()
