@@ -15,15 +15,16 @@
  */
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
-import {ActionURL} from "@labkey/api";
+import {ActionURL, Security} from "@labkey/api";
 import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
-import {Alert, LoadingSpinner} from "@glass/base";
+import { Alert, LoadingSpinner, PermissionTypes } from "@glass/base";
 
 type State = {
     protocolId: number,
     returnUrl: string,
     model?: AssayProtocolModel,
-    isLoading: boolean,
+    isLoadingModel: boolean,
+    hasDesignAssayPerm?: boolean
     message?: string
     dirty: boolean
 }
@@ -38,34 +39,49 @@ export class App extends React.Component<any, State> {
 
         this.state = {
             protocolId: rowId,
-            isLoading: true,
+            isLoadingModel: true,
             returnUrl,
-            dirty: false // TODO need handler to toggle this to true on changes to AssayDesignerPanels component
+            dirty: false
         };
     }
 
     componentDidMount() {
         const { protocolId } = this.state;
 
+        // query to find out if the user has permission to save assay designs
+        Security.getUserPermissions({
+            success: (data) => {
+                this.setState(() => ({
+                    hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1
+                }));
+            },
+            failure: (error) => {
+                this.setState(() => ({
+                    message: error.exception,
+                    hasDesignAssayPerm: false
+                }));
+            }
+        });
+
         // if URL has a protocol RowId, look up the assay design info
         if (protocolId) {
             fetchProtocol(protocolId)
                 .then((model) => {
-                    this.setState({
+                    this.setState(() => ({
                         model,
-                        isLoading: false
-                    });
+                        isLoadingModel: false
+                    }));
                 })
                 .catch((error) => {
-                    this.setState({
+                    this.setState(() => ({
                         message: error.exception,
-                        isLoading: false
-                    });
+                        isLoadingModel: false
+                    }));
                 });
         }
         // else we are on this page to create a new assay design
         else {
-            this.setState(() => ({isLoading: false}));
+            this.setState(() => ({isLoadingModel: false}));
         }
 
         window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
@@ -83,9 +99,10 @@ export class App extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         const { returnUrl } = this.state;
-        // this.setState(() => ({dirty: false}), () => {
+
+        this.setState(() => ({dirty: false}), () => {
             window.location.href = returnUrl || defaultUrl;
-        // });
+        });
     }
 
     onCancel = () => {
@@ -94,6 +111,10 @@ export class App extends React.Component<any, State> {
 
     onComplete = (model: AssayProtocolModel) => {
         this.navigate(ActionURL.buildURL('assay', 'assayBegin', null, {rowId: model.protocolId}));
+    };
+
+    onChange = (model: AssayProtocolModel) => {
+        this.setState(() => ({dirty: true}));
     };
 
     renderReadOnlyView() {
@@ -125,28 +146,35 @@ export class App extends React.Component<any, State> {
                 initModel={model}
                 onCancel={this.onCancel}
                 onComplete={this.onComplete}
+                onChange={this.onChange}
             />
         )
     }
 
     render() {
-        const { isLoading, message } = this.state;
-        const readOnly = false;// TODO show this read only view for users without DesignAssayPermission
+        const { isLoadingModel, hasDesignAssayPerm, message, model } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
         }
 
-        if (isLoading) {
+        // set as loading until model is loaded and we know if the user has DesignAssayPerm
+        if (isLoadingModel || hasDesignAssayPerm === undefined) {
             return <LoadingSpinner/>
         }
 
-        if (readOnly) {
-            return <>{this.renderReadOnlyView()}</>
+        // check if this is a create assay case with a user that doesn't have permissions
+        if (model === undefined && !hasDesignAssayPerm) {
+            return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>
         }
 
         return (
-            <>{this.renderDesignerView()}</>
+            <>
+                {hasDesignAssayPerm
+                    ? this.renderDesignerView()
+                    : this.renderReadOnlyView()
+                }
+            </>
         )
     }
 }

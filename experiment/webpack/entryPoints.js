@@ -7,7 +7,7 @@ module.exports = {
     apps: [{
         name: 'assayDesigner',
         title: 'Assay Designer',
-        permission: 'admin', // TODO this should be DesignAssayPermission
+        permission: 'read', // the component will check for DesignAssayPermission and show edit vs read only mode accordingly
         path: './src/client/AssayDesigner'
     },{
         name: 'domainDesigner',

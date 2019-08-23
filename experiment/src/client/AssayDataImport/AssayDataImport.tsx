@@ -304,7 +304,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = selected === undefined;
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step 1: Select an available assay{this.userCanCreateAssay() ? ' or the option to create a new one' : ''}&nbsp;
                     {assays && assays.size > 0 && selected !== undefined && <Button onClick={() => this.onAssayCardClick(undefined)}>Clear selection</Button>}
@@ -328,7 +328,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = showStep && !this.hasValidNewAssayName();
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step 3: Enter properties for the new assay
                 </Panel.Heading>
@@ -359,7 +359,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = showStep && !this.state.file;
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step 2: Upload a data file
                 </Panel.Heading>
@@ -413,7 +413,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = (this.getSelectedAssay() || this.isValidNewAssay()) && file;
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step {this.isCreateNewAssay() ? 5: 4}: Submit
                 </Panel.Heading>
