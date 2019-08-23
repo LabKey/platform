@@ -23,7 +23,7 @@ import org.labkey.api.util.ConfigurationException;
 public enum JavaVersion
 {
     JAVA_12(false, true),
-    JAVA_13(false, false),
+    JAVA_13(false, true),
     JAVA_14(false, false),
     JAVA_FUTURE(false, false);
 
@@ -49,7 +49,7 @@ public enum JavaVersion
     public static JavaVersion get()
     {
         // Determine current Java specification version, normalized to an int (e.g., 8, 9, 10, 11, 12, 13...). Commons lang
-        // methods like SystemUtils.isJavaVersionAtLeast() aren't an option because this library isn't released often enough
+        // methods like SystemUtils.isJavaVersionAtLeast() aren't an option because that library isn't released often enough
         // to keep up with the Java rapid release cadence.
         String[] versionArray = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");
 
@@ -63,7 +63,7 @@ public enum JavaVersion
         }
 
         if (version < 12)
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 12. We recommend installing " + getRecommendedJavaVersion() + ".");
+            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 12 or Java 13. We recommend installing " + getRecommendedJavaVersion() + ".");
 
         return JAVA_FUTURE;
     }
@@ -76,6 +76,6 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "Oracle OpenJDK 12";
+        return "Oracle OpenJDK 13";
     }
 }
