@@ -53,8 +53,8 @@ public class RequestNotificationSettings
 
     public enum DefaultEmailNotifyEnum implements EnumHasHtmlString<DefaultEmailNotifyEnum>
     {All, None, ActorsInvolved}
-
-    public enum SpecimensAttachmentEnum {InEmailBody, ExcelAttachment, TextAttachment, Never}
+    public enum SpecimensAttachmentEnum implements EnumHasHtmlString<SpecimensAttachmentEnum>
+    {InEmailBody, ExcelAttachment, TextAttachment, Never}
 
     public RequestNotificationSettings()
     {
