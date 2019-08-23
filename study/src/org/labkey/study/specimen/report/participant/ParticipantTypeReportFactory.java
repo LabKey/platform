@@ -82,7 +82,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         {
             String spacing = generateSpacing(indent);
             String label = getLabel(type);
-            HtmlString encodedLabel = unsafe(spacing.concat(HtmlString.of(label).toString()));
+            HtmlString encodedLabel = unsafe(spacing + HtmlString.of(label));
 
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
             builder.addOption(new Option.OptionBuilder()
@@ -97,7 +97,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     private String generateSpacing(int indent)
     {
-        String spacing = HtmlString.EMPTY_STRING.toString();
+        String spacing = "";
         for (int i = 0; i < indent * 5; i++)
         {
             spacing = spacing.concat(HtmlString.NBSP.toString());

@@ -18,6 +18,8 @@ package org.labkey.api.util.element;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
+import javax.validation.constraints.NotNull;
+
 public class Option
 {
     private boolean _disabled;
@@ -69,7 +71,7 @@ public class Option
 
         sb.append(">");
 
-        if (getLabel() != null && !HtmlString.EMPTY_STRING.equals(getLabel()))
+        if (!HtmlString.EMPTY_STRING.equals(getLabel()))
             sb.append(getLabel());
 
         sb.append("</option>");
@@ -79,8 +81,10 @@ public class Option
 
     public static class OptionBuilder
     {
-        private boolean _disabled;
+        @NotNull
         private HtmlString _label;
+
+        private boolean _disabled;
         private boolean _selected;
         private String _value;
 
