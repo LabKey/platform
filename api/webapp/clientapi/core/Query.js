@@ -898,6 +898,30 @@ LABKEY.Query = new function()
             return sendJsonQueryRequest(config);
         },
 
+        /**
+         * Delete all rows in a table.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {Function} config.success Function called when the "truncateTables" function executes successfully.
+         Will be called with the following arguments:
+         // todo
+         * @param {Function} [config.failure] Function called when execution of the "deleteRows" function fails.
+         // todo?
+         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @returns {Mixed} In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+         * @see LABKEY.Query.ModifyRowsResults
+         * @see LABKEY.Query.ModifyRowsOptions
+         */
         truncateTables : function(config)
         {
             if (arguments.length > 1)
