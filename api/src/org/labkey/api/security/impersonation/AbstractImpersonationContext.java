@@ -78,8 +78,8 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        NavTree stop = new NavTree("Stop Impersonating");
-        stop.setScript(PageFlowUtil.postOnClickJavaScript(PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL())));
+        ActionURL url = PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL());
+        NavTree stop = new NavTree("Stop Impersonating", url).usePost();
         menu.addChild(stop);
     }
 

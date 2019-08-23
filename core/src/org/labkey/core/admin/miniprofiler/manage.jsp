@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.miniprofiler.MiniProfilerController" %>
@@ -121,7 +120,7 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
             <td>
                     <%--<%= button("Reset to Default"). %>&nbsp;--%>
                 <%= button("Save").submit(true) %>
-                <%= button("Reset").onClick(PageFlowUtil.postOnClickJavaScript(buildURL(MiniProfilerController.ResetAction.class))) %>
+                <%= button("Reset").href(urlFor(MiniProfilerController.ResetAction.class)).usePost() %>
                 <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>
             </td>
         </tr>

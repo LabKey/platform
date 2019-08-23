@@ -392,8 +392,8 @@
     %>
     <td class="labkey-participant-view-header" colspan="<%=keyCount%>">
         <%=formatDate(date)%>
-        <%=(study.getTimepointType().isVisitBased() && date != null ? HtmlString.unsafe("<br/>Visit: ") : "")%>
-        <%=(study.getTimepointType().isVisitBased() ? seqNum : "")%>
+        <%=(study.getTimepointType().isVisitBased() && date != null ? HtmlString.unsafe("<br/>Visit: ") : HtmlString.EMPTY_STRING)%>
+        <%=(study.getTimepointType().isVisitBased() ? seqNum : HtmlString.EMPTY_STRING)%>
     </td>
     <%
             }
