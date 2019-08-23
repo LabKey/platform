@@ -1301,7 +1301,9 @@ public class SecurityController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
-            return root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL()).addChild("Add Users");
+            root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
+            root.addChild("Add Users");
+            return root;
         }
 
         public void validateCommand(AddUsersForm form, Errors errors) {}
