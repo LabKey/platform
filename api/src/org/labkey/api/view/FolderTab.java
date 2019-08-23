@@ -143,7 +143,12 @@ public abstract class FolderTab
 
                 if (parts.size() > 0)
                 {
-                    Portal.saveParts(container, getDbName(), parts);
+                    // Page initialization requires a GET when first loading a folder (and its tabs) with webparts.
+                    // However, this is not a CSRF vulnerability as an attacker could only create a folder.
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        Portal.saveParts(container, getDbName(), parts);
+                    }
                 }
             }
         }
