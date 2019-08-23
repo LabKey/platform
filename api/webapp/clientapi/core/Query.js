@@ -908,10 +908,7 @@ LABKEY.Query = new function()
          href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
          How To Find schemaName, queryName &amp; viewName</a>.
          * @param {Function} config.success Function called when the "truncateTables" function executes successfully.
-         Will be called with the following arguments:
-         // todo
          * @param {Function} [config.failure] Function called when execution of the "deleteRows" function fails.
-         // todo?
          * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
          *       generating a timeout error (defaults to 30000).
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
