@@ -1104,7 +1104,7 @@ public class Portal
                 newBean.scope = bean.scope;
                 // Add right webpart dropdown should be hidden on extra small screens
                 HtmlString rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
-                return leftWidget.toString().concat(rightWidget.toString());
+                return leftWidget.toString() + rightWidget.toString();
             }
 
             return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left").toString();
@@ -1121,7 +1121,7 @@ public class Portal
             HtmlString rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
             HtmlString rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
 
-            return leftBottomWidget.toString().concat(rightBottomWidget.toString()).concat(rightMainWidget.toString());
+            return leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString();
         }
         else
         {
