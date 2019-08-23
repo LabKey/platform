@@ -5,9 +5,14 @@
  */
 module.exports = {
     apps: [{
-        name: 'test',
-        title: 'Test Page',
-        permission: 'read',
-        path: './src/client/TestPage'
+        name: 'assayDesigner',
+        title: 'Assay Designer',
+        permission: 'read', // the component will check for DesignAssayPermission and show edit vs read only mode accordingly
+        path: './src/client/AssayDesigner'
+    },{
+        name: 'assayDataImport',
+        title: 'Assay Data Import',
+        permission: 'insert',
+        path: './src/client/AssayDataImport'
     }]
 };
