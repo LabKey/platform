@@ -45,7 +45,7 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
         for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
         {
             builder.addOption(new Option.OptionBuilder()
-                .value(level.toString())
+                .value(level.name())
                 .label("Show results by: " + level.getLabel())
                 .selected(getTypeLevelEnum() == level)
                 .build()
