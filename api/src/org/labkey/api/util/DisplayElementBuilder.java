@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -87,9 +88,11 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
 
     public BUILDER addClass(@NotNull String cssClass)
     {
-        if (this.cssClass == null)
-            this.cssClass = "";
-        this.cssClass += " " + cssClass;
+        if (StringUtils.isEmpty(this.cssClass))
+            this.cssClass = cssClass;
+        else
+            this.cssClass += " " + cssClass;
+
         return getThis();
     }
 

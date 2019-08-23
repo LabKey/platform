@@ -489,7 +489,11 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return appendRootNavTrail(root).addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer())).addChild(_experiment.getName());
+            appendRootNavTrail(root);
+            root.addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
+            root.addChild(_experiment.getName());
+
+            return root;
         }
     }
 
@@ -508,7 +512,10 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("Sample Sets");
+            appendRootNavTrail(root);
+            root.addChild("Sample Sets");
+
+            return root;
         }
     }
 
@@ -654,7 +661,10 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             ActionURL url = new ActionURL(ListMaterialSourcesAction.class, getContainer());
-            return appendRootNavTrail(root).addChild("Sample Sets", url).addChild("Sample Set " + _source.getName());
+            appendRootNavTrail(root).addChild("Sample Sets", url);
+            root.addChild("Sample Set " + _source.getName());
+
+            return root;
         }
     }
 
@@ -680,7 +690,10 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("All Materials");
+            appendRootNavTrail(root);
+            root.addChild("All Materials");
+
+            return root;
         }
     }
 
@@ -967,7 +980,11 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("dataClass");
             ActionURL url = new ActionURL(ListDataClassAction.class, getContainer());
-            return appendRootNavTrail(root).addChild("Data Class", url).addChild(_dataClass.getName());
+            appendRootNavTrail(root);
+            root.addChild("Data Class", url);
+            root.addChild(_dataClass.getName());
+
+            return root;
         }
     }
 
@@ -1456,14 +1473,9 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ToggleRunExperimentMembershipAction extends SimpleViewAction<ToggleRunExperimentMembershipForm>
+    public class ToggleRunExperimentMembershipAction extends FormHandlerAction<ToggleRunExperimentMembershipForm>
     {
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public ModelAndView getView(ToggleRunExperimentMembershipForm form, BindException errors)
+        public boolean handlePost(ToggleRunExperimentMembershipForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
             // Check if the user has permission to update this run
@@ -1497,7 +1509,18 @@ public class ExperimentController extends SpringActionController
                 exp.removeRun(getUser(), run);
             }
 
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ToggleRunExperimentMembershipForm form)
+        {
             return null;
+        }
+
+        @Override
+        public void validateCommand(ToggleRunExperimentMembershipForm target, Errors errors)
+        {
         }
     }
 
@@ -2388,7 +2411,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run)).addChild("Protocol Application " + _app.getName());
+            appendRootNavTrail(root);
+            root.addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run));
+            root.addChild("Protocol Application " + _app.getName());
+
+            return root;
         }
     }
 
@@ -2459,7 +2486,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).addChild("Protocol: " + _protocol.getName());
+            appendRootNavTrail(root);
+            root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
+            root.addChild("Protocol: " + _protocol.getName());
+
+            return root;
         }
     }
 
@@ -2541,6 +2572,7 @@ public class ExperimentController extends SpringActionController
         private ExpProtocol _parentProtocol;
         private ProtocolActionStepDetail _actionStep;
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL url = getViewContext().getActionURL();
@@ -2590,12 +2622,15 @@ public class ExperimentController extends SpringActionController
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, protocolDetails);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).
-                    addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).
-                    addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol)).
-                    addChild("Protocol Step: " + _actionStep.getName());
+            appendRootNavTrail(root);
+            root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
+            root.addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol));
+            root.addChild("Protocol Step: " + _actionStep.getName());
+
+            return root;
         }
     }
 
@@ -2921,7 +2956,9 @@ public class ExperimentController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Confirm Deletion");
+            appendRootNavTrail(root).addChild("Confirm Deletion");
+
+            return root;
         }
 
         protected abstract void deleteObjects(DeleteForm form) throws Exception;
@@ -5593,15 +5630,59 @@ public class ExperimentController extends SpringActionController
 
     @RequiresPermission(InsertPermission.class)
     @ActionNames("createRunGroup, createExperiment")
-    public class CreateRunGroupAction extends SimpleViewAction<CreateExperimentForm>
+    public class CreateRunGroupAction extends FormViewAction<CreateExperimentForm>
     {
-        public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(CreateExperimentForm form, boolean reshow, BindException errors)
         {
             // HACK - convert ExperimentForm to not be a BeanViewForm
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) && !"true".equals(getViewContext().getRequest().getParameter("noPost")))
+
+            DataRegion drg = new DataRegion();
+
+            drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
+            drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
+            form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+            // Fix issue 27562 - include session-stored selection
+            if (form.getDataRegionSelectionKey() != null)
             {
+                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, false))
+                {
+                    drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
+                }
+            }
+            drg.addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+
+            drg.addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments,Created");
+
+            DisplayColumn col = drg.getDisplayColumn("RowId");
+            col.setVisible(false);
+            drg.getDisplayColumn("LSID").setVisible(false);
+            drg.getDisplayColumn("Created").setVisible(false);
+
+            ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
+            ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit", ActionButton.Action.POST);
+            bb.add(insertButton);
+
+            drg.setButtonBar(bb);
+
+            return new InsertView(drg, errors);
+        }
+
+
+        @Override
+        public boolean handlePost(CreateExperimentForm form, BindException errors) throws Exception
+        {
+            // This is strange... but the "Create new run group..." menu item on the run grid always POSTs, probably to
+            // allow for long lists of run IDs. This "noPost" parameter on the initial POST is used to inform the action
+            // that it wants to display the form, not try to save anything yet.
+            if (!"true".equals(getViewContext().getRequest().getParameter("noPost")))
+            {
+                form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
+                form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+
                 Experiment exp = form.getBean();
                 if (exp.getName() == null || exp.getName().trim().length() == 0)
                 {
@@ -5649,44 +5730,24 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
                 }
             }
-
-            DataRegion drg = new DataRegion();
-
-            drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
-            drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
-            form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            // Fix issue 27562 - include session-stored selection
-            if (form.getDataRegionSelectionKey() != null)
-            {
-                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, false))
-                {
-                    drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
-                }
-            }
-            drg.addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-
-            drg.addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments,Created");
-
-            DisplayColumn col = drg.getDisplayColumn("RowId");
-            col.setVisible(false);
-            drg.getDisplayColumn("LSID").setVisible(false);
-            drg.getDisplayColumn("Created").setVisible(false);
-
-            ButtonBar bb = new ButtonBar();
-            bb.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit");
-            bb.add(insertButton);
-
-            drg.setButtonBar(bb);
-
-            return new InsertView(drg, errors);
+            return true;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
             return root.addChild("Create Run Group");
         }
+
+        @Override
+        public URLHelper getSuccessURL(CreateExperimentForm createExperimentForm)
+        {
+            return null; // null is used to show the form in the case where IDs are POSTed from the grid
+        }
+
+        @Override
+        public void validateCommand(CreateExperimentForm target, Errors errors) { }
     }
 
     public static class MoveRunsForm implements DataRegionSelection.DataSelectionKeyForm

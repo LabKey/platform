@@ -47,6 +47,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
 {
     private ExpProtocol _protocol;
 
+    @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
         _protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
@@ -94,11 +95,15 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
     protected abstract GraphSelectedBean createSelectionBean(ViewContext context, ExpProtocol protocol, int[] cutoffs,
                                                              int[] dataObjectIds, String caption, String title);
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer());
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
-        return root.addChild("Assay List", assayListURL).addChild(_protocol.getName() +
-                " Runs", runListURL).addChild("Graph Selected Specimens");
+        root.addChild("Assay List", assayListURL);
+        root.addChild(_protocol.getName() + " Runs", runListURL);
+        root.addChild("Graph Selected Specimens");
+
+        return root;
     }
 }

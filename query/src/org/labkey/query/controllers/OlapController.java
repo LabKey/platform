@@ -463,9 +463,9 @@ public class OlapController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root
-                    .addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()))
-                    .addChild("Create Custom OLAP Definition");
+            root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
+            root.addChild("Create Custom OLAP Definition");
+            return root;
         }
     }
 
@@ -488,9 +488,9 @@ public class OlapController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root
-                    .addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()))
-                    .addChild("Update Custom OLAP Definition");
+            root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
+            root.addChild("Update Custom OLAP Definition");
+            return root;
         }
     }
 
@@ -1490,9 +1490,9 @@ public class OlapController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root
-                    .addChild("Manage Application", new ActionURL(ManageAppsAction.class, getContainer()))
-                    .addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
+            root.addChild("Manage Application", new ActionURL(ManageAppsAction.class, getContainer()));
+            root.addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
+            return root;
         }
     }
 
