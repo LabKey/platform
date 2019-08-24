@@ -44,8 +44,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 {
     protected String _path;
     protected HttpJspPage _page;
-    @Nullable
-    protected Errors _errors;
+    protected @Nullable Errors _errors;
 
     // HttpJspPage constructors
 
@@ -103,6 +102,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
      * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
      * @param jspName the file name of the JSP, without any path information
      */
+    @Deprecated // Do not use. Use the string constructors instead -- they work much better with IntelliJ navigation & refactors, and with our tools
     public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model)
     {
         super(model);
@@ -120,6 +120,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
      * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
      * @param jspName the file name of the JSP, without any path information
      */
+    @Deprecated // Do not use. Use the string constructors instead -- they work much better with IntelliJ navigation & refactors, and with our tools
     public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model, @Nullable Errors errors)
     {
         this(packageClass, jspName, model);
