@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public final class HtmlString implements DOM.Renderable
 {
@@ -79,5 +80,20 @@ public final class HtmlString implements DOM.Renderable
         {
             throw new RuntimeException(x);
         }
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HtmlString that = (HtmlString) o;
+        return Objects.equals(_s, that._s);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_s);
     }
 }
