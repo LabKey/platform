@@ -3575,8 +3575,8 @@ public class ExperimentController extends SpringActionController
         //Parameter used by the Flow module
         private Boolean nameReadOnly = false;
 
-        private List<String> importAliasKeys;
-        private List<String> importAliasValues;
+        private List<String> importAliasKeys = new ArrayList<>();
+        private List<String> importAliasValues = new ArrayList<>();
 
         /** */
         private String importAliasJSON;
