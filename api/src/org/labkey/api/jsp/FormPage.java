@@ -24,28 +24,32 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
 {
     public FORM __form;
     
-    static public <F extends HasViewContext> FormPage<F> get(FormPage<F> formPage, F form)
+    private static <F extends HasViewContext> FormPage<F> get(FormPage<F> formPage, F form)
     {
         formPage.setForm(form);
         return formPage;
     }
 
-    static public <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
+    @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    public static <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
     {
         return get((FormPage<F>) JspLoader.createPage(clazzPackage, name), form);
     }
 
-    static public <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
+    public static <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
     {
         return get((FormPage<F>) JspLoader.createPage((String)null, jspPath), form);
     }
 
-    static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)
+
+    // TODO: Migrate usages to new JspView<>()? There should be no difference
+    public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
     {
-        return get(clazzPackage, form, name).createView(errors);
+        return get(jspPath, form).createView(errors);
     }
 
-    static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
+    @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    public static <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
     {
         return get(clazzPackage, form, name).createView();
     }

@@ -213,7 +213,7 @@ public class ToolsController extends SpringActionController
                     List<String> candidates = jspFiles.stream()
                         .filter(s->s.endsWith(path))
                         .collect(Collectors.toUnmodifiableList());
-                    out.println(filter(path + (candidates.isEmpty() ? "" : StringUtils.repeat(' ', Math.max(50 - path.length(), 0)) + " " + candidates)));
+                    out.println(filter(path + (candidates.isEmpty() ? "" : StringUtils.repeat(' ', Math.max(53 - path.length(), 0)) + " " + candidates)));
                     jspFiles.removeAll(candidates);
                 });
 

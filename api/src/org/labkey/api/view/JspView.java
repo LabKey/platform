@@ -72,20 +72,20 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
     // String constructors 
 
-    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
-    public JspView(String page)
+    /** @param jspPath path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
+    public JspView(String jspPath)
     {
-        this(page, null);
+        this(jspPath, null);
     }
 
-    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
-    public JspView(String page, @Nullable ModelClass model)
+    /** @param jspPath path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
+    public JspView(String jspPath, @Nullable ModelClass model)
     {
         super(model);
         setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
-        _path = page;
-        _page = JspLoader.createPage((String)null, page);
+        _path = jspPath;
+        _page = JspLoader.createPage((String)null, jspPath);
 
         if (_page instanceof AbstractJspBase)
             addClientDependencies(((AbstractJspBase)_page).getClientDependencies());
