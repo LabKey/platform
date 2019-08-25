@@ -46,7 +46,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     @Override
@@ -237,8 +237,8 @@ if (!pipelineSet)
                     hasVisitAssociations = true;
                     VisitDatasetType type = vm.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL;
                     %><tr>
-                        <td><%= h(visit.getDisplayString()) %></td>
-                        <td><%=text(type == VisitDatasetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
+                        <td><%=h(visit.getDisplayString())%></td>
+                        <td><%=h(type.getLabel())%></td>
                     </tr><%
                 }
             }

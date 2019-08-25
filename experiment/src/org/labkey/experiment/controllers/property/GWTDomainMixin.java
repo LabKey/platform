@@ -39,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "defaultValueOptions",
         "defaultValuesURL",
         "provisioned",
+        "domainException",
 })
 public interface GWTDomainMixin
 {

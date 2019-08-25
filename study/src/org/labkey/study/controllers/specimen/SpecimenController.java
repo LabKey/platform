@@ -274,13 +274,15 @@ public class SpecimenController extends BaseStudyController
     private NavTree appendSpecimenRequestsNavTrail(NavTree root)
     {
         root = appendBaseSpecimenNavTrail(root);
-        return root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        return root;
     }
 
     private NavTree appendSpecimenRequestNavTrail(NavTree root, int requestId)
     {
         root = appendSpecimenRequestsNavTrail(root);
-        return root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
+        root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
+        return root;
     }
 
 
