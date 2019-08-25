@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp;
 
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.view.JspView;
 import org.labkey.api.action.HasViewContext;
 import org.springframework.validation.BindException;
@@ -31,6 +32,7 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     }
 
     @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
     public static <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
     {
         return get((FormPage<F>) JspLoader.createPage(clazzPackage, name), form);
@@ -45,16 +47,19 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     // TODO: Migrate usages to new JspView<>()? There should be no difference
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
     {
-        return get(jspPath, form).createView(errors);
+        return new JspView<>(jspPath, form, errors);
+        //return get(jspPath, form).createView(errors);
     }
 
     // TODO: Migrate usages to new JspView<>()? There should be no difference
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form)
     {
-        return get(jspPath, form).createView();
+        return new JspView<>(jspPath, form);
+//        return get(jspPath, form).createView();
     }
 
     @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
     public static <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
     {
         return get(clazzPackage, form, name).createView();
