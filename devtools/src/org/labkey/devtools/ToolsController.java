@@ -205,7 +205,7 @@ public class ToolsController extends SpringActionController
                 jspFiles.forEach(path->out.println(filter(path)));
 
                 out.println();
-                out.println("JSP references that couldn't be resolved to JSP files (plus any candidates for resolution):");
+                out.println("JSP references that couldn't be resolved to JSP files [plus any candidates for resolution]:");
                 out.println();
 
                 jspReferences.removeAll(copyOfJspFiles);
@@ -321,12 +321,13 @@ public class ToolsController extends SpringActionController
                             String filePath = file.toString().replaceAll("\\\\", "/");
                             if (filePath.endsWith(".jsp"))
                             {
-                                int idx = filePath.indexOf("/org/labkey");
+                                // Accommodates /org/labkey and /org/scharp
+                                int idx = filePath.indexOf("/org/");
 
                                 if (-1 != idx)
                                     ret.add(filePath.substring(idx));
                                 else
-                                    out.println(filter("Can't find \"/org/labkey\": " + filePath));
+                                    out.println(filter("Can't find \"/org/\": " + filePath));
                             }
 
                             return FileVisitResult.CONTINUE;
