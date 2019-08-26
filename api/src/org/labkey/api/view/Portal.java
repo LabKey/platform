@@ -1136,8 +1136,7 @@ public class Portal
         ActionURL currentURL = viewContext.getActionURL();
         Set<String> partsSeen = new HashSet<>();
 
-        List<Renderable> options = new ArrayList<>();
-        HtmlString h = HtmlString.EMPTY_STRING;
+        List<Renderable> OPTIONS = new ArrayList<>();
 
         if (null != bean.scope && !"folder".equals(bean.scope))
         {
@@ -1145,28 +1144,28 @@ public class Portal
             {
                 if (partsSeen.add(entry.getValue()))
                 {
-                    options.add(OPTION(
+                    OPTIONS.add(OPTION(
                             at(value, entry.getValue()),
                             entry.getKey()));
                 }
             });
 
-            if (options.size() == 0)
-                options.add(OPTION(at(value, ""), HR()));
+            if (OPTIONS.size() > 0)
+                OPTIONS.add(OPTION(at(value, ""), HR()));
         }
 
         Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet().forEach(entry ->
         {
             if (partsSeen.add(entry.getValue()))
             {
-                options.add(OPTION(
+                OPTIONS.add(OPTION(
                         at(value, entry.getValue()),
                         entry.getKey()
                 ));
             }
         });
 
-        h = createHtml(
+       return createHtml(
                 DIV(
                         X.FORM(
                                 at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
@@ -1189,7 +1188,7 @@ public class Portal
                                                 OPTION(
                                                         at(value, ""),
                                                         "<Select Web Part>"),
-                                                options.stream()
+                                                OPTIONS.stream()
 
                                         ),
                                         SPAN(
@@ -1200,8 +1199,6 @@ public class Portal
                         )
                 )
         );
-
-        return h;
     }
 
     public static void addViewToRegion(HttpView template, String regionName, HttpView view)
