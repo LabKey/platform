@@ -15,12 +15,15 @@
  */
 package org.labkey.api.util.element;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+
+import javax.validation.constraints.NotNull;
 
 public class Option
 {
     private boolean _disabled;
-    private String _label;
+    private HtmlString _label;
     private boolean _selected;
     private String _value;
 
@@ -37,7 +40,7 @@ public class Option
         return _disabled;
     }
 
-    public String getLabel()
+    public HtmlString getLabel()
     {
         return _label;
     }
@@ -68,8 +71,8 @@ public class Option
 
         sb.append(">");
 
-        if (getLabel() != null && !"".equals(getLabel()))
-            sb.append(PageFlowUtil.filter(getLabel()));
+        if (!HtmlString.EMPTY_STRING.equals(getLabel()))
+            sb.append(getLabel());
 
         sb.append("</option>");
 
@@ -78,8 +81,10 @@ public class Option
 
     public static class OptionBuilder
     {
+        @NotNull
+        private HtmlString _label;
+
         private boolean _disabled;
-        private String _label;
         private boolean _selected;
         private String _value;
 
@@ -89,7 +94,7 @@ public class Option
 
         public OptionBuilder(String label, String value)
         {
-            _label = label;
+            _label = HtmlString.of(label);
             _value = value;
         }
 
@@ -100,6 +105,12 @@ public class Option
         }
 
         public OptionBuilder label(String label)
+        {
+            _label = HtmlString.of(label);
+            return this;
+        }
+
+        public OptionBuilder label(HtmlString label)
         {
             _label = label;
             return this;
