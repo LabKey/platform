@@ -919,7 +919,7 @@ LABKEY.Query = new function()
          * @see LABKEY.Query.ModifyRowsResults
          * @see LABKEY.Query.ModifyRowsOptions
          */
-        truncateTables : function(config)
+        truncateTable : function(config)
         {
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
