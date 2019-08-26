@@ -180,7 +180,7 @@ public class PropertyServiceImpl implements PropertyService
         List<? extends Domain> domainsInContainer = getDomains(container);
         List<Domain> result = new ArrayList<>();
         domainsInContainer.forEach(d -> {
-            if(domainKinds.contains(d.getDomainKind().getKindName()))
+            if(null != d.getDomainKind() && domainKinds.contains(d.getDomainKind().getKindName()))
             {
                 result.add(d);
             }
