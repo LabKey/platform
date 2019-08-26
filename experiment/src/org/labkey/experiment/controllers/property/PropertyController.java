@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -73,7 +75,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -1132,6 +1133,80 @@ public class PropertyController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class ListDomainsAction extends ReadOnlyApiAction<ContainerDomainForm>
+    {
+
+        @Override
+        protected ObjectMapper createObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper);
+            return mapper;
+        }
+
+        @Override
+        public Object execute(ContainerDomainForm containerDomainForm, BindException errors) throws Exception
+        {
+            return listDomains(getContainer(), containerDomainForm);
+        }
+    }
+
+    private List<GWTDomain> listDomains(Container c, ContainerDomainForm containerDomainForm)
+    {
+        List<GWTDomain> gwtDomains = new ArrayList<>();
+        if(containerDomainForm.getDomainKinds() != null)
+        {
+            PropertyService.get().getDomains(c, containerDomainForm.getDomainKinds()).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+        }
+        else
+        {
+            PropertyService.get().getDomains(c).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+        }
+        return gwtDomains;
+    }
+
+
+
+    public static class ContainerDomainForm
+    {
+        boolean includeFields = false;
+        String containerPath;
+        List<String> domainKinds;
+
+        public boolean isIncludeFields()
+        {
+            return includeFields;
+        }
+
+        public void setIncludeFields(boolean includeFields)
+        {
+            this.includeFields = includeFields;
+        }
+
+        public String getContainerPath()
+        {
+            return containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            this.containerPath = containerPath;
+        }
+
+        public List<String> getDomainKinds()
+        {
+            return domainKinds;
+        }
+
+        public void setDomainKinds(List<String> domainKinds)
+        {
+            this.domainKinds = domainKinds;
         }
     }
 }

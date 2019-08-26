@@ -174,6 +174,20 @@ public class PropertyServiceImpl implements PropertyService
         return Collections.unmodifiableList(result);
     }
 
+    @Override
+    public List<? extends Domain> getDomains(Container container, List<String> domainKinds)
+    {
+        List<? extends Domain> domainsInContainer = getDomains(container);
+        List<Domain> result = new ArrayList<>();
+        domainsInContainer.forEach(d -> {
+            if(domainKinds.contains(d.getDomainKind().getKindName()))
+            {
+                result.add(d);
+            }
+        });
+        return result;
+    }
+
     public void registerValidatorKind(ValidatorKind validatorKind)
     {
         if (_validatorTypes.containsKey(validatorKind.getTypeURI()))

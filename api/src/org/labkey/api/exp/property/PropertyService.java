@@ -60,6 +60,9 @@ public interface PropertyService
     /** Get all the domains in the specified container and optionally project and shared. */
     List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared);
 
+    /** Get all the domains in the specified container and specified Domain Kinds. */
+    List<? extends Domain> getDomains(Container container, List<String> domainKinds);
+
     /** Creates an in-memory Domain. It is not automatically saved to the database */
     @NotNull
     Domain createDomain(Container container, String typeURI, String name);
