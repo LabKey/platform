@@ -259,20 +259,7 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
                         // Be sure that the user really wants a managed key, not just that disabled select box still had a value
                         if (ds.getKeyPropertyManaged())
                         {
-                            if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.INTEGER || dp.getPropertyDescriptor().getPropertyType() == PropertyType.DOUBLE)
-                            {
-                                // Number fields must be RowIds
-                                keyType = Dataset.KeyManagementType.RowId;
-                            }
-                            else if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
-                            {
-                                // Strings can be managed as GUIDs
-                                keyType = Dataset.KeyManagementType.GUID;
-                            }
-                            else
-                            {
-                                throw new IllegalStateException("Unsupported column type for managed keys: " + dp.getPropertyDescriptor().getPropertyType());
-                            }
+                            keyType = Dataset.KeyManagementType.getManagementTypeFromProp(dp.getPropertyDescriptor().getPropertyType());
                         }
                         break;
                     }
