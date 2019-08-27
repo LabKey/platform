@@ -1072,8 +1072,10 @@ public class ProjectController extends SpringActionController
             else
                 name = "Web Part";
 
-            return (new BeginAction()).appendNavTrail(root)
-                    .addChild("Customize " + name);
+            NavTree ret = (new BeginAction()).appendNavTrail(root);
+            ret.addChild("Customize " + name);
+
+            return ret;
         }
     }
 
