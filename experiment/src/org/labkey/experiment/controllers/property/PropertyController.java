@@ -19,6 +19,9 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -1141,18 +1144,34 @@ public class PropertyController extends SpringActionController
     @Marshal(Marshaller.Jackson)
     public class ListDomainsAction extends ReadOnlyApiAction<ContainerDomainForm>
     {
+        boolean includeFields;
 
         @Override
         protected ObjectMapper createObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
             configureObjectMapper(mapper);
+            SimpleBeanPropertyFilter propertiesFilter;
+            FilterProvider filters;
+
+            if(!includeFields)
+            {
+                propertiesFilter = SimpleBeanPropertyFilter.serializeAllExcept("fields","indices");
+            }
+            else
+            {
+                propertiesFilter =  SimpleBeanPropertyFilter.serializeAll();
+            }
+            filters = new SimpleFilterProvider()
+                    .addFilter("listDomainsActionFilter", propertiesFilter);
+            mapper.setFilterProvider(filters);
             return mapper;
         }
 
         @Override
         public Object execute(ContainerDomainForm containerDomainForm, BindException errors) throws Exception
         {
+            includeFields = containerDomainForm.isIncludeFields();
             return listDomains(getContainer(), containerDomainForm);
         }
     }
