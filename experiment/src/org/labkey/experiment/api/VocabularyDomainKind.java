@@ -2,8 +2,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
@@ -16,8 +16,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.writer.ContainerUser;
@@ -123,13 +121,7 @@ public class VocabularyDomainKind extends AbstractDomainKind
 
     public String generateDomainURI(String vocabularyName, Container container)
     {
-        StringBuilder baseURI = new StringBuilder();
-        baseURI.append("urn:lsid:")
-                .append(PageFlowUtil.encode(AppProps.getInstance().getDefaultLsidAuthority()))
-                .append(":").append(getKindName())
-                .append(".Folder-").append(container.getRowId())
-                .append(":").append(vocabularyName);
-        return new Lsid(baseURI.toString()).toString();
+        return new Lsid(getKindName()+".Folder-"+container.getRowId(), vocabularyName).toString();
     }
 
     @Override
@@ -139,9 +131,9 @@ public class VocabularyDomainKind extends AbstractDomainKind
         if (name == null)
             throw new IllegalArgumentException("Vocabulary name required");
 
-        if(container.getContainerType() instanceof WorkbookContainerType)  //check with Susan if domain defns should be allowed in labbook container
+        if (!container.isContainerFor(ContainerType.DataType.domainDefinitions))
         {
-            throw new IllegalArgumentException("Vocabulary can not be created in Workbook folder.");
+            throw new IllegalArgumentException("Vocabulary  can not be created in this Container type.");
         }
         String domainURI = generateDomainURI( name, container);
 

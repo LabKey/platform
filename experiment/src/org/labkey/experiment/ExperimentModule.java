@@ -186,7 +186,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
                 "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
 
-        RoleManager.registerRole(new DesignVocabularyPermission(), true);
+        RoleManager.registerPermission(new DesignVocabularyPermission(), true);
     }
 
     public boolean hasScripts()
