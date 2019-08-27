@@ -152,6 +152,19 @@ public class PropertyServiceImpl implements PropertyService
         return Collections.unmodifiableList(l);
     }
 
+    @Override
+    public List<DomainKind> getDomainKinds(Container container, Set<String> domainKinds)
+    {
+        List<? extends Domain> domains = getDomains(container, domainKinds);
+        List<DomainKind> dks = new ArrayList<>();
+        domains.forEach(d -> {
+            if(null != d.getDomainKind())
+                dks.add((d.getDomainKind()));
+        });
+
+        return dks;
+    }
+
     public List<? extends Domain> getDomains(Container container)
     {
         List<Domain> result = new ArrayList<>();
@@ -175,7 +188,7 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
-    public List<? extends Domain> getDomains(Container container, List<String> domainKinds)
+    public List<? extends Domain> getDomains(Container container, Set<String> domainKinds)
     {
         List<? extends Domain> domainsInContainer = getDomains(container);
         List<Domain> result = new ArrayList<>();

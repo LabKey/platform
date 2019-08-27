@@ -107,6 +107,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class PropertyController extends SpringActionController
 {
@@ -1196,7 +1197,7 @@ public class PropertyController extends SpringActionController
     {
         boolean includeFields = false;
         String containerPath;
-        List<String> domainKinds;
+        Set<String> domainKinds;
 
         public boolean isIncludeFields()
         {
@@ -1218,12 +1219,12 @@ public class PropertyController extends SpringActionController
             this.containerPath = containerPath;
         }
 
-        public List<String> getDomainKinds()
+        public Set<String> getDomainKinds()
         {
             return domainKinds;
         }
 
-        public void setDomainKinds(List<String> domainKinds)
+        public void setDomainKinds(Set<String> domainKinds)
         {
             this.domainKinds = domainKinds;
         }
