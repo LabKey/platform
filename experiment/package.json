@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@glass/base": "0.14.2-fb-assayDesignCreate.3",
-    "@glass/domainproperties": "0.0.32-fb-assayDesignCreate.4"
+    "@glass/domainproperties": "0.0.32-fb-assayDesignCreate.5"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
