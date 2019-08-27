@@ -145,8 +145,7 @@
                 sampleSetList.push([<%=q(ssPair.getKey())%>, <%=q(ssPair.getValue())%>]);  // Do this so we can escape SampleSet names
             <%
                 }
-            %>
-            <%
+
                 for (Pair<String, String> dcPair : dataClassList ) {
             %>
                 dataClassList.push([<%=q(dcPair.getKey())%>, <%=q(dcPair.getValue())%>]);  // Do this so we can escape DataClass names
@@ -154,19 +153,31 @@
                 }
             %>
 
+            function createOption(value, text, prefix) {
+                let option = document.createElement("option");
+                option.value = prefix  + value;   //Set value to import path
+                option.text = text; //Set display text containing type, name, and path
+
+                return option;
+            }
+
             function createOptions(list, selectEl, valPrefix) {
                 for (let i = 0; i < list.length; i++) {
                     let pair = list[i];
 
-                    let option = document.createElement("option");
-                    option.value = valPrefix + '/' + pair[0];   //Set value to import path
-                    option.text = pair[1];                      //Set display text containing type, name, and path
+                    let option = createOption(pair[0], pair[1], valPrefix + '/');
                     selectEl.appendChild(option);
                 }
             }
 
             createOptions(dataClassList, selectListTemplate, 'dataInputs');
             createOptions(sampleSetList, selectListTemplate, 'materialInputs');
+
+            <%if(!bean.isUpdate()) { %>
+
+            const selfOption = createOption('<%=h(ExperimentController.BaseSampleSetForm.NEW_SAMPLE_SET_VALUE)%>', '<This Sample Set>', '');
+            selectListTemplate.append(selfOption);
+            <% } %>
 
             //Create string template to use for adding new alias rows
             let aliasRowTemplate = "<div class='form-group lk-exp-alias-group' name='importAliases'>" +

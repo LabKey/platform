@@ -3572,6 +3572,8 @@ public class ExperimentController extends SpringActionController
         private Integer rowId;
         private String lsid;
 
+        public static final String NEW_SAMPLE_SET_VALUE = "{{this_sample_set}}";
+
         //Parameter used by the Flow module
         private Boolean nameReadOnly = false;
 
@@ -3677,7 +3679,14 @@ public class ExperimentController extends SpringActionController
                     return aliases;
 
                 for (int i = 0; i < getImportAliasKeys().size(); i++)
-                    aliases.put(getImportAliasKeys().get(i), getImportAliasValues().get(i));
+                {
+                    String key = getImportAliasKeys().get(i);
+                    String val = getImportAliasValues().get(i);
+                    if (NEW_SAMPLE_SET_VALUE.equals(val))
+                        val = "materialInputs/" + this.getName();
+
+                    aliases.put(key, val);
+                }
             }
             return aliases;
         }
@@ -3836,8 +3845,8 @@ public class ExperimentController extends SpringActionController
 
             for (String parent : importParents)
             {
-                //check if it is of the expected format
-                if (!UploadSamplesHelper.isInputOutputHeader(parent))
+                //check if it is of the expected format or targeting the to be created sampleset
+                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || BaseSampleSetForm.NEW_SAMPLE_SET_VALUE.equals(parent)))
                     errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
             }
         }
