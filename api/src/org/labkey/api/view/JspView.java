@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.jsp.AbstractJspBase;
+import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -88,8 +88,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _path = page;
         _page = JspLoader.createPage((String)null, page);
 
-        if (_page instanceof AbstractJspBase)
-            addClientDependencies(((AbstractJspBase)_page).getClientDependencies());
+        if (_page instanceof JspBase)
+            addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
     /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
@@ -111,8 +111,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _path = jspName;
         _page = JspLoader.createPage(packageClass, jspName);
 
-        if (_page instanceof AbstractJspBase)
-            addClientDependencies(((AbstractJspBase)_page).getClientDependencies());
+        if (_page instanceof JspBase)
+            addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
 

@@ -24,7 +24,7 @@
         By default, only redirects to the same LabKey instance are allowed.
         Other server host names must be configured below to allow them to be automatically redirected.
         For more information on the security concern, please refer to the
-        <a href="<%= h("https://www.owasp.org/index.php/Unvalidated_Redirects_and_Forwards_Cheat_Sheet") %>">OWASP advisory</a>.
+        <a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html">OWASP cheat sheet</a>.
     </p>
     <p>
         Add allowed hosts based the server name or IP address, based on how it will be referenced in the returnUrl values.
