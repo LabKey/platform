@@ -138,7 +138,7 @@ public class MothershipTest extends BaseWebDriverTest
         StackTraceDetailsPage detailsPage = exceptionSummary.clickStackTrace(stackTraceId);
         String stackDetailsUrl = getDriver().getCurrentUrl();
         InsertPage insertPage = detailsPage.clickCreateIssue();
-        String expectedTitle = "NullPointerException in org.labkey.core.test.TestController$NpeAction.getView()";
+        String expectedTitle = "NullPointerException in org.labkey.devtools.TestController$NpeAction.getView()";
         String issueTitle = insertPage.title().get();
         assertEquals("Wrong issue title", expectedTitle, issueTitle);
         String[] expectedComments = new String[] {
