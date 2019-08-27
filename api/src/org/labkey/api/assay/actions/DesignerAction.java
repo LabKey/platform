@@ -20,6 +20,9 @@ import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -107,7 +110,17 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
         }
         setHelpTopic(new HelpTopic("defineAssaySchema"));
-        result.addView(createGWTView(properties));
+
+        // use new UX Assay Designer view for GPAT assays if experimental flag is turned on, but not yet ready for "copy"
+        if ("General".equalsIgnoreCase(provider.getName()) && !form.isCopy() && ExperimentService.get().useUXDomainDesigner())
+        {
+            result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
+        }
+        else
+        {
+            result.addView(createGWTView(properties));
+        }
+
         return result;
     }
 
