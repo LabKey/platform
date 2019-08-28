@@ -197,19 +197,18 @@ public class ExperimentJSONConverter
             }
         }
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+
+        var objectProps = object.getObjectProperties();
+        for (var propPair : objectProps.entrySet())
         {
-            var objectProps = object.getObjectProperties();
-            for (var propPair : objectProps.entrySet())
-            {
-                String propertyURI = propPair.getKey();
-                if (seenPropertyURIs.contains(propertyURI))
-                    continue;
-                seenPropertyURIs.add(propertyURI);
-                ObjectProperty op = propPair.getValue();
-                propertiesObject.put(propertyURI, op.value());
-            }
+            String propertyURI = propPair.getKey();
+            if (seenPropertyURIs.contains(propertyURI))
+                continue;
+            seenPropertyURIs.add(propertyURI);
+            ObjectProperty op = propPair.getValue();
+            propertiesObject.put(propertyURI, op.value());
         }
+
 
         if (!propertiesObject.isEmpty())
             jsonObject.put(PROPERTIES, propertiesObject);
@@ -297,19 +296,18 @@ public class ExperimentJSONConverter
                 value = convertProperty(value, dp, container);
                 properties.put(dp.getPropertyDescriptor(), value);
             }
-            else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+
+            // resolve propName by PropertyURI if propName looks like a URI
+            if (URIUtil.hasURICharacters(propName))
             {
-                // resolve propName by PropertyURI if propName looks like a URI
-                if (URIUtil.hasURICharacters(propName))
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
+                if (pd != null)
                 {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
-                    if (pd != null)
-                    {
-                        value = convertProperty(value, pd, container);
-                        properties.put(pd, value);
-                    }
+                    value = convertProperty(value, pd, container);
+                    properties.put(pd, value);
                 }
             }
+
         }
 
         return properties;
