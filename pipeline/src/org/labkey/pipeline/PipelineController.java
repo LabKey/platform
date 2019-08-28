@@ -502,7 +502,8 @@ public class PipelineController extends SpringActionController
             }
 
             java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
-            if (fileCurrent == null || !Files.exists(fileCurrent))
+            // S3-backed storage may not have an entry for the root if there are no children, see issue 38377
+            if (!("".equals(relativePath) && pr.isCloudRoot()) && (fileCurrent == null || !Files.exists(fileCurrent)))
             {
                 errors.reject(ERROR_MSG, "File not found: " + form.getPath());
             }
