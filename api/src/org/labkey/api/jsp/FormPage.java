@@ -47,15 +47,15 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     // TODO: Migrate usages to new JspView<>()? There should be no difference
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
     {
-        return new JspView<>(jspPath, form, errors);
-        //return get(jspPath, form).createView(errors);
+        JspView<F> view = new JspView<>(jspPath, form, errors);
+        ((FormPage<F>)view.getPage()).setForm(form);
+        return view;
     }
 
     // TODO: Migrate usages to new JspView<>()? There should be no difference
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form)
     {
-        return new JspView<>(jspPath, form);
-//        return get(jspPath, form).createView();
+        return getView(jspPath, form, null);
     }
 
     @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
