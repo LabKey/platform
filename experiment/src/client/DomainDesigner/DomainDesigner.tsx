@@ -130,6 +130,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             })
     };
 
+    submitAndNavigate = () => {
+        this.submitHandler(true);
+    }
+
     onChangeHandler = (newDomain, dirty) => {
 
         let bannerMsgs = getBannerMessages(newDomain);
@@ -180,11 +184,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     renderNavigateConfirm() {
         return (
             <ConfirmModal
-                title='Confirm Leaving Page'
-                msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
+                title='Keep unsaved changes?'
+                msg='You have made changes to this domain that have not yet been saved. Do you want to save these changes before leaving?'
                 confirmVariant='success'
-                onConfirm={this.navigate}
-                onCancel={this.hideConfirm}
+                onConfirm={this.submitAndNavigate}
+                onCancel={this.navigate}
+                cancelButtonText='No, Discard Changes'
+                confirmButtonText='Yes, Save Changes'
             />
         )
     }
