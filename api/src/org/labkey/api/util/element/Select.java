@@ -21,17 +21,23 @@ import org.labkey.api.util.PageFlowUtil;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.labkey.api.util.DOM.at;
 
 public class Select extends Input
 {
     private final boolean _multiple;
     private final List<Option> _options;
+    private Map<String,String> _attributes;
 
     private Select(SelectBuilder builder)
     {
         super(builder);
         _multiple = builder._multiple;
         _options = builder._options;
+        _attributes = builder._attributes;
     }
 
     @Override
@@ -61,6 +67,13 @@ public class Select extends Input
             sb.append(" size=\"").append(getSize()).append("\"");
         if (isMultiple())
             sb.append(" multiple");
+        if (null != _attributes)
+        {
+            var attrs = at(_attributes);
+            attrs.forEach(a -> {
+                sb.append(" ").append(PageFlowUtil.filter(a.getKey())).append("=\"").append(PageFlowUtil.filter(a.getValue())).append("\"");
+            });
+        }
 
         doInputEvents(sb);
 
@@ -90,6 +103,8 @@ public class Select extends Input
     {
         private boolean _multiple;
         private List<Option> _options;
+        private Map<String,String> _attributes;
+
 
         public SelectBuilder()
         {
@@ -114,6 +129,15 @@ public class Select extends Input
                 }
             }
 
+            return this;
+        }
+
+        public SelectBuilder attributes(Map<String, String> attributes)
+        {
+            if (attributes != null && !attributes.isEmpty())
+                this._attributes = new TreeMap<>(attributes);
+            else
+                this._attributes = null;
             return this;
         }
 
