@@ -18,6 +18,11 @@ package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.actions.DesignerAction;
+import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -37,7 +42,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -84,14 +88,9 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.actions.DesignerAction;
-import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
-import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -1429,17 +1428,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (!domainInfos.isEmpty())
             {
                 NavTree setDefaultsTree = new NavTree(SET_DEFAULT_VALUES_LINK);
-                ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, contextContainer);
-                baseEditUrl.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
-                baseEditUrl.addParameter("providerName", getName());
+                AssayUrls urls = PageFlowUtil.urlProvider(AssayUrls.class);
                 for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
                 {
                     Domain domain = domainInfo.getKey();
                     if (allowDefaultValues(domain) && !domain.getProperties().isEmpty())
                     {
-                        ActionURL currentEditUrl = baseEditUrl.clone();
-                        currentEditUrl.addParameter("domainId", domain.getTypeId());
-                        setDefaultsTree.addChild(domain.getName(), currentEditUrl);
+                        ActionURL url = urls.getSetDefaultValuesAssayURL(contextContainer, getName(), domain, context.getActionURL());
+                        setDefaultsTree.addChild(domain.getName(), url);
                     }
                 }
                 if (setDefaultsTree.hasChildren())
