@@ -13,27 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.assay.actions;
+package org.labkey.assay.actions;
 
 import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.actions.ProtocolIdForm;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.*;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.Errors;
 
 import java.util.Set;
 
 /**
  * User: jeckels
-* Date: Dec 30, 2008
-*/
+ * Date: Dec 30, 2008
+ */
 @RequiresPermission(ReadPermission.class)
-public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRunsAction.ShowSelectedForm>
+public class ShowSelectedDataAction extends SimpleRedirectAction<ShowSelectedDataAction.ShowSelectedForm>
 {
     public static class ShowSelectedForm extends ProtocolIdForm
     {
@@ -60,9 +62,23 @@ public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRun
         if (form.getContainerFilterName() != null)
             containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
 
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        String maxRowsKey = AssayProtocolSchema.DATA_TABLE_NAME + ".maxRows";
+        applyLastFilterParameter(url, maxRowsKey);
+        String sortKey = AssayProtocolSchema.DATA_TABLE_NAME + ".sort";
+        applyLastFilterParameter(url, sortKey);
+
         if (form.getContainerFilterName() != null)
             url.addParameter("containerFilterName", form.getContainerFilterName());
+
         return url;
+    }
+    
+    private void applyLastFilterParameter(ActionURL newURL, String parameterName)
+    {
+        ActionURL lastFilterURL = PageFlowUtil.getLastFilter(getViewContext(), newURL);
+        String value = lastFilterURL.getParameter(parameterName);
+        if (value != null)
+            newURL.addParameter(parameterName, value);
     }
 }
