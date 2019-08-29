@@ -921,8 +921,6 @@ LABKEY.Query = new function()
          */
         truncateTable : function(config)
         {
-            if (arguments.length > 1)
-                config = configFromArgs(arguments);
             config.action = "truncateTable.api";
             return sendJsonQueryRequest(config);
         },
