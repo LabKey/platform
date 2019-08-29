@@ -9646,66 +9646,7 @@ public class AdminController extends SpringActionController
         return res;
     }
 
-
-    @SuppressWarnings("unused")  // Invoked by test framework (BaseWebDriverTest.checkActionCoverage())
-    @AdminConsoleAction
-    public class ExportMutationWarningsAction extends ExportAction
-    {
-        @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws IOException
-        {
-            try (TextWriter writer = (new TextWriter()
-            {
-                @Override
-                protected String getFilename()
-                {
-                    return "MutationWarnings.txt";
-                }
-
-                @Override
-                protected void write()
-                {
-                    Set<String> warnings = getMutatingActionsWarned();
-
-                    if (warnings.isEmpty())
-                    {
-                        _pw.println("No mutation warnings were logged!");
-                    }
-                    else
-                    {
-                        String prefix = "distinct mutation warning";
-                        _pw.println(StringUtilsLabKey.pluralize(warnings.size(), prefix + " was", prefix + "s were") + " logged:");
-
-                        String previous = null;
-
-                        // Sort by package + name and enumerate
-                        for (String warning : new TreeSet<>(warnings))
-                        {
-                            String moduleName = warning.split("\\.")[2];
-
-                            if (!moduleName.equals(previous))
-                            {
-                                _pw.println();
-                                _pw.println(moduleName);
-                                _pw.println();
-                                previous = moduleName;
-                            }
-
-                            _pw.println(warning);
-                        }
-                    }
-                }
-            }))
-            {
-                writer.write(response);
-            }
-
-            // For now, also log the JspWriter statistics.
-            LabKeyJspWriter.logStatistics();
-        }
-    }
-
-
+    
     @ActionNames("projectSettings, lookAndFeelSettings")
     @RequiresPermission(AdminPermission.class)
     public class ProjectSettingsAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>
