@@ -136,6 +136,7 @@ import org.labkey.assay.actions.ImportAction;
 import org.labkey.assay.actions.ImportRunApiAction;
 import org.labkey.assay.actions.PipelineDataCollectorRedirectAction;
 import org.labkey.assay.actions.SaveAssayBatchAction;
+import org.labkey.assay.actions.SaveAssayRunAction;
 import org.labkey.assay.actions.SaveProtocolAction;
 import org.labkey.assay.actions.SetDefaultValuesAssayAction;
 import org.labkey.assay.actions.ShowSelectedDataAction;
@@ -177,6 +178,7 @@ public class AssayController extends SpringActionController
             GetAssayBatchAction.class,
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
+            SaveAssayRunAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
             TransformResultsAction.class,

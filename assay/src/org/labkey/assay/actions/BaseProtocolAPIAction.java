@@ -15,6 +15,7 @@
  */
 package org.labkey.assay.actions;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.MutatingApiAction;
@@ -135,4 +136,16 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
     }
 
     protected abstract ApiResponse executeAction(ExpProtocol protocol, FORM form, BindException errors) throws Exception;
+
+    public void verifyFormJsonObject(JSONObject jsonObject, JSONArray jsonArray)
+    {
+        if (jsonObject == null && jsonArray == null)
+            throw new IllegalArgumentException("No batch object or batches array found");
+
+        if ((null != jsonArray) && (jsonArray.length() == 0))
+            throw new IllegalArgumentException("You must provide at least one batch in your batches array");
+
+        if ((null != jsonObject) && (null != jsonArray))
+            throw new IllegalArgumentException("You cannot specify both a batch object and a batches array");
+    }
 }

@@ -311,6 +311,32 @@ LABKEY.Experiment.saveBatch({
              });
         },
 
+        saveRun: function (config)
+        {
+            function createExp(json)
+            {
+                if (json.runs) {
+                    return new LABKEY.Exp.RunGroup(json.runs);
+                }
+            }
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("assay", "saveAssayRun", LABKEY.ActionURL.getContainer()),
+                method: 'POST',
+                success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                scope: config.scope,
+                jsonData : {
+                    runs: config.runs,
+                    protocolName: config.protocolName
+                },
+                scope: config.scope,
+                headers: {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
         /**
          * Saves an array of modified batches.
          * Runs within the batches may refer to existing data and material objects, either inputs or outputs, by ID or LSID.

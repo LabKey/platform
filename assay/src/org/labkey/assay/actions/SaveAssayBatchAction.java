@@ -58,14 +58,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
         if (rootJsonObject.has(AssayJSONConverter.BATCHES))
             batchesJsonArray = rootJsonObject.getJSONArray(AssayJSONConverter.BATCHES);
 
-        if (batchJsonObject == null && batchesJsonArray == null)
-            throw new IllegalArgumentException("No batch object or batches array found");
-
-        if ((null != batchesJsonArray) && (batchesJsonArray.length() == 0))
-            throw new IllegalArgumentException("You must provide at least one batch in your batches array");
-
-        if ((null != batchJsonObject) && (null != batchesJsonArray))
-            throw new IllegalArgumentException("You cannot specify both a batch object and a batches array");
+        verifyFormJsonObject(batchJsonObject, batchesJsonArray);
 
         AssayProvider provider = getAssayProvider();
         ExperimentSaveHandler saveHandler;
