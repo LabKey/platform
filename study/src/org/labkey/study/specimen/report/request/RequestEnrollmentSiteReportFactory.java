@@ -19,6 +19,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Location;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
@@ -112,9 +113,9 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         return SpecimenController.RequestEnrollmentSiteReportAction.class;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         Set<LocationImpl> locations = SpecimenManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);
