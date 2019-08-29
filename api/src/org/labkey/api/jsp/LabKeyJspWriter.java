@@ -58,8 +58,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
         STRING_INVOCATIONS.incrementAndGet();
         if (UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
         {
-            LOG.info("A JSP is printing a string.", new Throwable());
-            LOGSTRING.info("A JSP is printing a string.", new Throwable());
+            LOGSTRING.info(" A JSP is printing a string!", new Throwable());
         }
 
         super.print(s);
