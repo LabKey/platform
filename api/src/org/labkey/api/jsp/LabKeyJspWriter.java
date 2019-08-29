@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LabKeyJspWriter extends JspWriterWrapper
 {
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
+    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName()+".string");
+
 
     private static final AtomicInteger CHAR_ARRAY_INVOCATIONS = new AtomicInteger();
     private static final AtomicInteger STRING_INVOCATIONS = new AtomicInteger();
@@ -54,7 +56,16 @@ public class LabKeyJspWriter extends JspWriterWrapper
     public void print(String s) throws IOException
     {
         STRING_INVOCATIONS.incrementAndGet();
-        UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
+        if (UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
+        {
+            LOG.info("A JSP is printing a string.");
+            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+            for (int i=0; i<15; i++)
+            {
+                LOG.info(stack[i].toString());
+            }
+        }
+
         super.print(s);
     }
 
