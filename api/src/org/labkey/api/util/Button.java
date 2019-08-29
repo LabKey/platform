@@ -60,6 +60,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean dropdown;
     private final boolean enabled;
     private final boolean submit;
+    private final boolean usePost;
 
     private Button(ButtonBuilder builder)
     {
@@ -77,6 +78,10 @@ public class Button extends DisplayElement implements HasHtmlString
         this.submit = builder.submit;
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
+        this.usePost = builder.usePost;
+
+        if (this.usePost && null != this.onClick)
+            throw new IllegalStateException("Can't specify both usePost and onClick");
         // TODO kill this usage
         this.unsafeAttributes = builder.unsafeAttributes;
     }
@@ -98,7 +103,8 @@ public class Button extends DisplayElement implements HasHtmlString
 
     public String getHref()
     {
-        return href;
+
+        return usePost ? "javascript:void(0);" : href;
     }
 
     public String getOnClick()
@@ -139,7 +145,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private String generateOnClick(String id)
     {
         // prepare onclick method and overrides
-        final String onClick = getOnClick() == null ? "" : getOnClick();
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href) : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
@@ -289,12 +295,6 @@ public class Button extends DisplayElement implements HasHtmlString
         {
             this.submit = submit;
             return this;
-        }
-
-        @Override
-        public ButtonBuilder usePost()
-        {
-            throw new IllegalStateException("Not yet implemented for ButtonBuilder");
         }
 
         @NotNull

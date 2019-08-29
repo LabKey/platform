@@ -147,6 +147,7 @@
         {
             out.print(innerSep);
             out.print("\t\t\"paramName\":" + PageFlowUtil.jsString(param.getName()) + ",\n");
+            out.print("\t\t\"format\":" + PageFlowUtil.jsString(param.getContentType().toString()) + ",\n");
             out.print("\t\t\"valueType\":" + PageFlowUtil.jsString(param.getValueType().getSimpleName()) + ",\n");
             out.print("\t\t\"paramDesc\":" + PageFlowUtil.jsString(param.getDescription()) + ",\n");
             String formattedValue = param.getFormattedValue(c, null, ContentType.HTML);
@@ -184,7 +185,7 @@
                 message.value = this.emailTemplates[i].message;
                 Ext4.get("siteResetButton").dom.style.display = this.emailTemplates[i].showSiteReset ? "" : "none";
                 Ext4.get("folderResetButton").dom.style.display = this.emailTemplates[i].showFolderReset ? "" : "none";
-                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].supportsMultipleContentTypes ? "" : "none";
+                Ext4.get("helpMultipleContentTypes").dom.style.display = this.emailTemplates[i].hasMultipleContentTypes ? "" : "none";
 
                 changeValidSubstitutions(this.emailTemplates[i]);
                 return;
@@ -241,9 +242,13 @@
 
         cell = row.insertCell(2);
         cell.className = "labkey-column-header";
-        cell.innerHTML = "Description";
+        cell.innerHTML = "Format";
 
         cell = row.insertCell(3);
+        cell.className = "labkey-column-header";
+        cell.innerHTML = "Description";
+
+        cell = row.insertCell(4);
         cell.className = "labkey-column-header";
         cell.innerHTML = "Current Value";
 
@@ -261,9 +266,12 @@
                 cell.innerHTML = record.replacements[i].valueType;
 
                 cell = row.insertCell(2);
-                cell.innerHTML = record.replacements[i].paramDesc;
+                cell.innerHTML = record.replacements[i].format;
 
                 cell = row.insertCell(3);
+                cell.innerHTML = record.replacements[i].paramDesc;
+
+                cell = row.insertCell(4);
                 var paramValue = record.replacements[i].paramValue;
                 cell.innerHTML = paramValue != '' ? paramValue : "<em>not available in designer</em>";
             }

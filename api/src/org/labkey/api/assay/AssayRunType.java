@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay;
 
+import org.labkey.api.assay.actions.AssayHeaderView;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -27,8 +28,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.assay.actions.AssayHeaderView;
-import org.labkey.api.assay.actions.ShowSelectedDataAction;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -57,7 +56,7 @@ public class AssayRunType extends ExperimentRunType
     public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter filter)
     {
         TableInfo table = view.getDataRegion().getTable();
-        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(context.getContainer(), _protocol, ShowSelectedDataAction.class);
+        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getShowSelectedDataURL(context.getContainer(), _protocol);
         if (table.getContainerFilter() != null && table.getContainerFilter().getType() != null)
             target.addParameter("containerFilterName", table.getContainerFilter().getType().name());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Results");

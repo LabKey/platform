@@ -24,4 +24,4 @@
 
     // TODO: Reconsider use of a .jsp
 %>
-<%=text(Portal.addWebPartWidgets(getViewContext(),bean))%>
+<%=unsafe(Portal.addWebPartWidgets(getViewContext(),bean))%>
