@@ -38,13 +38,13 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
         return get((FormPage<F>) JspLoader.createPage(clazzPackage, name), form);
     }
 
+    @Deprecated // This bypasses JspView() standard handling (addClientDependencies(), mem tracking). Instead, use getView().
+    @RemoveIn20_1
     public static <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
     {
         return get((FormPage<F>) JspLoader.createPage((String)null, jspPath), form);
     }
 
-
-    // TODO: Migrate usages to new JspView<>()? There should be no difference
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
     {
         JspView<F> view = new JspView<>(jspPath, form, errors);
@@ -52,7 +52,6 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
         return view;
     }
 
-    // TODO: Migrate usages to new JspView<>()? There should be no difference
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form)
     {
         return getView(jspPath, form, null);
