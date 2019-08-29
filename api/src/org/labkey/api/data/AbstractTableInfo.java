@@ -133,20 +133,22 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected List<Pair<String, StringExpression>> _importTemplates;
 
     protected DetailsURL _gridURL;
+
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
     protected DetailsURL _deleteURL;
     protected DetailsURL _importURL;
+
+    private boolean _hasInsertURLOverride;
+    private boolean _hasUpdateURLOverride;
+    private boolean _hasDeleteURLOverride;
+
     protected ButtonBarConfig _buttonBarConfig;
     protected AggregateRowConfig _aggregateRowConfig;
 
     private DetailsURL _detailsURL;
     protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
     private FieldKey _auditRowPk;
-
-    private boolean _hasInsertXMLOverride;
-    private boolean _hasUpdateXMLOverride;
-    private boolean _hasDeleteXMLOverride;
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
@@ -1119,19 +1121,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.isSetInsertUrl())
         {
             _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), errors);
-            _hasInsertXMLOverride = true;
+            _hasInsertURLOverride = true;
         }
 
         if (xmlTable.isSetUpdateUrl())
         {
             _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), errors);
-            _hasUpdateXMLOverride = true;
+            _hasUpdateURLOverride = true;
         }
 
         if (xmlTable.isSetDeleteUrl())
         {
             _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), errors);
-            _hasDeleteXMLOverride = true;
+            _hasDeleteURLOverride = true;
         }
         
         if (xmlTable.isSetTableUrl())
@@ -1778,19 +1780,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public boolean hasXMLInsertOverride()
     {
-        return _hasInsertXMLOverride;
+        return _hasInsertURLOverride;
     }
 
     @Override
     public boolean hasXMLUpdateOverride()
     {
-        return _hasUpdateXMLOverride;
+        return _hasUpdateURLOverride;
     }
 
     @Override
     public boolean hasXMLDeleteOverride()
     {
-        return _hasDeleteXMLOverride;
+        return _hasDeleteURLOverride;
     }
 
     public static class TestCase extends Assert{

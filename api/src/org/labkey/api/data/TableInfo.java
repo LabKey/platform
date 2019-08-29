@@ -604,7 +604,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
         return false;
     }
 
-    default boolean canOverridePermissions()
+    /**
+     * Allow QueryView to render insert, update, and other buttons if the metadata xml provides URL
+     * overrides and the underlying table doesn't support insert/update/delete operations,
+     * such as a query table.
+     */
+    default boolean allowQueryTableURLOverrides()
     {
         return false;
     };
