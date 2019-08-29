@@ -39,13 +39,18 @@
 <%
     JspView<ExperimentController.BaseSampleSetForm> view = (JspView<ExperimentController.BaseSampleSetForm>) HttpView.currentView();
     ExperimentController.BaseSampleSetForm bean = view.getModelBean();
+    Integer rowId = bean.getRowId();
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
+    final String SELF_OPTION_TEXT = "(This SampleSet)";
 
     List<Pair<String, String>> sampleSetList = new ArrayList<>();
     for (ExpSampleSet ss : SampleSetService.get().getSampleSets(getContainer(), getUser(), true))
     {
-        //Apply prefix and suffix to differentiate duplicates
-        Pair ssPair = new Pair<>(ss.getName(), String.format("Sample Set: %1$s (%2$s)", ss.getName(), ss.getContainer().getPath()));
+        String label = (rowId != null && ss.getRowId() == rowId) ?  //If this SampleSet use self option text.
+            SELF_OPTION_TEXT :
+            String.format("Sample Set: %1$s (%2$s)", ss.getName(), ss.getContainer().getPath());  //Apply prefix and suffix to differentiate duplicates
+
+        Pair<String, String> ssPair = new Pair<>(ss.getName(), label);
         sampleSetList.add(ssPair);
     }
 
@@ -53,7 +58,7 @@
     for(ExpDataClass dc : ExperimentService.get().getDataClasses(getContainer(), getUser(), true))
     {
         //Apply prefix and suffix to differentiate duplicates
-        Pair dcPair = new Pair<>(dc.getName(), String.format("Data Class: %1$s (%2$s)", dc.getName(), dc.getContainer().getPath()));
+        Pair<String, String> dcPair = new Pair<>(dc.getName(), String.format("Data Class: %1$s (%2$s)", dc.getName(), dc.getContainer().getPath()));
         dataClassList.add(dcPair);
     }
 
@@ -161,23 +166,22 @@
                 return option;
             }
 
-            function createOptions(list, selectEl, valPrefix) {
-                for (let i = 0; i < list.length; i++) {
-                    let pair = list[i];
+            const sampleSetPrefix = 'materialInputs';
+            const dataClassPrefix = 'dataInputs';
 
-                    let option = createOption(pair[0], pair[1], valPrefix + '/');
-                    selectEl.appendChild(option);
-                }
-            }
-
-            createOptions(dataClassList, selectListTemplate, 'dataInputs');
-            createOptions(sampleSetList, selectListTemplate, 'materialInputs');
-
-            <%if(!bean.isUpdate()) { %>
-
-            const selfOption = createOption('<%=h(ExperimentController.BaseSampleSetForm.NEW_SAMPLE_SET_VALUE)%>', '<This Sample Set>', '');
+            <% if (!bean.isUpdate()) { %>
+            const selfOption = createOption('<%=h(ExperimentController.BaseSampleSetForm.NEW_SAMPLE_SET_VALUE)%>', '<%=h(SELF_OPTION_TEXT)%>', '');
             selectListTemplate.append(selfOption);
+
             <% } %>
+
+            const ssOptionList = sampleSetList.map(ssPair => createOption(ssPair[0], ssPair[1], sampleSetPrefix + '/'));
+            ssOptionList.sort((a, b) => LABKEY.internal.SortUtil.naturalSort(a.text, b.text));
+            const dcOptionList = dataClassList.map(dcPair => createOption(dcPair[0], dcPair[1], dataClassPrefix + '/'));
+            dcOptionList.sort((a, b) => LABKEY.internal.SortUtil.naturalSort(a.text, b.text));
+
+            selectListTemplate.append(...ssOptionList);
+            selectListTemplate.append(...dcOptionList);
 
             //Create string template to use for adding new alias rows
             let aliasRowTemplate = "<div class='form-group lk-exp-alias-group' name='importAliases'>" +
