@@ -2021,6 +2021,18 @@ public class OntologyManager
         return pd;
     }
 
+    public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
+    {
+        List<? extends Domain> domainsInContainer = PropertyService.get().getDomains(container);
+        List<Domain> domainsForPropertyDescriptor = new ArrayList<>();
+        domainsInContainer.forEach(d -> {
+            if(null != d.getPropertyByURI(pd.getPropertyURI()))
+                domainsForPropertyDescriptor.add(d);
+
+        });
+        return domainsForPropertyDescriptor;
+    }
+
     private static class DomainDescriptorLoader implements CacheLoader<String, DomainDescriptor>
     {
         @Override

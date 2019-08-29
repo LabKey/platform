@@ -33,6 +33,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.view.NotFoundException;
 
 import java.io.File;
 import java.util.Collection;
@@ -301,10 +302,30 @@ public class ExperimentJSONConverter
             if (URIUtil.hasURICharacters(propName))
             {
                 PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
+
+                //ask OM to get the list of domains and check the domains (vocabulary domain)
                 if (pd != null)
                 {
-                    value = convertProperty(value, pd, container);
-                    properties.put(pd, value);
+                    List<Domain> domainsForPropertyDescriptor = OntologyManager.getDomainsForPropertyDescriptor(container, pd);
+                    boolean propertyInVocabulary = false;
+                    for(Domain domain: domainsForPropertyDescriptor)
+                    {
+                        if(domain.isVocabularyDomain())
+                        {
+                            propertyInVocabulary = true;
+                        }
+                    }
+
+                    //only properties that exist in any vocabulary in this container are saved in the batch
+                    if(propertyInVocabulary)
+                    {
+                        value = convertProperty(value, pd, container);
+                        properties.put(pd, value);
+                    }
+                }
+                else
+                {
+                    throw new NotFoundException("Property - '" + propName + "does not exist in any Vocabulary Domain in this container.");
                 }
             }
 
