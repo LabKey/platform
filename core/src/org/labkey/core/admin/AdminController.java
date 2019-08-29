@@ -9646,7 +9646,7 @@ public class AdminController extends SpringActionController
         return res;
     }
 
-    
+
     @ActionNames("projectSettings, lookAndFeelSettings")
     @RequiresPermission(AdminPermission.class)
     public class ProjectSettingsAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>

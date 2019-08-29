@@ -60,17 +60,17 @@ public class LabKeyJspWriter extends JspWriterWrapper
         {
             LOG.info("A JSP is printing a string.");
             StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-            for (int i=0; i<15; i++)
+            int maxStacks = (stack.length < 15) ? stack.length : 15;
+            for (int i=0; i<maxStacks; i++)
             {
                 LOG.info(stack[i].toString());
             }
 
             // Testing our own artifact
             LOGSTRING.info("A JSP is printing a string.");
-            StackTraceElement[] stackString = Thread.currentThread().getStackTrace();
-            for (int i=0; i<15; i++)
+            for (int i=0; i<maxStacks; i++)
             {
-                LOGSTRING.info(stackString[i].toString());
+                LOGSTRING.info(stack[i].toString());
             }
 
         }
