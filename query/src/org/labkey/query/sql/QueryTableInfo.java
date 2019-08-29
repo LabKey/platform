@@ -189,7 +189,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
     @Override
-    public boolean canOverridePermissions()
+    public boolean allowQueryTableURLOverrides()
     {
         return true;
     }
