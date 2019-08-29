@@ -589,17 +589,17 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
         return null;
     }
 
-    default boolean hasXMLInsertOverride()
+    default boolean hasInsertURLOverride()
     {
         return false;
     }
 
-    default boolean hasXMLUpdateOverride()
+    default boolean hasUpdateURLOverride()
     {
         return false;
     }
 
-    default boolean hasXMLDeleteOverride()
+    default boolean hasDeleteURLOverride()
     {
         return false;
     }

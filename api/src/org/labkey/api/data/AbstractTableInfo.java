@@ -1778,19 +1778,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public boolean hasXMLInsertOverride()
+    public boolean hasInsertURLOverride()
     {
         return _hasInsertURLOverride;
     }
 
     @Override
-    public boolean hasXMLUpdateOverride()
+    public boolean hasUpdateURLOverride()
     {
         return _hasUpdateURLOverride;
     }
 
     @Override
-    public boolean hasXMLDeleteOverride()
+    public boolean hasDeleteURLOverride()
     {
         return _hasDeleteURLOverride;
     }

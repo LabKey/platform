@@ -837,19 +837,19 @@ public class QueryView extends WebPartView<Object>
     private boolean allowQueryTableInsertURLOverride()
     {
         TableInfo table = getTable();
-        return table != null && table.hasXMLInsertOverride() && table.allowQueryTableURLOverrides();
+        return table != null && table.hasInsertURLOverride() && table.allowQueryTableURLOverrides();
     }
 
     private boolean allowQueryTableUpdateURLOverride()
     {
         TableInfo table = getTable();
-        return table != null && table.hasXMLUpdateOverride() && table.allowQueryTableURLOverrides();
+        return table != null && table.hasUpdateURLOverride() && table.allowQueryTableURLOverrides();
     }
 
     private boolean allowQueryTableDeleteURLOverride()
     {
         TableInfo table = getTable();
-        return table != null && table.hasXMLDeleteOverride() && table.allowQueryTableURLOverrides();
+        return table != null && table.hasDeleteURLOverride() && table.allowQueryTableURLOverrides();
     }
 
     public boolean showInsertNewButton()
