@@ -179,7 +179,11 @@ LABKEY.Experiment = new function()
          * </ul>
          * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
          * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
-         * @static
+         * @example Load batch:
+LABKEY.Experiment.loadBatch({
+    protocolName: LABKEY.Experiment.SAMPLE_DERIVATION_PROTOCOL,
+    batchId: 12
+});
          */
         loadBatch : function (config)
         {
@@ -197,6 +201,7 @@ LABKEY.Experiment = new function()
                 jsonData : {
                     assayId: config.assayId,
                     assayName: config.assayName,
+                    protocolName: config.protocolName,
                     providerName: config.providerName,
                     batchId: config.batchId
                 },
@@ -248,6 +253,7 @@ LABKEY.Experiment = new function()
                 jsonData : {
                     assayId: config.assayId,
                     assayName: config.assayName,
+                    protocolName: config.protocolName,
                     providerName: config.providerName,
                     batchIds: config.batchIds
                 },
@@ -278,7 +284,23 @@ LABKEY.Experiment = new function()
          * <li><b>response</b> The original response
          * </ul>
          * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
-         * @static
+         * @example Save batch:
+LABKEY.Experiment.saveBatch({
+    protocolName: LABKEY.Experiment.SAMPLE_DERIVATION_PROTOCOL,
+    batch: {
+        properties: {
+            // property URI from a Vocabulary
+            'urn:lsid:labkey.com:Vocabulary.Folder-114:MyVocab#field1': '123'
+        },
+        runs: [{
+            name: 'two',
+            properties: {
+                // property URI from a Vocabulary
+                'urn:lsid:labkey.com:Vocabulary.Folder-114:MyVocab#field1': '123'
+            }
+        }]
+    }
+});
          */
         saveBatch : function (config)
         {
