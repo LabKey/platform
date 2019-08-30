@@ -105,6 +105,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         return 19.20;
     }
 
+    @Override
     protected void init()
     {
         addController("announcements", AnnouncementsController.class);
@@ -120,26 +121,31 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         AttachmentService.get().registerAttachmentType(AnnouncementType.get());
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
+        return Arrays.asList(
             new AnnouncementsController.AnnouncementWebPartFactory(WEB_PART_NAME),
             new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new AnnouncementsController.AnnouncementListWebPart(parentCtx);
                 }
             },
-            new DiscussionWebPartFactory()));
+            new DiscussionWebPartFactory()
+        );
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     public String getTabName(ViewContext context)
     {
         return "Messages";
