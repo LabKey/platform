@@ -212,21 +212,6 @@ public class ProductRegistry
         }
 
         @Test
-        public void registerDuplicateSections()
-        {
-            try
-            {
-                registry.registerMenuItemsProvider(new TestMenuProvider("testModule", "unusedId", List.of("Section A", "SECTION B")));
-                fail("No exception thrown when registering a duplicate menu section");
-            }
-            catch (IllegalArgumentException e)
-            {
-                // this is the expected outcome
-                assertTrue(e.getMessage().contains("'SECTION B' registered"));
-            }
-        }
-
-        @Test
         public void getMenuSectionsByProductId()
         {
             ViewContext context = HttpView.currentContext();
