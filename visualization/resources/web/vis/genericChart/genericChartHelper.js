@@ -13,7 +13,7 @@ if(!LABKEY.vis) {
  */
 LABKEY.vis.GenericChartHelper = new function(){
 
-    var DEFULAT_TICK_LABEL_MAX = 25;
+    var DEFAULT_TICK_LABEL_MAX = 25;
     var $ = jQuery;
 
     var getRenderTypes = function() {
@@ -382,7 +382,7 @@ LABKEY.vis.GenericChartHelper = new function(){
             scales.x = {
                 scaleType: 'discrete', // Force discrete x-axis scale for box plots.
                 sortFn: LABKEY.vis.discreteSortFn,
-                tickLabelMax: DEFULAT_TICK_LABEL_MAX
+                tickLabelMax: DEFAULT_TICK_LABEL_MAX
             };
 
             var yMin = d3.min(data, aes.y);
@@ -429,7 +429,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 scales.x = {
                     scaleType: 'discrete',
                     sortFn: LABKEY.vis.discreteSortFn,
-                    tickLabelMax: DEFULAT_TICK_LABEL_MAX
+                    tickLabelMax: DEFAULT_TICK_LABEL_MAX
                 };
 
                 //bar chart x-axis subcategories support
@@ -437,7 +437,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                     scales.xSub = {
                         scaleType: 'discrete',
                         sortFn: LABKEY.vis.discreteSortFn,
-                        tickLabelMax: DEFULAT_TICK_LABEL_MAX
+                        tickLabelMax: DEFAULT_TICK_LABEL_MAX
                     };
                 }
             }
