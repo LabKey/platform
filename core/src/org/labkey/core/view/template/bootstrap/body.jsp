@@ -132,6 +132,16 @@
             %>
         </div>
     </div>
+    <%
+        if (me.getView("banner") != null)
+        {
+    %>
+    <div class="row content-banner">
+        <%me.include(me.getView("banner"), out);%>
+    </div>
+    <%
+        }
+    %>
     <div class="row content-row">
         <div class="content-left">
             <% me.include(me.getBody(), out); %>

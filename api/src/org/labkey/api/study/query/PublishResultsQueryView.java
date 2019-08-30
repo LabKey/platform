@@ -103,6 +103,7 @@ public class PublishResultsQueryView extends ResultsQueryView
     private final Map<Object, String> _reshowDates;
     private final Map<Object, String> _reshowPtids;
     private final Map<Object, String> _reshowTargetStudies;
+    private boolean _includeTimestamp;
 
     private List<ActionButton> _buttons = null;
 
@@ -160,7 +161,9 @@ public class PublishResultsQueryView extends ResultsQueryView
                                    Map<Object, String> reshowVisits,
                                    Map<Object, String> reshowDates,
                                    Map<Object, String> reshowPtids,
-                                   DefaultValueSource defaultValueSource, boolean mismatched)
+                                   DefaultValueSource defaultValueSource,
+                                   boolean mismatched,
+                                   boolean includeTimestamp)
     {
         super(protocol, schema, settings);
         _targetStudyContainer = targetStudyContainer;
@@ -176,6 +179,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         _reshowVisits = reshowVisits;
         _reshowDates = reshowDates;
         _reshowTargetStudies = reshowTargetStudies;
+        _includeTimestamp = includeTimestamp;
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
 
         getSettings().setMaxRows(Table.ALL_ROWS);
@@ -454,7 +458,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return result;
         }
 
-        public Object getUserDate(RenderContext ctx)
+        public Object getUserDate(RenderContext ctx, boolean includeTimestamp)
         {
             if (_reshowDates != null)
             {
@@ -467,7 +471,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
-            return DateUtil.formatDateISO8601(result);
+            return includeTimestamp ? DateUtil.formatDateTimeISO8601(result) : DateUtil.formatDateISO8601(result);
         }
 
         public Container getUserTargetStudy(RenderContext ctx)
@@ -596,7 +600,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 }
                 else
                 {
-                    Date userDate = convertObjectToDate(ctx.getContainer(), getUserDate(ctx));
+                    Date userDate = convertObjectToDate(ctx.getContainer(), getUserDate(ctx, false));
                     userInputMatchesASpecimen = isValidPtidDate(targetStudy, userParticipantId, userDate);
                     if (_specimenDateCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
@@ -837,15 +841,19 @@ public class PublishResultsQueryView extends ResultsQueryView
 
     private class DateDataInputColumn extends DataInputColumn
     {
-        public DateDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol)
+        private boolean _includeTimestamp;
+
+        public DateDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo dateCol, boolean includeTimestamp)
         {
             super(AbstractAssayProvider.DATE_PROPERTY_CAPTION, "date",
                     true, completionBase, resolverHelper, dateCol);
+
+            _includeTimestamp = includeTimestamp;
         }
 
         protected Object calculateValue(RenderContext ctx)
         {
-            return _resolverHelper.getUserDate(ctx);
+            return _resolverHelper.getUserDate(ctx, _includeTimestamp);
         }
     }
 
@@ -1044,7 +1052,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         // UNDONE: If selected ids contain studies of different timepoint types, include both Date and Visit columns and enable and disable the inputs when the study picker changes.
         // For now, just include both Date and Visit columns if the target study isn't known yet.
         VisitIDDataInputColumn visitIDInputColumn = new VisitIDDataInputColumn(resolverHelper, assayVisitIDCol);
-        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, assayDateCol);
+        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, assayDateCol, _includeTimestamp);
         if (_timepointType == null || _timepointType == TimepointType.VISIT)
         {
             columns.add(visitIDInputColumn);
