@@ -217,10 +217,13 @@ public class ToolsController extends SpringActionController
                     jspFiles.removeAll(candidates);
                 });
 
-                out.println();
-                out.println("The following " + jspFiles.size() + " JSP files are strong candidates for removal:");
-                out.println();
-                jspFiles.forEach(path->out.println(filter(path)));
+                if (!jspFiles.isEmpty())
+                {
+                    out.println();
+                    out.println("The following " + StringUtilsLabKey.pluralize(jspFiles.size(), "JSP file is a", "JSP files are") + " strong candidates for removal:");
+                    out.println();
+                    jspFiles.forEach(path->out.println(filter(path)));
+                }
 
                 out.println("</pre>");
                 out.flush();
@@ -247,6 +250,11 @@ public class ToolsController extends SpringActionController
                 }
 
                 return root;
+            }
+
+            private boolean shouldInclude(String jspPath)
+            {
+                return !jspPath.contains("/biologics/view/Navigation");  // ignore funny JSP in biologics, until we adjust its source path
             }
 
             // TODO: warn for duplicates - suspicious
@@ -284,7 +292,8 @@ public class ToolsController extends SpringActionController
                                                         s = "/org/labkey/study/view/" + s;
                                                 }
 
-                                                ret.add(s);
+                                                if (shouldInclude(s))
+                                                    ret.add(s);
                                             }
                                             return true;
                                         }
@@ -325,9 +334,16 @@ public class ToolsController extends SpringActionController
                                 int idx = filePath.indexOf("/org/");
 
                                 if (-1 != idx)
-                                    ret.add(filePath.substring(idx));
+                                {
+                                    String path = filePath.substring(idx);
+
+                                    if (shouldInclude(path))
+                                        ret.add(path);
+                                }
                                 else
+                                {
                                     out.println(filter("Can't find \"/org/\": " + filePath));
+                                }
                             }
 
                             return FileVisitResult.CONTINUE;
