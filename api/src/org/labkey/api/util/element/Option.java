@@ -23,6 +23,7 @@ import javax.validation.constraints.NotNull;
 public class Option
 {
     private boolean _disabled;
+    @NotNull
     private HtmlString _label;
     private boolean _selected;
     private String _value;
@@ -90,6 +91,7 @@ public class Option
 
         public OptionBuilder()
         {
+            _label = HtmlString.EMPTY_STRING;
         }
 
         public OptionBuilder(String label, String value)
