@@ -1678,6 +1678,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Map<String, Pair<Integer, String[]>> map = new HashMap<>();
 
+            add(map, "7z_sample.7z", 53, "7zSearchFile.txt", "This is a sample 7z test file.");
             add(map, "cmd_sample.cmd", 844, "Delete SetupPolicies directory");
             add(map, "cpp_sample.cpp", 281, "Rcpp::NumericVector");
             add(map, "css_sample.css", 697, "math display", "fixes display issues");
