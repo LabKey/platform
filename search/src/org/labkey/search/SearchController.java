@@ -287,19 +287,19 @@ public class SearchController extends SpringActionController
             }
 
             // Spring errors get displayed in the "Index Configuration" pane
-            WebPartView indexerView = new JspView<>(SearchController.class, "view/indexerAdmin.jsp", form, errors);
+            WebPartView indexerView = new JspView<>("/org/labkey/search/view/indexerAdmin.jsp", form, errors);
             indexerView.setTitle("Index Configuration");
             vbox.addView(indexerView);
 
             // Won't be able to gather statistics if the search index is misconfigured
             if (null == t)
             {
-                WebPartView indexerStatsView = new JspView<>(SearchController.class, "view/indexerStats.jsp", form);
+                WebPartView indexerStatsView = new JspView<>("/org/labkey/search/view/indexerStats.jsp", form);
                 indexerStatsView.setTitle("Index Statistics");
                 vbox.addView(indexerStatsView);
             }
 
-            WebPartView searchStatsView = new JspView<>(SearchController.class, "view/searchStats.jsp", form);
+            WebPartView searchStatsView = new JspView<>("/org/labkey/search/view/searchStats.jsp", form);
             searchStatsView.setTitle("Search Statistics");
             vbox.addView(searchStatsView);
 
@@ -655,7 +655,7 @@ public class SearchController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>(SearchController.class, "view/testJson.jsp", null, null);
+            return new JspView<>("/org/labkey/search/view/testJson.jsp", null, null);
         }
 
         public NavTree appendNavTrail(NavTree root)
