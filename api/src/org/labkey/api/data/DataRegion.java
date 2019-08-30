@@ -923,7 +923,7 @@ public class DataRegion extends DisplayElement
     {
         ParameterView(Collection<QueryService.ParameterDecl> params, Map<String, Object> defaults)
         {
-            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getDomId(), DataRegion.this.getName(), params, defaults));
+            super("/org/labkey/api/data/parameterForm.jsp", new ParameterViewBean(DataRegion.this.getDomId(), DataRegion.this.getName(), params, defaults));
         }
     }
 
