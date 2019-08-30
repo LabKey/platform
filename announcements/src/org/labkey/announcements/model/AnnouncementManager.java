@@ -1020,7 +1020,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -1046,7 +1046,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {

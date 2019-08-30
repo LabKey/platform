@@ -302,7 +302,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
      * Use Jackson to parse POST body as JSON and instantiate the FORM class directly.
      */
     @NotNull
-    private Pair<FORM, BindException> populateJacksonForm() throws Exception
+    // Leave this protected; client-developed action classes override it. See #38307
+    protected Pair<FORM, BindException> populateJacksonForm() throws Exception
     {
         FORM form = null;
         BindException errors;
@@ -407,7 +408,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return null == o || (o instanceof String && ((String)o).isEmpty());
     }
 
-    private void saveRequestedApiVersion(HttpServletRequest request, Object obj)
+    // Leave this protected; client-developed action classes call it. See #38307
+    protected void saveRequestedApiVersion(HttpServletRequest request, Object obj)
     {
         Object o = null;
 

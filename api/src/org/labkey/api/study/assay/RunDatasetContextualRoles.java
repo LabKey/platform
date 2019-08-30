@@ -58,6 +58,7 @@ public class RunDatasetContextualRoles implements HasContextualRoles
      *
      * @return a singleton ReaderRole set or null
      */
+    @Override
     @Nullable
     public Set<Role> getContextualRoles(ViewContext context)
     {
