@@ -610,7 +610,7 @@ public class ReportUtil
 
     public static Report getReportById(ViewContext viewContext, String reportIdString)
     {
-        ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString);
+        ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdString, viewContext.getUser(), viewContext.getContainer());
 
         //allow bare report ids for backward compatibility
         if (reportId == null && NumberUtils.isDigits(reportIdString))
@@ -780,7 +780,7 @@ public class ReportUtil
 
             Object reportId = props.get("reportId");
             if (reportId != null)
-                _reportId = ReportService.get().getReportIdentifier((String)reportId);
+                _reportId = ReportService.get().getReportIdentifier((String)reportId, null, null);
         }
 
         public static JSONObject toJSON(User user, Container container, Report report)

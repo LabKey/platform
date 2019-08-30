@@ -723,7 +723,7 @@ public class StudyController extends BaseStudyController
             {
                 String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
 
-                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
+                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId, getViewContext().getUser(), getViewContext().getContainer());
                 if (identifier != null)
                     _report = identifier.getReport(getViewContext());
             }
@@ -861,7 +861,7 @@ public class StudyController extends BaseStudyController
                 if (def != null &&
                     QueryService.get().getCustomView(getUser(), getContainer(), getUser(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
                 {
-                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null && reportId.getReport(getViewContext()) != null)
                     {
                         ActionURL newURL = url.clone().deleteParameter(DATASET_VIEW_NAME_PARAMETER_NAME).
@@ -3760,7 +3760,7 @@ public class StudyController extends BaseStudyController
                 String defaultView = getDefaultView(context, datasetId);
                 if (!StringUtils.isEmpty(defaultView))
                 {
-                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null)
                         url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
                     else

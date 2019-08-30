@@ -136,7 +136,7 @@ public interface ReportService
     @Nullable
     Report getReport(ReportDB reportDB);
 
-    ReportIdentifier getReportIdentifier(String reportId);
+    ReportIdentifier getReportIdentifier(String reportId, @Nullable User user, @Nullable Container container);
 
     void addUIProvider(UIProvider provider);
 
