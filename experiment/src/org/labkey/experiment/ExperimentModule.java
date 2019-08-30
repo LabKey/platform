@@ -35,6 +35,8 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAttachmentType;
+import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -51,6 +53,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -129,11 +132,13 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
+    @Override
     public String getName()
     {
         return MODULE_NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.21;
@@ -146,6 +151,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
+    @Override
     protected void init()
     {
         addController("experiment", ExperimentController.class);
@@ -181,20 +187,25 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
                 "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
+
+        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
+        AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
-    @NotNull
+    @NotNull @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> result = new ArrayList<>();
 
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunGroupWebPart(portalCtx, WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), webPart);
@@ -205,6 +216,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunTypeWebPart();
@@ -215,6 +227,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(new ExperimentRunWebPartFactory());
         BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
@@ -223,6 +236,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         sampleSetFactory.addLegacyNames("Narrow Sample Sets");
         result.add(sampleSetFactory);
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
@@ -232,6 +246,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         });
 
         result.add(new AlwaysAvailableWebPartFactory("Data Classes", false, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new DataClassWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx, webPart);
@@ -240,6 +255,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new ProtocolWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
@@ -413,6 +429,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -448,7 +465,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).size();
+        int sampleSetCount = SampleSetService.get().getSampleSets(c, null, false).size();
         if (sampleSetCount > 0)
             list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
 
@@ -503,6 +520,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
 
+    @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
 //        if (c == ContainerManager.getSharedContainer())
@@ -528,6 +546,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     }
 
+    @Override
     public void indexDeleted()
     {
         // Clear the last indexed time on all material sources
