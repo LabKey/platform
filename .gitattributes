@@ -334,8 +334,6 @@ api/src/org/labkey/api/assay/actions/DesignerAction.java -text
 api/src/org/labkey/api/assay/actions/newUploadWarnings.jsp -text
 api/src/org/labkey/api/assay/actions/ProtocolIdForm.java -text
 api/src/org/labkey/api/assay/actions/ReimportRedirectAction.java -text
-api/src/org/labkey/api/assay/actions/ShowSelectedDataAction.java -text
-api/src/org/labkey/api/assay/actions/ShowSelectedRunsAction.java -text
 api/src/org/labkey/api/assay/AssayColumnInfoRenderer.java -text
 api/src/org/labkey/api/assay/AssayDataCollector.java -text
 api/src/org/labkey/api/assay/AssayDataCollectorDisplayColumn.java -text
@@ -374,7 +372,6 @@ api/src/org/labkey/api/assay/PreviouslyUploadedDataCollector.java -text
 api/src/org/labkey/api/assay/query/AssayBaseQueryView.java -text
 api/src/org/labkey/api/assay/query/BatchListQueryView.java -text
 api/src/org/labkey/api/assay/query/ResultsQueryView.java -text
-api/src/org/labkey/api/assay/query/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/assay/query/RunListQueryView.java -text
 api/src/org/labkey/api/assay/ReplacedRunFilter.java -text
 api/src/org/labkey/api/assay/security/DesignAssayPermission.java -text
@@ -733,7 +730,6 @@ api/src/org/labkey/api/defaults/DefaultableDisplayColumn.java -text
 api/src/org/labkey/api/defaults/DefaultValueService.java -text
 api/src/org/labkey/api/defaults/DomainIdForm.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
-api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
@@ -1776,7 +1772,6 @@ api/webapp/Ext3.lib.xml -text
 api/webapp/Ext4.lib.xml -text
 api/webapp/WEB-INF/applicationContext.xml -text
 api/webapp/WEB-INF/labkey.tld -text
-assay/api-src/org/labkey/api/assay/actions/AssayResultsAction.java -text
 assay/api-src/org/labkey/api/assay/actions/PlateBasedUploadWizardAction.java -text
 assay/api-src/org/labkey/api/assay/actions/PlateUploadForm.java -text
 assay/api-src/org/labkey/api/assay/actions/PlateUploadFormImpl.java -text
@@ -1844,6 +1839,7 @@ assay/api-src/org/labkey/api/assay/plate/Well.java -text
 assay/api-src/org/labkey/api/assay/plate/WellData.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroup.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroupTemplate.java -text
+assay/api-src/org/labkey/api/assay/query/RunListDetailsQueryView.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text
@@ -1882,6 +1878,7 @@ assay/src/org/labkey/api/assay/nab/view/sampleDilutions.jsp -text
 assay/src/org/labkey/api/assay/nab/view/sampleProperties.jsp -text
 assay/src/org/labkey/assay/actions/AssayBatchDetailsAction.java -text
 assay/src/org/labkey/assay/actions/AssayBatchesAction.java -text
+assay/src/org/labkey/assay/actions/AssayResultsAction.java -text
 assay/src/org/labkey/assay/actions/BaseProtocolAPIAction.java -text
 assay/src/org/labkey/assay/actions/DeleteAction.java -text
 assay/src/org/labkey/assay/actions/DeleteProtocolAction.java -text
@@ -1890,6 +1887,9 @@ assay/src/org/labkey/assay/actions/GetProtocolAction.java -text
 assay/src/org/labkey/assay/actions/ImportAction.java -text
 assay/src/org/labkey/assay/actions/PipelineDataCollectorRedirectAction.java -text
 assay/src/org/labkey/assay/actions/SaveAssayBatchAction.java -text
+assay/src/org/labkey/assay/actions/SetDefaultValuesAssayAction.java -text
+assay/src/org/labkey/assay/actions/ShowSelectedDataAction.java -text
+assay/src/org/labkey/assay/actions/ShowSelectedRunsAction.java -text
 assay/src/org/labkey/assay/actions/TemplateAction.java -text
 assay/src/org/labkey/assay/actions/TsvImportAction.java -text
 assay/src/org/labkey/assay/AssayFolderType.java -text
@@ -2342,11 +2342,11 @@ core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
 core/src/org/labkey/core/statistics/SummaryStatisticRegistryImpl.java -text
-core/src/org/labkey/core/test/buttons.jsp -text
-core/src/org/labkey/core/test/complex.jsp -text
-core/src/org/labkey/core/test/form.jsp -text
-core/src/org/labkey/core/test/tags.jsp -text
-core/src/org/labkey/core/test/TestController.java -text
+devtools/src/org/labkey/devtools/view/buttons.jsp -text
+devtools/src/org/labkey/devtools/view/complex.jsp -text
+devtools/src/org/labkey/devtools/view/form.jsp -text
+devtools/src/org/labkey/devtools/view/tags.jsp -text
+devtools/src/org/labkey/devtools/TestController.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailCache.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailServiceImpl.java -text
 core/src/org/labkey/core/user/changeEmail.jsp -text

@@ -2447,7 +2447,7 @@ if (!LABKEY.DataRegions) {
      */
 
     LABKEY.DataRegion.prototype.toggleButtonPanelHandler = function(panelButton) {
-        _toggleButtonPanel( this, $(panelButton).attr('panel-toggle'), null, true);
+        _toggleButtonPanel( this, $(panelButton).attr('data-labkey-panel-toggle'), null, true);
     };
 
     LABKEY.DataRegion.prototype.showButtonPanel = function(panel, optionalTab) {
@@ -3584,7 +3584,8 @@ if (!LABKEY.DataRegions) {
                     item.onClick = "return LABKEY.DataRegions['" + region.name + "']._onButtonClick('" + item.id + "');";
                 }
 
-                if (item.items) {
+                // Be tolerant of the caller passing in undefined, as pageSize has been removed as an option. See issue 34562
+                if (item && item.items) {
                     _processButtonBarItems(region, item.items);
                 }
             }
@@ -3784,14 +3785,14 @@ if (!LABKEY.DataRegions) {
         if (!region._requiresSelectionButtons) {
             // escape ', ", and \
             var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
-            region._requiresSelectionButtons = $("a[labkey-requires-selection='" + escaped + "']");
+            region._requiresSelectionButtons = $("a[data-labkey-requires-selection='" + escaped + "']");
         }
 
         region._requiresSelectionButtons.each(function() {
             var el = $(this);
 
             // handle min-count
-            var minCount = el.attr('labkey-requires-selection-min-count');
+            var minCount = el.attr('data-labkey-requires-selection-min-count');
             if (minCount) {
                 minCount = parseInt(minCount);
             }
@@ -3800,7 +3801,7 @@ if (!LABKEY.DataRegions) {
             }
 
             // handle max-count
-            var maxCount = el.attr('labkey-requires-selection-max-count');
+            var maxCount = el.attr('data-labkey-requires-selection-max-count');
             if (maxCount) {
                 maxCount = parseInt(maxCount);
             }
@@ -4636,11 +4637,11 @@ if (!LABKEY.DataRegions) {
  * <ul>
  *  <li>LABKEY.QueryWebPart.standardButtons.query</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.views</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.charts</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.insertNew</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.deleteRows</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.exportRows</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.print</li>
- *  <li>LABKEY.QueryWebPart.standardButtons.pageSize</li>
  * </ul>
  * @name standardButtons
  * @memberOf LABKEY.QueryWebPart#
@@ -4648,11 +4649,11 @@ if (!LABKEY.DataRegions) {
 LABKEY.QueryWebPart.standardButtons = {
     query: 'query',
     views: 'grid views',
-    insertNew: 'insert new',
+    charts: 'charts',
+    insertNew: 'insert',
     deleteRows: 'delete',
     exportRows: 'export',
-    print: 'print',
-    pageSize: 'paging'
+    print: 'print'
 };
 
 /**

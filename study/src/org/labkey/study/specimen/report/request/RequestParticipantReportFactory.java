@@ -18,6 +18,7 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.study.model.Participant;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.controllers.specimen.SpecimenController;
@@ -76,9 +77,9 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
     }
 
     @Override
-    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;
     }

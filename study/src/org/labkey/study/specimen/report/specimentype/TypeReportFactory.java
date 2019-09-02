@@ -15,15 +15,18 @@
  */
 package org.labkey.study.specimen.report.specimentype;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.SpecimenManager;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Select;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
+import org.labkey.study.SpecimenManager;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * User: brittp
@@ -32,25 +35,25 @@ import java.util.ArrayList;
 public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 {
     @Override
-    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
 
         if (!SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting())
         {
-            StringBuilder builder = new StringBuilder();
-            builder.append("<select name=\"").append(PARAMS.typeLevel.name()).append("\">");
+            Select.SelectBuilder builder = new Select.SelectBuilder();
+            builder.name(PARAMS.typeLevel.name());
+
             for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
             {
-                builder.append("<option value=\"").append(PageFlowUtil.filter(level.name())).append("\"");
-                if (getTypeLevelEnum() == level)
-                    builder.append(" SELECTED");
-                builder.append(">");
-                builder.append("Show results by: ");
-                builder.append(PageFlowUtil.filter(level.getLabel())).append("</option>");
+                builder.addOption(new Option.OptionBuilder()
+                        .value(level.name())
+                        .label("Show results by: " + level.getLabel())
+                        .selected(getTypeLevelEnum() == level)
+                        .build()
+                );
             }
-            builder.append("</select>");
-            inputs.add(new Pair<>("Type breakdown", builder.toString()));
+            inputs.add(new Pair<>("Type breakdown", unsafe(builder.toString())));
         }
 
         return inputs;

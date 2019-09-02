@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -39,7 +38,7 @@
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Validate domains match hard tables:&nbsp;<br/>
         (Runs in background as pipeline job)</td>
-        <td> <%= button("Validate").href("javascript:void(0);").onClick(PageFlowUtil.postOnClickJavaScript(new ActionURL(AdminController.ValidateDomainsAction.class, ContainerManager.getRoot()))) %>&nbsp;</td></tr>
+        <td> <%= button("Validate").href(urlFor(AdminController.ValidateDomainsAction.class)).usePost() %>&nbsp;</td></tr>
         <tr><td>&nbsp;</td><td></td></tr>
         <tr><td>Get schema xml doc:&nbsp;</td>
             <td>

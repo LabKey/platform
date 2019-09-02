@@ -42,6 +42,7 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
 {
     private QueryForm _form = null;
     
+    @Override
     public ModelAndView getView(QueryForm form, BindException errors)
     {
         _form = form;
@@ -60,11 +61,14 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
         return new HtmlView(html.toString());
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         ActionURL urlQ = new ActionURL(QueryController.BeginAction.class, _form.getViewContext().getContainer());
         urlQ.addParameter("schemaName", _form.getSchemaName());
         urlQ.addParameter("queryName", _form.getQueryName());
-        return root.addChild("Query '" + _form.getSchemaName() + "." + _form.getQueryName() + "'", urlQ).addChild("Query Source");
+        root.addChild("Query '" + _form.getSchemaName() + "." + _form.getQueryName() + "'", urlQ);
+        root.addChild("Query Source");
+        return root;
     }
 }

@@ -18,8 +18,11 @@ package org.labkey.study.specimen.report.request;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Location;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Select;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.LocationImpl;
@@ -30,6 +33,8 @@ import org.labkey.study.specimen.report.SpecimenVisitReport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * User: brittp
@@ -112,23 +117,28 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
     }
 
     @Override
-    public List<Pair<String, String>> getAdditionalFormInputHtml(Container container)
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<select name=\"locationId\">\n" +
-                "<option value=\"\">All Requesting Locations</option>\n");
+
+        Select.SelectBuilder builder = new Select.SelectBuilder();
+
+        builder.name("locationId")
+            .addOption(new Option.OptionBuilder()
+            .value("")
+            .label("All Requesting Locations")
+            .build());
+
         for (LocationImpl location : SpecimenManager.getInstance().getSitesWithRequests(getContainer()))
         {
-            builder.append("<option value=\"").append(location.getRowId()).append("\"");
-            if (_locationId != null && location.getRowId() == _locationId)
-                builder.append(" SELECTED");
-            builder.append(">");
-            builder.append(PageFlowUtil.filter(location.getLabel()));
-            builder.append("</option>\n");
+            builder.addOption(new Option.OptionBuilder()
+                .value(Integer.toString(location.getRowId()))
+                .label(location.getLabel())
+                .selected(_locationId != null && location.getRowId() == _locationId)
+                .build());
         }
-        builder.append("</select>");
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml(container));
-        inputs.add(new Pair<>("Requesting location(s)", builder.toString()));
+
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        inputs.add(new Pair<>("Requesting location(s)", unsafe(builder.toString())));
         return inputs;
     }
 }

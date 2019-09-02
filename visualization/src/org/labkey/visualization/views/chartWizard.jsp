@@ -18,10 +18,12 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.util.ExtUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -30,7 +32,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
-<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -38,6 +39,10 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("vischart");
+
+        // Required by timeChartPanel.js. Load only if study module is present.
+        if (null != StudyService.get())
+            dependencies.add("study/ParticipantFilter");
     }
 %>
 <%

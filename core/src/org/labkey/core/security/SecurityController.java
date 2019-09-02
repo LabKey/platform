@@ -34,6 +34,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportPermission;
@@ -41,6 +42,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -340,6 +342,20 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class)
+    public class GetMaxPhiLevelAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            String maxPhi = ComplianceService.get().getMaxAllowedPhi(getContainer(), getUser()).name();
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("maxPhiLevel", maxPhi);
+
+            return response;
+        }
+    }
 
     @RequiresPermission(AdminPermission.class)
     @ActionNames("permissions,project")
@@ -373,7 +389,7 @@ public class SecurityController extends SpringActionController
         
         FolderPermissionsView(String resource, ActionURL doneURL)
         {
-            super(SecurityController.class, "permissions.jsp", null);
+            super("/org/labkey/core/security/permissions.jsp", null);
             this.setModelBean(this);
             this.setFrame(FrameType.NONE);
             this.resource = resource;
@@ -1285,7 +1301,9 @@ public class SecurityController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
-            return root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL()).addChild("Add Users");
+            root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
+            root.addChild("Add Users");
+            return root;
         }
 
         public void validateCommand(AddUsersForm form, Errors errors) {}

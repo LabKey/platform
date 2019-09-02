@@ -29,6 +29,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Date" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -51,7 +53,9 @@
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
     ActionURL shareReportURL = urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
-    String reportURLAttributes = report.getRunReportTarget() != null ? "target=\"" + report.getRunReportTarget() + "\"": "";
+    Map<String,String> reportURLAttributes = report.getRunReportTarget() != null
+            ? Map.of("target", report.getRunReportTarget())
+            : Collections.emptyMap();
 
     String type = report.getTypeDescription();
     String category = "";
@@ -199,7 +203,7 @@
             Created:
         </td>
         <td>
-             <%=createdDate != null && createdDate.getTime() > 0 ? formatDateTime(createdDate) : ""%>
+             <%=createdDate != null && createdDate.getTime() > 0 ? formatDateTime(createdDate) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 
@@ -253,8 +257,8 @@
     <tr>
         <td colspan="2">
             <%= button("View Report").href(vewReportURL).attributes(reportURLAttributes) %>
-            <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : ""%>
-            <%= report.allowShareButton(getUser(), getContainer()) && (shareReportURL != null) ? button("Share Report").href(shareReportURL) : ""%>
+            <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : HtmlString.EMPTY_STRING%>
+            <%= report.allowShareButton(getUser(), getContainer()) && (shareReportURL != null) ? button("Share Report").href(shareReportURL) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 </table>

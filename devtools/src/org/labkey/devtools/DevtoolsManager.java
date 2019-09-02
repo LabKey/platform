@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.annotations;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+package org.labkey.devtools;
 
-@Retention(RetentionPolicy.SOURCE)
-public @interface RemoveIn19_3
+public class DevtoolsManager
 {
+    private static final DevtoolsManager _instance = new DevtoolsManager();
+
+    private DevtoolsManager()
+    {
+        // prevent external construction with a private default constructor
+    }
+
+    public static DevtoolsManager get()
+    {
+        return _instance;
+    }
 }

@@ -38,7 +38,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
     SpecimenController.ReportConfigurationBean bean = me.getModelBean();
@@ -102,7 +102,7 @@ This folder does not contain a study.
             String formName = "form" + showHideSuffix;
 %>
     <tr><td>
-    <labkey:form action="<%=new ActionURL(factory.getAction(), container)%>" name="<%=h(formName)%>" method="GET">
+    <labkey:form action="<%=new ActionURL(factory.getAction(), container)%>" name="<%=formName%>" method="GET">
         <%
             if (bean.isListView())
             {
@@ -123,7 +123,7 @@ This folder does not contain a study.
         %>
         <div class="<%=rowClass%>">
             <div>
-                <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
+                <span id="reportParameters<%= unsafe(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
                 <table>
                 <%
                     if (showCohorts && factory.allowsCohortFilter())
@@ -166,7 +166,7 @@ This folder does not contain a study.
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
                             %>
-                                <option value="<%= type.name() %>"<%=selected(type == selectedCohortType)%>>
+                                <option value="<%=type%>"<%=selected(type == selectedCohortType)%>>
                                     <%= h(type.getTitle()) %>
                                 </option>
                             <%
@@ -239,7 +239,7 @@ This folder does not contain a study.
                                 for (SpecimenVisitReportParameters.Status status : SpecimenVisitReportParameters.Status.values())
                                 {
                             %>
-                                <option value="<%= status.name() %>"<%=selected(factory.getStatusFilter() == status)%>>
+                                <option value="<%=status%>"<%=selected(factory.getStatusFilter() == status)%>>
                                     <%= h(status.getCaption()) %>
                                 </option>
                             <%
@@ -252,7 +252,7 @@ This folder does not contain a study.
                     }
                     if (factory.allowsCustomViewFilter())
                     {
-                        String viewPickerHtml = factory.getCustomViewPicker(views);
+                        HtmlString viewPickerHtml = factory.getCustomViewPicker(views);
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>">Base</td>
@@ -263,8 +263,9 @@ This folder does not contain a study.
                 <%
                     }
 
-                    List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml(container);
-                    for (Pair<String, String> inputPair : additionalFormInputs)
+                    // AdditionalFormInputs values are html generated in classes that extend SpecimenVisitReportParameters
+                    List<Pair<String, HtmlString>> additionalFormInputs = factory.getAdditionalFormInputHtml();
+                    for (Pair<String, HtmlString> inputPair : additionalFormInputs)
                     {
                 %>
                     <tr>

@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
 <%@ page import="java.util.Iterator" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -81,7 +82,7 @@
         boolean usePlural = bean.getFilteredPtidVisits().size() != 1;
         if (bean.isSingleVisitFilter())
         {
-            filterString.append((usePlural?subjectNounPlural:subjectNounSingle).toLowerCase()).append(" ");
+            filterString.append(h((usePlural?subjectNounPlural:subjectNounSingle).toLowerCase())).append(" ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 String ptid = it.next().getKey();
@@ -110,7 +111,7 @@
 %>
     <p>
         <table width="700px">
-            <tr><td><%= filterString %></td></tr>
+            <tr><td><%= unsafe(filterString.toString()) %></td></tr>
         </table>
     </p>
 <%= link("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl)%><%

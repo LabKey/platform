@@ -22,8 +22,10 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunType;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.ReplacedRunFilter;
+import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
@@ -35,7 +37,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
-import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -149,9 +150,10 @@ public class RunListQueryView extends ExperimentRunListView
                 addButton = true;
             }
 
-            if (getContainer().hasPermission(getUser(), AdminPermission.class))
+            Container protocolContainer = schema.getProtocol().getContainer();
+            if (protocolContainer.hasPermission(getUser(), AdminPermission.class))
             {
-                button.addMenuItem("Manage states", PageFlowUtil.urlProvider(CoreUrls.class).getManageQCStatesURL(getContainer())
+                button.addMenuItem("Manage states", PageFlowUtil.urlProvider(CoreUrls.class).getManageQCStatesURL(protocolContainer)
                         .addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString()));
                 addButton = true;
             }

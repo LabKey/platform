@@ -140,20 +140,25 @@ public class ReportsController extends BaseStudyController
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
+
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             _study = getStudy();
             return StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (_study == null)
-                return root.addChild("No Study In Folder");
+                root.addChild("No Study In Folder");
             else if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                return root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
-                return root.addChild("Views");
+                root.addChild("Views");
+
+            return root;
         }
     }
 

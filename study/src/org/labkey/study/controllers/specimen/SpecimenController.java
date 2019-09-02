@@ -281,13 +281,15 @@ public class SpecimenController extends BaseStudyController
     private NavTree appendSpecimenRequestsNavTrail(NavTree root)
     {
         root = appendBaseSpecimenNavTrail(root);
-        return root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        return root;
     }
 
     private NavTree appendSpecimenRequestNavTrail(NavTree root, int requestId)
     {
         root = appendSpecimenRequestsNavTrail(root);
-        return root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
+        root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
+        return root;
     }
 
 
@@ -4179,6 +4181,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageActorOrder.jsp", study);
+        }
+
+        @Override
         public boolean handlePost(BulkEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
@@ -4234,8 +4242,10 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Form form, boolean reshow, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView<>("/org/labkey/study/view/specimen/" + _jsp + ".jsp", getStudyRedirectIfNull());
+            return getJspView(getStudyRedirectIfNull());
         }
+
+        protected abstract JspView<StudyImpl> getJspView(StudyImpl study);
 
         @Override
         public NavTree appendNavTrail(NavTree root)
@@ -4264,6 +4274,12 @@ public class SpecimenController extends BaseStudyController
         public ManageActorsAction()
         {
             super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
+        }
+
+        @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageActors.jsp", study);
         }
 
         @Override
@@ -4350,6 +4366,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageStatusOrder.jsp", study);
+        }
+
+        @Override
         public boolean handlePost(BulkEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
@@ -4398,6 +4420,12 @@ public class SpecimenController extends BaseStudyController
         public ManageStatusesAction()
         {
             super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
+        }
+
+        @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageStatuses.jsp", study);
         }
 
         @Override
