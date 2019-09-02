@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp;
 
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.view.JspView;
 import org.labkey.api.action.HasViewContext;
 import org.springframework.validation.BindException;
@@ -24,19 +25,41 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
 {
     public FORM __form;
     
-    static public <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
+    private static <F extends HasViewContext> FormPage<F> get(FormPage<F> formPage, F form)
     {
-        FormPage<F> ret = (FormPage<F>) JspLoader.createPage(clazzPackage, name);
-        ret.setForm(form);
-        return ret;
+        formPage.setForm(form);
+        return formPage;
     }
 
-    static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, BindException errors, String name)
+    @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
+    public static <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
     {
-        return get(clazzPackage, form, name).createView(errors);
+        return get((FormPage<F>) JspLoader.createPage(clazzPackage, name), form);
     }
 
-    static public <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
+    @Deprecated // This bypasses JspView() standard handling (addClientDependencies(), mem tracking). Instead, use getView().
+    @RemoveIn20_1
+    public static <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
+    {
+        return get((FormPage<F>) JspLoader.createPage((String)null, jspPath), form);
+    }
+
+    public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
+    {
+        JspView<F> view = new JspView<>(jspPath, form, errors);
+        ((FormPage<F>)view.getPage()).setForm(form);
+        return view;
+    }
+
+    public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form)
+    {
+        return getView(jspPath, form, null);
+    }
+
+    @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
+    public static <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
     {
         return get(clazzPackage, form, name).createView();
     }

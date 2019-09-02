@@ -1581,7 +1581,7 @@ public class FileContentController extends SpringActionController
     {
         public IFrameView(String url)
         {
-			super(FileContentController.class, "view/iframe.jsp", url);
+			super("/org/labkey/filecontent/view/iframe.jsp", url);
         }
     }
 
