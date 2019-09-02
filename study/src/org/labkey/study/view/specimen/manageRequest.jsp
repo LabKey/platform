@@ -204,7 +204,6 @@
 <%
     }
     if (!SpecimenService.get().getRequestCustomizer().hideRequestWarnings()) { %>
-    %>
         <table class="labkey-request-warnings">
     <%
         boolean multipleSites = bean.getProvidingLocations().length > 1;
