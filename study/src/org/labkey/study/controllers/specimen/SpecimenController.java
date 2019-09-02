@@ -3698,7 +3698,7 @@ public class SpecimenController extends BaseStudyController
                     }
                 }
                 if (selectedVials == null || selectedVials.size() == 0)
-                    return new HtmlView("No vials selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+                    return new HtmlView("No vials selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
             }
 
             return new JspView<>("/org/labkey/study/view/specimen/updateComments.jsp",

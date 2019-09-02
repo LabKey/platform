@@ -358,7 +358,7 @@ public class QueryView extends WebPartView<Object>
                     if (getUser().isPlatformDeveloper())
                     {
                         out.write(" ");
-                        out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
+                        out.print(PageFlowUtil.link(StringUtils.defaultString(resolveText, "resolve")).href(resolveURL));
                     }
                 }
                 out.write("<br>");
@@ -1928,18 +1928,6 @@ public class QueryView extends WebPartView<Object>
     protected boolean canViewReport(User user, Container c, Report report)
     {
         return true;
-    }
-
-    protected String textLink(String text, ActionURL url, String anchorElementId)
-    {
-        if (url == null)
-            return null;
-        return PageFlowUtil.textLink(text, url, anchorElementId).concat("&nbsp;");
-    }
-
-    protected String textLink(String text, ActionURL url)
-    {
-        return textLink(text, url, null);
     }
 
     public void addCustomizeViewItems(MenuButton button)
