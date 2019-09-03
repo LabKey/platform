@@ -121,7 +121,9 @@ The request has produced no records.
             {
                 rowIndex++;
                 %><tr class="<%=getShadeRowClass(rowIndex + 1)%>" style="vertical-align:top"><%
-                for (int col = 0; col<width ; col++)
+                int colMax = SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting() ? 1 : width;
+
+                for (int col = 0; col<colMax ; col++)
                 {
                     String title = rowtitles[rowIndex][col].first.getDisplayValue();
                     if (title == null || title.length() == 0)
