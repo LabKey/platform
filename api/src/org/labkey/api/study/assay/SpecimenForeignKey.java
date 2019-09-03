@@ -17,6 +17,11 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -92,7 +97,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     // SpecimenForeignKey joins to the vial table AND the specimen table
     // The SpecimenForeignKey that the caller creates appears to join to vial (_joinToSpecimen=false),
-    // the one we create here (see SpecimenForiegnKey.createLookupColumn()) joins to Specimen (_joinToSpecimen=true)
+    // the one we create here (see SpecimenForeignKey.createLookupColumn()) joins to Specimen (_joinToSpecimen=true)
     //boolean _joinToSpecimen = false;
 
 
@@ -104,6 +109,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         _protocol = protocol;
         _tableMetadata = provider.getTableMetadata(protocol);
         _studyContainerFilter = new StudyContainerFilter(schema);
+        assert null != StudyService.get() : "Should not be using SpecimenForeignKey when study module is not present";
     }
 
 
@@ -116,6 +122,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         _protocol = null;
         _tableMetadata = tableMetadata;
         _studyContainerFilter = new StudyContainerFilter(schema);
+        assert null != StudyService.get() : "Should not be using SpecimenForeignKey when study module is not present";
     }
 
 
@@ -139,11 +146,9 @@ public class SpecimenForeignKey extends LookupForeignKey
             targetStudy = _schema.getTargetStudy();
         _defaultTargetContainer = null!=targetStudy ? targetStudy: _schema.getContainer();
 
-        UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), _defaultTargetContainer, "study");
-
         if (null == _assayDataTable)
         {
-            AssayProtocolSchema assaySchema = _provider.createProtocolSchema(studySchema.getUser(), _schema.getContainer(), _protocol, null);
+            AssayProtocolSchema assaySchema = _provider.createProtocolSchema(_schema.getUser(), _schema.getContainer(), _protocol, null);
             _assayDataTable = assaySchema.createDataTable(ContainerFilter.EVERYTHING);
         }
 
@@ -208,7 +213,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             }
         };
         ft.wrapAllColumns(true);
-        ft.addColumn(new BaseColumnInfo(new FieldKey(null,AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
+        ft.addColumn(new BaseColumnInfo(new FieldKey(null, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME),ft,JdbcType.BOOLEAN));
         ft.getMutableColumn("Specimen").setFk(new _SpecimenUnionForeignKey());
         ft.setPublic(false);
         ft.setLocked(true);

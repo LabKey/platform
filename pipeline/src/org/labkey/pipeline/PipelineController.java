@@ -182,20 +182,24 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetupAction extends AbstractSetupAction<SetupForm>
     {
+        @Override
         protected SetupField getFormField()
         {
             return SetupField.path;
         }
 
+        @Override
         public void validateCommand(SetupForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(SetupForm form, BindException errors) throws Exception
         {
             return savePipelineSetup(getViewContext(), form, errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(SetupForm form)
         {
             return urlSetup(getContainer(), form.getReturnActionURL(getContainer().getStartURL(getUser())), true, false);
@@ -287,6 +291,7 @@ public class PipelineController extends SpringActionController
             errors.rejectValue(getFormField().toString(), ERROR_MSG, message);
         }
 
+        @Override
         public ModelAndView getView(FORM form, boolean reshow, BindException errors)
         {
             setHelpTopic(getHelpTopic("pipelineSetup"));
@@ -375,9 +380,12 @@ public class PipelineController extends SpringActionController
             return result;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer())).addChild("Data Processing Pipeline Setup");
+            root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Data Processing Pipeline Setup");
+            return root;
         }
     }
 
@@ -447,7 +455,7 @@ public class PipelineController extends SpringActionController
         protected SecurableResource getSecurableResource()
         {
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
-            if (pipeRoot != null && !pipeRoot.isDefault())
+            if (pipeRoot != null && !pipeRoot.isFileRoot())
                 return pipeRoot;
             return super.getSecurableResource();
         }
@@ -502,7 +510,8 @@ public class PipelineController extends SpringActionController
             }
 
             java.nio.file.Path fileCurrent = pr.resolveToNioPath(relativePath);
-            if (fileCurrent == null || !Files.exists(fileCurrent))
+            // S3-backed storage may not have an entry for the root if there are no children, see issue 38377
+            if (!("".equals(relativePath) && pr.isCloudRoot()) && (fileCurrent == null || !Files.exists(fileCurrent)))
             {
                 errors.reject(ERROR_MSG, "File not found: " + form.getPath());
             }
@@ -773,7 +782,7 @@ public class PipelineController extends SpringActionController
     {
         PermissionView(SecurityPolicy policy)
         {
-            super(PipelineController.class, "permission.jsp", policy);
+            super("/org/labkey/pipeline/permission.jsp", policy);
         }
     }
 
@@ -783,6 +792,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UpdateEmailNotificationAction extends AbstractSetupAction<EmailNotificationForm>
     {
+        @Override
         protected SetupField getFormField()
         {
             // Note: This is never used because the <labkey:errors /> tag is used,

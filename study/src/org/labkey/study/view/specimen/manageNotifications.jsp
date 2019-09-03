@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -29,7 +31,7 @@
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
@@ -41,7 +43,7 @@ function setElementDisplayByCheckbox(checkbox, element)
         target.style.display = "";
     else
         target.style.display = "none";
-  }
+}
 </script>
 
 <%
@@ -51,10 +53,9 @@ function setElementDisplayByCheckbox(checkbox, element)
 
     String completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(container);
     boolean newRequestNotifyChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
-            bean.isNewRequestNotifyCheckbox() : (h(bean.getNewRequestNotify()) != null &&
-            h(bean.getNewRequestNotify()).compareTo("") != 0));
+            bean.isNewRequestNotifyCheckbox() : StringUtils.isNotEmpty(bean.getNewRequestNotify()));
     boolean ccChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
-            bean.isCcCheckbox() : (h(bean.getCc()) != null && h(bean.getCc()).compareTo("") != 0));
+            bean.isCcCheckbox() : StringUtils.isNotEmpty(bean.getCc()));
     DefaultEmailNotifyEnum defaultEmailNotifyEnum = (bean.getDefaultEmailNotifyEnum());         // Checking getMethod bot needed because one of the radio buttons will always POST
     SpecimensAttachmentEnum specimensAttachmentEnum = (bean.getSpecimensAttachmentEnum());
 %>
@@ -94,16 +95,20 @@ function setElementDisplayByCheckbox(checkbox, element)
         </tr>
         <tr>
             <td>
-                <input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true'<%=checked(replyToCurrentUser)%>
-                        onclick="document.getElementById('replyTo').value = '<%= h(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');">
-                The administrator who generated each notification
+                <label>
+                    <input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true'<%=checked(replyToCurrentUser)%>
+                            onclick="document.getElementById('replyTo').value = '<%= h(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');">
+                    The administrator who generated each notification
+                </label>
             </td>
         </tr>
         <tr>
             <td>
-                <input type='radio' id='replyToFixedUser'  name='replyToCurrentUser'  value='false'<%=checked(!replyToCurrentUser)%>
-                        onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= text(!replyToCurrentUser ? h(bean.getReplyTo()) : "") %>';">
-                A fixed email address:
+                <label>
+                    <input type='radio' id='replyToFixedUser'  name='replyToCurrentUser'  value='false'<%=checked(!replyToCurrentUser)%>
+                            onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= !replyToCurrentUser ? h(bean.getReplyTo()) : HtmlString.EMPTY_STRING %>';">
+                    A fixed email address:
+                </label>
             </td>
         </tr>
         <tr>
@@ -137,19 +142,23 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td colspan="2" class="local-text-block">Notification can be sent whenever a new specimen request is submitted.</td>
         </tr>
         <tr>
-            <td colspan="2"><input type='checkbox' value='true' id='newRequestNotifyCheckbox'
+            <td colspan="2">
+                <label>
+                <input type='checkbox' value='true' id='newRequestNotifyCheckbox'
                         name='newRequestNotifyCheckbox'
                         onclick="setElementDisplayByCheckbox('newRequestNotifyCheckbox', 'newRequestNotifyArea');"
-                        <%=checked(newRequestNotifyChecked)%>>Send Notification of New Requests</td>
+                        <%=checked(newRequestNotifyChecked)%>>Send Notification of New Requests
+                </label>
+            </td>
         </tr>
         <tr id="newRequestNotifyArea" style="display:<%= text(newRequestNotifyChecked ? "" : "none")%>">
             <th align="right" class="labkey-form-label local-left-label-width-th">Notify of new requests<br>(one per line):</th>
             <td>
                 <labkey:autoCompleteTextArea name="newRequestNotify"
                                              id="newRequestNotify"
-                                             url="<%=h(completionURLPrefix)%>"
+                                             url="<%=completionURLPrefix%>"
                                              cols="30" rows="3"
-                                             value="<%=h(bean.getNewRequestNotify())%>"/>
+                                             value="<%=bean.getNewRequestNotify()%>"/>
             </td>
         </tr>
         <tr>
@@ -157,10 +166,15 @@ function setElementDisplayByCheckbox(checkbox, element)
                 Please keep security issues in mind when adding users to this list.</td>
         </tr>
         <tr>
-            <td colspan="2"><input type='checkbox' value='true' id='ccCheckbox'
-                        name='ccCheckbox'
-                        onclick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
-                        <%=checked(ccChecked)%>>Always Send CC</td>
+            <td colspan="2">
+                <label>
+                    <input type='checkbox' value='true' id='ccCheckbox'
+                            name='ccCheckbox'
+                            onclick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
+                            <%=checked(ccChecked)%>>Always Send CC
+                </label>
+            </td>
+
         </tr>
 
         <tr id="ccArea" style="display:<%= text(ccChecked ? "" : "none")%>">
@@ -168,9 +182,9 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <labkey:autoCompleteTextArea name="cc"
                                              id="cc"
-                                             url="<%=h(completionURLPrefix)%>"
+                                             url="<%=completionURLPrefix%>"
                                              cols="30" rows="3"
-                                             value="<%=h(bean.getCc())%>"/>
+                                             value="<%=bean.getCc()%>"/>
             </td>
         </tr>
 
@@ -180,21 +194,30 @@ function setElementDisplayByCheckbox(checkbox, element)
         </tr>
         <tr>
             <th align="right" rowspan="3" class="labkey-form-label local-left-label-width-th">Default Email Recipients:</th>
-            <td><input type='radio' value='<%=DefaultEmailNotifyEnum.All%>'
-                       name='defaultEmailNotify'
-                       <%=checked(defaultEmailNotifyEnum == DefaultEmailNotifyEnum.All)%>>All</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=DefaultEmailNotifyEnum.All%>'
+                           name='defaultEmailNotify'
+                           <%=checked(defaultEmailNotifyEnum == DefaultEmailNotifyEnum.All)%>>All</input>
+                </label>
             </td>
         </tr>
         <tr>
-            <td><input type='radio' value='<%=DefaultEmailNotifyEnum.None%>'
-                       name='defaultEmailNotify'
-                       <%=checked(defaultEmailNotifyEnum == DefaultEmailNotifyEnum.None)%>>None</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=DefaultEmailNotifyEnum.None%>'
+                           name='defaultEmailNotify'
+                           <%=checked(defaultEmailNotifyEnum == DefaultEmailNotifyEnum.None)%>>None</input>
+                </label>
             </td>
         </tr>
         <tr>
-            <td><input type='radio' value='<%=DefaultEmailNotifyEnum.ActorsInvolved%>'
-                       name='defaultEmailNotify'
-                       <%=checked(defaultEmailNotifyEnum == DefaultEmailNotifyEnum.ActorsInvolved)%>>Notify Actors Involved</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=DefaultEmailNotifyEnum.ActorsInvolved%>'
+                           name='defaultEmailNotify'
+                           <%=checked(defaultEmailNotifyEnum == DefaultEmailNotifyEnum.ActorsInvolved)%>>Notify Actors Involved</input>
+                </label>
             </td>
         </tr>
         <tr>
@@ -203,27 +226,39 @@ function setElementDisplayByCheckbox(checkbox, element)
         </tr>
         <tr>
             <th align="right" rowspan="4" class="labkey-form-label local-left-label-width-th">Include Requested Specimens Table:</th>
-            <td><input type='radio' value='<%=SpecimensAttachmentEnum.InEmailBody%>'
-                       name='specimensAttachment'
-                <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.InEmailBody)%>>In the email body</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=SpecimensAttachmentEnum.InEmailBody%>'
+                           name='specimensAttachment'
+                    <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.InEmailBody)%>>In the email body</input>
+                </label>
             </td>
         </tr>
         <tr>
-            <td><input type='radio' value='<%=SpecimensAttachmentEnum.ExcelAttachment%>'
-                       name='specimensAttachment'
-                <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.ExcelAttachment)%>>As Excel attachment</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=SpecimensAttachmentEnum.ExcelAttachment%>'
+                           name='specimensAttachment'
+                    <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.ExcelAttachment)%>>As Excel attachment</input>
+                </label>
             </td>
         </tr>
         <tr>
-            <td><input type='radio' value='<%=SpecimensAttachmentEnum.TextAttachment%>'
-                       name='specimensAttachment'
-                <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.TextAttachment)%>>As text attachment</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=SpecimensAttachmentEnum.TextAttachment%>'
+                           name='specimensAttachment'
+                    <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.TextAttachment)%>>As text attachment</input>
+                </label>
             </td>
         </tr>
         <tr>
-            <td><input type='radio' value='<%=SpecimensAttachmentEnum.Never%>'
-                       name='specimensAttachment'
-                <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.Never)%>>Never</input>
+            <td>
+                <label>
+                    <input type='radio' value='<%=SpecimensAttachmentEnum.Never%>'
+                           name='specimensAttachment'
+                    <%=checked(specimensAttachmentEnum == SpecimensAttachmentEnum.Never)%>>Never</input>
+                </label>
             </td>
         </tr>
         <tr>

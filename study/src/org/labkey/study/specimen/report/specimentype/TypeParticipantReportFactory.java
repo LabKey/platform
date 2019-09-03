@@ -17,6 +17,7 @@ package org.labkey.study.specimen.report.specimentype;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.specimen.report.SpecimenTypeVisitReport;
 import org.labkey.study.model.*;
@@ -131,9 +132,9 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         return SpecimenController.TypeParticipantReportAction.class;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         inputs.add(getParticipantPicker("participantId", _participantId));
         return inputs;
     }

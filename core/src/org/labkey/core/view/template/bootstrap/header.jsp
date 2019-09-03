@@ -59,7 +59,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     boolean showSearch = hasUrlProvider(SearchUrls.class);
 
-    HtmlView headerHtml = PageTemplate.getTemplateResource(new HeaderProperties());
+    HtmlView headerHtml = PageTemplate.getTemplateResource(new HeaderProperties(getContainer()));
     String siteShortName = (laf.getShortName() != null && laf.getShortName().length() > 0) ? laf.getShortName() : null;
 
     final NavTree optionsMenu = PopupAdminView.createNavTree(context);
@@ -199,7 +199,7 @@
 <% if (user != null && user.isImpersonated()) {
     ActionURL stopUrl = urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()); %>
             <li>
-                <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(stopUrl))%>" class="btn btn-primary">Stop impersonating</a>
+                <%=link("Stop impersonating").href(stopUrl).clearClasses().addClass("btn btn-primary").usePost()%>
             </li>
 <% } %>
 
@@ -207,7 +207,7 @@
     ActionURL exitUrl = urlProvider(ProjectUrls.class).getTogglePageAdminModeURL(c, getActionURL()); %>
             <li>&nbsp;</li> <!--spacer, for the case of both impersonating and page admin mode-->
             <li>
-                <a href="javascript:{}" onclick="<%=h(PageFlowUtil.postOnClickJavaScript(exitUrl))%>" class="btn btn-primary">Exit Admin Mode</a>
+                <%=link("Exit Admin Mode").href(exitUrl).clearClasses().addClass("btn btn-primary").usePost()%>
             </li>
 <% } %>
         </ul>

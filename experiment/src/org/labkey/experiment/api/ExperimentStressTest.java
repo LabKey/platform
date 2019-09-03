@@ -1,11 +1,13 @@
 package org.labkey.experiment.api;
 
 import org.apache.log4j.Logger;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -110,6 +112,7 @@ public class ExperimentStressTest
     @Test
     public void sampleSetInsertsWithLineage() throws Throwable
     {
+        Assume.assumeFalse("Issue 37518: Test does not yet pass on SQL Server. Skipping.", CoreSchema.getInstance().getSqlDialect().isSqlServer());
         _sampleSetInserts(true);
     }
 

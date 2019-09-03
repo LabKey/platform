@@ -116,7 +116,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -138,7 +138,6 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
-import org.labkey.study.assay.AssayManager;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
@@ -190,7 +189,6 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
-    public static final SearchService.SearchCategory assayCategory = new SearchService.SearchCategory("assay", "Study Assay");
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
@@ -2865,7 +2863,7 @@ public class StudyManager
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
 //        _locationHelper.clearCache(c);
-        AssayManager.get().clearProtocolCache();
+        AssayService.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
             for (DatasetDefinition def : getDatasetDefinitions(study))
                 uncache(def);
@@ -2956,7 +2954,7 @@ public class StudyManager
             ParticipantGroupManager.getInstance().clearCache(c);
 
             //
-            // participant and assay data (OntologyManager will take care of properties)
+            // participant data (OntologyManager will take care of properties)
             //
             // Table.delete(StudySchema.getInstance().getTableInfoStudyData(null), containerFilter);
             //assert deletedTables.add(StudySchema.getInstance().getTableInfoStudyData(null));
@@ -2973,16 +2971,6 @@ public class StudyManager
 
             // participant group cohort union view
             assert deletedTables.add(StudySchema.getInstance().getSchema().getTable(StudyQuerySchema.PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME));
-
-            //
-            // plate service
-            //
-            Table.delete(StudySchema.getInstance().getSchema().getTable("Well"), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getSchema().getTable("Well"));
-            Table.delete(StudySchema.getInstance().getSchema().getTable("WellGroup"), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getSchema().getTable("WellGroup"));
-            Table.delete(StudySchema.getInstance().getTableInfoPlate(), containerFilter);
-            assert deletedTables.add(StudySchema.getInstance().getTableInfoPlate());
 
             // Specimen comments
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
@@ -4660,6 +4648,7 @@ public class StudyManager
 
         Runnable runEnumerate = new Runnable()
         {
+            @Override
             public void run()
             {
                 if (task == defaultTask)
@@ -4682,8 +4671,6 @@ public class StudyManager
                     // study protocol document
                     _enumerateProtocolDocuments(task, study);
                 }
-
-                AssayService.get().indexAssays(task, c);
             }
         };
 

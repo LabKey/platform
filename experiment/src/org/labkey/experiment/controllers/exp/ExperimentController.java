@@ -27,26 +27,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -107,6 +91,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataProtocolInputTable;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
@@ -160,9 +145,6 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.actions.UploadWizardAction;
-import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -195,30 +177,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -530,7 +489,11 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return appendRootNavTrail(root).addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer())).addChild(_experiment.getName());
+            appendRootNavTrail(root);
+            root.addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
+            root.addChild(_experiment.getName());
+
+            return root;
         }
     }
 
@@ -549,7 +512,10 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("Sample Sets");
+            appendRootNavTrail(root);
+            root.addChild("Sample Sets");
+
+            return root;
         }
     }
 
@@ -695,7 +661,10 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("sampleSets");
             ActionURL url = new ActionURL(ListMaterialSourcesAction.class, getContainer());
-            return appendRootNavTrail(root).addChild("Sample Sets", url).addChild("Sample Set " + _source.getName());
+            appendRootNavTrail(root).addChild("Sample Sets", url);
+            root.addChild("Sample Set " + _source.getName());
+
+            return root;
         }
     }
 
@@ -721,7 +690,10 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return appendRootNavTrail(root).addChild("All Materials");
+            appendRootNavTrail(root);
+            root.addChild("All Materials");
+
+            return root;
         }
     }
 
@@ -1008,7 +980,11 @@ public class ExperimentController extends SpringActionController
         {
             setHelpTopic("dataClass");
             ActionURL url = new ActionURL(ListDataClassAction.class, getContainer());
-            return appendRootNavTrail(root).addChild("Data Class", url).addChild(_dataClass.getName());
+            appendRootNavTrail(root);
+            root.addChild("Data Class", url);
+            root.addChild(_dataClass.getName());
+
+            return root;
         }
     }
 
@@ -1497,14 +1473,9 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ToggleRunExperimentMembershipAction extends SimpleViewAction<ToggleRunExperimentMembershipForm>
+    public class ToggleRunExperimentMembershipAction extends FormHandlerAction<ToggleRunExperimentMembershipForm>
     {
-        public NavTree appendNavTrail(NavTree root)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        public ModelAndView getView(ToggleRunExperimentMembershipForm form, BindException errors)
+        public boolean handlePost(ToggleRunExperimentMembershipForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
             // Check if the user has permission to update this run
@@ -1538,7 +1509,18 @@ public class ExperimentController extends SpringActionController
                 exp.removeRun(getUser(), run);
             }
 
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ToggleRunExperimentMembershipForm form)
+        {
             return null;
+        }
+
+        @Override
+        public void validateCommand(ToggleRunExperimentMembershipForm target, Errors errors)
+        {
         }
     }
 
@@ -2429,7 +2411,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run)).addChild("Protocol Application " + _app.getName());
+            appendRootNavTrail(root);
+            root.addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run));
+            root.addChild("Protocol Application " + _app.getName());
+
+            return root;
         }
     }
 
@@ -2500,7 +2486,11 @@ public class ExperimentController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).addChild("Protocol: " + _protocol.getName());
+            appendRootNavTrail(root);
+            root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
+            root.addChild("Protocol: " + _protocol.getName());
+
+            return root;
         }
     }
 
@@ -2582,6 +2572,7 @@ public class ExperimentController extends SpringActionController
         private ExpProtocol _parentProtocol;
         private ProtocolActionStepDetail _actionStep;
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL url = getViewContext().getActionURL();
@@ -2631,12 +2622,15 @@ public class ExperimentController extends SpringActionController
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, protocolDetails);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).
-                    addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer())).
-                    addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol)).
-                    addChild("Protocol Step: " + _actionStep.getName());
+            appendRootNavTrail(root);
+            root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
+            root.addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol));
+            root.addChild("Protocol Step: " + _actionStep.getName());
+
+            return root;
         }
     }
 
@@ -2818,6 +2812,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DeletePermission.class)
     public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
+        @Override
         public ApiResponse execute(DeleteRunForm form, BindException errors)
         {
             ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
@@ -2834,12 +2829,100 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteRunsAction extends AbstractDeleteAPIAction
+    {
+        @Override
+        protected ApiSimpleResponse deleteObjects(CascadeDeleteForm form)
+        {
+            Set<Integer> runIdsToDelete = new HashSet<>(form.getIds(true));
+            Set<Integer> runIdsCascadeDeleted = new HashSet<>();
+
+            if (form.isCascade())
+            {
+                for (int runId : runIdsToDelete)
+                {
+                    ExpRun run = ExperimentService.get().getExpRun(runId);
+                    if (run != null)
+                        addReplacesRuns(run, runIdsCascadeDeleted);
+                }
+
+                if (runIdsCascadeDeleted.size() > 0)
+                    runIdsToDelete.addAll(runIdsCascadeDeleted);
+            }
+
+            ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), runIdsToDelete);
+
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            response.put("runIdsDeleted", runIdsToDelete);
+            if (runIdsCascadeDeleted.size() > 0)
+                response.put("runIdsCascadeDeleted", runIdsCascadeDeleted);
+            return response;
+        }
+
+        private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+        {
+            for (ExpRun replacedRun : run.getReplacesRuns())
+            {
+                runIds.add(replacedRun.getRowId());
+                addReplacesRuns(replacedRun, runIds);
+            }
+        }
+    }
+
+    private abstract class AbstractDeleteAPIAction extends MutatingApiAction<CascadeDeleteForm>
+    {
+        @Override
+        public void validateForm(CascadeDeleteForm form, Errors errors)
+        {
+            if (form.getSingleObjectRowId() == null && form.getDataRegionSelectionKey() == null)
+                errors.reject(ERROR_REQUIRED, "Either singleObjectRowId or dataRegionSelectionKey is required");
+        }
+
+        @Override
+        public ApiResponse execute(CascadeDeleteForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response;
+
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                tx.addCommitTask(form::clearSelected, POSTCOMMIT);
+
+                response = deleteObjects(form);
+                tx.commit();
+            }
+
+            response.putIfAbsent("success", !errors.hasErrors());
+            return new ApiSimpleResponse();
+        }
+
+        protected abstract ApiSimpleResponse deleteObjects(CascadeDeleteForm form) throws Exception;
+    }
+
+    public static class CascadeDeleteForm extends DeleteForm
+    {
+        private boolean _cascade;
+
+        public boolean isCascade()
+        {
+            return _cascade;
+        }
+
+        public void setCascade(boolean cascade)
+        {
+            _cascade = cascade;
+        }
+    }
+
     private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
     {
+        @Override
         public void validateCommand(DeleteForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(DeleteForm deleteForm, BindException errors) throws Exception
         {
             if (!deleteForm.isForceDelete())
@@ -2864,17 +2947,50 @@ public class ExperimentController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteForm form)
         {
             return form.getSuccessActionURL(ExperimentUrlsImpl.get().getOverviewURL(getContainer()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Confirm Deletion");
+            appendRootNavTrail(root).addChild("Confirm Deletion");
+
+            return root;
         }
 
-        protected abstract void deleteObjects(DeleteForm deleteForm) throws Exception;
+        protected abstract void deleteObjects(DeleteForm form) throws Exception;
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeleteProtocolByRowIdsAPIAction extends AbstractDeleteAPIAction
+    {
+        @Override
+        protected ApiSimpleResponse deleteObjects(CascadeDeleteForm form)
+        {
+            for (ExpProtocol protocol : getProtocolsForDeletion(form))
+            {
+                protocol.delete(getUser());
+            }
+
+            return new ApiSimpleResponse();
+        }
+    }
+
+    public static List<ExpProtocol> getProtocolsForDeletion(DeleteForm form)
+    {
+        List<ExpProtocol> protocols = new ArrayList<>();
+        for (int protocolId : form.getIds(false))
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
+            if (protocol != null)
+            {
+                protocols.add(protocol);
+            }
+        }
+        return protocols;
     }
 
     @RequiresPermission(DeletePermission.class)
@@ -2889,10 +3005,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(DeleteForm deleteForm, boolean reshow, BindException errors)
+        public ModelAndView getView(DeleteForm form, boolean reshow, BindException errors)
         {
-            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, deleteForm.getIds(false));
-            List<ExpProtocol> protocols = getProtocols(deleteForm, false);
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForProtocolIds(false, form.getIds(false));
+            List<ExpProtocol> protocols = getProtocolsForDeletion(form);
             String noun = "Assay Design";
             List<Pair<SecurableResource, ActionURL>> deleteableDatasets = new ArrayList<>();
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasets = new ArrayList<>();
@@ -2919,27 +3035,13 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, deleteForm, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
-        }
-
-        private List<ExpProtocol> getProtocols(DeleteForm deleteForm, boolean clearSelection)
-        {
-            List<ExpProtocol> protocols = new ArrayList<>();
-            for (int protocolId : deleteForm.getIds(clearSelection))
-            {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
-                if (protocol != null)
-                {
-                    protocols.add(protocol);
-                }
-            }
-            return protocols;
+            return new ConfirmDeleteView(noun, ProtocolDetailsAction.class, protocols, form, runs, "Dataset", deleteableDatasets, noPermissionDatasets);
         }
 
         @Override
-        protected void deleteObjects(DeleteForm deleteForm)
+        protected void deleteObjects(DeleteForm form)
         {
-            for (ExpProtocol protocol : getProtocols(deleteForm, false))
+            for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
                 protocol.delete(getUser());
             }
@@ -3600,22 +3702,26 @@ public class ExperimentController extends SpringActionController
 
     private void validateSampleSetForm(BaseSampleSetForm form, Errors errors)
     {
-        TableInfo ti = ExperimentService.get().getTinfoMaterialSource();
-        ExpSampleSet ss = null;
-        if (StringUtils.isEmpty(form.getName()))
+        // when this is a new sample set creation, we have some extra checks for the name
+        if (!form.isUpdate())
         {
-            errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+            if (StringUtils.isEmpty(form.getName()))
+            {
+                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
+            }
+            else
+            {
+                ExpSampleSet ss = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName());
+                if (ss != null)
+                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
+            }
         }
-        else
-        {
-            int nameMax = ti.getColumn("Name").getScale();
-            ss = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName());
 
-            if (form.getName().length() > nameMax)
-                errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
-            else if (!form.isUpdate() && ss != null)
-                errors.reject(ERROR_MSG, "A sample set with that name already exists.");
-        }
+        // verify the length of the Name and NameExpression values
+        TableInfo ti = ExperimentService.get().getTinfoMaterialSource();
+        int nameMax = ti.getColumn("Name").getScale();
+        if (!StringUtils.isEmpty(form.getName()) && form.getName().length() > nameMax)
+            errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
         int nameExpMax = ti.getColumn("NameExpression").getScale();
         if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
             errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
@@ -3623,7 +3729,6 @@ public class ExperimentController extends SpringActionController
         //Verify Aliases
         List<String> importHeadings = form.getImportAliasKeys();
         List<String> importParents = form.getImportAliasValues();
-
         if (importHeadings != null && importParents != null)
         {
             if (importHeadings.contains(null))
@@ -3637,36 +3742,35 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_MSG, msg);
             }
 
-            //check if heading is unique--alias isn't a field/reserved name
-            if (ss != null)
+            //check if alias header is unique and isn't a field/reserved name
+            DomainKind sampleSetDomainKind = PropertyService.get().getDomainKindByName(SampleSetDomainKind.NAME);
+            ExpSampleSet sampleSet = form.getRowId() != null ? ExperimentService.get().getSampleSet(getContainer(), form.getRowId()) : null;
+            Domain domain = sampleSet != null ? sampleSet.getDomain() : null;
+
+            // Contains both existingAliases and reserved property names
+            Set<String> reservedNames = new CaseInsensitiveHashSet(sampleSetDomainKind.getReservedPropertyNames(domain));
+            Set<String> existingAliases = new CaseInsensitiveHashSet();
+            try
             {
-                Domain domain = ss.getDomain();
+                if (sampleSet != null)
+                    existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
+            }
+            catch (IOException e)
+            {
+                errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
+            }
 
-                // Contains both existingAliases and reserved property names
-                Set<String> reservedNames = new CaseInsensitiveHashSet(domain.getDomainKind().getReservedPropertyNames(domain));
-                Set<String> existingAliases = null;
+            for (String heading : importHeadings)
+            {
+                //Skip if alias was added previously
+                if (existingAliases.contains(heading))
+                    continue;
 
-                try
-                {
-                    existingAliases = new CaseInsensitiveHashSet(ss.getImportAliasMap().keySet());
-                }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
-                }
+                if (reservedNames.contains(heading))
+                    errors.reject(ERROR_MSG, String.format("Parent alias header is reserved: %1$s", heading));
 
-                for (String heading : importHeadings)
-                {
-                    //Skip if alias was added previously
-                    if (existingAliases.contains(heading))
-                        continue;
-
-                    if (reservedNames.contains(heading))
-                        errors.reject(ERROR_MSG, String.format("Heading [%1$s] is reserved", heading));
-
-                    if (domain.getPropertyByName(heading) != null)
-                        errors.reject(ERROR_MSG, String.format("Property exists with alias name: %1$s", heading));
-                }
+                if (domain != null && domain.getPropertyByName(heading) != null)
+                    errors.reject(ERROR_MSG, String.format("A sample set property already exists with parent alias header: %1$s", heading));
             }
 
             //Check for duplicates
@@ -3674,14 +3778,14 @@ public class ExperimentController extends SpringActionController
             for (String heading : importHeadings)
             {
                 if (!dupes.add(heading))
-                    errors.reject(ERROR_UNIQUE, String.format("Duplicate alias: %1$s", heading));
+                    errors.reject(ERROR_UNIQUE, String.format("Duplicate parent alias header found: %1$s", heading));
             }
 
             for (String parent : importParents)
             {
                 //check if it is of the expected format
                 if (!UploadSamplesHelper.isInputOutputHeader(parent))
-                    errors.reject(ERROR_MSG, String.format("Invalid parent heading: %1$s", parent));
+                    errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
             }
         }
     }
@@ -5526,15 +5630,59 @@ public class ExperimentController extends SpringActionController
 
     @RequiresPermission(InsertPermission.class)
     @ActionNames("createRunGroup, createExperiment")
-    public class CreateRunGroupAction extends SimpleViewAction<CreateExperimentForm>
+    public class CreateRunGroupAction extends FormViewAction<CreateExperimentForm>
     {
-        public ModelAndView getView(CreateExperimentForm form, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(CreateExperimentForm form, boolean reshow, BindException errors)
         {
             // HACK - convert ExperimentForm to not be a BeanViewForm
             form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
             form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) && !"true".equals(getViewContext().getRequest().getParameter("noPost")))
+
+            DataRegion drg = new DataRegion();
+
+            drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
+            drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
+            form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+            // Fix issue 27562 - include session-stored selection
+            if (form.getDataRegionSelectionKey() != null)
             {
+                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, false))
+                {
+                    drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
+                }
+            }
+            drg.addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+
+            drg.addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments,Created");
+
+            DisplayColumn col = drg.getDisplayColumn("RowId");
+            col.setVisible(false);
+            drg.getDisplayColumn("LSID").setVisible(false);
+            drg.getDisplayColumn("Created").setVisible(false);
+
+            ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
+            ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit", ActionButton.Action.POST);
+            bb.add(insertButton);
+
+            drg.setButtonBar(bb);
+
+            return new InsertView(drg, errors);
+        }
+
+
+        @Override
+        public boolean handlePost(CreateExperimentForm form, BindException errors) throws Exception
+        {
+            // This is strange... but the "Create new run group..." menu item on the run grid always POSTs, probably to
+            // allow for long lists of run IDs. This "noPost" parameter on the initial POST is used to inform the action
+            // that it wants to display the form, not try to save anything yet.
+            if (!"true".equals(getViewContext().getRequest().getParameter("noPost")))
+            {
+                form.setAddSelectedRuns("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns")));
+                form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
+
                 Experiment exp = form.getBean();
                 if (exp.getName() == null || exp.getName().trim().length() == 0)
                 {
@@ -5582,44 +5730,24 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
                 }
             }
-
-            DataRegion drg = new DataRegion();
-
-            drg.addHiddenFormField(ActionURL.Param.returnUrl, getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name()));
-            drg.addHiddenFormField("addSelectedRuns", java.lang.Boolean.toString("true".equals(getViewContext().getRequest().getParameter("addSelectedRuns"))));
-            form.setDataRegionSelectionKey(getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-            // Fix issue 27562 - include session-stored selection
-            if (form.getDataRegionSelectionKey() != null)
-            {
-                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, false))
-                {
-                    drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
-                }
-            }
-            drg.addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY));
-
-            drg.addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,LSID,ContactId,ExperimentDescriptionURL,Hypothesis,Comments,Created");
-
-            DisplayColumn col = drg.getDisplayColumn("RowId");
-            col.setVisible(false);
-            drg.getDisplayColumn("LSID").setVisible(false);
-            drg.getDisplayColumn("Created").setVisible(false);
-
-            ButtonBar bb = new ButtonBar();
-            bb.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton insertButton = new ActionButton(new ActionURL(CreateRunGroupAction.class, getContainer()), "Submit");
-            bb.add(insertButton);
-
-            drg.setButtonBar(bb);
-
-            return new InsertView(drg, errors);
+            return true;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
             return root.addChild("Create Run Group");
         }
+
+        @Override
+        public URLHelper getSuccessURL(CreateExperimentForm createExperimentForm)
+        {
+            return null; // null is used to show the form in the case where IDs are POSTed from the grid
+        }
+
+        @Override
+        public void validateCommand(CreateExperimentForm target, Errors errors) { }
     }
 
     public static class MoveRunsForm implements DataRegionSelection.DataSelectionKeyForm

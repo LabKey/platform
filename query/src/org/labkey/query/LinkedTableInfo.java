@@ -41,7 +41,6 @@ import org.labkey.api.query.UserSchema;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -200,7 +199,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
         // and named parameters already have a value supplied via the template
         List<QueryService.ParameterDecl> result = new ArrayList<>(getRealTable().getNamedParameters());
         Map<String, Object> values = fireCustomizeParameterValues();
-        result.removeIf(param -> values.get(param.getName()) != null);
+        result.removeIf(param -> values.containsKey(param.getName()));
         return result;
     }
 

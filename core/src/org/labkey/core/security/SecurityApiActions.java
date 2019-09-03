@@ -1823,7 +1823,7 @@ public class SecurityApiActions
             {
                 throw new NotFoundException();
             }
-            return new JspView<>(SecurityController.class, "renameGroup.jsp", group, errors);
+            return new JspView<>("/org/labkey/core/security/renameGroup.jsp", group, errors);
         }
 
         public NavTree appendNavTrail(NavTree root)

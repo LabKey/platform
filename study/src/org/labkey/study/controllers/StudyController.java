@@ -36,6 +36,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -126,7 +127,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.study.assay.PublishConfirmAction;
+import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
@@ -318,6 +322,18 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(StudyController.ManageFilewatchersAction.class, container);
         }
+
+        @Override
+        public ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol)
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishStartAction.class);
+        }
+
+        @Override
+        public ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol)
+        {
+            return PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(container, protocol, PublishConfirmAction.class);
+        }
     }
 
     public StudyController()
@@ -337,7 +353,8 @@ public class StudyController extends BaseStudyController
 
         sb.append(getVisitLabelPlural());
 
-        return root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
+        root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
+        return root;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1701,7 +1718,6 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors)
         {
-
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, StudyQuerySchema.LOCATION_TABLE_NAME);
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
@@ -2466,7 +2482,10 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getUser();
-            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).createDatasetTableInternal(_def, null);
+            // Go through normal getTable() codepath to be sure all metadata is applied
+            TableInfo t = StudyQuerySchema.createSchema(_study, user, true).getTable(_def.getName(), null);
+            if (t == null)
+                throw new NotFoundException("Dataset not found");
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -3665,6 +3684,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DatasetServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService() throws IllegalStateException
         {
             return new DatasetServiceImpl(getViewContext(), getStudyThrowIfNull(), StudyManager.getInstance());
@@ -3689,10 +3709,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ResetPipelineAction extends FormHandlerAction<ResetPipelinePathForm>
     {
+        @Override
         public void validateCommand(ResetPipelinePathForm form, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ResetPipelinePathForm form, BindException errors) throws Exception
         {
             for (File f : form.getValidatedFiles(getContainer()))
@@ -3705,6 +3727,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public URLHelper getSuccessURL(ResetPipelinePathForm form)
         {
             String redirect = form.getRedirect();
@@ -3726,6 +3749,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DefaultDatasetReportAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             ViewContext context = getViewContext();
@@ -3761,14 +3785,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageUndefinedTypesAction extends SimpleViewAction
     {
-        StudyImpl study;
-
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            study = getStudyRedirectIfNull();
-            return new StudyJspView<>(study, "manageUndefinedTypes.jsp", o, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageUndefinedTypes.jsp", o, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
@@ -3776,9 +3799,13 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    // TODO: Delete? Doesn't seem to be used. Dataset import "Download Template" button invokes query-exportExcelTemplate.
     @RequiresPermission(ReadPermission.class)
+    @DeprecatedAction
+    @RemoveIn20_1
     public class TemplateAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             Study study = getStudyThrowIfNull();
@@ -3873,6 +3900,7 @@ public class StudyController extends BaseStudyController
             return _defaultView;
         }
 
+        @SuppressWarnings("unused")
         public void setDefaultView(String defaultView)
         {
             _defaultView = "defaultGrid".equals(defaultView) ? "" : defaultView;
@@ -3880,51 +3908,46 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ViewPreferencesAction extends SimpleViewAction<ViewPreferencesForm>
+    public class ViewPreferencesAction extends FormViewAction<ViewPreferencesForm>
     {
         private StudyImpl _study;
         private Dataset _def;
 
-        public ModelAndView getView(ViewPreferencesForm form, BindException errors)
+        private int init(ViewPreferencesForm form)
         {
-            _study = getStudyRedirectIfNull();
-
             int dsid = form.getDatasetId();
-            String defaultView = form.getDefaultView();
-
+            _study = getStudyRedirectIfNull();
             _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+            return dsid;
+        }
+
+        @Override
+        public ModelAndView getView(ViewPreferencesForm form, boolean reshow, BindException errors) throws Exception
+        {
+            init(form);
             if (_def != null)
             {
                 List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
-                if (defaultView != null)
-                {
-                    setDefaultView(dsid, defaultView);
-                }
-                else
-                {
-                    defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
-                    if (!StringUtils.isEmpty(defaultView))
-                    {
-                        boolean defaultExists = false;
-                        for (Pair<String, String> view : views)
-                        {
-                            if (StringUtils.equals(view.getValue(), defaultView))
-                            {
-                                defaultExists = true;
-                                break;
-                            }
-                        }
-                        if (!defaultExists)
-                            setDefaultView(dsid, "");
-                    }
-                }
-
                 ViewPrefsBean bean = new ViewPrefsBean(views, _def);
                 return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
             }
             throw new NotFoundException("Invalid dataset ID");
         }
 
+        @Override
+        public boolean handlePost(ViewPreferencesForm form, BindException errors) throws Exception
+        {
+            int dsid = init(form);
+            String defaultView = form.getDefaultView();
+            if ((_def != null) && (defaultView != null))
+            {
+                setDefaultView(dsid, defaultView);
+                return true;
+            }
+            throw new NotFoundException("Invalid dataset ID");
+        }
+
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("Set Default"));
@@ -3940,6 +3963,12 @@ public class StudyController extends BaseStudyController
             root.addChild(new NavTree("Preferences"));
             return root;
         }
+
+        @Override
+        public URLHelper getSuccessURL(ViewPreferencesForm viewPreferencesForm) { return null; }
+
+        @Override
+        public void validateCommand(ViewPreferencesForm target, Errors errors) { }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -3947,6 +3976,7 @@ public class StudyController extends BaseStudyController
     {
         private String path;
 
+        @Override
         public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
@@ -3986,6 +4016,7 @@ public class StudyController extends BaseStudyController
                     getStudyRedirectIfNull(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
@@ -4048,6 +4079,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
+        @Override
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
@@ -4070,23 +4102,16 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static class PipelineSetupView extends JspView<String>
-    {
-        private PipelineSetupView(String actionDescription)
-        {
-            super("/org/labkey/study/view/pipelineSetup.jsp", actionDescription);
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class TypeNotFoundAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new StudyJspView<StudyImpl>(getStudyRedirectIfNull(), "typeNotFound.jsp", null, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Type Not Found");
@@ -4131,6 +4156,7 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
@@ -6304,10 +6330,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
+    public class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
-        @Override
-        public URLHelper getURL(DatasetDetailRedirectForm form, Errors errors)
+        public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)

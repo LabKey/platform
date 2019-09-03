@@ -47,6 +47,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -63,14 +64,14 @@ import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -81,10 +82,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditProvider;
-import org.labkey.study.controllers.assay.AssayController;
+import org.labkey.study.controllers.PublishController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.DatasetDomainKind;
-import org.labkey.api.qc.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
@@ -776,7 +776,7 @@ public class AssayPublishManager implements AssayPublishService
     {
         if (protocol != null)
         {
-            ActionURL url = new ActionURL(AssayController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
+            ActionURL url = new ActionURL(PublishController.PublishHistoryAction.class, container).addParameter("rowId", protocol.getRowId());
             if (containerFilter != null && containerFilter.getType() != null)
                 url.addParameter("containerFilterName", containerFilter.getType().name());
             return url;

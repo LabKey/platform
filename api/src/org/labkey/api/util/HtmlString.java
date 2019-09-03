@@ -18,11 +18,15 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class HtmlString
+import java.io.IOException;
+import java.util.Objects;
+
+public final class HtmlString implements DOM.Renderable
 {
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
     public static HtmlString NBSP = HtmlString.unsafe("&nbsp;");
+    public static HtmlString NDASH = HtmlString.unsafe("&ndash;");
 
     private final String _s;
 
@@ -63,5 +67,33 @@ public final class HtmlString
     public String toString()
     {
         return _s;
+    }
+
+    @Override
+    public Appendable appendTo(Appendable sb)
+    {
+        try
+        {
+            return sb.append(_s);
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HtmlString that = (HtmlString) o;
+        return Objects.equals(_s, that._s);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_s);
     }
 }

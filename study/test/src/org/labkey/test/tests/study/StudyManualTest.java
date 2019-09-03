@@ -227,7 +227,7 @@ public abstract class StudyManualTest extends StudyTest
         PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
         PropertiesEditor.FieldRow row = editor.addField(new FieldDefinition("otherData").setLabel("Other Data").setType(FieldDefinition.ColumnType.String));
         PropertiesEditor.FieldPropertyDock.AdvancedTabPane tabPane = row.properties().selectAdvancedTab();
-        tabPane.importAliasesInput.set("aliasedColumn");
+        tabPane.setImportAliases("aliasedColumn");
 
         editDatasetPage
                 .save()
