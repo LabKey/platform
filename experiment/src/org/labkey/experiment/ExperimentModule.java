@@ -198,7 +198,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return true;
     }
 
-    @NotNull @Override
+    @Override
+    @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> result = new ArrayList<>();
@@ -239,7 +240,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
-                WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
+                WebPartView view = new JspView<>("/org/labkey/experiment/samplesAndAnalytes.jsp", webPart);
                 view.setTitle("Samples");
                 return view;
             }

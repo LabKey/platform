@@ -43,12 +43,6 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
         setFrame(WebPartView.FrameType.NOT_HTML);
     }
 
-    public JspTemplate(Class packageClass, String jspName, ModelClass model)
-    {
-        super(packageClass, jspName, model);
-        setFrame(WebPartView.FrameType.NOT_HTML);
-    }
-
     public String render() throws Exception
     {
         StringWriter out = new StringWriter();
