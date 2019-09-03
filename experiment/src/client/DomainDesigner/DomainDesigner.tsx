@@ -230,10 +230,11 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
                 }
                 { domain &&
-                <DomainForm
-                    domain={domain}
-                    onChange={this.onChangeHandler}
-                />}
+                    <DomainForm
+                        domain={domain}
+                        onChange={this.onChangeHandler}
+                    />
+                }
                 { domain && this.renderButtons() }
             </>
         )
