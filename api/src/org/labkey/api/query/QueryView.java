@@ -816,12 +816,6 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected boolean canDelete()
-    {
-        TableInfo table = getTable();
-        return table != null && table.hasPermission(getUser(), DeletePermission.class);
-    }
-
     protected boolean canInsert()
     {
         TableInfo table = getTable();
@@ -832,6 +826,30 @@ public class QueryView extends WebPartView<Object>
     {
         TableInfo table = getTable();
         return table != null && table.hasPermission(getUser(), UpdatePermission.class) && table.getUpdateService() != null;
+    }
+
+    protected boolean canDelete()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), DeletePermission.class);
+    }
+
+    private boolean allowQueryTableInsertURLOverride()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasInsertURLOverride() && table.allowQueryTableURLOverrides();
+    }
+
+    private boolean allowQueryTableUpdateURLOverride()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasUpdateURLOverride() && table.allowQueryTableURLOverrides();
+    }
+
+    private boolean allowQueryTableDeleteURLOverride()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasDeleteURLOverride() && table.allowQueryTableURLOverrides();
     }
 
     public boolean showInsertNewButton()
@@ -911,19 +929,13 @@ public class QueryView extends WebPartView<Object>
 
         populateChartsReports(bar);
 
-        if (canInsert() && (showInsertNewButton() || showImportDataButton()))
+
+        if ((canInsert() || allowQueryTableInsertURLOverride()) && (showInsertNewButton() || showImportDataButton()))
         {
             bar.add(createInsertMenuButton());
         }
 
-//        if (/* showUpdateButton() && */canUpdate())
-//        {
-//            ActionButton editMultipleButton = createEditMultipleButton();
-//            if (editMultipleButton != null)
-//                bar.add(editMultipleButton);
-//        }
-
-        if (showDeleteButton() && canDelete())
+        if ((canDelete() || allowQueryTableDeleteURLOverride()) && showDeleteButton())
         {
             bar.add(createDeleteButton());
         }
@@ -2888,7 +2900,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showUpdateColumn && canUpdate())
+        if (_showUpdateColumn && (canUpdate() || allowQueryTableUpdateURLOverride()))
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
 

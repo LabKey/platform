@@ -177,6 +177,11 @@ public class Input extends DisplayElement implements HasHtmlString
         return "checkbox".equalsIgnoreCase(_type);
     }
 
+    private boolean isRadio()
+    {
+        return "radio".equalsIgnoreCase(_type);
+    }
+
     public boolean isChecked()
     {
         return _checked;
@@ -617,7 +622,7 @@ public class Input extends DisplayElement implements HasHtmlString
 
     protected void doValue(StringBuilder sb)
     {
-        if (isCheckbox() && isChecked())
+        if ((isCheckbox() || isRadio()) && isChecked())
         {
             sb.append(" checked");
         }
