@@ -155,10 +155,4 @@ dependencies {
 
   jspCompile files(project.tasks.jar)
   jspCompile apache, jackson, spring
-  webappCompile files(project.tasks.jar)
-  webappCompile "com.google.code.kaptcha:kaptcha:${kaptchaVersion}"
-  webappCompile "org.springframework:spring-context:${springVersion}"
-  webappCompile "com.sun.mail:jakarta.mail:${javaMailVersion}"
-  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"))
-  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: BuildUtils.getInternalProjectPath(project.gradle))
 }
