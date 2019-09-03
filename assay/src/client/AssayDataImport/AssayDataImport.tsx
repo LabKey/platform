@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Button, ButtonToolbar, Panel} from "react-bootstrap";
+import { Button, ButtonToolbar, Panel } from "react-bootstrap";
 import {Map, List, fromJS} from 'immutable';
 import {ActionURL, Security, Utils} from '@labkey/api'
 import {
@@ -13,16 +13,19 @@ import {
     QueryColumn,
     PermissionTypes,
     User,
-    createGeneralAssayDesign,
     fetchAllAssays,
     importGeneralAssayRun,
     naturalSort,
     hasAllPermissions
 } from "@glass/base";
+import {AssayProtocolModel, AssayPropertiesPanel, createGeneralAssayDesign} from '@glass/domainproperties'
 
-import {FORM_IDS} from "./constants";
-import {AssayDesignForm} from "./AssayDesignForm";
 import {AssayRunForm} from "./AssayRunForm";
+
+const FORM_IDS = {
+    RUN_NAME: 'assay-run-name',
+    RUN_COMMENT: 'assay-run-comment'
+};
 
 interface Props {}
 
@@ -30,11 +33,12 @@ interface State {
     user: User
     selected: number
     assays: List<AssayDefinitionModel>
-    error: string
-    warning: string
-    file: File
-    inferredFields: List<QueryColumn>
-    assayUploadProps: {},
+    error?: string
+    warning?: string
+    file?: File
+    inferredFields?: List<QueryColumn>
+    protocolModel?: AssayProtocolModel,
+    runProperties?: {}
     isSubmitting: boolean
 }
 
@@ -47,11 +51,6 @@ export class App extends React.Component<Props, State> {
             user: new User(LABKEY.user),
             selected: undefined,
             assays: undefined,
-            error: undefined,
-            warning: undefined,
-            file: undefined,
-            inferredFields: undefined,
-            assayUploadProps: undefined,
             isSubmitting: false
         }
     }
@@ -125,8 +124,8 @@ export class App extends React.Component<Props, State> {
     }
 
     hasValidNewAssayName(): boolean {
-        const { assayUploadProps } = this.state;
-        return assayUploadProps && assayUploadProps[FORM_IDS.ASSAY_NAME] && assayUploadProps[FORM_IDS.ASSAY_NAME].length > 0;
+        const { protocolModel } = this.state;
+        return protocolModel && protocolModel.name && protocolModel.name.length > 0;
     }
 
     isValidNewAssay(): boolean {
@@ -138,7 +137,7 @@ export class App extends React.Component<Props, State> {
     }
 
     handleSubmit = () => {
-        const { inferredFields, assayUploadProps } = this.state;
+        const { inferredFields, protocolModel } = this.state;
         const selectedAssay = this.getSelectedAssay();
 
         if (selectedAssay) {
@@ -150,10 +149,10 @@ export class App extends React.Component<Props, State> {
             this.setErrorMsg(undefined);
             this.setSubmitting(true);
 
-            const name = assayUploadProps ? assayUploadProps[FORM_IDS.ASSAY_NAME] : undefined;
-            const descr = assayUploadProps ? assayUploadProps[FORM_IDS.ASSAY_DESCRIPTION] : undefined;
+            const name = protocolModel ? protocolModel.name : undefined;
+            const descr = protocolModel ? protocolModel.description : undefined;
 
-            if (!name || name.length === 0) {
+            if (!this.hasValidNewAssayName()) {
                 this.setErrorMsg('You must provide a name for the new assay design.');
                 return;
             }
@@ -169,11 +168,11 @@ export class App extends React.Component<Props, State> {
     };
 
     importFileAsRun(assayId: number): void {
-        const { file, assayUploadProps } = this.state;
+        const { file, runProperties } = this.state;
 
         if (assayId && file) {
-            const name = assayUploadProps ? assayUploadProps[FORM_IDS.RUN_NAME] : undefined;
-            const comment = assayUploadProps ? assayUploadProps[FORM_IDS.RUN_COMMENT] : undefined;
+            const name = runProperties ? runProperties[FORM_IDS.RUN_NAME] : undefined;
+            const comment = runProperties ? runProperties[FORM_IDS.RUN_COMMENT] : undefined;
 
             importGeneralAssayRun(assayId, file, name, comment)
                 .then((response) => {
@@ -231,11 +230,15 @@ export class App extends React.Component<Props, State> {
         const value = evt.target.value;
 
         this.setState((state) => ({
-            assayUploadProps: {
-                ...state.assayUploadProps,
+            runProperties: {
+                ...state.runProperties,
                 [id]: value
             }
         }));
+    };
+
+    onAssayPropertiesChange = (protocolModel: AssayProtocolModel) => {
+        this.setState(() => ({protocolModel}));
     };
 
     getCardsFromAssays(): List<any> {
@@ -301,7 +304,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = selected === undefined;
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step 1: Select an available assay{this.userCanCreateAssay() ? ' or the option to create a new one' : ''}&nbsp;
                     {assays && assays.size > 0 && selected !== undefined && <Button onClick={() => this.onAssayCardClick(undefined)}>Clear selection</Button>}
@@ -320,17 +323,31 @@ export class App extends React.Component<Props, State> {
             return;
         }
 
-        const showStep = this.isCreateNewAssay() && this.state.file;
+        const { file, protocolModel } = this.state;
+        const showStep = this.isCreateNewAssay() && file;
         const isCurrentStep = showStep && !this.hasValidNewAssayName();
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step 3: Enter properties for the new assay
                 </Panel.Heading>
                 {showStep &&
                     <Panel.Body>
-                        <AssayDesignForm onChange={this.onFormChange}/>
+                        <AssayPropertiesPanel
+                            asPanel={false}
+                            showEditSettings={false}
+                            model={protocolModel}
+                            onChange={this.onAssayPropertiesChange}
+                        >
+                            <div>
+                                Define basic properties for this new design. These and other advanced settings can always be
+                                modified later on the assay runs list by choosing "Manage Assay Design".
+                            </div>
+                            <div className={'margin-top'}>
+                                By default, this assay design will include the column headers detected from your uploaded file.
+                            </div>
+                        </AssayPropertiesPanel>
                     </Panel.Body>
                 }
             </Panel>
@@ -342,7 +359,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = showStep && !this.state.file;
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step 2: Upload a data file
                 </Panel.Heading>
@@ -396,7 +413,7 @@ export class App extends React.Component<Props, State> {
         const isCurrentStep = (this.getSelectedAssay() || this.isValidNewAssay()) && file;
 
         return (
-            <Panel className={isCurrentStep ? 'panel-portal' : ''}>
+            <Panel className={isCurrentStep ? 'panel-active' : ''}>
                 <Panel.Heading>
                     Step {this.isCreateNewAssay() ? 5: 4}: Submit
                 </Panel.Heading>
