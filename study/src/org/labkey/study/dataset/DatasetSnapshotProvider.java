@@ -214,9 +214,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 if (view != null && !errors.hasErrors() && view.getTable() != null)
                 {
                     StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, context.getUser(), false);
-                    TableInfo table = view.getTable();
-                    if (table instanceof ContainerFilterable && table.supportsContainerFilter())
-                        ((ContainerFilterable)table).setContainerFilter(studySchema.getDefaultContainerFilter());
+                    view.setContainerFilter(studySchema.getDefaultContainerFilter());
 
                     // TODO call updateSnapshot() instead of duplicating code
                     Results results = getResults(context, view, qsDef, def);
