@@ -20,11 +20,9 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-
-import static org.labkey.api.util.DOM.at;
 
 public class Select extends Input
 {
@@ -69,10 +67,9 @@ public class Select extends Input
             sb.append(" multiple");
         if (null != _attributes)
         {
-            var attrs = at(_attributes);
-            attrs.forEach(a -> {
-                sb.append(" ").append(PageFlowUtil.filter(a.getKey())).append("=\"").append(PageFlowUtil.filter(a.getValue())).append("\"");
-            });
+            _attributes.entrySet().forEach(a ->
+                sb.append(" ").append(a.getKey()).append("=\"").append(a.getValue()).append("\"")
+            );
         }
 
         doInputEvents(sb);
@@ -135,7 +132,7 @@ public class Select extends Input
         public SelectBuilder attributes(Map<String, String> attributes)
         {
             if (attributes != null && !attributes.isEmpty())
-                this._attributes = new TreeMap<>(attributes);
+                this._attributes = new HashMap<>(attributes);
             else
                 this._attributes = null;
             return this;

@@ -281,11 +281,6 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
                 {
                     key = name.substring(2);
                 }
-                // Case for enum names
-                else if(name.equals("name"))
-                {
-                    key = name;
-                }
                 if (key.length() > 0 &&
                         Character.isUpperCase(key.charAt(0)) &&
                         method.getParameterTypes().length == 0)
