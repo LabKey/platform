@@ -25,6 +25,7 @@ import java.util.Map;
 
 public class ClientDependencySubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
+    @Override
     @NotNull
     public FormattedHtml getSubstitution(Map<String, String> params)
     {

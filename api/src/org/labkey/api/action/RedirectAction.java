@@ -19,6 +19,7 @@ package org.labkey.api.action;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
@@ -31,15 +32,13 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 
 /**
- * Base class for action that always redirects the client to a different URL.
- * TODO: Subclasses should extend FormHandlerAction or SimpleRedirectAction instead, and this class should be deleted.
- *
- * TODO: This class is deprecated in favor of SimpleRedirectAction.
+ * Use SimpleRedirectAction instead. This base action class will be removed in LabKey Server 20.1
  *
  * User: adamr
  * Date: September 19, 2007
  */
 @Deprecated
+@RemoveIn20_1
 public abstract class RedirectAction<FORM> extends BaseViewAction<FORM>
 {
     @Override

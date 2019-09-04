@@ -164,7 +164,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
                 out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
                         (reason instanceof String ? reason : "Specimen Unavailable.") + "<br><br>" +
-                                "Click " + PageFlowUtil.textLink("history", getHistoryLink(ctx)) + " for more information.", true));
+                                "Click " + PageFlowUtil.link("history").href(getHistoryLink(ctx)) + " for more information.", true));
             }
         }
 

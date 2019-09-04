@@ -6335,7 +6335,7 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             if (getExpProtocol(wrappedProtocol.getLSID()) != null)
             {
-                throw new ExperimentException("An assay with that name already exists");
+                throw new ExperimentException("An assay with that name already exists.");
             }
 
             Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
