@@ -20,6 +20,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -50,6 +51,7 @@ public interface AssayUrls extends UrlProvider
     ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol);
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
 
@@ -87,4 +89,8 @@ public interface AssayUrls extends UrlProvider
     ActionURL getSummaryRedirectURL(Container container);
     ActionURL getSetResultFlagURL(Container container);
     ActionURL getChooseAssayTypeURL(Container container);
+    ActionURL getShowSelectedDataURL(Container container, ExpProtocol protocol);
+    ActionURL getShowSelectedRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter);
+    ActionURL getSetDefaultValuesAssayURL(Container container, String providerName, Domain domain, ActionURL returnUrl);
+    String getBatchIdFilterParam();
 }

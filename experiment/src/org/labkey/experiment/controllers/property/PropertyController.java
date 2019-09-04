@@ -1137,7 +1137,7 @@ public class PropertyController extends SpringActionController
             model.domain = gwt;
             model.template = gwtFromTemplate;
             model.info = info;
-            return new JspView<>(PropertyController.class, "templateUpdate.jsp", model);
+            return new JspView<>("/org/labkey/experiment/controllers/property/templateUpdate.jsp", model);
         }
 
         @Override

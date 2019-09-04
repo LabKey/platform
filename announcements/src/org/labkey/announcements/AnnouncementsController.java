@@ -944,9 +944,12 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
-                             .addChild("Respond to " + getSettings().getConversationName());
+            NavTree child = new BeginAction(getViewContext()).appendNavTrail(root);
+            if (_parent != null)
+            {
+                child.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
+                        .addChild("Respond to " + getSettings().getConversationName());
+            }
             return root;
         }
     }

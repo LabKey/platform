@@ -1678,6 +1678,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Map<String, Pair<Integer, String[]>> map = new HashMap<>();
 
+            add(map, "7z_sample.7z", 53, "7zSearchFile.txt", "This is a sample 7z test file.");
             add(map, "cmd_sample.cmd", 844, "Delete SetupPolicies directory");
             add(map, "cpp_sample.cpp", 281, "Rcpp::NumericVector");
             add(map, "css_sample.css", 697, "math display", "fixes display issues");
@@ -1689,6 +1690,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             add(map, "dotx_sample.dotx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "exe_sample.exe", 0);
             add(map, "html_sample.html", 1049, "Align redeploy resource modification", "57855: Explicitly handle the case");
+            add(map, "hdf_sample.hdf", 0);  //We are blocking loading of the hdf parser instead of taking an additional dependency Issue 38386
             add(map, "ico_sample.ico", 0);
 //            Our version of Tika can't extract text from .class and .jar files since we stopped including asm.jar. If we ever add it back then uncomment the line below to test decompilation.
 //            add(map, "jar_sample.jar", 712120, "private double _requiredVersion", "protected java.util.Map findObject(java.util.List, String, String);");

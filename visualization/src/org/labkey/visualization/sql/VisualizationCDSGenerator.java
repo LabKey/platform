@@ -17,6 +17,7 @@ package org.labkey.visualization.sql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
@@ -176,10 +177,12 @@ public class VisualizationCDSGenerator
         // the non-dataset tables and the dataset tables
         //
 
+        // TODO: Delete this set? Not used.
         Set<Path> nonDatasetTablesSet = new HashSet<>();
         LinkedHashSet<Path> datasetTablesSet = new LinkedHashSet<>();
 
-        Study study = StudyService.get().getStudy(getContainer());
+        StudyService svc = StudyService.get();
+        @Nullable Study study = null != svc ? svc.getStudy(getContainer()) : null;
 
         for (VisDataRequest.MeasureInfo mi : _request.getMeasures())
         {
@@ -192,7 +195,7 @@ public class VisualizationCDSGenerator
                     isDataset = true;
             }
             else if (equalsIgnoreCase("vis_junit", m.getSchemaName()) &&
-                    (equalsIgnoreCase("flow",m.getQueryName()) || equalsIgnoreCase("ics",m.getQueryName())))
+                    (equalsIgnoreCase("flow", m.getQueryName()) || equalsIgnoreCase("ics", m.getQueryName())))
             {
                 isDataset = true;
             }
@@ -233,7 +236,7 @@ public class VisualizationCDSGenerator
             return null;
 
 
-        // TODO code review? consider making this size() < 1, so that the one dataset case and two dataset case look more similiar
+        // TODO code review? consider making this size() < 1, so that the one dataset case and two dataset case look more similar
         if (datasetTablesSet.size() <= 1)
         {
             VisualizationSQLGenerator sqlGenerator = new VisualizationSQLGenerator(getViewContext(), _request);
