@@ -16,18 +16,17 @@
 package org.labkey.api.assay.query;
 
 import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.assay.query.RunListQueryView;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,12 +50,14 @@ public class RunListDetailsQueryView extends RunListQueryView
         _dataIdColumn = dataIdColumn;
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
         DataRegion rgn = view.getDataRegion();
         rgn.addDisplayColumn(0, new SimpleDisplayColumn()
         {
+            @Override
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {
                 Object runId = ctx.getRow().get(_dataIdColumn);
@@ -68,7 +69,7 @@ public class RunListDetailsQueryView extends RunListQueryView
 
                     Map<String, String> map = new HashMap<>();
                     map.put("title", "View run details");
-                    out.write(PageFlowUtil.textLink("run details", url, null, null, map));
+                    out.write(PageFlowUtil.link("run details").href(url).attributes(map).toString());
                 }
             }
         });

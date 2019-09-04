@@ -132,11 +132,13 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
+    @Override
     public String getName()
     {
         return MODULE_NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.21;
@@ -149,6 +151,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
+    @Override
     protected void init()
     {
         addController("experiment", ExperimentController.class);
@@ -189,11 +192,13 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -201,6 +206,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunGroupWebPart(portalCtx, WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), webPart);
@@ -211,6 +217,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunTypeWebPart();
@@ -221,6 +228,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(new ExperimentRunWebPartFactory());
         BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
@@ -229,15 +237,17 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         sampleSetFactory.addLegacyNames("Narrow Sample Sets");
         result.add(sampleSetFactory);
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
-                WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
+                WebPartView view = new JspView<>("/org/labkey/experiment/samplesAndAnalytes.jsp", webPart);
                 view.setTitle("Samples");
                 return view;
             }
         });
 
         result.add(new AlwaysAvailableWebPartFactory("Data Classes", false, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new DataClassWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx, webPart);
@@ -246,6 +256,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new ProtocolWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
@@ -419,6 +430,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -509,6 +521,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
 
+    @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
 //        if (c == ContainerManager.getSharedContainer())
@@ -534,6 +547,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     }
 
+    @Override
     public void indexDeleted()
     {
         // Clear the last indexed time on all material sources
