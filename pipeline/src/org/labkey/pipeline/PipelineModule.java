@@ -94,18 +94,21 @@ import java.util.Set;
  */
 public class PipelineModule extends SpringModule implements ContainerManager.ContainerListener
 {
-    private static Logger _log = Logger.getLogger(PipelineModule.class);
+    private static final Logger _log = Logger.getLogger(PipelineModule.class);
 
+    @Override
     public String getName()
     {
         return PipelineService.MODULE_NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.20;
     }
 
+    @Override
     protected void init()
     {
         PipelineServiceImpl ps = new PipelineServiceImpl();
@@ -136,12 +139,14 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         PipelineTriggerRegistry.setInstance(new PipelineTriggerRegistryImpl());
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<>(Arrays.asList(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new PipelineWebPart(portalCtx);
@@ -161,6 +166,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         ));
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
@@ -219,10 +225,12 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return super.getSummary(c);
     }
 
+    @Override
     public void containerCreated(Container c, User user)
     {
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         try
@@ -249,6 +257,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return Collections.emptyList();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
     }
@@ -289,6 +298,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     private static class JobRestarter implements Runnable
     {
+        @Override
         public void run()
         {
             assert ModuleLoader.getInstance().isStartupComplete();

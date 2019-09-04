@@ -77,6 +77,7 @@ public class SimpleModule extends SpringModule
         setName(name);
     }
 
+    @Override
     protected void init()
     {
         if (getName() == null || getName().length() == 0)
@@ -91,6 +92,7 @@ public class SimpleModule extends SpringModule
         return new SimpleController(getName().toLowerCase());
     }
 
+    @Override
     @NotNull
     protected Collection<? extends WebPartFactory> createWebPartFactories()
     {
@@ -140,6 +142,7 @@ public class SimpleModule extends SpringModule
             DbSchema dbSchema = DbSchema.get(schemaName);
             DefaultSchema.registerProvider(dbSchema.getQuerySchemaName(), new DefaultSchema.SchemaProvider(this)
             {
+                @Override
                 public QuerySchema createSchema(final DefaultSchema schema, Module module)
                 {
                     DbSchema dbSchema = DbSchema.get(schemaName);

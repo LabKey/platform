@@ -32,7 +32,7 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     String href;
     String id;
     String onClick;
-    Map<String,String> attributes;
+    Map<String, String> attributes;
     String cssClass;
     String tooltip;
     String iconCls;
@@ -128,7 +128,7 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
         return build().getHtmlString();
     }
 
-    @Override // TODO: HtmlString - remove
+    @Override
     public String toString()
     {
         return getHtmlString().toString();

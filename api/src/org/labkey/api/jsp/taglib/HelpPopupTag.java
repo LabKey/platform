@@ -16,12 +16,15 @@
 
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.jsp.tagext.BodyTagSupport;
 import javax.servlet.jsp.JspException;
 import java.io.IOException;
 
+@Deprecated // Use JspBase.helpPopup()
+@RemoveIn20_1
 public class HelpPopupTag extends BodyTagSupport
 {
     private String title;

@@ -70,6 +70,6 @@ public class LinkTag extends SimpleTagBase
             properties.put("rel", _rel);
 
         JspWriter out = getOut();
-        out.print(PageFlowUtil.textLink(_text, _href, _onclick, _id, properties));
+        out.print(PageFlowUtil.link(_text).href(_href).onClick(_onclick).id(_id).attributes(properties));
     }
 }
