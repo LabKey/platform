@@ -29,6 +29,7 @@ import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -81,12 +82,18 @@ import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -611,6 +618,41 @@ public class DbScope
 
         return result;
     }
+
+
+    /** Won't retry if we're already in a transaction
+     * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
+     */
+    public <ReturnType> ReturnType executeWithRetry(Function<DbScope.Transaction, ReturnType> fn)
+    {
+        // don't retry if we're already in a transaction, it won't help
+        ReturnType ret = null;
+        int tries = isTransactionActive() ? 1 : 3;
+        long delay = 100;
+        DeadlockLoserDataAccessException lastException = null;
+        for (var tri=0 ; tri < tries ; tri++ )
+        {
+            lastException = null;
+            try (DbScope.Transaction transaction = ensureTransaction())
+            {
+                ret = fn.apply(transaction);
+                transaction.commit();
+                break;
+            }
+            catch (DeadlockLoserDataAccessException dldae)
+            {
+                lastException = dldae;
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ie) {}
+                LOG.info("Retrying operation after deadlock", new Throwable());
+            }
+        }
+
+        if (null != lastException)
+            throw lastException;
+
+        return ret;
+    }
+
 
     private static Thread getEffectiveThread()
     {
