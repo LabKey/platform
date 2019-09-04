@@ -191,7 +191,7 @@ public class PropertyServiceImpl implements PropertyService
     public List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
         List<? extends Domain> domainsInContainer = getDomains(container);
-        List<Domain> result = new ArrayList<>();
+        List<Domain> result = domainsInContainer.stream().filter(d -> d.getDomainKind() != null && domainKinds.contains(d.getDomainKind().getKindName())).collect(Collectors.toList());
         domainsInContainer.forEach(d -> {
             if(null != d.getDomainKind() && domainKinds.contains(d.getDomainKind().getKindName()))
             {
