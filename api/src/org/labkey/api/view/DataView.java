@@ -256,7 +256,7 @@ public abstract class DataView extends WebPartView<RenderContext>
                     if (user.hasSiteAdminPermission() || user.isPlatformDeveloper())
                     {
                         out.write("&nbsp;");
-                        out.write(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
+                        out.write(PageFlowUtil.link(StringUtils.defaultString(resolveText, "resolve")).href(resolveURL).toString());
                     }
                 }
                 out.write("<br>");

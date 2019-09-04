@@ -522,7 +522,7 @@ public class SqlScriptController extends SpringActionController
             if (0 == html.length())
                 html.append("No schemas require consolidation in this range");
             else
-                html.append(PageFlowUtil.textLink("Create batch file from current settings", getConsolidateBatchActionURL(form), null, null, Collections.singletonMap("target", "batchFile")));
+                html.append(PageFlowUtil.link("Create batch file from current settings").href(getConsolidateBatchActionURL(form)).attributes(Collections.singletonMap("target", "batchFile")).toString());
 
             html.insert(0, formHtml);
 

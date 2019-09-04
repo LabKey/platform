@@ -27,6 +27,7 @@ List apache = [
         "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
         "commons-io:commons-io:${commonsIoVersion}",
         "org.apache.commons:commons-compress:${commonsCompressVersion}",
+        "org.tukaani:xz:${tukaaniXZVersion}",         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
         "org.apache.commons:commons-math3:${commonsMath3Version}",
         "commons-net:commons-net:${commonsNetVersion}",
