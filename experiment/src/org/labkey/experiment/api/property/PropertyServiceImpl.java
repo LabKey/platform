@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 public class PropertyServiceImpl implements PropertyService
 {
@@ -190,15 +191,10 @@ public class PropertyServiceImpl implements PropertyService
     @Override
     public List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
-        List<? extends Domain> domainsInContainer = getDomains(container);
-        List<Domain> result = domainsInContainer.stream().filter(d -> d.getDomainKind() != null && domainKinds.contains(d.getDomainKind().getKindName())).collect(Collectors.toList());
-        domainsInContainer.forEach(d -> {
-            if(null != d.getDomainKind() && domainKinds.contains(d.getDomainKind().getKindName()))
-            {
-                result.add(d);
-            }
-        });
-        return result;
+        return getDomains(container)
+                .stream()
+                .filter(d -> d.getDomainKind() != null && domainKinds.contains(d.getDomainKind().getKindName()))
+                .collect(Collectors.toList());
     }
 
     public void registerValidatorKind(ValidatorKind validatorKind)
