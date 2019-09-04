@@ -153,9 +153,9 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
-    public List<DomainKind> getDomainKinds(Container container, Set<String> domainKinds)
+    public List<DomainKind> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
-        List<? extends Domain> domains = getDomains(container, domainKinds);
+        List<? extends Domain> domains = getDomains(container, user, domainKinds, includeProjectAndShared);
         List<DomainKind> dks = new ArrayList<>();
         domains.forEach(d -> {
             if(null != d.getDomainKind())
@@ -188,7 +188,7 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
-    public List<? extends Domain> getDomains(Container container, Set<String> domainKinds)
+    public List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
         List<? extends Domain> domainsInContainer = getDomains(container);
         List<Domain> result = new ArrayList<>();

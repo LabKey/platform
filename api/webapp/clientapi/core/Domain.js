@@ -258,6 +258,7 @@ LABKEY.Domain.create({
          * @param {Function} config.success Required success callback.
          * @param {Function} [config.failure] Failure callback.
          * @param {Boolean} config.includeFields Include Fields of in the list of domains. Defaults to false.
+         * @param {Boolean} config.includeProjectAndShared Includes domains in projects and shared. Defaults to false.
          * @param {Array} config.domainKinds The list of domain Kinds to include in the list. Defaults to all the domains in container.
          * @param {String} config.containerPath Container path of the domains holding container.
          * @example List domains:
@@ -285,7 +286,11 @@ LABKEY.Domain.create({
             listDomains(
                     config.success,
                     config.failure,
-                    {includeFields: config.includeFields, domainKinds: config.domainKinds},
+                    {
+                        includeFields: config.includeFields,
+                        includeProjectAndShared: config.includeProjectAndShared,
+                        domainKinds: config.domainKinds
+                    },
                     config.containerPath);
         },
 
