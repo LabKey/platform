@@ -987,7 +987,7 @@ public class ReportsController extends SpringActionController
                 _report = form.getReportId().getReport(getViewContext());
 
             if (null == _report)
-                return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
+                throw new NotFoundException("Invalid report identifier, unable to create report.");
 
             HttpView ret;
             try
@@ -2402,7 +2402,7 @@ public class ReportsController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()));
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier((String)getViewContext().get(ReportDescriptor.Prop.reportId.name()), getViewContext().getUser(), getViewContext().getContainer());
             String sections = (String)getViewContext().get(Report.renderParam.showSection.name());
             if (reportId != null)
             {
@@ -3853,7 +3853,7 @@ public class ReportsController extends SpringActionController
             {
                 for (JSONObject reportInfo : ((JSONArray) reportsProp).toJSONObjectArray())
                 {
-                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(reportInfo.getString("reportId"));
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(reportInfo.getString("reportId"), getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null)
                     {
                         Report report = reportId.getReport(getViewContext());
