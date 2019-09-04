@@ -26,9 +26,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
-<%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -448,11 +448,8 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">
-        Always include inaccessible parent folders in project menu when child folder is accessible
-        <labkey:helpPopup title="Project menu access">
-            Unchecking this will only allow users to see folders in the project menu
-            where they have permissions to see the root project and all parent folders.
-        </labkey:helpPopup>
+        Always include inaccessible parent folders in project menu when child folder is accessible<%=helpPopup("Project menu access",
+            "Unchecking this will only allow users to see folders in the project menu where they have permissions to see the root project and all parent folders.")%>
     </td>
     <td><input type="checkbox" name="navAccessOpen" id="navAccessOpen" <%=checked(appProps.isNavigationAccessOpen())%>></td>
 </tr>

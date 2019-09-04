@@ -2587,7 +2587,7 @@ public class LoginController extends SpringActionController
                 html.append("<td id=\"").append(id1).append("\">");
                 html.append(logo);
                 html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
-                html.append(PageFlowUtil.textLink("delete", "javascript:{}", "deleteLogo('" + prefix + "');", "")); // RE_CHECK
+                html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + prefix + "');").toString()); // RE_CHECK
                 html.append("</td>\n");
 
                 return html.toString();
