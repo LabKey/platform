@@ -26,9 +26,8 @@ public class CheckboxTag extends SimpleTagBase
 {
     protected String _id;
     protected String _name;
-    protected Object _value;
+    protected String _value;
     protected Boolean _checked;
-    protected Set _checkedSet;
 
     @Override
     public void doTag() throws IOException
@@ -45,10 +44,6 @@ public class CheckboxTag extends SimpleTagBase
         out.print("\"");
 
         if (_checked != null && _checked)
-        {
-            out.print(" checked");
-        }
-        else if (_checkedSet != null && _checkedSet.contains(_value))
         {
             out.print(" checked");
         }
@@ -69,7 +64,7 @@ public class CheckboxTag extends SimpleTagBase
         _name = name;
     }
 
-    public void setValue(Object value)
+    public void setValue(String value)
     {
         _value = value;
     }
@@ -77,10 +72,5 @@ public class CheckboxTag extends SimpleTagBase
     public void setChecked(Boolean checked)
     {
         _checked = checked;
-    }
-
-    public void setCheckedSet(Set set)
-    {
-        _checkedSet = set;
     }
 }

@@ -751,6 +751,7 @@ public class ExperimentController extends SpringActionController
     {
         protected ExpMaterialImpl _material;
 
+        @Override
         public VBox getView(ExpObjectForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
@@ -792,6 +793,7 @@ public class ExperimentController extends SpringActionController
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
@@ -810,6 +812,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowMaterialAction extends ShowMaterialSimpleAction
     {
+        @Override
         public VBox getView(ExpObjectForm form, BindException errors) throws Exception
         {
             VBox vbox = super.getView(form, errors);
@@ -849,7 +852,7 @@ public class ExperimentController extends SpringActionController
                     // container context on the generated expr.
                     ((DetailsURL) expr).setContainerContext(ss.getContainer());
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
-                    updateLinks.append(PageFlowUtil.textLink("edit", url) + " ");
+                    updateLinks.append(PageFlowUtil.link("edit").href(url)).append(" ");
                 }
             }
 
@@ -860,7 +863,7 @@ public class ExperimentController extends SpringActionController
                 if (ss != null)
                     deriveURL.addParameter("targetSampleSetId", ss.getRowId());
 
-                updateLinks.append(PageFlowUtil.textLink("derive samples from this sample", deriveURL) + " ");
+                updateLinks.append(PageFlowUtil.link("derive samples from this sample").href(deriveURL)).append(" ");
             }
 
             vbox.addView(new HtmlView(updateLinks.toString()));
@@ -878,7 +881,6 @@ public class ExperimentController extends SpringActionController
 
             return vbox;
         }
-
     }
 
 

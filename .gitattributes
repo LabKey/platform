@@ -1265,7 +1265,6 @@ api/src/org/labkey/api/reports/report/view/ReportDesignBean.java -text
 api/src/org/labkey/api/reports/report/view/ReportQueryView.java -text
 api/src/org/labkey/api/reports/report/view/ReportUtil.java -text
 api/src/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp -text
-api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text
 api/src/org/labkey/api/reports/report/view/RunChartReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunReportView.java -text
 api/src/org/labkey/api/reports/report/view/ScriptReportBean.java -text
@@ -1919,7 +1918,6 @@ assay/src/org/labkey/assay/plate/query/PlateSchema.java -text
 assay/src/org/labkey/assay/plate/query/PlateTable.java -text
 assay/src/org/labkey/assay/plate/query/WellGroupTable.java -text
 assay/src/org/labkey/assay/plate/view/copyTemplate.jsp -text
-assay/src/org/labkey/assay/plate/view/plateTemplate.jsp -text
 assay/src/org/labkey/assay/plate/view/plateTemplateList.jsp -text
 assay/src/org/labkey/assay/plate/WellGroupCurveImpl.java -text
 assay/src/org/labkey/assay/plate/WellGroupImpl.java -text
@@ -2249,7 +2247,6 @@ core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/usageMetrics/UsageMetricsServiceImpl.java -text
 core/src/org/labkey/core/admin/ValidateDomainsPipelineJob.java -text
-core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
 core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
 core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
 core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
@@ -2809,7 +2806,6 @@ internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/SortHelpers.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
-internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
@@ -3547,7 +3543,6 @@ query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
-query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/shareReport.jsp -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/IConstant.java -text
@@ -4213,7 +4208,6 @@ study/src/org/labkey/study/view/customizeParticipantView.jsp -text
 study/src/org/labkey/study/view/customizeParticipantWebPart.jsp -text
 study/src/org/labkey/study/view/datasetDetails.jsp -text
 study/src/org/labkey/study/view/datasetDisplayOrder.jsp -text
-study/src/org/labkey/study/view/datasetInfo.jsp -text
 study/src/org/labkey/study/view/datasets.jsp -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/datasetVisibility.jsp -text
@@ -4222,7 +4216,6 @@ study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
-study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
@@ -4231,7 +4224,6 @@ study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text
 study/src/org/labkey/study/view/manageFilewatchers.jsp -text
-study/src/org/labkey/study/view/manageLocations.jsp -text
 study/src/org/labkey/study/view/manageMasterPatientConfig.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text
@@ -4247,12 +4239,10 @@ study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text
 study/src/org/labkey/study/view/participantReport.jsp -text
-study/src/org/labkey/study/view/pipelineSetup.jsp -text
 study/src/org/labkey/study/view/renderAssayProgressReport.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
-study/src/org/labkey/study/view/securityTabHeader.jsp -text
 study/src/org/labkey/study/view/sendParticipantGroup.jsp -text
 study/src/org/labkey/study/view/snapshotSettings.jsp -text
 study/src/org/labkey/study/view/specimen/autoReportList.jsp -text

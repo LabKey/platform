@@ -2676,7 +2676,7 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.textLink("Download Data File", "downloadTsv.view?id=" + ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
                 }
             };
             dr.addDisplayColumn(dc);
@@ -3602,7 +3602,7 @@ public class StudyController extends BaseStudyController
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+                return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);

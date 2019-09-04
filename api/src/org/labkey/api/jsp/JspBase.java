@@ -140,9 +140,26 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.unsafe(s);
     }
 
+    /**
+     * Convenience method for asserting that a String contains valid, properly encoded HTML.
+     *
+     * @param s Valid, properly encoded HTML
+     * @return An HtmlString that wraps the parameter without encoding
+     */
     public HtmlString unsafe(String s)
     {
         return HtmlString.unsafe(s);
+    }
+
+    /**
+     * Convenience method for asserting that a CharSequence contains valid, properly encoded HTML.
+     *
+     * @param cs Valid, properly encoded HTML
+     * @return An HtmlString that wraps the parameter without encoding
+     */
+    public HtmlString unsafe(CharSequence cs)
+    {
+        return HtmlString.unsafe(cs.toString());
     }
 
     /**
@@ -407,11 +424,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return new ButtonBuilder(html);
     }
 
-    // TODO: Switch to real impl in PageFlowUtil after merging it from CSRF branch
     public @NotNull HtmlString makeHtmlId(@Nullable String s)
     {
-        return null == s ? HtmlString.EMPTY_STRING : HtmlString.unsafe(s.replaceAll(" ", ""));
-//        return PageFlowUtil.makeHtmlId(s);
+        return PageFlowUtil.makeHtmlId(s);
     }
 
     public HtmlString generateReturnUrlFormField(URLHelper returnURL)
