@@ -272,17 +272,6 @@ LABKEY.Domain.create({
 
         listDomains : function(config)
         {
-            if (arguments.length > 1)
-            {
-                config = {
-                    success: arguments[0],
-                    failure: arguments[1],
-                    includeFields: arguments[2],
-                    domainKinds: arguments[3],
-                    containerPath: arguments[4]
-                };
-            }
-
             listDomains(
                     config.success,
                     config.failure,
