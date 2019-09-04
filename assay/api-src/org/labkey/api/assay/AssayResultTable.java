@@ -61,6 +61,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 
 import java.sql.Connection;
@@ -187,7 +188,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 visibleColumns.add(col.getFieldKey());
         }
 
-        configureSpecimensLookup(specimenIdCol, foundTargetStudyCol);
+        if (null != StudyService.get())
+            configureSpecimensLookup(specimenIdCol, foundTargetStudyCol);
 
         BaseColumnInfo dataColumn = getMutableColumn("DataId");
         dataColumn.setLabel("Data");

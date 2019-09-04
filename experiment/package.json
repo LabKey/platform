@@ -34,8 +34,8 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.32-fb-domain-prioritized-updates.11",
-    "@glass/base": "0.14.2-fb-domain-prioritized-updates.0"
+    "@glass/domainproperties": "0.0.32-fb-domain-prioritized-updates.12",
+    "@glass/base": "0.15.0-fb-domain-prioritized-updates.0"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",

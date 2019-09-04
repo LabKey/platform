@@ -40,7 +40,7 @@
     ActionURL baseDeleteStateURL = new ActionURL(bean.getDeleteAction(), container);
 %>
 <labkey:errors/><br>
-<labkey:form action="<%=h(buildURL(manageAction.getClass()))%>" name="manageQCStates" method="POST">
+<labkey:form action="<%=buildURL(manageAction.getClass())%>" name="manageQCStates" method="POST">
 <input type="hidden" name="reshowPage" value="true">
 <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <labkey:panel title="<%=currentQCPanelTitle%>">

@@ -3584,7 +3584,8 @@ if (!LABKEY.DataRegions) {
                     item.onClick = "return LABKEY.DataRegions['" + region.name + "']._onButtonClick('" + item.id + "');";
                 }
 
-                if (item.items) {
+                // Be tolerant of the caller passing in undefined, as pageSize has been removed as an option. See issue 34562
+                if (item && item.items) {
                     _processButtonBarItems(region, item.items);
                 }
             }
@@ -4636,11 +4637,11 @@ if (!LABKEY.DataRegions) {
  * <ul>
  *  <li>LABKEY.QueryWebPart.standardButtons.query</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.views</li>
+ *  <li>LABKEY.QueryWebPart.standardButtons.charts</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.insertNew</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.deleteRows</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.exportRows</li>
  *  <li>LABKEY.QueryWebPart.standardButtons.print</li>
- *  <li>LABKEY.QueryWebPart.standardButtons.pageSize</li>
  * </ul>
  * @name standardButtons
  * @memberOf LABKEY.QueryWebPart#
@@ -4648,11 +4649,11 @@ if (!LABKEY.DataRegions) {
 LABKEY.QueryWebPart.standardButtons = {
     query: 'query',
     views: 'grid views',
-    insertNew: 'insert new',
+    charts: 'charts',
+    insertNew: 'insert',
     deleteRows: 'delete',
     exportRows: 'export',
-    print: 'print',
-    pageSize: 'paging'
+    print: 'print'
 };
 
 /**

@@ -52,13 +52,13 @@ public interface AssayImportMethod
     abstract public String getTooltip();
 
     /**
-     * controls whether file content area shows.  otherwise this would be a web form only.  defulats to false
+     * controls whether file content area shows. otherwise this would be a web form only. defaults to false
      * @return
      */
     abstract public boolean doEnterResultsInGrid();
 
     /**
-     * URL to a to file with example data
+     * URL to a file with example data
      * @return
      */
     abstract public String getExampleDataUrl(ViewContext ctx);

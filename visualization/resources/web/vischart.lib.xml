@@ -30,8 +30,5 @@
         <dependency path="Ext4"/>
         <dependency path="vis/vis"/>
         <dependency path="codemirror"/>
-
-        <!-- Required by timeChartPanel.js -->
-        <dependency path="study/ParticipantFilter"/>
     </dependencies>
 </libraries>

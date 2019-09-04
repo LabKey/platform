@@ -17,11 +17,13 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
-import org.labkey.api.util.element.Input;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Input;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -36,7 +38,7 @@ public class FormTag extends BodyTagSupport
     private Boolean isNoValidate;
     private String name;
     private String method="GET";
-    private Object action;
+    private HtmlString action;
     private String enctype;
     private String target;
     private String onsubmit;
@@ -64,9 +66,37 @@ public class FormTag extends BodyTagSupport
         return action;
     }
 
+    @Deprecated
+    @RemoveIn20_1  // Remove -- unused and not needed
     public void setAction(Object action)
     {
+        setAction(String.valueOf(action));
+    }
+
+    // Our JSP tag classes expect unencoded parameters (they encode everything at render time), but this method accepts
+    // an encoded action for backward compatibility purposes. TODO: Migrate these cases and remove this method.
+    @Deprecated
+    public void setAction(HtmlString action)
+    {
         this.action = action;
+    }
+
+    public void setAction(String s)
+    {
+        if (AppProps.getInstance().getUseContainerRelativeURL() &&
+                StringUtils.containsNone(s, "/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
+        {
+            ViewContext ctx = HttpView.getRootContext();
+            if (null != ctx)
+                s = ctx.getActionURL().getController() + "-" + s;
+        }
+
+        this.action = HtmlString.of(s);
+    }
+
+    public void setAction(ActionURL action)
+    {
+        this.action = action.getHtmlString();
     }
 
     public String getEnctype()
@@ -152,6 +182,7 @@ public class FormTag extends BodyTagSupport
     @Override
     public int doStartTag() throws JspException
     {
+        // TODO: HtmlString or HTML DOM
         StringBuilder sb = new StringBuilder();
         sb.append("<form");
         if (StringUtils.isNotEmpty(getId()))
@@ -161,23 +192,7 @@ public class FormTag extends BodyTagSupport
         if (StringUtils.isNotEmpty(method))
             sb.append(" method=\"").append(method).append("\"");
         if (null != action)
-        {
-            String s;
-            if (action instanceof URLHelper)
-                s = PageFlowUtil.filter(action);
-            else
-            {
-                s = String.valueOf(action);
-                if (AppProps.getInstance().getUseContainerRelativeURL() &&
-                    StringUtils.containsNone(s,"/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
-                {
-                    ViewContext ctx = HttpView.getRootContext();
-                    if (null != ctx)
-                        s = ctx.getActionURL().getController() + "-" + s;
-                }
-            }
-            sb.append(" action=\"").append(s).append("\"");
-        }
+            sb.append(" action=\"").append(action).append("\"");
         if (StringUtils.isNotEmpty(enctype))
             sb.append(" enctype=\"").append(enctype).append("\"");
         if (StringUtils.isNotEmpty(target))

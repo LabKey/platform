@@ -131,9 +131,11 @@
     <td class="labkey-form-label">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</td>
     <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%= h(laf.getSupportEmail()) %>"></td>
 </tr>
-<tr>
-    <td>&nbsp;</td>
-</tr>
+<% if (bean.getCustomPageElementLink(c) != null) { %>
+    <tr>
+        <td class="labkey-form-label" ><%=link("Configure Custom Page Elements", bean.getCustomPageElementLink(c))%></td>
+    </tr>
+<%}%>
 <tr>
     <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
