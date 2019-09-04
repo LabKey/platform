@@ -99,6 +99,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
             }
             else
             {
+                LOG.debug("No user or container available, unable to try resolving by report name for '" + id + "'");
                 throw e;
             }
         }
