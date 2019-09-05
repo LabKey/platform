@@ -59,6 +59,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.assay.AssayProvider;
@@ -74,6 +75,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
@@ -91,6 +93,7 @@ import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -167,6 +170,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExpSchema.register(this);
         PropertyService.get().registerDomainKind(new SampleSetDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
+        PropertyService.get().registerDomainKind(new VocabularyDomainKind());
 
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
@@ -187,6 +191,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
                 "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
+
+        RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
