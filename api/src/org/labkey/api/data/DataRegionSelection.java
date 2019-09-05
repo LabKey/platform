@@ -105,7 +105,7 @@ public class DataRegionSelection
      */
     public static @NotNull Set<String> getSelected(ViewContext context, boolean clearSelection)
     {
-        return getSelected(context, null, false, clearSelection);
+        return getSelected(context, null, true, clearSelection);
     }
 
     /**

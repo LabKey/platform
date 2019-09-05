@@ -561,6 +561,7 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion.addFilter static method.
      */
     LABKEY.DataRegion.prototype.addFilter = function(filter) {
+        this.clearSelected();
         _updateFilter(this, filter);
     };
 
@@ -568,6 +569,7 @@ if (!LABKEY.DataRegions) {
      * Removes all filters from the DataRegion
      */
     LABKEY.DataRegion.prototype.clearAllFilters = function() {
+        this.clearSelected();
         if (this.async) {
             this.offset = 0;
             this.userFilters = {};
@@ -581,6 +583,7 @@ if (!LABKEY.DataRegions) {
      * @param {string|FieldKey} fieldKey the name of the field from which all filters should be removed
      */
     LABKEY.DataRegion.prototype.clearFilter = function(fieldKey) {
+        this.clearSelected();
         var fk = _resolveFieldKey(this, fieldKey);
 
         if (fk) {
@@ -704,6 +707,7 @@ if (!LABKEY.DataRegions) {
      * @param {LABKEY.Filter} filter
      */
     LABKEY.DataRegion.prototype.removeFilter = function(filter) {
+        this.clearSelected();
         if (LABKEY.Utils.isObject(filter) && LABKEY.Utils.isFunction(filter.getColumnName)) {
             _updateFilter(this, null, [this.name + '.' + filter.getColumnName() + '~']);
         }
@@ -3747,6 +3751,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _updateFilter = function(region, filter, skipPrefixes) {
+        region.clearSelected();
         var params = [];
         if (filter) {
             params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
