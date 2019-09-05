@@ -100,8 +100,7 @@ public class Select extends Input
     {
         private boolean _multiple;
         private List<Option> _options;
-        private List<String> _styles;
-
+        private List<String> _styles = new ArrayList<>();
 
         public SelectBuilder()
         {
@@ -131,18 +130,12 @@ public class Select extends Input
 
         public SelectBuilder style(String style)
         {
-            if (_styles == null)
-                _styles = new ArrayList<>();
-
             _styles.add(style);
             return this;
         }
 
         public SelectBuilder style(List<String> styles)
         {
-            if (_styles == null)
-                _styles = new ArrayList<>();
-
             _styles.addAll(styles);
             return this;
         }
