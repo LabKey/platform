@@ -220,14 +220,10 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return HtmlString.of(url == null ? null : url.toString());
     }
 
-    public JSONArray toJsonArray(Collection<Object> c)
+    // Note: If you have a stream, consider using JSONArray.collector() instead
+    public JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
-    }
-
-    public JSONArray toJsonArray(Stream<Object> c)
-    {
-        return toJsonArray(c.collect(Collectors.toList()));
     }
 
     public JSONObject toJsonObject(Collection<Object> c)
