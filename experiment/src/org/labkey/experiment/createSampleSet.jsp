@@ -41,7 +41,7 @@
     ExperimentController.BaseSampleSetForm bean = view.getModelBean();
     Integer rowId = bean.getRowId();
     String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
-    final String SELF_OPTION_TEXT = "(This SampleSet)";
+    final String SELF_OPTION_TEXT = "(Current Sample Set)";
 
     List<Pair<String, String>> sampleSetList = new ArrayList<>();
     for (ExpSampleSet ss : SampleSetService.get().getSampleSets(getContainer(), getUser(), true))
