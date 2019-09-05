@@ -85,14 +85,14 @@
     <labkey:input
             id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
             placeholder="S-\${now:date}-\${batchRandomId}-\${randomId}"
-            contextContent="<%=helpText%>" size="60"
+            contextContent="<%=h(helpText).toString()%>" size="60"
     />
     <div class="form-group">
-        <label class=" control-label col-sm-3 col-lg-2">
+        <label class=" control-label col-sm-3 col-lg-2" for="description">
             Description
         </label>
         <div class="col-sm-9 col-lg-10">
-            <textarea name="description" id="description" cols="60" rows="5"><%=text(bean.getDescription())%></textarea>
+            <textarea name="description" id="description" cols="60" rows="5"><%=h(bean.getDescription())%></textarea>
         </div>
     </div>
 
@@ -122,7 +122,7 @@
         $(document).ready(function(){
             function processAliasJson(aliases) {
                 if (aliases) {
-                    for (var j in aliases) {
+                    for (let j in aliases) {
                         if (aliases.hasOwnProperty(j) && aliases[j]) {
                             addAliasGroup(j, aliases[j])
                         }
@@ -196,6 +196,8 @@
                     "</div>" +
                     "</div>";
 
+            const extraAlias = $('#extraAlias');
+
             //Set existing values and append existing alias to DOM
             function addAliasGroup(key, value) {
                 let elem = $(aliasRowTemplate);
@@ -205,10 +207,10 @@
                     elem.find(".lk-exp-alias-value").val(value);
                 }
 
-                elem.appendTo($("#extraAlias"));
+                elem.appendTo(extraAlias);
             }
 
-            $('#extraAlias').on('click', '.removeAliasTrigger' , function() {
+            extraAlias.on('click', '.removeAliasTrigger' , function() {
                 $(this).parents('.lk-exp-alias-group').remove();
             });
 
