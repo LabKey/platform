@@ -39,6 +39,8 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.FieldComparator;
+import org.apache.lucene.search.FieldComparatorSource;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -60,7 +62,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1267,7 +1268,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _indexManager.releaseSearcher(searcher);
         }
     }
-    
+
 
     private static final String[] standardFields;
     private static final Map<String, Float> boosts = new HashMap<>();
@@ -1302,6 +1303,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                                Container current, SearchScope scope,
                                @Nullable String sortField,
                                int offset, int limit) throws IOException
+    {
+        return search(queryString, categories, user, current, scope, sortField, offset, limit, false);
+    }
+
+    @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
+                               Container current, SearchScope scope,
+                               @Nullable String sortField,
+                               int offset, int limit, boolean invertResults) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
 
@@ -1392,9 +1402,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (sortField != null && !sortField.equals("score"))
             {
                 if (sortField.equals(FIELD_NAME.created.name()) || sortField.equals(FIELD_NAME.modified.name()))
-                    sort = new Sort(new SortField(sortField, SortField.Type.LONG, true), SortField.FIELD_SCORE);
+                    sort = new Sort(new SortField(sortField, SortField.Type.LONG, !invertResults), SortField.FIELD_SCORE);
+                else if (sortField.equals(FIELD_NAME.container.name()))
+                    sort = new Sort(new SortField(sortField, new ContainerFieldComparatorSource(), invertResults), SortField.FIELD_SCORE);
                 else
-                    sort = new Sort(new SortField(sortField, SortField.Type.STRING), SortField.FIELD_SCORE);
+                    sort = new Sort(new SortField(sortField, SortField.Type.STRING, invertResults), SortField.FIELD_SCORE);
             }
 
             IndexSearcher searcher = _indexManager.getSearcher();
@@ -1545,7 +1557,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         return contentType.startsWith("image/");
     }
-    
+
 
     private boolean isZip(String contentType)
     {
@@ -1930,6 +1942,35 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             SearchResult result = _ss.search(query, Collections.singletonList(_category), _context.getUser(), _c, SearchScope.Folder, null, 0, 100);
 
             return result.hits;
+        }
+    }
+
+    private static class ContainerFieldComparatorSource extends FieldComparatorSource
+    {
+        @Override
+        public FieldComparator<?> newComparator(String fieldname, int numHits, int sortPos, boolean reversed)
+        {
+            return new FieldComparator.TermValComparator(numHits, fieldname, reversed) {
+                @Override
+                public int compareValues(BytesRef val1, BytesRef val2)
+                {
+                    Container c1 = ContainerManager.getForId(val1.utf8ToString());
+                    Container c2 = ContainerManager.getForId(val2.utf8ToString());
+
+                    if (c1 == null)
+                    {
+                        return c2 == null ? 0 : 1;
+                    }
+                    else if (c2 == null)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return c1.compareTo(c2);
+                    }
+                }
+            };
         }
     }
 }

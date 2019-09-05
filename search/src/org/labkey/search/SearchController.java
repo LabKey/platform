@@ -598,7 +598,7 @@ public class SearchController extends SpringActionController
                     //UNDONE: paging, rowlimit etc
                     int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
                     result = ss.search(query, ss.getCategories(form.getCategory()), getUser(), getContainer(), form.getSearchScope(),
-                        form.getSortField(), form.getOffset(), limit);
+                        form.getSortField(), form.getOffset(), limit, form.isInvertSort());
                 }
                 catch (Exception x)
                 {
@@ -701,7 +701,7 @@ public class SearchController extends SpringActionController
     {
         ActionURL getPostURL(Container c);    // Search does not actually post
         String getDescription(Container c);
-        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
+        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertSort) throws IOException;
         boolean includeAdvancedUI();
         boolean includeNavigationLinks();
     }
@@ -728,9 +728,9 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit) throws IOException
+        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit, boolean invertSort) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit);
+            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit, invertSort);
         }
 
         @Override
@@ -860,6 +860,7 @@ public class SearchController extends SpringActionController
         private boolean _includeHelpLink = true;
         private boolean _webpart = false;
         private boolean _showAdvanced = false;
+        private boolean _invertSort = false;
         private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
         private String _template = null;
         private SearchScope _scope = SearchScope.All;
@@ -1014,6 +1015,16 @@ public class SearchController extends SpringActionController
         public void setShowAdvanced(boolean showAdvanced)
         {
             _showAdvanced = showAdvanced;
+        }
+
+        public boolean isInvertSort()
+        {
+            return _invertSort;
+        }
+
+        public void setInvertSort(boolean invertSort)
+        {
+            _invertSort = invertSort;
         }
 
         public String getTemplate()
