@@ -1185,19 +1185,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
         Set<Module> activeModules;
         if (includeDependencies)
         {
-            Set<Module> withDependencies = new HashSet<>();
-            for (Module m : modules)
-            {
-                withDependencies.add(m);
-                Set<Module> dependencies = m.getResolvedModuleDependencies();
-                for (Module dependent : dependencies)
-//                    if (userCanAccessModule(dependent, userHasEnableRestrictedModules))           // TODO: check dependencies
-                        withDependencies.add(dependent);
-            }
-
             //Issue 24850: add modules associated with assays that have an active definition
             //note: on server startup, this can be called before AssayService is registered
             //we also need to defer until after the initial setup, to make sure the expected schemas exist.
+            //Note: place this first, so the code below will resolve dependencies
             if (ModuleLoader.getInstance().isStartupComplete() && AssayService.get() != null)
             {
                 List<ExpProtocol> activeProtocols = AssayService.get().getAssayProtocols(this);
@@ -1206,15 +1197,19 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     AssayProvider ap = AssayService.get().getProvider(p);
                     if (ap != null && !ap.getRequiredModules().isEmpty())
                     {
-                        Set<Module> toAdd = new HashSet<>();
-                        for (Module m : ap.getRequiredModules())
-                        {
-                            toAdd.add(m);
-                            toAdd.addAll(m.getResolvedModuleDependencies());
-                        }
-                        withDependencies.addAll(toAdd);
+                        modules.addAll(ap.getRequiredModules());
                     }
                 }
+            }
+
+            Set<Module> withDependencies = new HashSet<>();
+            for (Module m : modules)
+            {
+                withDependencies.add(m);
+                Set<Module> dependencies = m.getResolvedModuleDependencies();
+                for (Module dependent : dependencies)
+//                    if (userCanAccessModule(dependent, userHasEnableRestrictedModules))           // TODO: check dependencies
+                        withDependencies.add(dependent);
             }
 
             activeModules = withDependencies;
