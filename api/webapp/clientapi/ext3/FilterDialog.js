@@ -188,6 +188,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     }
                     else
                         dr.replaceFilter(filters[0]);
+                    dr.clearSelected();
                 }
                 else {
                     this.clearFilter();
