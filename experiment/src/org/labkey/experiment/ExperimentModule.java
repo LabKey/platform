@@ -498,7 +498,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             Lsid.TestCase.class,
             LSIDRelativizer.TestCase.class,
             LsidUtils.TestCase.class,
-            GraphAlgorithms.TestCase.class
+            GraphAlgorithms.TestCase.class,
+            PropertyController.TestCase.class
         ));
     }
 

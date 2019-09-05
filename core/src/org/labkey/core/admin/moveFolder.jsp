@@ -102,7 +102,7 @@
 
         // Move Button -- Disable
         var moveBtn = Ext.get('confirm-move-btn');
-        moveBtn.replaceClass('labkey-button', 'labkey-disabled-button');
+        moveBtn.addClass('labkey-disabled-button');
         moveBtn.show();
 
         folderTree = new Ext.tree.TreePanel({
