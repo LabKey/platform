@@ -28,14 +28,14 @@ public class Select extends Input
 {
     private final boolean _multiple;
     private final List<Option> _options;
-    private Map<String,String> _attributes;
+    private List<String> _styles;
 
     private Select(SelectBuilder builder)
     {
         super(builder);
         _multiple = builder._multiple;
         _options = builder._options;
-        _attributes = builder._attributes;
+        _styles = builder._styles;
     }
 
     @Override
@@ -65,11 +65,13 @@ public class Select extends Input
             sb.append(" size=\"").append(getSize()).append("\"");
         if (isMultiple())
             sb.append(" multiple");
-        if (null != _attributes)
+        if (!_styles.isEmpty())
         {
-            _attributes.entrySet().forEach(a ->
-                sb.append(" ").append(a.getKey()).append("=\"").append(a.getValue()).append("\"")
+            sb.append(" style=\"");
+            _styles.forEach(s ->
+                sb.append(PageFlowUtil.filter(s)).append(";")
             );
+            sb.append("\"");
         }
 
         doInputEvents(sb);
@@ -100,7 +102,7 @@ public class Select extends Input
     {
         private boolean _multiple;
         private List<Option> _options;
-        private Map<String,String> _attributes;
+        private List<String> _styles;
 
 
         public SelectBuilder()
@@ -129,12 +131,21 @@ public class Select extends Input
             return this;
         }
 
-        public SelectBuilder attributes(Map<String, String> attributes)
+        public SelectBuilder style(String style)
         {
-            if (attributes != null && !attributes.isEmpty())
-                this._attributes = new HashMap<>(attributes);
-            else
-                this._attributes = null;
+            if (_styles == null)
+                _styles = new ArrayList<>();
+
+            _styles.add(style);
+            return this;
+        }
+
+        public SelectBuilder style(List<String> styles)
+        {
+            if (_styles == null)
+                _styles = new ArrayList<>();
+
+            _styles.addAll(styles);
             return this;
         }
 
