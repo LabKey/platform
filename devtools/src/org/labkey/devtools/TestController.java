@@ -171,7 +171,7 @@ public class TestController extends SpringActionController
         public ModelAndView getView(SimpleForm form, boolean reshow, BindException errors)
         {
             form.encType = _enctype;
-            return jspView("form.jsp", form, errors);
+            return new JspView<>("/org/labkey/devtools/view/form.jsp", form, errors);
         }
 
         @Override
@@ -206,8 +206,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(SimpleForm simpleForm, boolean reshow, BindException errors)
         {
-            ModelAndView mv = jspView("tags.jsp", simpleForm, errors);
-            return mv;
+            return new JspView<>("/org/labkey/devtools/view/tags.jsp", simpleForm, errors);
         }
 
         @Override
@@ -272,7 +271,7 @@ public class TestController extends SpringActionController
                 complexForm.setBeans(a);
                 complexForm.setStrings(new String[2]);
             }
-            return jspView("complex.jsp", complexForm, errors);
+            return new JspView<>("/org/labkey/devtools/view/complex.jsp", complexForm, errors);
         }
 
         @Override
@@ -572,13 +571,6 @@ public class TestController extends SpringActionController
     }
 
 
-    JspView jspView(String name, Object model, Errors errors)
-    {
-        //noinspection unchecked
-        return new JspView(TestController.class, name, model, errors);
-    }
-
-
     public static class ExceptionForm
     {
         private String _message;
@@ -810,7 +802,7 @@ public class TestController extends SpringActionController
                 form.setAttrvalue1("_blank");
             }
 
-            return new JspView<>("/org/labkey/core/test/buttons.jsp", form);
+            return new JspView<>("/org/labkey/devtools/view/buttons.jsp", form);
         }
 
         @Override
@@ -952,7 +944,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object form, BindException errors)
         {
-            return jspView("view/dom.jsp", form, errors);
+            return new JspView<>("/org/labkey/devtools/view/dom.jsp", form, errors);
         }
 
         @Override

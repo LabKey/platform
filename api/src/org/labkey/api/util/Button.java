@@ -52,7 +52,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private final String href;
     private final String onClick;
     private final String id;
-    private final Map<String,String> attributes;
+    private final Map<String, String> attributes;
     private final String unsafeAttributes;
     private final String tooltip;
     private final String typeCls;

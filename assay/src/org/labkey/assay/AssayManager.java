@@ -888,7 +888,7 @@ public class AssayManager implements AssayService
 
     private ActionURL getAssayDataImportURL(ViewContext context)
     {
-        ActionURL importURL = new ActionURL("experiment", "assayDataImport", context.getContainer());
+        ActionURL importURL = new ActionURL("assay", "assayDataImport", context.getContainer());
         importURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
         return importURL;
     }

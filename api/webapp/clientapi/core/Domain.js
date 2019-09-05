@@ -88,6 +88,17 @@ LABKEY.Domain = new function()
         });
     }
 
+    function listDomains(success, failure, parameters, containerPath)
+    {
+        LABKEY.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("property", "listDomains.api", containerPath),
+            method : 'GET',
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
+            params : parameters
+        });
+    }
+
     /** @scope LABKEY.Domain */
     return {
 
@@ -95,7 +106,7 @@ LABKEY.Domain = new function()
          * Create a new domain with the given kind, domainDesign, and options or
          * specify a <a href='https://www.labkey.org/Documentation/wiki-page.view?name=domainTemplates'>domain template</a> to use for the domain creation.
          * Not all domain kinds can be created through this API.  Currently supported domain kinds are:
-         * "IntList", "VarList", "SampleSet", "DataClass", "StudyDatasetDate", "StudyDatasetVisit".
+         * "IntList", "VarList", "SampleSet", "DataClass", "StudyDatasetDate", "StudyDatasetVisit", "Vocabulary".
          *
          * @param {Object} config An object which contains the following configuration properties.
          * @param {Function} config.success Required success callback.
@@ -239,6 +250,37 @@ LABKEY.Domain.create({
                 config.failure,
                 {schemaName: config.schemaName, queryName: config.queryName, domainId: config.domainId},
                 config.containerPath);
+        },
+
+        /**
+         * Lists all the domains within a given container. Specify domain kinds to get the targeted list of domain kinds.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} config.success Required success callback.
+         * @param {Function} [config.failure] Failure callback.
+         * @param {Boolean} config.includeFields Include Fields of in the list of domains. Defaults to false.
+         * @param {Boolean} config.includeProjectAndShared Includes domains in projects and shared. Defaults to false.
+         * @param {Array} config.domainKinds The list of domain Kinds to include in the list. Defaults to all the domains in container.
+         * @param {String} config.containerPath Container path of the domains holding container.
+         * @example List domains:
+         <pre name="code" class="xml">
+ LABKEY.Domain.listDomains({
+  includeFields: "true",
+  domainKinds: ["ExtensibleTable", "Vocabulary"]
+});
+         </pre>
+         */
+
+        listDomains : function(config)
+        {
+            listDomains(
+                    config.success,
+                    config.failure,
+                    {
+                        includeFields: config.includeFields,
+                        includeProjectAndShared: config.includeProjectAndShared,
+                        domainKinds: config.domainKinds
+                    },
+                    config.containerPath);
         },
 
         /**

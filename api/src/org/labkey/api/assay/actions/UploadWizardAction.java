@@ -407,12 +407,19 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, form.getReturnURLHelper());
         }
 
-        DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
-        if (targetStudyCol != null)
+        if (null != AssayPublishService.get())
         {
-            ColumnInfo col = targetStudyCol.getColumnInfo();
-            view.getDataRegion().replaceDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME,
-                    new StudyPickerColumn(col));
+            DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
+            if (targetStudyCol != null)
+            {
+                ColumnInfo col = targetStudyCol.getColumnInfo();
+                view.getDataRegion().replaceDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME, new StudyPickerColumn(col));
+            }
+        }
+        else
+        {
+            // Don't display "Target Study" input/picker if study isn't present. Consider: Don't add to domain in the first place?
+            view.getDataRegion().removeColumns(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
         }
 
         DisplayColumn participantVisitResolverCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);

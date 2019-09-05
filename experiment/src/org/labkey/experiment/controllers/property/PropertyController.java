@@ -19,12 +19,19 @@ package org.labkey.experiment.controllers.property;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.AbstractFileUploadAction;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -67,13 +74,15 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -99,10 +108,13 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PropertyController extends SpringActionController
 {
@@ -1125,13 +1137,157 @@ public class PropertyController extends SpringActionController
             model.domain = gwt;
             model.template = gwtFromTemplate;
             model.info = info;
-            return new JspView<>(PropertyController.class, "templateUpdate.jsp", model);
+            return new JspView<>("/org/labkey/experiment/controllers/property/templateUpdate.jsp", model);
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class ListDomainsAction extends ReadOnlyApiAction<ContainerDomainForm>
+    {
+        boolean includeFields;
+        boolean includeProjectAndShared;
+
+        @Override
+        protected ObjectMapper createObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper);
+            mapper.addMixIn(GWTDomain.class, GWTListDomainActionMixin.class);
+            SimpleBeanPropertyFilter propertiesFilter;
+            FilterProvider filters;
+
+            if (!includeFields)
+            {
+                propertiesFilter = SimpleBeanPropertyFilter.serializeAllExcept("fields","indices");
+            }
+            else
+            {
+                propertiesFilter =  SimpleBeanPropertyFilter.serializeAll();
+            }
+            filters = new SimpleFilterProvider()
+                    .addFilter("listDomainsActionFilter", propertiesFilter);
+            mapper.setFilterProvider(filters);
+            return mapper;
+        }
+
+        @Override
+        public Object execute(ContainerDomainForm containerDomainForm, BindException errors) throws Exception
+        {
+            includeFields = containerDomainForm.isIncludeFields();
+            includeProjectAndShared = containerDomainForm.isIncludeProjectAndShared();
+
+            return listDomains(getContainer(), getUser(), containerDomainForm, includeProjectAndShared);
+        }
+    }
+
+    private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm containerDomainForm, boolean includeProjectAndShared)
+    {
+        List<GWTDomain> gwtDomains = new ArrayList<>();
+        if (containerDomainForm.getDomainKinds() != null)
+        {
+            PropertyService.get().getDomains(c, user, containerDomainForm.getDomainKinds(), includeProjectAndShared).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+        }
+        else
+        {
+            PropertyService.get().getDomains(c).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+        }
+        return gwtDomains;
+    }
+
+
+
+    public static class ContainerDomainForm
+    {
+        boolean includeFields = false;
+        boolean includeProjectAndShared = false;
+        String containerPath;
+        Set<String> domainKinds;
+
+        public boolean isIncludeFields()
+        {
+            return includeFields;
+        }
+
+        public void setIncludeFields(boolean includeFields)
+        {
+            this.includeFields = includeFields;
+        }
+
+        public String getContainerPath()
+        {
+            return containerPath;
+        }
+
+        public void setContainerPath(String containerPath)
+        {
+            this.containerPath = containerPath;
+        }
+
+        public Set<String> getDomainKinds()
+        {
+            return domainKinds;
+        }
+
+        public void setDomainKinds(Set<String> domainKinds)
+        {
+            this.domainKinds = domainKinds;
+        }
+
+        public boolean isIncludeProjectAndShared()
+        {
+            return includeProjectAndShared;
+        }
+
+        public void setIncludeProjectAndShared(boolean includeProjectAndShared)
+        {
+            this.includeProjectAndShared = includeProjectAndShared;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetDomains() throws ValidationException
+        {
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            GWTDomain mockDomain = new GWTDomain();
+            String domainName = "TestVocabularyDomain" + GUID.makeGUID();
+            mockDomain.setName(domainName);
+            mockDomain.setDescription("This is a mock vocabulary");
+
+            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
+
+            GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
+            prop1.setRangeURI("int");
+            prop1.setName("testIntField");
+
+            GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
+            prop2.setRangeURI("string");
+            prop2.setName("testStringField");
+
+            gwtProps.add(prop1);
+            gwtProps.add(prop2);
+
+            mockDomain.setFields(gwtProps);
+
+            Domain createdDomain = DomainUtil.createDomain("Vocabulary", mockDomain, null, c, user, domainName, null);
+
+            Set<String> domainKinds = new HashSet<>();
+            domainKinds.add("Vocabulary");
+
+            List<? extends Domain> addedDomains = PropertyService.get().getDomains(c, user, domainKinds, false).
+                    stream().filter(d ->  d.getDomainKind().getKindName().equals("Vocabulary")).collect(Collectors.toList());
+
+            assertEquals("Vocabulary Domain Not found.", createdDomain.getName(), mockDomain.getName());
         }
     }
 }

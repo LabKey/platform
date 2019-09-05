@@ -75,6 +75,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return "Audit Log";
     }
 
+    @Override
     public void moduleStartupComplete(ServletContext servletContext)
     {
         synchronized (STARTUP_LOCK)
@@ -89,11 +90,13 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         }
     }
 
+    @Override
     public boolean isViewable()
     {
         return true;
     }
 
+    @Override
     public <K extends AuditTypeEvent> K addEvent(User user, K type)
     {
         return _addEvent(user, type);
@@ -149,7 +152,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                         LogManager.get()._insertEvent(user, event);
                     }
                     else
-                        _eventTypeQueue.add(new Pair<>(user, (AuditTypeEvent)event));
+                        _eventTypeQueue.add(new Pair<>(user, event));
                 }
             }
             else
@@ -166,17 +169,20 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return null;
     }
 
+    @Override
     public String getTableName()
     {
         return AuditQuerySchema.AUDIT_TABLE_NAME;
     }
 
+    @Override
     public TableInfo getTable(ViewContext context, String name)
     {
         UserSchema schema = createSchema(context.getUser(), context.getContainer());
         return schema.getTable(name);
     }
 
+    @Override
     public UserSchema createSchema(User user, Container container)
     {
         return new AuditQuerySchema(user, container);

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.labkey.api.assay.actions;
+package org.labkey.assay.actions;
 
+import org.labkey.api.assay.actions.BaseAssayAction;
+import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;

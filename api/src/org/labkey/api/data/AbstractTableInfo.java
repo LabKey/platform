@@ -133,10 +133,16 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected List<Pair<String, StringExpression>> _importTemplates;
 
     protected DetailsURL _gridURL;
+
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
     protected DetailsURL _deleteURL;
     protected DetailsURL _importURL;
+
+    private boolean _hasInsertURLOverride;
+    private boolean _hasUpdateURLOverride;
+    private boolean _hasDeleteURLOverride;
+
     protected ButtonBarConfig _buttonBarConfig;
     protected AggregateRowConfig _aggregateRowConfig;
 
@@ -1113,14 +1119,23 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             _importURL = DetailsURL.fromXML(xmlTable.getImportUrl(), errors);
 
         if (xmlTable.isSetInsertUrl())
+        {
             _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), errors);
+            _hasInsertURLOverride = true;
+        }
 
         if (xmlTable.isSetUpdateUrl())
+        {
             _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), errors);
+            _hasUpdateURLOverride = true;
+        }
 
         if (xmlTable.isSetDeleteUrl())
+        {
             _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), errors);
-
+            _hasDeleteURLOverride = true;
+        }
+        
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
 
@@ -1760,6 +1775,24 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
     {
         return new HashSet<>(selectColumns);
+    }
+
+    @Override
+    public boolean hasInsertURLOverride()
+    {
+        return _hasInsertURLOverride;
+    }
+
+    @Override
+    public boolean hasUpdateURLOverride()
+    {
+        return _hasUpdateURLOverride;
+    }
+
+    @Override
+    public boolean hasDeleteURLOverride()
+    {
+        return _hasDeleteURLOverride;
     }
 
     public static class TestCase extends Assert{

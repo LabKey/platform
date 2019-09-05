@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.util.GUID;
@@ -81,17 +82,24 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                     .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
                     .append(");");
 
-            new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
+            // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.
+            // While the associated mutating operations are necessary, they are not a viable CSRF attack vector.
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
+            }
             tempTableInfo1.track();
-
             String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
             String sql100 = "INSERT INTO " + tableName + " (Id) VALUES (?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?)";
             try
             {
-                if (jdbcType == JdbcType.VARCHAR)
-                    Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>)argument);
-                else
-                    Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>)argument);
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    if (jdbcType == JdbcType.VARCHAR)
+                        Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>) argument);
+                    else
+                        Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>) argument);
+                }
             }
             catch (SQLException e)
             {
@@ -99,7 +107,10 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             }
 
             String indexSql = "CREATE INDEX IX_Id" + new GUID().toStringNoDashes() + " ON " + tableName + "(Id)";
-            new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
+            }
             return tempTableInfo1;
         });
 

@@ -28,6 +28,11 @@ public class SimpleTagBase extends SimpleTagSupport
         return PageFlowUtil.filter(o);
     }
 
+    protected String h(String s)
+    {
+        return PageFlowUtil.filter(s);
+    }
+
     protected JspWriter getOut()
     {
         return getJspContext().getOut();
