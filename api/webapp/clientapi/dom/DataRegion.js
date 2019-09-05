@@ -3751,7 +3751,6 @@ if (!LABKEY.DataRegions) {
     };
 
     var _updateFilter = function(region, filter, skipPrefixes) {
-        region.clearSelected();
         var params = [];
         if (filter) {
             params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
