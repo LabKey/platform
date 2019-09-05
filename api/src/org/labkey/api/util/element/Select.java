@@ -26,12 +26,14 @@ public class Select extends Input
 {
     private final boolean _multiple;
     private final List<Option> _options;
+    private List<String> _styles;
 
     private Select(SelectBuilder builder)
     {
         super(builder);
         _multiple = builder._multiple;
         _options = builder._options;
+        _styles = builder._styles;
     }
 
     @Override
@@ -61,6 +63,14 @@ public class Select extends Input
             sb.append(" size=\"").append(getSize()).append("\"");
         if (isMultiple())
             sb.append(" multiple");
+        if (!_styles.isEmpty())
+        {
+            sb.append(" style=\"");
+            _styles.forEach(s ->
+                sb.append(PageFlowUtil.filter(s)).append(";")
+            );
+            sb.append("\"");
+        }
 
         doInputEvents(sb);
 
@@ -90,6 +100,7 @@ public class Select extends Input
     {
         private boolean _multiple;
         private List<Option> _options;
+        private List<String> _styles = new ArrayList<>();
 
         public SelectBuilder()
         {
@@ -114,6 +125,18 @@ public class Select extends Input
                 }
             }
 
+            return this;
+        }
+
+        public SelectBuilder style(String style)
+        {
+            _styles.add(style);
+            return this;
+        }
+
+        public SelectBuilder style(List<String> styles)
+        {
+            _styles.addAll(styles);
             return this;
         }
 
