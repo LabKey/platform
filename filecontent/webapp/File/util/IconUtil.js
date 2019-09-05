@@ -14,6 +14,7 @@ Ext4.define("File.util.IconUtil", {
         switch (ext) {
             case 'mdb':
                 return 'fa fa-database';
+            case '7z':
             case 'gz':
             case 'jar':
             case 'tar':
@@ -83,6 +84,7 @@ Ext4.define("File.util.IconUtil", {
     _extensionMap : {
         '_deleted' : '_deleted',
         '_generic' : '_generic',
+        '7z' : '7z',
         'application' : 'application',
         'audio' : 'audio',
         'dll' : 'dll',
@@ -743,7 +745,8 @@ Ext4.define("File.util.IconUtil", {
         'ipr' : 'text',
         'iml' : 'text',
         'iws' : 'text',
-        'rss' : 'application'
+        'rss' : 'application',
+        '7z' : 'application'
     }
 
 });

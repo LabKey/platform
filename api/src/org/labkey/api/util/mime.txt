@@ -613,3 +613,4 @@ ipr text/xml
 iml text/xml
 iws text/xml
 rss application/rss+xml
+7z application/x-7z-compressed
