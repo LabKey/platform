@@ -27,6 +27,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -54,8 +56,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -1206,7 +1206,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     AssayProvider ap = AssayService.get().getProvider(p);
                     if (ap != null && !ap.getRequiredModules().isEmpty())
                     {
-                        withDependencies.addAll(ap.getRequiredModules());
+                        Set<Module> toAdd = new HashSet<>();
+                        for (Module m : ap.getRequiredModules())
+                        {
+                            toAdd.add(m);
+                            toAdd.addAll(m.getResolvedModuleDependencies());
+                        }
+                        withDependencies.addAll(toAdd);
                     }
                 }
             }
