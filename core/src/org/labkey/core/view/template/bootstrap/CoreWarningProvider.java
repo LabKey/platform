@@ -36,7 +36,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.util.Map;
 
-import static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KEY;
+import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 public class CoreWarningProvider implements WarningProvider
 {
@@ -62,7 +62,7 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     @Override
-    public void addDismissibleWarnings(Warnings warnings, ViewContext context)
+    public void addDynamicWarnings(Warnings warnings, ViewContext context)
     {
         if (context != null && context.getRequest() != null)
         {

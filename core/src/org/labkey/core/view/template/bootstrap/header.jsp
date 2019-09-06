@@ -37,9 +37,9 @@
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KEY" %>
 <%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -128,12 +128,12 @@
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
     %>
         <li class="dropdown dropdown-rollup" id="headerWarningIcon">
-            <a href="#" class="" id="headerWarningLink" data-tt="tooltip" data-placement="bottom" title data-original-title="Click to show important notification.">
+            <a href="#" class="" id="headerWarningLink" data-tt="tooltip" data-placement="bottom" title data-original-title="Click to show important notifications.">
                 <i class="fa fa-exclamation-circle warning"></i>
             </a>
         </li>
         <% if (coreUrls != null) {
-            String displayUrl = coreUrls.getDisplayCoreWarningActionURL(getViewContext()).toString();
+            String displayUrl = coreUrls.getDisplayWarningsActionURL(getViewContext()).toString();
         %>
         <script type="text/javascript">
             +function($){
@@ -143,7 +143,7 @@
                         method: 'POST',
                         success: function(xhr) {
                             var resp = JSON.parse(xhr.responseText);
-                            $('.lk-dismissable-alert-ct').html(resp['dismissableCoreWarningsHtml']);
+                            $('.lk-dismissable-alert-ct').html(resp['warningsHtml']);
                             $('#headerWarningIcon').hide();
                         },
                         failure: LABKEY.Utils.displayAjaxErrorResponse

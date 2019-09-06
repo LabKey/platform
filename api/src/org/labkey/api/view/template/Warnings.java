@@ -15,14 +15,36 @@
  */
 package org.labkey.api.view.template;
 
-import java.util.Collection;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public interface Warnings
 {
-    static Warnings of(Collection<String> collection)
+    static Warnings of(@NotNull List<String> collection)
     {
-        return collection::add;
+        return new Warnings() {
+            @Override
+            public void add(String warning)
+            {
+                collection.add(warning);
+            }
+
+            @Override
+            public boolean isEmpty()
+            {
+                return collection.isEmpty();
+            }
+
+            @Override
+            public List<String> getMessages()
+            {
+                return collection;
+            }
+        };
     }
 
     void add(String warning);
+    boolean isEmpty();
+    List<String> getMessages();
 }
