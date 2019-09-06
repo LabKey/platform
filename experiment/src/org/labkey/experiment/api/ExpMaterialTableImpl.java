@@ -166,7 +166,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SourceProtocolApplication:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
-                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 columnInfo.setHidden(true);
@@ -190,7 +190,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
-                col.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this sample");
                 col.setUserEditable(false);
                 col.setReadOnly(true);
@@ -438,8 +438,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
 
-        var runCol = addColumn(ExpMaterialTable.Column.Run);
-        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey());
+        var runCol = addColumn(ExpMaterialTable.Column.RunApplication);
+        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
         runCol.setShownInUpdateView(false);
 
