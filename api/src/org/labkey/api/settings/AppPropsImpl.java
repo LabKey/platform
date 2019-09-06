@@ -277,7 +277,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupBooleanValue(SHOW_RIBBON_MESSAGE, false);
     }
 
-    public String getRibbonMessageHtml()
+    public @Nullable String getRibbonMessageHtml()
     {
         return lookupStringValue(RIBBON_MESSAGE, null);
     }

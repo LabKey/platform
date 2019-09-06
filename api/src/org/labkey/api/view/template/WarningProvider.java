@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view.template;
 
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.view.ViewContext;
 
 public interface WarningProvider
@@ -25,12 +26,15 @@ public interface WarningProvider
     {
     }
 
-    // Add warnings based on the current context (folder, user, page, etc.)
-    default void addWarnings(Warnings warnings, ViewContext context)
+    // Add warnings based on the current context (folder, user, page, etc.).
+    default void addDynamicWarnings(Warnings warnings, ViewContext context)
     {
+        addDismissibleWarnings(warnings, context);
     }
 
-    // Add dismissible warnings based on the current context (folder, user, page, etc.)
+    // All warnings are dismissible -- implementors should override addDynamicWarnings() instead
+    @Deprecated
+    @RemoveIn20_1
     default void addDismissibleWarnings(Warnings warnings, ViewContext context)
     {
     }
