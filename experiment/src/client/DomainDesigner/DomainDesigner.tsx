@@ -109,7 +109,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     dirty: false
                 }));
 
-                this.showMessage("Save Successful", 'info', 0);
+                this.showMessage("Save Successful", 'success', 0);
                 window.scrollTo(0, 0);
 
                 if (navigate) {
@@ -205,17 +205,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 includeNext={false}>
                 <Button
                     type='submit'
-                    bsClass='btn'
-                    onClick={() => this.submitHandler(false)}
-                    disabled={submitting || !dirty}>
-                    Save
-                </Button>
-                <Button
-                    type='submit'
                     bsClass='btn btn-success'
                     onClick={() => this.submitHandler(true)}
                     disabled={submitting || !dirty}>
-                    Save And Finish
+                    Save
                 </Button>
             </WizardNavButtons>
         )
