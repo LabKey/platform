@@ -725,7 +725,7 @@ public class StudyController extends BaseStudyController
             {
                 String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
 
-                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
+                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId, getViewContext().getUser(), getViewContext().getContainer());
                 if (identifier != null)
                     _report = identifier.getReport(getViewContext());
             }
@@ -863,7 +863,7 @@ public class StudyController extends BaseStudyController
                 if (def != null &&
                     QueryService.get().getCustomView(getUser(), getContainer(), getUser(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
                 {
-                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null && reportId.getReport(getViewContext()) != null)
                     {
                         ActionURL newURL = url.clone().deleteParameter(DATASET_VIEW_NAME_PARAMETER_NAME).
@@ -2677,7 +2677,7 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.textLink("Download Data File", "downloadTsv.view?id=" + ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
                 }
             };
             dr.addDisplayColumn(dc);
@@ -3603,7 +3603,7 @@ public class StudyController extends BaseStudyController
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+                return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
@@ -3766,7 +3766,7 @@ public class StudyController extends BaseStudyController
                 String defaultView = getDefaultView(context, datasetId);
                 if (!StringUtils.isEmpty(defaultView))
                 {
-                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null)
                         url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
                     else

@@ -58,6 +58,7 @@ public class Attachment implements Serializable
     static {
         extensionFontClsMap.put("_deleted", "fa fa-file-o");
         extensionFontClsMap.put("_generic", "fa fa-file-o");
+        extensionFontClsMap.put("7z", "fa fa-file-archive-o");
         extensionFontClsMap.put("application", "fa fa-list-alt");
         extensionFontClsMap.put("audio", "fa fa-file-audio-o");
         extensionFontClsMap.put("dll", "fa fa-file-code-o");

@@ -42,6 +42,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -603,7 +604,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    public enum PermissionType
+    public enum PermissionType implements EnumHasHtmlString<PermissionType>
     {
         defaultPermission,
         customPermission,

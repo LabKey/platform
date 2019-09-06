@@ -26,7 +26,7 @@ import static org.labkey.api.util.DOM.at;
 
 public class Link extends DisplayElement implements HasHtmlString
 {
-    private LinkBuilder lb;
+    private final LinkBuilder lb;
 
     public Link(LinkBuilder linkBuilder)
     {

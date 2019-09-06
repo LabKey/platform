@@ -10,7 +10,7 @@ const entryPoints = require('./entryPoints');
 
 const devServer = {
     host: 'localhost',
-    port: 3020,
+    port: 3001,
 
     // enable the HMR on the server
     hot: true,

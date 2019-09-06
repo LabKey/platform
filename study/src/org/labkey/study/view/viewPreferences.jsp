@@ -66,7 +66,7 @@
     doneUrl.deleteParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
     doneUrl.deleteParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME);
 
-    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView, getUser(), getContainer());
 
     if (reportId != null)
         doneUrl.addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, defaultView);

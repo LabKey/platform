@@ -39,6 +39,7 @@ public class UrlColumn extends SimpleDisplayColumn
         setURL(url);
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object value = getValue(ctx);
@@ -55,7 +56,7 @@ public class UrlColumn extends SimpleDisplayColumn
             {
                 props = Collections.emptyMap();
             }
-            out.write(PageFlowUtil.textLink(value.toString(), url, null, null, props));
+            out.write(PageFlowUtil.link(value.toString()).href(url).attributes(props).toString());
         }
     }
 }
