@@ -34,8 +34,8 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.33",
-    "@glass/base": "0.15.1"
+    "@glass/base": "0.15.0-fb-parentAliases.4",
+    "@glass/domainproperties": "0.0.32-fb-parentAliases.5"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
