@@ -109,6 +109,4 @@ public interface Domain extends IPropertyType
 
     @Nullable
     TemplateInfo getTemplateInfo();
-
-    boolean isVocabularyDomain();
 }

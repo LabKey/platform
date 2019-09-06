@@ -27,27 +27,23 @@ public class SaveAssayRunAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
     {
         JSONObject rootJsonObject = form.getJsonObject();
 
-        // A user can send in either an array of runs or just a run but not both.  If a user sends in an array of runs
-        // then it must have at least one run
-
-        JSONObject runJsonObject = null;
         JSONArray runsJsonArray = null;
-
-        if (rootJsonObject.has(AssayJSONConverter.RUN))
-            runJsonObject = rootJsonObject.getJSONObject(AssayJSONConverter.RUN);
 
         if (rootJsonObject.has(AssayJSONConverter.RUNS))
             runsJsonArray = rootJsonObject.getJSONArray(AssayJSONConverter.RUNS);
 
-        verifyFormJsonObject(runJsonObject, runsJsonArray);
+        if ( runsJsonArray == null)
+            throw new IllegalArgumentException("No run array found.");
 
-        ExperimentSaveHandler saveHandler = new DefaultExperimentSaveHandler();
+        if (runsJsonArray.length() == 0)
+            throw new IllegalArgumentException("No runs provided. You must provide at least one run in your runs array.");
 
-        return executeAction(saveHandler, protocol, getAssayProvider(), rootJsonObject, runsJsonArray);
+        ExperimentSaveHandler saveHandler = getExperimentSaveHandler(getAssayProvider());
+
+        return executeAction(saveHandler, protocol, getAssayProvider(),runsJsonArray);
     }
 
-    private ApiResponse executeAction(ExperimentSaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider,
-                                      JSONObject rootJsonObject, JSONArray runsJsonArray) throws Exception
+    private ApiResponse executeAction(ExperimentSaveHandler saveHandler, ExpProtocol protocol, AssayProvider provider, JSONArray runsJsonArray) throws Exception
     {
         List<ExpRun> runs = new ArrayList<>();
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())

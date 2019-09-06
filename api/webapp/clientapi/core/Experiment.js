@@ -311,7 +311,7 @@ LABKEY.Experiment.saveBatch({
              });
         },
 
-        saveRun: function (config)
+        saveRuns: function (config)
         {
             function createExp(json)
             {

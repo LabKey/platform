@@ -79,7 +79,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.experiment.api.VocabularyDomainKind;
 
 import java.sql.SQLException;
 import java.text.DecimalFormat;
@@ -1240,11 +1239,5 @@ public class DomainImpl implements Domain
     public DomainTemplate getTemplate()
     {
         return DomainTemplate.findTemplate(getTemplateInfo(), getDomainKind().getKindName());
-    }
-
-    @Override
-    public boolean isVocabularyDomain()
-    {
-        return this.getDomainKind() instanceof VocabularyDomainKind;
     }
 }

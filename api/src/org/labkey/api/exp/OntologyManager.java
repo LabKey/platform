@@ -75,6 +75,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.search.SearchService.PROPERTY;
 
@@ -2024,13 +2025,10 @@ public class OntologyManager
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
     {
         List<? extends Domain> domainsInContainer = PropertyService.get().getDomains(container);
-        List<Domain> domainsForPropertyDescriptor = new ArrayList<>();
-        domainsInContainer.forEach(d -> {
-            if(null != d.getPropertyByURI(pd.getPropertyURI()))
-                domainsForPropertyDescriptor.add(d);
-
-        });
-        return domainsForPropertyDescriptor;
+        return domainsInContainer
+                .stream()
+                .filter(d -> null != d.getPropertyByURI(pd.getPropertyURI()))
+                .collect(Collectors.toList());
     }
 
     private static class DomainDescriptorLoader implements CacheLoader<String, DomainDescriptor>
