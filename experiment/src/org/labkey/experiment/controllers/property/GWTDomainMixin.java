@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.controllers.property;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "provisioned",
         "domainException",
 })
+
 public interface GWTDomainMixin
 {
 }

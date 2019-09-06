@@ -1291,7 +1291,7 @@ public class VisualizationController extends SpringActionController
             Report report = getGenericReport(form);
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getUser(), getContainer());
             report = ReportService.get().getReport(getContainer(), rowId);
             saveSVGThumbnail((SvgThumbnailGenerator) report, form.getSvg(), form.getThumbnailType());
             response.put("success", true);
