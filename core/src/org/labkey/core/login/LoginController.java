@@ -64,6 +64,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -934,8 +935,8 @@ public class LoginController extends SpringActionController
             {
                 returnURL.setFragment(form.getUrlhash().replace("#", ""));
             }
-            String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnURL);
-            response.put("otherLoginMechanismsContent", otherLoginMechanisms);
+            HtmlString otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnURL);
+            response.put("otherLoginMechanismsContent", null != otherLoginMechanisms ? otherLoginMechanisms.toString() : null);
             return response;
         }
     }

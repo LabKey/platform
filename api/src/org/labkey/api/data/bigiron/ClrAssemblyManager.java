@@ -16,6 +16,7 @@
 package org.labkey.api.data.bigiron;
 
 import org.labkey.api.data.DbScope;
+import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
@@ -47,7 +48,7 @@ public class ClrAssemblyManager
     {
         for (AbstractClrInstallationManager manager : _managers)
         {
-            if (!manager.isInstalled(DbScope.getLabKeyScope()))
+            if (WarningService.get().showAllWarnings() || !manager.isInstalled(DbScope.getLabKeyScope()))
             {
                 manager.addAdminWarningMessages(warnings);
             }
