@@ -275,7 +275,7 @@ public class AuthenticationManager
         if (ssoProviders.isEmpty())
             return null;
 
-        HtmlStringBuilder html = new HtmlStringBuilder();
+        HtmlStringBuilder html = HtmlStringBuilder.of("");
 
         for (SSOAuthenticationProvider provider : ssoProviders)
         {

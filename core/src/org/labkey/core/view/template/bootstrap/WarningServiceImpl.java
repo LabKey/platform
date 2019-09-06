@@ -19,6 +19,7 @@ import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
@@ -36,7 +37,7 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class WarningServiceImpl implements WarningService
 {
-    private static Collection<String> STATIC_ADMIN_WARNINGS = null;
+    private static Collection<HtmlString> STATIC_ADMIN_WARNINGS = null;
 
     private final Collection<WarningProvider> _providers = new CopyOnWriteArrayList<>();
 
@@ -54,14 +55,14 @@ public class WarningServiceImpl implements WarningService
 
     // Check warning conditions that will never change after the server has started up. This will be called
     // once per server session; no need to test on every request.
-    private static Collection<String> getStaticAdminWarnings()
+    private static Collection<HtmlString> getStaticAdminWarnings()
     {
         if (STATIC_ADMIN_WARNINGS != null)
         {
             return STATIC_ADMIN_WARNINGS;
         }
 
-        List<String> messages = new LinkedList<>();
+        List<HtmlString> messages = new LinkedList<>();
         Warnings warnings = Warnings.of(messages);
         WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings));
 
@@ -97,7 +98,7 @@ public class WarningServiceImpl implements WarningService
     public Warnings getWarnings(ViewContext context)
     {
         // Collect warnings
-        List<String> warningMessages = new LinkedList<>();
+        List<HtmlString> warningMessages = new LinkedList<>();
         User user = context.getUser();
 
         if (null != user && user.hasSiteAdminPermission())
@@ -112,38 +113,34 @@ public class WarningServiceImpl implements WarningService
     @Override
     public HtmlString getWarningsHtml(Warnings warnings, ViewContext context)
     {
-        StringBuilder html = new StringBuilder();
-
-        html.append("<div class=\"alert alert-warning alert-dismissable\">")
-                .append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>")
-                .append("<div class=\"lk-dismissable-warn\">");
+        HtmlStringBuilder html = HtmlStringBuilder.of(HtmlString.unsafe("<div class=\"alert alert-warning alert-dismissable\">\n<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>\n<div class=\"lk-dismissable-warn\">"));
         appendMessageContent(warnings, html);
-        html.append("</div>");
+        html.append(HtmlString.unsafe("</div>"));
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         if (coreUrls != null)
         {
             String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
-            html.append(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
+            html.append(HtmlString.unsafe(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL))));
         }
-        html.append("</div>");
+        html.append(HtmlString.unsafe("</div>"));
 
-        return HtmlString.unsafe(html.toString());
+        return html.getHtmlString();
     }
 
-    private void appendMessageContent(Warnings warnings, StringBuilder html)
+    private void appendMessageContent(Warnings warnings, HtmlStringBuilder html)
     {
         if (!warnings.isEmpty())
         {
-            List<String> messages = warnings.getMessages();
+            List<HtmlString> messages = warnings.getMessages();
 
             if (messages.size() == 1)
                 html.append(messages.get(0));
             else
             {
-                html.append("<ul>");
-                for (String msg : messages)
-                    html.append("<li>").append(msg).append("</li>");
-                html.append("</ul>");
+                html.append(HtmlString.unsafe("<ul>"));
+                for (HtmlString msg : messages)
+                    html.append(HtmlString.unsafe("<li>")).append(msg).append(HtmlString.unsafe("</li>"));
+                html.append(HtmlString.unsafe("</ul>"));
             }
         }
     }

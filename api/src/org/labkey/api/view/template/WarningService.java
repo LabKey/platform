@@ -25,6 +25,12 @@ public interface WarningService
 {
     String SESSION_WARNINGS_BANNER_KEY = "PAGE_CONFIG$SESSION_WARNINGS_BANNER_KEY";
 
+    default boolean showAllWarnings()
+    {
+        // Set to true to test most of the warning messages
+        return false;
+    }
+
     static WarningService get()
     {
         return ServiceRegistry.get().getService(WarningService.class);

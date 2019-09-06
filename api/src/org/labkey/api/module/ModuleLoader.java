@@ -67,6 +67,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -216,7 +217,7 @@ public class ModuleLoader implements Filter
     }
 
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
-    private final List<String> _duplicateModuleErrors = new ArrayList<>();
+    private final List<HtmlString> _duplicateModuleErrors = new ArrayList<>();
     private Map<String, ModuleContext> _contextMap = new HashMap<>();
     private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
@@ -373,7 +374,7 @@ public class ModuleLoader implements Filter
                 @Override
                 public void addStaticWarnings(Warnings warnings)
                 {
-                    for (String error : _duplicateModuleErrors)
+                    for (HtmlString error : _duplicateModuleErrors)
                     {
                         warnings.add(error);
                     }
@@ -439,8 +440,14 @@ public class ModuleLoader implements Filter
             }
         }
 
-        if (!downgradedModules.isEmpty())
+        if (WarningService.get().showAllWarnings() || !downgradedModules.isEmpty())
         {
+            if (WarningService.get().showAllWarnings() && downgradedModules.isEmpty())
+            {
+                downgradedModules.add("core");
+                downgradedModules.add("flow");
+            }
+
             int count = downgradedModules.size();
             String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
             _log.error(message);
@@ -449,7 +456,7 @@ public class ModuleLoader implements Filter
                 @Override
                 public void addStaticWarnings(Warnings warnings)
                 {
-                    warnings.add(message);
+                    warnings.add(HtmlString.of(message));
                 }
             });
         }
@@ -685,7 +692,7 @@ public class ModuleLoader implements Filter
                     {
                         String error = "Module with name '" + module.getName() + "' has already been loaded from "
                                 + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir + ". You should delete the extra copy and restart the server.";
-                        _duplicateModuleErrors.add(error);
+                        _duplicateModuleErrors.add(HtmlString.of(error));
                         _log.error(error);
                     }
                     else if (!moduleNamePattern.matcher(module.getName()).matches())

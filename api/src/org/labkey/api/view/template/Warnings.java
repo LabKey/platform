@@ -16,16 +16,17 @@
 package org.labkey.api.view.template;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 
 import java.util.List;
 
 public interface Warnings
 {
-    static Warnings of(@NotNull List<String> collection)
+    static Warnings of(@NotNull List<HtmlString> collection)
     {
         return new Warnings() {
             @Override
-            public void add(String warning)
+            public void add(HtmlString warning)
             {
                 collection.add(warning);
             }
@@ -37,14 +38,14 @@ public interface Warnings
             }
 
             @Override
-            public List<String> getMessages()
+            public List<HtmlString> getMessages()
             {
                 return collection;
             }
         };
     }
 
-    void add(String warning);
+    void add(HtmlString warning);
     boolean isEmpty();
-    List<String> getMessages();
+    List<HtmlString> getMessages();
 }
