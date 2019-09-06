@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@glass/domainproperties": "0.0.32-fb-domain-prioritized-updates.13",
+    "@glass/domainproperties": "0.0.32-fb-domain-prioritized-updates.14",
     "@glass/base": "0.15.0-fb-domain-prioritized-updates.0"
   },
   "devDependencies": {
