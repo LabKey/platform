@@ -81,7 +81,7 @@ public class WarningServiceImpl implements WarningService
         "            var config = {\n" +
         "                url: %1$s,\n" +
         "                method: 'POST',\n" +
-        "                success: function () {$(\".lk-dismissable-warn\").hide()},\n" +
+        "                success: function () {$(\".lk-dismissable-warn\").hide();$('#headerWarningIcon').show();},\n" +
         "                failure: LABKEY.Utils.displayAjaxErrorResponse\n" +
         "            };\n" +
         "            LABKEY.Ajax.request(config); \n" +
