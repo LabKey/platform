@@ -33,6 +33,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.Warnings;
 
@@ -1653,7 +1654,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
         if ("2008R2".equals(getProductVersion()))
-            warnings.add("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED);
+            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
     }
 
     @Override

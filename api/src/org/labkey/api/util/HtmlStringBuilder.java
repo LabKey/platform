@@ -19,6 +19,11 @@ public class HtmlStringBuilder implements HasHtmlString
 {
     private final StringBuilder _sb = new StringBuilder();
 
+    // Use of() factory methods
+    private HtmlStringBuilder()
+    {
+    }
+
     public static HtmlStringBuilder of(String s)
     {
         return new HtmlStringBuilder().append(s);
