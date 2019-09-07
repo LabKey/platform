@@ -38,7 +38,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
@@ -567,7 +566,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //add all sub-containers the user is allowed to read
         List<SecurableResource> ret = new ArrayList<>(ContainerManager.getChildren(this, user, ReadPermission.class));
 
-        // TODO: Shouldn't each module register a provider to add their securable resources? This knowledge shouldn't be hard-coded in Container.
+        // TODO: Shouldn't each module register a provider to add their securable resources? This knowledge about study,
+        // reports, and pipeline roots shouldn't be hard-coded in Container.
 
         //add resources from study
         StudyService sts = StudyService.get();
@@ -590,16 +590,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
             if (policy.hasPermission(user, AdminPermission.class))
                 ret.add(root);
-        }
-
-        if (isRoot())
-        {
-            SearchService ss = SearchService.get();
-
-            if (null != ss)
-            {
-                ret.addAll(ss.getSecurableResources(user));
-            }
         }
 
         return ret;
