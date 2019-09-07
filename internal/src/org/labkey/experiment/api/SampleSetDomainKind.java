@@ -143,6 +143,12 @@ public class SampleSetDomainKind extends AbstractDomainKind
         return ExperimentService.get().getSampleSet(domain.getTypeURI());
     }
 
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return false;
+    }
+
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleSet ss = getSampleSet(domain);
@@ -155,7 +161,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, false, true, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
     }
 
     @Override

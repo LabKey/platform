@@ -719,7 +719,7 @@
                             if (ptidLegacyReportIds.contains(reportId))
                             {
 %>
-                                <a class="labkey-text-link" href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId).toString()))%>">Remove Chart</a>
+                                <a class="labkey-text-link" href="<%=h(new ActionURL(ReportsController.DeleteReportAction.class, study.getContainer()).addParameter(ReportDescriptor.Prop.redirectUrl.name(), currentUrl).addParameter(ReportDescriptor.Prop.reportId.name(), ReportService.get().getReportIdentifier(reportId, user, getContainer()).toString()))%>">Remove Chart</a>
                                 <%
                             }
                             else
