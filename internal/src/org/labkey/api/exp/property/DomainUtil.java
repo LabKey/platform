@@ -266,6 +266,9 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
+        gwtDomain.setAllowAttachmentProperties(dd.getDomainKind().allowAttachmentProperties());
+        gwtDomain.setAllowFileLinkProperties(dd.getDomainKind().allowFileLinkProperties());
+        gwtDomain.setAllowFlagProperties(dd.getDomainKind().allowFlagProperties());
         return gwtDomain;
     }
 

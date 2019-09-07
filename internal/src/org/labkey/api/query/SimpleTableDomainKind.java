@@ -193,7 +193,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         if (!containerUser.getContainer().isContainerFor(ContainerType.DataType.domainDefinitions))
             return null;
 
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, true, true, true);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), true);
     }
 
     @Override
