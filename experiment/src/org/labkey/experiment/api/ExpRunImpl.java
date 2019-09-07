@@ -510,6 +510,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         deleteRunProtocolApps();
 
+        clearCache();
+
         ExperimentRunGraph.clearCache(getContainer());
         ExperimentServiceImpl.get().syncRunEdges(getRowId(), getLSID(), getContainer());
     }
