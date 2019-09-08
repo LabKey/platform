@@ -60,7 +60,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -77,7 +76,6 @@ import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
@@ -1562,12 +1560,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 return true;
         }
         return false;
-    }
-
-    @Override
-    public List<SecurableResource> getSecurableResources(User user)
-    {
-        return Collections.emptyList();
     }
 
 
