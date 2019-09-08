@@ -323,7 +323,6 @@ public interface SearchService
     @Nullable Throwable getConfigurationError();
     boolean isRunning();
 
-    List<SecurableResource> getSecurableResources(User user);    
     IndexTask defaultTask();
     IndexTask createTask(String description);
     IndexTask createTask(String description, TaskListener l);

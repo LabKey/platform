@@ -110,6 +110,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -2196,6 +2197,17 @@ public class ContainerManager
         }
     }
 
+    private static final List<ModuleDependencyProvider> MODULE_DEPENDENCY_PROVIDERS = new CopyOnWriteArrayList<>();
+
+    public static void registerModuleDependencyProvider(ModuleDependencyProvider provider)
+    {
+        MODULE_DEPENDENCY_PROVIDERS.add(provider);
+    }
+
+    public static void forEachModuleDependencyProvider(Consumer<ModuleDependencyProvider> action)
+    {
+        MODULE_DEPENDENCY_PROVIDERS.forEach(action);
+    }
 
     public static Container createDefaultSupportContainer()
     {

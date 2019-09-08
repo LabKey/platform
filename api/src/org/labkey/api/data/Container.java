@@ -29,7 +29,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -39,7 +38,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
@@ -54,8 +52,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -147,6 +143,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
+    @Override
     public Container getContainer(Map context)
     {
         return this;
@@ -249,6 +246,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _path.getName();
     }
 
+    @Override
     @NotNull
     public String getResourceName()
     {
@@ -388,6 +386,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
 
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (user instanceof User && isForbiddenProject((User) user))
@@ -560,13 +559,15 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return ContainerManager.getChildren(this);
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
-        List<SecurableResource> ret = new ArrayList<>();
-
         //add all sub-containers the user is allowed to read
-        ret.addAll(ContainerManager.getChildren(this, user, ReadPermission.class));
+        List<SecurableResource> ret = new ArrayList<>(ContainerManager.getChildren(this, user, ReadPermission.class));
+
+        // TODO: Shouldn't each module register a provider to add their securable resources? This knowledge about study,
+        // reports, and pipeline roots shouldn't be hard-coded in Container.
 
         //add resources from study
         StudyService sts = StudyService.get();
@@ -589,16 +590,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
             if (policy.hasPermission(user, AdminPermission.class))
                 ret.add(root);
-        }
-
-        if (isRoot())
-        {
-            SearchService ss = SearchService.get();
-
-            if (null != ss)
-            {
-                ret.addAll(ss.getSecurableResources(user));
-            }
         }
 
         return ret;
@@ -902,15 +893,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (!errors.hasErrors())
             {
                 if (isWorkbook())
-                    appendWorkbookModulesToParent(new HashSet<Module>(), user);
+                    appendWorkbookModulesToParent(new HashSet<>(), user);
             }
         }
     }
 
     public Set<Module> getRequiredModules()
     {
-        Set<Module> requiredModules = new HashSet<>();
-        requiredModules.addAll(getFolderType().getActiveModules());
+        Set<Module> requiredModules = new HashSet<>(getFolderType().getActiveModules());
         requiredModules.add(ModuleLoader.getInstance().getModule("API"));
         requiredModules.add(ModuleLoader.getInstance().getModule("Internal"));
 
@@ -979,24 +969,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         ContainerManager.notifyContainerChange(getId());
     }
 
-    public void appendWorkbookModulesToParent()
-    {
-        appendWorkbookModulesToParent(new HashSet<Module>());
-    }
-
-    public void appendWorkbookModulesToParent(Set<Module> newModules)
-    {
-        appendWorkbookModulesToParent(newModules, null);
-    }
-
     public void appendWorkbookModulesToParent(Set<Module> newModules, @Nullable User user)
     {
         if (!isWorkbook())
             return;
 
         boolean isChanged = false;
-        Set<Module> existingModules = new HashSet<>();
-        existingModules.addAll(getParent().getActiveModules(false, false, user));
+        Set<Module> existingModules = new HashSet<>(getParent().getActiveModules(false, false, user));
 
         boolean userHasEnableRestrictedModules = hasEnableRestrictedModules(user);
         for (Module m : newModules)
@@ -1185,6 +1164,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
         Set<Module> activeModules;
         if (includeDependencies)
         {
+            // Invoke the ModuleDependencyProviders first, so the code below will resolve dependencies
+            ModuleDependencies moduleDependencies = ModuleDependencies.of(modules);
+            ContainerManager.forEachModuleDependencyProvider(provider -> provider.addModuleDependencies(moduleDependencies, Container.this));
+
+            // Resolve dependencies
             Set<Module> withDependencies = new HashSet<>();
             for (Module m : modules)
             {
@@ -1193,22 +1177,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 for (Module dependent : dependencies)
 //                    if (userCanAccessModule(dependent, userHasEnableRestrictedModules))           // TODO: check dependencies
                         withDependencies.add(dependent);
-            }
-
-            //Issue 24850: add modules associated with assays that have an active definition
-            //note: on server startup, this can be called before AssayService is registered
-            //we also need to defer until after the initial setup, to make sure the expected schemas exist.
-            if (ModuleLoader.getInstance().isStartupComplete() && AssayService.get() != null)
-            {
-                List<ExpProtocol> activeProtocols = AssayService.get().getAssayProtocols(this);
-                for (ExpProtocol p : activeProtocols)
-                {
-                    AssayProvider ap = AssayService.get().getProvider(p);
-                    if (ap != null && !ap.getRequiredModules().isEmpty())
-                    {
-                        withDependencies.addAll(ap.getRequiredModules());
-                    }
-                }
             }
 
             activeModules = withDependencies;
@@ -1276,7 +1244,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 return child;
         }
 
-        Container ret = null;
+        Container ret;
         for (Container child : parent.getChildren())
         {
             ret = findDescendant(child, name);
@@ -1400,6 +1368,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return containerList;
     }
 
+    @Override
     public int compareTo(@NotNull Container other)
     {
         // Container returns itself as a parent if it's root, so we need to special case that
@@ -1436,36 +1405,42 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return myPath.size() - otherPath.size();
     }
 
+    @Override
     @NotNull
     public String getResourceId()
     {
         return _id.toString();
     }
 
+    @Override
     @NotNull
     public String getResourceDescription()
     {
         return "The folder " + getPath();
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getCoreModule();
     }
 
+    @Override
     @NotNull
     public Container getResourceContainer()
     {
         return this;
     }
 
+    @Override
     public SecurableResource getParentResource()
     {
         SecurableResource parent = getParent();
         return this.equals(getParent()) ? null : parent;
     }
 
+    @Override
     public boolean mayInheritPolicy()
     {
         return true;

@@ -78,7 +78,6 @@ import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
@@ -1574,12 +1573,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 return true;
         }
         return false;
-    }
-
-    @Override
-    public List<SecurableResource> getSecurableResources(User user)
-    {
-        return Collections.emptyList();
     }
 
 

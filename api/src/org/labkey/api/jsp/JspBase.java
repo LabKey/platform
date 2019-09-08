@@ -19,6 +19,8 @@ package org.labkey.api.jsp;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -51,11 +53,14 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 
@@ -214,6 +219,23 @@ public abstract class JspBase extends JspContext implements HasViewContext
     {
         return HtmlString.of(url == null ? null : url.toString());
     }
+
+    // Note: If you have a stream, consider using JSONArray.collector() instead
+    public JSONArray toJsonArray(Collection<?> c)
+    {
+        return new JSONArray(c);
+    }
+
+    public JSONObject toJsonObject(Collection<Object> c)
+    {
+        return new JSONObject(c);
+    }
+
+    public JSONObject toJsonObject(Stream<Object> c)
+    {
+        return new JSONObject(c);
+    }
+
 
     /**
      * Quotes a javascript string.
