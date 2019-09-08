@@ -27,6 +27,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -54,8 +56,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
@@ -1185,19 +1185,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
         Set<Module> activeModules;
         if (includeDependencies)
         {
-            Set<Module> withDependencies = new HashSet<>();
-            for (Module m : modules)
-            {
-                withDependencies.add(m);
-                Set<Module> dependencies = m.getResolvedModuleDependencies();
-                for (Module dependent : dependencies)
-//                    if (userCanAccessModule(dependent, userHasEnableRestrictedModules))           // TODO: check dependencies
-                        withDependencies.add(dependent);
-            }
-
             //Issue 24850: add modules associated with assays that have an active definition
             //note: on server startup, this can be called before AssayService is registered
             //we also need to defer until after the initial setup, to make sure the expected schemas exist.
+            //Note: place this first, so the code below will resolve dependencies
             if (ModuleLoader.getInstance().isStartupComplete() && AssayService.get() != null)
             {
                 List<ExpProtocol> activeProtocols = AssayService.get().getAssayProtocols(this);
@@ -1206,9 +1197,19 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     AssayProvider ap = AssayService.get().getProvider(p);
                     if (ap != null && !ap.getRequiredModules().isEmpty())
                     {
-                        withDependencies.addAll(ap.getRequiredModules());
+                        modules.addAll(ap.getRequiredModules());
                     }
                 }
+            }
+
+            Set<Module> withDependencies = new HashSet<>();
+            for (Module m : modules)
+            {
+                withDependencies.add(m);
+                Set<Module> dependencies = m.getResolvedModuleDependencies();
+                for (Module dependent : dependencies)
+//                    if (userCanAccessModule(dependent, userHasEnableRestrictedModules))           // TODO: check dependencies
+                        withDependencies.add(dependent);
             }
 
             activeModules = withDependencies;
