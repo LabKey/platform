@@ -17,6 +17,7 @@ package org.labkey.test.tests.experiment;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -28,12 +29,17 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.assay.Batch;
 import org.labkey.remoteapi.assay.Data;
+import org.labkey.remoteapi.assay.LoadAssayBatchCommand;
+import org.labkey.remoteapi.assay.LoadAssayBatchResponse;
 import org.labkey.remoteapi.assay.Material;
 import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
 import org.labkey.remoteapi.assay.SaveAssayBatchResponse;
+import org.labkey.remoteapi.domain.CreateDomainCommand;
+import org.labkey.remoteapi.domain.DomainResponse;
+import org.labkey.remoteapi.domain.GetDomainCommand;
+import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
@@ -42,6 +48,8 @@ import org.labkey.test.util.SampleSetHelper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -261,6 +269,54 @@ public class ExperimentAPITest extends BaseWebDriverTest
         getBatch.setJsonObject(json);
         CommandResponse getResponse = getBatch.execute(connection, getProjectName());
         return new Batch(getResponse.getProperty("batch"));
+    }
+
+    @Test
+    public void testSaveBatchWithAdHocProperties() throws IOException, URISyntaxException, CommandException, ParseException
+    {
+        //Create VocabularyDomain with adhoc properties
+        List<PropertyDescriptor> adHocProperties = new ArrayList<>();
+
+        PropertyDescriptor prop1 = new PropertyDescriptor();
+        prop1.setRangeURI("int");
+        prop1.setName("testIntField");
+
+        PropertyDescriptor prop2 = new PropertyDescriptor();
+        prop2.setRangeURI("int");
+        prop2.setName("testIntField");
+
+        adHocProperties.add(prop1);
+        adHocProperties.add(prop2);
+
+        CreateDomainCommand domainCommand = new CreateDomainCommand("Vocabulary", "TestVocabulary");
+        domainCommand.getDomainDesign().setDescription("Test Ad Hoc Properties");
+        domainCommand.getDomainDesign().setFields(adHocProperties);
+        domainCommand.setColumns(List.of(Map.of("name","testIntField" ,"rangeURI", "int"),
+                                        Map.of( "name", "testStringField", "rangeURI", "string")));
+        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
+
+        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomainId());
+        domainResponse = getDomainCommand.execute(createDefaultConnection(false), getProjectName());
+
+        //Save Batch - Use Vocabulary Domain properties while saving batch
+        List<PropertyDescriptor> propertyURIS = domainResponse.getDomain().getFields();
+        Run run = new Run();
+        run.setName("testAdHocPropertiesRun");
+        run.setProperties(Map.of(propertyURIS.get(1).getPropertyURI(), "testAdHocRunProperty"));
+
+        Batch batch = new Batch();
+        batch.setProperties(Map.of(propertyURIS.get(0).getPropertyURI(), 123));
+        batch.setRuns(List.of(run));
+
+        SaveAssayBatchCommand saveAssayBatchCommand = new SaveAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, batch);
+        SaveAssayBatchResponse saveAssayBatchResponse = saveAssayBatchCommand.execute(createDefaultConnection(false), getProjectName());
+
+        LoadAssayBatchCommand loadDomainCommand = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, saveAssayBatchResponse.getBatch().getId());
+        LoadAssayBatchResponse loadAssayBatchResponse = loadDomainCommand.execute(createDefaultConnection(false), getProjectName());
+        List<String> addedPropertyURIs = new ArrayList<>(loadAssayBatchResponse.getBatch().getProperties().keySet());
+
+        //Verify property in added batch
+        assertEquals("Ad hoc property not found." , propertyURIS.get(0).getPropertyURI(), addedPropertyURIs.get(0));
     }
 
     @Override
