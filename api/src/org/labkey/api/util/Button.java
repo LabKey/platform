@@ -53,7 +53,6 @@ public class Button extends DisplayElement implements HasHtmlString
     private final String onClick;
     private final String id;
     private final Map<String, String> attributes;
-    private final String unsafeAttributes;
     private final String tooltip;
     private final String typeCls;
     private final boolean disableOnClick;
@@ -61,6 +60,9 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean enabled;
     private final boolean submit;
     private final boolean usePost;
+    private final String rel;
+    private final String name;
+    private final String style;
 
     private Button(ButtonBuilder builder)
     {
@@ -79,11 +81,12 @@ public class Button extends DisplayElement implements HasHtmlString
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
         this.usePost = builder.usePost;
+        this.rel = builder.rel;
+        this.name = builder.name;
+        this.style = builder.style;
 
         if (this.usePost && null != this.onClick)
             throw new IllegalStateException("Can't specify both usePost and onClick");
-        // TODO kill this usage
-        this.unsafeAttributes = builder.unsafeAttributes;
     }
 
     public String getCssClass()
@@ -107,6 +110,16 @@ public class Button extends DisplayElement implements HasHtmlString
         return usePost ? "javascript:void(0);" : href;
     }
 
+    public String getRel()
+    {
+        return rel;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
     public String getOnClick()
     {
         return onClick;
@@ -115,6 +128,11 @@ public class Button extends DisplayElement implements HasHtmlString
     public String getIconCls()
     {
         return iconCls;
+    }
+
+    public String getStyle()
+    {
+        return style;
     }
 
     public String getId()
@@ -209,7 +227,7 @@ public class Button extends DisplayElement implements HasHtmlString
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId))
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), rel, getRel(), name, getName(), style, getStyle())
             .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
@@ -217,9 +235,6 @@ public class Button extends DisplayElement implements HasHtmlString
             .cl(isSubmit(), PRIMARY_CLS)
             .cl(isDropdown(), "labkey-down-arrow")
             .cl(iconOnly, "icon-only");
-
-        if (unsafeAttributes != null)
-            attrs.callback(appendable -> { try {appendable.append(unsafeAttributes); } catch (IOException x) {throw new RuntimeException(x);}});
 
         return createHtmlFragment(
             isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
@@ -235,8 +250,9 @@ public class Button extends DisplayElement implements HasHtmlString
         private boolean enabled = true;
         private boolean submit;
         private HtmlString html;
-        // TODO remove usages of attributes(String)
-        private String unsafeAttributes;
+        private String rel;
+        private String name;
+        private String style;
 
         public ButtonBuilder(@NotNull String text)
         {
@@ -259,13 +275,6 @@ public class Button extends DisplayElement implements HasHtmlString
         public ButtonBuilder dropdown(boolean dropdown)
         {
             this.dropdown = dropdown;
-            return this;
-        }
-
-        @Deprecated // use Map<String, String> version instead
-        public ButtonBuilder attributes(String attributes)
-        {
-            this.unsafeAttributes = attributes;
             return this;
         }
 
@@ -294,6 +303,24 @@ public class Button extends DisplayElement implements HasHtmlString
         public ButtonBuilder submit(boolean submit)
         {
             this.submit = submit;
+            return this;
+        }
+
+        public ButtonBuilder rel(String rel)
+        {
+            this.rel = rel;
+            return this;
+        }
+
+        public ButtonBuilder name(String name)
+        {
+            this.name = name;
+            return this;
+        }
+
+        public ButtonBuilder style(String style)
+        {
+            this.style = style;
             return this;
         }
 
