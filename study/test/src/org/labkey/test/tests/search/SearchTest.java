@@ -185,7 +185,7 @@ public abstract class SearchTest extends StudyBaseTest
 
         waitAndClick(Locator.radioButtonByNameAndValue("scope", "FolderAndSubfolders"));
         _searchHelper.searchFor(searchTerm);
-        waitForElement(Locator.tagWithText("div", "Found 5 results"));
+        waitForElement(Locator.tagWithText("div", "Found 6 results"));
 
         //Now create subfolders:
         goToProjectHome();
