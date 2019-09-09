@@ -69,6 +69,12 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(_namespacePrefix) ? _priority: null;
     }
 
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return false;
+    }
+
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         ExpProtocol protocol = findProtocol(domain);
