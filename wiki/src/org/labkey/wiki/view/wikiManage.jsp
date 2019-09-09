@@ -156,9 +156,9 @@
                         %>
                     </select></td>
                     <td valign="top" >
-                        <%= button("Move Up").attributes("style='width:100px'").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <%= button("Move Up").style("width:100px").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
                         <br/>
-                        <%= button("Move Down").attributes("style='width:100px'").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <%= button("Move Down").style("width:100px").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
                     </td>
                 </tr>
             </table>
