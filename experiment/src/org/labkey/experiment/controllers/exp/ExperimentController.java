@@ -6565,6 +6565,7 @@ public class ExperimentController extends SpringActionController
     public static class LoadAssayRunForm
     {
         String lsid;
+        String apiVersion;
 
         public String getLsid()
         {
@@ -6574,6 +6575,16 @@ public class ExperimentController extends SpringActionController
         public void setLsid(String lsid)
         {
             this.lsid = lsid;
+        }
+
+        public String getApiVersion()
+        {
+            return apiVersion;
+        }
+
+        public void setApiVersion(String apiVersion)
+        {
+            this.apiVersion = apiVersion;
         }
     }
 }
