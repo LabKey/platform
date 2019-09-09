@@ -24,6 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
@@ -32,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collector;
 
 import static org.json.JSONObject.NULL;
 
@@ -84,7 +88,8 @@ import static org.json.JSONObject.NULL;
  * @author JSON.org
  * @version 2
  */
-public class JSONArray {
+public class JSONArray implements HasHtmlString
+{
 
 
     /**
@@ -334,7 +339,7 @@ public class JSONArray {
      */
     public String join(String separator) throws JSONException {
         int len = length();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < len; i += 1) {
             if (i > 0) {
@@ -808,6 +813,12 @@ public class JSONArray {
     }
 
 
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return HtmlString.unsafe(toString());
+    }
+
     /**
      * Make a prettyprinted JSON text of this JSONArray.
      * Warning: This method assumes that the data structure is acyclical.
@@ -840,7 +851,7 @@ public class JSONArray {
             return "[]";
         }
         int i;
-        StringBuffer sb = new StringBuffer("[");
+        StringBuilder sb = new StringBuilder("[");
         if (len == 1) {
             sb.append(JSONObject.valueToString(this.myArrayList.get(0),
                     indentFactor, indent));
@@ -851,9 +862,7 @@ public class JSONArray {
                 if (i > 0) {
                     sb.append(",\n");
                 }
-                for (int j = 0; j < newindent; j += 1) {
-                    sb.append(' ');
-                }
+                sb.append(" ".repeat(Math.max(0, newindent)));
                 sb.append(JSONObject.valueToString(this.myArrayList.get(i),
                         indentFactor, newindent));
             }
@@ -946,5 +955,22 @@ public class JSONArray {
     public int hashCode()
     {
         return Objects.hash(myArrayList);
+    }
+
+    // Collects a stream of Objects into a JSONArray
+    public static Collector<Object, JSONArray, JSONArray> collector()
+    {
+        return Collector.of(
+            JSONArray::new,
+            JSONArray::put,
+            JSONArray::append
+        );
+    }
+
+    // Private for now, since it's only used by the Collector above
+    private JSONArray append(JSONArray ja)
+    {
+        myArrayList.addAll(ja.myArrayList);
+        return this;
     }
 }

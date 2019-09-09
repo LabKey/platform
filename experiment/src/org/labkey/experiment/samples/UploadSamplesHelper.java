@@ -475,7 +475,7 @@ public abstract class UploadSamplesHelper
 
 
     /* this might be generally useful
-     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similiar functionality, but SampleTranslator
+     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator
      * copies data, this is straight pass through.
      */
     static class DropColumnsDataIterator extends WrapperDataIterator
@@ -679,6 +679,7 @@ public abstract class UploadSamplesHelper
         @Override
         public void close() throws IOException
         {
+            super.close();
             if (null != nameState)
                 nameState.close();
         }

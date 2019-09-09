@@ -74,7 +74,7 @@ public class StudyDesignsWebPart extends GridView
                 {
                     Map<String, String> style = new HashMap<>();
                     style.put("style", "white-space:nowrap");
-                    out.write(PageFlowUtil.textLink("Go To Study Folder", renderURL(ctx), "", "", style));
+                    out.write(PageFlowUtil.link("Go To Study Folder").href(renderURL(ctx)).attributes(style).toString());
                 }
                 else
                 {

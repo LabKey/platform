@@ -43,12 +43,6 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
         setFrame(WebPartView.FrameType.NOT_HTML);
     }
 
-    public JspTemplate(Class packageClass, String jspName, ModelClass model)
-    {
-        super(packageClass, jspName, model);
-        setFrame(WebPartView.FrameType.NOT_HTML);
-    }
-
     public String render() throws Exception
     {
         StringWriter out = new StringWriter();
@@ -72,7 +66,7 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
             assertEquals("This is a JSP used by the JspTemplate.TestCase", test);
 
             RReport r = new RReport();
-            assertTrue("".equals(r.getDefaultScript()));
+            assertEquals("", r.getDefaultScript());
             assertTrue(r.getDesignerHelpHtml().length() > 1000);
 
             JavaScriptReport js = new JavaScriptReport();

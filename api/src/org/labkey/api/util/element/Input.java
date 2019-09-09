@@ -18,6 +18,8 @@ package org.labkey.api.util.element;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DisplayElement;
 
@@ -26,7 +28,7 @@ import java.io.Writer;
 import java.text.Format;
 
 // TODO: Need handling for checkbox, file, and radio types
-public class Input extends DisplayElement
+public class Input extends DisplayElement implements HasHtmlString
 {
     public enum Layout
     {
@@ -173,6 +175,11 @@ public class Input extends DisplayElement
     private boolean isCheckbox()
     {
         return "checkbox".equalsIgnoreCase(_type);
+    }
+
+    private boolean isRadio()
+    {
+        return "radio".equalsIgnoreCase(_type);
     }
 
     public boolean isChecked()
@@ -379,6 +386,13 @@ public class Input extends DisplayElement
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         out.write(toString());
+    }
+
+    // TODO reverse toString() and getHtmlString() (that is toString() should call getHtmlString())
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return HtmlString.unsafe(toString());
     }
 
     @Override
@@ -608,7 +622,7 @@ public class Input extends DisplayElement
 
     protected void doValue(StringBuilder sb)
     {
-        if (isCheckbox() && isChecked())
+        if ((isCheckbox() || isRadio()) && isChecked())
         {
             sb.append(" checked");
         }
@@ -639,7 +653,7 @@ public class Input extends DisplayElement
     }
 
     @SuppressWarnings("unchecked")
-    public static class InputBuilder<T extends InputBuilder<T>> // TODO: extends DisplayElementBuilder? HtmlString?
+    public static class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString// TODO: extends DisplayElementBuilder?
     {
         private String _autoComplete;
         private Boolean _autoFocus;
@@ -946,6 +960,12 @@ public class Input extends DisplayElement
         public String toString()
         {
             return build().toString();
+        }
+
+        @Override
+        public HtmlString getHtmlString()
+        {
+            return HtmlString.unsafe(toString());
         }
     }
 }

@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -29,7 +31,7 @@
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
 <%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
@@ -41,7 +43,7 @@ function setElementDisplayByCheckbox(checkbox, element)
         target.style.display = "";
     else
         target.style.display = "none";
-  }
+}
 </script>
 
 <%
@@ -51,10 +53,9 @@ function setElementDisplayByCheckbox(checkbox, element)
 
     String completionURLPrefix = urlProvider(SecurityUrls.class).getCompleteUserURLPrefix(container);
     boolean newRequestNotifyChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
-            bean.isNewRequestNotifyCheckbox() : (h(bean.getNewRequestNotify()) != null &&
-            h(bean.getNewRequestNotify()).compareTo("") != 0));
+            bean.isNewRequestNotifyCheckbox() : StringUtils.isNotEmpty(bean.getNewRequestNotify()));
     boolean ccChecked = ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()) ?
-            bean.isCcCheckbox() : (h(bean.getCc()) != null && h(bean.getCc()).compareTo("") != 0));
+            bean.isCcCheckbox() : StringUtils.isNotEmpty(bean.getCc()));
     DefaultEmailNotifyEnum defaultEmailNotifyEnum = (bean.getDefaultEmailNotifyEnum());         // Checking getMethod bot needed because one of the radio buttons will always POST
     SpecimensAttachmentEnum specimensAttachmentEnum = (bean.getSpecimensAttachmentEnum());
 %>
@@ -105,7 +106,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <label>
                     <input type='radio' id='replyToFixedUser'  name='replyToCurrentUser'  value='false'<%=checked(!replyToCurrentUser)%>
-                            onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= text(!replyToCurrentUser ? h(bean.getReplyTo()) : "") %>';">
+                            onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= !replyToCurrentUser ? h(bean.getReplyTo()) : HtmlString.EMPTY_STRING %>';">
                     A fixed email address:
                 </label>
             </td>
@@ -155,9 +156,9 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <labkey:autoCompleteTextArea name="newRequestNotify"
                                              id="newRequestNotify"
-                                             url="<%=h(completionURLPrefix)%>"
+                                             url="<%=completionURLPrefix%>"
                                              cols="30" rows="3"
-                                             value="<%=h(bean.getNewRequestNotify())%>"/>
+                                             value="<%=bean.getNewRequestNotify()%>"/>
             </td>
         </tr>
         <tr>
@@ -181,9 +182,9 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <labkey:autoCompleteTextArea name="cc"
                                              id="cc"
-                                             url="<%=h(completionURLPrefix)%>"
+                                             url="<%=completionURLPrefix%>"
                                              cols="30" rows="3"
-                                             value="<%=h(bean.getCc())%>"/>
+                                             value="<%=bean.getCc()%>"/>
             </td>
         </tr>
 

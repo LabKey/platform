@@ -334,8 +334,6 @@ api/src/org/labkey/api/assay/actions/DesignerAction.java -text
 api/src/org/labkey/api/assay/actions/newUploadWarnings.jsp -text
 api/src/org/labkey/api/assay/actions/ProtocolIdForm.java -text
 api/src/org/labkey/api/assay/actions/ReimportRedirectAction.java -text
-api/src/org/labkey/api/assay/actions/ShowSelectedDataAction.java -text
-api/src/org/labkey/api/assay/actions/ShowSelectedRunsAction.java -text
 api/src/org/labkey/api/assay/AssayColumnInfoRenderer.java -text
 api/src/org/labkey/api/assay/AssayDataCollector.java -text
 api/src/org/labkey/api/assay/AssayDataCollectorDisplayColumn.java -text
@@ -374,7 +372,6 @@ api/src/org/labkey/api/assay/PreviouslyUploadedDataCollector.java -text
 api/src/org/labkey/api/assay/query/AssayBaseQueryView.java -text
 api/src/org/labkey/api/assay/query/BatchListQueryView.java -text
 api/src/org/labkey/api/assay/query/ResultsQueryView.java -text
-api/src/org/labkey/api/assay/query/RunListDetailsQueryView.java -text
 api/src/org/labkey/api/assay/query/RunListQueryView.java -text
 api/src/org/labkey/api/assay/ReplacedRunFilter.java -text
 api/src/org/labkey/api/assay/security/DesignAssayPermission.java -text
@@ -733,7 +730,6 @@ api/src/org/labkey/api/defaults/DefaultableDisplayColumn.java -text
 api/src/org/labkey/api/defaults/DefaultValueService.java -text
 api/src/org/labkey/api/defaults/DomainIdForm.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
-api/src/org/labkey/api/defaults/SetDefaultValuesAssayAction.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
@@ -1269,7 +1265,6 @@ api/src/org/labkey/api/reports/report/view/ReportDesignBean.java -text
 api/src/org/labkey/api/reports/report/view/ReportQueryView.java -text
 api/src/org/labkey/api/reports/report/view/ReportUtil.java -text
 api/src/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp -text
-api/src/org/labkey/api/reports/report/view/rReportTabHandler.jsp -text
 api/src/org/labkey/api/reports/report/view/RunChartReportView.java -text
 api/src/org/labkey/api/reports/report/view/RunReportView.java -text
 api/src/org/labkey/api/reports/report/view/ScriptReportBean.java -text
@@ -1776,7 +1771,6 @@ api/webapp/Ext3.lib.xml -text
 api/webapp/Ext4.lib.xml -text
 api/webapp/WEB-INF/applicationContext.xml -text
 api/webapp/WEB-INF/labkey.tld -text
-assay/api-src/org/labkey/api/assay/actions/AssayResultsAction.java -text
 assay/api-src/org/labkey/api/assay/actions/PlateBasedUploadWizardAction.java -text
 assay/api-src/org/labkey/api/assay/actions/PlateUploadForm.java -text
 assay/api-src/org/labkey/api/assay/actions/PlateUploadFormImpl.java -text
@@ -1844,6 +1838,7 @@ assay/api-src/org/labkey/api/assay/plate/Well.java -text
 assay/api-src/org/labkey/api/assay/plate/WellData.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroup.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroupTemplate.java -text
+assay/api-src/org/labkey/api/assay/query/RunListDetailsQueryView.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text
@@ -1882,6 +1877,7 @@ assay/src/org/labkey/api/assay/nab/view/sampleDilutions.jsp -text
 assay/src/org/labkey/api/assay/nab/view/sampleProperties.jsp -text
 assay/src/org/labkey/assay/actions/AssayBatchDetailsAction.java -text
 assay/src/org/labkey/assay/actions/AssayBatchesAction.java -text
+assay/src/org/labkey/assay/actions/AssayResultsAction.java -text
 assay/src/org/labkey/assay/actions/BaseProtocolAPIAction.java -text
 assay/src/org/labkey/assay/actions/DeleteAction.java -text
 assay/src/org/labkey/assay/actions/DeleteProtocolAction.java -text
@@ -1890,6 +1886,9 @@ assay/src/org/labkey/assay/actions/GetProtocolAction.java -text
 assay/src/org/labkey/assay/actions/ImportAction.java -text
 assay/src/org/labkey/assay/actions/PipelineDataCollectorRedirectAction.java -text
 assay/src/org/labkey/assay/actions/SaveAssayBatchAction.java -text
+assay/src/org/labkey/assay/actions/SetDefaultValuesAssayAction.java -text
+assay/src/org/labkey/assay/actions/ShowSelectedDataAction.java -text
+assay/src/org/labkey/assay/actions/ShowSelectedRunsAction.java -text
 assay/src/org/labkey/assay/actions/TemplateAction.java -text
 assay/src/org/labkey/assay/actions/TsvImportAction.java -text
 assay/src/org/labkey/assay/AssayFolderType.java -text
@@ -1919,7 +1918,6 @@ assay/src/org/labkey/assay/plate/query/PlateSchema.java -text
 assay/src/org/labkey/assay/plate/query/PlateTable.java -text
 assay/src/org/labkey/assay/plate/query/WellGroupTable.java -text
 assay/src/org/labkey/assay/plate/view/copyTemplate.jsp -text
-assay/src/org/labkey/assay/plate/view/plateTemplate.jsp -text
 assay/src/org/labkey/assay/plate/view/plateTemplateList.jsp -text
 assay/src/org/labkey/assay/plate/WellGroupCurveImpl.java -text
 assay/src/org/labkey/assay/plate/WellGroupImpl.java -text
@@ -2249,7 +2247,6 @@ core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/usageMetrics/UsageMetricsServiceImpl.java -text
 core/src/org/labkey/core/admin/ValidateDomainsPipelineJob.java -text
-core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
 core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
 core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
 core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
@@ -2342,11 +2339,11 @@ core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
 core/src/org/labkey/core/statistics/SummaryStatisticRegistryImpl.java -text
-core/src/org/labkey/core/test/buttons.jsp -text
-core/src/org/labkey/core/test/complex.jsp -text
-core/src/org/labkey/core/test/form.jsp -text
-core/src/org/labkey/core/test/tags.jsp -text
-core/src/org/labkey/core/test/TestController.java -text
+devtools/src/org/labkey/devtools/view/buttons.jsp -text
+devtools/src/org/labkey/devtools/view/complex.jsp -text
+devtools/src/org/labkey/devtools/view/form.jsp -text
+devtools/src/org/labkey/devtools/view/tags.jsp -text
+devtools/src/org/labkey/devtools/TestController.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailCache.java -text
 core/src/org/labkey/core/thumbnail/ThumbnailServiceImpl.java -text
 core/src/org/labkey/core/user/changeEmail.jsp -text
@@ -2809,7 +2806,6 @@ internal/src/org/labkey/api/util/HashHelpers.java -text
 internal/src/org/labkey/api/util/SortHelpers.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
-internal/src/org/labkey/api/view/addWebPart.jsp -text
 internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
 internal/src/org/labkey/api/view/LinkBarView.java -text
@@ -3547,7 +3543,6 @@ query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
-query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/shareReport.jsp -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/IConstant.java -text
@@ -4213,7 +4208,6 @@ study/src/org/labkey/study/view/customizeParticipantView.jsp -text
 study/src/org/labkey/study/view/customizeParticipantWebPart.jsp -text
 study/src/org/labkey/study/view/datasetDetails.jsp -text
 study/src/org/labkey/study/view/datasetDisplayOrder.jsp -text
-study/src/org/labkey/study/view/datasetInfo.jsp -text
 study/src/org/labkey/study/view/datasets.jsp -text
 study/src/org/labkey/study/view/DatasetsWebPartView.java -text
 study/src/org/labkey/study/view/datasetVisibility.jsp -text
@@ -4222,7 +4216,6 @@ study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
-study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
@@ -4231,7 +4224,6 @@ study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text
 study/src/org/labkey/study/view/manageFilewatchers.jsp -text
-study/src/org/labkey/study/view/manageLocations.jsp -text
 study/src/org/labkey/study/view/manageMasterPatientConfig.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text
@@ -4247,12 +4239,10 @@ study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
 study/src/org/labkey/study/view/participantCharacteristics.jsp -text
 study/src/org/labkey/study/view/participantReport.jsp -text
-study/src/org/labkey/study/view/pipelineSetup.jsp -text
 study/src/org/labkey/study/view/renderAssayProgressReport.jsp -text
 study/src/org/labkey/study/view/reportPermission.jsp -text
 study/src/org/labkey/study/view/requirePipeline.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
-study/src/org/labkey/study/view/securityTabHeader.jsp -text
 study/src/org/labkey/study/view/sendParticipantGroup.jsp -text
 study/src/org/labkey/study/view/snapshotSettings.jsp -text
 study/src/org/labkey/study/view/specimen/autoReportList.jsp -text

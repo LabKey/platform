@@ -99,9 +99,9 @@ public abstract class AutoCompleteTag extends SimpleTagBase
         sb.append("</script>\n");
         sb.append("<div id=\"").append(renderId).append("\"></div>");
 
-        JspWriter out = getOut();
+        Writer out = getWriter();
 
-        out.print(sb.toString());
+        out.write(sb.toString());
     }
 
     // Allow subclasses to override to provide a generic Writer (not a JspWriter)

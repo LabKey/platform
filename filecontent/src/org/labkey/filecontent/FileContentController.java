@@ -395,8 +395,10 @@ public class FileContentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
-            return (new BeginAction(getViewContext())).appendNavTrail(root)
-                    .addChild(name);
+            NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
+            ret.addChild(name);
+
+            return ret;
         }
     }
 
@@ -547,8 +549,10 @@ public class FileContentController extends SpringActionController
 
        public NavTree appendNavTrail(NavTree root)
        {
-           return (new BeginAction(getViewContext())).appendNavTrail(root)
-                   .addChild("Administer File System Access");
+           NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
+           ret.addChild("Administer File System Access");
+
+           return ret;
        }
    }
 
@@ -1577,7 +1581,7 @@ public class FileContentController extends SpringActionController
     {
         public IFrameView(String url)
         {
-			super(FileContentController.class, "view/iframe.jsp", url);
+			super("/org/labkey/filecontent/view/iframe.jsp", url);
         }
     }
 

@@ -140,7 +140,7 @@ public interface AppProps
 
     boolean isShowRibbonMessage();
 
-    String getRibbonMessageHtml();
+    @Nullable String getRibbonMessageHtml();
 
     int getSSLPort();
 
