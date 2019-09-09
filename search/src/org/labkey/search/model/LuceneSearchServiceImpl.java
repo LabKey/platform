@@ -589,6 +589,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             doc.add(new Field(FIELD_NAME.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
             doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
 
+            // See: https://stackoverflow.com/questions/29695307/sortiing-string-field-alphabetically-in-lucene-5-0
+            doc.add(new SortedDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
+
             // === Index and analyze, don't store ===
 
             // We're using the LabKeyAnalyzer, which is a PerFieldAnalyzerWrapper that ensures categories and identifier fields

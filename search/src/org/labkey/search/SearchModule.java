@@ -66,7 +66,7 @@ public class SearchModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 19.21;
+        return 19.22;
     }
 
     @Override
