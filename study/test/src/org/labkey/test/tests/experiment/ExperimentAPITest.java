@@ -31,10 +31,14 @@ import org.labkey.remoteapi.assay.Batch;
 import org.labkey.remoteapi.assay.Data;
 import org.labkey.remoteapi.assay.LoadAssayBatchCommand;
 import org.labkey.remoteapi.assay.LoadAssayBatchResponse;
+import org.labkey.remoteapi.assay.LoadAssayRunCommand;
+import org.labkey.remoteapi.assay.LoadAssayRunResponse;
 import org.labkey.remoteapi.assay.Material;
 import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
 import org.labkey.remoteapi.assay.SaveAssayBatchResponse;
+import org.labkey.remoteapi.assay.SaveAssayRunCommand;
+import org.labkey.remoteapi.assay.SaveAssayRunResponse;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
 import org.labkey.remoteapi.domain.GetDomainCommand;
@@ -317,6 +321,23 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
         //Verify property in added batch
         assertEquals("Ad hoc property not found." , propertyURIS.get(0).getPropertyURI(), addedPropertyURIs.get(0));
+    }
+
+    @Test
+    public void testSaveRunApi() throws IOException, CommandException
+    {
+        Run run = new Run();
+        run.setName("testRun");
+        run.setProperties(Map.of("name","testIntField" ,"rangeURI", "int"));
+        SaveAssayRunCommand saveAssayRunCommand = new SaveAssayRunCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(run));
+        SaveAssayRunResponse saveAssayRunResponse = saveAssayRunCommand.execute(createDefaultConnection(false), getProjectName());
+        String addedRunLsid = saveAssayRunResponse.getRuns().get(0).getLsid();
+
+        LoadAssayRunCommand loadAssayRunCommand = new LoadAssayRunCommand(addedRunLsid);
+        LoadAssayRunResponse loadAssayRunResponse = loadAssayRunCommand.execute(createDefaultConnection(false), getProjectName());
+        String resultLsid = loadAssayRunResponse.getRun().getLsid();
+
+        assertEquals("Run not found", addedRunLsid, resultLsid);
     }
 
     @Override
