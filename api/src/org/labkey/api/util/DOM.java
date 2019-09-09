@@ -411,7 +411,15 @@ public class DOM
             at(firstKey, firstValue);
             assert keyvalues.length % 2 == 0;
             for (int i=0 ; i<keyvalues.length ; i+=2)
-                at((Attribute)keyvalues[i], keyvalues[i+1]);
+            {
+                try{
+                    at((Attribute) keyvalues[i], keyvalues[i + 1]);
+                }
+                catch(Exception e)
+                {
+                    System.out.println(e);
+                }
+            }
             return this;
         }
         public _Attributes at(Attribute key, Object value)

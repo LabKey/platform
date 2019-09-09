@@ -227,7 +227,7 @@ public class Button extends DisplayElement implements HasHtmlString
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), rel, getRel(), name, getName(), style, getStyle())
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle())
             .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
@@ -237,7 +237,8 @@ public class Button extends DisplayElement implements HasHtmlString
             .cl(iconOnly, "icon-only");
 
         return createHtmlFragment(
-            isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
+            isSubmit() ?
+            INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
             A(attrs, iconOnly ? FA(getIconCls()) : SPAN(html))
         );
     }
@@ -258,12 +259,18 @@ public class Button extends DisplayElement implements HasHtmlString
         {
             this.text = text;
             this.html = HtmlString.of(text);
+            this.style = "";
+            this.rel = "";
+            this.name = "";
         }
 
         public ButtonBuilder(@NotNull HtmlString html)
         {
             this.text = null;
             this.html = html;
+            this.style = "";
+            this.rel = "";
+            this.name = "";
         }
 
         @Override
