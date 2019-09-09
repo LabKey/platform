@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 
 import java.util.Map;
@@ -25,40 +26,112 @@ import java.util.Map;
  */
 public interface TemplateProperties
 {
+    String SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME = "ShowOnlyInProjectRoot";
+
     String getDisplayConfigs();
     String getDisplayPropertyName();
     String getModulePropertyName();
     String getFileName();
     String getShowByDefault();
+    String getPropertyDisplayType();
+    Container getContainer();
 
-    default boolean isDisplay()
+    default Boolean isDisplay()
     {
-        String isDisplay = getShowByDefault();
-        Map<String, String> map = PropertyManager.getProperties(getDisplayConfigs());
-        if (!map.isEmpty())
-        {
-            isDisplay = map.get(getDisplayPropertyName());
-        }
-        return BooleanUtils.toBoolean(isDisplay);
+        return isDisplay(true);
     }
 
-    default void setDisplay(boolean isDisplay)
+    default Boolean isDisplay(boolean inherit)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(getDisplayConfigs(), true);
-        map.put(getDisplayPropertyName(), BooleanUtils.toStringTrueFalse(isDisplay));
-        map.save();
+        String displayProp = getProperty(getDisplayPropertyName(), inherit);
+        return BooleanUtils.toBooleanObject(displayProp);
+    }
+
+    default void setDisplay(Boolean isDisplay)
+    {
+        setProperty(getDisplayPropertyName(), isDisplay != null ? String.valueOf(isDisplay) : null);
     }
 
     default String getModule()
     {
-        Map<String, String> map = PropertyManager.getProperties(getDisplayConfigs());
-        return map.get(getModulePropertyName());
+        return getModule(true);
+    }
+
+    default String getModule(boolean inherit)
+    {
+        return getProperty(getModulePropertyName(), inherit);
     }
 
     default void setModule(String module)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(getDisplayConfigs(), true);
-        map.put(getModulePropertyName(), module);
+        setProperty(getModulePropertyName(), module);
+    }
+
+    /**
+     * Should this resource appear in all folders or only in the project root.
+     */
+    default boolean isShowOnlyInProjectRoot()
+    {
+        return BooleanUtils.toBoolean(getProperty(SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME));
+    }
+
+    default void setIsShowOnlyInProjectRoot(boolean showOnlyInProjectRoot)
+    {
+        setProperty(SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME, String.valueOf(showOnlyInProjectRoot));
+    }
+
+    private void setProperty(String propName, String value)
+    {
+        PropertyManager.PropertyMap map;
+        Container container = getContainer();
+
+        if (container != null)
+        {
+            if (container.isRoot())
+                map = PropertyManager.getWritableProperties(getDisplayConfigs(), true);
+            else
+                // if not site level, default to project level
+                map = PropertyManager.getWritableProperties(container.getProject(), getDisplayConfigs(), true);
+        }
+        else
+            throw new IllegalStateException("Container is null for this TemplateProperty");
+
+        if (value == null)
+            map.remove(propName);
+        else
+            map.put(propName, value);
         map.save();
+    }
+
+    private String getProperty(String propName)
+    {
+        return getProperty(propName, true);
+    }
+
+    /**
+     * Helper to pull property values from the appropriate scopes
+     *
+     * @param inherit if true will inherit from the site root if the property is not defined in the
+     *                container
+     */
+    private String getProperty(String propName, boolean inherit)
+    {
+        Map<String, String> map;
+        Container container = getContainer();
+
+        if (container != null)
+        {
+            // check to see if there is a project override, else get the site default
+            if (!container.isRoot())
+            {
+                map = PropertyManager.getProperties(container.getProject(), getDisplayConfigs());
+                if (map.containsKey(propName) || !inherit)
+                    return map.get(propName);
+            }
+            map = PropertyManager.getProperties(getDisplayConfigs());
+            return map.get(propName);
+        }
+        else
+            throw new IllegalStateException("Container is null for this TemplateProperty");
     }
 }

@@ -20,12 +20,17 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.assay.query.AssayDbSchema;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.DetectionMethodAssayProvider;
+import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -51,22 +56,17 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.study.Study;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.DetectionMethodAssayProvider;
-import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.assay.actions.SetDefaultValuesAssayAction;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -543,18 +543,26 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     @Override
     public List<GWTContainer> getStudyContainers()
     {
-        Set<Study> publishTargets = AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class);
-        // Use a tree set so they're sorted nicely
-        Set<Container> containers = new TreeSet<>();
-        for (Study study : publishTargets)
-        {
-            containers.add(study.getContainer());
-        }
         List<GWTContainer> result = new ArrayList<>();
-        for (Container container : containers)
+        AssayPublishService aps = AssayPublishService.get();
+
+        if (null != aps)
         {
-            result.add(convertToGWTContainer(container));
+            // Use a tree set so they're sorted nicely
+            Set<Container> containers = new TreeSet<>();
+            Set<Study> publishTargets = aps.getValidPublishTargets(getUser(), ReadPermission.class);
+
+            for (Study study : publishTargets)
+            {
+                containers.add(study.getContainer());
+            }
+
+            for (Container container : containers)
+            {
+                result.add(convertToGWTContainer(container));
+            }
         }
+
         return result;
     }
 

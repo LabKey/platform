@@ -46,6 +46,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
     private static final ThreadLocal<Stack<Map>> _paramsStack = ThreadLocal.withInitial(Stack::new);
 
 
+    @Override
     @NotNull
     public FormattedHtml getSubstitution(Map<String, String> params)
     {

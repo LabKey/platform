@@ -129,11 +129,17 @@ public class DataClassDomainKind extends AbstractDomainKind
         return ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
     }
 
+    @Override
+    public boolean allowFileLinkProperties()
+    {
+        return false;
+    }
+
     @Nullable
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, true, false, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
     }
 
     @Override

@@ -71,13 +71,13 @@
             %>API keys are currently disabled on this site. <%
         }
 %>
-As a site administrator, you can configure API keys on the <%=PageFlowUtil.unstyledTextLink("Site Settings page", urlProvider(AdminUrls.class).getCustomizeSiteURL())%>.
+As a site administrator, you can configure API keys on the <%=link("Site Settings page", urlProvider(AdminUrls.class).getCustomizeSiteURL()).clearClasses()%>.
 
 <%
         if (apiKeys)
         {
 %>
-You can manage API keys generated on the server via <%=PageFlowUtil.unstyledTextLink("this query", urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), "core", "APIKeys"))%>.
+You can manage API keys generated on the server via <%=link("this query", urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), "core", "APIKeys")).clearClasses()%>.
 <%
         }
 %>

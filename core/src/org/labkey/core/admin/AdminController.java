@@ -92,6 +92,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -2572,7 +2573,7 @@ public class AdminController extends SpringActionController
         {
             String buttonHTML = "";
             if (getUser().hasRootAdminPermission())
-                buttonHTML += PageFlowUtil.button("Reset All Statistics").onClick(PageFlowUtil.postOnClickJavaScript(getResetQueryStatisticsURL())) + "&nbsp;";
+                buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()).usePost() + "&nbsp;";
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
@@ -6556,8 +6557,10 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root = root.addChild("Folder Management", getManageFoldersURL());
-            return root.addChild("Move Folder");
+            root.addChild("Folder Management", getManageFoldersURL());
+            root.addChild("Move Folder");
+
+            return root;
         }
     }
 
@@ -7699,11 +7702,11 @@ public class AdminController extends SpringActionController
     }
 
 
-    class LoggingView extends JspView
+    static class LoggingView extends JspView<Object>
     {
         LoggingView()
         {
-            super(AdminController.class, "logging.jsp", null);
+            super("/org/labkey/core/admin/logging.jsp", null);
         }
     }
 
@@ -9645,65 +9648,6 @@ public class AdminController extends SpringActionController
     }
 
 
-    @SuppressWarnings("unused")  // Invoked by test framework (BaseWebDriverTest.checkActionCoverage())
-    @AdminConsoleAction
-    public class ExportMutationWarningsAction extends ExportAction
-    {
-        @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws IOException
-        {
-            try (TextWriter writer = (new TextWriter()
-            {
-                @Override
-                protected String getFilename()
-                {
-                    return "MutationWarnings.txt";
-                }
-
-                @Override
-                protected void write()
-                {
-                    Set<String> warnings = getMutatingActionsWarned();
-
-                    if (warnings.isEmpty())
-                    {
-                        _pw.println("No mutation warnings were logged!");
-                    }
-                    else
-                    {
-                        String prefix = "distinct mutation warning";
-                        _pw.println(StringUtilsLabKey.pluralize(warnings.size(), prefix + " was", prefix + "s were") + " logged:");
-
-                        String previous = null;
-
-                        // Sort by package + name and enumerate
-                        for (String warning : new TreeSet<>(warnings))
-                        {
-                            String moduleName = warning.split("\\.")[2];
-
-                            if (!moduleName.equals(previous))
-                            {
-                                _pw.println();
-                                _pw.println(moduleName);
-                                _pw.println();
-                                previous = moduleName;
-                            }
-
-                            _pw.println(warning);
-                        }
-                    }
-                }
-            }))
-            {
-                writer.write(response);
-            }
-
-            // For now, also log the JspWriter statistics.
-            LabKeyJspWriter.logStatistics();
-        }
-    }
-
-
     @ActionNames("projectSettings, lookAndFeelSettings")
     @RequiresPermission(AdminPermission.class)
     public class ProjectSettingsAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>
@@ -10176,6 +10120,12 @@ public class AdminController extends SpringActionController
         public final HtmlString helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final HtmlString welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
+
+
+        public static ActionURL getCustomPageElementLink(Container c)
+        {
+            return PremiumService.get().getConfCustomPageElements(c);
+        }
     }
 
 

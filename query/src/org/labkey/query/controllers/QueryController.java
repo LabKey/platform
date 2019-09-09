@@ -734,7 +734,7 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(BeginAction.class, getContainer());
                 url.addParameter("schemaName", schemaKey.toString());
                 url.addParameter("queryName", queryName);
-                (new BeginAction(getViewContext())).appendNavTrail(root)
+                new BeginAction(getViewContext()).appendNavTrail(root)
                         .addChild(schemaName + " Schema", url);
             }
             catch (NullPointerException e)
@@ -866,8 +866,8 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root)
-                    .addChild("New Query", new QueryUrlsImpl().urlNewQuery(getContainer()));
+            new SchemaAction(_form).appendNavTrail(root);
+            root.addChild("New Query", new QueryUrlsImpl().urlNewQuery(getContainer()));
             return root;
         }
     }
@@ -1231,6 +1231,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class ExecuteQueryAction extends QueryViewAction
     {
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
@@ -1248,9 +1249,10 @@ public class QueryController extends SpringActionController
             return queryView;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             TableInfo ti = null;
             try
             {
@@ -1285,6 +1287,7 @@ public class QueryController extends SpringActionController
 
             DbScope scope = ti.getSchema().getScope();
 
+            // Test for provisioned table
             if (ti.getDomain() != null)
             {
                 Domain domain = ti.getDomain();
@@ -1295,7 +1298,9 @@ public class QueryController extends SpringActionController
                     _dbSchemaName = domain.getDomainKind().getStorageSchemaName();
                 }
             }
-            else
+
+            // No domain or domain with non-provisioned storage (e.g., core.Users)
+            if (null == _dbSchemaName || null == _dbTableName)
             {
                 DbSchema dbSchema = ti.getSchema();
                 _dbSchemaName = dbSchema.getName();
@@ -1817,10 +1822,12 @@ public class QueryController extends SpringActionController
         QueryDefinition _query = null;
         QueryForm _form = null;
 
+        @Override
         public void validateCommand(QueryForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(QueryForm form, boolean reshow, BindException errors)
         {
             _form = form;
@@ -1835,19 +1842,22 @@ public class QueryController extends SpringActionController
             return new GWTView(MetadataEditor.class, props);
         }
 
+        @Override
         public boolean handlePost(QueryForm form, BindException errors)
         {
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(QueryForm metadataForm)
         {
             return _query.urlFor(QueryAction.metadataQuery);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             root.addChild("Edit Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
             return root;
         }
@@ -2123,10 +2133,12 @@ public class QueryController extends SpringActionController
         PropertiesForm _form = null;
         private String _queryName;
 
+        @Override
         public void validateCommand(PropertiesForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(PropertiesForm form, boolean reshow, BindException errors)
         {
             // assertQueryExists requires that it be well-formed
@@ -2142,6 +2154,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/propertiesQuery.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
         {
             // assertQueryExists requires that it be well-formed
@@ -2181,6 +2194,7 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(PropertiesForm propertiesForm)
         {
             ActionURL url = new ActionURL(BeginAction.class, propertiesForm.getViewContext().getContainer());
@@ -2190,9 +2204,10 @@ public class QueryController extends SpringActionController
             return url;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             root.addChild("Edit query properties");
             return root;
         }
@@ -2337,6 +2352,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class DetailsQueryRowAction extends UserSchemaAction
     {
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             ButtonBar bb = new ButtonBar();
@@ -2407,11 +2423,13 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             return false;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
@@ -2437,6 +2455,7 @@ public class QueryController extends SpringActionController
 
         Map<String, Object> insertedRow = null;
 
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             InsertView view = new InsertView(tableForm, errors);
@@ -2444,6 +2463,7 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             List<Map<String, Object>> list = doInsertUpdate(tableForm, errors, true);
@@ -2490,6 +2510,7 @@ public class QueryController extends SpringActionController
             return super.getSuccessURL(form);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
@@ -2501,6 +2522,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public static class UpdateQueryRowAction extends UserSchemaAction
     {
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             ButtonBar bb = createSubmitCancelButtonBar(tableForm);
@@ -2509,12 +2531,14 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
         {
             doInsertUpdate(tableForm, errors, false);
             return 0 == errors.getErrorCount();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
@@ -3261,7 +3285,7 @@ public class QueryController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
             root.addChild("Import Data");
             return root;
@@ -3888,12 +3912,14 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
             return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root);
@@ -3957,6 +3983,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", connectionMap, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root);
@@ -3972,11 +3999,13 @@ public class QueryController extends SpringActionController
             super(commandClass);
         }
 
+        @Override
         public void validateCommand(F form, Errors errors)
         {
             form.validate(errors);
         }
 
+        @Override
         public boolean handlePost(F form, BindException errors) throws Exception
         {
             try
@@ -3998,11 +4027,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(F form)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction(getViewContext()).appendNavTrail(root);
@@ -4106,6 +4137,7 @@ public class QueryController extends SpringActionController
             super(commandClass);
         }
 
+        @Override
         public void validateCommand(F form, Errors errors)
         {
             form.validate(errors);
@@ -4137,6 +4169,7 @@ public class QueryController extends SpringActionController
             return def;
         }
 
+        @Override
         public boolean handlePost(F form, BindException errors) throws Exception
         {
             T def = form.getBean();
@@ -4164,11 +4197,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(F externalSchemaForm)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction(getViewContext()).appendNavTrail(root);
@@ -4185,11 +4220,13 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
+        @Override
         protected LinkedSchemaDef getCurrent(int externalId)
         {
             return QueryManager.get().getLinkedSchemaDef(getContainer(), externalId);
         }
 
+        @Override
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors)
         {
             LinkedSchemaDef def = getDef(form, reshow, errors);
@@ -4207,11 +4244,13 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
+        @Override
         protected ExternalSchemaDef getCurrent(int externalId)
         {
             return QueryManager.get().getExternalSchemaDef(getContainer(), externalId);
         }
 
+        @Override
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors)
         {
             ExternalSchemaDef def = getDef(form, reshow, errors);
@@ -4869,11 +4908,13 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root);
@@ -4912,10 +4953,12 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
     {
+        @Override
         public void validateCommand(InternalSourceViewForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
@@ -4926,6 +4969,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/internalSourceView.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(InternalSourceViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
@@ -4939,11 +4983,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(InternalSourceViewForm form)
         {
             return new ActionURL(ManageViewsAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new ManageViewsAction(getViewContext()).appendNavTrail(root);
