@@ -67,6 +67,7 @@ public class NavTree implements Collapsible
     private URLHelper _imageURL;
     private String _menuFilterItemCls = null;
     private boolean _usePost = false;
+    private String _confirmMessage = null;
 
     private final @NotNull List<NavTree> _children = new LinkedList<>();
 
@@ -446,7 +447,7 @@ public class NavTree implements Collapsible
         if (_usePost && null != _script)
             throw new IllegalStateException("Can't specify both usePost and setScript");
 
-        return _usePost ? PageFlowUtil.postOnClickJavaScript(_href) : _script;
+        return _usePost ? (null != _confirmMessage ? PageFlowUtil.confirmAndPostJavaScript(_confirmMessage, _href) : PageFlowUtil.postOnClickJavaScript(_href)) : _script;
     }
 
     public void setScript(String script)
@@ -520,6 +521,12 @@ public class NavTree implements Collapsible
     {
         _usePost = true;
         return this;
+    }
+
+    public NavTree usePost(String confirmMessage)
+    {
+        _confirmMessage = confirmMessage;
+        return usePost();
     }
 
     public boolean isPost()
@@ -646,7 +653,7 @@ public class NavTree implements Collapsible
         LinkBuilder lb = new LinkBuilder(_text).href(_href).onClick(_script);
 
         if (_usePost)
-            lb.usePost();
+            lb.usePost(_confirmMessage);
 
         if (isNoFollow())
             lb.attributes(Map.of("rel", "nofollow"));

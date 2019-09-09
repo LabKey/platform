@@ -1253,7 +1253,17 @@ public class PageFlowUtil
      */
     public static String postOnClickJavaScript(String href)
     {
-        return "LABKEY.Utils.postToAction('" + href + "');";
+        return "LABKEY.Utils.postToAction(" + jsString(href) + ");";
+    }
+
+    /**
+     *  Returns an onClick handler that displays a confirmation dialog containing the provided message, then, if user confirms,
+     *  posts to the specified href, providing a CSRF token. Used by NavTree, LinkBuilder, and ButtonBuilder, this shouldn't be
+     *  called directly by other code paths.
+     */
+    public static String confirmAndPostJavaScript(String message, String href)
+    {
+        return "LABKEY.Utils.confirmAndPost(" + jsString(message) + ", " + jsString(href) + ");";
     }
 
     /**

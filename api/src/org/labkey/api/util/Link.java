@@ -63,7 +63,7 @@ public class Link extends DisplayElement implements HasHtmlString
             sb.append(" id=\"").append(lb.id).append("\"");
 
         if (lb.usePost)
-            sb.append(" onClick=\"").append(PageFlowUtil.postOnClickJavaScript(lb.href)).append("\"");
+            sb.append(" onClick=\"").append(null != lb.confirmMessage ? PageFlowUtil.confirmAndPostJavaScript(lb.confirmMessage, lb.href) : PageFlowUtil.postOnClickJavaScript(lb.href)).append("\"");
         else if (null != lb.onClick)
             sb.append(" onClick=\"").append(lb.onClick).append("\"");
 

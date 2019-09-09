@@ -30,7 +30,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
