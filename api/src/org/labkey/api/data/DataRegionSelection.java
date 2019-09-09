@@ -105,7 +105,7 @@ public class DataRegionSelection
      */
     public static @NotNull Set<String> getSelected(ViewContext context, boolean clearSelection)
     {
-        return getSelected(context, null, true, clearSelection);
+        return getSelected(context, null, clearSelection);
     }
 
     /**
@@ -115,7 +115,7 @@ public class DataRegionSelection
      */
     public static boolean hasSelected(ViewContext context)
     {
-        return !getSelected(context, null, false, false).isEmpty();
+        return !getSelected(context, null, false).isEmpty();
     }
 
     /**
@@ -126,7 +126,7 @@ public class DataRegionSelection
      */
     public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, boolean clearSelection)
     {
-        return asInts(getSelected(context, null, false, clearSelection));
+        return asInts(getSelected(context, null, clearSelection));
     }
 
     public static String getSelectionKeyFromRequest(ViewContext context)
@@ -143,11 +143,10 @@ public class DataRegionSelection
      * Get the selected items from the request parameters (the current page of a data region) and session state.
      * @param context Contains the session
      * @param key The data region selection key; if null the DATA_REGION_SELECTION_KEY request parameter will be used
-     * @param mergeSession false will only get the selection from the request parameters, true will get add the selection in session state
      * @param clearSession Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
      */
-    public static @NotNull Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
+    public static @NotNull Set<String> getSelected(ViewContext context, @Nullable String key, boolean clearSession)
     {
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
         if (null != values && values.length == 1 && values[0].contains("\t"))
@@ -155,19 +154,16 @@ public class DataRegionSelection
         List<String> parameterSelected = values == null ? new ArrayList<>() : Arrays.asList(values);
         Set<String> result = new LinkedHashSet<>(parameterSelected);
 
-        if (mergeSession || clearSession)
-        {
-            synchronized (lock)
-            {
-                Set<String> sessionSelected = getSet(context, key, false);
-                if (sessionSelected != null)
-                {
-                    if (mergeSession)
-                        result.addAll(sessionSelected);
 
-                    if (clearSession)
-                        sessionSelected.removeAll(result);
-                }
+        synchronized (lock)
+        {
+            Set<String> sessionSelected = getSet(context, key, false);
+            if (sessionSelected != null)
+            {
+                result.addAll(sessionSelected);
+
+                if (clearSession)
+                    sessionSelected.removeAll(result);
             }
         }
         return Collections.unmodifiableSet(result);
@@ -176,9 +172,9 @@ public class DataRegionSelection
     /**
      * Get the selected items from the request parameters (the current page of a data region) and session state as integers.
      */
-    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
+    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, @Nullable String key, boolean clearSession)
     {
-        return asInts(getSelected(context, key, mergeSession, clearSession));
+        return asInts(getSelected(context, key, clearSession));
     }
 
     private static @NotNull Set<Integer> asInts(Set<String> ids)

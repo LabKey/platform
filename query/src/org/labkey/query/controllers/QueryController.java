@@ -2284,7 +2284,7 @@ public class QueryController extends SpringActionController
             if (updateService == null)
                 throw new UnsupportedOperationException("Unable to delete - no QueryUpdateService registered for " + form.getSchemaName() + "." + form.getQueryName());
 
-            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), null, true, true);
+            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), null, true);
             List<ColumnInfo> pks = table.getPkColumns();
             int numPks = pks.size();
 
@@ -5136,7 +5136,7 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(final SelectForm form, BindException errors)
         {
-            Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), true, false);
+            Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), false);
             return new ApiSimpleResponse("selected", selected);
         }
     }

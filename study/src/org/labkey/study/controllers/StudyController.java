@@ -2935,7 +2935,7 @@ public class StudyController extends BaseStudyController
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, true, false);
+                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, false);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
@@ -3600,7 +3600,7 @@ public class StudyController extends BaseStudyController
             }
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
@@ -3644,7 +3644,7 @@ public class StudyController extends BaseStudyController
         {
             if (!updateQCForm.isUpdate())
                 return false;
-            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
 
             QCState newState = null;
             if (updateQCForm.getNewState() != null)
