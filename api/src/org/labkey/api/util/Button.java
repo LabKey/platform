@@ -61,6 +61,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean enabled;
     private final boolean submit;
     private final boolean usePost;
+    private final String confirmMessage;
 
     private Button(ButtonBuilder builder)
     {
@@ -79,6 +80,7 @@ public class Button extends DisplayElement implements HasHtmlString
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
         this.usePost = builder.usePost;
+        this.confirmMessage = builder.confirmMessage;
 
         if (this.usePost && null != this.onClick)
             throw new IllegalStateException("Can't specify both usePost and onClick");
@@ -103,7 +105,6 @@ public class Button extends DisplayElement implements HasHtmlString
 
     public String getHref()
     {
-
         return usePost ? "javascript:void(0);" : href;
     }
 
@@ -145,7 +146,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private String generateOnClick(String id)
     {
         // prepare onclick method and overrides
-        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href) : StringUtils.defaultString(getOnClick());
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href, confirmMessage) : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);

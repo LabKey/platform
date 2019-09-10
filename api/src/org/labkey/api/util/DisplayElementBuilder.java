@@ -37,6 +37,7 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     String tooltip;
     String iconCls;
     boolean usePost = false;
+    String confirmMessage = null;
 
     public DisplayElementBuilder()
     {
@@ -118,6 +119,18 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     {
         this.usePost = true;
         return getThis();
+    }
+
+    /**
+     * Non-null confirmMessage causes clicking on the element to display a confirmation dialog with the specified message
+     * and then, if confirmed, to POST to the href. A null confirmMessage results in a POST with no confirmation dialog.
+     * @param confirmMessage The confirmation message
+     * @return this builder
+     */
+    public BUILDER usePost(String confirmMessage)
+    {
+        this.confirmMessage = confirmMessage;
+        return usePost();
     }
 
     abstract public @NotNull T build();
