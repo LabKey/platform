@@ -444,11 +444,25 @@ public class NavTree implements Collapsible
 
     public String getScript()
     {
-        if (_usePost && null != _script)
-            throw new IllegalStateException("Can't specify both usePost and setScript");
+        final String script;
 
-        return _usePost ? (null != _confirmMessage ? PageFlowUtil.confirmAndPostJavaScript(_confirmMessage, _href) : PageFlowUtil.postOnClickJavaScript(_href)) : _script;
-    }
+        if (_usePost)
+        {
+            if (null != _script)
+                throw new IllegalStateException("Can't specify both usePost and setScript");
+
+            if (null != _confirmMessage)
+                script = PageFlowUtil.confirmAndPostJavaScript(_confirmMessage, _href);
+            else
+                script = PageFlowUtil.postOnClickJavaScript(_href);
+        }
+        else
+        {
+            script = _script;
+        }
+
+        return script;
+   }
 
     public void setScript(String script)
     {
