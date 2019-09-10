@@ -1198,7 +1198,7 @@ public class QueryView extends WebPartView<Object>
             {
                 return false;
             }
-            Set<String> selected = DataRegionSelection.getSelected(context, _selectionKey, true, false);
+            Set<String> selected = DataRegionSelection.getSelected(context, _selectionKey, false);
             return !selected.isEmpty();
         }
 

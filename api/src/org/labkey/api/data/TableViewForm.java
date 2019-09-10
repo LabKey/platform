@@ -746,7 +746,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         if (_isBulkUpdate)
         {
-            Set<String> selected = DataRegionSelection.getSelected(context, null, true, false);
+            Set<String> selected = DataRegionSelection.getSelected(context, null, false);
             _selectedRows = selected.toArray(new String[selected.size()]);
         }
         else

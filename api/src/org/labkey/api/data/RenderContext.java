@@ -131,7 +131,7 @@ public class RenderContext implements Map<String, Object>, Serializable
 
             if (_currentRegion.getSelectionKey() != null)
             {
-                _selected = DataRegionSelection.getSelected(getViewContext(), _currentRegion.getSelectionKey(), true, false);
+                _selected = DataRegionSelection.getSelected(getViewContext(), _currentRegion.getSelectionKey(), false);
             }
         }
         else
