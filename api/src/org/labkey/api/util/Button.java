@@ -146,9 +146,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private String generateOnClick(String id)
     {
         // prepare onclick method and overrides
-        final String onClick = usePost ?
-            (confirmMessage != null ? PageFlowUtil.confirmAndPostJavaScript(confirmMessage, href) : PageFlowUtil.postOnClickJavaScript(href)) :
-            StringUtils.defaultString(getOnClick());
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href, confirmMessage) : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);

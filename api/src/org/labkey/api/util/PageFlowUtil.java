@@ -1248,22 +1248,13 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. Used by NavTree, LinkBuilder,
-     *  and ButtonBuilder, this shouldn't be called directly by other code paths.
+     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. If confirmMessage is not null,
+     *  displays a confirmation dialog and requires an "OK" before posting. Used by NavTree, LinkBuilder, and ButtonBuilder,
+     *  this shouldn't be called directly by other code paths.
      */
-    public static String postOnClickJavaScript(String href)
+    public static String postOnClickJavaScript(String href, @Nullable String confirmMessage)
     {
-        return "LABKEY.Utils.postToAction(" + jsString(href) + ");";
-    }
-
-    /**
-     *  Returns an onClick handler that displays a confirmation dialog containing the provided message, then, if user confirms,
-     *  posts to the specified href, providing a CSRF token. Used by NavTree, LinkBuilder, and ButtonBuilder, this shouldn't be
-     *  called directly by other code paths.
-     */
-    public static String confirmAndPostJavaScript(String message, String href)
-    {
-        return "LABKEY.Utils.confirmAndPost(" + jsString(message) + ", " + jsString(href) + ");";
+        return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
     /**
@@ -1273,7 +1264,7 @@ public class PageFlowUtil
     @RemoveIn20_1  // TODO: Unused -- all callers now delegate to builder methods that implement post-on-click
     public static String postOnClickJavaScript(ActionURL url)
     {
-        return postOnClickJavaScript(url.getLocalURIString());
+        return postOnClickJavaScript(url.getLocalURIString(), null);
     }
 
     public static ButtonBuilder button(String text)
