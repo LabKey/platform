@@ -439,6 +439,12 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
+    @Deprecated
+    public ForeignKey getRunGroupIdForeignKey(final boolean includeBatches)
+    {
+        return getRunGroupIdForeignKey(null, includeBatches);
+    }
+
     /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
     public ForeignKey getRunGroupIdForeignKey(ContainerFilter cf, final boolean includeBatches)
     {
@@ -446,6 +452,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
+                // CONSIDER: I wonder if this shouldn't be using UnionContainerFilter(cf, CurrentPlusProjectAndShared)
                 ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups.name(),
                         Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())), true, true);
                 if (!includeBatches)
