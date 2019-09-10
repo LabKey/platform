@@ -32,7 +32,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
@@ -1332,12 +1331,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-
-    @Override
-    public List<SecurableResource> getSecurableResources(User user)
-    {
-        return Collections.emptyList();
-    }
 
     @Override
     public long getFileSizeLimit()

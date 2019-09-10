@@ -1636,7 +1636,7 @@ public class SpecimenController extends BaseStudyController
             if ("post".equalsIgnoreCase(utils.getViewContext().getRequest().getMethod()) &&
                     (utils.getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
             {
-                ids = DataRegionSelection.getSelected(utils.getViewContext(), null, true, true);
+                ids = DataRegionSelection.getSelected(utils.getViewContext(), null, true);
                 if (isFromGroupedView())
                     return utils.getRequestableBySampleHash(ids, getPreferredLocation());
                 else
