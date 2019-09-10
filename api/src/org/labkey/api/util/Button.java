@@ -259,18 +259,12 @@ public class Button extends DisplayElement implements HasHtmlString
         {
             this.text = text;
             this.html = HtmlString.of(text);
-            this.style = "";
-            this.rel = "";
-            this.name = "";
         }
 
         public ButtonBuilder(@NotNull HtmlString html)
         {
             this.text = null;
             this.html = html;
-            this.style = "";
-            this.rel = "";
-            this.name = "";
         }
 
         @Override
