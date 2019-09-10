@@ -377,7 +377,7 @@ public class ExperimentController extends SpringActionController
             // Or a reference to a DataRegion selection key
             else if (selectionKey != null)
             {
-                Set<Integer> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, true, false);
+                Set<Integer> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, false);
                 for (Integer id : ids)
                 {
                     ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(id);
@@ -3117,7 +3117,7 @@ public class ExperimentController extends SpringActionController
 
         public Set<Integer> getIds(boolean clear)
         {
-            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), true, clear);
+            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 
@@ -4424,7 +4424,7 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4498,7 +4498,7 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4606,7 +4606,7 @@ public class ExperimentController extends SpringActionController
 
     private void addSelectedRunsToExperiment(ExpExperiment exp, String dataRegionSelectionKey)
     {
-        Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, false, true);
+        Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, true);
         List<ExpRun> runs = new ArrayList<>();
         for (int runId : runIds)
         {
@@ -4654,7 +4654,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
             }
 
-            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false))
+            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().hasPermission(getUser(), DeletePermission.class))
@@ -5234,7 +5234,7 @@ public class ExperimentController extends SpringActionController
         {
             if (_rowIds == null)
             {
-                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), getDataRegionSelectionKey(), getDataRegionSelectionKey() != null, false));
+                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), getDataRegionSelectionKey(), false));
             }
             return _rowIds;
         }
@@ -5709,7 +5709,7 @@ public class ExperimentController extends SpringActionController
             // Fix issue 27562 - include session-stored selection
             if (form.getDataRegionSelectionKey() != null)
             {
-                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, false))
+                for (String rowId : DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), false))
                 {
                     drg.addHiddenFormField(DataRegion.SELECT_CHECKBOX_NAME, rowId);
                 }
@@ -5894,7 +5894,7 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), form.getDataRegionSelectionKey() != null, false);
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
             List<ExpRun> runs = new ArrayList<>();
             for (Integer runId : runIds)
             {
