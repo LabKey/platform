@@ -93,7 +93,6 @@ public class ModuleHtmlView extends HtmlView
 
     private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable WebPart webpart)
     {
-        super((HtmlString)null);
         _debugViewDescription = getClass().getSimpleName() + ": " + module.getName() + "/" + viewdef.getName();
 
         _viewdef = viewdef;

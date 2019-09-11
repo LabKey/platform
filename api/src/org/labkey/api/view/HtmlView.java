@@ -32,6 +32,11 @@ public class HtmlView extends WebPartView
         this(DOM.createHtml(renderable));
     }
 
+    public HtmlView()
+    {
+        super(FrameType.DIV);
+    }
+
     public HtmlView(HtmlString html)
     {
         super(FrameType.DIV);
