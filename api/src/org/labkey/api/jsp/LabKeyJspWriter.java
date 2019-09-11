@@ -81,7 +81,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
                     if (null == obj)
                         LOG.info("A JSP is attempting to render a null object!", new Throwable());
                     else
-                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getSimpleName(), new Throwable());
+                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getName(), new Throwable());
                 }
             }
         }

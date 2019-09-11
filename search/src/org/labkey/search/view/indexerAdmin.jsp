@@ -43,7 +43,7 @@ if (null == ss)
 }
 else
 {
-    %><p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    %><p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table>
             <tr>
                 <td>Path to full-text search index:&nbsp;</td>
@@ -76,7 +76,7 @@ else
 </table>
 </p>
 
-    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table><%
 
     if (ss.isRunning())
@@ -107,7 +107,7 @@ else
     if (hasAdminOpsPerms)
     {
     %>
-    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table>
             <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
@@ -117,7 +117,7 @@ else
     <%
     }
     %>
-    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table>
             <tr><td width="800">You can change the search indexing directory type below, but this is generally not recommended. Contact
                 LabKey for assistance if full-text indexing or searching seems to have difficulty with the default setting.<br><br></td></tr>
@@ -141,7 +141,7 @@ else
             %>
         </table>
     </labkey:form></p>
-    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table>
             <tr><td width="800">You can change the maximum file size limit below, but this is generally not recommended and will result in additional system memory usage. We further limit <b>xlsx</b> files at 1/5 the normal max, as they are compressed at rest.<br><br></td></tr>
             <tr><td>Indexed file size limit: <input type="number" name="fileLimitMB" value="<%=h(SearchPropertyManager.getFileSizeLimitMB())%>" /> MB</td></tr><%

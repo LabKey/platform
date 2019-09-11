@@ -18,7 +18,9 @@ package org.labkey.api.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
@@ -148,7 +150,7 @@ public enum UsageReportingLevel
     }
 
     private static Timer _timer;
-    private static String _upgradeMessage;
+    private static HtmlString _upgradeMessage;
 
     public static void cancelUpgradeCheck()
     {
@@ -179,7 +181,7 @@ public enum UsageReportingLevel
         return new UsageTimerTask(this);
     }
 
-    public static String getUpgradeMessage()
+    public static @Nullable HtmlString getUpgradeMessage()
     {
         return _upgradeMessage;
     }
@@ -216,6 +218,7 @@ public enum UsageReportingLevel
             _level = level;
         }
 
+        @Override
         public void run()
         {
             MothershipReport report = generateReport(_level, MothershipReport.Target.remote);
@@ -223,13 +226,14 @@ public enum UsageReportingLevel
             {
                 report.run();
                 String message = report.getContent();
-                if ("".equals(message))
+                if (StringUtils.isEmpty(message))
                 {
                     _upgradeMessage = null;
                 }
                 else
                 {
-                    _upgradeMessage = message;
+                    // We assume labkey.org is sending back legal HTML
+                    _upgradeMessage = HtmlString.unsafe(message);
                 }
             }
          }

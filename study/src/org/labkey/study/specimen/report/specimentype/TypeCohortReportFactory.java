@@ -15,28 +15,25 @@
  */
 package org.labkey.study.specimen.report.specimentype;
 
-import com.google.gwt.user.client.ui.Hidden;
-import org.labkey.api.jsp.taglib.InputTag;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
+import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SingleCohortFilter;
-import org.labkey.study.specimen.report.SpecimenVisitReport;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.SpecimenManager;
-import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.study.specimen.report.SpecimenVisitReport;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.labkey.api.util.HtmlString.unsafe;
 
@@ -69,7 +66,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
             Input.InputBuilder input = new Input.InputBuilder()
                 .type("hidden")
                 .value("0")
-                .label(CohortFilterFactory.Params.cohortId.name());
+                .name(CohortFilterFactory.Params.cohortId.name());
 
             Select.SelectBuilder select = new Select.SelectBuilder()
                 .name(CohortFilterFactory.Params.cohortFilterType.name());

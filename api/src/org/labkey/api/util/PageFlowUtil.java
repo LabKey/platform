@@ -37,6 +37,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -168,8 +169,6 @@ public class PageFlowUtil
     private static final String NONPRINTING_ALTCHAR = "~";
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
-
-    public static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     public static boolean useExperimentalCoreUI()
     {
@@ -1249,21 +1248,23 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. Used by NavTree, LinkBuilder,
-     *  and ButtonBuilder, this shouldn't be called directly by other code paths.
+     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. If confirmMessage is not null,
+     *  displays a confirmation dialog and requires an "OK" before posting. Used by NavTree, LinkBuilder, and ButtonBuilder,
+     *  this shouldn't be called directly by other code paths.
      */
-    public static String postOnClickJavaScript(String href)
+    public static String postOnClickJavaScript(String href, @Nullable String confirmMessage)
     {
-        return "LABKEY.Utils.postToAction('" + href + "');";
+        return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
     /**
      *  Returns an onClick handler that posts to the specified url, providing a CSRF token.
      */
-    @Deprecated // TODO: Remove soon
+    @Deprecated
+    @RemoveIn20_1  // TODO: Unused -- all callers now delegate to builder methods that implement post-on-click
     public static String postOnClickJavaScript(ActionURL url)
     {
-        return postOnClickJavaScript(url.getLocalURIString());
+        return postOnClickJavaScript(url.getLocalURIString(), null);
     }
 
     public static ButtonBuilder button(String text)
@@ -1274,6 +1275,11 @@ public class PageFlowUtil
     public static LinkBuilder link(String text)
     {
         return new LinkBuilder(text);
+    }
+
+    public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)
+    {
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip);
     }
 
     private static final String ARBITRARY_LETTER = "Q";
@@ -1327,6 +1333,7 @@ public class PageFlowUtil
         return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
     }
 
+    @RemoveIn20_1 // No usages
     public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
     {
         return button(text)
@@ -1338,6 +1345,7 @@ public class PageFlowUtil
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
+    @RemoveIn20_1 // No usages
     public static String generateDropDownButton(String text, String href, String onClick)
     {
         return generateDropDownButton(text, href, onClick, null);
@@ -1397,11 +1405,6 @@ public class PageFlowUtil
         return attributes.toString();
     }
 
-    public static String generateDisabledButton(String text)
-    {
-        return button(text).enabled(false).toString();
-    }
-
     /**
      * If the provided text uses ", return '. If it uses ', return ".
      * This is useful to quote javascript.
@@ -1426,62 +1429,80 @@ public class PageFlowUtil
         return '"';
     }
 
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 42 usages.
     public static String textLink(String text, URLHelper url)
     {
-        return link(text).href(url).build().toString();
+        return link(text).href(url).toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, URLHelper url, String id)
     {
         return link(text).href(url).id(id).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
     {
         return link(text).href(url).onClick(onClickScript).id(id).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href, String id)
     {
         return link(text).href(href).id(id).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href)
     {
         return link(text).href(href).build().toString();
     }
 
-    @Deprecated
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
     {
         return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
-    @Deprecated
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String unstyledTextLink(String text, String href, String onClickScript, String id)
     {
         return link(text).href(href).onClick(onClickScript).id(id).clearClasses().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String unstyledTextLink(String text, URLHelper url)
     {
         return link(text).href(url).clearClasses().toString();
     }
 
-
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
+        return iconLink(iconCls, tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String helpPopup(String title, String helpText)
@@ -1538,7 +1559,7 @@ public class PageFlowUtil
             // Finally, since this is script inside of an attribute, it must be HTML escaped again.
             showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
             if (width != 0)
-                showHelpDivArgs.append(", ").append(filter(jsString(filter(String.valueOf(width) + "px"))));
+                showHelpDivArgs.append(", ").append(filter(jsString(filter(width + "px"))));
             if (onClickScript == null)
             {
                 onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";

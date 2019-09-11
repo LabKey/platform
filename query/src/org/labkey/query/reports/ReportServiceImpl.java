@@ -61,7 +61,6 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -525,9 +524,10 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return (!ContainerManager.getSharedContainer().equals(c)) ? DatabaseReportCache.getReport(ContainerManager.getSharedContainer(), rowId) : null;
     }
 
-    public ReportIdentifier getReportIdentifier(String reportId)
+    @Override
+    public ReportIdentifier getReportIdentifier(String reportId, @Nullable User user, @Nullable Container container)
     {
-        return AbstractReportIdentifier.fromString(reportId);
+        return AbstractReportIdentifier.fromString(reportId, user, container);
     }
 
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c)

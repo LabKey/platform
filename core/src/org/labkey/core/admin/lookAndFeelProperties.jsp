@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>

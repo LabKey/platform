@@ -1819,7 +1819,7 @@ public class DataRegion extends DisplayElement
                 props = Collections.emptyMap();
             }
 
-            out.write(PageFlowUtil.iconLink(iconCls, value.toString(), url, null, null, props));
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).attributes(props).toString());
         }
     }
 
