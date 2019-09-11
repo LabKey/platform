@@ -412,13 +412,7 @@ public class DOM
             assert keyvalues.length % 2 == 0;
             for (int i=0 ; i<keyvalues.length ; i+=2)
             {
-                try{
-                    at((Attribute) keyvalues[i], keyvalues[i + 1]);
-                }
-                catch(Exception e)
-                {
-                    System.out.println(e);
-                }
+                at((Attribute) keyvalues[i], keyvalues[i + 1]);
             }
             return this;
         }
