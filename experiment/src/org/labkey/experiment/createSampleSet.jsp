@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -40,7 +41,7 @@
     JspView<ExperimentController.BaseSampleSetForm> view = (JspView<ExperimentController.BaseSampleSetForm>) HttpView.currentView();
     ExperimentController.BaseSampleSetForm bean = view.getModelBean();
     Integer rowId = bean.getRowId();
-    String helpText = "Used for generating unique sample IDs (" + helpLink("sampleIDs#expression", "more info") + ")";
+    HtmlString helpText = HtmlString.unsafe(String.format("Used for generating unique sample IDs (%1$s)", helpLink("sampleIDs#expression", "more info")));
     final String SELF_OPTION_TEXT = "(Current Sample Set)";
 
     List<Pair<String, String>> sampleSetList = new ArrayList<>();
@@ -85,7 +86,7 @@
     <labkey:input
             id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
             placeholder="S-\${now:date}-\${batchRandomId}-\${randomId}"
-            contextContent="<%=h(helpText).toString()%>" size="60"
+            contextContent="<%=helpText%>" size="60"
     />
     <div class="form-group">
         <label class=" control-label col-sm-3 col-lg-2" for="description">
