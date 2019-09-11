@@ -111,14 +111,14 @@ public class Button extends DisplayElement implements HasHtmlString
         return usePost ? "javascript:void(0);" : href;
     }
 
-    public String getRel()
-    {
-        return rel;
-    }
-
     public String getName()
     {
         return name;
+    }
+
+    public String getRel()
+    {
+        return rel;
     }
 
     public String getOnClick()
@@ -252,9 +252,6 @@ public class Button extends DisplayElement implements HasHtmlString
         private boolean enabled = true;
         private boolean submit;
         private HtmlString html;
-        private String rel;
-        private String name;
-        private String style;
 
         public ButtonBuilder(@NotNull String text)
         {
@@ -305,24 +302,6 @@ public class Button extends DisplayElement implements HasHtmlString
         public ButtonBuilder submit(boolean submit)
         {
             this.submit = submit;
-            return this;
-        }
-
-        public ButtonBuilder rel(String rel)
-        {
-            this.rel = rel;
-            return this;
-        }
-
-        public ButtonBuilder name(String name)
-        {
-            this.name = name;
-            return this;
-        }
-
-        public ButtonBuilder style(String style)
-        {
-            this.style = style;
             return this;
         }
 
