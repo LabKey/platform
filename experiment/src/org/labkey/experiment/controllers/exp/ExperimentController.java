@@ -1777,7 +1777,7 @@ public class ExperimentController extends SpringActionController
             if (_data.isInlineImage() && _data.isFileOnDisk())
             {
                 ActionURL showFileURL = new ActionURL(ShowFileAction.class, getContainer()).addParameter("rowId", _data.getRowId());
-                HtmlView imageView = new HtmlView(IMG(src, showFileURL));
+                HtmlView imageView = new HtmlView(IMG(at(src, showFileURL)));
                 return new VBox(vbox, imageView);
             }
             return vbox;
