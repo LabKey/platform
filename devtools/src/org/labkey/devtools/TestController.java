@@ -49,7 +49,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -783,14 +783,14 @@ public class TestController extends SpringActionController
                         .submit(form.isButtonsubmit())
                         .onClick(form.getOnclick());
 
-                Map<String, String> attr =  new HashMap<>();
+                Map<String, String> map = new LinkedHashMap<>();
                 // test that the attribute looks like an attribute (e.g. no special chars)
-                if (form.getAttrkey1() != null && form.getAttrkey1().equals(PageFlowUtil.filter(form.getAttrkey1())))
-                    attr.put(form.getAttrkey1(), filter(form.getAttrvalue1()));
+                if (form.getAttrkey1() != null && form.getAttrkey1().equals(filter(form.getAttrkey1())))
+                    map.put(form.getAttrkey1(), filter(form.getAttrvalue1()));
                 if (form.getAttrkey2() != null && form.getAttrkey2().equals(filter(form.getAttrkey2())))
-                    attr.put(form.getAttrkey2(), filter(form.getAttrvalue2()));
-                if (!attr.isEmpty())
-                    button.attributes(attr);
+                    map.put(form.getAttrkey2(), filter(form.getAttrvalue2()));
+                if (!map.isEmpty())
+                    button.attributes(map);
 
                 form.setBuiltButton(button);
             }

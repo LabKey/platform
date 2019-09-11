@@ -379,4 +379,36 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return _publicSchemaName == null ? _userSchema.getSchemaName() : _publicSchemaName;
     }
 
+    @Override
+    public void setFilterPatterns(String columnName, String... patterns)
+    {
+        checkLocked();
+        if (patterns != null)
+        {
+            SQLFragment condition = new SQLFragment();
+            condition.append("(");
+            String separator = "";
+            for (String pattern : patterns)
+            {
+                condition.append(separator);
+                condition.append(_rootTable.getColumn(columnName).getAlias());
+                // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
+                // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol,
+                // and in other cases we're passed a pattern that matches against all protocols of a given type
+                if (pattern.contains("%"))
+                {
+                    condition.append(" LIKE ?");
+                }
+                else
+                {
+                    condition.append(" = ?");
+                }
+                condition.add(pattern);
+                separator = " OR ";
+            }
+            condition.append(")");
+            addCondition(condition);
+        }
+    }
+
 }
