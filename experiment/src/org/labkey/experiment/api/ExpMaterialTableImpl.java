@@ -438,7 +438,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
 
-        var runCol = addColumn(ExpMaterialTable.Column.RunApplication);
+        var runCol = addColumn(ExpMaterialTable.Column.Run);
         runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
         runCol.setShownInUpdateView(false);
