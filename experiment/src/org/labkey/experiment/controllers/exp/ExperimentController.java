@@ -151,6 +151,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -1532,7 +1533,7 @@ public class ExperimentController extends SpringActionController
     {
         public ToggleRunView(ExpRun expRun, boolean showGraphSummary, boolean showGraphDetail, boolean showText)
         {
-            super(null);
+            super((String)null);
             StringBuilder sb = new StringBuilder();
 
             sb.append("<table class=\"labkey-tab-strip\"><tr>");
@@ -1546,7 +1547,7 @@ public class ExperimentController extends SpringActionController
             addSpace(sb);
             sb.append("</tr></table>");
 
-            setHtml(sb.toString());
+            setHtml(HtmlString.unsafe(sb.toString()));
         }
 
         private void addTab(String text, ActionURL url, boolean selected, StringBuilder sb)
@@ -1567,7 +1568,7 @@ public class ExperimentController extends SpringActionController
     {
         protected VBox createLowerView(ExpRunImpl expRun, BindException errors)
         {
-            JspView<ExpRun> applicationsView = new JspView<ExpRun>("/org/labkey/experiment/ProtocolApplications.jsp", expRun);
+            JspView<ExpRun> applicationsView = new JspView<>("/org/labkey/experiment/ProtocolApplications.jsp", expRun);
             applicationsView.setFrame(WebPartView.FrameType.TITLE);
             applicationsView.setTitle("Protocol Applications");
 
@@ -1620,7 +1621,7 @@ public class ExperimentController extends SpringActionController
         protected TableInfo createTable()
         {
             String tableName = getSettings().getQueryName();
-            ExpInputTable tableInfo = (ExpInputTable)((ExpSchema)getSchema()).getTable(tableName, new ContainerFilter.AllFolders(getUser()), true, true);
+            ExpInputTable tableInfo = (ExpInputTable) getSchema().getTable(tableName, new ContainerFilter.AllFolders(getUser()), true, true);
             tableInfo.setRun(_run, _type);
             tableInfo.setLocked(true);
             return tableInfo;

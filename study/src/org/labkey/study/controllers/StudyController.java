@@ -127,6 +127,8 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -2506,10 +2508,10 @@ public class StudyController extends BaseStudyController
 
             // TODO need a shorthand for this check
             if (_def.isShared() && _def.getContainer().equals(_def.getDefinitionContainer()))
-                return new HtmlView("Error", "Cannot insert dataset data in this folder.  Use a sub-study to import data.", form.getDatasetId());
+                return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
-                return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
+            throw new NotFoundException("Dataset is not yet defined.");
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
