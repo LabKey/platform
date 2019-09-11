@@ -101,7 +101,7 @@
     if (headerHtml != null)
     {
 %>
-        <%=text(headerHtml.getHtml())%>
+        <%=headerHtml.getHtml()%>
 <%
     }
 %>
