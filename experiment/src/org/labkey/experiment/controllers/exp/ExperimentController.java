@@ -1556,7 +1556,7 @@ public class ExperimentController extends SpringActionController
 
     private DOM.Renderable createTab(String text, ActionURL url, boolean selected)
     {
-        return TD(cl("labkey-tab" + (selected ? "-selected" : "")),
+        return TD(cl(selected,"labkey-tab-selected", "labkey-tab"),
                 A(at(href, url), text));
     }
 
