@@ -1,7 +1,9 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
@@ -11,6 +13,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -21,12 +24,17 @@ import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -40,6 +48,11 @@ public class LineageDisplayColumn extends DataColumn
     final QuerySchema sourceSchema;
     final FieldKey boundFieldKey;
     final ExpLineageOptions options;
+
+    ReexecutableDataregion innerDataRegion;
+    RenderContext innerCtx;
+    DisplayColumn innerDisplayColumn;
+
 
     public static DisplayColumn create(QuerySchema schema, ColumnInfo objectid, boolean parents, Integer depth, String expType, String cpasType)
     {
@@ -131,6 +144,29 @@ public class LineageDisplayColumn extends DataColumn
         this.sourceSchema = schema;
         this.boundFieldKey = boundFieldKey;
         this.options = options;
+
+        /* SET UP DataRegion */
+
+        // TODO ContainerFilter
+        TableInfo seedTable = new SeedTable((UserSchema)sourceSchema);
+        ColumnInfo bound = null;
+        for (String part : boundFieldKey.getParts())
+        {
+            if (null == bound)
+                bound = seedTable.getColumn(boundFieldKey.getRootName());
+            else
+                bound = null == bound.getFk() ? null : bound.getFk().createLookupColumn(bound, part);
+            if (null == bound)
+                break;
+        }
+        // This is an error, probably in recreating the fieldkey correctly
+        if (null == bound)
+            return;
+
+        innerDataRegion = new ReexecutableDataregion();
+        innerDataRegion.setTable(seedTable);
+        innerDataRegion.addColumn(bound);
+        innerDisplayColumn = innerDataRegion.getDisplayColumn(0);
     }
 
     @Override
@@ -142,48 +178,26 @@ public class LineageDisplayColumn extends DataColumn
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
+        if (null == innerCtx)
+            innerCtx = new RenderContext(ctx.getViewContext(), ctx.getErrors());
+
         try
         {
-            Integer objectid = (Integer) getValue(ctx);
-            if (null == objectid)
+            if (null == innerDataRegion)
             {
+                out.write("&lt;" + filter(this.toString()) + "&gt;");
                 return;
             }
 
-            // TODO ContainerFilter
-            TableInfo seedTable = new SeedTable((UserSchema)sourceSchema, objectid);
-            ColumnInfo bound = null;
-//            ColumnInfo display = null;
-            for (String part : boundFieldKey.getParts())
-            {
-                if (null == bound)
-                    bound = seedTable.getColumn(boundFieldKey.getRootName());
-                else
-                    bound = null == bound.getFk() ? null : bound.getFk().createLookupColumn(bound, part);
-                if (null == bound)
-                    break;
-            }
-            if (null == bound)
-            {
-                // This is an error, probably in recreating the fieldkey correctly
-                out.write("&lt;" + filter(this.toString()) + " " + objectid + "&gt;");
-                return;
-            }
-
-            DataRegion dr = new DataRegion();
-            dr.setTable(seedTable);
-            dr.addColumn(bound);
-            var displayColumn = dr.getDisplayColumn(0);
-
-            RenderContext innerCtx = new RenderContext(ctx.getViewContext(), ctx.getErrors());
-            try (ResultSet rs = requireNonNull(dr.getResultSet(innerCtx)))
+            innerDataRegion.reset(innerCtx, Collections.singletonMap(SeedTable.OBJECTID_PARAMETER, getValue(ctx)));
+            try (ResultSet rs = requireNonNull(innerDataRegion.getResultSet(innerCtx)))
             {
                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
                 if (rs.next())
                 {
                     innerCtx.setRow(factory.getRowMap(rs));
-                    displayColumn.renderGridCellContents(innerCtx, out);
+                    innerDisplayColumn.renderGridCellContents(innerCtx, out);
                     boolean hasNext = rs.next();
                     assert !hasNext;
                 }
@@ -268,15 +282,18 @@ public class LineageDisplayColumn extends DataColumn
 
     static class SeedTable extends AbstractTableInfo
     {
+        public static final String OBJECTID_PARAMETER = "_$_OBJECTID_$_";
         final UserSchema schema;
         final SQLFragment sqlf;
+        final List<QueryService.ParameterDecl> parameters = Collections.singletonList(new QueryService.ParameterDeclaration(OBJECTID_PARAMETER, JdbcType.INTEGER));
 
-        SeedTable(UserSchema schema, Integer objectid)
+        SeedTable(UserSchema schema)
         {
             super(schema.getDbSchema(), "seed");
             SqlDialect d = schema.getDbSchema().getScope().getSqlDialect();
             this.schema = schema;
-            this.sqlf = new SQLFragment("SELECT CAST(" + (null==objectid ? "NULL" : String.valueOf(objectid)) + " AS " + d.getSqlCastTypeName(JdbcType.INTEGER)+ ") AS objectid");
+            this.sqlf = new SQLFragment("SELECT CAST( ? AS " + d.getSqlCastTypeName(JdbcType.INTEGER)+ ") AS objectid");
+            this.sqlf.addAll(parameters);
             var objectidCol = new BaseColumnInfo("objectid", this, JdbcType.INTEGER);
             addColumn(objectidCol);
             var inputs = new AliasedColumn(this, "Inputs", objectidCol);
@@ -285,6 +302,12 @@ public class LineageDisplayColumn extends DataColumn
             var outputs = new AliasedColumn(this, "Outputs", objectidCol);
             outputs.setFk(LineageForeignKey.createWithMultiValuedColumn(schema, sqlf, false));
             addColumn(outputs);
+        }
+
+        @Override
+        public @NotNull Collection<QueryService.ParameterDecl> getNamedParameters()
+        {
+            return parameters;
         }
 
         @Override
@@ -297,6 +320,41 @@ public class LineageDisplayColumn extends DataColumn
         public @Nullable UserSchema getUserSchema()
         {
             return schema;
+        }
+    }
+
+    /*
+     * This is an attemp at making a DataRegion that can be reused/reexecuted where ONLY the query parameters change
+     */
+    public static class ReexecutableDataregion extends DataRegion
+    {
+        Map<String,Object> parameters = new CaseInsensitiveHashMap<>();
+
+        // close current result set and update query parameters
+        // usually followed immediately by call to getResultSet()
+        void reset(RenderContext ctx, Map<String,Object> currentParameters)
+        {
+            ResultSet rs = ctx.getResults();
+            if (null != rs)
+            {
+                try {if (!rs.isClosed()) rs.close();}catch(SQLException x){/*pass*/}
+                ctx.setResults(null);
+            }
+            parameters.clear();
+            parameters.putAll(super.getQueryParameters());
+            parameters.putAll(currentParameters);
+        }
+
+        @Override
+        public @NotNull Map<String, Object> getQueryParameters()
+        {
+            return parameters;
+        }
+
+        @Override
+        protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
+        {
+            return super.getResultSet(ctx, async);
         }
     }
 }
