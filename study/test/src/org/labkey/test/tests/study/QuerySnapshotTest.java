@@ -228,7 +228,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         final String ASSAY_NAME = "Simple_GPAT";
         final File SIMPLE_ASSAY_FILE = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME + ".xar.xml");
-        final File ASSAY_RUN_FILE = TestFileUtils.getSampleData("/assay/GPAT_RUN1.tsv");
+        final File ASSAY_RUN_FILE = TestFileUtils.getSampleData("/assay/GPAT_Run1.tsv");
 
         Map<String, Object> batchProperties = new HashMap<>();
         batchProperties.put("OperatorEmail", "john.doe@email.com");
