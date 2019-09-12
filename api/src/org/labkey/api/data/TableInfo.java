@@ -589,4 +589,29 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
         return null;
     }
 
+    default boolean hasInsertURLOverride()
+    {
+        return false;
+    }
+
+    default boolean hasUpdateURLOverride()
+    {
+        return false;
+    }
+
+    default boolean hasDeleteURLOverride()
+    {
+        return false;
+    }
+
+    /**
+     * Allow QueryView to render insert, update, and other buttons if the metadata xml provides URL
+     * overrides and the underlying table doesn't support insert/update/delete operations,
+     * such as a query table.
+     */
+    default boolean allowQueryTableURLOverrides()
+    {
+        return false;
+    };
+
 }

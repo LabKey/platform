@@ -127,6 +127,8 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -724,7 +726,7 @@ public class StudyController extends BaseStudyController
             {
                 String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
 
-                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
+                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId, getViewContext().getUser(), getViewContext().getContainer());
                 if (identifier != null)
                     _report = identifier.getReport(getViewContext());
             }
@@ -862,7 +864,7 @@ public class StudyController extends BaseStudyController
                 if (def != null &&
                     QueryService.get().getCustomView(getUser(), getContainer(), getUser(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
                 {
-                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null && reportId.getReport(getViewContext()) != null)
                     {
                         ActionURL newURL = url.clone().deleteParameter(DATASET_VIEW_NAME_PARAMETER_NAME).
@@ -2506,10 +2508,10 @@ public class StudyController extends BaseStudyController
 
             // TODO need a shorthand for this check
             if (_def.isShared() && _def.getContainer().equals(_def.getDefinitionContainer()))
-                return new HtmlView("Error", "Cannot insert dataset data in this folder.  Use a sub-study to import data.", form.getDatasetId());
+                return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
-                return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
+            throw new NotFoundException("Dataset is not yet defined.");
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
@@ -2676,7 +2678,7 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.textLink("Download Data File", "downloadTsv.view?id=" + ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
                 }
             };
             dr.addDisplayColumn(dc);
@@ -2935,7 +2937,7 @@ public class StudyController extends BaseStudyController
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, true, false);
+                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, false);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
@@ -3600,9 +3602,9 @@ public class StudyController extends BaseStudyController
             }
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+                return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
@@ -3644,7 +3646,7 @@ public class StudyController extends BaseStudyController
         {
             if (!updateQCForm.isUpdate())
                 return false;
-            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
 
             QCState newState = null;
             if (updateQCForm.getNewState() != null)
@@ -3765,7 +3767,7 @@ public class StudyController extends BaseStudyController
                 String defaultView = getDefaultView(context, datasetId);
                 if (!StringUtils.isEmpty(defaultView))
                 {
-                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null)
                         url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
                     else

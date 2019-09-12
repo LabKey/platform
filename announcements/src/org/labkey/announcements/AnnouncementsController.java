@@ -1612,7 +1612,7 @@ public class AnnouncementsController extends SpringActionController
             MessageConfigService.ConfigTypeProvider provider = form.getProvider();
             String srcIdentifier = getContainer().getId();
 
-            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
+            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true);
 
             if (!selections.isEmpty() && provider != null)
             {

@@ -16,6 +16,9 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 
 /*
 * User: Dave
@@ -24,12 +27,12 @@ import org.apache.commons.lang3.math.NumberUtils;
 */
 public abstract class AbstractReportIdentifier implements ReportIdentifier
 {
-    public static ReportIdentifier fromString(String id)
+    public static ReportIdentifier fromString(String id, @Nullable User user, @Nullable Container container)
     {
         if (null == id || id.length() == 0)
             return null;
 
-        try {return new DbReportIdentifier(id);}
+        try {return new DbReportIdentifier(id, user, container);}
         catch(IllegalArgumentException ignore) {}
 
         try {return new ModuleReportIdentifier(id);}

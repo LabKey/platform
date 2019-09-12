@@ -66,7 +66,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
         {
             try
             {
-                ReportIdentifier reportId = ReportService.get().getReportIdentifier(serializedPropertyMap.get("reportId"));
+                ReportIdentifier reportId = ReportService.get().getReportIdentifier(serializedPropertyMap.get("reportId"), ctx.getUser(), ctx.getContainer());
                 if (reportId != null)
                 {
                     Report report = reportId.getReport(ctx);

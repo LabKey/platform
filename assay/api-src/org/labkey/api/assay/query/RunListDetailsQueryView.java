@@ -69,7 +69,7 @@ public class RunListDetailsQueryView extends RunListQueryView
 
                     Map<String, String> map = new HashMap<>();
                     map.put("title", "View run details");
-                    out.write(PageFlowUtil.textLink("run details", url, null, null, map));
+                    out.write(PageFlowUtil.link("run details").href(url).attributes(map).toString());
                 }
             }
         });
