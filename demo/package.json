@@ -4,9 +4,8 @@
   "private": true,
   "scripts": {
     "setup": "npm install",
-    "build": "npm run clean && better-npm-run build:prod && better-npm-run build:style",
+    "build": "npm run clean && better-npm-run build:prod",
     "start": "better-npm-run build:watch",
-    "build-style": "better-npm-run build:style",
     "build-prod": "npm run build",
     "clean": "better-npm-run clean"
   },
@@ -21,12 +20,6 @@
       "command": "webpack --config webpack/prod.config.js --progress --profile --colors",
       "env": {
         "NODE_ENV": "production"
-      }
-    },
-    "build:style": {
-      "command": "webpack --config webpack/dev-style.config.js --progress",
-      "env": {
-        "NODE_ENV": "development"
       }
     },
     "clean": {
@@ -53,6 +46,7 @@
     "react-hot-loader": "4.8.8",
     "resolve-url-loader": "3.1.0",
     "sass-loader": "7.1.0",
+    "style-loader": "1.0.0",
     "ts-loader": "6.0.2",
     "typescript": "3.1.6",
     "url-loader": "1.1.2",
