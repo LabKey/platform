@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
@@ -56,9 +57,6 @@ public class ModuleHtmlView extends HtmlView
 
     /**
      * Quick check for existence of an HTML view at this path
-     * @param module
-     * @param path
-     * @return
      */
     public static boolean exists(Module module, Path path)
     {
@@ -67,9 +65,6 @@ public class ModuleHtmlView extends HtmlView
 
     /**
      * Quick check for existence of an HTML view with this name in the standard location /views/*
-     * @param module
-     * @param viewName
-     * @return
      */
     public static boolean exists(Module module, String viewName)
     {
@@ -98,7 +93,6 @@ public class ModuleHtmlView extends HtmlView
 
     private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable WebPart webpart)
     {
-        super(null);
         _debugViewDescription = getClass().getSimpleName() + ": " + module.getName() + "/" + viewdef.getName();
 
         _viewdef = viewdef;
@@ -117,7 +111,7 @@ public class ModuleHtmlView extends HtmlView
     }
 
 
-    public String replaceTokensForView(String html, ViewContext context, @Nullable WebPart webpart)
+    public HtmlString replaceTokensForView(String html, ViewContext context, @Nullable WebPart webpart)
     {
         if (null == html)
             return null;
@@ -140,7 +134,7 @@ public class ModuleHtmlView extends HtmlView
 
         String ret = replaceTokens(html, context);
         ret = ret.replaceAll("<%=\\s*webpartContext\\s*%>", Matcher.quoteReplacement(webpartContext));
-        return "<div id=\"" + wrapperDivId + "\">" + ret + "</div>";
+        return HtmlString.unsafe("<div id=\"" + wrapperDivId + "\">" + ret + "</div>");
     }
 
     public static String replaceTokens(String html, ViewContext context)
@@ -175,12 +169,6 @@ public class ModuleHtmlView extends HtmlView
     {
         return _viewdef.getRequiredPermissionClasses();
     }
-
-    public String getHtml()
-    {
-        return _viewdef.getHtml();
-    }
-
 
     public static class TestCase extends Assert
     {
