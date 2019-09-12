@@ -211,6 +211,14 @@ if (!LABKEY.DataRegions) {
         var isQWP = config._useQWPDefaults === true;
         delete config._useQWPDefaults;
 
+        if (config.buttonBar && config.buttonBar.items && $.isArray(config.buttonBar.items)) {
+            // Be tolerant of the caller passing in undefined items, as pageSize has been removed as an option. Strip
+            // them out so they don't cause problems downstream. See issue 34562
+            config.buttonBar.items = config.buttonBar.items.filter(function (value, index, arr) {
+                return value;
+            });
+        }
+
         var settings;
 
         if (applyDefaults) {
@@ -3588,8 +3596,7 @@ if (!LABKEY.DataRegions) {
                     item.onClick = "return LABKEY.DataRegions['" + region.name + "']._onButtonClick('" + item.id + "');";
                 }
 
-                // Be tolerant of the caller passing in undefined, as pageSize has been removed as an option. See issue 34562
-                if (item && item.items) {
+                if (item.items) {
                     _processButtonBarItems(region, item.items);
                 }
             }
