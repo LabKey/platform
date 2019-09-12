@@ -17,7 +17,6 @@
 package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -151,7 +150,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.ImageUtil;
-import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -6534,57 +6532,6 @@ public class ExperimentController extends SpringActionController
             ret.put("result", result);
             ret.put("success", true);
             return ret;
-        }
-    }
-
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
-    public class LoadAssayRunAction extends ReadOnlyApiAction<LoadAssayRunForm>
-    {
-        @Override
-        protected ObjectMapper createObjectMapper()
-        {
-            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            mapper.addMixIn(ExpRun.class, ExpRunMixin.class);
-            return mapper;
-        }
-
-        @Override
-        public Object execute(LoadAssayRunForm loadAssayRunForm, BindException errors) throws Exception
-        {
-            ExpRun run = ExperimentService.get().getExpRun(loadAssayRunForm.getLsid());
-            JSONObject result = new JSONObject();
-
-            result.put("run", run);
-
-            return result;
-        }
-
-    }
-
-    public static class LoadAssayRunForm
-    {
-        String lsid;
-        String apiVersion;
-
-        public String getLsid()
-        {
-            return lsid;
-        }
-
-        public void setLsid(String lsid)
-        {
-            this.lsid = lsid;
-        }
-
-        public String getApiVersion()
-        {
-            return apiVersion;
-        }
-
-        public void setApiVersion(String apiVersion)
-        {
-            this.apiVersion = apiVersion;
         }
     }
 }
