@@ -1383,7 +1383,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     _sourcePathMatched = true;
                     String moduleEnlistmentId = getEnlistmentId();
 
-                    if (null != moduleEnlistmentId)
+                    if (StringUtils.isNotBlank(moduleEnlistmentId))
                     {
                         String serverEnlistmentId = AppProps.getInstance().getEnlistmentId();
                         boolean useSource = (null != serverEnlistmentId && serverEnlistmentId.equals(moduleEnlistmentId));

@@ -127,6 +127,8 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -2506,10 +2508,10 @@ public class StudyController extends BaseStudyController
 
             // TODO need a shorthand for this check
             if (_def.isShared() && _def.getContainer().equals(_def.getDefinitionContainer()))
-                return new HtmlView("Error", "Cannot insert dataset data in this folder.  Use a sub-study to import data.", form.getDatasetId());
+                return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
-                return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
+            throw new NotFoundException("Dataset is not yet defined.");
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
@@ -2935,7 +2937,7 @@ public class StudyController extends BaseStudyController
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, true, false);
+                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, false);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
@@ -3600,7 +3602,7 @@ public class StudyController extends BaseStudyController
             }
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
@@ -3644,7 +3646,7 @@ public class StudyController extends BaseStudyController
         {
             if (!updateQCForm.isUpdate())
                 return false;
-            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
 
             QCState newState = null;
             if (updateQCForm.getNewState() != null)

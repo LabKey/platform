@@ -107,9 +107,21 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     @Override
+    public boolean allowFileLinkProperties()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return false;
+    }
+
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(ContainerManager.getSharedContainer(), domain, false, false, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(ContainerManager.getSharedContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
     }
 
     @Override

@@ -35,6 +35,8 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAttachmentType;
+import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
@@ -51,6 +53,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -190,6 +193,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
+
+        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
+        AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
     }
 
     @Override
@@ -466,7 +472,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).size();
+        int sampleSetCount = SampleSetService.get().getSampleSets(c, null, false).size();
         if (sampleSetCount > 0)
             list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
 

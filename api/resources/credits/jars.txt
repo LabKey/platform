@@ -67,4 +67,5 @@ tika-core-1.19.1.jar|Tika|1.19.1|{link:Apache|http://lucene.apache.org/tika/}|{l
 validation-api-1.1.0.Final.jar|Bean Validation API (JSR 303)|1.1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xmlbeans-3.0.1.jar|XMLBeans|3.0.1|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Reading/writing XML
 xercesImpl-2.11.0.jar|Xerces|2.11.0|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
+xz-1.8.jar|XZ for Java|1.8|{link:tukaani.org|https://tukaani.org/xz/java.html}|{link:public|https://tukaani.org/xz/java.html#Licensing}|ians|Transitive dependency of commons-compress to support additional compression types for search
 {table}

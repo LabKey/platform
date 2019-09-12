@@ -178,7 +178,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         return sql;
     }
 
-
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return false;
+    }
 
     // Issue 16526:  nobody should call this overload of generateDomainURI for DatasetDomainKind.  Instead
     // use the overload below with a unique id (the dataset's entityId).  Assert is here to track down
