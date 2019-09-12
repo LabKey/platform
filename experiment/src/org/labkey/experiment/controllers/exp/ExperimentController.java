@@ -148,6 +148,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -245,6 +246,17 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 /**
  * User: jeckels
@@ -1308,7 +1320,7 @@ public class ExperimentController extends SpringActionController
         protected VBox createLowerView(ExpRunImpl experimentRun, BindException errors)
         {
             return new VBox(
-                    new ToggleRunView(experimentRun, false, true, true),
+                    createRunViewTabs(experimentRun, false, true, true),
                     new ExperimentRunGraphView(experimentRun, false));
         }
     }
@@ -1528,38 +1540,30 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public class ToggleRunView extends HtmlView
+    private HtmlView createRunViewTabs(ExpRun expRun, boolean showGraphSummary, boolean showGraphDetail, boolean showText)
     {
-        public ToggleRunView(ExpRun expRun, boolean showGraphSummary, boolean showGraphDetail, boolean showText)
-        {
-            super(null);
-            StringBuilder sb = new StringBuilder();
+        return new HtmlView(
+                TABLE(cl("labkey-tab-strip"),
+                    TR(
+                        createTabSpacer(false),
+                        createTab("Graph Summary View", ExperimentUrlsImpl.get().getRunGraphURL(expRun), !showGraphSummary),
+                        createTabSpacer(false),
+                        createTab("Graph Detail View", ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun), !showGraphDetail),
+                        createTabSpacer(false),
+                        createTab("Text View", ExperimentUrlsImpl.get().getRunTextURL(expRun), !showText),
+                        createTabSpacer(true))));
+    }
 
-            sb.append("<table class=\"labkey-tab-strip\"><tr>");
-            addSpace(sb);
-            addTab("Graph Summary View", ExperimentUrlsImpl.get().getRunGraphURL(expRun), !showGraphSummary, sb);
-            addSpace(sb);
-            addTab("Graph Detail View", ExperimentUrlsImpl.get().getRunGraphDetailURL(expRun), !showGraphDetail, sb);
-            addSpace(sb);
-            addTab("Text View", ExperimentUrlsImpl.get().getRunTextURL(expRun), !showText, sb);
-            sb.append("<td class=\"labkey-tab-space\" width=\"100%\"></td>");
-            addSpace(sb);
-            sb.append("</tr></table>");
+    private DOM.Renderable createTab(String text, ActionURL url, boolean selected)
+    {
+        return TD(cl(selected,"labkey-tab-selected", "labkey-tab"),
+                A(at(href, url), text));
+    }
 
-            setHtml(sb.toString());
-        }
-
-        private void addTab(String text, ActionURL url, boolean selected, StringBuilder sb)
-        {
-            sb.append("<td class=\"labkey-tab" + (selected ? "-selected" : "") + "\" style=\"margin-bottom: 0px;\"><a href=\"" + url + "\">" + PageFlowUtil.filter(text) + "</a></td>");
-        }
-
-        private void addSpace(StringBuilder sb)
-        {
-            sb.append("<td class=\"labkey-tab-space\"><img width=\"5\" src=\"");
-            sb.append(AppProps.getInstance().getContextPath());
-            sb.append("/_.gif\"></td>");
-        }
+    private DOM.Renderable createTabSpacer(boolean fullWidth)
+    {
+        return TD(cl("labkey-tab-space").at(fullWidth, width, "100%"),
+                IMG(at(src, AppProps.getInstance().getContextPath() + "/_.gif", width, "5")));
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1567,11 +1571,11 @@ public class ExperimentController extends SpringActionController
     {
         protected VBox createLowerView(ExpRunImpl expRun, BindException errors)
         {
-            JspView<ExpRun> applicationsView = new JspView<ExpRun>("/org/labkey/experiment/ProtocolApplications.jsp", expRun);
+            JspView<ExpRun> applicationsView = new JspView<>("/org/labkey/experiment/ProtocolApplications.jsp", expRun);
             applicationsView.setFrame(WebPartView.FrameType.TITLE);
             applicationsView.setTitle("Protocol Applications");
 
-            HtmlView toggleView = new ToggleRunView(expRun, true, true, false);
+            HtmlView toggleView = createRunViewTabs(expRun, true, true, false);
 
             QuerySettings runDataInputsSettings = new QuerySettings(getViewContext(), "RunDataInputs", DataInputs.name());
             UsageQueryView runDataInputsView = new UsageQueryView("Data Inputs", getViewContext(), expRun, ExpProtocol.ApplicationType.ExperimentRun, runDataInputsSettings, errors);
@@ -1620,7 +1624,7 @@ public class ExperimentController extends SpringActionController
         protected TableInfo createTable()
         {
             String tableName = getSettings().getQueryName();
-            ExpInputTable tableInfo = (ExpInputTable)((ExpSchema)getSchema()).getTable(tableName, new ContainerFilter.AllFolders(getUser()), true, true);
+            ExpInputTable tableInfo = (ExpInputTable) getSchema().getTable(tableName, new ContainerFilter.AllFolders(getUser()), true, true);
             tableInfo.setRun(_run, _type);
             tableInfo.setLocked(true);
             return tableInfo;
@@ -1646,7 +1650,7 @@ public class ExperimentController extends SpringActionController
                 gw.setFocus(getViewContext().getActionURL().getParameter("focus"));
             if (null != getViewContext().getActionURL().getParameter("focusType"))
                 gw.setFocusType(getViewContext().getActionURL().getParameter("focusType"));
-            return new VBox(new ToggleRunView(run, true, false, true), gw);
+            return new VBox(createRunViewTabs(run, true, false, true), gw);
         }
     }
 
@@ -1735,7 +1739,7 @@ public class ExperimentController extends SpringActionController
                         Path dataFile = _data.getFilePath();
                         if (dataFile != null)
                         {
-                            Path pathRelative = null;
+                            Path pathRelative;
                             try
                             {
                                 pathRelative = rootFile.relativize(dataFile);
@@ -1773,7 +1777,7 @@ public class ExperimentController extends SpringActionController
             if (_data.isInlineImage() && _data.isFileOnDisk())
             {
                 ActionURL showFileURL = new ActionURL(ShowFileAction.class, getContainer()).addParameter("rowId", _data.getRowId());
-                HtmlView imageView = new HtmlView("<img src=\"" + showFileURL + "\"/>");
+                HtmlView imageView = new HtmlView(IMG(at(src, showFileURL)));
                 return new VBox(vbox, imageView);
             }
             return vbox;
@@ -2407,7 +2411,7 @@ public class ExperimentController extends SpringActionController
                 map.put(param.getOntologyEntryURI(), param);
             }
 
-            JspView<Map<String, ? extends AbstractParameter>> paramsView = new JspView<Map<String, ? extends AbstractParameter>>("/org/labkey/experiment/Parameters.jsp", map);
+            JspView<Map<String, ? extends AbstractParameter>> paramsView = new JspView<>("/org/labkey/experiment/Parameters.jsp", map);
             paramsView.setTitle("Protocol Application Parameters");
             CustomPropertiesView cpv = new CustomPropertiesView(_app.getLSID(), c);
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), paramsView, outMGrid, outDGrid);
@@ -3870,7 +3874,7 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_MSG, "Sample set name is required");
             else
             {
-                _sampleSet = (ExpSampleSetImpl) SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
+                _sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
                 if (_sampleSet == null)
                 {
                     errors.reject(ERROR_MSG, "Sample set '" + queryForm.getQueryName() + " not found.");
@@ -4548,7 +4552,6 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                List<ExpData> files = new ArrayList<>();
                 for (int id : dataIds)
                 {
                     ExpData data = ExperimentService.get().getExpData(id);
@@ -4556,7 +4559,6 @@ public class ExperimentController extends SpringActionController
                     {
                         throw new NotFoundException("Could not find file " + id);
                     }
-                    files.add(data);
                 }
 
                 XarExportSelection selection = new XarExportSelection();
@@ -4961,31 +4963,11 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private ActionButton getDeriveSamplesButton(@Nullable Integer targetSampleSetId)
-    {
-        ActionURL urlDeriveSamples = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
-        if (targetSampleSetId != null)
-            urlDeriveSamples.addParameter("targetSampleSetId", targetSampleSetId);
-        ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
-        deriveButton.setActionType(ActionButton.Action.POST);
-        deriveButton.setDisplayPermission(InsertPermission.class);
-        deriveButton.setRequiresSelection(true);
-        return deriveButton;
-    }
-
     private List<ExpSampleSet> getUploadableSampleSets()
     {
         // Make a copy so we can modify it
         List<ExpSampleSet> sampleSets = new ArrayList<>(ExperimentService.get().getSampleSets(getContainer(), getUser(), true));
-        Iterator<ExpSampleSet> iter = sampleSets.iterator();
-        while (iter.hasNext())
-        {
-            ExpSampleSet sampleSet = iter.next();
-            if (!sampleSet.canImportMoreSamples())
-            {
-                iter.remove();
-            }
-        }
+        sampleSets.removeIf(sampleSet -> !sampleSet.canImportMoreSamples());
         return sampleSets;
     }
 

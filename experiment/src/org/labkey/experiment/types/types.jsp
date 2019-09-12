@@ -18,7 +18,6 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.exp.property.Domain"%>
 <%@ page import="org.labkey.api.exp.property.DomainKind" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ page import="org.labkey.experiment.types.TypesController.TypeBean" %>
