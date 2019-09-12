@@ -205,7 +205,7 @@
 <input type="hidden" name="nextAction" value="">
 <%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.page.name()) + "; return true;").title("Save Changes") %>
 <%= button("Delete").href(new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName())) %>
-<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").attributes(Map.of("title","Edit Content and Attachments")) %>
+<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
 <script type="text/javascript">
     existingWikiPages = [<% for (String name : bean.pageNames) out.print(unsafe(PageFlowUtil.jsString(name) + ",")); %>];
