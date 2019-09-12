@@ -99,6 +99,8 @@ public class LineageTableInfo extends VirtualTable
         var parentRowId = new BaseColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
         //parentRowId.setFk(new QueryForeignKey("exp", schema.getContainer(), schema.getContainer(), schema.getUser(), "Materials", "rowId", "Name"));
         addColumn(parentRowId);
+
+        setTitleColumn("Name");
     }
 
     private ForeignKey createLsidLookup(String expType, String cpasType)
