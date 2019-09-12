@@ -64,6 +64,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private final String name;
     private final String style;
     private final String confirmMessage;
+    private final String target;
 
     private Button(ButtonBuilder builder)
     {
@@ -86,6 +87,7 @@ public class Button extends DisplayElement implements HasHtmlString
         this.name = builder.name;
         this.style = builder.style;
         this.confirmMessage = builder.confirmMessage;
+        this.target = builder.target;
 
         if (this.usePost && null != this.onClick)
             throw new IllegalStateException("Can't specify both usePost and onClick");
@@ -99,6 +101,11 @@ public class Button extends DisplayElement implements HasHtmlString
     public String getText()
     {
         return text;
+    }
+
+    public String getTarget()
+    {
+        return target;
     }
 
     public boolean isDropdown()
@@ -228,7 +235,7 @@ public class Button extends DisplayElement implements HasHtmlString
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle())
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
             .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
