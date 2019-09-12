@@ -1,6 +1,5 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import $ from 'jquery'
 
 import {AppContainer} from 'react-hot-loader'
 
@@ -17,7 +16,7 @@ const render = () => {
 
 declare const module: any;
 
-$(() => {
+window.addEventListener('DOMContentLoaded', (event) => {
     render();
     if (module.hot) {
         module.hot.accept();
