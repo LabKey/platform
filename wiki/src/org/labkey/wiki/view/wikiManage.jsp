@@ -185,7 +185,7 @@
                    </select>
                 </td>
                 <td valign="top">
-                    <%= button("Move Up").attributes(Map.of("style","width:200px;")).submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
+                    <%= button("Move Up").style("width:200px;").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
                     <br><br>
                     <%= button("Move Down").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
                 </td>
@@ -208,7 +208,7 @@
 <%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").attributes(Map.of("title","Edit Content and Attachments")) %>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (String name : bean.pageNames) out.print(text(PageFlowUtil.jsString(name) + ",")); %>];
+    existingWikiPages = [<% for (String name : bean.pageNames) out.print(unsafe(PageFlowUtil.jsString(name) + ",")); %>];
 
     function checkWikiName(name)
     {
