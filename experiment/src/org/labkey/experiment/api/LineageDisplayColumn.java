@@ -14,9 +14,14 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExperimentService;
@@ -31,6 +36,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -179,7 +185,7 @@ public class LineageDisplayColumn extends DataColumn
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         if (null == innerCtx)
-            innerCtx = new RenderContext(ctx.getViewContext(), ctx.getErrors());
+            innerCtx = new ReexecutableRenderContext(ctx);
 
         try
         {
@@ -355,6 +361,38 @@ public class LineageDisplayColumn extends DataColumn
         protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
         {
             return super.getResultSet(ctx, async);
+        }
+    }
+    public static class ReexecutableRenderContext extends RenderContext
+    {
+        SQLFragment sqlf  = null;
+        ArrayList<ColumnInfo> selectedColumns;
+
+        ReexecutableRenderContext(RenderContext ctx)
+        {
+            super(ctx.getViewContext(), ctx.getErrors());
+        }
+
+        @Override
+        protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
+        {
+            if (null == sqlf)
+            {
+                TableSelector selector = new TableSelector(table, columns, filter, sort)
+                        .setNamedParameters(null)       // leave named parameters in SQLFragment
+                        .setMaxRows(maxRows)
+                        .setOffset(offset)
+                        .setForDisplay(true);
+                var sqlfWithCTE = selector.getSql();
+                // flatten out CTEs
+                sqlf = new SQLFragment(sqlfWithCTE.getSQL(), sqlfWithCTE.getParams());
+                selectedColumns = new ArrayList<>(selector.getSelectedColumns());
+            }
+
+            SQLFragment copy = new SQLFragment(sqlf, true);
+            QueryService.get().bindNamedParameters(copy, parameters);
+            QueryService.get().validateNamedParameters(copy);
+            return new ResultsImpl(new SqlSelector(table.getSchema(), copy).getResultSet(), selectedColumns);
         }
     }
 }
