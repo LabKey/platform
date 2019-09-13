@@ -12,7 +12,7 @@ There are two example React pages at
 
 <a name="functionality"></a>
 # Functionality Overview
-The compilation and packaging of this module, including the NPM/webpack build, is done with the standard Gradle build. 
+The compilation and packaging of this module, including the NPM/webpack build, is done with the standard LabKey Gradle build. 
 Gradle will use the Node and NPM version defined in \<projectHome\>/gradle.properties to run the "build-prod" script defined in package.json.
 (Note: Gradle does not install Node/NPM globally. To run NPM commands outside of Gradle you will need to have Node/NPM installed 
 locally.)
@@ -21,8 +21,6 @@ The webpack production build will compile TypeScript and JavaScript files, as we
 for each webpack entry point.  The bundles are placed in the appropriate LabKey directory for web resources.  The production build will also 
 generate the necessary LabKey HTML files, including the containing elements for the React apps, as well as the necessary view.xml files 
 to make the bundled React and CSS files available to the appropriate LabKey React pages.
-
-Note: To run NPM commands outside the Gradle build you will need to have Node/NPM installed locally.
 
 <a name="devServer"></a>
 ## Development Server
