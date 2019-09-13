@@ -18,7 +18,7 @@ Gradle will use the Node and NPM version defined in \<projectHome\>/gradle.prope
 locally.)
 
 The webpack production build will compile TypeScript and JavaScript files, as well as CSS and SCSS files, and bundle them independently 
-for each webpack entry point.  The bundles are placed in the appropriate LabKey directory for web resources.  The production build will also 
+for each webpack entry point.  The bundled resources will be placed in the appropriate LabKey directory for web resources.  The production build will also 
 generate the necessary LabKey HTML files, including the containing elements for the React apps, as well as the necessary view.xml files 
 to make the bundled React and CSS files available to the appropriate LabKey React pages.
 
@@ -26,14 +26,14 @@ to make the bundled React and CSS files available to the appropriate LabKey Reac
 ## Development Server
 This module includes a webpack development server to help with rapid development.  The server is setup for Hot Module Replacement, 
 to allow updates made to TypeScript, JavaScript, CSS and SCSS files to take effect on the page without manual builds or page refreshes. To 
-start the server, from the command line run "npm start", then navigate to either of the appropriate development pages.
+start the server, from the command line in the demo module directory run "npm start", then navigate to either of the appropriate development pages.
 - http://localhost:8080/labkey/home/demo-helloWorldDev.view?
 - http://localhost:8080/labkey/home/demo-todoListDev.view?
 
 <a name="jest"></a>
 ## Jest Tests
-This module is setup to run Jest tests, including using Enzyme and Jest Snapshot testing. There is an example Jest test with 
-snapshot in the HelloWorld module.  Jest tests can be run using "npm run test" or they can be run directly in IntelliJ.
+This module is setup to run Jest tests, including using Enzyme and Jest Snapshot testing. There is an example Jest test and 
+Jest snapshot in the HelloWorld module.  Jest tests can be run using "npm run test" or they can be run directly in IntelliJ.
 
     
 [LabKey Gradle build]: https://www.labkey.org/Documentation/wiki-page.view?name=gradleBuild    
