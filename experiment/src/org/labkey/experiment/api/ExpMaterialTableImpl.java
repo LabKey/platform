@@ -37,6 +37,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.PropertyColumn;
@@ -412,24 +413,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, null, ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                if (ss == null)
-                    return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
-
                 // Be sure that we can resolve the sample set if it's defined in a separate container.
                 // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
                 // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
                 Set<Container> containers = new HashSet<>();
-                containers.add(ss.getContainer());
+                if (null != ss)
+                    containers.add(ss.getContainer());
                 containers.add(getContainer());
                 if (getContainer().getProject() != null)
                     containers.add(getContainer().getProject());
                 containers.add(ContainerManager.getSharedContainer());
-                return new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+
+                if (null != _containerFilter && _containerFilter != ContainerFilter.CURRENT)
+                    cf = new UnionContainerFilter(_containerFilter, cf);
+                return cf;
             }
         });
 
