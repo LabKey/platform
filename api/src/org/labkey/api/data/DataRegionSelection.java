@@ -131,12 +131,7 @@ public class DataRegionSelection
 
     public static String getSelectionKeyFromRequest(ViewContext context)
     {
-        String selectionKey = context.getRequest().getParameter(DATA_REGION_SELECTION_KEY);
-        if (AppProps.getInstance().isDevMode() && selectionKey == null)
-        {
-            throw new NotFoundException("Could not find " + DATA_REGION_SELECTION_KEY + " in request parameters");
-        }
-        return selectionKey;
+        return context.getRequest().getParameter(DATA_REGION_SELECTION_KEY);
     }
 
     /**
