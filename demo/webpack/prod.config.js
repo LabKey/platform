@@ -73,14 +73,6 @@ module.exports = {
         extensions: constants.extensions.TYPESCRIPT
     },
 
-    // TODO: re-enable this once we understand the interactions of the chunks and splitting better
-    //       NOTE: that this will require changes to the app.view.template.xml
-    // optimization: {
-    //     splitChunks: {
-    //         chunks: 'all'
-    //     }
-    // },
-
     plugins: plugins
 };
 

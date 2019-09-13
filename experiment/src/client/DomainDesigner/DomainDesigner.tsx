@@ -21,6 +21,10 @@ import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
 
+import "@glass/base/dist/base.css"
+import "@glass/domainproperties/dist/domainproperties.css"
+import "./domaindesigner.scss";
+
 interface IAppState {
     dirty: boolean
     domain: DomainDesign
