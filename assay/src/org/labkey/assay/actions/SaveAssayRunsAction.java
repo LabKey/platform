@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RequiresPermission(InsertPermission.class)
-public class SaveAssayRunAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
+public class SaveAssayRunsAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
     @Override
     protected ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors) throws Exception

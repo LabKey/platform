@@ -161,7 +161,7 @@ public class AssayController extends SpringActionController
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
             GetAssayRunAction.class,
-            SaveAssayRunAction.class,
+            SaveAssayRunsAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
             TransformResultsAction.class,

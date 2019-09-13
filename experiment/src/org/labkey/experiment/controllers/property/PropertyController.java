@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -44,6 +45,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -122,13 +124,28 @@ public class PropertyController extends SpringActionController
 
     public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
 
+    private static SimpleBeanPropertyFilter _gwtDomainPropertiesFilter;
+    private static FilterProvider _gwtDomainFilterProvider;
+
     public PropertyController()
     {
         setActionResolver(_actionResolver);
     }
 
-    static void configureObjectMapper(ObjectMapper om)
+    static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
     {
+        if(null == filter)
+        {
+            _gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
+        }
+        else
+        {
+            _gwtDomainPropertiesFilter = filter;
+        }
+
+        _gwtDomainFilterProvider = new SimpleFilterProvider()
+                .addFilter("listDomainsActionFilter", _gwtDomainPropertiesFilter);
+        om.setFilterProvider(_gwtDomainFilterProvider);
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
         om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
@@ -236,7 +253,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -359,7 +376,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -381,7 +398,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -602,7 +619,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -1065,7 +1082,7 @@ public class PropertyController extends SpringActionController
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om);
+        configureObjectMapper(om, null);
         try
         {
             return om.convertValue(domain, Map.class);
@@ -1079,7 +1096,7 @@ public class PropertyController extends SpringActionController
     public static String convertDomainToJson(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om);
+        configureObjectMapper(om, null);
         try
         {
             return om.writeValueAsString(domain);
@@ -1159,32 +1176,34 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
-            mapper.addMixIn(GWTDomain.class, GWTListDomainActionMixin.class);
-            SimpleBeanPropertyFilter propertiesFilter;
-            FilterProvider filters;
 
             if (!includeFields)
             {
-                propertiesFilter = SimpleBeanPropertyFilter.serializeAllExcept("fields","indices");
+               configureObjectMapper(mapper, SimpleBeanPropertyFilter.serializeAllExcept("fields","indices"));
             }
             else
             {
-                propertiesFilter =  SimpleBeanPropertyFilter.serializeAll();
+                configureObjectMapper(mapper, null);
             }
-            filters = new SimpleFilterProvider()
-                    .addFilter("listDomainsActionFilter", propertiesFilter);
-            mapper.setFilterProvider(filters);
             return mapper;
         }
 
         @Override
-        public Object execute(ContainerDomainForm containerDomainForm, BindException errors) throws Exception
+        public Object execute(ContainerDomainForm containerDomainForm, BindException errors)
         {
             includeFields = containerDomainForm.isIncludeFields();
             includeProjectAndShared = containerDomainForm.isIncludeProjectAndShared();
 
-            return listDomains(getContainer(), getUser(), containerDomainForm, includeProjectAndShared);
+            //resetting mapper when incoming request is json to capture the above scenario
+            _mapper = null;
+
+            Container c = containerDomainForm.getContainerPath() == null ? getContainer():
+                    ContainerService.get().getForPath(containerDomainForm.getContainerPath());
+
+            List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            return resp.put("domains", listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
     }
 
@@ -1210,6 +1229,17 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared = false;
         String containerPath;
         Set<String> domainKinds;
+        String apiVersion;
+
+        public String getApiVersion()
+        {
+            return apiVersion;
+        }
+
+        public void setApiVersion(String apiVersion)
+        {
+            this.apiVersion = apiVersion;
+        }
 
         public boolean isIncludeFields()
         {

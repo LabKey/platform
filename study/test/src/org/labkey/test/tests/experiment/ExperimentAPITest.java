@@ -36,11 +36,13 @@ import org.labkey.remoteapi.assay.Material;
 import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
 import org.labkey.remoteapi.assay.SaveAssayBatchResponse;
-import org.labkey.remoteapi.assay.SaveAssayRunCommand;
-import org.labkey.remoteapi.assay.SaveAssayRunResponse;
+import org.labkey.remoteapi.assay.SaveAssayRunsCommand;
+import org.labkey.remoteapi.assay.SaveAssayRunsResponse;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
 import org.labkey.remoteapi.domain.GetDomainCommand;
+import org.labkey.remoteapi.domain.ListDomainsCommand;
+import org.labkey.remoteapi.domain.ListDomainsResponse;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
@@ -55,7 +57,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -343,15 +347,28 @@ public class ExperimentAPITest extends BaseWebDriverTest
 
         String vocabDomainPropURI = domainResponse.getDomain().getFields().get(0).getPropertyURI();
         String vocabDomainPropVal = "Value 1";
-        Run run = new Run();
-        run.setName("testRun");
-        run.setProperties(Map.of(vocabDomainPropURI,vocabDomainPropVal));
-        SaveAssayRunCommand saveAssayRunCommand = new SaveAssayRunCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(run));
-        SaveAssayRunResponse saveAssayRunResponse = saveAssayRunCommand.execute(createDefaultConnection(false), getProjectName());
 
-        String addedRunLsid = saveAssayRunResponse.getRuns().get(0).getLsid();
+        ListDomainsCommand listDomainsCommand = new ListDomainsCommand(true, false, Set.of("UserAuditDomain"), "/Shared");
+        ListDomainsResponse listDomainsResponse = listDomainsCommand.execute(createDefaultConnection(false), "Shared");
 
-        assertEquals("Vocabulary domain property not found in new saved run.", saveAssayRunResponse.getRuns().get(0).getProperties().get(vocabDomainPropURI), vocabDomainPropVal);
+        String userAuditDomainPropURI = listDomainsResponse.getDomains().get(0).getFields().get(0).getPropertyURI();
+
+        Run runA = new Run();
+        runA.setName("testRunA");
+        runA.setProperties(Map.of(vocabDomainPropURI, vocabDomainPropVal));
+
+        Run runB = new Run();
+        runB.setName("testRunB");
+        runB.setProperties(Map.of(userAuditDomainPropURI, 2));
+
+        SaveAssayRunsCommand saveAssayRunsCommand = new SaveAssayRunsCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(runA, runB));
+        SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(false), getProjectName());
+
+        String addedRunLsid = saveAssayRunsResponse.getRuns().get(0).getLsid();
+
+        assertEquals("Vocabulary domain property not found in new saved run.", vocabDomainPropVal, saveAssayRunsResponse.getRuns().get(0).getProperties().get(vocabDomainPropURI));
+        //assert Non vocabulary domain property not added
+        assertTrue("Non Vocabulary domain property found in new saved run.",  saveAssayRunsResponse.getRuns().get(1).getProperties().isEmpty());
 
         GetAssayRunCommand getAssayRunCommand = new GetAssayRunCommand(addedRunLsid);
         GetAssayRunResponse getAssayRunResponse = getAssayRunCommand.execute(createDefaultConnection(false), getProjectName());

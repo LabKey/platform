@@ -63,7 +63,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
-    private ObjectMapper _mapper;
+    protected ObjectMapper _mapper;
 
     protected enum CommonParameters
     {
