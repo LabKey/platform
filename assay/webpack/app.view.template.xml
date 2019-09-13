@@ -2,10 +2,10 @@
     <permissions>
         <permission name="<%= htmlWebpackPlugin.options.permission %>"/>
     </permissions>
+    <% if (htmlWebpackPlugin.options.mode !== 'dev') { %>
     <dependencies>
-        <dependency path="assay/gen/assay-styles.css" />
-        <% if (htmlWebpackPlugin.options.mode !== 'dev') { %>
-         <dependency path="assay/gen/<%= htmlWebpackPlugin.options.name %>.js"/>
-        <% } %>
+        <dependency path="assay/gen/<%= htmlWebpackPlugin.options.name %>.css" />
+        <dependency path="assay/gen/<%= htmlWebpackPlugin.options.name %>.js"/>
     </dependencies>
+    <% } %>
 </view>
