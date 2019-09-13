@@ -124,9 +124,6 @@ public class PropertyController extends SpringActionController
 
     public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
 
-    private static SimpleBeanPropertyFilter _gwtDomainPropertiesFilter;
-    private static FilterProvider _gwtDomainFilterProvider;
-
     public PropertyController()
     {
         setActionResolver(_actionResolver);
@@ -134,18 +131,19 @@ public class PropertyController extends SpringActionController
 
     static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
     {
+        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
         if(null == filter)
         {
-            _gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
+            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
         }
         else
         {
-            _gwtDomainPropertiesFilter = filter;
+            gwtDomainPropertiesFilter = filter;
         }
 
-        _gwtDomainFilterProvider = new SimpleFilterProvider()
-                .addFilter("listDomainsActionFilter", _gwtDomainPropertiesFilter);
-        om.setFilterProvider(_gwtDomainFilterProvider);
+        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
+                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
+        om.setFilterProvider(gwtDomainFilterProvider);
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
         om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
@@ -249,12 +247,20 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
             configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
@@ -373,7 +379,7 @@ public class PropertyController extends SpringActionController
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createResponseObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
             configureObjectMapper(mapper, null);
@@ -394,12 +400,20 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
             configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         public Object execute(DomainApiForm form, BindException errors)
@@ -615,12 +629,20 @@ public class PropertyController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Either a file is required to be posted or the id/path to a file that exists on the server must be supplied.");
         }
 
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
             configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         @Override
@@ -1173,7 +1195,15 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared;
 
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
 
@@ -1193,9 +1223,6 @@ public class PropertyController extends SpringActionController
         {
             includeFields = containerDomainForm.isIncludeFields();
             includeProjectAndShared = containerDomainForm.isIncludeProjectAndShared();
-
-            //resetting mapper when incoming request is json to capture the above scenario
-            _mapper = null;
 
             Container c = containerDomainForm.getContainerPath() == null ? getContainer():
                     ContainerService.get().getForPath(containerDomainForm.getContainerPath());
