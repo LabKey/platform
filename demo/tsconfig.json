@@ -6,10 +6,9 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": [] // don't implicitly include any @types, only those included via import
+    "types": ["jest"] // implicitly include only jest types; otherwise get those included via import
   },
   "exclude": [
-    "node_modules",
     "resources"
   ]
 }

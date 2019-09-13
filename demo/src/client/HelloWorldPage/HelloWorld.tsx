@@ -1,7 +1,7 @@
 import * as React from 'react'
 import "./helloWorld.scss";
 
-export class App extends React.Component<any, any> {
+export class App extends React.PureComponent<any, any> {
 
     render() {
         return (
