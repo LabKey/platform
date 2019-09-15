@@ -56,6 +56,8 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.vcs.Vcs;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -187,17 +189,17 @@ public class SqlScriptController extends SpringActionController
 
     public static class ScriptsForm
     {
-        private boolean _managedOnly = false;
+        private boolean _consolidateOnly = false;
 
-        public boolean isManagedOnly()
+        public boolean isConsolidateOnly()
         {
-            return _managedOnly;
+            return _consolidateOnly;
         }
 
         @SuppressWarnings("unused")
-        public void setManagedOnly(boolean managedOnly)
+        public void setConsolidateOnly(boolean consolidateOnly)
         {
-            _managedOnly = managedOnly;
+            _consolidateOnly = consolidateOnly;
         }
     }
 
@@ -214,14 +216,14 @@ public class SqlScriptController extends SpringActionController
             {
                 html.append("<tr><td colspan=4>");
 
-                if (form.isManagedOnly())
-                    html.append(PageFlowUtil.textLink("show all modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
+                if (form.isConsolidateOnly())
+                    html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
-                    html.append(PageFlowUtil.textLink("ignore unmanaged modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
+                    html.append(PageFlowUtil.link("show only \"consolidate scripts\" modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("consolidateOnly", true)));
 
-                html.append(PageFlowUtil.textLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.textLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.textLink("scripts with errors", new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.link("consolidate scripts").href(new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.link("scripts with errors").href(new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
 //                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
                 html.append("</td></tr>");
                 html.append("<tr><td>&nbsp;</td></tr>");
@@ -233,10 +235,10 @@ public class SqlScriptController extends SpringActionController
 
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
-            if (form.isManagedOnly())
+            if (form.isConsolidateOnly())
             {
                 modules = modules.stream()
-                    .filter(Module::shouldManageVersion)
+                    .filter(Module::shouldConsolidateScripts)
                     .collect(Collectors.toList());
             }
 
@@ -521,8 +523,6 @@ public class SqlScriptController extends SpringActionController
 
             if (0 == html.length())
                 html.append("No schemas require consolidation in this range");
-            else
-                html.append(PageFlowUtil.link("Create batch file from current settings").href(getConsolidateBatchActionURL(form)).attributes(Collections.singletonMap("target", "batchFile")).toString());
 
             html.insert(0, formHtml);
 
@@ -549,6 +549,7 @@ public class SqlScriptController extends SpringActionController
     }
 
 
+    // TODO: Delete URL and action
     private ActionURL getConsolidateBatchActionURL(ConsolidateForm form)
     {
         ActionURL url = new ActionURL(ConsolidateBatchAction.class, getContainer());
@@ -705,6 +706,11 @@ public class SqlScriptController extends SpringActionController
         {
             _provider.saveScript(_schema, getFilename(), getConsolidatedScript());
         }
+
+        public File getScriptDirectory()
+        {
+            return _provider.getScriptDirectory(_schema.getSqlDialect());
+        }
     }
 
 
@@ -833,6 +839,22 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptConsolidator consolidator = getConsolidator(form);
             consolidator.saveScript();
+
+            File dir = consolidator.getScriptDirectory();
+            Vcs vcs = VcsService.get().getVcs(dir);
+
+            if (null != vcs)
+            {
+                File destination = new File(dir, "obsolete");
+
+                if (!destination.exists())
+                    destination.mkdir();
+
+                consolidator.getScripts().forEach(sqlScript -> {
+                    File source = new File(dir, sqlScript.getDescription());
+                    vcs.moveFile(source, destination);
+                });
+            }
 
             return true;
         }
