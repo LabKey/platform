@@ -23,7 +23,7 @@ import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SE
 
 import "@glass/base/dist/base.css"
 import "@glass/domainproperties/dist/domainproperties.css"
-import "./domaindesigner.scss";
+import "./domainDesigner.scss";
 
 interface IAppState {
     dirty: boolean
