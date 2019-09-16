@@ -594,7 +594,7 @@ public class DOM
         }
     }
 
-    // eXtensions, any helpers that are not directly representations of native browser DOM
+    // LabKey extensions, any helpers that are not directly representations of native browser DOM
     public static class LK
     {
         public static Renderable CHECKBOX(Attributes attrs)
