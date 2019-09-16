@@ -129,6 +129,7 @@ public class DataRegionSelection
         return asInts(getSelected(context, null, clearSelection));
     }
 
+    @Nullable
     public static String getSelectionKeyFromRequest(ViewContext context)
     {
         return context.getRequest().getParameter(DATA_REGION_SELECTION_KEY);
