@@ -3,8 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const constants = require('./constants');
 const entryPoints = require('./entryPoints');
 
@@ -48,6 +48,8 @@ for (let i = 0; i < entryPoints.apps.length; i++) {
     ]);
 }
 
+plugins.push(new MiniCssExtractPlugin());
+
 module.exports = {
     context: constants.context(__dirname),
 
@@ -64,7 +66,7 @@ module.exports = {
     },
 
     module: {
-        rules: constants.loaders.TYPESCRIPT_LOADERS
+        rules: constants.loaders.TYPESCRIPT_LOADERS.concat(constants.loaders.STYLE_LOADERS)
     },
 
     resolve: {

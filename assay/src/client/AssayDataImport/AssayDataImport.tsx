@@ -20,6 +20,10 @@ import {
 } from "@glass/base";
 import {AssayProtocolModel, AssayPropertiesPanel, createGeneralAssayDesign} from '@glass/domainproperties'
 
+import "@glass/base/dist/base.css"
+import "@glass/domainproperties/dist/domainproperties.css"
+import "./assayDataImport.scss";
+
 import {AssayRunForm} from "./AssayRunForm";
 
 const FORM_IDS = {
