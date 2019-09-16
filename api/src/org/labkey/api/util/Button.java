@@ -27,7 +27,7 @@ import java.util.Map;
 
 import static org.labkey.api.util.DOM.Attribute;
 import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.X.*;
+import static org.labkey.api.util.DOM.LK.*;
 import static org.labkey.api.util.DOM.Attribute.*;
 
 
