@@ -11,6 +11,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
@@ -41,23 +42,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 // NOTE DataColumn perhaps does more than we need, consider extending DisplayColumn instead?
 
-public class LineageDisplayColumn extends DataColumn
+public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisplayColumn
 {
-    final QuerySchema sourceSchema;
-    final FieldKey boundFieldKey;
-    final ExpLineageOptions options;
+    private final FieldKey boundFieldKey;
 
-    ReexecutableDataregion innerDataRegion;
-    RenderContext innerCtx;
-    DisplayColumn innerDisplayColumn;
+    private ReexecutableDataregion innerDataRegion;
+    private ReexecutableRenderContext innerCtx;
+    private DisplayColumn innerDisplayColumn;
 
 
     public static DisplayColumn create(QuerySchema schema, ColumnInfo objectid, boolean parents, Integer depth, String expType, String cpasType)
@@ -140,21 +139,19 @@ public class LineageDisplayColumn extends DataColumn
         if (!equalsIgnoreCase(boundFieldKey.getName(),objectid.getFieldKey().getName()))
             boundFieldKey = new FieldKey(boundFieldKey, objectid.getFieldKey().getName());
 
-        return new LineageDisplayColumn(schema, objectid, boundFieldKey, options);
+        return new LineageDisplayColumn(schema, objectid, boundFieldKey);
     }
 
     // TODO what to do with Level columns (like All, First, etc)
-    protected LineageDisplayColumn(QuerySchema schema, ColumnInfo objectid, FieldKey boundFieldKey, ExpLineageOptions options)
+    private LineageDisplayColumn(QuerySchema schema, ColumnInfo objectId, FieldKey boundFieldKey)
     {
-        super(objectid, false);
-        this.sourceSchema = schema;
+        super(objectId, false);
         this.boundFieldKey = boundFieldKey;
-        this.options = options;
 
         /* SET UP DataRegion */
 
         // TODO ContainerFilter
-        TableInfo seedTable = new SeedTable((UserSchema)sourceSchema);
+        TableInfo seedTable = new SeedTable((UserSchema) schema);
         ColumnInfo bound = null;
         for (String part : boundFieldKey.getParts())
         {
@@ -181,56 +178,91 @@ public class LineageDisplayColumn extends DataColumn
         return null;
     }
 
-    @Override
-    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+
+    private int innerCtxObjectId = -1;
+
+    /*
+     * NOTE DisplayColumn is very stateless, we don't know when we advance a row, or when we are at end-of-resultset
+     * so we have to infer this ourselves by watching when objectid changes
+     */
+    private void updateInnerContext(RenderContext outerCtx)
     {
         if (null == innerCtx)
-            innerCtx = new ReexecutableRenderContext(ctx);
+            innerCtx = new ReexecutableRenderContext(outerCtx);
+        int currentObjectId = requireNonNullElse((Integer) getValue(outerCtx), -1);
+        if (innerCtxObjectId == currentObjectId)
+            return;
 
-        try
+        innerCtxObjectId = currentObjectId;
+        innerDataRegion.reset(innerCtx, Collections.singletonMap(SeedTable.OBJECTID_PARAMETER, currentObjectId));
+        if (-1 != currentObjectId)
         {
-            if (null == innerDataRegion)
-            {
-                out.write("&lt;" + filter(this.toString()) + "&gt;");
-                return;
-            }
-
-            innerDataRegion.reset(innerCtx, Collections.singletonMap(SeedTable.OBJECTID_PARAMETER, getValue(ctx)));
             try (ResultSet rs = requireNonNull(innerDataRegion.getResultSet(innerCtx)))
             {
                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-
                 if (rs.next())
                 {
                     innerCtx.setRow(factory.getRowMap(rs));
-                    innerDisplayColumn.renderGridCellContents(innerCtx, out);
                     boolean hasNext = rs.next();
                     assert !hasNext;
                 }
             }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            catch (IOException x)
+            {
+                throw new RuntimeException(x);
+            }
         }
-        catch (SQLException x)
+    }
+
+    @Override
+    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        if (null == innerDataRegion)
         {
-            throw new RuntimeSQLException(x);
+            out.write("&lt;" + filter(this.toString()) + "&gt;");
+            return;
         }
+        updateInnerContext(ctx);
+        innerDisplayColumn.renderGridCellContents(innerCtx, out);
     }
 
     @Override
-    public void addQueryColumns(Set<ColumnInfo> columns)
+    public List<String> renderURLs(RenderContext ctx)
     {
-        super.addQueryColumns(columns);
+        updateInnerContext(ctx);
+        return ((IMultiValuedDisplayColumn)innerDisplayColumn).renderURLs(innerCtx);
     }
 
     @Override
-    public void addQueryFieldKeys(Set<FieldKey> keys)
+    public List<Object> getDisplayValues(RenderContext ctx)
     {
-        super.addQueryFieldKeys(keys);
+        updateInnerContext(ctx);
+        return ((IMultiValuedDisplayColumn)innerDisplayColumn).getDisplayValues(innerCtx);
     }
 
     @Override
-    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+    public List<String> getTsvFormattedValues(RenderContext ctx)
     {
-        super.renderTitle(ctx, out);
+        updateInnerContext(ctx);
+        return ((IMultiValuedDisplayColumn)innerDisplayColumn).getTsvFormattedValues(innerCtx);
+    }
+
+    @Override
+    public List<String> getFormattedTexts(RenderContext ctx)
+    {
+        updateInnerContext(ctx);
+        return ((IMultiValuedDisplayColumn)innerDisplayColumn).getFormattedTexts(innerCtx);
+    }
+
+    @Override
+    public List<Object> getJsonValues(RenderContext ctx)
+    {
+        updateInnerContext(ctx);
+        return ((IMultiValuedDisplayColumn)innerDisplayColumn).getJsonValues(innerCtx);
     }
 
     @Override
@@ -252,31 +284,14 @@ public class LineageDisplayColumn extends DataColumn
     }
 
     @Override
-    public void renderFilterOnClick(RenderContext ctx, Writer out)
-    {
-    }
-
-    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value)
     {
     }
 
     @Override
-    public boolean isQueryColumn()
-    {
-        return false;
-    }
-
-    @Override
-    public Object getValue(RenderContext ctx)
-    {
-        return super.getValue(ctx);
-    }
-
-    @Override
     public Class getValueClass()
     {
-        return String.class;
+        return innerDisplayColumn.getValueClass();
     }
 
     @Override
@@ -288,7 +303,7 @@ public class LineageDisplayColumn extends DataColumn
 
     static class SeedTable extends AbstractTableInfo
     {
-        public static final String OBJECTID_PARAMETER = "_$_OBJECTID_$_";
+        static final String OBJECTID_PARAMETER = "_$_OBJECTID_$_";
         final UserSchema schema;
         final SQLFragment sqlf;
         final List<QueryService.ParameterDecl> parameters = Collections.singletonList(new QueryService.ParameterDeclaration(OBJECTID_PARAMETER, JdbcType.INTEGER));
@@ -338,8 +353,9 @@ public class LineageDisplayColumn extends DataColumn
 
         // close current result set and update query parameters
         // usually followed immediately by call to getResultSet()
-        void reset(RenderContext ctx, Map<String,Object> currentParameters)
+        void reset(ReexecutableRenderContext ctx, Map<String,Object> currentParameters)
         {
+            ctx.setRow(Collections.emptyMap());
             ResultSet rs = ctx.getResults();
             if (null != rs)
             {
