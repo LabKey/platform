@@ -843,9 +843,14 @@ public class AnnouncementManager
 
     public static String getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
     {
-        String result = "";
+        String result;
 
-        if (!forEmail)
+        // Email link shows display name and not html link
+        if (forEmail)
+        {
+            result = PageFlowUtil.filter(UserManager.getDisplayName(formattedUserId, currentUser));
+        }
+        else
         {
             result = UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId);
         }

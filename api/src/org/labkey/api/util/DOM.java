@@ -511,6 +511,11 @@ public class DOM
         return new _Attributes().cl(f, className);
     }
 
+    public static _Attributes cl(boolean f, String trueName, String falseName)
+    {
+        return new _Attributes().cl(f, trueName, falseName);
+    }
+
     public static _Attributes cl(String... classNames)
     {
         var ret = new _Attributes();

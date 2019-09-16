@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>

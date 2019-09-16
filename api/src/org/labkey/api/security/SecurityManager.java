@@ -3172,7 +3172,7 @@ public class SecurityManager
 
     public static boolean canSeeFilePaths(Container c, User user)
     {
-        return c.hasPermission(user, SeeFilePathsPermission.class) || user.hasRootPermission(SeeFilePathsPermission.class);
+        return (null!=c && c.hasPermission(user, SeeFilePathsPermission.class)) || user.hasRootPermission(SeeFilePathsPermission.class);
     }
 
     public static void adminRotatePassword(ValidEmail email, BindException errors, Container c, User user)
