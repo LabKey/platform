@@ -59,7 +59,6 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;
@@ -124,7 +123,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public HtmlString getWebappURL(String path)
     {
-        return HtmlString.of(_viewContext.getContextPath() + (path.startsWith("/") ? "" : "/") + path);
+        return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
     }
 
     /**
