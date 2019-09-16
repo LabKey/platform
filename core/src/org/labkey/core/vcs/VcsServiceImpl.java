@@ -113,5 +113,5 @@ public class VcsServiceImpl implements VcsService
                 throw new RuntimeException("IOException while executing command " + cl, e);
             }
         }
-    };
+    }
 }
