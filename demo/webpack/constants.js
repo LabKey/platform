@@ -105,6 +105,6 @@ module.exports = {
         ]
     },
     outputPath: function(dir) {
-        return path.resolve(dir, '../resources/web/assay/gen');
+        return path.resolve(dir, '../resources/web/demo/gen');
     }
 };

@@ -1,0 +1,10 @@
+
+.todolist-incomplete-item {
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.todolist-complete-item {
+  text-decoration: line-through;
+}
