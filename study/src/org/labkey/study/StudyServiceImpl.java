@@ -912,7 +912,7 @@ public class StudyServiceImpl implements StudyService
                         fk.addJoin(new FieldKey(null, "Container"), "Folder", false);
                         unionCol.setFk(fk);
                     }
-                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name) || "visit".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name)))
+                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name)))
                     {
                         TableInfo lookupTable = unionCol.getFk().getLookupTableInfo();
                         UserSchema schema = null==lookupTable ? null : lookupTable.getUserSchema();
