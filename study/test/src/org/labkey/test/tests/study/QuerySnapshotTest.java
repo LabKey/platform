@@ -16,7 +16,6 @@
 
 package org.labkey.test.tests.study;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,7 +35,6 @@ import org.labkey.test.util.LoggedParam;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
@@ -219,7 +217,7 @@ public class QuerySnapshotTest extends StudyBaseTest
         deleteSnapshot();
     }
 
-    // Regression coverage for 38311: Creating query snapshots tied to Assay Data table generates java.lang.IllegalStateException error
+    // Regression coverage for Issue 38311: Creating query snapshots tied to Assay Data table generates java.lang.IllegalStateException error
     @Test
     public void testQuerySnapshotAgainstAssayDataTable() throws IOException, CommandException
     {
