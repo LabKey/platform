@@ -344,7 +344,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
                         ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
-                        result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(false));
+                        result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), false));
                         return result;
                     }
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
@@ -366,7 +366,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return ret;
             case ReplacedByRun:
                 var replacedByRunCol = wrapColumn(alias, _rootTable.getColumn("ReplacedByRunId"));
-                replacedByRunCol.setFk(getExpSchema().getRunIdForeignKey());
+                replacedByRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 replacedByRunCol.setLabel("Replaced By");
                 replacedByRunCol.setShownInInsertView(false);
                 replacedByRunCol.setShownInUpdateView(false);
@@ -387,7 +387,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
                 replacesSQL.append(".RowId)");
                 var replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
-                replacesRunCol.setFk(getExpSchema().getRunIdForeignKey());
+                replacesRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 replacesRunCol.setLabel("Replaces");
                 replacesRunCol.setDescription("The run that this run replaces, usually with updated or corrected information");
                 return replacesRunCol;
@@ -396,7 +396,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 batchIdCol.setUserEditable(false);
                 batchIdCol.setShownInInsertView(false);
                 batchIdCol.setShownInUpdateView(false);
-                batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(true));
+                batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return batchIdCol;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -498,6 +498,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             @Override
             public TableInfo getLookupTableInfo()
             {
+                final ContainerFilter cf = ExpRunTableImpl.this.getContainerFilter();
                 VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
                 {
                     @NotNull
@@ -516,13 +517,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         return sql;
                     }
                 };
-                t.setContainerFilter(new DelegatingContainerFilter(ExpRunTableImpl.this));
-
                 var runCol = new BaseColumnInfo("RunId", t, JdbcType.INTEGER);
                 t.addColumn(runCol);
 
                 var dataCol = new BaseColumnInfo(dataIdName, t, JdbcType.INTEGER);
-                dataCol.setFk(getExpSchema().getDataIdForeignKey());
+                dataCol.setFk(getExpSchema().getDataIdForeignKey(cf));
                 t.addColumn(dataCol);
                 return t;
             }
