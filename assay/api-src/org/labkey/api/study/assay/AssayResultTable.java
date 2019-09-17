@@ -150,7 +150,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer(), getUserSchema().getUser());
                     if (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
                     {
-                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty));
+                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty, cf));
                     }
                 }
                 addColumn(col);
@@ -191,7 +191,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         BaseColumnInfo dataColumn = getMutableColumn("DataId");
         dataColumn.setLabel("Data");
-        dataColumn.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getDataIdForeignKey());
+        dataColumn.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getDataIdForeignKey(getContainerFilter()));
         dataColumn.setUserEditable(false);
         dataColumn.setShownInUpdateView(false);
         dataColumn.setShownInUpdateView(false);
