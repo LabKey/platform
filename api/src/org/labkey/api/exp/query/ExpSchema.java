@@ -428,6 +428,12 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
+    @Deprecated
+    public ForeignKey getRunIdForeignKey()
+    {
+        return getRunIdForeignKey(null);
+    }
+
     public ForeignKey getRunIdForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Runs.name(), "RowId", null)
