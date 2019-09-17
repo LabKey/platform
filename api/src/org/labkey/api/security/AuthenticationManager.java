@@ -59,6 +59,8 @@ import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
@@ -236,13 +238,13 @@ public class AuthenticationManager
         addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
-    public static @Nullable String getHeaderLogoHtml(URLHelper currentURL)
+    public static @Nullable HtmlString getHeaderLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, HEADER_LOGO_PREFIX);
     }
 
 
-    public static @Nullable String getLoginPageLogoHtml(URLHelper currentURL)
+    public static @Nullable HtmlString getLoginPageLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, LOGIN_PAGE_LOGO_PREFIX);
     }
@@ -266,25 +268,27 @@ public class AuthenticationManager
         return !AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class).isEmpty();
     }
 
-    private static @Nullable String getAuthLogoHtml(URLHelper currentURL, String prefix)
+    private static @Nullable HtmlString getAuthLogoHtml(URLHelper currentURL, String prefix)
     {
         Collection<SSOAuthenticationProvider> ssoProviders = AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class);
 
         if (ssoProviders.isEmpty())
             return null;
 
-        StringBuilder html = new StringBuilder();
+        HtmlStringBuilder html = HtmlStringBuilder.of("");
 
         for (SSOAuthenticationProvider provider : ssoProviders)
         {
             if (!provider.isAutoRedirect())
             {
                 LinkFactory factory = provider.getLinkFactory();
-                html.append("<li>").append(factory.getLink(currentURL, prefix)).append("</li>");
+                html.append(HtmlString.unsafe("<li>"));
+                html.append(factory.getLink(currentURL, prefix));
+                html.append(HtmlString.unsafe("</li>"));
             }
         }
 
-        return html.toString();
+        return html.getHtmlString();
     }
 
 
@@ -1402,7 +1406,7 @@ public class AuthenticationManager
             _providerName = provider.getName(); // Just for convenience
         }
 
-        private @NotNull String getLink(URLHelper returnURL, String prefix)
+        private @NotNull HtmlString getLink(URLHelper returnURL, String prefix)
         {
             String content = _providerName;
             String img = getImg(prefix);
@@ -1410,7 +1414,7 @@ public class AuthenticationManager
             if (null != img)
                 content = img;
 
-            return "<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + content + "</a>";
+            return HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + content + "</a>");
         }
 
         public ActionURL getURL(URLHelper returnURL, boolean skipProfile)

@@ -211,6 +211,14 @@ if (!LABKEY.DataRegions) {
         var isQWP = config._useQWPDefaults === true;
         delete config._useQWPDefaults;
 
+        if (config.buttonBar && config.buttonBar.items && LABKEY.Utils.isArray(config.buttonBar.items)) {
+            // Be tolerant of the caller passing in undefined items, as pageSize has been removed as an option. Strip
+            // them out so they don't cause problems downstream. See issue 34562
+            config.buttonBar.items = config.buttonBar.items.filter(function (value, index, arr) {
+                return value;
+            });
+        }
+
         var settings;
 
         if (applyDefaults) {
@@ -429,7 +437,7 @@ if (!LABKEY.DataRegions) {
         }
 
         // if 'filters' is not specified and 'filterArray' is, use 'filterArray'
-        if (!$.isArray(settings.filters) && $.isArray(config.filterArray)) {
+        if (!LABKEY.Utils.isArray(settings.filters) && LABKEY.Utils.isArray(config.filterArray)) {
             settings.filters = config.filterArray;
         }
 
@@ -449,7 +457,7 @@ if (!LABKEY.DataRegions) {
             _convertRenderTo(this, config.renderTo);
         }
 
-        if ($.isArray(this.removeableFilters)) {
+        if (LABKEY.Utils.isArray(this.removeableFilters)) {
             LABKEY.Filter.appendFilterParams(this.userFilters, this.removeableFilters, this.name);
             delete this.removeableFilters; // they've been applied
         }
@@ -730,7 +738,7 @@ if (!LABKEY.DataRegions) {
             filterParams = [],
             me = this;
 
-        if ($.isArray(filters)) {
+        if (LABKEY.Utils.isArray(filters)) {
             $.each(filters, function(i, filter) {
                 filterPrefixes.push(me.name + '.' + filter.getColumnName() + '~');
                 filterParams.push([filter.getURLParameterName(me.name), filter.getURLParameterValue()]);
@@ -739,7 +747,7 @@ if (!LABKEY.DataRegions) {
 
         var fieldKeys = [];
 
-        if ($.isArray(columnNames)) {
+        if (LABKEY.Utils.isArray(columnNames)) {
             fieldKeys = fieldKeys.concat(columnNames);
         }
         else if ($.isPlainObject(columnNames) && columnNames.fieldKey) {
@@ -2315,7 +2323,7 @@ if (!LABKEY.DataRegions) {
             subjectColumn + ADV_COHORT_ENROLLED
         ];
 
-        if ($.isArray(groupNames)) {
+        if (LABKEY.Utils.isArray(groupNames)) {
             for (k=0; k < groupNames.length; k++) {
                 keys.push(subjectColumn + '/' + groupNames[k]);
             }
@@ -2369,7 +2377,7 @@ if (!LABKEY.DataRegions) {
             isString = LABKEY.Utils.isString,
             cols = this.columns;
 
-        if (isString(columnIdentifier) && $.isArray(cols)) {
+        if (isString(columnIdentifier) && LABKEY.Utils.isArray(cols)) {
             $.each(['fieldKey', 'name', 'displayField', 'caption'], function(i, key) {
                 $.each(cols, function(c, col) {
                     if (isString(col[key]) && col[key] == columnIdentifier) {
@@ -2870,7 +2878,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _buildQueryString = function(region, pairs) {
-        if (!$.isArray(pairs)) {
+        if (!LABKEY.Utils.isArray(pairs)) {
             return '';
         }
 
@@ -3072,7 +3080,7 @@ if (!LABKEY.DataRegions) {
 
             if (qString.length > 1) {
                 var pairs = qString.split('&'), p, key,
-                    LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
+                    LAST = '.lastFilter', lastIdx, skip = LABKEY.Utils.isArray(skipPrefixSet);
 
                 var exactMatches = EXACT_MATCH_PREFIXES.map(function(prefix) {
                     return region.name + prefix;
@@ -3321,7 +3329,7 @@ if (!LABKEY.DataRegions) {
 
         // prepend region name
         // e.g. ['.hello', '.goodbye'] becomes ['aqwp19.hello', 'aqwp19.goodbye']
-        if ($.isArray(skipPrefixes)) {
+        if (LABKEY.Utils.isArray(skipPrefixes)) {
             $.each(skipPrefixes, function(i, skip) {
                 if (skip && skip.indexOf(region.name + '.') !== 0) {
                     skipPrefixes[i] = region.name + skip;
@@ -3332,9 +3340,9 @@ if (!LABKEY.DataRegions) {
         var param, value,
             params = _getParameters(region, skipPrefixes);
 
-        if ($.isArray(newParamValPairs)) {
+        if (LABKEY.Utils.isArray(newParamValPairs)) {
             $.each(newParamValPairs, function(i, newPair) {
-                if (!$.isArray(newPair)) {
+                if (!LABKEY.Utils.isArray(newPair)) {
                     throw new Error("DataRegion: _setParameters newParamValPairs improperly initialized. It is an array of arrays. You most likely passed in an array of strings.");
                 }
                 param = newPair[0];
@@ -3574,7 +3582,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _processButtonBarItems = function(region, items) {
-        if ($.isArray(items) && items.length > 0) {
+        if (LABKEY.Utils.isArray(items) && items.length > 0) {
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
 
@@ -3584,8 +3592,7 @@ if (!LABKEY.DataRegions) {
                     item.onClick = "return LABKEY.DataRegions['" + region.name + "']._onButtonClick('" + item.id + "');";
                 }
 
-                // Be tolerant of the caller passing in undefined, as pageSize has been removed as an option. See issue 34562
-                if (item && item.items) {
+                if (item.items) {
                     _processButtonBarItems(region, item.items);
                 }
             }
@@ -3708,7 +3715,7 @@ if (!LABKEY.DataRegions) {
                     if (params[pair[0]] == undefined) {
                         params[pair[0]] = [];
                     }
-                    else if (!$.isArray(params[pair[0]])) {
+                    else if (!LABKEY.Utils.isArray(params[pair[0]])) {
                         params[pair[0]] = [params[pair[0]]];
                     }
                     params[pair[0]].push(pair[1]);

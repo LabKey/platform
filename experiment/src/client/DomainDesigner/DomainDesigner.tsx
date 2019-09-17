@@ -21,6 +21,10 @@ import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
 
+import "@glass/base/dist/base.css"
+import "@glass/domainproperties/dist/domainproperties.css"
+import "./domainDesigner.scss";
+
 interface IAppState {
     dirty: boolean
     domain: DomainDesign
@@ -109,7 +113,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     dirty: false
                 }));
 
-                this.showMessage("Save Successful", 'info', 0);
+                this.showMessage("Save Successful", 'success', 0);
                 window.scrollTo(0, 0);
 
                 if (navigate) {
@@ -129,6 +133,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }));
             })
     };
+
+    submitAndNavigate = () => {
+        this.submitHandler(true);
+    }
 
     onChangeHandler = (newDomain, dirty) => {
 
@@ -180,11 +188,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     renderNavigateConfirm() {
         return (
             <ConfirmModal
-                title='Confirm Leaving Page'
-                msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
+                title='Keep unsaved changes?'
+                msg='You have made changes to this domain that have not yet been saved. Do you want to save these changes before leaving?'
                 confirmVariant='success'
-                onConfirm={this.navigate}
-                onCancel={this.hideConfirm}
+                onConfirm={this.submitAndNavigate}
+                onCancel={this.navigate}
+                cancelButtonText='No, Discard Changes'
+                confirmButtonText='Yes, Save Changes'
             />
         )
     }
@@ -199,17 +209,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 includeNext={false}>
                 <Button
                     type='submit'
-                    bsClass='btn'
-                    onClick={() => this.submitHandler(false)}
-                    disabled={submitting || !dirty}>
-                    Save
-                </Button>
-                <Button
-                    type='submit'
                     bsClass='btn btn-success'
                     onClick={() => this.submitHandler(true)}
                     disabled={submitting || !dirty}>
-                    Save And Finish
+                    Save
                 </Button>
             </WizardNavButtons>
         )

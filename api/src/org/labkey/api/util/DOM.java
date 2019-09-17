@@ -5,6 +5,7 @@ import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
@@ -500,6 +501,24 @@ public class DOM
         return ret;
     }
 
+    /* copy attributes, useful for extended/custom elements */
+    public static _Attributes at(Attributes attrsIn)
+    {
+        if (!(attrsIn instanceof _Attributes))
+            throw new UnsupportedOperationException();
+        _Attributes in = (_Attributes)attrsIn;
+        _Attributes copy = new _Attributes();
+        copy.attrs.addAll(in.attrs);
+        copy.classes.addAll(in.classes);
+        if (in.expandos != null)
+        {
+            copy.expandos = new ArrayList<>();
+            copy.expandos.addAll(in.expandos);
+        }
+        copy.callback = in.callback;
+        return copy;
+    }
+
     public static _Attributes at(Attribute firstKey, Object firstValue, Object... keyvalues)
     {
         var ret = new _Attributes(firstKey,firstValue,keyvalues);
@@ -509,6 +528,11 @@ public class DOM
     public static _Attributes cl(boolean f, String className)
     {
         return new _Attributes().cl(f, className);
+    }
+
+    public static _Attributes cl(boolean f, String trueName, String falseName)
+    {
+        return new _Attributes().cl(f, trueName, falseName);
     }
 
     public static _Attributes cl(String... classNames)
@@ -570,9 +594,27 @@ public class DOM
         }
     }
 
-    // eXtensions, any helpers that are not directly representations of native browser DOM
-    public static class X
+    // LabKey extensions, any helpers that are not directly representations of native browser DOM
+    public static class LK
     {
+        public static Renderable CHECKBOX(Attributes attrs)
+        {
+            // find name attribute
+            String name = null;
+            for (var attr : attrs)
+            {
+                if (attr.getKey()==Attribute.name)
+                {
+                    name = String.valueOf(attr.getValue());
+                    break;
+                }
+            }
+            return createHtmlFragment(
+                    DOM.INPUT((at(attrs).at(Attribute.type,"checkbox"))),
+                    null==name?null:DOM.INPUT(at(Attribute.type,"hidden", Attribute.name, SpringActionController.FIELD_MARKER+name))
+            );
+        }
+
         /** font-awesome */
         public static Renderable FA(String icon)
         {
@@ -599,6 +641,10 @@ public class DOM
                     Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
             return DOM.FORM(attrs, body, csrfInput);
         }
+    }
+    @Deprecated /* use LK */
+    public static class X extends LK
+    {
     }
 
     private static Appendable appendAttribute(Appendable html, String key, Object value) throws IOException
