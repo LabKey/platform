@@ -277,14 +277,14 @@ public class ExperimentAPITest extends BaseWebDriverTest
         return new Batch(getResponse.getProperty("batch"));
     }
 
-    private DomainResponse createDomain(String domainKind, String domainName, String description, List<Map<String, Object>> properties) throws IOException, CommandException
+    private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
     {
         CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
         domainCommand.getDomainDesign().setDescription(description);
-        domainCommand.setColumns(properties);
+        domainCommand.getDomainDesign().setFields(fields);
 
         DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomainId());
+        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
         return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
     }
 
@@ -294,17 +294,17 @@ public class ExperimentAPITest extends BaseWebDriverTest
         String domainKind = "Vocabulary";
         String domainName = "TestVocabulary";
         String domainDescription = "Test Ad Hoc Properties";
-        String nameKey = "name";
-        String rangeKey = "rangeURI";
         String prop1Name = "testIntField";
         String prop2Name = "testStringField";
         String prop1range = "int";
         String prop2range = "string";
 
         //Create VocabularyDomain with adhoc properties
-        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription,
-                List.of(Map.of(nameKey, prop1Name, rangeKey, prop1range),
-                        Map.of( nameKey, prop2Name, rangeKey, prop2range)));
+        List<PropertyDescriptor> fields = new ArrayList<>();
+        fields.add(new PropertyDescriptor(prop1Name, prop1range));
+        fields.add(new PropertyDescriptor(prop2Name, prop2range));
+
+        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription,fields);
 
         //verifying properties got added in domainResponse
         assertEquals("First Adhoc property not found.", domainResponse.getDomain().getFields().get(0).getName(), prop1Name);
@@ -340,8 +340,10 @@ public class ExperimentAPITest extends BaseWebDriverTest
         String propertyName = "testRunField";
         String rangeURI = "string";
 
-        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription,
-                List.of(Map.of("name", propertyName, "rangeURI", rangeURI)));
+        List<PropertyDescriptor> fields = new ArrayList<>();
+        fields.add(new PropertyDescriptor(propertyName, rangeURI));
+
+        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription, fields);
 
         assertEquals("Property not added in Domain.", propertyName, domainResponse.getDomain().getFields().get(0).getName());
 
