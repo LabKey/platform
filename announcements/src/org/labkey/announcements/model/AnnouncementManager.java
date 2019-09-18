@@ -848,7 +848,7 @@ public class AnnouncementManager
         // Email link shows display name and not html link
         if (forEmail)
         {
-            result = PageFlowUtil.filter(UserManager.getDisplayName(formattedUserId, currentUser));
+            result = UserManager.getDisplayName(formattedUserId, currentUser);
         }
         else
         {
