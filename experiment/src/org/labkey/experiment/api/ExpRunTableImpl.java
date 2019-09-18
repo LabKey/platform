@@ -51,7 +51,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -105,34 +105,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     @Override
     public void setProtocolPatterns(String... patterns)
     {
-        checkLocked();
-        _protocolPatterns = patterns;
-        if (_protocolPatterns != null)
-        {
-            SQLFragment condition = new SQLFragment();
-            condition.append("(");
-            String separator = "";
-            for (String pattern : _protocolPatterns)
-            {
-                condition.append(separator);
-                condition.append(_rootTable.getColumn("ProtocolLSID").getAlias());
-                // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
-                // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol (assay design),
-                // and in other cases we're passed a pattern that matches against all assay designs of a given type
-                if (pattern.contains("%"))
-                {
-                    condition.append(" LIKE ?");
-                }
-                else
-                {
-                    condition.append(" = ?");
-                }
-                condition.add(pattern);
-                separator = " OR "; 
-            }
-            condition.append(")");
-            addCondition(condition);
-        }
+        setFilterPatterns("ProtocolLSID", patterns);
     }
 
     @Override

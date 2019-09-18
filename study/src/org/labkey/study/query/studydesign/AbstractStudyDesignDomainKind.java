@@ -26,7 +26,6 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -145,6 +144,18 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public boolean allowFileLinkProperties()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return false;
+    }
+
+    @Override
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
     {
         return getDomainURI(schemaName, tableName, getNamespacePrefix(), getDomainContainer(c), u);
@@ -176,7 +187,7 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, false, false, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
     }
 
     @Override

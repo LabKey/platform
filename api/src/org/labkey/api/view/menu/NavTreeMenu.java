@@ -30,7 +30,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -74,12 +73,14 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         this(context, rootId, null, null, false, true, Arrays.asList(elements));
     }
 
+    @Override
     public boolean isCollapsed()
     {
         Object collapsed = getViewContext().get("collapsed");
         return (collapsed instanceof Boolean) && ((Boolean) collapsed).booleanValue();
     }
 
+    @Override
     public void setCollapsed(boolean collapsed)
     {
         enableExpandCollapse(_collapseId, collapsed);
@@ -113,6 +114,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         return _elements;
     }
 
+    @Override
     public Collapsible findSubtree(String path)
     {
         if (path == null)

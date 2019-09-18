@@ -1291,7 +1291,7 @@ public class VisualizationController extends SpringActionController
             Report report = getGenericReport(form);
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getUser(), getContainer());
             report = ReportService.get().getReport(getContainer(), rowId);
             saveSVGThumbnail((SvgThumbnailGenerator) report, form.getSvg(), form.getThumbnailType());
             response.put("success", true);
@@ -1368,42 +1368,44 @@ public class VisualizationController extends SpringActionController
 
                 if (table != null)
                 {
-                    Study study = StudyService.get().getStudy(getContainer());
+                    StudyService svc = StudyService.get();
 
-                    if (study != null)
+                    if (null != svc)
                     {
-                        // We need the subject info from the study in order to set up the sort order for measure choices.
-                        Map<String, String> subjectInfo = new HashMap<>();
-                        subjectInfo.put("nounSingular", study.getSubjectNounSingular());
-                        subjectInfo.put("nounPlural", study.getSubjectNounPlural());
-                        subjectInfo.put("column", study.getSubjectColumnName());
-                        response.put("subject", subjectInfo);
+                        Study study = svc.getStudy(getContainer());
 
-                        if (form.isIncludeCohort())
+                        if (study != null)
                         {
-                            FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), "Cohort");
-                            cohortColumns.add(cohort.toString());
-                        }
+                            // We need the subject info from the study in order to set up the sort order for measure choices.
+                            Map<String, String> subjectInfo = new HashMap<>();
+                            subjectInfo.put("nounSingular", study.getSubjectNounSingular());
+                            subjectInfo.put("nounPlural", study.getSubjectNounPlural());
+                            subjectInfo.put("column", study.getSubjectColumnName());
+                            response.put("subject", subjectInfo);
 
-                        if (form.isIncludeParticipantCategory())
-                        {
-                            for (ParticipantCategory category : study.getParticipantCategories(getUser()))
+                            if (form.isIncludeCohort())
                             {
-                                FieldKey group = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
-                                subjectGroupColumns.add(group.toString());
+                                FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), "Cohort");
+                                cohortColumns.add(cohort.toString());
+                            }
+
+                            if (form.isIncludeParticipantCategory())
+                            {
+                                for (ParticipantCategory category : study.getParticipantCategories(getUser()))
+                                {
+                                    FieldKey group = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
+                                    subjectGroupColumns.add(group.toString());
+                                }
                             }
                         }
                     }
                 }
 
-                if (queryView != null)
-                {
-                    for (DisplayColumn column : queryView.getDisplayColumns()){
-                        ColumnInfo colInfo = column.getColumnInfo();
-                        if (colInfo != null)
-                        {
-                            baseColumns.add(colInfo.getFieldKey().toString());
-                        }
+                for (DisplayColumn column : queryView.getDisplayColumns()){
+                    ColumnInfo colInfo = column.getColumnInfo();
+                    if (colInfo != null)
+                    {
+                        baseColumns.add(colInfo.getFieldKey().toString());
                     }
                 }
             }

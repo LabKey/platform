@@ -22,16 +22,18 @@ import org.labkey.api.view.DisplayElement;
 import java.io.IOException;
 import java.io.Writer;
 
+import static org.labkey.api.util.DOM.at;
+
 public class Link extends DisplayElement implements HasHtmlString
 {
-    private LinkBuilder lb;
+    private final LinkBuilder lb;
 
     public Link(LinkBuilder linkBuilder)
     {
         lb = linkBuilder;
 
         if (lb.usePost && null != lb.onClick)
-            throw new IllegalStateException("Can't specify usePost and onClick");
+            throw new IllegalStateException("Can't specify both usePost and onClick");
     }
 
     @Override
@@ -39,14 +41,10 @@ public class Link extends DisplayElement implements HasHtmlString
     {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("<a href=\"");
+        sb.append("<a");
 
-        if (lb.usePost)
-            sb.append("javascript:void(0);");
-        else
-            sb.append(PageFlowUtil.filter(lb.href));
-
-        sb.append("\"");
+        if (null != lb.href && !lb.usePost)
+            sb.append(" href=\"").append(PageFlowUtil.filter(lb.href)).append("\"");
 
         boolean icon = lb.iconCls != null;
 
@@ -54,13 +52,18 @@ public class Link extends DisplayElement implements HasHtmlString
             sb.append(" class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\"");
 
         if (null != lb.attributes)
-            sb.append(" ").append(lb.attributes);
+        {
+            var attrs = at(lb.attributes);
+            attrs.forEach(a -> {
+                sb.append(" ").append(PageFlowUtil.filter(a.getKey())).append("=\"").append(PageFlowUtil.filter(a.getValue())).append("\"");
+            });
+        }
 
         if (null != lb.id)
             sb.append(" id=\"").append(lb.id).append("\"");
 
         if (lb.usePost)
-            sb.append(" onClick=\"").append(PageFlowUtil.postOnClickJavaScript(lb.href)).append("\"");
+            sb.append(" onClick=\"").append(PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage)).append("\"");
         else if (null != lb.onClick)
             sb.append(" onClick=\"").append(lb.onClick).append("\"");
 

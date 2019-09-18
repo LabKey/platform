@@ -23,15 +23,14 @@
 <%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.stripEnd" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -71,13 +70,13 @@
             %>API keys are currently disabled on this site. <%
         }
 %>
-As a site administrator, you can configure API keys on the <%=PageFlowUtil.unstyledTextLink("Site Settings page", urlProvider(AdminUrls.class).getCustomizeSiteURL())%>.
+As a site administrator, you can configure API keys on the <%=link("Site Settings page", urlProvider(AdminUrls.class).getCustomizeSiteURL()).clearClasses()%>.
 
 <%
         if (apiKeys)
         {
 %>
-You can manage API keys generated on the server via <%=PageFlowUtil.unstyledTextLink("this query", urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), "core", "APIKeys"))%>.
+You can manage API keys generated on the server via <%=link("this query", urlProvider(QueryUrls.class).urlExecuteQuery(ContainerManager.getRoot(), "core", "APIKeys")).clearClasses()%>.
 <%
         }
 %>
@@ -117,7 +116,7 @@ configured to expire, and they can be revoked), but a valid API key provides com
                 expirationMessage = "expire after " + duration + "; administrators can also revoke API keys before they expire.";
             }
 %>
-This server allows API keys. They are currently configured to <%=text(expirationMessage)%> (For example, if an API key is accidentally revealed
+This server allows API keys. They are currently configured to <%=h(expirationMessage)%> (For example, if an API key is accidentally revealed
 to others.) API keys are appropriate for authenticating ad hoc interactions within statistical tools (e.g., R, RStudio, SAS) or programming languages
 (e.g., Java, Python), as well authenticating API use from automated scripts.
 <br/><br/>

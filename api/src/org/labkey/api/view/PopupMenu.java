@@ -139,12 +139,12 @@ public class PopupMenu extends DisplayElement
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append(PageFlowUtil.textLink(_navTree.getText(), "javascript:void(0)", onClickScript, "", attributes));
+            out.append(PageFlowUtil.link(_navTree.getText()).onClick(onClickScript).attributes(attributes).toString());
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
         {
             if (requiresSelection)
-                attributes.put("labkey-requires-selection", dataRegionName);
+                attributes.put("data-labkey-requires-selection", dataRegionName);
 
             Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
                     .dropdown(true)

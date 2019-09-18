@@ -112,7 +112,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                         "        success: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('Run group information saved successfully.') },\n" +
                         "        failure: function(o) { LABKEY.DataRegions[dataRegionName].showMessage('<div class=\"labkey-error\">Run group information save failed.</div>') },\n" +
                         "        url: " + PageFlowUtil.jsString(url.getLocalURIString()) + " + 'runId=' + runId + '&experimentId=' + expId + '&included=' + included,\n" +
-                        "        method: 'GET'\n" +
+                        "        method: 'POST'\n" +
                         "    }\n" +
                         "    LABKEY.Ajax.request(config); \n" +
                         "};\n" +

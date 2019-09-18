@@ -15,7 +15,27 @@
  */
 package org.labkey.api.util;
 
-public interface HasHtmlString
+import java.io.IOException;
+
+public interface HasHtmlString extends DOM.Renderable
 {
+    /**
+     * Must be consistent with {@code toString()}! JSP rendering of objects will call {@code obj.getHtmlString().toString()}
+     * in dev mode but {@code obj.toString()} in production mode. Most implementations will either implement {@code toString()}
+     * as {@code return getHtmlString.toString()} or implement {@code getHtmlString()} as {@code HtmlString.unsafe(toString);}.
+     */
     HtmlString getHtmlString();
+
+    @Override
+    default Appendable appendTo(Appendable builder)
+    {
+        try
+        {
+            return builder.append(this.getHtmlString().toString());
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
 }

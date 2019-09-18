@@ -429,10 +429,10 @@
             ],
             forceFit: true,
             buttons: [
-                {text:'Add', id: 'btn_addEngine', menu: newMenu, tooltip: {text:'Configure a new external script engine', title:'Add Engine'}, hidden: <%=!hasAdminOpsPerms%>},
-                {text:'Delete', id: 'btn_deleteEngine', tooltip: {text:'Delete the selected script engine', title:'Delete Engine'}, listeners:{click:function(button, event) {deleteSelected(grid);}}, hidden: <%=!hasAdminOpsPerms%>},
-                {text:'Edit', id: 'btn_editEngine', tooltip: {text:'Edit an existing script engine', title:'Edit Engine'}, listeners:{click:function(button, event) {editSelected(button, grid);}}, hidden: <%=!hasAdminOpsPerms%>},
-                {text:'Done', id: 'btn_done', tooltip: {text:'Return back to the Admin Console'}, listeners:{click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('admin', 'showAdmin');}}}
+                {text:'Add', id: 'btn_addEngine', menu: newMenu, hidden: <%=!hasAdminOpsPerms%>},
+                {text:'Delete', id: 'btn_deleteEngine', listeners:{click:function(button, event) {deleteSelected(grid);}}, hidden: <%=!hasAdminOpsPerms%>},
+                {text:'Edit', id: 'btn_editEngine', listeners:{click:function(button, event) {editSelected(button, grid);}}, hidden: <%=!hasAdminOpsPerms%>},
+                {text:'Done', id: 'btn_done', listeners:{click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('admin', 'showAdmin');}}}
             ],
             buttonAlign:'left'
         });

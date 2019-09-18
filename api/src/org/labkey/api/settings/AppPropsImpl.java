@@ -96,8 +96,8 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     static final String API_KEY_EXPIRATION_SECONDS = "apiKeyExpirationSeconds";
     static final String ALLOW_SESSION_KEYS = "allowSessionKeys";
     static final String X_FRAME_OPTIONS = "XFrameOption";
-    static String EXTERNAL_REDIRECT_HOST_URLS = "externalRedirectHostURLs"; //configured redirect host urls (delimited by newline) will be saved under this property.
-    static String EXTERNAL_REDIRECT_HOST_URL_DELIMITER = "\n";
+    static String EXTERNAL_REDIRECT_HOSTS = "externalRedirectHostURLs"; //configured redirect host urls (delimited by newline) will be saved under this property.
+    static String EXTERNAL_REDIRECT_HOST_DELIMITER = "\n";
 
     private static final String SERVER_GUID = "serverGUID";
     private static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
@@ -277,7 +277,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupBooleanValue(SHOW_RIBBON_MESSAGE, false);
     }
 
-    public String getRibbonMessageHtml()
+    public @Nullable String getRibbonMessageHtml()
     {
         return lookupStringValue(RIBBON_MESSAGE, null);
     }
@@ -576,12 +576,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     @Override
     @NotNull
-    public List<String> getExternalRedirectURLs()
+    public List<String> getExternalRedirectHosts()
     {
-        String urls =  lookupStringValue(EXTERNAL_REDIRECT_HOST_URLS, "");
+        String urls =  lookupStringValue(EXTERNAL_REDIRECT_HOSTS, "");
         if (StringUtils.isNotBlank(urls))
         {
-            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_URL_DELIMITER)));
+            return new ArrayList<>(Arrays.asList(urls.split(EXTERNAL_REDIRECT_HOST_DELIMITER)));
         }
         return new ArrayList<>();
     }

@@ -146,7 +146,7 @@ public class UmlsController extends SpringActionController
         @Override
         public ModelAndView getView(ConceptForm conceptForm, BindException errors)
         {
-            return new JspView<>(UmlsController.class, "concept.jsp", conceptForm, errors);
+            return new JspView<>("/org/labkey/search/umls/concept.jsp", conceptForm, errors);
         }
     }
     
@@ -183,7 +183,7 @@ public class UmlsController extends SpringActionController
                         _key = job.getPollKey();
                 }
             }
-            return new JspView<>(UmlsController.class,"index.jsp",this,errors);
+            return new JspView<>("/org/labkey/search/umls/index.jsp",this,errors);
         }
 
         public URLHelper getSuccessURL(PathForm o)

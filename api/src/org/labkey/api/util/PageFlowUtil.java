@@ -37,6 +37,7 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -168,8 +169,6 @@ public class PageFlowUtil
     private static final String NONPRINTING_ALTCHAR = "~";
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
-
-    public static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     public static boolean useExperimentalCoreUI()
     {
@@ -1249,33 +1248,23 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified href, provided a CSRF token. Use with ButtonBuilder to create
-     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
-     *  NavTree as an option (e.g., usePost()).
+     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. If confirmMessage is not null,
+     *  displays a confirmation dialog and requires an "OK" before posting. Used by NavTree, LinkBuilder, and ButtonBuilder,
+     *  this shouldn't be called directly by other code paths.
      */
-    public static String postOnClickJavaScript(String href)
+    public static String postOnClickJavaScript(String href, @Nullable String confirmMessage)
     {
-        return "var form = document.createElement('form');\n" +
-            "form.setAttribute('method', 'post');\n" +
-            "form.setAttribute('action', '" + href + "');\n" +
-            "var input = document.createElement('input');\n" +
-            "input.type = 'hidden';\n" +
-            "input.name = '" + CSRFUtil.csrfName + "';\n" +
-            "input.value = LABKEY.CSRF;\n" +
-            "form.appendChild(input);\n" +
-            "form.style.display = 'hidden';\n" +
-            "document.body.appendChild(form)\n" +
-            "form.submit();";
+        return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified url, providing a CSRF token. Use with ButtonBuilder to create
-     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
-     *  NavTree as an option (see LinkBuilder.usePost()).
+     *  Returns an onClick handler that posts to the specified url, providing a CSRF token.
      */
+    @Deprecated
+    @RemoveIn20_1  // TODO: Unused -- all callers now delegate to builder methods that implement post-on-click
     public static String postOnClickJavaScript(ActionURL url)
     {
-        return postOnClickJavaScript(url.getLocalURIString());
+        return postOnClickJavaScript(url.getLocalURIString(), null);
     }
 
     public static ButtonBuilder button(String text)
@@ -1288,6 +1277,52 @@ public class PageFlowUtil
         return new LinkBuilder(text);
     }
 
+    public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)
+    {
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip);
+    }
+
+    private static final String ARBITRARY_LETTER = "Q";
+
+    /**
+     * Converts the provided string into a legal HTML ID or Name, based on the HTML 4 rules:
+     * <ul>
+     * <li>Must begin with a letter ([A-Za-z])</li>
+     * <li>May be followed by any number of letters, digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".")</li>
+     * </ul>
+     * See <a href="https://www.w3.org/TR/html4/types.html#type-id">W3C HTML 4.01 Specification</a><br>
+     *
+     * Removes all illegal characters (e.g., whitespace and non-alphanumeric characters except the four mentioned above) and then
+     * pre-pends an arbitrary letter if the stripped version doesn't start with a letter. The return value is guaranteed to have
+     * a legal form, but of course it's not guaranteed to be unique on the page.
+     *
+     * @param s Any string
+     * @return A legal HTML ID produced from the string. Passing null is valid and returns a single letter ID.
+     */
+    public static @NotNull HtmlString makeHtmlId(@Nullable String s)
+    {
+        final String ret;
+
+        if (null == s)
+        {
+            ret = ARBITRARY_LETTER;
+        }
+        else
+        {
+            String stripped = s.replaceAll("[^0-9A-Za-z\\-_:.]", "");
+
+            if (stripped.isEmpty())
+                ret = ARBITRARY_LETTER;
+            else if (!Character.isLetter(stripped.charAt(0)))
+                ret = ARBITRARY_LETTER + stripped;
+            else
+                ret = stripped;
+        }
+
+        // We've stripped all characters that could possibly cause HTML problems
+        return HtmlString.unsafe(ret);
+    }
+
     public static HtmlString generateBackButton()
     {
         return generateBackButton("Back");
@@ -1298,6 +1333,7 @@ public class PageFlowUtil
         return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
     }
 
+    @RemoveIn20_1 // No usages
     public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
     {
         return button(text)
@@ -1309,6 +1345,7 @@ public class PageFlowUtil
     }
 
     /* Renders a span and a drop down arrow image wrapped in a link */
+    @RemoveIn20_1 // No usages
     public static String generateDropDownButton(String text, String href, String onClick)
     {
         return generateDropDownButton(text, href, onClick, null);
@@ -1368,11 +1405,6 @@ public class PageFlowUtil
         return attributes.toString();
     }
 
-    public static String generateDisabledButton(String text)
-    {
-        return button(text).enabled(false).toString();
-    }
-
     /**
      * If the provided text uses ", return '. If it uses ', return ".
      * This is useful to quote javascript.
@@ -1397,62 +1429,80 @@ public class PageFlowUtil
         return '"';
     }
 
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 42 usages.
     public static String textLink(String text, URLHelper url)
     {
-        return link(text).href(url).build().toString();
+        return link(text).href(url).toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, URLHelper url, String id)
     {
         return link(text).href(url).id(id).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
     {
         return link(text).href(url).onClick(onClickScript).id(id).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href, String id)
     {
         return link(text).href(href).id(id).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href)
     {
         return link(text).href(href).build().toString();
     }
 
-    @Deprecated
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
     {
         return link(text).href(href).onClick(onClickScript).id(id).build().toString();
     }
 
-    @Deprecated
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String unstyledTextLink(String text, String href, String onClickScript, String id)
     {
         return link(text).href(href).onClick(onClickScript).id(id).clearClasses().toString();
     }
 
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String unstyledTextLink(String text, URLHelper url)
     {
         return link(text).href(url).clearClasses().toString();
     }
 
-
+    @Deprecated    // Use LinkBuilder directly - no usages
+    @RemoveIn20_1
     public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
-        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
+        return iconLink(iconCls, tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String helpPopup(String title, String helpText)
@@ -1509,7 +1559,7 @@ public class PageFlowUtil
             // Finally, since this is script inside of an attribute, it must be HTML escaped again.
             showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
             if (width != 0)
-                showHelpDivArgs.append(", ").append(filter(jsString(filter(String.valueOf(width) + "px"))));
+                showHelpDivArgs.append(", ").append(filter(jsString(filter(width + "px"))));
             if (onClickScript == null)
             {
                 onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
@@ -2561,6 +2611,33 @@ public class PageFlowUtil
                 assertTrue(isRobotUserAgent(ua));
             for (String ua : nots)
                 assertFalse(isRobotUserAgent(ua));
+        }
+
+        @Test
+        public void testMakeHtmlId()
+        {
+            testMakeHtmlId(null);
+            testMakeHtmlId("");
+            testMakeHtmlId("!@#$");
+            testMakeHtmlId(")(*&^%$");
+            testMakeHtmlId("</html>");
+            testMakeHtmlId("123@#$%");
+            testMakeHtmlId("foo");
+            testMakeHtmlId("!@#1!@#");
+            testMakeHtmlId("ABC");
+            testMakeHtmlId("!BC234");
+            testMakeHtmlId("1A-34-FB-44");
+        }
+
+        private void testMakeHtmlId(@Nullable String id)
+        {
+            HtmlString legalId = makeHtmlId(id);
+            assertTrue(id + " was converted to " + legalId + ", which is not a legal HTML ID!", isLegalId(legalId.toString()));
+        }
+
+        private boolean isLegalId(String id)
+        {
+            return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
         }
     }
 

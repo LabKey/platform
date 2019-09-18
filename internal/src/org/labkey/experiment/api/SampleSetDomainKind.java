@@ -54,7 +54,6 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,6 +66,7 @@ import java.util.stream.Collectors;
 public class SampleSetDomainKind extends AbstractDomainKind
 {
     private static final Logger logger;
+    public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -103,7 +103,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     public String getKindName()
     {
-        return "SampleSet";
+        return NAME;
     }
 
     @Override
@@ -143,6 +143,12 @@ public class SampleSetDomainKind extends AbstractDomainKind
         return ExperimentService.get().getSampleSet(domain.getTypeURI());
     }
 
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return false;
+    }
+
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleSet ss = getSampleSet(domain);
@@ -155,7 +161,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, false, true, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
     }
 
     @Override
@@ -167,11 +173,15 @@ public class SampleSetDomainKind extends AbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
+        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
+
+        if (domain == null)
+            return reserved;
+
         ExpSampleSet ss = getSampleSet(domain);
         if (ss == null)
-            return RESERVED_NAMES;
+            return reserved;
 
-        Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
         try
         {
             Map<String, String> aliases = ss.getImportAliasMap();

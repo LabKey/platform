@@ -39,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -70,6 +71,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.HtmlString.NBSP;
+
 
 public class JunitController extends SpringActionController
 {
@@ -97,6 +102,37 @@ public class JunitController extends SpringActionController
         @Override
         protected void renderView(Object model, PrintWriter out)
         {
+            renderViewDOM(model,out);
+        }
+
+        protected void renderViewDOM(Object model, PrintWriter out)
+        {
+            DIV(TABLE(cl("labkey-data-region"), testCases.keySet().stream().map(module ->
+                    createHtmlFragment(
+                        TR(TD(at(colspan,"3"),A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)),module))),
+                        testCases.get(module).stream().map(clazz ->
+                            TR(
+                                TD(at(style,"width:60px;"), NBSP),
+                                showRunButtons ? TD(at(style,"font-size:66%; color:gray;"), getScope(clazz).name(), NBSP, NBSP) : null,
+                                TD(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName())), clazz.getName())
+                            ))
+            ))))).appendTo(out);
+
+            if (showRunButtons)
+            {
+                createHtmlFragment(
+                        BR(), PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())),
+                        BR(), PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")),
+                        BR(), PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")),
+                        LK.FORM(at(name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
+                        BR(), PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true)),
+                        BR(), PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer()))
+                ).appendTo(out);
+            }
+        }
+
+        protected void renderViewOLD(Object model, PrintWriter out)
+        {
             out.println("<div><table class=\"labkey-data-region\">");
 
             for (String module : testCases.keySet())
@@ -111,7 +147,7 @@ public class JunitController extends SpringActionController
                 {
                     ActionURL testCaseURL = new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName());
                     out.println("<tr>");
-                    out.println("<td style=\"min-width:60px;\">&nbsp;</td>");
+                    out.println("<td style=\"width:60px;\">&nbsp;</td>");
                     if (showRunButtons)
                     {
                         out.println("<td style=\"font-size:66%; color:gray;\">" + getScope(clazz) + "&nbsp;&nbsp;</td>");
@@ -127,10 +163,10 @@ public class JunitController extends SpringActionController
             if (showRunButtons)
             {
                 out.print("<p><br>" + PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())) + "</p>");
-                out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","BVT")) + "</p>");
-                out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when","DRT")) + "</p>");
+                out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")) + "</p>");
+                out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")) + "</p>");
 
-                out.print("<form name=\"run2\" action=\"" +  new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
+                out.print("<form name=\"run2\" action=\"" + new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
                 out.print("<br>" + PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())));
             }
         }

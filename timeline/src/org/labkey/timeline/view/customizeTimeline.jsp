@@ -185,7 +185,7 @@ Ext.onReady(function()
     updateFields(settings.schemaName, settings.queryName, settings.viewName);
 });
 </script>
-<labkey:form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(ctx).getEncodedLocalURIString()%>">
+<labkey:form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(ctx)%>">
     <table>
         <tr>
             <td class="ms-searchform">Web Part Title:</td>

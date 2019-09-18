@@ -15,6 +15,8 @@
  */
 package org.labkey.api.study.actions;
 
+import org.labkey.api.assay.actions.BaseAssayAction;
+import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.InsertPermission;

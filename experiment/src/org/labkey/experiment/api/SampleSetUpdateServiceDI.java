@@ -18,10 +18,12 @@ package org.labkey.experiment.api;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -67,6 +69,8 @@ import java.util.Objects;
  */
 public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 {
+    public static final Logger LOG = Logger.getLogger(SampleSetUpdateServiceDI.class);
+
     public enum Options {
         SkipDerivation
     }
@@ -160,7 +164,12 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
-        List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+        // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
+
+        DbScope scope = getSchema().getDbSchema().getScope();
+        List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
+                super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext));
+
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
             onSamplesChanged();
@@ -396,6 +405,22 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 //    }
 
     private void onSamplesChanged()
+    {
+        var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
+        if (tx != null)
+        {
+             if (!tx.isAborted())
+                 tx.addCommitTask(this::fireSamplesChanged, DbScope.CommitTaskOption.POSTCOMMIT);
+             else
+                 LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+        }
+        else
+        {
+            this.fireSamplesChanged();
+        }
+    }
+
+    private void fireSamplesChanged()
     {
         _sampleset.onSamplesChanged(getUser(), null);
     }

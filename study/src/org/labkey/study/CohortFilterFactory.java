@@ -23,6 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.CohortFilter.Type;
@@ -45,7 +46,7 @@ import java.util.Set;
  */
 public class CohortFilterFactory
 {
-    public static enum Params
+    public static enum Params implements EnumHasHtmlString<Params>
     {
         cohortFilterType
         {
@@ -444,7 +445,15 @@ public class CohortFilterFactory
         String subject = study.getSubjectColumnName();
         String subjectVisit = StudyService.get().getSubjectVisitTableName(study.getContainer());
 
-        FieldKey fk = FieldKey.decode(s);
+        FieldKey fk;
+        try
+        {
+            fk = FieldKey.decode(s);
+        }
+        catch (IllegalArgumentException badFieldKey)
+        {
+            return null; // Don't choke on malformed URL parameter
+        }
         List<String> parts = fk.getParts();
         if (parts.size() > 0)
         {

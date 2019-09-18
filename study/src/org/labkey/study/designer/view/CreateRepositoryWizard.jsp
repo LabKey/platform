@@ -28,6 +28,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.SortedSet" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -59,7 +60,7 @@ the vaccine study.
 
         <tr>
             <td>Study Begin Date</td>
-            <td><input name="beginDate" value="<%=formatDate(form.getBeginDate())%>"></td>
+            <td><input name="beginDate" value="<%=h(DateUtil.formatDateISO8601(form.getBeginDate()))%>"></td>
         </tr>
         <tr>
             <td>Subject Noun (Singular)</td>
@@ -114,7 +115,7 @@ the vaccine study.
 else
 {
 %>
-    <input type="hidden" name="beginDate" value="<%=form.getBeginDate()%>">
+    <input type="hidden" name="beginDate" value="<%=h(DateUtil.formatDateISO8601(form.getBeginDate()))%>">
     <input type="hidden" name="subjectNounSingular" value="<%=h(form.getSubjectNounSingular())%>">
     <input type="hidden" name="subjectNounPlural" value="<%=h(form.getSubjectNounPlural())%>">
     <input type="hidden" name="subjectColumnName" value="<%=h(form.getSubjectColumnName())%>">

@@ -27,7 +27,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.study.query.ResultsQueryView;
+import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -146,7 +146,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
 
                     Map<String, String> title = new HashMap<>();
                     title.put("title", "View run details");
-                    out.write(PageFlowUtil.textLink("run details", url, "", "", title));
+                    out.write(PageFlowUtil.link("run details").href(url).attributes(title).toString());
                 }
             }
 

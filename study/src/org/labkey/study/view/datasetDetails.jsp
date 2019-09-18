@@ -38,6 +38,7 @@
 <%@ page import="org.labkey.study.model.VisitDataset" %>
 <%@ page import="org.labkey.study.model.VisitDatasetType" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.view.TypeSummaryView" %>
 <%@ page import="org.labkey.study.visitmanager.VisitManager" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="java.util.ArrayList" %>
@@ -45,9 +46,10 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
+    @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("Ext4");
@@ -116,9 +118,8 @@ if (permissions.contains(AdminPermission.class))
         ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, c);
         deleteDatasetURL.addParameter("id", dataset.getDatasetId());
         buttons.add(button("Delete Dataset")
-            .submit(true)
             .href(deleteDatasetURL)
-            .onClick("this.form.action='" + deleteDatasetURL + "'; return confirm('Are you sure you want to delete this dataset?  All related data and visitmap entries will also be deleted.')"));
+            .usePost("Are you sure you want to delete this dataset? All related data and visitmap entries will also be deleted."));
     }
     if (user.hasRootAdminPermission() || dataset.canWrite(user))
     {
@@ -214,7 +215,7 @@ if (!pipelineSet)
 
     <labkey:panel title="Dataset Fields">
         <%
-            JspView typeSummary = new StudyController.StudyJspView<>(study, "typeSummary.jsp", dataset, (BindException)me.getErrors());
+            JspView typeSummary = new TypeSummaryView(study, dataset, (BindException)me.getErrors());
             me.include(typeSummary, out);
         %>
     </labkey:panel>
@@ -235,8 +236,8 @@ if (!pipelineSet)
                     hasVisitAssociations = true;
                     VisitDatasetType type = vm.isRequired() ? VisitDatasetType.REQUIRED : VisitDatasetType.OPTIONAL;
                     %><tr>
-                        <td><%= h(visit.getDisplayString()) %></td>
-                        <td><%=text(type == VisitDatasetType.NOT_ASSOCIATED ? "&nbsp;" : h(type.getLabel()))%></td>
+                        <td><%=h(visit.getDisplayString())%></td>
+                        <td><%=h(type.getLabel())%></td>
                     </tr><%
                 }
             }

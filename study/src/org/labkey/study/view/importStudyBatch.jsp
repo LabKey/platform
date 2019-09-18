@@ -15,15 +15,17 @@
  * limitations under the License.
  */
 %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
 <%@ page import="org.labkey.api.study.Dataset"%>
-<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.pipeline.DatasetFileReader" %>
 <%@ page import="org.labkey.study.pipeline.DatasetImportRunnable" %>
 <%@ page import="java.util.List" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <div>
 <labkey:errors/>
@@ -34,7 +36,6 @@
     List<DatasetImportRunnable> runnables = reader.getRunnables();
 
     boolean hasError = me.getErrors().hasErrors();
-
 %>
 The dataset definition file <b><%= h(reader.getDefinitionFileName()) %></b> refers to the following dataset files:<br><br>
 
@@ -44,18 +45,21 @@ int row = 0;
 for (DatasetImportRunnable runnable : runnables)
 {
     Dataset dataset = runnable.getDatasetDefinition();
-    String message = runnable.validate();
-    if (message == null)
+    String error = runnable.validate();
+    HtmlString message;
+    if (error == null)
+    {
         message = h(runnable.getFileName());
+    }
     else
     {
         hasError = true;
-        message = "<font class=labkey-error>" + h(message) + "</font>";
+        message = HtmlStringBuilder.of(HtmlString.unsafe("<font class=labkey-error>")).append(error).append(HtmlString.unsafe("</font>")).getHtmlString();
     }
     %>
     <tr class="<%=getShadeRowClass(row++)%>">
         <td align=right><%= dataset != null ? dataset.getDatasetId() : ""%></td>
-        <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
+        <td><%=h(dataset != null ? dataset.getLabel() : "Unknown")%></td>
         <td><%=message%></td>
         <td><%=runnable.getAction()%></td>
     </tr><%

@@ -18,13 +18,15 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase"%>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
     StudyController.ViewPrefsBean bean = me.getModelBean();
@@ -44,9 +46,9 @@
         for (Pair<String, String> view : bean.getViews())
         {
 %>
-            <tr><td><%=text(getLabel(view, defaultView))%></td>
+            <tr><td><%=getLabel(view, defaultView)%></td>
                 <td>&nbsp;</td>
-                <td><%=link("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue()))%></td>
+                <td><%=link("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue())).usePost()%></td>
             </tr>
 <%
         }
@@ -64,7 +66,7 @@
     doneUrl.deleteParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
     doneUrl.deleteParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME);
 
-    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView, getUser(), getContainer());
 
     if (reportId != null)
         doneUrl.addParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
@@ -76,10 +78,10 @@
 </table>
 
 <%!
-    String getLabel(Pair<String, String> view, String defaultView)
+    HtmlString getLabel(Pair<String, String> view, String defaultView)
     {
         if (StringUtils.equals(view.getValue(), defaultView))
-            return "<b>" + h(view.getKey()) + "</b>";
+            return HtmlStringBuilder.of(HtmlString.unsafe("<b>")).append(view.getKey()).append(HtmlString.unsafe("</b>")).getHtmlString();
 
         return h(view.getKey());
     }

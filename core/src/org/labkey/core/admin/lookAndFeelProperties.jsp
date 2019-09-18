@@ -24,7 +24,6 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -102,8 +101,8 @@
     <td><%
             FolderDisplayMode currentMode = laf.getFolderDisplayMode();
         %>
-        <input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%><br>
-        <input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
+        <label><input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ALWAYS.toString())%>"<%=checked(currentMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
+        <label><input type="radio" name="folderDisplayMode" value="<%=h(FolderDisplayMode.ADMIN.toString())%>"<%=checked(currentMode == FolderDisplayMode.ADMIN)%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%></label><br>
     </td>
 </tr>
 <tr>
@@ -131,9 +130,11 @@
     <td class="labkey-form-label">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</td>
     <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%= h(laf.getSupportEmail()) %>"></td>
 </tr>
-<tr>
-    <td>&nbsp;</td>
-</tr>
+<% if (bean.getCustomPageElementLink(c) != null) { %>
+    <tr>
+        <td class="labkey-form-label" ><%=link("Configure Custom Page Elements", bean.getCustomPageElementLink(c))%></td>
+    </tr>
+<%}%>
 <tr>
     <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
@@ -213,8 +214,8 @@
 <tr>
     <td class="labkey-form-label">Date parsing mode<%=helpPopup("Date parsing", dateParsingHelp, false)%></td>
     <td>
-        <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%><br>
-        <input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%><br>
+        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.US)%>> <%=h(DateParsingMode.US.getDisplayString())%> </label><br>
+        <label><input type="radio" name="dateParsingMode" value="<%=h(DateParsingMode.NON_US.toString())%>"<%=checked(dateParsingMode == DateParsingMode.NON_US)%>> <%=h(DateParsingMode.NON_US.getDisplayString())%> </label><br>
     </td>
 </tr><%
     }
@@ -303,7 +304,7 @@
         if (confirm('Are you sure you want to clear <%=text(clearMessage)%>?'))
         {
             _form.setClean();
-            <%=PageFlowUtil.postOnClickJavaScript(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))%>
+            LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c).toString())%>);
             return true;
         }
         else

@@ -67,7 +67,10 @@ import org.labkey.api.study.StudyCachable;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -2234,7 +2237,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    public enum SpecimenTypeLevel
+    public enum SpecimenTypeLevel implements EnumHasHtmlString<SpecimenTypeLevel>
     {
         PrimaryType()
         {
@@ -3283,9 +3286,9 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             {
                 ModuleHtmlView moduleView = ModuleHtmlView.get(module, path);
                 assert null != moduleView;
-                String html = moduleView.getHtml();
-                html = ModuleHtmlView.replaceTokens(html, context);
-                return ExtendedSpecimenRequestView.createView(html);
+                HtmlString html = moduleView.getHtml();
+                String s = ModuleHtmlView.replaceTokens(html.toString(), context);
+                return ExtendedSpecimenRequestView.createView(s);
             }
         }
 
