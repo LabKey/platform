@@ -238,8 +238,6 @@ public class QuerySnapshotTest extends StudyBaseTest
         assayHelper.importAssay(ASSAY_NAME, ASSAY_RUN_FILE, getCurrentContainerPath(), batchProperties);
 
         log("Create a query against the Assay Data table.");
-        goToModule("Query");
-        createNewQuery("study");
 
         final String CROSS_STUDY_QUERY_SQL =
                 "SELECT 1 as sequenceNum, \n" +
@@ -248,9 +246,7 @@ public class QuerySnapshotTest extends StudyBaseTest
                         "Data.Date \n" +
                         "FROM assay.General." + ASSAY_NAME + ".Data";
 
-        setFormElement(Locator.id("ff_newQueryName"), "assay_query");
-        clickButton("Create and Edit Source");
-        setCodeEditorValue("queryText", CROSS_STUDY_QUERY_SQL);
+        createQuery(getCurrentContainerPath(), "assay_query", "study", CROSS_STUDY_QUERY_SQL, null, false);
         clickButton("Save & Finish");
 
         log("Create a snapshot of the query.");

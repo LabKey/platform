@@ -85,19 +85,24 @@ public class ExpSchemaLookup38448Test extends BaseWebDriverTest
         _containerHelper.createProject(PROJECT_NAME);
 
         projectMenu().navigateToProject(PROJECT_NAME);
-        portalHelper.addWebPart("Sample Sets");
-        portalHelper.addWebPart("Data Classes");
-        portalHelper.addWebPart("Assay List");
-        portalHelper.addWebPart("Run Groups");
-
+        portalHelper.doInAdminMode(ph ->
+        {
+            ph.addBodyWebPart("Sample Sets");
+            ph.addBodyWebPart("Data Classes");
+            ph.addBodyWebPart("Assay List");
+            ph.addBodyWebPart("Run Groups");
+        });
 
         _containerHelper.createSubfolder(PROJECT_NAME, SUB_FOLDER_A);
 
         projectMenu().navigateToFolder(PROJECT_NAME, SUB_FOLDER_A);
-        portalHelper.addWebPart("Sample Sets");
-        portalHelper.addWebPart("Data Classes");
-        portalHelper.addWebPart("Assay List");
-        portalHelper.addWebPart("Run Groups");
+        portalHelper.doInAdminMode(ph ->
+        {
+            ph.addBodyWebPart("Sample Sets");
+            ph.addBodyWebPart("Data Classes");
+            ph.addBodyWebPart("Assay List");
+            ph.addBodyWebPart("Run Groups");
+        });
 
         createDataClasses();
 
