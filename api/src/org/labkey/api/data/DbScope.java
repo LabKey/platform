@@ -620,10 +620,16 @@ public class DbScope
     }
 
 
+    public interface RetryFn<ReturnType>
+    {
+        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException;
+    }
+
+
     /** Won't retry if we're already in a transaction
      * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
      */
-    public <ReturnType> ReturnType executeWithRetry(Function<DbScope.Transaction, ReturnType> fn)
+    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn)
     {
         // don't retry if we're already in a transaction, it won't help
         ReturnType ret = null;
@@ -635,7 +641,7 @@ public class DbScope
             lastException = null;
             try (DbScope.Transaction transaction = ensureTransaction())
             {
-                ret = fn.apply(transaction);
+                ret = fn.exec(transaction);
                 transaction.commit();
                 break;
             }
