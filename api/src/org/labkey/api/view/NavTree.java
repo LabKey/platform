@@ -667,7 +667,7 @@ public class NavTree implements Collapsible
             lb.usePost(_confirmMessage);
 
         if (isNoFollow())
-            lb.attributes(Map.of("rel", "nofollow"));
+            lb.nofollow();
 
         return lb;
     }

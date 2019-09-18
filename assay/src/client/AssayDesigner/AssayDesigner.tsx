@@ -19,6 +19,9 @@ import {ActionURL, Security} from "@labkey/api";
 import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
 import { Alert, LoadingSpinner, PermissionTypes } from "@glass/base";
 
+import "@glass/base/dist/base.css"
+import "@glass/domainproperties/dist/domainproperties.css"
+
 type State = {
     protocolId: number,
     returnUrl: string,

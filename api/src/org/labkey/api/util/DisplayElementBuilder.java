@@ -38,6 +38,11 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     String iconCls;
     boolean usePost = false;
     String confirmMessage = null;
+    String rel;
+    String style;
+    String name;
+    String target;
+    String title;
 
     public DisplayElementBuilder()
     {
@@ -87,6 +92,12 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
         return getThis();
     }
 
+    public BUILDER title(String title)
+    {
+        this.title = title;
+        return getThis();
+    }
+
     public BUILDER addClass(@NotNull String cssClass)
     {
         if (StringUtils.isEmpty(this.cssClass))
@@ -118,6 +129,30 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     public BUILDER usePost()
     {
         this.usePost = true;
+        return getThis();
+    }
+
+    public BUILDER nofollow()
+    {
+        this.rel = "nofollow";
+        return getThis();
+    }
+
+    public BUILDER target(String target)
+    {
+        this.target = target;
+        return getThis();
+    }
+
+    public BUILDER name(String name)
+    {
+        this.name = name;
+        return getThis();
+    }
+
+    public BUILDER style(String style)
+    {
+        this.style = style;
         return getThis();
     }
 
