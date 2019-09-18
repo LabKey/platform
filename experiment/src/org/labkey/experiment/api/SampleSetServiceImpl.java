@@ -71,7 +71,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -707,36 +706,33 @@ public class SampleSetServiceImpl implements SampleSetService
         if (parentUri != null)
             source.setParentCol(parentUri);
 
-        ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
+        final ExpSampleSetImpl ss = new ExpSampleSetImpl(source);
 
-        /* CONSIDER making a DbScope helper out of this pattern and use for other domain create/save usages */
-        // don't retry if we're already in a transaction, it won't help
-        int tries = getExpSchema().getScope().isTransactionActive() ? 1 : 3;
-        long delay = 100;
-        DeadlockLoserDataAccessException lastException = null;
-        for (var tri=0 ; tri < tries ; tri++ )
+        try
         {
-            lastException = null;
-            try (DbScope.Transaction transaction = ensureTransaction())
+            getExpSchema().getScope().executeWithRetry(transaction ->
             {
-                domain.save(u);
-                ss.save(u);
-                DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
-
-                transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-                transaction.commit();
-                break;
-            }
-            catch (DeadlockLoserDataAccessException dldae)
-            {
-                lastException = dldae;
-                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ie) {}
-                LOG.info("Retrying create sample set after deadlock: " + ss.getName());
-            }
+                try
+                {
+                    domain.save(u);
+                    ss.save(u);
+                    DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+                    transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                    return ss;
+                }
+                catch (ExperimentException eex)
+                {
+                    throw new RuntimeException(eex);
+                }
+            });
         }
-
-        if (null != lastException)
-            throw lastException;
+        catch (RuntimeException x)
+        {
+            if (x.getCause() instanceof ExperimentException)
+                throw (ExperimentException)x.getCause();
+            else
+                throw x;
+        }
 
         return ss;
     }
