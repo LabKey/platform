@@ -1296,7 +1296,7 @@ public class FileContentServiceImpl implements FileContentService
                 filesRoot = rootPath;
 
             String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl, container);
-            if (absoluteFilePath.startsWith(rootPath))
+            if (StringUtils.startsWith(absoluteFilePath, rootPath))
             {
                 String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
                 int lastSlash = offset.lastIndexOf("/");
