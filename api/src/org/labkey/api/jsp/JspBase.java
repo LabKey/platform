@@ -757,7 +757,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
         if (response.isCommitted())
             return;
         Set<String> alreadyBeenPushed = Objects.requireNonNull(SessionHelper.getAttribute(request, "org.labkey.api.jsp.JspBase#alreadyPushed", HashSet::new));
-        System.err.println(request.getRequestURI());
         pushPaths.stream()
                 .filter(link -> alreadyBeenPushed.add(link.href))
                 .forEach(path -> response.addHeader("Link", path.toLinkHeader()));
