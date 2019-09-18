@@ -1809,17 +1809,7 @@ public class DataRegion extends DisplayElement
 
         if (value != null && url != null)
         {
-            Map<String, String> props;
-            if (column.getLinkTarget() != null)
-            {
-                props = Collections.singletonMap("target", column.getLinkTarget());
-            }
-            else
-            {
-                props = Collections.emptyMap();
-            }
-
-            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).attributes(props).toString());
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).target(column.getLinkTarget()).toString());
         }
     }
 

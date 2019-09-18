@@ -64,13 +64,15 @@
 
         HR(),
 
-        X.FORM(at(method,"POST"),
-                "This is a POST form ", X.FA("plus-square")),
+        LK.FORM(at(method,"POST"),
+                "This is a POST form ", LK.FA("plus-square")),
 
         HR(),
 
-        X.FORM(at(method,"GET"),
-                "This is a GET form ", X.FA("minus-square")),
+        LK.FORM(at(method,"GET"),
+                "This is a GET form ", LK.FA("minus-square")),
 
-        HR()
+        HR(),
+
+        LK.CHECKBOX(at(name,"test"))
 );%>

@@ -55,7 +55,7 @@ public class DomTestCase extends Assert
 
 
         h = createHtml(
-                X.FORM(at(method,"POST"), new Button.ButtonBuilder("button").build())
+                LK.FORM(at(method,"POST"), new Button.ButtonBuilder("button").build())
         );
         assertTrue(h.toString().contains("labkey-button"));
         assertTrue(h.toString().contains("POST"));
