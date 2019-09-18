@@ -28,7 +28,7 @@ import java.util.Map;
 // Regression coverage for Issue 38448: ExpSchema lookups do not propagate ContainerFilter of parent table
 
 @Category({DailyC.class})
-public class ExpSchemaLookup38448Test extends BaseWebDriverTest
+public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
 {
 
     private static final String PROJECT_NAME = "ExpSchemaLookupProject";
@@ -74,7 +74,7 @@ public class ExpSchemaLookup38448Test extends BaseWebDriverTest
     @BeforeClass
     public static void setupProject()
     {
-        ExpSchemaLookup38448Test init = (ExpSchemaLookup38448Test) getCurrentTest();
+        ExpSchemaPropagateFilterTest init = (ExpSchemaPropagateFilterTest) getCurrentTest();
 
         init.doSetup();
     }
