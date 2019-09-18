@@ -146,6 +146,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.util.DOM.at;
 
 
 public class PageFlowUtil
@@ -1619,12 +1620,68 @@ public class PageFlowUtil
         }
     }
 
+    public static class Link
+    {
+        enum AS
+        {
+            script,
+            style,
+            image,
+            media,
+            document,
+            font
+        }
 
+        public final String href;
+        public final AS as;
+        public final String type;
+
+        public Link(String href, AS as, String type)
+        {
+            this.href = href;
+            this.as = as;
+            this.type = type;
+        }
+
+        public Link(String href, MimeMap.MimeType mimeType)
+        {
+            this.href = href;
+            as = null;
+            type = null;
+        }
+
+        public String toLinkHeader()
+        {
+            var sb = new StringBuilder();
+            sb.append("<").append(href).append(">; rel=preload");
+            if (null != as)
+                sb.append("; as=").append(as);
+            if (null != type)
+                sb.append("; type=").append(type);
+            return sb.toString();
+        }
+
+        public HtmlString toLinkElement()
+        {
+            return DOM.createHtml(DOM.LINK(at(
+                    DOM.Attribute.href,href,
+                    DOM.Attribute.rel,"preload",
+                    DOM.Attribute.as, null==as?null:as.name(),
+                    DOM.Attribute.type,type)));
+        }
+    }
+
+
+    @Deprecated
     public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources)
     {
         return _getStandardIncludes(context, null, resources, false, false, null);
     }
 
+    public static String getAppIncludes(ViewContext context, @Nullable  LinkedHashSet<ClientDependency> resources, @Nullable Set<Link> pushPaths)
+    {
+        return _getStandardIncludes(context, null, resources, false, false, pushPaths);
+    }
 
     public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
     {
@@ -1636,14 +1693,14 @@ public class PageFlowUtil
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters(), null);
     }
 
-    public static String getStandardIncludes(ViewContext context, PageConfig config, @Nullable Set<String> pushPaths)
+    public static String getStandardIncludes(ViewContext context, PageConfig config, @Nullable Set<Link> pushPaths)
     {
         return _getStandardIncludes(context, config, config.getClientDependencies(), true, config.shouldIncludePostParameters(), pushPaths);
     }
 
 
     private static String _getStandardIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources,
-            boolean includeDefaultResources, boolean includePostParameters, @Nullable Set<String> pushPaths)
+            boolean includeDefaultResources, boolean includePostParameters, @Nullable Set<Link> pushPaths)
 
     {
         if (resources == null)
@@ -1694,7 +1751,7 @@ public class PageFlowUtil
     }
 
     private static String getIncludes(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> extraResources,
-              boolean includeDefaultResources, boolean includePostParameters, @Nullable Set<String> pushPaths)
+              boolean includeDefaultResources, boolean includePostParameters, @Nullable Set<Link> pushPaths)
     {
         Container c = context.getContainer();
 
@@ -1742,7 +1799,7 @@ public class PageFlowUtil
 
     // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
-    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources, Set<String> pushPaths)
+    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeDefaultResources, Set<Link> pushPaths)
     {
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
@@ -1756,10 +1813,10 @@ public class PageFlowUtil
 
         if (includeDefaultResources)
         {
-            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css", pushPaths)));
-            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css", pushPaths)));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/core.css", Link.AS.style, "text/css", pushPaths)));
+            F.format(link, PageFlowUtil.filter(staticResourceUrl("/core/css/" + resolveThemeName(c) + ".css", Link.AS.style, "text/css", pushPaths)));
 
-            staticResourceUrl("fonts/Roboto/Roboto-Regular.ttf", pushPaths);
+            staticResourceUrl("fonts/Roboto/Roboto-Regular.ttf", Link.AS.font, "font/ttf",  pushPaths);
             staticResourceUrl("fonts/Roboto/Roboto-Bold.ttf", pushPaths);
             staticResourceUrl("fonts/TitilliumWeb/TitilliumWeb-Regular.ttf", pushPaths);
             staticResourceUrl("fonts/TitilliumWeb/TitilliumWeb-Bold.ttf", pushPaths);
@@ -1923,24 +1980,52 @@ public class PageFlowUtil
 
     public static String staticResourceUrl(String resourcePath)
     {
-        return staticResourceUrl(resourcePath, null);
+        return staticResourceUrl(resourcePath, null, null, null);
     }
 
-    public static String staticResourceUrl(String resourcePath, Set<String> pushPaths)
+    public static String staticResourceUrl(String resourcePath, Set<Link> pushPaths)
+    {
+        Link.AS as = null;
+        String contentType = null;
+        if (null != pushPaths)
+        {
+            contentType = getContentTypeFor(resourcePath);
+            if ("text/javascript".equals(contentType))
+                as = Link.AS.script;
+            else if ("text/css".equals(contentType))
+                as = Link.AS.style;
+            else if ("font/ttf".equals(contentType))
+                as = Link.AS.font;
+            else
+                as = null;
+        }
+        return staticResourceUrl(resourcePath, as, contentType, pushPaths);
+    }
+
+    /* TODO consider caching map resourcePath -> PageFlowUtil.Link */
+    public static String staticResourceUrl(String resourcePath, Link.AS as, String contentType, Set<Link> pushPaths)
     {
         String slash = resourcePath.startsWith("/") ? "" : "/";
+        var path = new StringBuilder();
         if (null != staticResourcePrefix)
-        {
-            return staticResourcePrefix + slash + resourcePath;
-        }
-        String path = AppProps.getInstance().getContextPath() + slash + resourcePath + "?" + getServerSessionHash();
-        if (null != pushPaths)
-            pushPaths.add(path);
-        return path;
+            path.append(staticResourcePrefix).append(slash).append(resourcePath);
+        else
+            path.append(AppProps.getInstance().getContextPath()).append(slash).append(resourcePath);
+        if (as != Link.AS.font) // the .css file references do not append sessionHash, and the href needs to match exactly
+            path.append("?").append(getServerSessionHash());
+        var href = path.toString();
+        if (null != pushPaths && null != as)
+            pushPaths.add(new Link(href, as, contentType));
+        return href;
     }
 
+    @Deprecated
+    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters)
+    {
+        return getLabkeyJS(context, config, resources, includePostParameters, null);
+    }
 
-    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters, Set<String> pushPaths)
+    public static String getLabkeyJS(ViewContext context, @Nullable PageConfig config, @Nullable LinkedHashSet<ClientDependency> resources, boolean includePostParameters, Set<Link> pushPaths)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -1961,7 +2046,7 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources, Set<String> pushPaths)
+    private static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> resources, Set<Link> pushPaths)
     {
         /*
            scripts: the scripts that should be explicitly included

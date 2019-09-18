@@ -42,11 +42,11 @@
     if (model.getShowPrintDialog())
         onLoad += "window.print(); ";
 
-    var pushPaths = new LinkedHashSet<String>();
+    var pushPaths = new LinkedHashSet<PageFlowUtil.Link>();
     var includes = me.isAppTemplate()
-            ? PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies() /* TODO , pushPaths */)
+            ? PageFlowUtil.getAppIncludes(getViewContext(), model.getClientDependencies(), pushPaths)
             : PageFlowUtil.getStandardIncludes(getViewContext(), model, pushPaths);
-    pushServerResources(request, pushPaths);
+    pushServerResources(request, response, pushPaths);
 %>
 <!DOCTYPE html>
 <html lang="en">

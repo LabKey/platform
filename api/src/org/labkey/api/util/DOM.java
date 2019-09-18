@@ -185,6 +185,7 @@ public class DOM
         action,
         align,
         alt,
+        as,
         async,
         autocomplete,
         autofocus,

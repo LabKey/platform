@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp;
 
+import org.apache.catalina.manager.util.SessionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,6 +37,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -51,14 +53,19 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -743,5 +750,17 @@ public abstract class JspBase extends JspContext implements HasViewContext
     @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(ClientDependencies dependencies)
     {
+    }
+
+    protected void pushServerResources(HttpServletRequest request, HttpServletResponse response, Set<PageFlowUtil.Link> pushPaths)
+    {
+        if (response.isCommitted())
+            return;
+        Set<String> alreadyBeenPushed = Objects.requireNonNull(SessionHelper.getAttribute(request, "org.labkey.api.jsp.JspBase#alreadyPushed", HashSet::new));
+        System.err.println(request.getRequestURI());
+        pushPaths.stream()
+                .filter(link -> alreadyBeenPushed.add(link.href))
+                .forEach(path -> response.addHeader("Link", path.toLinkHeader()));
+        // FOR HTTP/2 we could use PushBuilder
     }
 }
