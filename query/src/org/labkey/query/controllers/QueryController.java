@@ -5090,14 +5090,32 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public static class SelectNoneAction extends MutatingApiAction<SelectForm>
     {
-        public ApiResponse execute(final SelectForm form, BindException errors)
+        @Override
+        public void validateForm(SelectForm form, Errors errors)
         {
-            DataRegionSelection.clearAll(getViewContext(), form.getKey());
-            return new DataRegionSelection.SelectionResponse(0);
+            if (form.getSchemaName().isEmpty() != (form.getQueryName() == null))
+            {
+                errors.reject(ERROR_MSG, "Both schemaName and queryName are required");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            if (form.getQueryName() == null)
+            {
+                DataRegionSelection.clearAll(getViewContext(), form.getKey());
+                return new DataRegionSelection.SelectionResponse(0);
+            }
+            else
+            {
+                int count = DataRegionSelection.setSelectionForAll(form, false);
+                return new DataRegionSelection.SelectionResponse(count);
+            }
         }
     }
 
-    public static class SelectForm
+    public static class SelectForm extends QueryForm
     {
         protected String key;
 
@@ -5116,6 +5134,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public static class SelectAllAction extends MutatingApiAction<QueryForm>
     {
+        @Override
         public void validateForm(QueryForm form, Errors errors)
         {
             if (form.getSchemaName().isEmpty() ||
@@ -5125,9 +5144,10 @@ public class QueryController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(final QueryForm form, BindException errors) throws Exception
         {
-            int count = DataRegionSelection.selectAll(form);
+            int count = DataRegionSelection.setSelectionForAll(form, true);
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -5135,10 +5155,28 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class GetSelectedAction extends ReadOnlyApiAction<SelectForm>
     {
-        public ApiResponse execute(final SelectForm form, BindException errors)
+        @Override
+        public void validateForm(SelectForm form, Errors errors)
         {
-            Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), false);
-            return new ApiSimpleResponse("selected", selected);
+            if (form.getSchemaName().isEmpty() != (form.getQueryName() == null))
+            {
+                errors.reject(ERROR_MSG, "Both schemaName and queryName are required");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            if (form.getQueryName() == null)
+            {
+                Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), false);
+                return new ApiSimpleResponse("selected", selected);
+            }
+            else
+            {
+                Set<String> selected = DataRegionSelection.getSelected(form.getQueryView());
+                return new ApiSimpleResponse("selected", selected);
+            }
         }
     }
 
@@ -5146,6 +5184,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class SetCheckAction extends MutatingApiAction<SetCheckForm>
     {
+        @Override
         public ApiResponse execute(final SetCheckForm form, BindException errors)
         {
             String[] ids = form.getId(getViewContext().getRequest());

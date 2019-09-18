@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -165,6 +166,50 @@ public class DataRegionSelection
         return Collections.unmodifiableSet(result);
     }
 
+    public static @NotNull Set<String> getSelected(QueryView view) throws IOException
+    {
+        // Turn off features of QueryView
+        view.setPrintView(true);
+        view.setShowConfiguredButtons(false);
+        view.setShowPagination(false);
+        view.setShowPaginationCount(false);
+        view.setShowDetailsColumn(false);
+        view.setShowUpdateColumn(false);
+
+        TableInfo table = view.getTable();
+
+        DataView v = view.createDataView();
+        DataRegion rgn = v.getDataRegion();
+
+        // Include all rows
+        view.getSettings().setShowRows(ShowRows.ALL);
+        view.getSettings().setOffset(Table.NO_OFFSET);
+
+        // remove unnecessary columns and force the pk column(s) into the default list of columns
+        rgn.clearColumns();
+        List<String> colNames = rgn.getRecordSelectorValueColumns();
+        if (colNames == null)
+            colNames = table.getPkColumnNames();
+        for (String colName : colNames)
+        {
+            if (null == rgn.getDisplayColumn(colName))
+                rgn.addColumns(table, colName);
+        }
+
+        RenderContext rc = v.getRenderContext();
+        rc.setCache(false);
+
+        try (Timing t = MiniProfiler.step("selectAll");
+             ResultSet rs = rgn.getResultSet(rc))
+        {
+            return new HashSet<>(createSelectionList(rc, rgn, rs, colNames));
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     /**
      * Get the selected items from the request parameters (the current page of a data region) and session state as integers.
      */
@@ -243,17 +288,24 @@ public class DataRegionSelection
     }
 
 
-    public static int selectAll(QueryForm form) throws IOException
+    /**
+     * Sets the selection for all items in the given query form's view
+     * @param form
+     * @param checked
+     * @return
+     * @throws IOException
+     */
+    public static int setSelectionForAll(QueryForm form, boolean checked) throws IOException
     {
         UserSchema schema = form.getSchema();
         if (schema == null)
             throw new NotFoundException();
 
         QueryView view = schema.createView(form, null);
-        return selectAll(view, form.getQuerySettings().getSelectionKey());
+        return setSelectionForAll(view, form.getQuerySettings().getSelectionKey(), checked);
     }
 
-    public static int selectAll(QueryView view, String key) throws IOException
+    public static int setSelectionForAll(QueryView view, String key, boolean checked) throws IOException
     {
         // Turn off features of QueryView
         view.setPrintView(true);
@@ -292,7 +344,7 @@ public class DataRegionSelection
              ResultSet rs = rgn.getResultSet(rc))
         {
             List<String> selection = createSelectionList(rc, rgn, rs, colNames);
-            return setSelected(context, key, selection, true);
+            return setSelected(context, key, selection, checked);
         }
         catch (SQLException e)
         {
