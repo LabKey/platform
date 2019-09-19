@@ -66,7 +66,7 @@
 %>
         <br/>
         <%= button("Proceed").onClick("submitForm(getRegionForm()); return false;") %>
-        <%= button("Cancel").href(returnURL).attributes(Map.of("style", "margin: 0 0 0 10px;")) %>
+        <%= button("Cancel").href(returnURL).style("margin: 0 0 0 10px;") %>
 <%
     }
 %>

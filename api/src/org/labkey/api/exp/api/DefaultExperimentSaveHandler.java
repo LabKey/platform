@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -242,7 +243,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
-    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
+    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
         String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
@@ -255,7 +256,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             {
                 throw new NotFoundException("Could not find experiment run " + runId);
             }
-            if (!batch.getContainer().equals(context.getContainer()))
+            if (null != batch && !batch.getContainer().equals(context.getContainer()))
             {
                 throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
             }
@@ -574,5 +575,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             material.setCpasType(sampleSet.getLSID());
         material.save(viewContext.getUser());
         return material;
+    }
+
+    @Override
+    public ExpRun handleRunWithoutBatch(ViewContext context, JSONObject runJson, ExpProtocol protocol) throws ExperimentException, ValidationException
+    {
+        return handleRun(context, runJson, protocol, null);
     }
 }

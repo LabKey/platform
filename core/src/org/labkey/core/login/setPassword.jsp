@@ -100,8 +100,8 @@
         <% } %>
         </div>
         <div style="padding-top: 1em;">
-            <%= button(bean.buttonText).submit(true).attributes(Map.of("name", "set")) %>
-            <%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
+            <%= button(bean.buttonText).submit(true).name("set") %>
+            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
         </div>
     <% } %>
 </labkey:form>
