@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -44,6 +45,7 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -127,8 +129,21 @@ public class PropertyController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    static void configureObjectMapper(ObjectMapper om)
+    static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
     {
+        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
+        if(null == filter)
+        {
+            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
+        }
+        else
+        {
+            gwtDomainPropertiesFilter = filter;
+        }
+
+        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
+                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
+        om.setFilterProvider(gwtDomainFilterProvider);
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
         om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
@@ -232,12 +247,20 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
@@ -356,10 +379,10 @@ public class PropertyController extends SpringActionController
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createResponseObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -377,12 +400,20 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         public Object execute(DomainApiForm form, BindException errors)
@@ -598,12 +629,20 @@ public class PropertyController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Either a file is required to be posted or the id/path to a file that exists on the server must be supplied.");
         }
 
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         @Override
@@ -1065,7 +1104,7 @@ public class PropertyController extends SpringActionController
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om);
+        configureObjectMapper(om, null);
         try
         {
             return om.convertValue(domain, Map.class);
@@ -1079,7 +1118,7 @@ public class PropertyController extends SpringActionController
     public static String convertDomainToJson(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om);
+        configureObjectMapper(om, null);
         try
         {
             return om.writeValueAsString(domain);
@@ -1156,35 +1195,42 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared;
 
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
-            mapper.addMixIn(GWTDomain.class, GWTListDomainActionMixin.class);
-            SimpleBeanPropertyFilter propertiesFilter;
-            FilterProvider filters;
-
-            if (!includeFields)
-            {
-                propertiesFilter = SimpleBeanPropertyFilter.serializeAllExcept("fields","indices");
-            }
-            else
-            {
-                propertiesFilter =  SimpleBeanPropertyFilter.serializeAll();
-            }
-            filters = new SimpleFilterProvider()
-                    .addFilter("listDomainsActionFilter", propertiesFilter);
-            mapper.setFilterProvider(filters);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
         @Override
-        public Object execute(ContainerDomainForm containerDomainForm, BindException errors) throws Exception
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+
+            if (!includeFields)
+            {
+               configureObjectMapper(mapper, SimpleBeanPropertyFilter.serializeAllExcept("fields","indices"));
+            }
+            else
+            {
+                configureObjectMapper(mapper, null);
+            }
+            return mapper;
+        }
+
+        @Override
+        public Object execute(ContainerDomainForm containerDomainForm, BindException errors)
         {
             includeFields = containerDomainForm.isIncludeFields();
             includeProjectAndShared = containerDomainForm.isIncludeProjectAndShared();
 
-            return listDomains(getContainer(), getUser(), containerDomainForm, includeProjectAndShared);
+            Container c = containerDomainForm.getContainerPath() == null ? getContainer():
+                    ContainerService.get().getForPath(containerDomainForm.getContainerPath());
+
+            List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            return resp.put("domains", listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
     }
 
@@ -1210,6 +1256,17 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared = false;
         String containerPath;
         Set<String> domainKinds;
+        String apiVersion;
+
+        public String getApiVersion()
+        {
+            return apiVersion;
+        }
+
+        public void setApiVersion(String apiVersion)
+        {
+            this.apiVersion = apiVersion;
+        }
 
         public boolean isIncludeFields()
         {

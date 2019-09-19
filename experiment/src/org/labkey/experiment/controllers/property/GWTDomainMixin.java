@@ -39,6 +39,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "domainException",
 })
 
+@JsonFilter("listDomainsActionFilter")
+
 public interface GWTDomainMixin
 {
 }
