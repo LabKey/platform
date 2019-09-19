@@ -1034,7 +1034,7 @@ public class SqlScriptController extends SpringActionController
             for (Module module : modules)
             {
                 if (!module.shouldConsolidateScripts())
-                    break;
+                    continue;
 
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
                 Collection<DbSchema> schemas = provider.getSchemas();
