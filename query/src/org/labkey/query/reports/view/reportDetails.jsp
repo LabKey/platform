@@ -53,9 +53,6 @@
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
     ActionURL shareReportURL = urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
-    Map<String,String> reportURLAttributes = report.getRunReportTarget() != null
-            ? Map.of("target", report.getRunReportTarget())
-            : Collections.emptyMap();
 
     String type = report.getTypeDescription();
     String category = "";
@@ -256,7 +253,7 @@
 
     <tr>
         <td colspan="2">
-            <%= button("View Report").href(vewReportURL).attributes(reportURLAttributes) %>
+            <%= button("View Report").href(vewReportURL).target(report.getRunReportTarget()) %>
             <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : HtmlString.EMPTY_STRING%>
             <%= report.allowShareButton(getUser(), getContainer()) && (shareReportURL != null) ? button("Share Report").href(shareReportURL) : HtmlString.EMPTY_STRING%>
         </td>

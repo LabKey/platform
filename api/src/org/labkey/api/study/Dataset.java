@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.model.ViewCategory;
@@ -253,6 +254,24 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
                 }
             }
             throw new IllegalArgumentException("No match for '" + name + "'");
+        }
+
+        public static KeyManagementType getManagementTypeFromProp(PropertyType propertyType)
+        {
+            if (propertyType == PropertyType.INTEGER || propertyType == PropertyType.DOUBLE)
+            {
+                // Number fields must be RowIds
+                return RowId;
+            }
+            else if (propertyType == PropertyType.STRING)
+            {
+                // Strings can be managed as GUIDs
+                return GUID;
+            }
+            else
+            {
+                throw new IllegalStateException("Unsupported column type for managed keys: " + propertyType);
+            }
         }
     }
 }
