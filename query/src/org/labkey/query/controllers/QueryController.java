@@ -5174,7 +5174,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                Set<String> selected = DataRegionSelection.getSelected(form.getQueryView());
+                List<String> selected = DataRegionSelection.getSelected(form);
                 return new ApiSimpleResponse("selected", selected);
             }
         }
