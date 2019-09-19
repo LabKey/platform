@@ -22,7 +22,6 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.api.AssayJSONConverter;
-import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
@@ -68,16 +67,7 @@ public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonFor
             throw new IllegalArgumentException("You cannot specify both a batch object and a batches array");
 
         AssayProvider provider = getAssayProvider();
-        ExperimentSaveHandler saveHandler;
-
-        if (provider != null)
-        {
-            saveHandler = provider.getSaveHandler();
-            if (null == saveHandler)
-                throw new IllegalArgumentException("SaveAssayBatch is not supported for assay provider: " + provider);
-        }
-        else
-            saveHandler = new DefaultExperimentSaveHandler();
+        ExperimentSaveHandler saveHandler = getExperimentSaveHandler(provider);
 
         if (null != batchJsonObject)
             return executeAction(saveHandler, protocol, provider, rootJsonObject, batchJsonObject);
