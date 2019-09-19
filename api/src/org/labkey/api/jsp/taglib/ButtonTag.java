@@ -46,12 +46,7 @@ public class ButtonTag extends SimpleTagBase
 
         // TODO: This shouldn't have inconsistent logic from Button.java, should just be a pass through
         if (_href != null)
-        {
-            if (null != _target)
-                attributes.put("target", _target);
-
-            button.href(_href).onClick(_onclick).attributes(attributes);
-        }
+            button.href(_href).onClick(_onclick).target(_target);
         else
         {
             if (_onclick != null && _action != null)
@@ -62,13 +57,10 @@ public class ButtonTag extends SimpleTagBase
                 onClickScript = _onclick;
             if (_action != null)
                 onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';");
-
-            if (_name != null)
-                attributes.put("name", _name);
             if (_value != null)
                 attributes.put("value", _value);
 
-            button.submit(_submit).onClick(onClickScript).attributes(attributes);
+            button.submit(_submit).onClick(onClickScript).name(_name).attributes(attributes);
         }
 
         if (null != _disableOnClick)

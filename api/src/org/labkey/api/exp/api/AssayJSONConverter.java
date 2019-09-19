@@ -52,6 +52,7 @@ public class AssayJSONConverter
     public static final String BATCH_IDS = "batchIds";
     public static final String BATCH = "batch";
     public static final String BATCHES = "batches";
+    public static final String RUN = "run";
     public static final String RUNS = "runs";
 
     // Run properties
@@ -136,6 +137,23 @@ public class AssayJSONConverter
 
         return jsonObject;
     }
+
+    public static ApiResponse serializeRuns(AssayProvider provider, ExpProtocol protocol, List<ExpRun> runs, User user)
+    {
+        JSONObject result = new JSONObject();
+        result.put(ASSAY_ID, protocol.getRowId());
+
+        JSONArray runsArray = new JSONArray();
+
+       for(ExpRun run: runs)
+       {
+           runsArray.put(serializeRun(run, provider, protocol, user));
+       }
+
+        result.put(RUNS, runsArray);
+        return new ApiSimpleResponse(result);
+    }
+
 
     public static ApiResponse serializeResult(AssayProvider provider, ExpProtocol protocol, ExpExperiment batch, User user)
     {
