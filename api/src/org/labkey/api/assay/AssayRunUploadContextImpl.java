@@ -203,12 +203,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         {
             if (URIUtil.hasURICharacters(property.getKey()) && !properties.containsKey(property.getKey()))
             {
-                PropertyDescriptor pd;
-                try
-                {
-                    pd = OntologyManager.getPropertyDescriptor(property.getKey(), _container);
-                }
-                catch (NullPointerException e)
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(property.getKey(), _container);
+
+                if (null == pd)
                 {
                     throw new NotFoundException("Property URI is not valid - " + property.getKey());
                 }
