@@ -732,6 +732,8 @@ if (!LABKEY.DataRegions) {
      * @param {LABKEY.Filter} [filterToReplace]
      */
     LABKEY.DataRegion.prototype.replaceFilter = function(filter, filterToReplace) {
+        // alert("clearing from replaceFilter");
+        this.clearSelected();
         var target = filterToReplace ? filterToReplace : filter;
         _updateFilter(this, filter, [this.name + '.' + target.getColumnName() + '~']);
     };
@@ -742,6 +744,8 @@ if (!LABKEY.DataRegions) {
      * @param columnNames
      */
     LABKEY.DataRegion.prototype.replaceFilters = function(filters, columnNames) {
+        // alert("clearing from replaceFilters");
+        this.clearSelected();
         var filterPrefixes = [],
             filterParams = [],
             me = this;
