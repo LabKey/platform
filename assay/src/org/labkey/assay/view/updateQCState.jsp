@@ -146,5 +146,5 @@
     %>
     <labkey:input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
     <labkey:button text="update" submit="false" onclick="saveState();"/>
-    <labkey:button text="cancel" href="<%=h(form.getReturnUrl())%>" onclick="LABKEY.setSubmit(true);"/>
+    <labkey:button text="cancel" href="<%=form.getReturnUrl()%>" onclick="LABKEY.setSubmit(true);"/>
 </labkey:form>
