@@ -37,7 +37,25 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -73,7 +91,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.jsp.LabKeyJspWriter;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -151,7 +168,7 @@ import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
@@ -213,7 +230,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -693,11 +709,8 @@ public class AdminController extends SpringActionController
             }
             else if (maintenanceMode)
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                {
-                    content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
-                }
+                WikiRenderingService wikiService = WikiRenderingService.get();
+                content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
 
             if (content == null)
@@ -910,13 +923,10 @@ public class AdminController extends SpringActionController
 
             if (errorSource.length() > 0)
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                {
-                    // Copy all the warnings to the top
-                    String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
-                    views.addView(new HtmlView(html), 0);
-                }
+                WikiRenderingService renderingService = WikiRenderingService.get();
+                // Copy all the warnings to the top
+                String html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
+                views.addView(new HtmlView(html), 0);
             }
 
             return views;
@@ -984,14 +994,9 @@ public class AdminController extends SpringActionController
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                {
-                    String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
-                    _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
-                }
-                else
-                    _html = "<p class='labkey-error'>NO WIKI SERVICE AVAILABLE!</p>";
+                WikiRenderingService wikiService = WikiRenderingService.get();
+                String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
             }
         }
 

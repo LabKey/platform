@@ -54,11 +54,10 @@ public class WikiRendererDisplayColumn extends DataColumn
     @Override @NotNull
     public String getFormattedValue(RenderContext ctx)
     {
-        WikiService wikiService = WikiService.get();
+        WikiRenderingService wikiService = WikiRenderingService.get();
         String content = (String) getValue(ctx);
         if (null == content)
             return "&nbsp";
-
 
         WikiRendererType rendererType = _defaultRenderer;
         Object rendererTypeName = ctx.get(getRenderTypeFieldKey());
