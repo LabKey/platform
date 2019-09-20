@@ -80,6 +80,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
          @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, boolean commitRowsBeforeContinuing)
+            //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
         // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
         DataIterator di = data.getDataIterator(context);
@@ -276,6 +277,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         if (_insertOption.identity_insert)
             setAutoIncrement(INSERT.ON);
 
+        //pass in the voc cols in this builder
         StatementUtils utils = new StatementUtils(StatementUtils.Operation.insert, _table)
                 .skip(_skipColumnNames)
                 .allowSetAutoIncrement(_context.supportsAutoIncrementKey())

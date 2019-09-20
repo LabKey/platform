@@ -465,6 +465,7 @@ public class StatementUtils
         Domain domain = _table.getDomain();
         DomainKind domainKind = _table.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
+        //include voc props here - may be sep list (correct merge )
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
         boolean alwaysInsertExpObject = hasObjectURIColumn && updatable.isAlwaysInsertExpObject();

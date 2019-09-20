@@ -126,6 +126,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 // Attempt to resolve the column name as a property URI if it looks like a URI
                 if (URIUtil.hasURICharacters(name))
                 {
+                    // mark vocab propURI col as Voc column
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
