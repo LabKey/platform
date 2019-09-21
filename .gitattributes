@@ -2028,7 +2028,7 @@ core/resources/credits/tomcat_jars.txt -text
 core/resources/module.xml -text
 core/resources/schemas/dbscripts/postgresql/core-17.20-17.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-18.20-18.30.sql -text
-core/resources/schemas/dbscripts/postgresql/core-18.34-18.35.sql -text
+core/resources/schemas/dbscripts/postgresql/obsolete/core-18.34-18.35.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/core-0.00-12.20.sql -text
@@ -2090,7 +2090,7 @@ core/resources/schemas/dbscripts/postgresql/test-create.sql -text
 core/resources/schemas/dbscripts/postgresql/test-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-17.20-17.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-18.20-18.30.sql -text
-core/resources/schemas/dbscripts/sqlserver/core-18.34-18.35.sql -text
+core/resources/schemas/dbscripts/sqlserver/obsolete/core-18.34-18.35.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install_1.00.23696.sql -text
@@ -2431,7 +2431,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-17.30-18.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.10-18.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.30.sql -text
-experiment/resources/schemas/dbscripts/postgresql/exp-18.30-18.31.sql -text
+experiment/resources/schemas/dbscripts/postgresql/obsolete/exp-18.30-18.31.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -2482,8 +2482,8 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-17.30-18.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.10-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.30.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-18.30-18.31.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-18.31-18.32.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-18.30-18.31.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-18.31-18.32.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/exp-0.00-12.20.sql -text
@@ -2702,7 +2702,6 @@ experiment/webapp/Experiment/domainTemplate.js -text
 experiment/webapp/Experiment/QCFlagToggle.css -text
 experiment/webapp/Experiment/QCFlagToggleWindow.js -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
-experiment/webpack/dev-style.config.js -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesDesigner.java -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesService.java -text
 filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesServiceAsync.java -text
@@ -3087,7 +3086,7 @@ issues/resources/data/resolution.tsv -text
 issues/resources/data/type.tsv -text
 issues/resources/domain-templates/issue-lookup.template.xml -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-16.30.sql -text
-issues/resources/schemas/dbscripts/postgresql/issues-18.30-18.31.sql -text
+issues/resources/schemas/dbscripts/postgresql/obsolete/issues-18.30-18.31.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-13.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-14.20.sql -text
@@ -3106,7 +3105,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.21-16.22.sql -t
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.22-16.23.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-16.23-16.24.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-16.30.sql -text
-issues/resources/schemas/dbscripts/sqlserver/issues-18.30-18.31.sql -text
+issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-18.30-18.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-13.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-0.00-14.20.sql -text
@@ -3416,7 +3415,7 @@ query/resources/schemas/dbscripts/postgresql/obsolete/query-13.10-13.20.sql -tex
 query/resources/schemas/dbscripts/postgresql/obsolete/query-14.20-14.30.sql -text
 query/resources/schemas/dbscripts/postgresql/obsolete/query-17.20-17.21.sql -text
 query/resources/schemas/dbscripts/postgresql/query-0.00-14.30.sql -text
-query/resources/schemas/dbscripts/postgresql/query-18.30-18.31.sql -text
+query/resources/schemas/dbscripts/postgresql/obsolete/query-18.30-18.31.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-12.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-12.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-13.10.sql -text
@@ -3425,7 +3424,7 @@ query/resources/schemas/dbscripts/sqlserver/obsolete/query-13.10-13.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-14.20-14.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-17.20-17.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-0.00-14.30.sql -text
-query/resources/schemas/dbscripts/sqlserver/query-18.30-18.31.sql -text
+query/resources/schemas/dbscripts/sqlserver/obsolete/query-18.30-18.31.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/importData.html -text
 query/resources/views/importData.view.xml -text
@@ -3772,7 +3771,7 @@ study/resources/schemas/dbscripts/postgresql/obsolete/study-17.22-17.23.sql -tex
 study/resources/schemas/dbscripts/postgresql/obsolete/study-17.30-17.31.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-18.10-18.11.sql -text
 study/resources/schemas/dbscripts/postgresql/obsolete/study-18.20-18.21.sql -text
-study/resources/schemas/dbscripts/postgresql/study-0.00-16.30.sql -text
+study/resources/schemas/dbscripts/postgresql/obsolete/study-0.00-16.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-17.30-18.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-18.20-18.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
@@ -3819,7 +3818,7 @@ study/resources/schemas/dbscripts/sqlserver/obsolete/study-17.22-17.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-17.30-17.31.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-18.10-18.11.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-18.20-18.21.sql -text
-study/resources/schemas/dbscripts/sqlserver/study-0.00-16.30.sql -text
+study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-16.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-17.30-18.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-18.20-18.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
