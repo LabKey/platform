@@ -27,8 +27,8 @@
     }
   },
   "dependencies": {
-    "@glass/base": "0.15.2",
-    "@glass/domainproperties": "0.0.34"
+    "@glass/base": "0.18.0",
+    "@glass/domainproperties": "0.0.38"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
