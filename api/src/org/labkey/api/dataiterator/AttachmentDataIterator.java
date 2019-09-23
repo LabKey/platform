@@ -166,52 +166,46 @@ public class AttachmentDataIterator extends WrapperDataIterator
 
     public static DataIteratorBuilder getAttachmentDataIteratorBuilder(TableInfo ti, @NotNull final DataIteratorBuilder builder, final User user, @Nullable final VirtualFile attachmentDir, Container container, AttachmentParentFactory parentFactory)
     {
-        return new DataIteratorBuilder()
-        {
-            @Override
-            public DataIterator getDataIterator(DataIteratorContext context)
-            {
-                //Adding as check against Issue #26599
-                if (builder == null)
-                    throw new IllegalStateException("Originating data iterator is null");
+        return context -> {
+            //Adding as check against Issue #26599
+            if (builder == null)
+                throw new IllegalStateException("Originating data iterator is null");
 
-                DataIterator it = builder.getDataIterator(context);
-                Domain domain = ti.getDomain();
-                if(domain == null)
-                    return it;
-
-                // find attachment columns
-                int entityIdIndex = 0;
-                final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<>();
-
-                for (int c = 1; c <= it.getColumnCount(); c++)
-                {
-                    try
-                    {
-                        ColumnInfo col = it.getColumnInfo(c);
-
-                        if (StringUtils.equalsIgnoreCase("entityId", col.getName()))
-                            entityIdIndex = c;
-
-                        // TODO: Issue 22505: Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
-                        // UNDONE: PropertyURI is not propagated, need to use name
-                        DomainProperty domainProperty = domain.getPropertyByName(col.getName());
-                        if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
-                            continue;
-
-                        attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
-                    }
-                    catch (IndexOutOfBoundsException e) // Until issue is resolved between StatementDataIterator.getColumnCount() and SimpleTranslator.getColumnCount()
-                    {
-                        continue;
-                    }
-                }
-
-                if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)
-                    return new AttachmentDataIterator(it, context.getErrors(), user, attachmentDir, entityIdIndex, attachmentColumns, context.getInsertOption(), container, parentFactory );
-
+            DataIterator it = builder.getDataIterator(context);
+            Domain domain = ti.getDomain();
+            if(domain == null)
                 return it;
+
+            // find attachment columns
+            int entityIdIndex = 0;
+            final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<>();
+
+            for (int c = 1; c <= it.getColumnCount(); c++)
+            {
+                try
+                {
+                    ColumnInfo col = it.getColumnInfo(c);
+
+                    if (StringUtils.equalsIgnoreCase("entityId", col.getName()))
+                        entityIdIndex = c;
+
+                    // TODO: Issue 22505: Don't seem to have attachment information in the ColumnInfo, so we need to lookup the DomainProperty
+                    // UNDONE: PropertyURI is not propagated, need to use name
+                    DomainProperty domainProperty = domain.getPropertyByName(col.getName());
+                    if (null == domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
+                        continue;
+
+                    attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
+                }
+                catch (IndexOutOfBoundsException ignored) // Until issue is resolved between StatementDataIterator.getColumnCount() and SimpleTranslator.getColumnCount()
+                {
+                }
             }
+
+            if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)
+                return new AttachmentDataIterator(it, context.getErrors(), user, attachmentDir, entityIdIndex, attachmentColumns, context.getInsertOption(), container, parentFactory );
+
+            return it;
         };
     }
 

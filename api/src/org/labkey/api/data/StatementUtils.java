@@ -28,6 +28,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
@@ -88,6 +89,9 @@ public class StatementUtils
     //
     // builder style methods
     //
+
+    //Vocabulary adhoc properties
+    private Set<PropertyDescriptor> _vocabularyProperties = new HashSet<>();
 
     public StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
     {
@@ -157,6 +161,11 @@ public class StatementUtils
         return this;
     }
 
+    public StatementUtils setVocabularyProperties(Set<PropertyDescriptor> vocabularyProperties)
+    {
+        _vocabularyProperties = vocabularyProperties;
+        return this;
+    }
 
     /**
      * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship

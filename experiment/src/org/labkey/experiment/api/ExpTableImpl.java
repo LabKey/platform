@@ -130,7 +130,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
+                        List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), pd);
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        pc.setVocabulary(domainsForPD.stream().anyMatch(d-> d.getDomainKind() instanceof VocabularyDomainKind));
                         // use the property URI as the column's FieldKey name
                         pc.setFieldKey(FieldKey.fromParts(name));
                         pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));

@@ -40,10 +40,13 @@ import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -51,11 +54,13 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.SampleSetUpdateServiceDI;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.web.multipart.MultipartFile;
@@ -783,8 +788,25 @@ public class ExpDataIterators
                     .setCommitRowsBeforeContinuing(true)
                     ;
 
+            Set<PropertyDescriptor> pds = new HashSet<>();
+
+            //pass in voc cols here
+            for (String key: colNameMap.keySet())
+            {
+                if (URIUtil.hasURICharacters(key))
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, _container);
+                    List<Domain> ds = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d-> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
+                    if (!ds.isEmpty())
+                    {
+                        pds.add(pd);
+                    }
+                }
+            }
+
             DataIteratorBuilder step3 = new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"));
+                    .setKeyColumns(Collections.singleton("lsid"))
+                    .setVocabularyProperties(pds);
 
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
