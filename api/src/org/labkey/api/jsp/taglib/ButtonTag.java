@@ -66,7 +66,8 @@ public class ButtonTag extends SimpleTagBase
 
     public void setHref(URLHelper url)
     {
-        _href = url.toString();
+        if (null != url)
+            _href = url.toString();
     }
 
     public void setText(String text)
