@@ -222,6 +222,8 @@ public class DataIteratorUtil
             if (null != from.getPropertyURI())
                 to = targetMap.get(from.getPropertyURI());
             if (null == to)
+                to = targetMap.get(from.getName());
+            if (null == to)
             {
                 // 1. here if (from.name - propURI ) and no match then ask targetTableInfo to getCol and if it returns then there is a match
                 if(URIUtil.hasURICharacters(from.getColumnName()))
@@ -231,10 +233,9 @@ public class DataIteratorUtil
                     List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
                     if(!vocabularyDomains.isEmpty())
                     {
-                        matches.add(Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri));
+                        to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
                     }
                 }
-                to = targetMap.get(from.getName());
             }
             matches.add(to);
         }
