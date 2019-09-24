@@ -44,6 +44,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -101,6 +102,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -2301,6 +2303,8 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    // Remove this annotation once @glass is corrected to call dismissWarnings.api and Biologics moves to 19.3
+    @ActionNames("dismissWarnings, dismissCoreWarnings") @RemoveIn20_1
     public class DismissWarningsAction extends MutatingApiAction
     {
         @Override

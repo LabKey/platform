@@ -1134,11 +1134,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public void setKeyManagementType(@NotNull KeyManagementType type)
     {
         _keyManagementType = type;
     }
 
+    @Override
     @NotNull
     public KeyManagementType getKeyManagementType()
     {
