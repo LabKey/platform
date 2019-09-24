@@ -2002,17 +2002,25 @@ public class PageFlowUtil
         return staticResourceUrl(resourcePath, as, contentType, pushPaths);
     }
 
+    private final static boolean useQueryParamVersionString = true;
+
     /* TODO consider caching map resourcePath -> PageFlowUtil.Link */
-    public static String staticResourceUrl(String resourcePath, Link.AS as, String contentType, Set<Link> pushPaths)
+    public static String staticResourceUrl(String resourcePath, PageFlowUtil.Link.AS as, String contentType, Set<Link> pushPaths)
     {
         String slash = resourcePath.startsWith("/") ? "" : "/";
         var path = new StringBuilder();
         if (null != staticResourcePrefix)
             path.append(staticResourcePrefix).append(slash).append(resourcePath);
         else
-            path.append(AppProps.getInstance().getContextPath()).append(slash).append(resourcePath);
-        if (as != Link.AS.font) // the .css file references do not append sessionHash, and the href needs to match exactly
-            path.append("?").append(getServerSessionHash());
+        {
+            var ext = MimeMap.getExtension(resourcePath);
+            if (null == ext || as == Link.AS.font)
+                path.append(AppProps.getInstance().getContextPath()).append(slash).append(resourcePath);
+            else if (useQueryParamVersionString)
+                path.append(AppProps.getInstance().getContextPath()).append(slash).append(resourcePath).append("?").append(getServerSessionHash());
+            else // see DavController.nameVersionExtension
+                path.append(AppProps.getInstance().getContextPath()).append(slash).append(resourcePath,0,resourcePath.length()-ext.length()-1).append("{").append(getServerSessionHash()).append("}.").append(ext);
+        }
         var href = path.toString();
         if (null != pushPaths && null != as)
             pushPaths.add(new Link(href, as, contentType));
