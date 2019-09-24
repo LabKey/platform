@@ -28,6 +28,8 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.assay.Batch;
 import org.labkey.remoteapi.assay.Data;
+import org.labkey.remoteapi.assay.ImportRunCommand;
+import org.labkey.remoteapi.assay.ImportRunResponse;
 import org.labkey.remoteapi.assay.LoadAssayBatchCommand;
 import org.labkey.remoteapi.assay.LoadAssayBatchResponse;
 import org.labkey.remoteapi.assay.GetAssayRunCommand;
@@ -48,7 +50,10 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.pages.AssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.util.APIAssayHelper;
+import org.labkey.test.util.Maps;
 import org.labkey.test.util.SampleSetHelper;
 
 import java.io.File;
@@ -380,6 +385,52 @@ public class ExperimentAPITest extends BaseWebDriverTest
         String resultLsid = getAssayRunResponse.getRun().getLsid();
 
         assertEquals("Run not found", addedRunLsid, resultLsid);
+    }
+
+    @Test
+    public void testImportRunWithAdhocProperties() throws IOException, CommandException
+    {
+        String domainKind = "Vocabulary";
+        String domainName = "ImportRunVocabulary";
+        String domainDescription = "Test Import Runs";
+        String propertyName = "TestImportRunField";
+        String rangeURI = "int";
+        String assayName = "ImportRunAssay";
+
+        // 1. Create Vocabulary Domain with one adhoc property with CreateDomainApi
+        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription, List.of(new PropertyDescriptor(propertyName,  rangeURI)));
+
+        assertEquals("Property not added in Vocabulary Domain.", propertyName, domainResponse.getDomain().getFields().get(0).getName());
+
+        String vocabDomainPropURI = domainResponse.getDomain().getFields().get(0).getPropertyURI();
+        int vocabDomainPropVal = 2;
+
+        // 2. Use this adhoc property as a run property and batch a property in ImportRun api
+        goToManageAssays();
+        APIAssayHelper assayHelper = new APIAssayHelper(this);
+        AssayDesignerPage assayDesigner = assayHelper.createAssayAndEdit("General", assayName);
+        assayDesigner.addRunField("RunIntField", "Run Int Field", FieldDefinition.ColumnType.Integer);
+        assayDesigner.saveAndClose();
+
+        int assayId = assayHelper.getIdFromAssayName(assayName, getProjectName(), false);
+
+        List<Map<String, Object>> dataRows = Arrays.asList(
+                Maps.of("ptid", "p01", "date", "2017-05-10")
+        );
+
+        ImportRunCommand importRunCommand = new ImportRunCommand(assayId, dataRows);
+        importRunCommand.setName("TestImportRun");
+        importRunCommand.setBatchProperties(Map.of(vocabDomainPropURI, vocabDomainPropVal));
+        importRunCommand.setProperties(Map.of("RunIntField", 10, vocabDomainPropURI, vocabDomainPropVal));
+        ImportRunResponse importRunResponse = importRunCommand.execute(createDefaultConnection(false), getProjectName());
+
+        assertEquals("Import Run is not successful", assayId, importRunResponse.getAssayId());
+
+        // 3. Verify these properties were added by LoadAssayBatch or LoadAssayRun
+        LoadAssayBatchCommand loadAssayBatchCommand = new LoadAssayBatchCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, importRunResponse.getBatchId());
+        LoadAssayBatchResponse loadAssayBatchResponse = loadAssayBatchCommand.execute(createDefaultConnection(false), getProjectName());
+        assertTrue("Ad hoc property is not present in Batch.", loadAssayBatchResponse.getBatch().getProperties().containsKey(vocabDomainPropURI));
+        assertTrue("Ad hoc property is not present in Run.", loadAssayBatchResponse.getBatch().getRuns().get(0).getProperties().containsKey(vocabDomainPropURI));
     }
 
     @Override

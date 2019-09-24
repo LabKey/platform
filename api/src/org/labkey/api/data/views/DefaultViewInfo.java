@@ -70,6 +70,7 @@ public class DefaultViewInfo implements DataViewInfo
 
     private String _schemaName;
     private String _queryName;
+    private String _viewName;
 
     private int _displayOrder;
 
@@ -387,6 +388,10 @@ public class DefaultViewInfo implements DataViewInfo
     {
         _queryName = queryName;
     }
+
+    public String getViewName() { return _viewName; }
+
+    public void setViewName(String viewName) { _viewName = viewName; }
 
     public int getDisplayOrder() {return _displayOrder; }
 
