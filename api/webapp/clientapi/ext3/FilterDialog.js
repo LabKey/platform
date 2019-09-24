@@ -182,6 +182,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
             else {
                 if (filters.length > 0) {
+                    // add the current filter(s)
                     if (view.supportsMultipleFilters) {
                         dr.replaceFilters(filters, this.column);
                     }

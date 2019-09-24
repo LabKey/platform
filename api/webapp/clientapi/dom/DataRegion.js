@@ -569,7 +569,6 @@ if (!LABKEY.DataRegions) {
      * @see LABKEY.DataRegion.addFilter static method.
      */
     LABKEY.DataRegion.prototype.addFilter = function(filter) {
-        // alert("clearing in addFilter");
         this.clearSelected();
         _updateFilter(this, filter);
     };
@@ -578,7 +577,6 @@ if (!LABKEY.DataRegions) {
      * Removes all filters from the DataRegion
      */
     LABKEY.DataRegion.prototype.clearAllFilters = function() {
-        // alert("clearing in clearAllFilters");
         this.clearSelected();
         if (this.async) {
             this.offset = 0;
@@ -593,7 +591,6 @@ if (!LABKEY.DataRegions) {
      * @param {string|FieldKey} fieldKey the name of the field from which all filters should be removed
      */
     LABKEY.DataRegion.prototype.clearFilter = function(fieldKey) {
-        // alert("clearing in clearFilter");
         this.clearSelected();
         var fk = _resolveFieldKey(this, fieldKey);
 
@@ -718,7 +715,6 @@ if (!LABKEY.DataRegions) {
      * @param {LABKEY.Filter} filter
      */
     LABKEY.DataRegion.prototype.removeFilter = function(filter) {
-        // alert("clearing from removeFilter");
         this.clearSelected();
         if (LABKEY.Utils.isObject(filter) && LABKEY.Utils.isFunction(filter.getColumnName)) {
             _updateFilter(this, null, [this.name + '.' + filter.getColumnName() + '~']);
@@ -732,7 +728,6 @@ if (!LABKEY.DataRegions) {
      * @param {LABKEY.Filter} [filterToReplace]
      */
     LABKEY.DataRegion.prototype.replaceFilter = function(filter, filterToReplace) {
-        // alert("clearing from replaceFilter");
         this.clearSelected();
         var target = filterToReplace ? filterToReplace : filter;
         _updateFilter(this, filter, [this.name + '.' + target.getColumnName() + '~']);
@@ -744,7 +739,6 @@ if (!LABKEY.DataRegions) {
      * @param columnNames
      */
     LABKEY.DataRegion.prototype.replaceFilters = function(filters, columnNames) {
-        // alert("clearing from replaceFilters");
         this.clearSelected();
         var filterPrefixes = [],
             filterParams = [],
@@ -791,7 +785,6 @@ if (!LABKEY.DataRegions) {
      * @param filterMatch
      */
     LABKEY.DataRegion.prototype.replaceFilterMatch = function(filter, filterMatch) {
-        // alert("clearing in replaceFilterMatch");
         this.clearSelected();
         var skips = [], me = this;
 
@@ -2327,7 +2320,6 @@ if (!LABKEY.DataRegions) {
      * @private
      */
     LABKEY.DataRegion.prototype._removeCohortGroupFilters = function(subjectColumn, groupNames) {
-        // alert("removing cohort group filters");
         this.clearSelected();
         var params = _getParameters(this);
         var skips = [], i, p, k;
@@ -2367,7 +2359,6 @@ if (!LABKEY.DataRegions) {
      * @private
      */
     LABKEY.DataRegion.prototype._replaceAdvCohortFilter = function(filter) {
-        // alert("replacing cohort filter");
         this.clearSelected();
         var params = _getParameters(this);
         var skips = [], i, p;
