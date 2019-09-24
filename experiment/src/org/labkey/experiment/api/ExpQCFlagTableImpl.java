@@ -63,6 +63,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         super(name, ExperimentServiceImpl.get().getTinfoAssayQCFlag(), schema, new ExpProtocolApplicationImpl(new ProtocolApplication()), cf);
     }
 
+    @Override
     public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -74,7 +75,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             case Run:
                 _columnMapping.put(column.name(), "RunId");
                 var runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
-                runColumnInfo.setFk(getExpSchema().getRunIdForeignKey());
+                runColumnInfo.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 return runColumnInfo;
             case FlagType:
                 return wrapColumn(alias, _rootTable.getColumn("FlagType"));
@@ -133,6 +134,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         addColumn(Column.Key2).setHidden(true);
     }
 
+    @Override
     public void setAssayProtocol(ExpProtocol protocol)
     {
         checkLocked();
@@ -148,9 +150,8 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             public TableInfo getLookupTableInfo()
             {
                 AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
-                return provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
+                return null==provider ? null : provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
             }
-
         });
         SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
         protocolSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");

@@ -51,6 +51,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), containerFK);
     }
 
+    @Override
     public BaseColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
     {
         switch (column)
@@ -65,7 +66,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Run:
                 var runColumnInfo = wrapColumn(alias, _rootTable.getColumn("RunId"));
-                runColumnInfo.setFk(getExpSchema().getRunIdForeignKey());
+                runColumnInfo.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 return runColumnInfo;
             case ActionSequence:
                 return wrapColumn(alias, _rootTable.getColumn("ActionSequence"));
@@ -79,6 +80,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         throw new IllegalArgumentException("Unknown column " + column);
     }
 
+    @Override
     public BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.MaterialInput.MaterialId) FROM exp.MaterialInput\nWHERE ");
@@ -104,6 +106,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         return ret;
     }
 
+    @Override
     public BaseColumnInfo createDataInputColumn(String name, final ExpSchema schema, String... roleNames)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.DataInput.DataId) FROM exp.DataInput\nWHERE ");
@@ -127,6 +130,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         // TODO add ContainerFitler to ExperimentLookupForeignKey() constructor
         ret.setFk(new ExpSchema.ExperimentLookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 ExpDataTable expDataTable;
