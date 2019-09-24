@@ -1034,13 +1034,19 @@ public class AnnouncementManager
         }
 
         @Override
-        public boolean hasMultipleContentTypes()
+        public @Nullable String renderTextBody(Container c)
         {
-            // Don't include plain text variant if the source of the message is HTML
-            return super.hasMultipleContentTypes() &&
-                    (notificationBean == null ||
-                            notificationBean.announcementModel == null ||
-                            !WikiRendererType.HTML.name().equals(notificationBean.announcementModel.getRendererType()));
+            if (notificationBean != null &&
+                    notificationBean.announcementModel != null &&
+                    WikiRendererType.HTML.name().equals(notificationBean.announcementModel.getRendererType()))
+            {
+                // We don't support flattening HTML source messages into a plain text version, so just send a
+                // fixed value for the replacement. Including the plain text version is mostly to help improve our
+                // spam filtering scores. See issues 38578 and 36734.
+                return "Plain text version unavailable, please refer to the HTML version of this email.";
+            }
+
+            return super.renderTextBody(c);
         }
 
         public List<ReplacementParam> getValidReplacements()
