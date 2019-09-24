@@ -18,40 +18,29 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.Button;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ButtonTag extends SimpleTagBase
 {
-    Boolean _disableOnClick;
-    String _text;
-    String _href;
-    String _alt;
-    String _onclick;
-    String _action;
-    String _name;
-    String _value;
-    String _id;
-    String _target;
-    Boolean _submit = true;
+    private String _text;
+    private String _href;
+    private String _onclick;
+    private String _action;
+    private String _name;
+    private String _id;
+    private Boolean _submit = true;
 
     @Override
     public void doTag() throws IOException
     {
-        Map<String, String> attributes = new HashMap<>();
         Button.ButtonBuilder button = PageFlowUtil.button(_text).id(_id);
 
         // TODO: This shouldn't have inconsistent logic from Button.java, should just be a pass through
         if (_href != null)
-        {
-            if (null != _target)
-                attributes.put("target", _target);
-
-            button.href(_href).onClick(_onclick).attributes(attributes);
-        }
+            button.href(_href).onClick(_onclick);
         else
         {
             if (_onclick != null && _action != null)
@@ -63,29 +52,22 @@ public class ButtonTag extends SimpleTagBase
             if (_action != null)
                 onClickScript = ("this.form.action='" + _action + "';this.form.method='POST';");
 
-            if (_name != null)
-                attributes.put("name", _name);
-            if (_value != null)
-                attributes.put("value", _value);
-
-            button.submit(_submit).onClick(onClickScript).attributes(attributes);
+            button.submit(_submit).onClick(onClickScript).name(_name);
         }
-
-        if (null != _disableOnClick)
-            button.disableOnClick(_disableOnClick);
 
         // TODO: HtmlString
         getOut().print(button.toString());
     }
 
-    public void setDisableOnClick(Boolean disableOnClick)
+    public void setHref(String href)
     {
-        _disableOnClick = disableOnClick;
+        _href = href;
     }
 
-    public void setHref(Object value)
+    public void setHref(URLHelper url)
     {
-        _href = value == null ? null : value.toString();
+        if (null != url)
+            _href = url.toString();
     }
 
     public void setText(String text)
@@ -98,19 +80,9 @@ public class ButtonTag extends SimpleTagBase
         _onclick = onclick;
     }
 
-    public void setAction(String action)
-    {
-        _action = action;
-    }
-
     public void setAction(ActionURL action)
     {
         _action = action.toString();
-    }
-
-    public void setAction(Enum action)
-    {
-        _action = action.toString() + ".view";
     }
 
     public void setName(String name)
@@ -118,24 +90,9 @@ public class ButtonTag extends SimpleTagBase
         _name = name;
     }
 
-    public void setValue(String value)
-    {
-        _value = value;
-    }
-
     public void setId(String id)
     {
         _id = id;
-    }
-
-    public void setAlt(String alt)
-    {
-        _alt = alt;
-    }
-
-    public void setTarget(String target)
-    {
-        _target = target;
     }
 
     public void setSubmit(Boolean submit)

@@ -18,7 +18,6 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -98,8 +97,6 @@ import static org.labkey.api.exp.query.ExpSchema.TableType.DataClasses;
 
 public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> implements ExpDataTable
 {
-    private static final Logger _log = Logger.getLogger(ExpDataTableImpl.class);
-
     protected ExpExperiment _experiment;
     protected boolean _runSpecified;
     protected ExpRun _run;
@@ -122,7 +119,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.Description);
         addColumn(Column.DataClass);
         ExpSchema schema = getExpSchema();
-        addColumn(Column.Run).setFk(schema.getRunIdForeignKey());
+        addColumn(Column.Run).setFk(schema.getRunIdForeignKey(getContainerFilter()));
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
@@ -277,7 +274,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case SourceProtocolApplication:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
-                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 columnInfo.setUserEditable(false);
                 columnInfo.setHidden(true);
                 return columnInfo;
@@ -300,7 +297,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
-                col.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this data");
                 col.setUserEditable(false);
                 col.setReadOnly(true);

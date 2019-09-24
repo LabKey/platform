@@ -15,14 +15,17 @@
  */
 package org.labkey.assay.actions;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -135,4 +138,20 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
     }
 
     protected abstract ApiResponse executeAction(ExpProtocol protocol, FORM form, BindException errors) throws Exception;
+
+    public ExperimentSaveHandler getExperimentSaveHandler(@Nullable AssayProvider provider)
+    {
+        ExperimentSaveHandler saveHandler;
+
+        if (provider != null)
+        {
+            saveHandler = provider.getSaveHandler();
+            if (null == saveHandler)
+                throw new IllegalArgumentException("SaveAssayBatch is not supported for assay provider: " + provider);
+        }
+        else
+            saveHandler = new DefaultExperimentSaveHandler();
+
+        return saveHandler;
+    }
 }
