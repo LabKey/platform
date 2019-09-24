@@ -428,6 +428,8 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         pipeline._initialFileTypesFromTask = true;
         pipeline._initialFileTypes = initialTaskFactory.getInputTypes();
 
+        pipeline._allowForTriggerConfiguration = true;
+
         // Misconfiguration: the user will never be able to start this pipeline
         if (pipeline._initialFileTypes == null || pipeline._initialFileTypes.isEmpty())
             throw new IllegalArgumentException("File analysis pipelines require at least one initial file type.");
