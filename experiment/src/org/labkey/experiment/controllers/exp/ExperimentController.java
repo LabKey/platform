@@ -3428,7 +3428,7 @@ public class ExperimentController extends SpringActionController
         public ActionURL getSuccessURL(BaseSampleSetForm form)
         {
             setHelpTopic("sampleSets");
-            return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(ExperimentService.get().getSampleSet(form.getRowId())));
+            return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(SampleSetService.get().getSampleSet(form.getRowId())));
         }
 
         @Override
@@ -3669,7 +3669,7 @@ public class ExperimentController extends SpringActionController
 
         public @NotNull  Map<String, String> getAliasMap() throws IOException
         {
-            Map<String, String> aliases;
+            Map<String, String> aliases = new HashMap<>();
             if (StringUtils.isNotBlank(getImportAliasJSON()))
             {
                 ObjectMapper mapper = new ObjectMapper();
@@ -3678,7 +3678,6 @@ public class ExperimentController extends SpringActionController
             }
             else
             {
-                aliases = new HashMap<>();
                 if (getImportAliasKeys() == null)
                     return aliases;
 
@@ -3793,8 +3792,8 @@ public class ExperimentController extends SpringActionController
             errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
 
         //Verify Aliases
-        List<String> importHeadings = form.getImportAliasKeys();
-        List<String> importParents = form.getImportAliasValues();
+        Collection<String> importHeadings = form.getImportAliasKeys();
+        Collection<String> importParents = form.getImportAliasValues();
         if (importHeadings != null && importParents != null)
         {
             if (importHeadings.contains(null))

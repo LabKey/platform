@@ -140,7 +140,7 @@ public class ModuleLoader implements Filter
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
 
-    public static final double EARLIEST_UPGRADE_VERSION = 16.3;
+    public static final double EARLIEST_UPGRADE_VERSION = 17.2;
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
