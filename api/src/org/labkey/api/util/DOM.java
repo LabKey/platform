@@ -426,6 +426,14 @@ public class DOM
                 attrs.add(new Pair<>(key,value));
             return this;
         }
+        public _Attributes at(boolean test, Attribute key, Object ifValue, Object elseValue)
+        {
+            if (test)
+                attrs.add(new Pair<>(key,ifValue));
+            else
+                attrs.add(new Pair<>(key,elseValue));
+            return this;
+        }
         public _Attributes id(String id)
         {
             at(Attribute.id, id);
@@ -436,6 +444,16 @@ public class DOM
             if (null == expandos)
                 expandos = new ArrayList<>();
             expandos.add(new Pair<>("data-"+datakey,value));
+            return this;
+        }
+        public _Attributes data(boolean condition, String datakey, Object value)
+        {
+            if (condition)
+            {
+                if (null == expandos)
+                    expandos = new ArrayList<>();
+                expandos.add(new Pair<>("data-"+datakey,value));
+            }
             return this;
         }
 
