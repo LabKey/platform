@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ns:ExperimentArchive xsi:schemaLocation="http://cpas.fhcrc.org/exp/xml http://www.labkey.org/download/XarSchema/V2.3/expTypes.xsd" xmlns:ns="http://cpas.fhcrc.org/exp/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <ns:DomainDefinitions>
+    <ns:Domain>
+      <ns:Name>Parent_Assay_38448 Batch Fields</ns:Name>
+      <ns:DomainURI>urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:Parent_Assay_38448</ns:DomainURI>
+      <ns:Description>The user is prompted for batch properties once for each set of runs they import. The batch is a convenience to let users set properties that seldom change in one place and import many runs using them. This is the first step of the import process.</ns:Description>
+      <ns:PropertyDescriptor>
+        <ns:PropertyURI>urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:Parent_Assay_38448#ParticipantVisitResolver</ns:PropertyURI>
+        <ns:Name>ParticipantVisitResolver</ns:Name>
+        <ns:Required>false</ns:Required>
+        <ns:Hidden>true</ns:Hidden>
+        <ns:ShownInInsertView>true</ns:ShownInInsertView>
+        <ns:ShownInUpdateView>true</ns:ShownInUpdateView>
+        <ns:ShownInDetailsView>true</ns:ShownInDetailsView>
+        <ns:RangeURI>http://www.w3.org/2001/XMLSchema#string</ns:RangeURI>
+        <ns:Label>Participant Visit Resolver</ns:Label>
+        <ns:MvEnabled>false</ns:MvEnabled>
+        <ns:DefaultType>LastEntered</ns:DefaultType>
+        <ns:PropertyValidator>
+          <ns:Name>Text Length</ns:Name>
+          <ns:TypeURI>urn:lsid:labkey.com:PropertyValidator:length</ns:TypeURI>
+          <ns:Expression>~lte=4000</ns:Expression>
+        </ns:PropertyValidator>
+        <ns:Measure>false</ns:Measure>
+        <ns:Dimension>false</ns:Dimension>
+        <ns:RecommendedVariable>false</ns:RecommendedVariable>
+        <ns:Scale>4000</ns:Scale>
+      </ns:PropertyDescriptor>
+      <ns:PropertyDescriptor>
+        <ns:PropertyURI>urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:Parent_Assay_38448#TargetStudy</ns:PropertyURI>
+        <ns:Name>TargetStudy</ns:Name>
+        <ns:Required>false</ns:Required>
+        <ns:Hidden>false</ns:Hidden>
+        <ns:ShownInInsertView>true</ns:ShownInInsertView>
+        <ns:ShownInUpdateView>true</ns:ShownInUpdateView>
+        <ns:ShownInDetailsView>true</ns:ShownInDetailsView>
+        <ns:RangeURI>http://www.w3.org/2001/XMLSchema#string</ns:RangeURI>
+        <ns:Label>Target Study</ns:Label>
+        <ns:MvEnabled>false</ns:MvEnabled>
+        <ns:DefaultType>LastEntered</ns:DefaultType>
+        <ns:PropertyValidator>
+          <ns:Name>Text Length</ns:Name>
+          <ns:TypeURI>urn:lsid:labkey.com:PropertyValidator:length</ns:TypeURI>
+          <ns:Expression>~lte=4000</ns:Expression>
+        </ns:PropertyValidator>
+        <ns:Measure>false</ns:Measure>
+        <ns:Dimension>false</ns:Dimension>
+        <ns:RecommendedVariable>false</ns:RecommendedVariable>
+        <ns:Scale>4000</ns:Scale>
+      </ns:PropertyDescriptor>
+    </ns:Domain>
+    <ns:Domain>
+      <ns:Name>Parent_Assay_38448 Run Fields</ns:Name>
+      <ns:DomainURI>urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:Parent_Assay_38448</ns:DomainURI>
+      <ns:Description>The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.</ns:Description>
+    </ns:Domain>
+    <ns:Domain>
+      <ns:Name>Parent_Assay_38448 Data Fields</ns:Name>
+      <ns:DomainURI>urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:Parent_Assay_38448</ns:DomainURI>
+      <ns:Description>The user is prompted to enter data values for row of data associated with a run, typically done as uploading a file.  This is part of the second step of the upload process.</ns:Description>
+      <ns:PropertyDescriptor>
+        <ns:PropertyURI>urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:Parent_Assay_38448#sample</ns:PropertyURI>
+        <ns:Name>sample</ns:Name>
+        <ns:Required>false</ns:Required>
+        <ns:Hidden>false</ns:Hidden>
+        <ns:ShownInInsertView>true</ns:ShownInInsertView>
+        <ns:ShownInUpdateView>true</ns:ShownInUpdateView>
+        <ns:ShownInDetailsView>true</ns:ShownInDetailsView>
+        <ns:RangeURI>http://www.w3.org/2001/XMLSchema#string</ns:RangeURI>
+        <ns:FK>
+          <ns:Query>ParentFolderSampleSet</ns:Query>
+          <ns:Schema>samples</ns:Schema>
+        </ns:FK>
+        <ns:MvEnabled>false</ns:MvEnabled>
+        <ns:PropertyValidator>
+          <ns:Name>Text Length</ns:Name>
+          <ns:TypeURI>urn:lsid:labkey.com:PropertyValidator:length</ns:TypeURI>
+          <ns:Expression>~lte=4000</ns:Expression>
+        </ns:PropertyValidator>
+        <ns:Measure>false</ns:Measure>
+        <ns:Dimension>true</ns:Dimension>
+        <ns:RecommendedVariable>false</ns:RecommendedVariable>
+        <ns:Scale>4000</ns:Scale>
+      </ns:PropertyDescriptor>
+    </ns:Domain>
+  </ns:DomainDefinitions>
+  <ns:ProtocolDefinitions>
+    <ns:Protocol rdf:about="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448">
+      <ns:Name>Parent_Assay_38448</ns:Name>
+      <ns:ApplicationType>ExperimentRun</ns:ApplicationType>
+      <ns:MaxInputMaterialPerInstance>1</ns:MaxInputMaterialPerInstance>
+      <ns:MaxInputDataPerInstance>1</ns:MaxInputDataPerInstance>
+      <ns:OutputMaterialType>Material</ns:OutputMaterialType>
+      <ns:OutputDataType>Data</ns:OutputDataType>
+      <ns:ParameterDeclarations>
+        <ns:SimpleVal Name="ApplicationLSIDTemplate" OntologyEntryURI="terms.fhcrc.org#XarTemplate.ApplicationLSID" ValueType="String">${RunLSIDBase}:SimpleProtocol.InputStep</ns:SimpleVal>
+        <ns:SimpleVal Name="ApplicationName" OntologyEntryURI="terms.fhcrc.org#XarTemplate.ApplicationName" ValueType="String">Parent_Assay_38448 Protocol</ns:SimpleVal>
+      </ns:ParameterDeclarations>
+      <ns:Properties>
+        <ns:SimpleVal Name="Parent_Assay_38448" OntologyEntryURI="urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:Parent_Assay_38448" ValueType="String">urn:lsid:${LSIDAuthority}:AssayDomain-Data.Folder-${Container.RowId}:Parent_Assay_38448</ns:SimpleVal>
+        <ns:SimpleVal Name="EditableRuns" OntologyEntryURI="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448#EditableRuns" ValueType="Boolean">false</ns:SimpleVal>
+        <ns:SimpleVal Name="BackgroundUpload" OntologyEntryURI="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448#BackgroundUpload" ValueType="Boolean">false</ns:SimpleVal>
+        <ns:SimpleVal Name="EditableResults" OntologyEntryURI="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448#EditableResults" ValueType="Boolean">false</ns:SimpleVal>
+        <ns:SimpleVal Name="SaveScriptFiles" OntologyEntryURI="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448#SaveScriptFiles" ValueType="Boolean">false</ns:SimpleVal>
+        <ns:SimpleVal Name="QCEnabled" OntologyEntryURI="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448#QCEnabled" ValueType="Boolean">false</ns:SimpleVal>
+        <ns:SimpleVal Name="Parent_Assay_38448" OntologyEntryURI="urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:Parent_Assay_38448" ValueType="String">urn:lsid:${LSIDAuthority}:AssayDomain-Batch.Folder-${Container.RowId}:Parent_Assay_38448</ns:SimpleVal>
+        <ns:SimpleVal Name="Parent_Assay_38448" OntologyEntryURI="urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:Parent_Assay_38448" ValueType="String">urn:lsid:${LSIDAuthority}:AssayDomain-Run.Folder-${Container.RowId}:Parent_Assay_38448</ns:SimpleVal>
+      </ns:Properties>
+    </ns:Protocol>
+    <ns:Protocol rdf:about="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448.Core">
+      <ns:Name>Parent_Assay_38448 - Core</ns:Name>
+      <ns:ApplicationType>ProtocolApplication</ns:ApplicationType>
+      <ns:OutputMaterialType>Material</ns:OutputMaterialType>
+      <ns:OutputDataType>Data</ns:OutputDataType>
+      <ns:ParameterDeclarations>
+        <ns:SimpleVal Name="ApplicationLSIDTemplate" OntologyEntryURI="terms.fhcrc.org#XarTemplate.ApplicationLSID" ValueType="String">${RunLSIDBase}:SimpleProtocol.CoreStep</ns:SimpleVal>
+        <ns:SimpleVal Name="ApplicationName" OntologyEntryURI="terms.fhcrc.org#XarTemplate.ApplicationName" ValueType="String">Parent_Assay_38448</ns:SimpleVal>
+      </ns:ParameterDeclarations>
+    </ns:Protocol>
+    <ns:Protocol rdf:about="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448.Output">
+      <ns:Name>Parent_Assay_38448 - Output</ns:Name>
+      <ns:ApplicationType>ExperimentRunOutput</ns:ApplicationType>
+      <ns:OutputMaterialType>Material</ns:OutputMaterialType>
+      <ns:OutputDataType>Data</ns:OutputDataType>
+      <ns:ParameterDeclarations>
+        <ns:SimpleVal Name="ApplicationLSIDTemplate" OntologyEntryURI="terms.fhcrc.org#XarTemplate.ApplicationLSID" ValueType="String">${RunLSIDBase}:SimpleProtocol.OutputStep</ns:SimpleVal>
+        <ns:SimpleVal Name="ApplicationName" OntologyEntryURI="terms.fhcrc.org#XarTemplate.ApplicationName" ValueType="String">Parent_Assay_38448 output</ns:SimpleVal>
+      </ns:ParameterDeclarations>
+    </ns:Protocol>
+  </ns:ProtocolDefinitions>
+  <ns:ProtocolActionDefinitions>
+    <ns:ProtocolActionSet ParentProtocolLSID="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448">
+      <ns:ProtocolAction ActionSequence="1" ChildProtocolLSID="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448">
+        <ns:PredecessorAction ActionSequenceRef="1"/>
+      </ns:ProtocolAction>
+      <ns:ProtocolAction ActionSequence="10" ChildProtocolLSID="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448.Core">
+        <ns:PredecessorAction ActionSequenceRef="1"/>
+      </ns:ProtocolAction>
+      <ns:ProtocolAction ActionSequence="20" ChildProtocolLSID="urn:lsid:${LSIDAuthority}:GeneralAssayProtocol.Folder-${Container.RowId}:Parent_Assay_38448.Output">
+        <ns:PredecessorAction ActionSequenceRef="10"/>
+      </ns:ProtocolAction>
+    </ns:ProtocolActionSet>
+  </ns:ProtocolActionDefinitions>
+</ns:ExperimentArchive>
