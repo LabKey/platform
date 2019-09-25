@@ -135,9 +135,16 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
                 break;
             }
         }
-        // TODO see above, this is ugly
-        if (!equalsIgnoreCase(boundFieldKey.getName(),objectid.getFieldKey().getName()))
-            boundFieldKey = new FieldKey(boundFieldKey, objectid.getFieldKey().getName());
+        // test to see if we need to tack on the final field name
+        {
+            String objectIdColumnName = objectid.getFieldKey().getName();
+            String boundColumnName = boundFieldKey.getName();
+            String allParentColumnName = null;
+            if (boundFieldKey.getName().equals("All"))
+                allParentColumnName = boundFieldKey.getParent().getName();
+            if (!equalsIgnoreCase(boundColumnName,objectIdColumnName)  && !equalsIgnoreCase(allParentColumnName,objectIdColumnName))
+                boundFieldKey = new FieldKey(boundFieldKey, objectIdColumnName);
+        }
 
         return new LineageDisplayColumn(schema, objectid, boundFieldKey);
     }
@@ -291,6 +298,8 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public Class getValueClass()
     {
+        if (null == innerDisplayColumn)
+            return String.class;
         return innerDisplayColumn.getValueClass();
     }
 
