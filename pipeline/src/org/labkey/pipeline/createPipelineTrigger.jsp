@@ -279,7 +279,6 @@
 
                 <br/>
                 <%= button("Save").primary(true).id("btnSubmit") %>
-                &nbsp;&nbsp;
                 <%= button("Cancel").href(bean.getReturnUrl()) %>
                 <%= button("Back").href("#details") %>
             </div>
