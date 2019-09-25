@@ -59,6 +59,12 @@ public class Link extends DisplayElement implements HasHtmlString
             });
         }
 
+        if(null != lb.target)
+            sb.append(" target=\"").append(PageFlowUtil.filter(lb.target)).append("\"");
+
+        if(null != lb.title)
+            sb.append(" title=\"").append(PageFlowUtil.filter(lb.title)).append("\"");
+
         if (null != lb.id)
             sb.append(" id=\"").append(lb.id).append("\"");
 

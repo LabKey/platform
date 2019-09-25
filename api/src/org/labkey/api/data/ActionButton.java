@@ -410,7 +410,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
         
         if (_noFollow)
-            attributes.put("rel", "nofollow");
+            button.nofollow();
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
@@ -420,21 +420,16 @@ public class ActionButton extends DisplayElement implements Cloneable
             if (_script != null)
                 onClickScript.append(getScript(ctx));
 
-            String actionName = getActionName(ctx);
-            if (actionName != null)
-                attributes.put("name", actionName);
-
             button.onClick(onClickScript.toString())
-                    .submit(true);
+                    .submit(true)
+                    .name(getActionName(ctx));
         }
         else if (_actionType.equals(Action.LINK))
         {
-            if (_target != null)
-                attributes.put("target", _target);
             if (_script != null)
                 button.onClick(getScript(ctx));
 
-            button.href(getURL(ctx));
+            button.href(getURL(ctx)).target(_target);
         }
         else
         {

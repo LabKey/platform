@@ -124,7 +124,7 @@ public class JunitController extends SpringActionController
                         BR(), PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())),
                         BR(), PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")),
                         BR(), PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")),
-                        X.FORM(at(name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
+                        LK.FORM(at(name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
                         BR(), PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true)),
                         BR(), PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer()))
                 ).appendTo(out);

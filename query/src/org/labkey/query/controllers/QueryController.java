@@ -2213,6 +2213,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @ActionNames("truncateTable")
     @RequiresPermission(AdminPermission.class)
     public class TruncateTableAction extends MutatingApiAction<QueryForm>
     {

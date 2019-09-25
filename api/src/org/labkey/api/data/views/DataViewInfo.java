@@ -58,6 +58,7 @@ public interface DataViewInfo
 
     @Nullable String getSchemaName();
     @Nullable String getQueryName();
+    @Nullable String getViewName();
 
     boolean isVisible();                // specifies whether this view is hidden
     boolean showInDashboard();          // an optional visibility level

@@ -21,25 +21,15 @@ import org.labkey.api.util.URLHelper;
 
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class LinkTag extends SimpleTagBase
 {
-    String _href;
-    String _text;
-    String _id;
-    String _onclick;
-    String _rel;
-
-    public void setHref(String href)
-    {
-        _href = href;
-    }
+    private URLHelper _href;
+    private String _text;
 
     public void setHref(URLHelper url)
     {
-        _href = url.toString();
+        _href = url;
     }
 
     public void setText(String text)
@@ -47,29 +37,10 @@ public class LinkTag extends SimpleTagBase
         _text = text;
     }
 
-    public void setId(String id)
-    {
-        _id = id;
-    }
-
-    public void setOnclick(String onclick)
-    {
-        _onclick = onclick;
-    }
-
-    public void setRel(String rel)
-    {
-        _rel = rel;
-    }
-
     @Override
     public void doTag() throws IOException
     {
-        Map<String, String> properties = new HashMap<>();
-        if (_rel != null)
-            properties.put("rel", _rel);
-
         JspWriter out = getOut();
-        out.print(PageFlowUtil.link(_text).href(_href).onClick(_onclick).id(_id).attributes(properties));
+        out.print(PageFlowUtil.link(_text).href(_href));
     }
 }

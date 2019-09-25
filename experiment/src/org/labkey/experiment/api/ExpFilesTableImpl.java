@@ -20,7 +20,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -74,7 +73,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 
         ExpSchema schema = getExpSchema();
         var runCol = addColumn(Column.Run);
-        runCol.setFk(schema.getRunIdForeignKey());
+        runCol.setFk(schema.getRunIdForeignKey(getContainerFilter()));
         runCol.setUserEditable(true);
         runCol.setShownInUpdateView(false);
         runCol.setShownInDetailsView(true);

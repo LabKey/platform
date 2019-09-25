@@ -38,12 +38,20 @@ import org.springframework.validation.BindException;
 @RequiresPermission(ReadPermission.class)
 public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
 {
+    //Keeping both request and response object mappers to avoid serialization/deserialization issues
+    //as not sure if request object mapper is needed
     @Override
-    protected ObjectMapper createObjectMapper()
+    protected ObjectMapper createRequestObjectMapper()
     {
         ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
         configureObjectMapper(mapper);
         return mapper;
+    }
+
+    @Override
+    protected ObjectMapper createResponseObjectMapper()
+    {
+        return this.createRequestObjectMapper();
     }
 
     @Override
