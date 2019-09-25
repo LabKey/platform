@@ -58,7 +58,6 @@ class LineageForeignKey extends AbstractForeignKey
     private final UserSchema _userSchema;
     private final boolean _parents;
 
-
     /* generate a ForeignKey that returns a wrapper over objectid with a LineageDisplayColumn */
     public static LineageForeignKey createWithDisplayColumn(UserSchema schema, ExpTableImpl seedTable, boolean parents)
     {
@@ -176,14 +175,86 @@ class LineageForeignKey extends AbstractForeignKey
         return _createLookupColumn(parent, getLookupTableInfo(), displayField);
     }
 
-    public void applyDisplayColumn(BaseColumnInfo column, Integer depth, String expType, String cpasType)
+    public void applyDisplayColumn(BaseColumnInfo column, Integer depth, String expType, String cpasType, @Nullable String lookupColumnName)
     {
+        // the users's FieldKey may not match the canonical FieldKey (say due to column renaming in queries)
+        // this is the 'canonical' field key that the LineageDisplayColumn will use
+        FieldKey lineageDisplayColumnFieldKey = FieldKey.fromParts(_parents?"Inputs":"Outputs");
+        switch (StringUtils.trimToEmpty(expType))
+        {
+            case "Material":
+            {
+                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Materials");
+                if (depth != null  && depth != 0)
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
+                else
+                {
+                    var type = "All";
+                    if (null != cpasType)
+                    {
+                        var ss = SampleSetService.get().getSampleSet(cpasType);
+                        if (null != ss)
+                            type = ss.getName();
+                    }
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
+                }
+                break;
+            }
+            case "Data":
+            {
+                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Data");
+                if (depth != null  && depth != 0)
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
+                else
+                {
+                    var type = "All";
+                    if (null != cpasType)
+                    {
+                        var dc = ExperimentServiceImpl.get().getDataClass(cpasType);
+                        if (null != dc)
+                            type = dc.getName();
+                    }
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
+                }
+                break;
+            }
+            case "ExperimentRun":
+            {
+                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "Runs");
+                if (depth != null  && depth != 0)
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "First");
+                else
+                {
+                    var type = "All";
+                    if (null != cpasType)
+                    {
+                        var protocol = ExperimentService.get().getExpProtocol(cpasType);
+                        if (protocol != null)
+                            type = protocol.getName();
+                    }
+                    lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, type);
+                }
+                break;
+            }
+            default:
+            {
+                lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, "All");
+                break;
+            }
+        }
+        if (null != lookupColumnName)
+            lineageDisplayColumnFieldKey = new FieldKey(lineageDisplayColumnFieldKey, lookupColumnName);
+
         // We could add this DisplayColumnFactory in createLookupColumn(), but we have all the information
         // we need right here (parents,depth,expType,cpasType), so it's easier to construct it here, and
         // copy it in createLookupColumn()
         if (_useLineageDisplayColumn)
-            column.setDisplayColumnFactory(colInfo -> LineageDisplayColumn.create(_sourceSchema, colInfo, _parents, depth, expType, cpasType));
+        {
+            final FieldKey ldcfk = lineageDisplayColumnFieldKey;
+            column.setDisplayColumnFactory(colInfo -> LineageDisplayColumn.create(_sourceSchema, colInfo, ldcfk));
+        }
     }
+
 
     private class LineageForeignKeyLookupTable extends VirtualTable<UserSchema>
     {
@@ -206,14 +277,13 @@ class LineageForeignKey extends AbstractForeignKey
 
         void addLevelColumn(@NotNull LevelColumnType level)
         {
-//            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".objectid");
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(level.columnName), sql, JdbcType.VARCHAR);
             col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix));
             col.setUserEditable(false);
             col.setReadOnly(true);
             col.setIsUnselectable(true);
-            applyDisplayColumn(col, 0, level.expType, null);
+            applyDisplayColumn(col, 0, level.expType, null, null);
             addColumn(col);
         }
 
@@ -223,7 +293,7 @@ class LineageForeignKey extends AbstractForeignKey
             SQLFragment sql = new SQLFragment("'#ERROR'");
             var col = new ExprColumn(this, FieldKey.fromParts(name), sql, JdbcType.INTEGER);
             col.setFk(new _MultiValuedForeignKey(cacheKeyPrefix, depth, expType, cpasType));
-            applyDisplayColumn(col, depth, expType, cpasType);
+            applyDisplayColumn(col, depth, expType, cpasType, null);
             addColumn(col);
         }
     }
@@ -298,7 +368,7 @@ class LineageForeignKey extends AbstractForeignKey
             if (_useLineageDisplayColumn)
             {
                 FieldKey aliasFieldKey = new FieldKey(parent.getFieldKey(), StringUtils.defaultString(displayField,"Name"));
-                var alias = new _AliasedParentColumn(parent, aliasFieldKey, depth, expType, cpasType);
+                var alias = new _AliasedParentColumn(parent, aliasFieldKey, depth, expType, cpasType, aliasFieldKey.getName());
                 return alias;
             }
             else
@@ -416,10 +486,11 @@ class LineageForeignKey extends AbstractForeignKey
     // same as AliasedColumn, but avoids getDisplayField() noise
     public class _AliasedParentColumn extends AliasedColumn
     {
-        public _AliasedParentColumn(ColumnInfo parent, FieldKey key, Integer depth, String expType, String cpasType)
+        // lookupColumnName is for explictly selected lookup to column in target table (vs internal virtual column)
+        public _AliasedParentColumn(ColumnInfo parent, FieldKey key, Integer depth, String expType, String cpasType, @Nullable String lookupColumnName)
         {
             super(parent.getParentTable(), key, parent, false);
-            applyDisplayColumn(this, depth, expType, cpasType);
+            applyDisplayColumn(this, depth, expType, cpasType, lookupColumnName);
         }
 
         @Override
