@@ -1,6 +1,5 @@
 package org.labkey.experiment.api;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -24,9 +23,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.api.ExpLineageOptions;
-import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -42,10 +38,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 // NOTE DataColumn perhaps does more than we need, consider extending DisplayColumn instead?
@@ -142,9 +138,11 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        if (null == innerDataRegion)
+        if (null == innerDisplayColumn)
         {
-            out.write("&lt;" + filter(this.toString()) + "&gt;");
+            Object v = getValue(ctx);
+            if (null != v)
+                out.write("&lt;" + filter(v) + "&gt;");
             return;
         }
         updateInnerContext(ctx);
@@ -154,6 +152,8 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public List<String> renderURLs(RenderContext ctx)
     {
+        if (null == innerDisplayColumn)
+            return Collections.emptyList();
         updateInnerContext(ctx);
         return ((IMultiValuedDisplayColumn)innerDisplayColumn).renderURLs(innerCtx);
     }
@@ -161,13 +161,24 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public List<Object> getDisplayValues(RenderContext ctx)
     {
+        if (null == innerDisplayColumn)
+            return Collections.emptyList();
         updateInnerContext(ctx);
         return ((IMultiValuedDisplayColumn)innerDisplayColumn).getDisplayValues(innerCtx);
     }
 
     @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        // see MultiValuedDisplayColumn.getDisplayValue()
+        return getDisplayValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));
+    }
+
+    @Override
     public List<String> getTsvFormattedValues(RenderContext ctx)
     {
+        if (null == innerDisplayColumn)
+            return Collections.emptyList();
         updateInnerContext(ctx);
         return ((IMultiValuedDisplayColumn)innerDisplayColumn).getTsvFormattedValues(innerCtx);
     }
@@ -175,6 +186,8 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public List<String> getFormattedTexts(RenderContext ctx)
     {
+        if (null == innerDisplayColumn)
+            return Collections.emptyList();
         updateInnerContext(ctx);
         return ((IMultiValuedDisplayColumn)innerDisplayColumn).getFormattedTexts(innerCtx);
     }
@@ -182,6 +195,8 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public List<Object> getJsonValues(RenderContext ctx)
     {
+        if (null == innerDisplayColumn)
+            return Collections.emptyList();
         updateInnerContext(ctx);
         return ((IMultiValuedDisplayColumn)innerDisplayColumn).getJsonValues(innerCtx);
     }
