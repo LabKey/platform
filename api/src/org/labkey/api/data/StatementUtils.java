@@ -432,6 +432,22 @@ public class StatementUtils
         sqlfObjectProperty.append(";\n");
     }
 
+    private void appendSQLFDeleteObjectProperty(SQLFragment sqlfDelete, String objectIdVar, List<? extends DomainProperty> domainProperties, Set<DomainProperty> vocabularyProperties)
+    {
+        var properties = null == domainProperties ? vocabularyProperties : domainProperties;
+        sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
+        sqlfDelete.append(objectIdVar);
+        sqlfDelete.append(" AND PropertyId IN (");
+        String separator = "";
+        for (DomainProperty property : properties)
+        {
+            sqlfDelete.append(separator);
+            separator = ", ";
+            sqlfDelete.append(property.getPropertyId());
+        }
+        sqlfDelete.append(");\n");
+    }
+
     public Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
         if (!(_table instanceof UpdateableTableInfo))
@@ -522,7 +538,6 @@ public class StatementUtils
         Domain domain = _table.getDomain();
         DomainKind domainKind = _table.getDomainKind();
         List<? extends DomainProperty> properties = Collections.emptyList();
-        //include voc props here - may be sep list (correct merge )
 
         boolean hasObjectURIColumn = objectURIColumnName != null && table.getColumn(objectURIColumnName) != null;
         boolean alwaysInsertExpObject = hasObjectURIColumn && updatable.isAlwaysInsertExpObject();
@@ -597,20 +612,19 @@ public class StatementUtils
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
 
-                if (Operation.insert != _operation && !properties.isEmpty())
+                if (Operation.insert != _operation && (!properties.isEmpty() || !_vocabularyProperties.isEmpty()))
                 {
                     // Clear out any existing property values for this domain
-                    sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
-                    sqlfDelete.append(objectIdVar);
-                    sqlfDelete.append(" AND PropertyId IN (");
-                    String separator = "";
-                    for (DomainProperty property : properties)
+                    if (!properties.isEmpty())
                     {
-                        sqlfDelete.append(separator);
-                        separator = ", ";
-                        sqlfDelete.append(property.getPropertyId());
+                        appendSQLFDeleteObjectProperty(sqlfDelete, objectIdVar, properties, null);
                     }
-                    sqlfDelete.append(");\n");
+
+                    // Clear out any existing ad hoc property
+                    if (!_vocabularyProperties.isEmpty())
+                    {
+                        appendSQLFDeleteObjectProperty(sqlfDelete, objectIdVar, null, _vocabularyProperties);
+                    }
                 }
             }
         }
@@ -856,7 +870,7 @@ public class StatementUtils
             }
         }
 
-        if (!_vocabularyProperties.isEmpty() && _vocabularyProperties.size() > 0)
+        if (!_vocabularyProperties.isEmpty())
         {
             for (DomainProperty vocProp: _vocabularyProperties)
             {
