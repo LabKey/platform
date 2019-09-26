@@ -1059,6 +1059,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 filenames.add(name);
         }
 
+        // For now, add in the /lib jars as well. TODO: Stop putting jars in /WEB-INF/lib -- doesn't seem necessary any more
+        filenames.addAll(super.getJarFilenames());
+
         return filenames;
     }
 
