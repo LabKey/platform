@@ -645,7 +645,7 @@ public class ListDefinitionImpl implements ListDefinition
             {
                 // Go through the schema so we always get all of the XML metadata applied
                 UserSchema schema = new ListQuerySchema(user, c);
-                table = schema.getTable(getDomain().getName(), null, true, false);
+                table = schema.getTable(getName(), null, true, false);
             }
             else
             {

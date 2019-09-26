@@ -139,6 +139,25 @@ public abstract class SqlScriptManager
     }
 
 
+    // Get the incremental scripts within a range from a given collection of scripts
+    public List<SqlScript> getIncrementalScripts(double from, double to)
+    {
+        List<SqlScript> scripts = new ArrayList<>();
+
+        for (SqlScript script : _provider.getScripts(_schema))
+        {
+            if (script.getFromVersion() >= from && script.getToVersion() <= to && (script.getFromVersion() != from || script.getToVersion() != to))
+            {
+                scripts.add(script);
+            }
+        }
+
+        scripts.sort(null);
+
+        return scripts;
+    }
+
+
     private static Pair<Double, List<SqlScript>> getNearestFrom(Map<Double, Pair<Double, List<SqlScript>>> m, double targetFrom)
     {
         Pair<Double, List<SqlScript>> nearest = m.get(targetFrom);

@@ -82,6 +82,7 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.core.qc.QCStateImporter;
 import org.labkey.core.qc.QCStateWriter;
 import org.labkey.api.query.AliasManager;
@@ -239,6 +240,7 @@ import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
+import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
@@ -359,6 +361,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
         WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
+        VcsService.setInstance(new VcsServiceImpl());
         ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
 
         try
