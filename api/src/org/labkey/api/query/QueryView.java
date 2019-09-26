@@ -2742,7 +2742,7 @@ public class QueryView extends WebPartView<Object>
         if (table == null)
             throw new IllegalStateException();
 
-        return DataRegionSelection.selectAll(this, this.getSelectionKey());
+        return DataRegionSelection.setSelectionForAll(this, this.getSelectionKey(), true);
     }
 
     protected void logAuditEvent(String comment, int dataRowCount)
