@@ -1429,7 +1429,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 42 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 37 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();

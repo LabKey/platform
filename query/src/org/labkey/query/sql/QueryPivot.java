@@ -313,23 +313,28 @@ public class QueryPivot extends QueryRelation
         // get the context they need before trying to run it
         QueryProfiler.getInstance().ensureListenerEnvironment();
 
-        try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
+        try
         {
-            JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
-            int columnCount = rs.getMetaData().getColumnCount();
-            while (rs.next())
+            for (Object p : sqlPivotValues.getParams())
+                if (p instanceof QueryService.ParameterDecl)
+                    throw new QueryService.NamedParameterNotProvided(((QueryService.ParameterDecl) p).getName());
+            try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
             {
-                Object value = rs.getObject(1);
-                IConstant wrap = wrapConstant(value, type, rs.wasNull());
-                String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
-                // CONSIDER: error on name collision
-                _pivotValues.put(name, wrap);
+                JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
+                int columnCount = rs.getMetaData().getColumnCount();
+                while (rs.next())
+                {
+                    Object value = rs.getObject(1);
+                    IConstant wrap = wrapConstant(value, type, rs.wasNull());
+                    String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
+                    // CONSIDER: error on name collision
+                    _pivotValues.put(name, wrap);
+                }
             }
         }
         catch (QueryService.NamedParameterNotProvided npnp)
         {
             parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
-            parseError(npnp.getMessage(), null);
         }
         catch (UnauthorizedException e)
         {
