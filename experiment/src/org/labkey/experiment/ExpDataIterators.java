@@ -47,6 +47,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -788,7 +789,7 @@ public class ExpDataIterators
                     .setCommitRowsBeforeContinuing(true)
                     ;
 
-            Set<PropertyDescriptor> pds = new HashSet<>();
+            Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
 
             //pass in voc cols here
             for (String key: colNameMap.keySet())
@@ -796,17 +797,19 @@ public class ExpDataIterators
                 if (URIUtil.hasURICharacters(key))
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, _container);
-                    List<Domain> ds = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d-> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
-                    if (!ds.isEmpty())
+
+                    List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d-> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
+                    if (!vocabDomains.isEmpty())
                     {
-                        pds.add(pd);
+                        DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                        vocabularyDomainProperties.add(dp);
                     }
                 }
             }
 
             DataIteratorBuilder step3 = new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
                     .setKeyColumns(Collections.singleton("lsid"))
-                    .setVocabularyProperties(pds);
+                    .setVocabularyProperties(vocabularyDomainProperties);
 
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());

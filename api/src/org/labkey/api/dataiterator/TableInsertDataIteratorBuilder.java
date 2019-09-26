@@ -2,7 +2,7 @@ package org.labkey.api.dataiterator;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.Set;
 
@@ -15,7 +15,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     Set<String> addlSkipColumns = null;
     Set<String> dontUpdate = null;
     boolean commitRowsBeforeContinuing = false;
-    private Set<PropertyDescriptor> vocabularyProperties;
+    private Set<DomainProperty> vocabularyProperties;
 
     public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, Container c)
     {
@@ -54,7 +54,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         return this;
     }
 
-    public TableInsertDataIteratorBuilder setVocabularyProperties(Set<PropertyDescriptor> vocabularyProperties)
+    public TableInsertDataIteratorBuilder setVocabularyProperties(Set<DomainProperty> vocabularyProperties)
     {
         this.vocabularyProperties = vocabularyProperties;
         return this;

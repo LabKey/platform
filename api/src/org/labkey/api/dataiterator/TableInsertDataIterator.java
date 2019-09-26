@@ -31,7 +31,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
 
@@ -57,7 +57,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     private final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
     private final Set<String> _keyColumns = new CaseInsensitiveHashSet();
-    private Set<PropertyDescriptor> _adhocPropColumns = new LinkedHashSet<>();
+    private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
 
     @Deprecated // use TableInsertDataIteratorBuilder
@@ -82,7 +82,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     }
 
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
-         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, @Nullable Set<PropertyDescriptor> vocabularyColumns , boolean commitRowsBeforeContinuing)
+         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, @Nullable Set<DomainProperty> vocabularyColumns , boolean commitRowsBeforeContinuing)
             //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
         // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
@@ -415,7 +415,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         }
     }
 
-    public void setAdhocPropColumns(Set<PropertyDescriptor> adhocPropColumns)
+    public void setAdhocPropColumns(Set<DomainProperty> adhocPropColumns)
     {
         _adhocPropColumns = adhocPropColumns;
     }
