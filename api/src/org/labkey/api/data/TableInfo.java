@@ -183,7 +183,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     /** Get select list for named (hopefully unique!) column to title column. */
     default @NotNull NamedObjectList getSelectList(String columnName)
     {
-        return getSelectList(columnName, Collections.emptyList(), null);
+        return getSelectList(columnName, Collections.emptyList(), null, null);
     }
 
     /**
@@ -192,7 +192,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * When maxRows is null a default maxRows will be used. To select all rows, set maxRows to {@link Table#ALL_ROWS}.
      * @see NamedObjectList#isComplete()
      */
-    @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows);
+    @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn);
 
     ColumnInfo getColumn(@NotNull String colName);
 
