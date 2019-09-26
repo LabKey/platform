@@ -16,6 +16,9 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
@@ -23,8 +26,10 @@ import org.labkey.api.util.GUID;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.TreeSet;
 
 /**
@@ -35,10 +40,10 @@ import java.util.TreeSet;
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final StringKeyCache<TempTableInfo> _tempTableCache =
-        CacheManager.getBlockingStringKeyCache(100, CacheManager.MINUTE * 5, "InClauseTempTableCache", null);
+            CacheManager.getBlockingStringKeyCache(100, CacheManager.MINUTE * 5, "InClauseTempTableCache", null);
 
     /**
-     * @param sql fragment to append to
+     * @param sql    fragment to append to
      * @param params list of values
      * @return null if can't use TempTableInClauseGenerator, therefore requires a fallback generator
      */
@@ -55,7 +60,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
 
     private SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> paramsCollection, JdbcType jdbcType)
     {
-        ArrayList<Object> sortedParameters = null;
+        List<Object> sortedParameters = null;
         if (jdbcType == JdbcType.INTEGER)
         {
             sortedParameters = collectIntegers(paramsCollection);
@@ -63,7 +68,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         else if (jdbcType == JdbcType.VARCHAR)
         {
             // https://technet.microsoft.com/en-US/library/ms191241(v=SQL.105).aspx
-            if (paramsCollection.stream().mapToInt(s->null==s?0:((String)s).length()).max().orElse(0) >= 450)
+            if (paramsCollection.stream().mapToInt(s -> null == s ? 0 : ((String) s).length()).max().orElse(0) >= 450)
                 return null;
             sortedParameters = collectStrings(paramsCollection);
         }
@@ -111,6 +116,12 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             {
                 new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
             }
+            if (DbSchema.getTemp().getScope().isTransactionActive())
+            {
+                // Remove the entry from the cache since the transaction just got rolled back and the table's gone.
+                // See issue 38605
+                DbSchema.getTemp().getScope().getCurrentTransaction().addCommitTask(() -> _tempTableCache.removeUsingPrefix(cacheKey), DbScope.CommitTaskOption.POSTROLLBACK);
+            }
             return tempTableInfo1;
         });
 
@@ -121,7 +132,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
 
 
     // unique and ordered list
-    private  ArrayList<Object> collectStrings(@NotNull Collection<?> paramsCollection)
+    private ArrayList<Object> collectStrings(@NotNull Collection<?> paramsCollection)
     {
         boolean hasNull = false;
         TreeSet<String> ts = new TreeSet<>();
@@ -132,7 +143,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             else if (!(S instanceof String))
                 return null;
             else
-                ts.add((String)S);
+                ts.add((String) S);
         }
         ArrayList<Object> params = new ArrayList<>(ts);
         if (hasNull)
@@ -152,7 +163,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             else if (!(I instanceof Integer))
                 return null;
             else
-                ts.add((Integer)I);
+                ts.add((Integer) I);
         }
         ArrayList<Object> params = new ArrayList<>(ts);
         if (hasNull)
@@ -167,5 +178,55 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             key.append("_").append(param);
 
         return key.toString();
+    }
+
+    public static class TestCase
+    {
+        private static final List<Integer> INTEGERS = Arrays.asList(1, 2, 3, 4);
+        private static final List<String> STRINGS = Arrays.asList("a", "b", "c", "d");
+
+        private DbScope _scope = CoreSchema.getInstance().getSchema().getScope();
+
+        @Before
+        public void init()
+        {
+            _tempTableCache.clear();
+        }
+
+        @Test
+        public void testIntegerRollback()
+        {
+            SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
+            try (DbScope.Transaction ignored = _scope.ensureTransaction())
+            {
+                SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertEquals("Validate inside transaction, pre-rollback", 2, new SqlSelector(_scope, sql).getRowCount());
+                // Intentionally exit without committing, thus rolling back the transaction
+            }
+            SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+            Assert.assertEquals("Validate outside transaction, post-rollback", 2, new SqlSelector(_scope, sql).getRowCount());
+        }
+
+        @Test
+        public void testIntegerCommit()
+        {
+            SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
+            try (DbScope.Transaction transaction = _scope.ensureTransaction())
+            {
+                SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, sql).getRowCount());
+                transaction.commit();
+            }
+            SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+            Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, sql).getRowCount());
+        }
+
+        @Test
+        public void testString()
+        {
+            SQLFragment sql = new SQLFragment("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
+            new TempTableInClauseGenerator().appendInClauseSql(sql, STRINGS);
+            Assert.assertEquals("Validate string IN clause", 2, new SqlSelector(_scope, sql).getRowCount());
+        }
     }
 }
