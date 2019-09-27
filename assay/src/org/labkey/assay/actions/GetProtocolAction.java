@@ -73,7 +73,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
                 {
                     throw new NotFoundException("Could not locate Assay Definition for id: " + protocol.getProtocolId().toString());
                 }
-                return success("Assay protocol " + protocol.getName() + "'", ret);
+                return success("Assay protocol '" + ret.getName() + "'", ret);
             }
             else
             {

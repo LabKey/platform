@@ -22,6 +22,7 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
@@ -274,6 +275,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
 
         result.setAllowTransformationScript((provider.createDataExchangeHandler() != null) && canUpdateTransformationScript());
+        result.setAllowBackgroundUpload(provider.supportsBackgroundUpload());
+        result.setAllowEditableResults(provider.supportsEditableResults());
+
+        // allow spaces in path for non-linux OS
+        result.setAllowSpacesInPath(!System.getProperty("os.name").toLowerCase().contains("linux"));
+
+        // if the provider supports QC and if there is a valid QC service registered
+        result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         for (GWTDomain d : result.getDomains())

@@ -17,13 +17,14 @@ import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security} from "@labkey/api";
 import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
-import { Alert, LoadingSpinner, PermissionTypes } from "@glass/base";
+import {Alert, LoadingSpinner, PermissionTypes} from "@glass/base";
 
 import "@glass/base/dist/base.css"
 import "@glass/domainproperties/dist/domainproperties.css"
 
 type State = {
     protocolId: number,
+    providerName?: string,
     returnUrl: string,
     model?: AssayProtocolModel,
     isLoadingModel: boolean,
@@ -38,10 +39,11 @@ export class App extends React.Component<any, State> {
     {
         super(props);
 
-        const { rowId, returnUrl } = ActionURL.getParameters();
+        const { rowId, providerName, returnUrl } = ActionURL.getParameters();
 
         this.state = {
             protocolId: rowId,
+            providerName,
             isLoadingModel: true,
             returnUrl,
             dirty: false
@@ -49,7 +51,7 @@ export class App extends React.Component<any, State> {
     }
 
     componentDidMount() {
-        const { protocolId } = this.state;
+        const { protocolId, providerName } = this.state;
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
@@ -66,9 +68,9 @@ export class App extends React.Component<any, State> {
             }
         });
 
-        // if URL has a protocol RowId, look up the assay design info
-        if (protocolId) {
-            fetchProtocol(protocolId)
+        // if URL has a protocol RowId, look up the assay design info. otherwise use the providerName to get the template
+        if (protocolId || providerName) {
+            fetchProtocol(protocolId, providerName)
                 .then((model) => {
                     this.setState(() => ({
                         model,
@@ -82,9 +84,11 @@ export class App extends React.Component<any, State> {
                     }));
                 });
         }
-        // else we are on this page to create a new assay design
         else {
-            this.setState(() => ({isLoadingModel: false}));
+            this.setState(() => ({
+                message: 'Missing required parameter: rowId or providerName',
+                isLoadingModel: false
+            }));
         }
 
         window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
@@ -167,7 +171,7 @@ export class App extends React.Component<any, State> {
         }
 
         // check if this is a create assay case with a user that doesn't have permissions
-        if (model === undefined && !hasDesignAssayPerm) {
+        if (!model.protocolId && !hasDesignAssayPerm) {
             return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>
         }
 
