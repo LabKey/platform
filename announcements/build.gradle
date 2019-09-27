@@ -12,5 +12,5 @@ sourceSets {
 }
 
 dependencies {
-    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "wiki"), depProjectConfig: "published", depExtenstion: "module")
+    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "wiki"), depProjectConfig: "published", depExtension: "module")
 }
