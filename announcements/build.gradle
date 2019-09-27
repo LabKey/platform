@@ -1,3 +1,5 @@
+import org.labkey.gradle.util.BuildUtils
+
 // TODO move resources files into resources directory to avoid this overlap
 sourceSets {
     main {
@@ -7,4 +9,8 @@ sourceSets {
             exclude '**/*.jsp'
         }
     }
+}
+
+dependencies {
+    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "wiki"), depProjectConfig: "published", depExtension: "module")
 }
