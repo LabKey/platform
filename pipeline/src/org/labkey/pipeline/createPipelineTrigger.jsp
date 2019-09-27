@@ -20,10 +20,13 @@
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerType" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.util.element.TextArea" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.function.Function" %>
 <%@ page import="java.util.stream.Collectors" %>
@@ -151,7 +154,12 @@
                                 {
                                     %> <option disabled selected value style="display: none"> </option><%
                                 }
-                                for (FileAnalysisTaskPipeline pipeline : triggerConfigTasks.values())
+                                // Sort by description to alphabetize drop-down
+                                List<FileAnalysisTaskPipeline> sorted = triggerConfigTasks.values()
+                                    .stream()
+                                    .sorted((tp1, tp2) -> tp1.getDescription().compareToIgnoreCase(tp2.getDescription()))
+                                    .collect(Collectors.toList());
+                                for (FileAnalysisTaskPipeline pipeline : sorted)
                                 {
                                     boolean selected = false;
                                     String pipelineId = bean.getPipelineId();
@@ -187,7 +195,6 @@
 
                 <br/>
                 <%= button("Next").primary(true).href("#configuration") %>
-                &nbsp;&nbsp;
                 <%= button("Cancel").href(bean.getReturnUrl()) %>
             </div>
 
@@ -272,7 +279,6 @@
 
                 <br/>
                 <%= button("Save").primary(true).id("btnSubmit") %>
-                &nbsp;&nbsp;
                 <%= button("Cancel").href(bean.getReturnUrl()) %>
                 <%= button("Back").href("#details") %>
             </div>
@@ -304,7 +310,7 @@
         for (String key : triggerConfigTasks.keySet())
         {
             FileAnalysisTaskPipeline task = triggerConfigTasks.get(key);
-            String helpText = HELP_TEXT + task.getHelpText();
+            HtmlString helpText = HtmlStringBuilder.of(HELP_TEXT).append(task.getHelpText()).getHtmlString();
         %>
             taskPipelineVariables[<%=q(task.getId().toString())%>] = {
                 helpText: <%=q(helpText)%>,
