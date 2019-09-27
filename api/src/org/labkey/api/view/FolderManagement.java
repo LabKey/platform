@@ -261,8 +261,6 @@ public class FolderManagement
             TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(type).get(action.getClass());
             String tabId = provider.getTabId();
 
-            assert null == ctx.get("tabId");
-
             return new ManagementTabStrip(c, tabId, errors)
             {
                 @Override
