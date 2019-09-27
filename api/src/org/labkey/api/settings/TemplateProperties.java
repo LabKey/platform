@@ -172,12 +172,12 @@ public interface TemplateProperties
             throw new IllegalStateException("Container is null for this TemplateProperty");
     }
 
-    private String getNotDisplayedSetting()
+    private @NotNull String getNotDisplayedSetting()
     {
         return "No " + getPropertyDisplayType() + " Displayed";
     }
 
-    private String getInheritSetting()
+    private @NotNull String getInheritSetting()
     {
         TemplateProperties rootProperties = getRootProperties();
         return "Inherit from site settings (" + rootProperties.getCurrentSetting() + ")";
@@ -185,7 +185,7 @@ public interface TemplateProperties
 
     private @NotNull String getCurrentSetting()
     {
-        String currentSetting;
+        String currentSetting = null;
 
         if (getContainer().isRoot())
         {
@@ -196,21 +196,18 @@ public interface TemplateProperties
         {
             Boolean isDisplayObj = isDisplay(false);
 
-            if (isDisplayObj != null && !isDisplayObj)
-            {
-                currentSetting = getNotDisplayedSetting();
-            }
-            else
-            {
-                currentSetting = getModuleName(false);
-            }
-
-            if (currentSetting == null)
+            if (isDisplayObj == null)
             {
                 currentSetting = getInheritSetting();
             }
+            else
+            {
+                if (isDisplayObj)
+                    currentSetting = getModuleName(false);
 
-            return currentSetting;
+                if (null == currentSetting)
+                   currentSetting = getNotDisplayedSetting();
+            }
         }
 
         return currentSetting;
