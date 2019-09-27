@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -40,7 +41,7 @@ import java.util.TreeSet;
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final StringKeyCache<TempTableInfo> _tempTableCache =
-            CacheManager.getBlockingStringKeyCache(100, CacheManager.MINUTE * 5, "InClauseTempTableCache", null);
+            CacheManager.getStringKeyCache(100, CacheManager.MINUTE * 5, "InClauseTempTableCache");
 
     /**
      * @param sql    fragment to append to
@@ -60,7 +61,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
 
     private SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> paramsCollection, JdbcType jdbcType)
     {
-        List<Object> sortedParameters = null;
+        List<?> sortedParameters = null;
         if (jdbcType == JdbcType.INTEGER)
         {
             sortedParameters = collectIntegers(paramsCollection);
@@ -76,10 +77,11 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             return null;
 
         String cacheKey = getCacheKey(jdbcType, sortedParameters);
-        TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey, sortedParameters, (key, argument) ->
+        TempTableInfo tempTableInfo = _tempTableCache.get(cacheKey);
+        if (tempTableInfo == null)
         {
-            TempTableInfo tempTableInfo1 = new TempTableInfo("InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
-            String tableName = tempTableInfo1.getSelectName();
+            tempTableInfo = new TempTableInfo("InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
+            String tableName = tempTableInfo.getSelectName();
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
             sqlCreate.append(tableName)
                     .append("\n(Id ")
@@ -93,7 +95,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             {
                 new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
             }
-            tempTableInfo1.track();
+            tempTableInfo.track();
             String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
             String sql100 = "INSERT INTO " + tableName + " (Id) VALUES (?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?)";
             try
@@ -101,9 +103,9 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
                     if (jdbcType == JdbcType.VARCHAR)
-                        Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>) argument);
+                        Table.batchExecute1String(DbSchema.getTemp(), sql1, (ArrayList<String>) sortedParameters);
                     else
-                        Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>) argument);
+                        Table.batchExecute1Integer(DbSchema.getTemp(), sql1, sql100, (ArrayList<Integer>) sortedParameters);
                 }
             }
             catch (SQLException e)
@@ -116,14 +118,19 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             {
                 new SqlExecutor(DbSchema.getTemp()).execute(indexSql);
             }
+            TempTableInfo cacheEntry = tempTableInfo;
+
             if (DbSchema.getTemp().getScope().isTransactionActive())
             {
-                // Remove the entry from the cache since the transaction just got rolled back and the table's gone.
-                // See issue 38605
-                DbSchema.getTemp().getScope().getCurrentTransaction().addCommitTask(() -> _tempTableCache.removeUsingPrefix(cacheKey), DbScope.CommitTaskOption.POSTROLLBACK);
+                // Only put the entry in the cache after it's committed, since nobody else will be able to see
+                // it until then. See issue 38605
+                DbSchema.getTemp().getScope().getCurrentTransaction().addCommitTask(() -> _tempTableCache.put(cacheKey, cacheEntry), DbScope.CommitTaskOption.POSTCOMMIT);
             }
-            return tempTableInfo1;
-        });
+            else
+            {
+                _tempTableCache.put(cacheKey, cacheEntry);
+            }
+        }
 
         sql.append(" IN (SELECT Id FROM ").append(tempTableInfo.getSelectName()).append(")");
         sql.addTempToken(tempTableInfo);
@@ -132,40 +139,40 @@ public class TempTableInClauseGenerator implements InClauseGenerator
 
 
     // unique and ordered list
-    private ArrayList<Object> collectStrings(@NotNull Collection<?> paramsCollection)
+    private List<String> collectStrings(@NotNull Collection<?> paramsCollection)
     {
         boolean hasNull = false;
-        TreeSet<String> ts = new TreeSet<>();
-        for (Object S : paramsCollection)
+        Set<String> ts = new TreeSet<>();
+        for (Object s : paramsCollection)
         {
-            if (null == S)
+            if (null == s)
                 hasNull = true;
-            else if (!(S instanceof String))
+            else if (!(s instanceof String))
                 return null;
             else
-                ts.add((String) S);
+                ts.add((String) s);
         }
-        ArrayList<Object> params = new ArrayList<>(ts);
+        List<String> params = new ArrayList<>(ts);
         if (hasNull)
             params.add(null);
         return params;
     }
 
     // unique and ordered list
-    private ArrayList<Object> collectIntegers(@NotNull Collection<?> paramsCollection)
+    private List<Integer> collectIntegers(@NotNull Collection<?> paramsCollection)
     {
         boolean hasNull = false;
-        TreeSet<Integer> ts = new TreeSet<>();
-        for (Object I : paramsCollection)
+        Set<Integer> ts = new TreeSet<>();
+        for (Object i : paramsCollection)
         {
-            if (null == I)
+            if (null == i)
                 hasNull = true;
-            else if (!(I instanceof Integer))
+            else if (!(i instanceof Integer))
                 return null;
             else
-                ts.add((Integer) I);
+                ts.add((Integer) i);
         }
-        ArrayList<Object> params = new ArrayList<>(ts);
+        List<Integer> params = new ArrayList<>(ts);
         if (hasNull)
             params.add(null);
         return params;
@@ -211,22 +218,35 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         public void testIntegerCommit()
         {
             SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
+            SQLFragment originalSelectSQL;
             try (DbScope.Transaction transaction = _scope.ensureTransaction())
             {
-                SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-                Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, sql).getRowCount());
+                originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, originalSelectSQL).getRowCount());
+
+                SQLFragment uncommittedSecondSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertNotEquals("SQL shouldn't match until it's been committed", originalSelectSQL, uncommittedSecondSQL);
+                Assert.assertEquals("Validate second inside transaction", 2, new SqlSelector(_scope, uncommittedSecondSQL).getRowCount());
+
                 transaction.commit();
             }
-            SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-            Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, sql).getRowCount());
+            SQLFragment postCommitSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+            Assert.assertNotEquals("SQL should match after the original has been committed", originalSelectSQL, postCommitSQL);
+            Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, postCommitSQL).getRowCount());
         }
 
         @Test
         public void testString()
         {
             SQLFragment sql = new SQLFragment("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
-            new TempTableInClauseGenerator().appendInClauseSql(sql, STRINGS);
-            Assert.assertEquals("Validate string IN clause", 2, new SqlSelector(_scope, sql).getRowCount());
+            SQLFragment firstSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), STRINGS);
+            Assert.assertEquals("Validate first string IN clause", 2, new SqlSelector(_scope, firstSQL).getRowCount());
+            SQLFragment secondSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), STRINGS);
+            Assert.assertEquals("Validate second string IN clause", 2, new SqlSelector(_scope, secondSQL).getRowCount());
+
+            Assert.assertEquals("Validate SQL matches, indicated cached results", firstSQL, secondSQL);
+
+
         }
     }
 }
