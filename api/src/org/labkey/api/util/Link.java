@@ -48,7 +48,7 @@ public class Link extends DisplayElement implements HasHtmlString
     @Override
     public Appendable appendTo(Appendable out)
     {
-        A(at(lb.attributes==null? Collections.emptyMap() : lb.attributes)
+        A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
                 .id(lb.id)
                 .at(lb.usePost, href, null, lb.href)
