@@ -102,7 +102,7 @@ public class ExpSampleSetTestCase
     @After
     public void tearDown()
     {
-//        ContainerManager.deleteAll(c, TestContext.get().getUser());
+        ContainerManager.deleteAll(c, TestContext.get().getUser());
     }
 
     private void assertExpectedName(ExpSampleSet ss, String expectedName)
@@ -113,6 +113,7 @@ public class ExpSampleSetTestCase
     }
 
     // validate name is not null
+    @Test
     public void nameNotNull() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -133,6 +134,7 @@ public class ExpSampleSetTestCase
     }
 
     // validate name scale
+    @Test
     public void nameScale() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -155,6 +157,7 @@ public class ExpSampleSetTestCase
     }
 
     // validate name expression scale
+    @Test
     public void nameExpressionScale() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -179,6 +182,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols all null, nameExpression null, no 'name' property -- fail
+    @Test
     public void idColsUnset_nameExpressionNull_noNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -201,6 +205,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols all null, nameExpression null, has 'name' property -- ok
+    @Test
     public void idColsUnset_nameExpressionNull_hasNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -232,6 +237,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols all null, nameExpression not null, has 'name' property -- ok
+    @Test
     public void idColsUnset_nameExpression_hasNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -249,6 +255,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols not null, nameExpression null, no 'name' property -- ok
+    @Test
     public void idColsSet_nameExpressionNull_noNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -286,6 +293,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols not null, nameExpression null, 'name' property (not used) -- fail **
+    @Test
     public void idColsSet_nameExpressionNull_hasUnusedNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -308,6 +316,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols not null, nameExpression null, 'name' property (used) -- ok
+    @Test
     public void idColsSet_nameExpressionNull_hasNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -350,6 +359,7 @@ public class ExpSampleSetTestCase
     }
 
     // idCols not null, nameExpression not null, 'name' property (not used) -- fail
+    @Test
     public void idColsSet_nameExpression_hasUnusedNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -371,6 +381,7 @@ public class ExpSampleSetTestCase
         }
     }
 
+    @Test
     public void testNameExpression() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -423,6 +434,7 @@ public class ExpSampleSetTestCase
         assertExpectedName(ss, expectedName3);
     }
 
+    @Test
     public void testAliases() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -467,6 +479,7 @@ public class ExpSampleSetTestCase
 
 
     // Issue 33682: Calling insertRows on SampleSet with empty values will not insert new samples
+    @Test
     public void testBlankRows() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -566,6 +579,7 @@ public class ExpSampleSetTestCase
 
 
     // Issue 29060: Deriving with DataInputs and MaterialInputs on SampleSet even when Parent col is set
+    @Test
     public void testParentColAndDataInputDerivation() throws Exception
     {
         final User user = TestContext.get().getUser();
