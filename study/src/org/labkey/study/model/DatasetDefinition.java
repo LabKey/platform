@@ -896,16 +896,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
-                else if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                else
                 {
-                    result.add(UpdatePermission.class);
-                    result.add(DeletePermission.class);
-                    result.add(InsertPermission.class);
-                }
-                else if (studyPolicy.hasPermission(user, ReadSomePermission.class))
-                {
-                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                    {
+                        result.add(UpdatePermission.class);
+                        result.add(DeletePermission.class);
+                        result.add(InsertPermission.class);
+                    }
+                    // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
+                    // so check for a custom security policy even if they have UpdatePermission on the study's policy
+                    if (studyPolicy.hasPermission(user, ReadSomePermission.class))
+                    {
+                        // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                        result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    }
                 }
             }
         }

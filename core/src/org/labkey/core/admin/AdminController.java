@@ -484,25 +484,19 @@ public class AdminController extends SpringActionController
 
         ActionURL getLookAndFeelResourcesURL(Container c)
         {
-            ActionURL url = new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("tabId", "resources");
-            return url;
+            return new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
         public ActionURL getProjectSettingsMenuURL(Container c)
         {
-            ActionURL url = new ActionURL(MenuBarAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("tabId", "menubar");
-            return url;
+            return new ActionURL(MenuBarAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
         public ActionURL getProjectSettingsFileURL(Container c)
         {
-            ActionURL url = new ActionURL(FilesAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("tabId", "files");
-            return url;
+            return new ActionURL(FilesAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
@@ -542,19 +536,19 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getManageFoldersURL(Container c)
         {
-            return getFolderManagementURL(ManageFoldersAction.class, c, "folderTree");
+            return new ActionURL(ManageFoldersAction.class, c);
         }
 
         @Override
         public ActionURL getExportFolderURL(Container c)
         {
-            return getFolderManagementURL(ExportFolderAction.class, c, "export");
+            return new ActionURL(ExportFolderAction.class, c);
         }
 
         @Override
         public ActionURL getImportFolderURL(Container c)
         {
-            return getFolderManagementURL(ImportFolderAction.class, c, "import");
+            return new ActionURL(ImportFolderAction.class, c);
         }
 
         @Override
@@ -595,31 +589,31 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getFileRootsURL(Container c)
         {
-            return getFolderManagementURL(FileRootsAction.class, c, "files");
+            return new ActionURL(FileRootsAction.class, c);
         }
 
         @Override
         public ActionURL getFolderSettingsURL(Container c)
         {
-            return getFolderManagementURL(FolderSettingsAction.class, c, "settings");
+            return new ActionURL(FolderSettingsAction.class, c);
         }
 
         @Override
         public ActionURL getNotificationsURL(Container c)
         {
-            return getFolderManagementURL(NotificationsAction.class, c, "messages");
+            return new ActionURL(NotificationsAction.class, c);
         }
 
         @Override
         public ActionURL getModulePropertiesURL(Container c)
         {
-            return getFolderManagementURL(ModulePropertiesAction.class, c, "props");
+            return new ActionURL(ModulePropertiesAction.class, c);
         }
 
         @Override
         public ActionURL getMissingValuesURL(Container c)
         {
-            return getFolderManagementURL(MissingValuesAction.class, c, "mvIndicators");
+            return new ActionURL(MissingValuesAction.class, c);
         }
 
         public ActionURL getInitialFolderSettingsURL(Container c)
@@ -654,11 +648,6 @@ public class AdminController extends SpringActionController
         public ActionURL getTrackedAllocationsViewerURL()
         {
             return new ActionURL(TrackedAllocationsViewerAction.class, ContainerManager.getRoot());
-        }
-
-        public static ActionURL getFolderManagementURL(Class<? extends Controller> actionClass, Container c, String tabId)
-        {
-            return new ActionURL(actionClass, c).addParameter("tabId", tabId);
         }
     }
 
@@ -10125,12 +10114,6 @@ public class AdminController extends SpringActionController
         public final HtmlString helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final HtmlString welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
-
-
-        public static ActionURL getCustomPageElementLink(Container c)
-        {
-            return PremiumService.get().getConfCustomPageElements(c);
-        }
     }
 
 
