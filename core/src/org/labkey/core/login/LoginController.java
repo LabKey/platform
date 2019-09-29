@@ -84,7 +84,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1007,11 +1007,8 @@ public class LoginController extends SpringActionController
         else if (isAdminOnlyMode())
         {
             String content = "The site is currently undergoing maintenance.";
-            WikiService wikiService = WikiService.get();
-            if (null != wikiService)
-            {
-                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
-            }
+            WikiRenderingService wikiService = WikiRenderingService.get();
+            content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }
