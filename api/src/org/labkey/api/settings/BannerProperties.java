@@ -1,16 +1,11 @@
 package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 
 public class BannerProperties implements TemplateProperties
 {
-    private final String BANNER_CONFIGS = "BannerProperties";
-    private final String SHOW_BANNER_PROPERTY_NAME = "ShowBanner";
-    private final String BANNER_MODULE_PROPERTY_NAME = "BannerModule";
-    private final String FILE_NAME = "_banner";
-    private final String PROPERTY_DISPLAY_TYPE = "Banner";
-
-    private Container _container;
+    private final Container _container;
 
     public BannerProperties(Container container)
     {
@@ -26,36 +21,42 @@ public class BannerProperties implements TemplateProperties
     @Override
     public String getDisplayConfigs()
     {
-        return BANNER_CONFIGS;
+        return "BannerProperties";
     }
 
     @Override
     public String getDisplayPropertyName()
     {
-        return SHOW_BANNER_PROPERTY_NAME;
+        return "ShowBanner";
     }
 
     @Override
     public String getModulePropertyName()
     {
-        return BANNER_MODULE_PROPERTY_NAME;
+        return "BannerModule";
     }
 
     @Override
     public String getFileName()
     {
-        return FILE_NAME;
-    }
-
-    @Override
-    public String getShowByDefault()
-    {
-        return String.valueOf(false);
+        return "_banner";
     }
 
     @Override
     public String getPropertyDisplayType()
     {
-        return PROPERTY_DISPLAY_TYPE;
+        return "Banner";
+    }
+
+    @Override
+    public String getDefaultModule()
+    {
+        return null;
+    }
+
+    @Override
+    public TemplateProperties getRootProperties()
+    {
+        return new BannerProperties(ContainerManager.getRoot());
     }
 }
