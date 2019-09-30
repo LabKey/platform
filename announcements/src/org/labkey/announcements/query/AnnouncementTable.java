@@ -31,7 +31,6 @@ import org.labkey.api.query.AbstractBeanQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
@@ -83,14 +82,20 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
             }
         });
         final var renderTypeColumn = getMutableColumn("RendererType");
-        renderTypeColumn.setFk(new LookupForeignKey("Value")
+
+        WikiService ws = WikiService.get();
+
+        if (null != ws)
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            renderTypeColumn.setFk(new LookupForeignKey("Value")
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
-            }
-        });
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return ws.getRendererTypeTable(_userSchema.getUser(), _userSchema.getContainer());
+                }
+            });
+        }
 
         var bodyColumn = getMutableColumn("Body");
         bodyColumn.setHidden(true);
