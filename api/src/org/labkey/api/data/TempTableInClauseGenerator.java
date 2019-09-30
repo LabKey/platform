@@ -218,20 +218,20 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         public void testIntegerCommit()
         {
             SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
-            SQLFragment originalSelectSQL;
+            SQLFragment secondSelectSQL;
             try (DbScope.Transaction transaction = _scope.ensureTransaction())
             {
-                originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                SQLFragment originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
                 Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, originalSelectSQL).getRowCount());
 
-                SQLFragment uncommittedSecondSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-                Assert.assertNotEquals("SQL shouldn't match until it's been committed", originalSelectSQL, uncommittedSecondSQL);
-                Assert.assertEquals("Validate second inside transaction", 2, new SqlSelector(_scope, uncommittedSecondSQL).getRowCount());
+                secondSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
+                Assert.assertNotEquals("SQL shouldn't match until it's been committed", originalSelectSQL, secondSelectSQL);
+                Assert.assertEquals("Validate second inside transaction", 2, new SqlSelector(_scope, secondSelectSQL).getRowCount());
 
                 transaction.commit();
             }
             SQLFragment postCommitSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-            Assert.assertNotEquals("SQL should match after the original has been committed", originalSelectSQL, postCommitSQL);
+            Assert.assertEquals("SQL should match after the original has been committed", secondSelectSQL, postCommitSQL);
             Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, postCommitSQL).getRowCount());
         }
 
