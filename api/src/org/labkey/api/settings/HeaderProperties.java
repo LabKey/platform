@@ -16,19 +16,14 @@
 package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 
 /**
  * Created by marty on 7/5/2017.
  */
 public class HeaderProperties implements TemplateProperties
 {
-    private final String HEADER_CONFIGS = "HeaderProperties";
-    private final String SHOW_HEADER_PROPERTY_NAME = "ShowHeader";
-    private final String HEADER_MODULE_PROPERTY_NAME = "HeaderModule";
-    private final String FILE_NAME = "_header";
-    private final String PROPERTY_DISPLAY_TYPE = "Header";
-
-    private Container _container;
+    private final Container _container;
 
     public HeaderProperties(Container container)
     {
@@ -44,33 +39,42 @@ public class HeaderProperties implements TemplateProperties
     @Override
     public String getDisplayConfigs()
     {
-        return HEADER_CONFIGS;
+        return "HeaderProperties";
     }
 
     @Override
     public String getDisplayPropertyName()
     {
-        return SHOW_HEADER_PROPERTY_NAME;
+        return "ShowHeader";
     }
 
     @Override
     public String getModulePropertyName()
     {
-        return HEADER_MODULE_PROPERTY_NAME;
+        return "HeaderModule";
     }
 
     @Override
     public String getFileName()
     {
-        return FILE_NAME;
+        return "_header";
     }
-
-    @Override
-    public String getShowByDefault() { return "FALSE";}
 
     @Override
     public String getPropertyDisplayType()
     {
-        return PROPERTY_DISPLAY_TYPE;
+        return "Header";
+    }
+
+    @Override
+    public String getDefaultModule()
+    {
+        return null;
+    }
+
+    @Override
+    public TemplateProperties getRootProperties()
+    {
+        return new HeaderProperties(ContainerManager.getRoot());
     }
 }
