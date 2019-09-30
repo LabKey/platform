@@ -18,7 +18,6 @@ package org.labkey.study.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -107,7 +106,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
             List<String> readerErrors = new ArrayList<>();
             StudyImpl study = getStudy();
             DatasetInferSchemaReader reader = new DatasetInferSchemaReader(getDatasetsDirectory(), getStudy(), _ctx, inputDataMap);
-            reader.validate(readerErrors);
+            reader.validate(readerErrors, null);
 
             for (String error : readerErrors)
                 _ctx.getLogger().error(error);
@@ -115,7 +114,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
             BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "pipeline"));
             if (StudyManager.getInstance().importDatasetSchemas(study, _ctx.getUser(), reader, errors, _ctx.isCreateSharedDatasets(), _ctx.getActivity()))
             {
-                doImport(getDatasetsDirectory(), getDatasetsFileName(), getJob(), _ctx, getStudy(), reader, true);
+                doImport(getDatasetsDirectory(), getDatasetsFileName(), getJob(), _ctx, getStudy(), reader, true, params);
             }
             return new RecordedActionSet();
         }

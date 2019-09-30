@@ -135,7 +135,7 @@ public class DatasetFileReader
         return dsMap;
     }
 
-    public void validate(List<String> errors) throws IOException
+    public void validate(List<String> errors, Map<String, String> params) throws IOException
     {
         Properties props = new Properties();
 
@@ -161,7 +161,48 @@ public class DatasetFileReader
         // load defaults
         //
 
-        Action defaultAction = Action.REPLACE;
+        // ------ version 1
+        // Default action type is replace.
+        Action actionType = Action.REPLACE;
+        if (params != null && (params.containsKey("Action")))
+        {
+            switch(params.get("Action").toLowerCase())
+            {
+                case "append":
+                    actionType = Action.APPEND;
+                    break;
+                case "delete":
+                    actionType = Action.DELETE;
+                    break;
+                default:
+                    // If user-entered param value is not a valid action.
+                    errors.add("Configuration parameter is not valid.");
+                    return;
+            }
+        }
+
+        // for reviewer:
+        // ------ version 2
+        // Could pull this into a helper function for reusability if other config options are going to use a similar structure.
+        // In my opinion version 1 is more readable, but version 1's structure is less reusable if we do want to pull it into a helper function.
+
+//        Action actionType = Action.REPLACE;
+//        if (params != null && params.containsKey("Action"))
+//        {
+//            String chosenAction = params.get("Action");
+//            for (Action action : Action.values())
+//            {
+//                if ((actionType.name().toLowerCase()).equals(chosenAction))
+//                {
+//                    actionType = action;
+//                    break;
+//                }
+//            }
+//            errors.add("Configuration parameter is not valid.");
+//            return;
+//        }
+        // ------ end version 2 -----
+
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;
         Date defaultReplaceCutoff = null;
@@ -176,7 +217,7 @@ public class DatasetFileReader
                 continue;
             if (key.equals("default.action"))
             {
-                defaultAction = actionForName(value);
+                actionType = actionForName(value);
             }
             else if (key.equals("default.filepattern"))
             {
@@ -228,7 +269,7 @@ public class DatasetFileReader
             DatasetImportRunnable runnable = jobMap.get(ds);
             if (null == runnable)
             {
-                runnable = newImportJob(ds, _datasetsDirectory, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                runnable = newImportJob(ds, _datasetsDirectory, null, actionType, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             if (propertyKey.equals("file"))
@@ -290,7 +331,7 @@ public class DatasetFileReader
             {
                 if (!importAllMatches)
                     continue;
-                runnable = newImportJob(ds, _datasetsDirectory, name, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                runnable = newImportJob(ds, _datasetsDirectory, name, actionType, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             else if (runnable._fileName == null)

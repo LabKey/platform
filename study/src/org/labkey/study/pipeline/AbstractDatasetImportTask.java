@@ -39,6 +39,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -110,11 +111,11 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
         }
 
-        return doImport(datasetsDirectory, datasetsFileName, job, ctx, study, reader, syncParticipantVisit);
+        return doImport(datasetsDirectory, datasetsFileName, job, ctx, study, reader, syncParticipantVisit, null);
     }
 
     public static List<DatasetDefinition> doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job,
-                                                   StudyImportContext ctx, StudyImpl study, DatasetFileReader reader, boolean syncParticipantVisit)
+                                                   StudyImportContext ctx, StudyImpl study, DatasetFileReader reader, boolean syncParticipantVisit, Map<String, String> params)
     {
         try
         {
@@ -123,7 +124,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
             try
             {
-                reader.validate(errors);
+                reader.validate(errors, params);
 
                 for (String error : errors)
                     ctx.getLogger().error(error);
