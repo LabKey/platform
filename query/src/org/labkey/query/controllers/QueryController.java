@@ -3645,7 +3645,7 @@ public class QueryController extends SpringActionController
                 //issue 13967: provide better message for OptimisticConflictException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            catch (ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
+            catch (QueryUpdateServiceException | ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
             {
                 //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037), and DataIntegrity (uniqueness) (Issue 22779)
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
