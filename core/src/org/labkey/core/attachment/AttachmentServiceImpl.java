@@ -1117,21 +1117,25 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             _response = response;
         }
 
+        @Override
         public void setContentType(String contentType)
         {
             _response.setContentType(contentType);
         }
 
+        @Override
         public void setContentDisposition(String value)
         {
             _response.setHeader("Content-Disposition", value);
         }
 
+        @Override
         public void setContentLength(int size)
         {
             _response.setContentLength(size);
         }
 
+        @Override
         public OutputStream getOutputStream() throws IOException
         {
             return _response.getOutputStream();

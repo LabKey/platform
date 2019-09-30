@@ -17,6 +17,8 @@
 package org.labkey.api.data;
 
 /**
+ * Interface for data-object classes, normally backed by a row in the database, that track who created and last modified
+ * a piece of data, and when.
  * User: jeckels
  * Date: Dec 20, 2005
  */
