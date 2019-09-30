@@ -176,7 +176,7 @@ public class DatasetFileReader
                     break;
                 default:
                     // If user-entered param value is not a valid action.
-                    errors.add("Configuration parameter is not valid.");
+                    errors.add("Configuration parameter is not valid."); //Is this the appropriate way to add an error in this situation?
                     return;
             }
         }
