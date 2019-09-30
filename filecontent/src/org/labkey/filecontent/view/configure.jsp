@@ -51,7 +51,7 @@
     if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
     {
         Path rootPath = service.getFileRootPath(getContainer());
-        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()).addParameter("tabId", "files");
+        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer());
         if (null == rootPath)
         { %>
             There is no file root for this folder.

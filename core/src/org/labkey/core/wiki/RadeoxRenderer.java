@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.wiki.renderer;
+package org.labkey.core.wiki;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -38,7 +38,7 @@ import org.labkey.api.view.menu.SiteAdminMenu;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.WikiRenderEngine;
 import org.radeox.api.engine.context.InitialRenderContext;
@@ -111,6 +111,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         _attachments = attachments;
     }
 
+    @Override
     public FormattedHtml format(String text)
     {
         if (text == null)
@@ -828,13 +829,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     public static class RadeoxRenderTest extends Assert
     {
         RadeoxRenderer _r;
-        WikiService _ws;
+        WikiRenderingService _wrs;
 
         @Before
         public void setup()
         {
            _r = new RadeoxRenderer();
-           _ws = WikiService.get();
+           _wrs = WikiRenderingService.get();
         }
 
         @Test
@@ -857,7 +858,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         private void test(String wiki, String html)
         {
             assertEquals(html, _r.format(wiki).getHtml());
-            assertEquals(WikiService.WIKI_PREFIX + html + WikiService.WIKI_SUFFIX, _ws.getFormattedHtml(WikiRendererType.RADEOX, wiki));
+            assertEquals(WikiRenderingService.WIKI_PREFIX + html + WikiRenderingService.WIKI_SUFFIX, _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
 
         @Test
