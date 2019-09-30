@@ -535,7 +535,7 @@
             }
         }
         else {
-            toggleTimeout = setTimeout(doToggle.bind(undefined, elm), 0);
+            toggleTimeout = setTimeout(doToggle.bind(undefined, elm), 500);
         }
     }
 
