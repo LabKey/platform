@@ -161,47 +161,35 @@ public class DatasetFileReader
         // load defaults
         //
 
-        // ------ version 1
+// ------ version 1
+        // Default action type is replace.
+//        Action actionType = Action.REPLACE;
+//        if (params != null && (params.containsKey("Action")))
+//        {
+//            switch(params.get("Action").toLowerCase())
+//            {
+//                case "append":
+//                    actionType = Action.APPEND;
+//                    break;
+//                case "delete":
+//                    actionType = Action.DELETE;
+//                    break;
+//                default:
+//                    errors.add("Invalid configuration parameter received.");
+//                    return;
+//            }
+//        }
+// ------ end version 1
+
+// ------ version 2
+// Version 1 is more readable, in my opinion, but clunkier. Version 2 is more reusable, assuming that the other config options coming in later are also going to
+// be based on enums.
+
         // Default action type is replace.
         Action actionType = Action.REPLACE;
         if (params != null && (params.containsKey("Action")))
-        {
-            switch(params.get("Action").toLowerCase())
-            {
-                case "append":
-                    actionType = Action.APPEND;
-                    break;
-                case "delete":
-                    actionType = Action.DELETE;
-                    break;
-                default:
-                    // If user-entered param value is not a valid action.
-                    errors.add("Configuration parameter is not valid."); //Is this the appropriate way to add an error in this situation?
-                    return;
-            }
-        }
-
-        // for reviewer:
-        // ------ version 2
-        // Could pull this into a helper function for reusability if other config options are going to use a similar structure.
-        // In my opinion version 1 is more readable, but version 1's structure is less reusable if we do want to pull it into a helper function.
-
-//        Action actionType = Action.REPLACE;
-//        if (params != null && params.containsKey("Action"))
-//        {
-//            String chosenAction = params.get("Action");
-//            for (Action action : Action.values())
-//            {
-//                if ((actionType.name().toLowerCase()).equals(chosenAction))
-//                {
-//                    actionType = action;
-//                    break;
-//                }
-//            }
-//            errors.add("Configuration parameter is not valid.");
-//            return;
-//        }
-        // ------ end version 2 -----
+            actionType = setConfigParam(Action.class, params.get("Action"), errors);
+// ------ end version 2
 
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;
@@ -349,6 +337,20 @@ public class DatasetFileReader
                 return name1 == null ? -1 : 1;
             return j1._datasetDefinition.getDatasetId() - j2._datasetDefinition.getDatasetId();
         });
+    }
+
+    @Nullable
+    private <T extends Enum<T>> T setConfigParam(Class<T> options, String chosenOption, List<String> errors)
+    {
+        for (T option : options.getEnumConstants())
+        {
+            if ((option.name().toLowerCase()).equals(chosenOption))
+            {
+                return option;
+            }
+        }
+        errors.add("Invalid configuration parameter received."); //Is this the appropriate way to make an error in this situation?
+        return null;
     }
 
     protected List<String> getDatasetFileNames()
