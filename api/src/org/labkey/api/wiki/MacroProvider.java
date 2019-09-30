@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * Modules that want to provide wiki macros should implement this interface.
- * The module should call @link WikiService.Service#registerMacroProvider
+ * The module should call @link WikiRenderingService#registerMacroProvider
  * to register the provider. Macros by this provider will be called like this
  *
  * {providerName:viewName|paramName=paramVal|paramName2=paramVal2...}
@@ -40,5 +40,5 @@ public interface MacroProvider
      * @param parentContext Context beind used to render the wiki
      * @return HttpView that will be included in the wiki.
      */
-    public HttpView getView(String name, Map<String,String> params, ViewContext parentContext);
+    HttpView getView(String name, Map<String, String> params, ViewContext parentContext);
 }
