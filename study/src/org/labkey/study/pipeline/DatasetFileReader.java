@@ -182,6 +182,7 @@ public class DatasetFileReader
 // ------ end version 1
 
 // ------ version 2
+// To Reviewer:
 // Version 1 is more readable, in my opinion, but clunkier. Version 2 is more reusable, assuming that the other config options coming in later are also going to
 // be based on enums.
 
@@ -349,7 +350,7 @@ public class DatasetFileReader
                 return option;
             }
         }
-        errors.add("Invalid configuration parameter received."); //Is this the appropriate way to make an error in this situation?
+        errors.add("Invalid configuration parameter received."); //To Reviewer: Is this the appropriate way to make an error in this situation?
         return null;
     }
 
