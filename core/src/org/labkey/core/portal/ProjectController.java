@@ -57,7 +57,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
@@ -1602,8 +1601,6 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class GetReadableContainersAction extends ReadOnlyApiAction<BasicGetContainersForm>
     {
-        private int _index = 0;
-
         @Override
         public ApiResponse execute(BasicGetContainersForm form, BindException errors) throws Exception
         {
@@ -1623,7 +1620,7 @@ public class ProjectController extends SpringActionController
         protected List<String> getVisibleChildren(Container parent, int currentDepth, int requestedDepth)
         {
             List<String> result = new ArrayList<>();
-            if (currentDepth == requestedDepth)
+            if (requestedDepth < 0 || currentDepth > requestedDepth)
                 return result;
 
             if (parent.hasPermission(getUser(), ReadPermission.class))
