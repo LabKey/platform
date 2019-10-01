@@ -122,7 +122,7 @@ public final class TableSorter
                     lookupTableName = t.getName();
 
                 // Skip self-referencing FKs
-                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equalsIgnoreCase(table.getName()))
                     continue;
 
                 // Remove the lookup table from the set of tables with no incoming FK
