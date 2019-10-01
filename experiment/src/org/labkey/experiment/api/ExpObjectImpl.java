@@ -140,26 +140,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
             throw new IllegalArgumentException("PropertyType resource is NYI in this method");
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
-        {
-            OntologyManager.deleteProperty(getLSID(), pd.getPropertyURI(), getContainer(), pd.getContainer());
-
-            ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd, value);
-            if (value != null)
-            {
-                oprop.setPropertyId(pd.getPropertyId());
-                OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
-            }
-            else
-            {
-                // We still need to validate blanks
-                List<ValidationError> errors = new ArrayList<>();
-                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, oprop, errors, new ValidatorContext(pd.getContainer(), user));
-                if (!errors.isEmpty())
-                    throw new ValidationException(errors);
-            }
-            transaction.commit();
-        }
+        OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, this);
     }
 
     public String urlFlag(boolean flagged)
