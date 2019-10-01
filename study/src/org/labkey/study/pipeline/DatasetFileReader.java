@@ -137,16 +137,23 @@ public class DatasetFileReader
 
     public void validate(List<String> errors) throws IOException
     {
-        Properties props = new Properties();
+        // cull
+//        Properties props = new Properties();
+//        if (_datasetsFileName != null)
+//        {
+//            try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
+//            {
+//                if (is != null)
+//                    props.load(is);
+//            }
+//        }
+        //
 
         if (_datasetsFileName != null)
         {
-            try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
-            {
-                if (is != null)
-                    props.load(is);
-            }
+            _studyImportContext.setProperties(_datasetsDirectory.getInputStream(_datasetsFileName));
         }
+
 
         if (null == _study)
         {
@@ -161,27 +168,23 @@ public class DatasetFileReader
         // load defaults
         //
 
-        // Default action type is replace.
-        Action actionType = Action.REPLACE;
-        Map<String, String> params = _studyImportContext.getProperties();
-        if (params != null && (params.containsKey("Action")))
-            actionType = setConfigParam(Action.class, params.get("Action"), errors);
-
+        Action defaultAction = Action.REPLACE;
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;
         Date defaultReplaceCutoff = null;
 
         OneToOneStringMap defaultColumnMap = new OneToOneStringMap();
 
-        for (Map.Entry e : props.entrySet())
-        {
-            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String) e.getValue());
+        Map<String, Object> properties = _studyImportContext.getProperties();
+        for (String key : properties.keySet())
+            {
+            String value = (String) properties.get(key);
+
             if (!key.startsWith("default."))
                 continue;
             if (key.equals("default.action"))
             {
-                actionType = actionForName(value);
+                defaultAction = actionForName(value);
             }
             else if (key.equals("default.filepattern"))
             {
@@ -215,7 +218,7 @@ public class DatasetFileReader
         // load explicit definitions
         //
 
-        for (Map.Entry e : props.entrySet())
+        for (Map.Entry e : properties.entrySet())
         {
             String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
             String value = StringUtils.trimToEmpty((String) e.getValue());
@@ -233,7 +236,7 @@ public class DatasetFileReader
             DatasetImportRunnable runnable = jobMap.get(ds);
             if (null == runnable)
             {
-                runnable = newImportJob(ds, _datasetsDirectory, null, actionType, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                runnable = newImportJob(ds, _datasetsDirectory, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             if (propertyKey.equals("file"))
@@ -295,7 +298,7 @@ public class DatasetFileReader
             {
                 if (!importAllMatches)
                     continue;
-                runnable = newImportJob(ds, _datasetsDirectory, name, actionType, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                runnable = newImportJob(ds, _datasetsDirectory, name, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             else if (runnable._fileName == null)
@@ -313,20 +316,6 @@ public class DatasetFileReader
                 return name1 == null ? -1 : 1;
             return j1._datasetDefinition.getDatasetId() - j2._datasetDefinition.getDatasetId();
         });
-    }
-
-    @Nullable
-    private <T extends Enum<T>> T setConfigParam(Class<T> options, String chosenOption, List<String> errors)
-    {
-        for (T option : options.getEnumConstants())
-        {
-            if ((option.name().toLowerCase()).equals(chosenOption))
-            {
-                return option;
-            }
-        }
-        errors.add("Invalid configuration parameter received."); //To Reviewer: Is this the appropriate way to make an error in this situation?
-        return null;
     }
 
     protected List<String> getDatasetFileNames()

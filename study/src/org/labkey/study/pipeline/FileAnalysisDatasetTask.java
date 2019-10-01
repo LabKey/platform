@@ -79,10 +79,18 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
     @Override
     public RecordedActionSet run() throws PipelineJobException
     {
+        FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
+        Map<String, String> params = jobSupport.getParameters();
+        if (params != null)
+            _ctx.setProperties(params);
+
         try
         {
-            FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
-            Map<String, String> params = jobSupport.getParameters();
+//            FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
+//            Map<String, String> params = jobSupport.getParameters();
+//            if (params != null)
+//                _ctx.setProperties(params);
+
 
             if (params.containsKey(DATASET_ID_KEY) && params.containsKey(DATASET_NAME_KEY))
             {
@@ -114,7 +122,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
             BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "pipeline"));
             if (StudyManager.getInstance().importDatasetSchemas(study, _ctx.getUser(), reader, errors, _ctx.isCreateSharedDatasets(), _ctx.getActivity()))
             {
-                doImport(getDatasetsDirectory(), getDatasetsFileName(), getJob(), _ctx, getStudy(), reader, true, params);
+                doImport(getDatasetsDirectory(), getDatasetsFileName(), getJob(), _ctx, getStudy(), reader, true);
             }
             return new RecordedActionSet();
         }

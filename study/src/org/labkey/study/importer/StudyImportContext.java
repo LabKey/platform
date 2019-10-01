@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
@@ -30,11 +31,15 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
+import org.systemsbiology.jrap.Base64;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -45,7 +50,8 @@ import java.util.Set;
 public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
-    private Map<String, String> props;
+    private HashMap<String, Object> props = new HashMap<>();
+//    private Map<String, Object> props1;
 
     // Study design table maps (primarily in Dataspace case) to help map dataset FKs
     private Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
@@ -185,10 +191,30 @@ public class StudyImportContext extends AbstractContext
 
     public void setProperties(Map<String, String> props)
     {
-        this.props = props;
+        this.props.putAll(props);
     }
 
-    public Map<String, String> getProperties()
+
+    public void setProperties(InputStream is)
+    {
+        Properties props = new Properties();
+
+        try
+        {
+            props.load(is);
+        }
+        catch (Exception e) {
+            // what
+        }
+
+        for (Map.Entry<Object, Object> entry : props.entrySet())
+        {
+            this.props.put( StringUtils.trimToEmpty((String) entry.getKey()).toLowerCase(),
+                            StringUtils.trimToEmpty((String) entry.getValue()));
+        }
+    }
+
+    public Map<String, Object> getProperties()
     {
         return this.props;
     }
