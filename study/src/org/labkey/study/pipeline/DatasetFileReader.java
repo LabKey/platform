@@ -135,7 +135,7 @@ public class DatasetFileReader
         return dsMap;
     }
 
-    public void validate(List<String> errors, Map<String, String> params) throws IOException
+    public void validate(List<String> errors) throws IOException
     {
         Properties props = new Properties();
 
@@ -161,36 +161,11 @@ public class DatasetFileReader
         // load defaults
         //
 
-// ------ version 1
-        // Default action type is replace.
-//        Action actionType = Action.REPLACE;
-//        if (params != null && (params.containsKey("Action")))
-//        {
-//            switch(params.get("Action").toLowerCase())
-//            {
-//                case "append":
-//                    actionType = Action.APPEND;
-//                    break;
-//                case "delete":
-//                    actionType = Action.DELETE;
-//                    break;
-//                default:
-//                    errors.add("Invalid configuration parameter received.");
-//                    return;
-//            }
-//        }
-// ------ end version 1
-
-// ------ version 2
-// To Reviewer:
-// Version 1 is more readable, in my opinion, but clunkier. Version 2 is more reusable, assuming that the other config options coming in later are also going to
-// be based on enums.
-
         // Default action type is replace.
         Action actionType = Action.REPLACE;
+        Map<String, String> params = _studyImportContext.getProperties();
         if (params != null && (params.containsKey("Action")))
             actionType = setConfigParam(Action.class, params.get("Action"), errors);
-// ------ end version 2
 
         boolean importAllMatches = true;
         boolean defaultDeleteAfterImport = false;

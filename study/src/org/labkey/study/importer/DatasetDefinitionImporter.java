@@ -153,7 +153,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                 if (datasetsDirectory != null)
                 {
                     reader = new DatasetInferSchemaReader(datasetsDirectory, datasetsFileName, study, ctx);
-                    ((DatasetInferSchemaReader)reader).validate(readerErrors, null);
+                    ((DatasetInferSchemaReader)reader).validate(readerErrors);
 
                     for (String error : readerErrors)
                         ctx.getLogger().error(error);

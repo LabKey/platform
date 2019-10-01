@@ -121,10 +121,11 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         {
             QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).pauseUpdates(study.getContainer());
             List<String> errors = new ArrayList<>();
+            ctx.setProperties(params);
 
             try
             {
-                reader.validate(errors, params);
+                reader.validate(errors);
 
                 for (String error : errors)
                     ctx.getLogger().error(error);

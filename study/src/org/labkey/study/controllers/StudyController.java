@@ -4009,7 +4009,7 @@ public class StudyController extends BaseStudyController
             if (!errors.hasErrors())
             {
                 List<String> parseErrors = new ArrayList<>();
-                reader.validate(parseErrors, null);
+                reader.validate(parseErrors);
                 for (String error : parseErrors)
                     errors.reject("importStudyBatch", error);
             }

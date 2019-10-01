@@ -45,6 +45,7 @@ import java.util.Set;
 public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
+    private Map<String, String> props;
 
     // Study design table maps (primarily in Dataspace case) to help map dataset FKs
     private Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
@@ -181,6 +182,17 @@ public class StudyImportContext extends AbstractContext
             map = Collections.emptyMap();
         return map;
     }
+
+    public void setProperties(Map<String, String> props)
+    {
+        this.props = props;
+    }
+
+    public Map<String, String> getProperties()
+    {
+        return this.props;
+    }
+
 
     public void addTableIdMap(String key, @NotNull Map<Object, Object> map)
     {

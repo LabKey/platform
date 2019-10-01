@@ -106,7 +106,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
             List<String> readerErrors = new ArrayList<>();
             StudyImpl study = getStudy();
             DatasetInferSchemaReader reader = new DatasetInferSchemaReader(getDatasetsDirectory(), getStudy(), _ctx, inputDataMap);
-            reader.validate(readerErrors, null);
+            reader.validate(readerErrors);
 
             for (String error : readerErrors)
                 _ctx.getLogger().error(error);
