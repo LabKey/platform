@@ -22,12 +22,10 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -195,9 +193,11 @@ public class ExpDataIterators
 
     private static class AliasDataIterator extends WrapperDataIterator
     {
+        // For some reason I don't quite understand we don't want to pass through a column called "alias" so we rename it to ALIASCOLUMNALIAS
+        final static String ALIASCOLUMNALIAS = AliasDataIterator.class.getName() + "#ALIAS";
         final DataIteratorContext _context;
-        final Integer _lsidCol;
-        final Integer _aliasCol;
+        final Supplier<Object> _lsidCol;
+        final Supplier<Object> _aliasCol;
         final Container _container;
         final User _user;
         Map<String, Object> _lsidAliasMap = new HashMap<>();
@@ -209,8 +209,8 @@ public class ExpDataIterators
             _context = context;
 
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
-            _lsidCol = map.get("lsid");
-            _aliasCol = map.get("alias");
+            _lsidCol = map.get("lsid")==null ? null : di.getSupplier(map.get("lsid"));
+            _aliasCol = map.get(ALIASCOLUMNALIAS)==null ? null : di.getSupplier(map.get(ALIASCOLUMNALIAS));
 
             _container = container;
             _user = user;
@@ -254,8 +254,8 @@ public class ExpDataIterators
             // For each iteration, collect the lsid and alias col values.
             if (_lsidCol != null && _aliasCol != null)
             {
-                Object lsidValue = get(_lsidCol);
-                Object aliasValue = get(_aliasCol);
+                Object lsidValue = _lsidCol.get();
+                Object aliasValue = _aliasCol.get();
 
                 if (aliasValue != null && lsidValue instanceof String)
                 {
@@ -771,9 +771,15 @@ public class ExpDataIterators
                     _importAliases :
                     new CaseInsensitiveHashMap<>();
 
-            SimpleTranslator step0 = new SimpleTranslator(input, context);
-            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
-            step0.setDebugName("drop alias");
+            DataIterator step0 = input;
+            if (colNameMap.containsKey("alias"))
+            {
+                SimpleTranslator st = new SimpleTranslator(input, context);
+                st.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
+                st.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias"));
+                st.setDebugName("rename alias column");
+                step0 = st;
+            }
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
@@ -800,16 +806,6 @@ public class ExpDataIterators
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step6 = step5;
-            if (colNameMap.containsKey("alias"))
-            {
-                SimpleTranslator st = new SimpleTranslator(step5.getDataIterator(context), context);
-                st.selectAll();
-                //ColumnInfo aliasCol = getColumn(FieldKey.fromParts("alias"));
-                final DataIterator _aliasDI = input;
-                st.addColumn(new BaseColumnInfo("alias", JdbcType.VARCHAR), (Supplier) () -> _aliasDI.get(colNameMap.get("alias")));
-                step6 = DataIteratorBuilder.wrap(st);
-            }
-
             DataIteratorBuilder step7 = step6;
             if (null != _indexFunction)
                 step7 = new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction); // may need to add this after the aliases are set

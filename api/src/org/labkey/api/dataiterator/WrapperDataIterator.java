@@ -33,7 +33,7 @@ public abstract class WrapperDataIterator implements DataIterator, ScrollableDat
 
     protected WrapperDataIterator(DataIterator di)
     {
-        _delegate = di;
+        _delegate = LoggingDataIterator.wrap(di);
     }
 
     public void setDebugName(String name)
