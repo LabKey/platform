@@ -1593,7 +1593,7 @@ public class StudyManager
 
                     int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
                     if (count > 0)
-                        StudyManager.datasetModified(def, user, true);
+                        StudyManager.datasetModified(def, true);
                 }
 
                 for (VisitImpl visit : visits)
@@ -1721,7 +1721,7 @@ public class StudyManager
         {
             return true;
         }
-        // It has no location type, so allow it
+        // If it has no location type, allow it
         return !location.isRepository() && !location.isClinic() && !location.isSal() && !location.isEndpoint();
     }
 
@@ -2727,17 +2727,12 @@ public class StudyManager
     }
 
 
-    public int purgeDataset(DatasetDefinition dataset, User user)
-    {
-        return purgeDataset(dataset, null, user);
-    }
-
     /**
      * Delete all rows from a dataset or just those newer than the cutoff date.
      */
-    public int purgeDataset(DatasetDefinition dataset, Date cutoff, User user)
+    public int purgeDataset(DatasetDefinition dataset, @Nullable Date cutoff)
     {
-        return dataset.deleteRows(user, cutoff);
+        return dataset.deleteRows(cutoff);
     }
 
     /**
@@ -2945,8 +2940,6 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
 
-            // study data provisioned tables
-            //deleteStudyDataProvisionedTables(c, user); // NOTE: this looks to be handled by the OntologyManager
             deleteStudyDesignData(c, user, studyDesignTables);
 
             Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), containerFilter);
@@ -4253,16 +4246,16 @@ public class StudyManager
      * Called when a dataset has been modified in order to set the modified time, plus any other related actions.
      * @param fireNotification - true to fire the changed notification.
      */
-    public static void datasetModified(DatasetDefinition def, User user, boolean fireNotification)
+    public static void datasetModified(DatasetDefinition def, boolean fireNotification)
     {
         // Issue 19285 - run this as a commit task.  This has the benefit of only running per set of batch changes
         // under the same transaction and only running if the transaction is committed.  If no transaction is active then
         // the code is run immediately
         DbScope scope = StudySchema.getInstance().getScope();
-        scope.addCommitTask(getInstance().getDatasetModifiedRunnable(def, user, fireNotification), CommitTaskOption.POSTCOMMIT);
+        scope.addCommitTask(getInstance().getDatasetModifiedRunnable(def, fireNotification), CommitTaskOption.POSTCOMMIT);
     }
 
-    public Runnable getDatasetModifiedRunnable(DatasetDefinition def, User user, boolean fireNotification)
+    public Runnable getDatasetModifiedRunnable(DatasetDefinition def, boolean fireNotification)
     {
         return new DatasetModifiedRunnable(def, fireNotification);
     }
