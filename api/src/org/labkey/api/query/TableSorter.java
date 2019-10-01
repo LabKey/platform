@@ -23,17 +23,14 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Tuple3;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -220,8 +217,7 @@ public final class TableSorter
             TableInfo table = tuple.first;
             ColumnInfo col = tuple.second;
             TableInfo lookupTable = tuple.third;
-            //sb.append(String.format("%s.%s.%s -> %s.%s", table.getPublicSchemaName(), table.getPublicName(), col.getName(), lookupTable.getPublicSchemaName(), lookupTable.getPublicName()));
-            sb.append(String.format("%s.%s -> %s", table.getPublicName(), col.getName(), lookupTable.getPublicName()));
+            sb.append(String.format("%s.%s -> %s", table.getName(), col.getName(), lookupTable.getName()));
             if (iter.hasNext())
                 sb.append("\n");
         }
