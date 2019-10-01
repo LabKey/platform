@@ -40,6 +40,7 @@ public class UnionTableInfoImpl extends QueryTableInfo implements UnionTableInfo
         _unionColumns.add(col);
     }
 
+    @Override
     public List<ColumnInfo> getUnionColumns()
     {
         return _unionColumns;

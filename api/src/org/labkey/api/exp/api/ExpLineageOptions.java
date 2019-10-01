@@ -15,8 +15,6 @@
  */
 package org.labkey.api.exp.api;
 
-import org.labkey.api.settings.AppProps;
-
 /**
  * Created by Nick Arnold on 2/12/2016.
  */
