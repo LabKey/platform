@@ -142,7 +142,10 @@ public final class TableSorter
     private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted)
     {
         if (hasLoop(visitingPath, table))
+        {
             checkForContainerCol(visitingPath);
+            return;
+        }
 
         if (visited.contains(table))
             return;
@@ -229,5 +232,4 @@ public final class TableSorter
                 sb.append("\n");
         }
     }
-
 }
