@@ -2294,7 +2294,7 @@ public class UserController extends SpringActionController
         if (null == user)
             throw new NotFoundException("User not found :" + userId);
         if (user.isGuest())
-            throw new UnauthorizedException("Invalid action for Guest user");
+            throw new UnauthorizedException("Unable to modify Guest user details");
         return user;
     }
 
