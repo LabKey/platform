@@ -50,8 +50,7 @@ import java.util.Set;
 public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
-    private HashMap<String, Object> props = new HashMap<>();
-//    private Map<String, Object> props1;
+    private HashMap<String, String> props = new HashMap<>();
 
     // Study design table maps (primarily in Dataspace case) to help map dataset FKs
     private Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
@@ -195,16 +194,13 @@ public class StudyImportContext extends AbstractContext
     }
 
 
-    public void setProperties(InputStream is)
+    public void setProperties(InputStream is) throws IOException
     {
         Properties props = new Properties();
 
-        try
+        try (is)
         {
             props.load(is);
-        }
-        catch (Exception e) {
-            // what
         }
 
         for (Map.Entry<Object, Object> entry : props.entrySet())
@@ -214,7 +210,7 @@ public class StudyImportContext extends AbstractContext
         }
     }
 
-    public Map<String, Object> getProperties()
+    public Map<String, String> getProperties()
     {
         return this.props;
     }

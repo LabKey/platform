@@ -79,17 +79,12 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
     @Override
     public RecordedActionSet run() throws PipelineJobException
     {
-        FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
-        Map<String, String> params = jobSupport.getParameters();
-        if (params != null)
-            _ctx.setProperties(params);
-
         try
         {
-//            FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
-//            Map<String, String> params = jobSupport.getParameters();
-//            if (params != null)
-//                _ctx.setProperties(params);
+            FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
+            Map<String, String> params = jobSupport.getParameters();
+            if (params != null)
+                _ctx.setProperties(params);
 
 
             if (params.containsKey(DATASET_ID_KEY) && params.containsKey(DATASET_NAME_KEY))
