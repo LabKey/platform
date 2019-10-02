@@ -48,7 +48,7 @@ export class App extends React.Component<any, State> {
             copy,
             isLoadingModel: true,
             returnUrl,
-            dirty: false
+            dirty: copy || false // default to dirty state for assay copy case
         };
     }
 
