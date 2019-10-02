@@ -308,7 +308,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     abstract protected SQLFragment getFromSQL();
 
     @Override
-    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
+    public @NotNull NamedObjectList getSelectList(@Nullable String columnName, List<FilterType> filters, Integer maxRows, @Nullable String titleColumn)
     {
         ColumnInfo titleColumnInfo = null;
         if (titleColumn != null)
@@ -322,7 +322,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
             else
-                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, null);
+                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);

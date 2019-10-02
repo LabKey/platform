@@ -180,12 +180,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     DatabaseTableType getTableType();
 
-    /** Get select list for named (hopefully unique!) column to title column. */
-    default @NotNull NamedObjectList getSelectList(String columnName)
-    {
-        return getSelectList(columnName, Collections.emptyList(), null, null);
-    }
-
     /**
      * Get select list for named (hopefully unique!) column to title column, including filter on table.
      * If maxRows is exceeded, the NamedObjectList will be marked as incomplete.
