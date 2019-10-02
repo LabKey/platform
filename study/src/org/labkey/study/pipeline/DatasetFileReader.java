@@ -204,10 +204,10 @@ public class DatasetFileReader
         // load explicit definitions
         //
 
-        for (String e : properties.keySet())
+        for (Map.Entry<String, String> entry : properties.entrySet())
         {
-            String key = StringUtils.trimToEmpty(e.toLowerCase());
-            String value = StringUtils.trimToEmpty(properties.get(e));
+            String key = entry.getKey();
+            String value = entry.getValue();
             int period = key.indexOf('.');
             if (key.startsWith("default.") || -1 == period)
                 continue;
