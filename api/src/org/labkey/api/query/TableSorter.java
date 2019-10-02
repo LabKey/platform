@@ -28,6 +28,7 @@ import org.labkey.api.util.Tuple3;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,6 @@ public final class TableSorter
         // Find all tables with no incoming FKs
         Set<String> startTables = new CaseInsensitiveHashSet();
         startTables.addAll(tables.keySet());
-
         for (String tableName : tables.keySet())
         {
             TableInfo table = tables.get(tableName);
@@ -119,7 +119,7 @@ public final class TableSorter
                     lookupTableName = t.getName();
 
                 // Skip self-referencing FKs
-                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equalsIgnoreCase(table.getName()))
+                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
                     continue;
 
                 // Remove the lookup table from the set of tables with no incoming FK
@@ -144,7 +144,10 @@ public final class TableSorter
         // NOTE: loops exist in current schemas
         //   core.Containers has a self join to parent Container
         //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
-        if (visited.contains(table) || hasLoop(visitingPath, table))
+        if (hasLoop(visitingPath, table))
+            throw new IllegalStateException("Loop detected: " + formatPath(visitingPath));
+
+        if (visited.contains(table))
             return;
 
         visited.add(table);
@@ -203,4 +206,23 @@ public final class TableSorter
     {
         return path.stream().anyMatch(tuple -> table.equals(tuple.first));
     }
+
+    private static String formatPath(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path)
+    {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Tuple3<TableInfo, ColumnInfo, TableInfo>> iter = path.listIterator();
+        while (iter.hasNext())
+        {
+            Tuple3<TableInfo, ColumnInfo, TableInfo> tuple = iter.next();
+            TableInfo table = tuple.first;
+            ColumnInfo col = tuple.second;
+            TableInfo lookupTable = tuple.third;
+            //sb.append(String.format("%s.%s.%s -> %s.%s", table.getPublicSchemaName(), table.getPublicName(), col.getName(), lookupTable.getPublicSchemaName(), lookupTable.getPublicName()));
+            sb.append(String.format("%s.%s -> %s", table.getPublicName(), col.getName(), lookupTable.getPublicName()));
+            if (iter.hasNext())
+                sb.append("\n");
+        }
+        return sb.toString();
+    }
+
 }
