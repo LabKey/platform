@@ -28,6 +28,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Factory methods to create {@link ColumnValidator} instances and validate if values satisfy them.
+ */
 public class ColumnValidators
 {
     public static void validate(@Nullable ColumnInfo col, @Nullable DomainProperty dp, int rowNum, Object value)
