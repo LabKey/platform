@@ -85,6 +85,9 @@ import java.util.Map;
 import java.util.Set;
 
 
+/**
+ * Holder for {@link Converter} implementations that convert from strings to strongly typed objects for a wide variety of classes
+ */
 public class ConvertHelper implements PropertyEditorRegistrar
 {
     private static final ConvertHelper _myInstance = new ConvertHelper();
@@ -189,6 +192,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
     }
 
 
+    @Override
     public void registerCustomEditors(PropertyEditorRegistry registry)
     {
         for (Class c : _converters)
@@ -554,13 +558,13 @@ public class ConvertHelper implements PropertyEditorRegistrar
         /**
          * The default value specified to our Constructor, if any.
          */
-        private Object defaultValue = null;
+        private final Object defaultValue;
 
 
         /**
          * Should we return the default value on conversion errors?
          */
-        private boolean useDefault = true;
+        private final boolean useDefault;
 
         // --------------------------------------------------------- Public Methods
 
