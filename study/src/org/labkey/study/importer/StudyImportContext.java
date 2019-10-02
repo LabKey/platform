@@ -193,7 +193,6 @@ public class StudyImportContext extends AbstractContext
         this.props.putAll(props);
     }
 
-
     public void setProperties(InputStream is) throws IOException
     {
         Properties props = new Properties();
@@ -214,7 +213,6 @@ public class StudyImportContext extends AbstractContext
     {
         return this.props;
     }
-
 
     public void addTableIdMap(String key, @NotNull Map<Object, Object> map)
     {

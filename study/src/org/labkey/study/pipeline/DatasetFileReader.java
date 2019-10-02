@@ -142,7 +142,6 @@ public class DatasetFileReader
             _studyImportContext.setProperties(_datasetsDirectory.getInputStream(_datasetsFileName));
         }
 
-
         if (null == _study)
         {
             errors.add("Study has not been created yet.");
@@ -165,9 +164,8 @@ public class DatasetFileReader
 
         Map<String, String> properties = _studyImportContext.getProperties();
         for (String key : properties.keySet())
-            {
-            String value = (String) properties.get(key);
-
+        {
+            String value = properties.get(key);
             if (!key.startsWith("default."))
                 continue;
             if (key.equals("default.action"))
