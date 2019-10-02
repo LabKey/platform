@@ -231,5 +231,7 @@ public final class TableSorter
             if (iter.hasNext())
                 sb.append("\n");
         }
+
+        Logger.getLogger(TableSorter.class).warn("Loop detected: " + sb.toString());
     }
 }
