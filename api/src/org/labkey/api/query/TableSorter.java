@@ -141,11 +141,8 @@ public final class TableSorter
 
     private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted)
     {
-        // NOTE: loops exist in current schemas
-        //   core.Containers has a self join to parent Container
-        //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
         if (hasLoop(visitingPath, table))
-            throw new IllegalStateException("Loop detected: " + formatPath(visitingPath));
+            checkForContainerCol(visitingPath);
 
         if (visited.contains(table))
             return;
@@ -207,22 +204,30 @@ public final class TableSorter
         return path.stream().anyMatch(tuple -> table.equals(tuple.first));
     }
 
-    private static String formatPath(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path)
+    private static void checkForContainerCol(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path)
     {
         StringBuilder sb = new StringBuilder();
         Iterator<Tuple3<TableInfo, ColumnInfo, TableInfo>> iter = path.listIterator();
         while (iter.hasNext())
         {
             Tuple3<TableInfo, ColumnInfo, TableInfo> tuple = iter.next();
+
+            // NOTE: loops exist in current schemas
+            //   core.Containers has a self join to parent Container
+            //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
+            for(ColumnInfo col : tuple.first.getColumns())
+            {
+                if ("container".equalsIgnoreCase(col.getName()))
+                    throw new IllegalStateException("Loop detected for columns joined by container columns: " + sb.toString());
+            }
+
             TableInfo table = tuple.first;
             ColumnInfo col = tuple.second;
             TableInfo lookupTable = tuple.third;
-            //sb.append(String.format("%s.%s.%s -> %s.%s", table.getPublicSchemaName(), table.getPublicName(), col.getName(), lookupTable.getPublicSchemaName(), lookupTable.getPublicName()));
-            sb.append(String.format("%s.%s -> %s", table.getPublicName(), col.getName(), lookupTable.getPublicName()));
+            sb.append(String.format("%s.%s -> %s", table.getName(), col.getName(), lookupTable.getName()));
             if (iter.hasNext())
                 sb.append("\n");
         }
-        return sb.toString();
     }
 
 }
