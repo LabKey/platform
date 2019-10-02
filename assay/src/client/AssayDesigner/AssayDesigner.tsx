@@ -25,6 +25,7 @@ import "@glass/domainproperties/dist/domainproperties.css"
 type State = {
     protocolId: number,
     providerName?: string,
+    copy?: boolean,
     returnUrl: string,
     model?: AssayProtocolModel,
     isLoadingModel: boolean,
@@ -39,11 +40,12 @@ export class App extends React.Component<any, State> {
     {
         super(props);
 
-        const { rowId, providerName, returnUrl } = ActionURL.getParameters();
+        const { rowId, copy, providerName, returnUrl } = ActionURL.getParameters();
 
         this.state = {
             protocolId: rowId,
             providerName,
+            copy,
             isLoadingModel: true,
             returnUrl,
             dirty: false
@@ -51,7 +53,7 @@ export class App extends React.Component<any, State> {
     }
 
     componentDidMount() {
-        const { protocolId, providerName } = this.state;
+        const { protocolId, providerName, copy } = this.state;
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
@@ -70,7 +72,7 @@ export class App extends React.Component<any, State> {
 
         // if URL has a protocol RowId, look up the assay design info. otherwise use the providerName to get the template
         if (protocolId || providerName) {
-            fetchProtocol(protocolId, providerName)
+            fetchProtocol(protocolId, providerName, copy)
                 .then((model) => {
                     this.setState(() => ({
                         model,
