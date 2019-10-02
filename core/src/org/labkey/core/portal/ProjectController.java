@@ -1620,7 +1620,7 @@ public class ProjectController extends SpringActionController
         protected List<String> getVisibleChildren(Container parent, int currentDepth, int requestedDepth)
         {
             List<String> result = new ArrayList<>();
-            if (requestedDepth < 0 || currentDepth > requestedDepth)
+            if (requestedDepth >= 0 && currentDepth > requestedDepth)
                 return result;
 
             if (parent.hasPermission(getUser(), ReadPermission.class))
