@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.DOMUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -153,15 +154,16 @@ public class ModuleQueryMetadataDef
         return _hidden;
     }
 
-    public QueryDef toQueryDef(Container container)
+    public QueryDef toQueryDef(Container container, SchemaKey schemaPath)
     {
         QueryDef ret = new QueryDef();
         ret.setContainer(container.getId());
         ret.setName(getName());
         ret.setDescription(getDescription());
         ret.setSchemaVersion(getSchemaVersion());
+        ret.setSchemaPath(schemaPath);
         ret.setParsedMetadata(_queryMetaData);
-        if(isHidden())
+        if (isHidden())
             ret.setFlags(QueryManager.FLAG_HIDDEN);
 
         return ret;
