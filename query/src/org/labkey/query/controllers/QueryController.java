@@ -1039,10 +1039,7 @@ public class QueryController extends SpringActionController
 
             for (XmlValidationError xmle : xmlErrors)
             {
-                String message = (null != xmle.getOffendingQName()) ?
-                        "Metadata validation error with '" + xmle.getOffendingQName().getLocalPart() + "'" :
-                        "Metadata validation error";
-                errors.reject(ERROR_MSG, message);
+                errors.reject(ERROR_MSG, XmlBeansUtil.getErrorMessage(xmle));
             }
         }
 
