@@ -40,7 +40,13 @@ export class App extends React.Component<any, State> {
     {
         super(props);
 
-        const { rowId, copy, providerName, returnUrl } = ActionURL.getParameters();
+        const { rowId, copy, providerName } = ActionURL.getParameters();
+
+        // hack, if the returnUrl has stripped off the rowId because of encoding/decoding issues (see TODO in AbstractAssayProvider.getManageMenuNavTree()) add it back on
+        let returnUrl = ActionURL.getParameter('returnUrl');
+        if (rowId && returnUrl && returnUrl.indexOf('rowId') === returnUrl.length - 5) {
+            returnUrl = returnUrl + '=' + rowId
+        }
 
         this.state = {
             protocolId: rowId,

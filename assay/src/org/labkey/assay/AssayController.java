@@ -927,7 +927,7 @@ public class AssayController extends SpringActionController
                 url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
 
             return url;
         }

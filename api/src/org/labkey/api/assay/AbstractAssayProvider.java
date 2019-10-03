@@ -1402,6 +1402,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 String editLink = editURL.toString();
                 if (!protocolContainer.equals(contextContainer))
                 {
+                    // TODO issue with the returnURL on this editLink if it has its own params
                     editLink = "javascript: if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
                 }
                 manageMenu.addChild("Edit assay design", editLink);
