@@ -323,23 +323,26 @@ public class QueryImporter implements FolderImporter
         {
             // check that each meta xml file was applied to a built-in table after import of all data structures has completed
             QueryImportContext qic = (QueryImportContext)ctx.getContext(QueryImportContext.class);
-            for (Map.Entry<String, QueryDocument> entry : qic.unresolvedMetadataFiles.entrySet())
+            if (qic != null)
             {
-                String metaFileName = entry.getKey();
-                QueryDocument queryDoc = entry.getValue();
-                QueryType queryXml = queryDoc.getQuery();
-
-                String queryName = queryXml.getName();
-                String schemaName = queryXml.getSchemaName();
-                SchemaKey schemaKey = SchemaKey.fromString(schemaName);
-                UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
-                if (schema == null)
-                    continue;
-
-                if (!schema.getTableNames().contains(queryName))
+                for (Map.Entry<String, QueryDocument> entry : qic.unresolvedMetadataFiles.entrySet())
                 {
-                    // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleSet may be created as a part of the import process)
-                    ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Created metadata xml override for table that doesn't exist"));
+                    String metaFileName = entry.getKey();
+                    QueryDocument queryDoc = entry.getValue();
+                    QueryType queryXml = queryDoc.getQuery();
+
+                    String queryName = queryXml.getName();
+                    String schemaName = queryXml.getSchemaName();
+                    SchemaKey schemaKey = SchemaKey.fromString(schemaName);
+                    UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
+                    if (schema == null)
+                        continue;
+
+                    if (!schema.getTableNames().contains(queryName))
+                    {
+                        // error if the table doesn't exist -- it wan't created during the import (e.g., a SampleSet may be created as a part of the import process)
+                        ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Created metadata xml override for table that doesn't exist"));
+                    }
                 }
             }
 
