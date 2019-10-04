@@ -1502,7 +1502,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
             if (lookupTable == null)
                 return new NamedObjectList();
 
-            return lookupTable.getSelectList(getLookupColumnName());
+            return lookupTable.getSelectList(getLookupColumnName(), Collections.emptyList(), null, null);
         }
 
         public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
