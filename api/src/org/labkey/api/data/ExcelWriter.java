@@ -167,8 +167,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         public abstract void setMetadata(Workbook workbook, Map<String, String> metadata);
     }
 
-    public static final int MAX_ROWS_EXCEL_97 = 65535;
-
     protected static final String SHEET_DRAWING = "~~excel-sheet-drawing~~";
     protected static final String SHEET_IMAGE_SIZES = "~~excel-sheet-image-sizes~~";
     protected static final String SHEET_IMAGE_PICTURES = "~~excel-sheet-image-pictures~~";

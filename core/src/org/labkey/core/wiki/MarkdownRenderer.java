@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.labkey.wiki.renderer;
+package org.labkey.core.wiki;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
@@ -27,7 +27,6 @@ import java.util.Map;
 
 public class MarkdownRenderer extends HtmlRenderer
 {
-
     public MarkdownRenderer(String hrefPrefix, String attachPrefix, Map<String, String> nameTitleMap, @Nullable Collection<? extends Attachment> attachments)
     {
         super(hrefPrefix, attachPrefix, nameTitleMap, attachments);
@@ -58,7 +57,5 @@ public class MarkdownRenderer extends HtmlRenderer
             String errorMsg = "<div class=\"labkey-error\"><b>No markdown service was available to convert the markdown to HTML</b></div><br>";
             return super.format(errorMsg);
         }
-
     }
-
 }

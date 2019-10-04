@@ -25,7 +25,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -48,8 +47,6 @@ import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiType;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.query.WikiSchema;
-import org.labkey.wiki.renderer.MarkdownServiceImpl;
-import org.labkey.wiki.renderer.RadeoxRenderer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +56,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -127,15 +123,6 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-
-        try
-        {
-            MarkdownService.setInstance(new MarkdownServiceImpl());
-        }
-        catch (Exception e)
-        {
-            _log.error(e);
-        }
     }
 
     private void populateHomeProjectWebpartsWithStartupProps()
@@ -249,9 +236,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                WikiManager.TestCase.class,
-                RadeoxRenderer.RadeoxRenderTest.class));
+        return Set.of(
+            WikiManager.TestCase.class
+        );
     }
 
 
