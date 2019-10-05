@@ -4,7 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 const fs = require('fs-extra');
-const { execSync } = require('child_process');
 
 /**
  * Experimental build configuration to use @labkey/api distribution in lieu of default client/api/core files.
@@ -26,30 +25,6 @@ function copyAPIFiles() {
         fs.copy(apiDistDir + file, targetDir + file);
     });
     log('Done.\n');
-}
-
-function installDependencies() {
-    log('Installing dependencies ... ');
-
-    const pkgName = '@labkey/api';
-    let output;
-
-    try {
-        output = execSync(`npm ls ${pkgName} --json`);
-    } catch (ex) {
-        output = ex.stdout;
-    }
-
-    const result = JSON.parse(output);
-
-    if (result.dependencies === undefined ||
-        result.dependencies[pkgName] === undefined) {
-        execSync(`npm install ${pkgName} --save-dev --loglevel=error`);
-        log('Installed.\n');
-    }
-    else {
-        log('Already Installed.\n');
-    }
 }
 
 function log(msg) {
@@ -76,7 +51,6 @@ function overwriteLibXML() {
 }
 
 if (USE_LABKEY_API === true) {
-    installDependencies();
     copyAPIFiles();
     overwriteLibXML();
 }
