@@ -215,6 +215,16 @@ public class DomainEditorServiceBase extends BaseRemoteService
         return container;
     }
 
+    protected void setDefaultValues(GWTDomain domain, String typeURI)
+    {
+        Domain dom = PropertyService.get().getDomain(getContainer(), typeURI);
+        if (dom != null)
+        {
+            DomainKind kind = dom.getDomainKind();
+            domain.setDefaultValueOptions(kind.getDefaultValueOptions(dom), kind.getDefaultDefaultType(dom));
+        }
+    }
+
     public GWTDomain getDomainDescriptor(String typeURI)
     {
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());

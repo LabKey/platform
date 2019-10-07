@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.ValidationException;
@@ -259,4 +260,14 @@ abstract public class DomainKind implements Handler<String>
     public boolean allowFileLinkProperties() { return true; }
     public boolean allowAttachmentProperties() { return true; }
     public boolean allowFlagProperties() { return true; }
+
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return new DefaultValueType[] { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED };
+    }
+
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return DefaultValueType.FIXED_EDITABLE;
+    }
 }

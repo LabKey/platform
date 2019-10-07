@@ -21,7 +21,10 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.Sort;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -67,8 +70,10 @@ public class IssueServiceAction extends GWTServiceAction
         public GWTDomain getDomainDescriptor(String typeURI)
         {
             GWTDomain domain = super.getDomainDescriptor(typeURI);
-            domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED, DefaultValueType.FIXED_NON_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+            if (domain != null)
+            {
+                setDefaultValues(domain, typeURI);
+            }
             return domain;
         }
 

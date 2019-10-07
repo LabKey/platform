@@ -337,8 +337,10 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
     public GWTDomain getDomainDescriptor(String typeURI)
     {
         GWTDomain domain = super.getDomainDescriptor(typeURI);
-        domain.setDefaultValueOptions(new DefaultValueType[]
-                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+        if (domain != null)
+        {
+            setDefaultValues(domain, domain.getDomainURI());
+        }
         return domain;
     }
 }
