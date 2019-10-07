@@ -20,17 +20,17 @@ import java.io.OutputStream;
 import java.io.IOException;
 
 /**
+ * Something that knows how to absorb the content of a file or document, including some basic metadata.
  * User: adam
  * Date: Jan 4, 2007
- * Time: 4:20:50 PM
  */
 public interface DocumentWriter
 {
-    public void setContentType(String contentType);
+    void setContentType(String contentType);
 
-    public void setContentDisposition(String value);
+    void setContentDisposition(String value);
 
-    public void setContentLength(int size);
+    void setContentLength(int size);
 
-    public OutputStream getOutputStream() throws IOException;
+    OutputStream getOutputStream() throws IOException;
 }

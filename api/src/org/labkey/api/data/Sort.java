@@ -239,8 +239,11 @@ public class Sort
             for (int i = sortKeys.length - 1; i >= 0; i--)
             {
                 String k = StringUtils.trimToNull(sortKeys[i]);
-                if (null != k)
-                    insertSortColumn(k, true);
+                if (null == k)
+                    continue;
+                if (k.length() == 1 && (k.charAt(0)==SortDirection.ASC.dir || k.charAt(0)==SortDirection.DESC.dir))
+                    continue;
+                insertSortColumn(k, true);
             }
         }
     }
@@ -409,7 +412,7 @@ public class Sort
     public SortField getSortColumn(FieldKey fieldKey)
     {
         for (SortField sf : _sortList)
-            if (sf._fieldKey.equals(fieldKey))
+            if (fieldKey.equals(sf._fieldKey))
                 return sf;
         return null;
     }
@@ -454,6 +457,8 @@ public class Sort
         Set<FieldKey> requiredFieldKeys = new HashSet<>();
         for (SortField sf : _sortList)
         {
+            if (null == sf.getFieldKey())
+                continue;
             requiredFieldKeys.add(sf.getFieldKey());
 
             String columnName = sf.getColumnName();
@@ -486,6 +491,8 @@ public class Sort
         for (SortField sf : _sortList)
         {
             FieldKey fieldKey = sf.getFieldKey();
+            if (null == fieldKey)
+                continue;
             ColumnInfo colinfo = columns.get(fieldKey);
             if (colinfo == null)
             {
