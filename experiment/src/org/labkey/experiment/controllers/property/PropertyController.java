@@ -63,6 +63,8 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -652,7 +654,9 @@ public class PropertyController extends SpringActionController
             File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
             DataLoader loader = null;
 
-            if (file != null && file.exists())
+            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+            // Allow preview only for files under the pipeline root.
+            if (file != null && file.exists() && pipelineRoot != null && pipelineRoot.isUnderRoot(file) )
             {
                 loader = DataLoader.get().createLoader(file, null, true, null, null);
             }
