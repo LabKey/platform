@@ -229,6 +229,8 @@ public class DataIteratorUtil
                 if(URIUtil.hasURICharacters(from.getColumnName()))
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(from.getColumnName(), container);
+                    if (null == pd)
+                        continue;
                     List<Domain> domains = OntologyManager.getDomainsForPropertyDescriptor(container, pd);
                     List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
                     if(!vocabularyDomains.isEmpty())

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -31,6 +32,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
@@ -78,7 +80,7 @@ import static org.junit.Assert.assertTrue;
  * Date: 11/24/16
  */
 @TestWhen(TestWhen.When.BVT)
-public class ExpSampleSetTestCase
+public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 {
     Container c;
 
@@ -759,6 +761,48 @@ public class ExpSampleSetTestCase
         Map<String, Object> row = results.iterator().next();
         assertEquals("sally", row.get("SampleId"));
         assertEquals("bob", row.get("MySampleParent"));
+    }
+
+    @Test
+    public void testSampleSetWithVocabularyProperties() throws Exception
+    {
+        User user = TestContext.get().getUser();
+
+        String domainName = "TestVocabularyDomain";
+        String domainDescription = "This is a mock vocabulary";
+        String sampleType = "TypeA";
+
+        GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
+        prop1.setRangeURI("int");
+        prop1.setName("sampleAge");
+
+        GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
+        prop2.setRangeURI("string");
+        prop2.setName("sampleType");
+
+        Domain mockDomain = createMockDomain(domainName, domainDescription, List.of(prop1, prop2), user, c);
+
+        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                "SamplesWithVocabularyProperties", null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        TableInfo table = schema.getTable("SamplesWithVocabularyProperties");
+        QueryUpdateService svc = table.getUpdateService();
+
+        // insert a sample
+        List<Map<String, Object>> rows = new ArrayList<>();
+        ArrayListMap<String, Object> row = new ArrayListMap<>();
+        row.put("name", "TestSample");
+        row.put(mockDomain.getProperties().get(1).getPropertyDescriptor().getPropertyURI(), sampleType);
+        rows.add(row);
+
+        BatchValidationException errors = new BatchValidationException();
+        var insertedSample = svc.insertRows(user, c, rows, errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+        assertEquals("Custom Property is not inserted", sampleType, OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(mockDomain.getProperties().get(1).getPropertyURI()).getStringValue());
+
     }
 
 }
