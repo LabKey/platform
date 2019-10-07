@@ -29,6 +29,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.PageFlowUtil;
@@ -48,7 +49,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
 
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
@@ -648,7 +652,13 @@ public class DataColumn extends DisplayColumn
         {
             // When incomplete, there are too many select options to render -- use a simple text input instead.
             // TODO: if the FK target is public, we can generate an auto-complete input
-            renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
+            String textInputValue = strVal;
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+            {
+                Object displayValue = getDisplayValue(ctx);
+                textInputValue = Objects.toString(displayValue, strVal);
+            }
+            renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
         }
         else
         {
