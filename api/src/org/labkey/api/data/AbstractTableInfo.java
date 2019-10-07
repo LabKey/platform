@@ -101,7 +101,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     /**
      * Default lookup select list max size.
-     * @see TableInfo#getSelectList(String, List, Integer)
+     * @see TableInfo#getSelectList(String, List, Integer, String)
      */
     private static final int MAX_SELECT_LIST = 10_000;
 
@@ -308,22 +308,28 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     abstract protected SQLFragment getFromSQL();
 
     @Override
-    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows)
+    public @NotNull NamedObjectList getSelectList(@Nullable String columnName, List<FilterType> filters, Integer maxRows, @Nullable String titleColumn)
     {
+        ColumnInfo titleColumnInfo = null;
+        if (titleColumn != null)
+        {
+            titleColumnInfo = getColumn(titleColumn);
+        }
+
         if (columnName == null)
         {
             List<ColumnInfo> pkColumns = getPkColumns();
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
             else
-                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows);
+                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);
-        return getSelectList(column, filters, maxRows);
+        return getSelectList(column, filters, maxRows, titleColumnInfo);
     }
 
-    private @NotNull NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters, Integer maxRows)
+    private @NotNull NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters, Integer maxRows, ColumnInfo titleColumnInfo)
     {
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
@@ -334,7 +340,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         List<ColumnInfo> cols;
         final int titleIndex;
-        if (firstColumn == titleColumn)
+        if (titleColumnInfo != null && !(firstColumn.equals(titleColumnInfo)))
+        {
+            cols = Arrays.asList(firstColumn, titleColumnInfo);
+            titleIndex = 2;
+        }
+        else if (firstColumn == titleColumn)
         {
             cols = Arrays.asList(firstColumn);
             titleIndex = 1;

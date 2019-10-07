@@ -1166,6 +1166,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             TableSelectorTestCase.class,
             TableViewFormTestCase.class,
             TabLoader.TabLoaderTestCase.class,
+            TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
             UserController.TestCase.class,
             ViewCategoryManager.TestCase.class,
