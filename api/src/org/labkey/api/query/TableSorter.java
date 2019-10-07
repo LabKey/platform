@@ -218,7 +218,7 @@ public final class TableSorter
             // NOTE: loops exist in current schemas
             //   core.Containers has a self join to parent Container
             //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
-            for(ColumnInfo col : tuple.first.getColumns())
+            for (ColumnInfo col : tuple.first.getColumns())
             {
                 if ("container".equalsIgnoreCase(col.getName()))
                     throw new IllegalStateException("Loop detected for columns joined by container columns: " + sb.toString());
