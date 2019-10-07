@@ -771,6 +771,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         String domainName = "TestVocabularyDomain";
         String domainDescription = "This is a mock vocabulary";
         String sampleType = "TypeA";
+        String updatedSampleType = "TypeB";
 
         GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
         prop1.setRangeURI("int");
@@ -781,6 +782,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         prop2.setName("sampleType");
 
         Domain mockDomain = createMockDomain(domainName, domainDescription, List.of(prop1, prop2), user, c);
+        String sampleTypePropertyURI = mockDomain.getProperties().get(1).getPropertyDescriptor().getPropertyURI();
 
         ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
                 "SamplesWithVocabularyProperties", null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
@@ -794,7 +796,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         List<Map<String, Object>> rows = new ArrayList<>();
         ArrayListMap<String, Object> row = new ArrayListMap<>();
         row.put("name", "TestSample");
-        row.put(mockDomain.getProperties().get(1).getPropertyDescriptor().getPropertyURI(), sampleType);
+        row.put(sampleTypePropertyURI, sampleType);
         rows.add(row);
 
         BatchValidationException errors = new BatchValidationException();
@@ -802,6 +804,22 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         if (errors.hasErrors())
             throw errors;
         assertEquals("Custom Property is not inserted", sampleType, OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(mockDomain.getProperties().get(1).getPropertyURI()).getStringValue());
+
+        List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
+        ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+        rowToUpdate.put("name", "TestSample");
+        rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+        rowToUpdate.put(sampleTypePropertyURI, updatedSampleType);
+        rowsToUpdate.add(rowToUpdate);
+
+        List<Map<String, Object>> oldKeys = new ArrayList<>();
+        ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+        oldKey.put("name", "TestSample");
+        oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+        oldKeys.add(oldKey);
+
+        var updatedSample = svc.updateRows(user, c, rowsToUpdate, oldKeys, null, null);
+        assertEquals("Custom Property is not updated", updatedSampleType, OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(mockDomain.getProperties().get(1).getPropertyURI()).getStringValue());
 
     }
 
