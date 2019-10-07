@@ -141,7 +141,7 @@ public class ReturnURLString
                         }
 
                         LOG.warn("Rejected external host redirect " + logMessageDetails +
-                                "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Admin Console Links --> External Redirect Hosts");
+                                "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
                         return false;
                     }
                     else
