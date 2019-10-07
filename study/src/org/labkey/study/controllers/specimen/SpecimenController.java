@@ -239,6 +239,12 @@ public class SpecimenController extends BaseStudyController
         {
             return new ActionURL(ManageRequestStatusAction.class, c).addParameter("id", requestId);
         }
+
+        @Override
+        public ActionURL getRequestDetailsURL(Container c, int requestId)
+        {
+            return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
