@@ -333,7 +333,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
 
     @Override
-    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows)
+    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
     {
         if (columnName == null)
             return getSelectList(getPkColumnNames());
