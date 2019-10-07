@@ -383,21 +383,6 @@ public class StatementUtils
         }
     }
 
-    private String getValueTypeColumn(PropertyType propertyType)
-    {
-        switch (propertyType.getStorageType())
-        {
-            case 's':
-                return "stringValue";
-            case 'd':
-                return "dateTimeValue";
-            case 'f':
-                return "floatValue";
-            default:
-                throw new IllegalArgumentException("Unknown property type: " + propertyType);
-        }
-    }
-
     private void appendSQLFObjectProperty(SQLFragment sqlfObjectProperty, DomainProperty dp, String objectIdVar, String ifTHEN, String ifEND)
     {
         PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
@@ -415,7 +400,7 @@ public class StatementUtils
         sqlfObjectProperty.append(")");
         sqlfObjectProperty.append(ifTHEN);
         sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
-        sqlfObjectProperty.append(getValueTypeColumn(propertyType));
+        sqlfObjectProperty.append(propertyType.getValueTypeColumn());
         sqlfObjectProperty.append(") VALUES (");
         sqlfObjectProperty.append(objectIdVar);
         sqlfObjectProperty.append(",").append(dp.getPropertyId());
