@@ -60,9 +60,9 @@ import static java.lang.Math.min;
 
 
 /**
+ * In-memory representation of a ResultSet, no longer directly backed by a database connection
  * User: mbellew
  * Date: Nov 29, 2005
- * Time: 12:52:06 PM
  */
 public class CachedResultSet implements ResultSet, TableResultSet
 {
