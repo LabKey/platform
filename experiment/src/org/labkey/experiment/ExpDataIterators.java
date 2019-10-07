@@ -789,23 +789,8 @@ public class ExpDataIterators
                     .setCommitRowsBeforeContinuing(true)
                     ;
 
-            Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
-
             //pass in voc cols here
-            for (String key: colNameMap.keySet())
-            {
-                if (URIUtil.hasURICharacters(key))
-                {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, _container);
-
-                    List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d-> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
-                    if (!vocabDomains.isEmpty())
-                    {
-                        DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
-                        vocabularyDomainProperties.add(dp);
-                    }
-                }
-            }
+            Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
 
             DataIteratorBuilder step3 = new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
                     .setKeyColumns(Collections.singleton("lsid"))
@@ -840,6 +825,26 @@ public class ExpDataIterators
                 step7 = new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step7.getDataIterator(context));
+        }
+
+        private Set<DomainProperty> findVocabularyProperties(Map<String, Integer> colNameMap)
+        {
+            Set<DomainProperty> vocabularyDomainProperties = new HashSet<>();
+            for (String key: colNameMap.keySet())
+            {
+                if (URIUtil.hasURICharacters(key))
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, _container);
+
+                    List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d-> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
+                    if (!vocabDomains.isEmpty())
+                    {
+                        DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                        vocabularyDomainProperties.add(dp);
+                    }
+                }
+            }
+            return vocabularyDomainProperties;
         }
     }
 }

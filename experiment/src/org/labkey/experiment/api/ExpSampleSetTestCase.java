@@ -768,49 +768,39 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
     {
         User user = TestContext.get().getUser();
 
-        String domainName = "TestVocabularyDomain";
-        String domainDescription = "This is a mock vocabulary";
+        String sampleName = "SamplesWithVocabularyProperties";
         String sampleType = "TypeA";
         String updatedSampleType = "TypeB";
 
-        GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
-        prop1.setRangeURI("int");
-        prop1.setName("sampleAge");
+        Domain mockDomain = createMockDomain(user, c);
+        String sampleTypePropertyURI = mockDomain.getProperties().get(1).getPropertyURI();
 
-        GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
-        prop2.setRangeURI("string");
-        prop2.setName("sampleType");
-
-        Domain mockDomain = createMockDomain(domainName, domainDescription, List.of(prop1, prop2), user, c);
-        String sampleTypePropertyURI = mockDomain.getProperties().get(1).getPropertyDescriptor().getPropertyURI();
-
+        //create sample set
         ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
-                "SamplesWithVocabularyProperties", null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
+                sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
+        assertNotNull(ss);
+
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        TableInfo table = schema.getTable("SamplesWithVocabularyProperties");
-        QueryUpdateService svc = table.getUpdateService();
 
         // insert a sample
-        List<Map<String, Object>> rows = new ArrayList<>();
         ArrayListMap<String, Object> row = new ArrayListMap<>();
         row.put("name", "TestSample");
         row.put(sampleTypePropertyURI, sampleType);
-        rows.add(row);
+        List<Map<String, Object>> rows = buildRows(row);
 
-        BatchValidationException errors = new BatchValidationException();
-        var insertedSample = svc.insertRows(user, c, rows, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
-        assertEquals("Custom Property is not inserted", sampleType, OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(mockDomain.getProperties().get(1).getPropertyURI()).getStringValue());
+        var insertedSample = insertRows(c, rows ,sampleName, schema);
 
-        List<Map<String, Object>> rowsToUpdate = new ArrayList<>();
+        assertEquals("Custom Property is not inserted", sampleType,
+                OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(sampleTypePropertyURI).getStringValue());
+
+        //update inserted sample
         ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
         rowToUpdate.put("name", "TestSample");
         rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
         rowToUpdate.put(sampleTypePropertyURI, updatedSampleType);
-        rowsToUpdate.add(rowToUpdate);
+        List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
 
         List<Map<String, Object>> oldKeys = new ArrayList<>();
         ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
@@ -818,8 +808,9 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         oldKey.put("RowId", insertedSample.get(0).get("RowId"));
         oldKeys.add(oldKey);
 
-        var updatedSample = svc.updateRows(user, c, rowsToUpdate, oldKeys, null, null);
-        assertEquals("Custom Property is not updated", updatedSampleType, OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(mockDomain.getProperties().get(1).getPropertyURI()).getStringValue());
+        var updatedSample = updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+        assertEquals("Custom Property is not updated", updatedSampleType,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(sampleTypePropertyURI).getStringValue());
 
     }
 

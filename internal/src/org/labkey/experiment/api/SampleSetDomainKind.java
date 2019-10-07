@@ -69,7 +69,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     private static final Logger logger;
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
-    private static final String OBJECT_URI_COLUMN_NAME = "lsid";
+
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;

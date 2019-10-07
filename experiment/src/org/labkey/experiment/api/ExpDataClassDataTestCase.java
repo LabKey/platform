@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -39,6 +40,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -92,15 +94,15 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * User: kevink
  * Date: 12/27/15
  */
 @TestWhen(TestWhen.When.BVT)
-public class ExpDataClassDataTestCase
+public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 {
-    private static SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
 
     Container c;
 
@@ -120,24 +122,6 @@ public class ExpDataClassDataTestCase
         //ContainerManager.deleteAll(c, TestContext.get().getUser());
     }
 
-    private static List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName)
-            throws Exception
-    {
-        final User user = TestContext.get().getUser();
-
-        BatchValidationException errors = new BatchValidationException();
-        UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
-        TableInfo table = schema.getTable(tableName);
-        Assert.assertNotNull(table);
-
-        QueryUpdateService qus = table.getUpdateService();
-        Assert.assertNotNull(qus);
-
-        List<Map<String, Object>> ret = qus.insertRows(user, c, rows, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
-        return ret;
-    }
 
     // validate name is not null
     @Test
@@ -945,5 +929,51 @@ public class ExpDataClassDataTestCase
             Assert.assertTrue("Expected a SQLException", t instanceof SQLException);
             Assert.assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
         }
+    }
+
+    @Test
+    public void testDataClassWithVocabularyProperties() throws Exception
+    {
+        User user = TestContext.get().getUser();
+
+        String dataClassName = "DataClassesWithVocabularyProperties";
+        int dataClassAge = 2;
+        int updatedDataClassAge = 4;
+
+        Domain mockDomain = createMockDomain(user, c);
+        String dataClassAgePropertyURI = mockDomain.getProperties().get(0).getPropertyURI();
+
+        ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
+                dataClassName, null, List.of(new GWTPropertyDescriptor("DataClassName", "string")), Collections.emptyList(),
+                null, null, null);
+        assertNotNull(dataClass);
+
+        //insert a data class
+        ArrayListMap<String, Object> row = new ArrayListMap<>();
+        row.put("DataClassName", "TestDataClass");
+        row.put(dataClassAgePropertyURI, dataClassAge);
+        List<Map<String, Object>> rows = buildRows(row);
+
+        var insertedDataClass = insertRows( c, rows, dataClassName);
+
+        assertEquals("Custom Property is not inserted", dataClassAge,
+                OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(dataClassAgePropertyURI).getFloatValue().intValue());
+
+
+        ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+        rowToUpdate.put("DataClassName", "TestDataClass");
+        rowToUpdate.put("RowId", insertedDataClass.get(0).get("RowId"));
+        rowToUpdate.put(dataClassAgePropertyURI, updatedDataClassAge);
+        List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
+
+        List<Map<String, Object>> oldKeys = new ArrayList<>();
+        ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+        oldKey.put("DataClassName", "TestDataClass");
+        oldKey.put("RowId", insertedDataClass.get(0).get("RowId"));
+        oldKeys.add(oldKey);
+
+        updateRows(c, rowsToUpdate, oldKeys, dataClassName);
+        assertEquals("Custom Property is not updated",
+                updatedDataClassAge, OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(dataClassAgePropertyURI).getFloatValue().intValue());
     }
 }
