@@ -394,6 +394,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+        AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
+                "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
+                        "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
 
         // test authentication provider implementations... dev mode only
         if (AppProps.getInstance().isDevMode())
