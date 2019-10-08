@@ -74,24 +74,24 @@ public class SimpleModuleContainerListener extends ContainerManager.AbstractCont
         Collections.reverse(sorted);
         for (TableInfo dbTable : sorted)
         {
-            ColumnInfo containerCol = null;
+            boolean hasContainerCol = false;
             for (ColumnInfo column : dbTable.getColumns())
             {
                 if ("container".equalsIgnoreCase(column.getName()))
                 {
-                    containerCol = column;
+                    hasContainerCol = true;
                     break;
                 }
             }
 
-            if (containerCol != null)
+            if (hasContainerCol)
             {
-                purgeTable(userSchema, dbTable, c, user);
+                purgeTable(userSchema, dbTable, c);
             }
         }
     }
 
-    protected void purgeTable(UserSchema userSchema, TableInfo dbTable, Container c, User u)
+    protected void purgeTable(UserSchema userSchema, TableInfo dbTable, Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         if (dbTable.getTableType() == DatabaseTableType.TABLE)
