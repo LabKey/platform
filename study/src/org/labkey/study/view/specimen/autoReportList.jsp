@@ -139,7 +139,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
-                            <select name="<%= CohortFilterFactory.Params.cohortId %>">
+                            <select name="<%= CohortFilterFactory.Params.cohortId %>" class="form-control">
                                 <option value="">All Cohorts</option>
                             <%
                                 for (CohortImpl cohort : cohorts)
@@ -161,7 +161,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter type</td>
                         <td>
-                            <select name="<%= CohortFilterFactory.Params.cohortFilterType %>">
+                            <select name="<%= CohortFilterFactory.Params.cohortFilterType %>" class="form-control">
                             <%
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
@@ -191,7 +191,7 @@ This folder does not contain a study.
                         <tr>
                             <td style="<%= optionLabelStyle %>"><%= h(study.getSubjectNounSingular()) %> Group</td>
                             <td>
-                                <select name="participantGroupFilter">
+                                <select name="participantGroupFilter" class="form-control">
                                     <option value="">All Groups</option>
                                     <%
                                         for (ParticipantCategoryImpl cat : categories)
@@ -234,7 +234,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Availability status</td>
                         <td>
-                            <select name="statusFilterName">
+                            <select name="statusFilterName" class="form-control">
                             <%
                                 for (SpecimenVisitReportParameters.Status status : SpecimenVisitReportParameters.Status.values())
                                 {
