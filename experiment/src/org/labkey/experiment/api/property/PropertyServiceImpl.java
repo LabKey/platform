@@ -191,7 +191,7 @@ public class PropertyServiceImpl implements PropertyService
     @Override
     public List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared)
     {
-        return getDomains(container)
+        return getDomains(container, user, includeProjectAndShared)
                 .stream()
                 .filter(d -> d.getDomainKind() != null && domainKinds.contains(d.getDomainKind().getKindName()))
                 .collect(Collectors.toList());

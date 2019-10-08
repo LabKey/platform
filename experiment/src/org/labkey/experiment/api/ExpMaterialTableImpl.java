@@ -486,6 +486,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
 
+        addVocabularyDomains();
+
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
         nameCol.setURL(url);

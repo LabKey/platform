@@ -35,6 +35,7 @@ import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.exp.flag.FlagForeignKey;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
@@ -207,9 +208,12 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 if (lsid == null)
                     return null;
 
-                Map<String, Object> props = OntologyManager.getProperties(ctx.getContainer(), lsid);
-                if (!props.isEmpty())
-                    return props;
+                Map<String, Object> rawProps = OntologyManager.getProperties(ctx.getContainer(), lsid);
+                if (!rawProps.isEmpty())
+                {
+                    // TODO: resolve lookups, evaluate URL expression
+                    return rawProps;
+                }
 
                 return null;
             }
@@ -323,14 +327,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         BaseColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
-            colProperty = wrapColumn(legacyName, getLSIDColumn());
-            colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
             // them under the legacyName node
-            colProperty.setHidden(true);
-            colProperty.setUserEditable(false);
-            colProperty.setIsUnselectable(true);
-            addColumn(colProperty);
+            colProperty = addDomainColumns(domain, legacyName);
         }
 
         List<FieldKey> visibleColumns = new ArrayList<>(getDefaultVisibleColumns());
@@ -350,6 +349,37 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         setDefaultVisibleColumns(visibleColumns);
         return colProperty;
     }
+
+    /**
+     * Create a hidden column as a fake lookup to include all columns in the domain.
+     * @param domain The domain to add columns from
+     * @param lookupColName The column name
+     * @return
+     */
+    protected BaseColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
+    {
+        BaseColumnInfo colProperty = wrapColumn(lookupColName, getLSIDColumn());
+        colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
+        colProperty.setHidden(true);
+        colProperty.setUserEditable(false);
+        colProperty.setIsUnselectable(true);
+        addColumn(colProperty);
+
+        return colProperty;
+    }
+
+    protected void addVocabularyDomains()
+    {
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), Set.of(VocabularyDomainKind.KIND_NAME), true);
+        for (Domain domain : domains)
+        {
+            String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();
+            BaseColumnInfo col = this.addDomainColumns(domain, columnName);
+            col.setLabel(domain.getName());
+            col.setDescription("Properties from " + domain.getLabel(getContainer()));
+        }
+    }
+
 
     @Override
     public Domain getDomain()

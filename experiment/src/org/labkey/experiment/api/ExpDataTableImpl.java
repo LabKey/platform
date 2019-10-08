@@ -136,6 +136,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.LastIndexed);
 
         addFileColumns(false);
+
+        addVocabularyDomains();
+
         setDefaultColumns();
         setTitleColumn("Name");
 
