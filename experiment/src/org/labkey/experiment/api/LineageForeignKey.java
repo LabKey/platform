@@ -369,6 +369,7 @@ class LineageForeignKey extends AbstractForeignKey
             {
                 FieldKey aliasFieldKey = new FieldKey(parent.getFieldKey(), StringUtils.defaultString(displayField,"Name"));
                 var alias = new _AliasedParentColumn(parent, aliasFieldKey, depth, expType, cpasType, aliasFieldKey.getName());
+                alias.clearFk();
                 return alias;
             }
             else
