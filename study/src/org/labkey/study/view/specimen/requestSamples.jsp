@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.study.SpecimenService"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
@@ -23,14 +24,13 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
-<%@ page import="org.labkey.study.model.LocationImpl"%>
+<%@ page import="org.labkey.study.model.LocationImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -176,13 +176,13 @@ function setDefaults()
                     if (input.isMultiLine())
                     {
                 %>
-                <textarea rows="5" id="input<%= i %>" cols="50" name="inputs"><%= h(bean.getValue(i)) %></textarea>
+                <textarea rows="5" id="input<%= i %>" cols="50" name="inputs" <%= h(input.isRequired() ? "required" : "") %>><%= h(bean.getValue(i)) %></textarea>
                 <%
                     }
                     else
                     {
                 %>
-                <input type="text" id="input<%= i %>" size="40" name="inputs" value="<%= h(bean.getValue(i)) %>">
+                <input type="text" id="input<%= i %>" size="40" name="inputs" <%= h(input.isRequired() ? "required" : "") %> value="<%= h(bean.getValue(i)) %>">
                 <%
                     }
                 %>

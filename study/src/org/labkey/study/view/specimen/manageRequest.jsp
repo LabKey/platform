@@ -21,9 +21,10 @@
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.study.Location"%>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
@@ -37,7 +38,6 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
@@ -375,7 +375,7 @@
         </tr>
         <tr>
             <td>
-                <table class="table-condensed">
+                <table class="table-condensed specimen-request-information">
                     <tr>
                         <th valign="top" align="right">Requester</th>
                         <td><%= h(creatingUser != null ? creatingUser.getDisplayName(user) : "Unknown") %></td>
