@@ -97,6 +97,7 @@ public class OntologyManager
     private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
     private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
     private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
+    private static final StringKeyCache<List<DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -1137,6 +1138,7 @@ public class OntologyManager
                     {
                         domainDescByURICache.remove(getURICacheKey(dd));
                         domainDescByIDCache.remove(getIDCacheKey(dd));
+                        domainDescByContainerCache.remove(c.getId());
                         domainPropertiesCache.clear();
                         dd = dd.edit()
                                 .setContainer(project)
@@ -2103,12 +2105,21 @@ public class OntologyManager
         if (includeProjectAndShared && user == null)
             throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
 
+        String key = container.getId();
+        List<DomainDescriptor> dds = domainDescByContainerCache.get(key);
+
+        if (null != dds && !dds.isEmpty())
+            return dds;
+        else
+            dds = new ArrayList<>();
+
         Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
 
         for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
         {
             ret.put(dd.getDomainURI(), dd);
+            dds.add(dd);
         }
 
         if (includeProjectAndShared)
@@ -2116,24 +2127,30 @@ public class OntologyManager
             Container project = container.getProject();
             if (project != null && project.hasPermission(user, ReadPermission.class))
             {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, project).getArrayList(DomainDescriptor.class))
-                {
-                    if (!ret.containsKey(dd.getDomainURI()))
-                        ret.put(dd.getDomainURI(), dd);
-                }
+                addDomainDescriptors(ret, dds, sql, project);
             }
 
             if (_sharedContainer.hasPermission(user, ReadPermission.class))
             {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, _sharedContainer).getArrayList(DomainDescriptor.class))
-                {
-                    if (!ret.containsKey(dd.getDomainURI()))
-                        ret.put(dd.getDomainURI(), dd);
-                }
+                addDomainDescriptors(ret, dds, sql, _sharedContainer);
             }
         }
+        domainDescByContainerCache.put(container.getId(), dds);
 
         return Collections.unmodifiableCollection(ret.values());
+    }
+
+    private static void addDomainDescriptors(Map<String, DomainDescriptor> ret, List<DomainDescriptor> dds, String sql, Container container)
+    {
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
+        {
+            if (!ret.containsKey(dd.getDomainURI()))
+            {
+                ret.put(dd.getDomainURI(), dd);
+                dds.add(dd);
+            }
+
+        }
     }
 
     public static String getURICacheKey(DomainDescriptor dd)
@@ -2400,6 +2417,7 @@ public class OntologyManager
         domainDescByURICache.remove(getURICacheKey(dd));
         domainDescByIDCache.remove(getIDCacheKey(dd));
         domainPropertiesCache.remove(getURICacheKey(dd));
+        domainDescByContainerCache.clear();
         return dd;
     }
 
@@ -2412,6 +2430,7 @@ public class OntologyManager
         propDescCache.clear();
         mapCache.clear();
         objectIdCache.clear();
+        domainDescByContainerCache.clear();
     }
 
 
