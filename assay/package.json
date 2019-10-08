@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@glass/base": "0.18.0",
-    "@glass/domainproperties": "0.0.34-fb-domain-validation.11"
+    "@glass/domainproperties": "0.0.34-fb-domain-validation.12"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",

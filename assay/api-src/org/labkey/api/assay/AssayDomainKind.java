@@ -79,25 +79,42 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     @Override
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
-        AssayProvider provider = AssayService.get().getProvider(findProtocol(domain));
+        ExpProtocol protocol = findProtocol(domain);
 
-        if (provider != null) {
-            return provider.getDefaultValueOptions(domain);
+        // In the case of a new assay there may not be a protocol yet. This value will be set in getAssayTemplate in AssayService
+        if (protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+
+            if (provider != null)
+            {
+                if (provider.allowDefaultValues(domain))
+                {
+                    return provider.getDefaultValueOptions(domain);
+                }
+            }
         }
 
-        return super.getDefaultValueOptions(domain);
+        return new DefaultValueType[0];
     }
 
     @Override
     public DefaultValueType getDefaultDefaultType(Domain domain)
     {
-        AssayProvider provider = AssayService.get().getProvider(findProtocol(domain));
+        ExpProtocol protocol = findProtocol(domain);
 
-        if (provider != null) {
-            return provider.getDefaultValueDefault(domain);
+        // In the case of a new assay there may not be a protocol yet. This value will be set in getAssayTemplate in AssayService
+        if (protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+
+            if (provider != null)
+            {
+                return provider.getDefaultValueDefault(domain);
+            }
         }
 
-        return super.getDefaultDefaultType(domain);
+        return null;
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
@@ -113,6 +130,7 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         return new SQLFragment("NULL");
     }
 
+    @Nullable
     private ExpProtocol findProtocol(Domain domain)
     {
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(domain.getContainer());
