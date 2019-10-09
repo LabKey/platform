@@ -182,10 +182,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             String goodSql =
                     "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
+                    "SELECT core.executeJavaInitializationCode('upgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
                     "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
                     "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
                     "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
-
 
             String badSql =
                     "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
@@ -201,7 +201,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             SqlDialect dialect = new PostgreSql94Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
-            assertEquals(4, good.getCounter());
+            assertEquals(5, good.getCounter());
 
             TestUpgradeCode bad = new TestUpgradeCode();
             dialect.runSql(null, badSql, bad, null, null);

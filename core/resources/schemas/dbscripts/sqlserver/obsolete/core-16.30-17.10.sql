@@ -35,7 +35,7 @@ BEGIN
        objname    Required. For TABLE, VIEW, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, this is the name of the object to be dropped
                    for SCHEMA, specify '*' to drop all dependent objects, or NULL to drop an empty schema
                    for INDEX, CONSTRAINT, DEFAULT, or COLUMN, specify the name of the table
-       objschema  Requried. The name of the schema for the object, or the schema being dropped
+       objschema  Required. The name of the schema for the object, or the schema being dropped
        objtype    Required. The type of object being dropped. Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, COLUMN
        subobjtype Optional. When dropping INDEX, CONSTRAINT, DEFAULT, or COLUMN, the name of the object being dropped
        printCmds  Optional, 1 or 0. If 1, the cascading drop commands for SCHEMA and COLUMN will be printed for debugging purposes
