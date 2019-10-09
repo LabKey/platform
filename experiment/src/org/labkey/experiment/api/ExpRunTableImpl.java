@@ -389,6 +389,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 batchIdCol.setShownInUpdateView(false);
                 batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return batchIdCol;
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -549,6 +551,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Output);
         addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
+        addColumn(Column.Properties);
 
         addVocabularyDomains();
 

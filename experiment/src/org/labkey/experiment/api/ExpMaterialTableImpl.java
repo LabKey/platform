@@ -264,6 +264,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case Outputs:
                 return createLineageColumn(this, alias, false);
 
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -497,6 +500,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
+
+        addColumn(Column.Properties);
     }
 
     public Domain getDomain()

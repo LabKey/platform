@@ -48,6 +48,7 @@ public interface ExpSampleSetTable extends ExpTable<ExpSampleSetTable.Column>
         Property,
         Alias,
         Inputs,
-        Outputs
+        Outputs,
+        Properties
     }
 }

@@ -134,6 +134,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.ViewOrDownload);
         addColumn(Column.Generated);
         addColumn(Column.LastIndexed);
+        addColumn(Column.Properties);
 
         addFileColumns(false);
 
@@ -547,6 +548,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
             case Outputs:
                 return createLineageColumn(this, alias, true);
+
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
