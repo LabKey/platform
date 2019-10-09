@@ -331,6 +331,10 @@
         <isReadOnly>true</isReadOnly>
         <description>The date and time this user last logged in to the system.</description>
       </column>
+      <column columnName="HasPassword">
+        <description>True if this user has the ability to login via a hashed password stored in the database. If false, the user can login only via an external authentication mechanism that has been configured, such as an LDAP server, Active Directory, or a single-sign-on protocol like SAML or CAS. A site administrator can give a user the ability to create a database password by clicking the "Create Password" button on that user's details page.</description>
+        <isReadOnly>true</isReadOnly>
+      </column>
       <column columnName="Active">
         <description>True if this user is active, false otherwise. Inactive users are not allowed to sign in.</description>
         <isUserEditable>false</isUserEditable>
@@ -472,6 +476,7 @@
         <inputLength>23</inputLength>
         <isReadOnly>true</isReadOnly>
       </column>
+      <column columnName="HasPassword"/>
       <column columnName="Active">
         <description>True if this user is active, false otherwise. Inactive users are not allowed to sign in.</description>
       </column>

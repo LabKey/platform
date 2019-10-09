@@ -140,6 +140,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultColumns.add(FieldKey.fromParts("DisplayName"));
         defaultColumns.add(FieldKey.fromParts("Email"));
         defaultColumns.add(FieldKey.fromParts("Active"));
+        defaultColumns.add(FieldKey.fromParts("HasPassword"));
         defaultColumns.add(FieldKey.fromParts("LastLogin"));
         defaultColumns.add(FieldKey.fromParts("Created"));
 
