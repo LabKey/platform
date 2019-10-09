@@ -832,11 +832,14 @@ public class ExpDataIterators
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(key, _container);
 
-                    List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d-> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
-                    if (!vocabDomains.isEmpty())
+                    if (null != pd)
                     {
-                        DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
-                        vocabularyDomainProperties.add(dp);
+                        List<Domain> vocabDomains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd).stream().filter(d -> d.getDomainKind() instanceof VocabularyDomainKind).collect(Collectors.toList());
+                        if (!vocabDomains.isEmpty())
+                        {
+                            DomainProperty dp = vocabDomains.get(0).getPropertyByURI(key);
+                            vocabularyDomainProperties.add(dp);
+                        }
                     }
                 }
             }

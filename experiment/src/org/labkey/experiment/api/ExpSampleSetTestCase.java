@@ -772,7 +772,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         String sampleType = "TypeA";
         String updatedSampleType = "TypeB";
 
-        Domain mockDomain = createMockDomain(user, c);
+        Domain mockDomain = createVocabularyTestDomain(user, c);
         String sampleTypePropertyURI = mockDomain.getProperties().get(1).getPropertyURI();
 
         //create sample set

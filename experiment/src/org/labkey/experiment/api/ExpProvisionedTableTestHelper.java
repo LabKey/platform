@@ -29,7 +29,7 @@ public class ExpProvisionedTableTestHelper
 
     final User user = TestContext.get().getUser();
 
-    protected Domain createMockDomain(User user, Container c) throws ValidationException
+    protected Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
     {
         String domainName = "TestVocabularyDomain";
         String domainDescription = "This is a mock vocabulary";

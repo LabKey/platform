@@ -58,7 +58,6 @@ import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -66,8 +65,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
@@ -940,7 +937,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         int dataClassAge = 2;
         int updatedDataClassAge = 4;
 
-        Domain mockDomain = createMockDomain(user, c);
+        Domain mockDomain = createVocabularyTestDomain(user, c);
         String dataClassAgePropertyURI = mockDomain.getProperties().get(0).getPropertyURI();
 
         ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
