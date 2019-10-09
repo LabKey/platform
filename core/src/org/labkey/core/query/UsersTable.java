@@ -226,6 +226,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (!getUser().hasRootPermission(UserManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 _illegalColumns.add("Active");
+                _illegalColumns.add("HasPassword");
                 _illegalColumns.add("LastLogin");
             }
         }
