@@ -94,8 +94,20 @@ public interface AuthenticationProvider
         return Collections.emptyList();
     }
 
+    default boolean isConfigurationAware()
+    {
+        return false;
+    }
+
     interface PrimaryAuthenticationProvider extends AuthenticationProvider
     {
+        // For now, provider is responsible for loading properties (using hard-coded configuration key) and passing them to the
+        // new AuthenticationConfiguration. TODO: Authentication properties will have the configuration so it will be passed in
+        default AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
+        {
+            return null;
+        }
+
         default void logout(HttpServletRequest request)
         {
         }
@@ -113,9 +125,17 @@ public interface AuthenticationProvider
          * Return the external service's URL.
          * @return The redirect URL
          */
-        URLHelper getURL(String secret);
+        @Deprecated // Moving to SSOAuthenticationConfiguration
+        default URLHelper getURL(String secret)
+        {
+            throw new IllegalStateException("Shouldn't be called");
+        }
 
-        LinkFactory getLinkFactory();
+        @Deprecated // Moving to SSOAuthenticationConfiguration
+        default LinkFactory getLinkFactory()
+        {
+            throw new IllegalStateException("Shouldn't be called");
+        }
 
         /**
          * Allows an SSO auth provider to define that it should be used automatically instead of showing the standard

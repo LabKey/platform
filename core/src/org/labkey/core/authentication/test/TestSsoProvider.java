@@ -17,11 +17,13 @@ package org.labkey.core.authentication.test;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.AuthenticationManager.LinkFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by adam on 6/5/2016.
@@ -30,18 +32,17 @@ public class TestSsoProvider implements SSOAuthenticationProvider
 {
     static final String NAME = "TestSSO";
 
-    private final LinkFactory _linkFactory = new LinkFactory(this);
-
     @Override
-    public URLHelper getURL(String secret)
+    public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
     {
-        return new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
-    }
+        String key = NAME; // TODO: TestSSOConfigurationProperties?
+        Map<String, String> m = PropertyManager.getProperties(key);
+        Map<String, String> map = new HashMap<>(m);
+        map.put("Provider", NAME);
+        map.put("Enabled", Boolean.toString(active));
+        map.put("Name", NAME);
 
-    @Override
-    public LinkFactory getLinkFactory()
-    {
-        return _linkFactory;
+        return new TestSsoConfiguration(key, this, map);
     }
 
     @Nullable
@@ -63,5 +64,11 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     public String getDescription()
     {
         return "A trivial, insecure SSO authentication provider (for test purposes only)";
+    }
+
+    @Override
+    public boolean isConfigurationAware()
+    {
+        return true;
     }
 }

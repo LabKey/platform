@@ -16,11 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.jsp.JspBase" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider" %>
-<%@ page import="org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -191,7 +189,6 @@
                 "    <td class=\"labkey-column-header\">Name</td>\n" +
                 "    <td class=\"labkey-column-header\">Status</td>\n" +
                 "    <td class=\"labkey-column-header\">Configuration</td>\n" +
-                "    <td class=\"labkey-column-header\">Logos</td>\n" +
                 "    <td class=\"labkey-column-header\">Description</td>\n" +
                 "</tr>");
 
@@ -244,14 +241,6 @@
                 out.print("&nbsp;");
             else
                 out.print(link("configure", url));
-            out.print("</td>");
-
-            out.print("<td>");
-            if (canEdit && authProvider instanceof SSOAuthenticationProvider)
-            {
-                ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
-                out.print(link("pick logos", pickLogoURL));
-            };
             out.print("</td>");
 
             out.print("<td>");

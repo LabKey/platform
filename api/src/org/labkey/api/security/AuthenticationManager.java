@@ -41,6 +41,7 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
@@ -243,7 +244,6 @@ public class AuthenticationManager
         return getAuthLogoHtml(currentURL, HEADER_LOGO_PREFIX);
     }
 
-
     public static @Nullable HtmlString getLoginPageLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, LOGIN_PAGE_LOGO_PREFIX);
@@ -258,9 +258,18 @@ public class AuthenticationManager
         return config;
     }
 
+    /** Return all registered providers */
     static List<AuthenticationProvider> getAllProviders()
     {
         return _allProviders;
+    }
+
+    /** Return all valid, registered providers */
+    static List<AuthenticationProvider> getValidProviders()
+    {
+        return _allProviders.stream()
+            .filter(p->!AuthenticationManager.isAcceptOnlyFicamProviders() || p.isFicamApproved())
+            .collect(Collectors.toList());
     }
 
     public static boolean hasSSOAuthenticationProvider()
@@ -271,6 +280,7 @@ public class AuthenticationManager
     private static @Nullable HtmlString getAuthLogoHtml(URLHelper currentURL, String prefix)
     {
         Collection<SSOAuthenticationProvider> ssoProviders = AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class);
+        Collection<SSOAuthenticationConfiguration> ssoConfigurations = AuthenticationConfigurationCache.getActive(SSOAuthenticationConfiguration.class);
 
         if (ssoProviders.isEmpty())
             return null;
@@ -279,9 +289,20 @@ public class AuthenticationManager
 
         for (SSOAuthenticationProvider provider : ssoProviders)
         {
-            if (!provider.isAutoRedirect())
+            if (!provider.isConfigurationAware() && !provider.isAutoRedirect())
             {
                 LinkFactory factory = provider.getLinkFactory();
+                html.append(HtmlString.unsafe("<li>"));
+                html.append(factory.getLink(currentURL, prefix));
+                html.append(HtmlString.unsafe("</li>"));
+            }
+        }
+
+        for (SSOAuthenticationConfiguration configuration : ssoConfigurations)
+        {
+            if (configuration.getAuthenticationProvider().isConfigurationAware() && !configuration.isAutoRedirect())
+            {
+                LinkFactory factory = configuration.getLinkFactory();
                 html.append(HtmlString.unsafe("<li>"));
                 html.append(factory.getLink(currentURL, prefix));
                 html.append(HtmlString.unsafe("</li>"));
@@ -316,7 +337,8 @@ public class AuthenticationManager
             {
                 HttpServletRequest request = getViewContext().getRequest();
 
-                PrimaryAuthenticationResult primaryResult = null;
+                final PrimaryAuthenticationResult primaryResult;
+
                 // Some SSO protocols allow GET, but validation requires a secret so it's not susceptible to CSRF attacks
                 try (var ignored = SpringActionController.ignoreSqlUpdates())
                 {
@@ -461,6 +483,10 @@ public class AuthenticationManager
         return AuthenticationProviderCache.getActiveProvider(SSOAuthenticationProvider.class, name);
     }
 
+    public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(String key)
+    {
+        return AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key);
+    }
 
     public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
     {
@@ -521,6 +547,7 @@ public class AuthenticationManager
 
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
+    private static final String CONFIGURATIONS_KEY = "Configurations";
     private static final String PROP_SEPARATOR = ":";
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
@@ -550,6 +577,18 @@ public class AuthenticationManager
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String activeProviderProp = props.get(PROVIDERS_KEY);
+
+        Set<String> set = new HashSet<>();
+        Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
+
+        return set;
+    }
+
+    // Configuration keys stored in properties; includes enabled, disabled, and (perhaps) invalid configurations
+    static Set<String> getConfigurationKeysFromProperties()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String activeProviderProp = props.get(CONFIGURATIONS_KEY);
 
         Set<String> set = new HashSet<>();
         Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
@@ -760,6 +799,7 @@ public class AuthenticationManager
 
     public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
+        AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class);
         PrimaryAuthenticationResult result = null;
         try
         {
@@ -1400,10 +1440,18 @@ public class AuthenticationManager
         private final SSOAuthenticationProvider _provider;
         private final String _providerName;
 
+        private SSOAuthenticationConfiguration _configuration = null;
+
         public LinkFactory(SSOAuthenticationProvider provider)
         {
             _provider = provider;
             _providerName = provider.getName(); // Just for convenience
+        }
+
+        public LinkFactory(SSOAuthenticationConfiguration configuration)
+        {
+            this(configuration.getAuthenticationProvider());
+            _configuration = configuration;
         }
 
         private @NotNull HtmlString getLink(URLHelper returnURL, String prefix)
@@ -1417,10 +1465,17 @@ public class AuthenticationManager
             return HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(getURL(returnURL, false)) + "\">" + content + "</a>");
         }
 
+        @SuppressWarnings("ConstantConditions")
         public ActionURL getURL(URLHelper returnURL, boolean skipProfile)
         {
-            //noinspection ConstantConditions
-            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_provider, returnURL, skipProfile);
+            if (null != _configuration)
+            {
+                return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
+            }
+            else
+            {   // TODO: Delete
+                return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_provider, returnURL, skipProfile);
+            }
         }
 
         public String getImg(String prefix)

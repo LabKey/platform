@@ -29,10 +29,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -45,6 +41,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
@@ -88,7 +85,6 @@ import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -98,14 +94,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
@@ -151,31 +144,37 @@ public class LoginController extends SpringActionController
             return root;
         }
 
+        @Override
         public ActionURL getConfigureURL()
         {
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getConfigureDbLoginURL()
         {
             return LoginController.getConfigureDbLoginURL(false);
         }
 
+        @Override
         public ActionURL getEnableConfigParameterURL(String paramName)
         {
             return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", true);
         }
 
+        @Override
         public ActionURL getDisableConfigParameterURL(String paramName)
         {
             return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", false);
         }
 
+        @Override
         public ActionURL getInitialUserURL()
         {
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
         {
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
@@ -189,6 +188,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message)
         {
             ActionURL url = new ActionURL(ChangePasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
@@ -202,11 +202,13 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getLoginURL()
         {
             return getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
         }
 
+        @Override
         public ActionURL getLoginURL(URLHelper returnURL)
         {
             // Use root as placeholder; extra path of returnURL determines the real login URL path
@@ -222,7 +224,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-
+        @Override
         public ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
@@ -233,11 +235,13 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getLogoutURL(Container c)
         {
             return new ActionURL(LogoutAction.class, c);
         }
 
+        @Override
         public ActionURL getLogoutURL(Container c, URLHelper returnURL)
         {
             ActionURL url = getLogoutURL(c);
@@ -245,6 +249,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(StopImpersonatingAction.class, c);
@@ -255,6 +260,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
@@ -288,6 +294,7 @@ public class LoginController extends SpringActionController
             return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot()).addParameter("provider", provider.getName());
         }
 
+        @Deprecated // TODO: Delete
         @Override
         public ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL, boolean skipProfile)
         {
@@ -307,6 +314,33 @@ public class LoginController extends SpringActionController
                     url.replaceParameter("urlhash", "#" + fragment);
             }
             return url;
+        }
+
+        @Override
+        public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile)
+        {
+            ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
+            url.addParameter("configuration", configuration.getKey());
+            if (skipProfile)
+            {
+                url.addParameter("skipProfile", 1);
+            }
+            if (null != returnURL)
+            {
+                String fragment = returnURL.getFragment();
+                if (!returnURL.isReadOnly())
+                    returnURL.setFragment(null);
+                url.addReturnURL(returnURL);
+                if (!StringUtils.isBlank(fragment))
+                    url.replaceParameter("urlhash", "#" + fragment);
+            }
+            return url;
+        }
+
+        @Override
+        public ModelAndView getPickLogosView(SSOAuthenticationConfiguration configuration, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(configuration, reshow), errors);
         }
     }
 
@@ -1396,6 +1430,7 @@ public class LoginController extends SpringActionController
     public static class SsoRedirectForm extends AbstractLoginForm
     {
         private String _provider;
+        private String _configuration;
 
         public String getProvider()
         {
@@ -1406,6 +1441,17 @@ public class LoginController extends SpringActionController
         public void setProvider(String provider)
         {
             _provider = provider;
+        }
+
+        public String getConfiguration()
+        {
+            return _configuration;
+        }
+
+        @SuppressWarnings("unused")
+        public void setConfiguration(String configuration)
+        {
+            _configuration = configuration;
         }
     }
 
@@ -1421,12 +1467,6 @@ public class LoginController extends SpringActionController
             if (!getUser().isGuest())
                 return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
 
-            // Check for valid, active, SSO provider
-            SSOAuthenticationProvider provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
-
-            if (null == provider)
-                throw new NotFoundException("Authentication provider is not valid");
-
             // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnURL = form.getReturnURLHelper();
             if (null != returnURL || form.getSkipProfile())
@@ -1436,7 +1476,29 @@ public class LoginController extends SpringActionController
             }
 
             String csrf = CSRFUtil.getExpectedToken(getViewContext());
-            URLHelper url = provider.getURL(csrf);
+
+            final URLHelper url;
+            String configurationName = form.getConfiguration();
+
+            if (null != configurationName)
+            {
+                SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(configurationName);
+
+                if (null == configuration)
+                    throw new NotFoundException("Authentication configuration is not valid");
+
+                url = configuration.getUrl(csrf);
+            }
+            else
+            {
+                // Check for valid, active, SSO provider  TODO: Delete this section
+                SSOAuthenticationProvider provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
+
+                if (null == provider)
+                    throw new NotFoundException("Authentication provider is not valid");
+
+                url = provider.getURL(csrf);
+            }
 
             return HttpView.redirect(url.getURIString());
         }
@@ -2300,6 +2362,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @Deprecated
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetProviderEnabledAction extends FormHandlerAction<ProviderForm>
     {
@@ -2325,6 +2388,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @Deprecated
     public static class ProviderForm
     {
         private String _provider;
@@ -2459,107 +2523,26 @@ public class LoginController extends SpringActionController
     }
 
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class PickAuthLogoAction extends FormViewAction<AuthLogoForm>
-    {
-        private SSOAuthenticationProvider _provider;
-
-        public void validateCommand(AuthLogoForm form, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors)
-        {
-            _provider = AuthenticationManager.getSSOProvider(form.getProvider());
-
-            if (null == _provider)
-                throw new NotFoundException("Authentication provider is not valid");
-
-            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(_provider, reshow), errors);
-        }
-
-        public boolean handlePost(AuthLogoForm form, BindException errors)
-        {
-            Map<String, MultipartFile> fileMap = getFileMap();
-
-            boolean changedLogos = deleteLogos(form);
-
-            try
-            {
-                changedLogos |= handleLogo(form.getProvider(), fileMap, AuthenticationManager.HEADER_LOGO_PREFIX);
-                changedLogos |= handleLogo(form.getProvider(), fileMap, AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
-            }
-            catch (Exception e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                return false;
-            }
-
-            // If user changed one or both logos then...
-            if (changedLogos)
-            {
-                // Clear the image cache so the web server sends the new logo
-                AttachmentCache.clearAuthLogoCache();
-                // Bump the look & feel revision to force browsers to retrieve new logo
-                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            }
-
-            return false;  // Always reshow the page so user can view updates.  After post, second button will change to "Done".
-        }
-
-        // Returns true if a new logo is saved
-        private boolean handleLogo(String providerName, Map<String, MultipartFile> fileMap, String prefix) throws IOException, ServletException
-        {
-            MultipartFile file = fileMap.get(prefix + "file");
-
-            if (null == file || file.isEmpty())
-                return false;
-
-            if (!file.getContentType().startsWith("image/"))
-                throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
-
-            AttachmentFile aFile = new SpringAttachmentFile(file, prefix + providerName);
-            AttachmentService.get().addAttachments(AuthenticationLogoAttachmentParent.get(), Collections.singletonList(aFile), getUser());
-
-            return true;
-        }
-
-        // Returns true if a logo is deleted
-        public boolean deleteLogos(AuthLogoForm form)
-        {
-            String[] deletedLogos = form.getDeletedLogos();
-
-            if (null == deletedLogos)
-                return false;
-
-            for (String logoName : deletedLogos)
-                AttachmentService.get().deleteAttachment(AuthenticationLogoAttachmentParent.get(), logoName, getUser());
-
-            return true;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            getUrls().appendAuthenticationNavTrail(root).addChild("Pick logos for " + _provider.getName());
-            return root;
-        }
-
-        public ActionURL getSuccessURL(AuthLogoForm form)
-        {
-            return null;  // Should never get here
-        }
-    }
-
-
     public static class AuthLogoBean
     {
+        public final SSOAuthenticationConfiguration configuration;
         public final SSOAuthenticationProvider provider;
         public final String headerLogo;
         public final String loginPageLogo;
         public final boolean reshow;
 
+        private AuthLogoBean(SSOAuthenticationConfiguration configuration, boolean reshow)
+        {
+            this.configuration = configuration;
+            this.provider = null;
+            this.reshow = reshow;
+            headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
+            loginPageLogo = getAuthLogoHtml(AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
+        }
+
         private AuthLogoBean(SSOAuthenticationProvider provider, boolean reshow)
         {
+            this.configuration = null;
             this.provider = provider;
             this.reshow = reshow;
             headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
@@ -2568,47 +2551,32 @@ public class LoginController extends SpringActionController
 
         public String getAuthLogoHtml(String prefix)
         {
-            LinkFactory factory = provider.getLinkFactory();
+            LinkFactory factory = null != configuration ? configuration.getLinkFactory() : provider.getLinkFactory();
             String logo = factory.getImg(prefix);
 
             if (null == logo)
             {
-                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
+                return "<input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
+//                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
             }
             else
             {
                 StringBuilder html = new StringBuilder();
 
-                String id1 = prefix + "td1";
-                String id2 = prefix + "td2";
+                String id1 = prefix + "d1";
+                String id2 = prefix + "d2";
 
-                html.append("<td id=\"").append(id1).append("\">");
+                html.append("<div id=\"").append(id1).append("\">");
                 html.append(logo);
-                html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
+                html.append("</div>\n<div id=\"").append(id2).append("\">");
                 html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + prefix + "');").toString()); // RE_CHECK
-                html.append("</td>\n");
+                html.append("</div>\n");
 
                 return html.toString();
             }
         }
     }
 
-
-    public static class AuthLogoForm extends ProviderForm
-    {
-        private String[] _deletedLogos;
-
-        public String[] getDeletedLogos()
-        {
-            return _deletedLogos;
-        }
-
-        @SuppressWarnings("unused")
-        public void setDeletedLogos(String[] deletedLogos)
-        {
-            _deletedLogos = deletedLogos;
-        }
-    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {
@@ -2629,8 +2597,7 @@ public class LoginController extends SpringActionController
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
                 controller.new ConfigureAction(),
-                controller.new ConfigureDbLoginAction(),
-                controller.new PickAuthLogoAction()
+                controller.new ConfigureDbLoginAction()
             );
         }
     }
