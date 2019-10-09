@@ -2068,8 +2068,6 @@ public class QueryServiceImpl implements QueryService
     // Look for file-based definitions in modules
     private @Nullable QueryDef findMetadataOverrideInModules(@NotNull UserSchema schema, @NotNull String tableName, boolean allModules, @Nullable Path dir)
     {
-        String schemaName = schema.getSchemaPath().toString();
-
         if (dir == null)
         {
             dir = createSchemaPath(schema.getSchemaPath());
@@ -2097,7 +2095,7 @@ public class QueryServiceImpl implements QueryService
         // if tableName specified, filter to the metadata that match
         if (tableName != null)
         {
-            metadataDefs = metadataDefs.filter(metadata -> tableName.equals(metadata.getName()));
+            metadataDefs = metadataDefs.filter(metadata -> tableName.equalsIgnoreCase(metadata.getName()));
         }
 
         return metadataDefs.map(metadata -> metadata.toQueryDef(c, schemaPath));
