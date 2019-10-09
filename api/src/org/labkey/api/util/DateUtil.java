@@ -808,20 +808,43 @@ validNum:       {
         int ms = 0;
         try
         {
-            // strip off trailing decimal :00:00.000
             int len = s.length();
+            int colon = s.lastIndexOf(':');
             int period = s.lastIndexOf('.');
-            if (period > 6 && period >= len - 4 && period < len - 1 &&
+            if (period > 6 && period >= len - 7 && period < len - 1 &&
                     s.charAt(period - 3) == ':' &&
                     s.charAt(period - 6) == ':')
             {
+                // strip off trailing decimal :00:00.000 or :00:00.00000
                 String m = s.substring(period + 1);
+                if (m.length() > 3)
+                {
+                    // Issue 36691: flow: 18.3 upgrade error caused by date parsing issue
+                    // trim decimal seconds to three places, e.g. :00:00.00000 to :00:00.000
+                    m = m.substring(0, 3);
+                }
+
                 ms = Integer.parseInt(m);
                 if (m.length() == 1)
                     ms *= 100;
                 else if (m.length() == 2)
                     ms *= 10;
+                assert ms >= 0 && ms <= 1000;
+
                 s = s.substring(0, period);
+            }
+            else if (colon > 6 && colon >= len - 4 && colon >= len - 3 &&
+                    s.charAt(colon - 3) == ':' &&
+                    s.charAt(colon - 6) == ':')
+            {
+                // Issue 38649: parse fractional seconds used in $BTIM keyword
+                // strip off trailing fraction seconds in 1/60th format - 00:00:00:00
+                int fraction = Integer.parseInt(s.substring(colon+1));
+                if (fraction > 0 && fraction < 60)
+                    ms = Math.round((1000.0f * fraction) / 60);
+                assert ms >= 0 && ms <= 1000;
+
+                s = s.substring(0, colon);
             }
 
             long time = parseDateTimeEN(s, DateTimeOption.DateTime, md);
@@ -918,22 +941,46 @@ validNum:       {
 
     public static long parseTime(String s)
     {
-        // strip off trailing decimal :00:00.000
         int ms = 0;
         int len = s.length();
+        int colon = s.lastIndexOf(':');
         int period = s.lastIndexOf('.');
-        if (period > 6 && period >= len - 4 && period < len - 1 &&
+        if (period > 6 && period >= len - 7 && period < len - 1 &&
                 s.charAt(period - 3) == ':' &&
                 s.charAt(period - 6) == ':')
         {
+            // strip off trailing decimal :00:00.000 or :00:00.00000
             String m = s.substring(period + 1);
+            if (m.length() > 3)
+            {
+                // Issue 36691: flow: 18.3 upgrade error caused by date parsing issue
+                // trim decimal seconds to three places, e.g. :00:00.00000 to :00:00.000
+                m = m.substring(0, 3);
+            }
+
             ms = Integer.parseInt(m);
             if (m.length() == 1)
                 ms *= 100;
             else if (m.length() == 2)
                 ms *= 10;
+            assert ms >= 0 && ms <= 1000;
+
             s = s.substring(0, period);
         }
+        else if (colon > 6 && colon >= len - 4 && colon >= len - 3 &&
+                s.charAt(colon - 3) == ':' &&
+                s.charAt(colon - 6) == ':')
+        {
+            // Issue 38649: parse fractional seconds used in $BTIM keyword
+            // strip off trailing fraction seconds in 1/60th format - 00:00:00:00
+            int fraction = Integer.parseInt(s.substring(colon+1));
+            if (fraction > 0 && fraction < 60)
+                ms = Math.round((1000.0f * fraction) / 60);
+            assert ms >= 0 && ms <= 1000;
+
+            s = s.substring(0, colon);
+        }
+
         long time = parseDateTimeUS(s, DateTimeOption.TimeOnly);
         return time + ms;
     }
@@ -1510,6 +1557,25 @@ Parse:
             assertEquals(datetimeExpected-6000, parseDateTime("03 feb 2001 04:05 am"));
             assertEquals(datetimeExpected, parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
 
+            // milliseconds trimmed to 3 decimal places
+            assertEquals(datetimeExpected+100, parseDateTime("03-FEB-2001 04:05:06.1"));
+            assertEquals(datetimeExpected+120, parseDateTime("03-FEB-2001 04:05:06.12"));
+            assertEquals(datetimeExpected+123, parseDateTime("03-FEB-2001 04:05:06.123"));
+            assertEquals(datetimeExpected+123, parseDateTime("03-FEB-2001 04:05:06.1234"));
+            assertEquals(datetimeExpected+123, parseDateTime("03-FEB-2001 04:05:06.123456"));
+
+            // fractional seconds
+            assertEquals(datetimeExpected, parseDateTime("03-FEB-2001 04:05:06:00"));
+            // "01" fractional seconds is .01666 seconds, rounded to .017
+            assertEquals(datetimeExpected+17, parseDateTime("03-FEB-2001 04:05:06:01"));
+            assertEquals(datetimeExpected+17, parseDateTime("03-FEB-2001 4:05:06:01"));
+            assertEquals(datetimeExpected+133, parseDateTime("03-FEB-2001 04:05:06:08"));
+            assertEquals(datetimeExpected+983, parseDateTime("03-FEB-2001 04:05:06:59"));
+            // ignore invalid fractional seconds > 59
+            assertEquals(datetimeExpected, parseDateTime("03-FEB-2001 04:05:06:60"));
+            assertEquals(datetimeExpected, parseDateTime("03-FEB-2001 04:05:06:61"));
+
+
             // Test parseXMLDate() handling of time and date time values
 //            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
@@ -1829,6 +1895,25 @@ Parse:
             assertEquals(timeSecExpected+7, parseTime("4:05:06.007"));
             assertEquals(timeSecExpected+70, parseTime("4:05:06.07"));
             assertEquals(timeSecExpected+700, parseTime("4:05:06.7"));
+
+            // milliseconds trimmed to 3 decimal places
+            assertEquals(timeSecExpected+100, parseTime("4:05:06.1"));
+            assertEquals(timeSecExpected+120, parseTime("4:05:06.12"));
+            assertEquals(timeSecExpected+123, parseTime("4:05:06.123"));
+            assertEquals(timeSecExpected+123, parseTime("4:05:06.1234"));
+            assertEquals(timeSecExpected+123, parseTime("4:05:06.123456"));
+
+            // fractional seconds
+            assertEquals(timeSecExpected, parseTime("4:05:06:00"));
+            // "01" fractional seconds is .01666 seconds, rounded to .017
+            assertEquals(timeSecExpected+17, parseTime("4:05:06:01"));
+            assertEquals(timeSecExpected+17, parseTime("04:05:06:01"));
+            assertEquals(timeSecExpected+133, parseTime("4:05:06:08"));
+            assertEquals(timeSecExpected+983, parseTime("4:05:06:59"));
+            // ignore invalid fractional seconds > 59
+            assertEquals(timeSecExpected, parseTime("4:05:06:60"));
+            assertEquals(timeSecExpected, parseTime("4:05:06:61"));
+
             assertIllegalTime("2/3/2001 4:05:06");
             assertIllegalTime("4/05:06");
             assertIllegalTime("4:05/06");
