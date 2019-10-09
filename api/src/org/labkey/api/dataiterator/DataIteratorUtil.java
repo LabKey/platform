@@ -243,6 +243,10 @@ public class DataIteratorUtil
                     }
                 }
             }
+            if(null == to.first)
+            {
+                LOG.info("Column Info null here: - " +  from.getColumnName());
+            }
             matches.add(to);
         }
         return matches;
@@ -259,16 +263,7 @@ public class DataIteratorUtil
         {
             Pair<ColumnInfo,MatchType> match = matches.get(i);
             if (null != match)
-            {
-                try
-                {
-                    duplicatesMap.put(match.first.getFieldKey(), i);
-                }
-                catch (NullPointerException ex)
-                {
-                    LOG.info("FieldKey Null here: - " +  match.first.getColumnName());
-                }
-            }
+                duplicatesMap.put(match.first.getFieldKey(), i);
         }
 
         // handle duplicates, by priority
