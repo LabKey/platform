@@ -442,6 +442,7 @@ LABKEY.Filter = new function()
             HAS_MISSING_VALUE : createNoValueFilterType("Has a missing value indicator", null, "hasmvvalue", null),
             DOES_NOT_HAVE_MISSING_VALUE : createNoValueFilterType("Does not have a missing value indicator", null, "nomvvalue", null),
 
+            EXP_PARENT_OF : createSingleValueFilterType("Is Parent Of", null, "exp:parentof", " is parent of" ),
             EXP_CHILD_OF : createSingleValueFilterType("Is Child Of", null, "exp:childof", " is child of" ),
 
             //

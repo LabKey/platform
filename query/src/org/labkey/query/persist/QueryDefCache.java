@@ -92,7 +92,7 @@ public class QueryDefCache
         }
 
         private @NotNull
-        Collection<QueryDef> getQueryDefs(String schemaName, boolean customQuery)
+        Collection<QueryDef> getQueryDefs(@Nullable String schemaName, boolean customQuery)
         {
             Map<String, Map<String, QueryDef>> queryDefs = customQuery ? _customQueryDefs : _queryDefs;
 
@@ -128,7 +128,7 @@ public class QueryDefCache
     }
 
     public static @NotNull
-    List<QueryDef> getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
+    List<QueryDef> getQueryDefs(Container container, @Nullable String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
         List<QueryDef> queries = new ArrayList<>();
 
