@@ -15,7 +15,7 @@
  */
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
-import {ActionURL, Security} from "@labkey/api";
+import {ActionURL, Security, Utils} from "@labkey/api";
 import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
 import {Alert, LoadingSpinner, PermissionTypes} from "@glass/base";
 
@@ -142,8 +142,21 @@ export class App extends React.Component<any, State> {
                         <div className={"panel-title"}>{model.name}</div>
                     </Panel.Heading>
                     <Panel.Body>
-                        <p>Provider: {model.providerName}</p>
-                        <p>Description: {model.description}</p>
+                        <table>
+                            {this.renderReadOnlyProperty('Provider', model.providerName)}
+                            {this.renderReadOnlyProperty('Description', model.description)}
+                            {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
+                            {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
+                            {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
+                            {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
+                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer)}
+                            {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
+                            {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
+                            {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
+                            {this.renderReadOnlyProperty('Module-Provided Scripts', model.moduleTransformScripts, model.moduleTransformScripts.size === 0)}
+                            {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
+                            {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
+                        </table>
                     </Panel.Body>
                 </Panel>
                 {model.domains.map((domain, index) => (
@@ -151,6 +164,21 @@ export class App extends React.Component<any, State> {
                 ))}
             </>
         )
+    }
+
+    renderReadOnlyProperty(label: string, value: any, hide?: boolean) {
+        if (value && !hide) {
+            return (
+                <tr>
+                    <td style={{verticalAlign: 'top'}}>{label}:&nbsp;&nbsp;&nbsp;</td>
+                    <td>
+                        {Utils.isString(value) && value}
+                        {Utils.isBoolean(value) && value.toString()}
+                        {typeof value === 'object' && value.map((val) => <div>{val}</div>)}
+                    </td>
+                </tr>
+            )
+        }
     }
 
     renderDesignerView() {
