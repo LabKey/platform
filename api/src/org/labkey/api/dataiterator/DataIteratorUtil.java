@@ -65,6 +65,9 @@ import java.util.stream.StreamSupport;
  */
 public class DataIteratorUtil
 {
+
+    private static final Logger LOG = Logger.getLogger(DataIteratorUtil.class);
+
     public static Map<FieldKey, ColumnInfo> createFieldKeyMap(DataIterator di)
     {
         Map<FieldKey, ColumnInfo> map = new LinkedHashMap<>();
@@ -256,7 +259,16 @@ public class DataIteratorUtil
         {
             Pair<ColumnInfo,MatchType> match = matches.get(i);
             if (null != match)
-                duplicatesMap.put(match.first.getFieldKey(),i);
+            {
+                try
+                {
+                    duplicatesMap.put(match.first.getFieldKey(), i);
+                }
+                catch (NullPointerException ex)
+                {
+                    LOG.info("FieldKey Null here: - " +  match.first.getColumnName());
+                }
+            }
         }
 
         // handle duplicates, by priority
