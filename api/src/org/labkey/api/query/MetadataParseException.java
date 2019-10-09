@@ -15,7 +15,11 @@
  */
 package org.labkey.api.query;
 
+import org.apache.xmlbeans.XmlError;
 import org.json.JSONObject;
+import org.labkey.api.util.XmlBeansUtil;
+
+import static java.lang.Math.max;
 
 /**
  * Indicates an error during query metadata parsing that will prevent it from completing successfully.
@@ -37,6 +41,11 @@ public class MetadataParseException extends QueryParseException
     public MetadataParseException(String queryName, QueryParseException other)
     {
         super(queryName + ":" + other.getMessage(), other.getCause(), other._line, other._column);
+    }
+
+    public MetadataParseException(XmlError other)
+    {
+        super(XmlBeansUtil.getErrorMessage(other), null, max(other.getLine(), 0), max(other.getColumn(), 0));
     }
 
     @Override

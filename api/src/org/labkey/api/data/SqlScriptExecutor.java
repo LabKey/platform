@@ -140,7 +140,7 @@ public class SqlScriptExecutor
             }
 
             if (start < trimmed.length())
-                blocks.add(new Block(trimmed.substring(start, trimmed.length())));
+                blocks.add(new Block(trimmed.substring(start)));
         }
 
         return blocks;

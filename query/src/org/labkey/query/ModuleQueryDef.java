@@ -118,7 +118,7 @@ public class ModuleQueryDef
         QueryDef ret;
         if (_metadataDef != null)
         {
-            ret = _metadataDef.toQueryDef(container);
+            ret = _metadataDef.toQueryDef(container, schemaKey);
         }
         else
         {
