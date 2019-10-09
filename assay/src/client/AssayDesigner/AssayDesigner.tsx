@@ -149,7 +149,7 @@ export class App extends React.Component<any, State> {
                             {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
                             {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
                             {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
-                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer)}
+                            {/*{this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer)}*/}
                             {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
                             {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
                             {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
