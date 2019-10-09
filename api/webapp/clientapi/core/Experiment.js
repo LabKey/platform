@@ -321,7 +321,7 @@ LABKEY.Experiment.saveBatch({
             }
 
             LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("assay", "saveAssayRuns", LABKEY.ActionURL.getContainer()),
+                url: LABKEY.ActionURL.buildURL("assay", "saveAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
