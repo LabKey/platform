@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@glass/base": "0.19.0",
-    "@glass/domainproperties": "0.0.41-fb-uxAssayProviderTypes.9"
+    "@glass/domainproperties": "0.0.41-fb-uxAssayProviderTypes.10"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
