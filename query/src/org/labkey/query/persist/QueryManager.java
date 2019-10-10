@@ -102,7 +102,7 @@ public class QueryManager
     /**
      * @param customQuery whether to look for custom queries or modified metadata on built-in tables
      */
-    public List<QueryDef> getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
+    public List<QueryDef> getQueryDefs(Container container, @Nullable String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
         return QueryDefCache.getQueryDefs(container, schema, inheritableOnly, includeSnapshots, customQuery);
     }

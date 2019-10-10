@@ -1673,8 +1673,8 @@ public class DbScope
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions
-            Set<Runnable> tasks = new HashSet<>(getRunnables(transaction));
+            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashSet
+            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction));
 
             for (Runnable task : tasks)
             {
