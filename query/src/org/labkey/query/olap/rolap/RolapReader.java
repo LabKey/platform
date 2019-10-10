@@ -17,11 +17,13 @@ package org.labkey.query.olap.rolap;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -37,6 +39,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +57,9 @@ public class RolapReader
 {
 //    static Logger _log = Logger.getLogger(RolapReader.class);
 
-    Document _document;
-    Map<String,RolapCubeDef> cubeDefinitions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private Document _document;
+    private final Map<String,String> schemaAnnotations = new TreeMap<>();
+    private final Map<String,RolapCubeDef> cubeDefinitions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 
     public RolapReader(File f) throws SAXException, ParserConfigurationException, IOException
@@ -74,12 +78,17 @@ public class RolapReader
 
     public List<RolapCubeDef> getCubes()
     {
-        ArrayList<RolapCubeDef> ret = new ArrayList<>(cubeDefinitions.values());
-        return ret;
+        return new ArrayList<>(cubeDefinitions.values());
     }
 
 
-    void loadDocument(File file) throws SAXException, ParserConfigurationException, IOException
+    public Map<String,String> getAnnotations()
+    {
+        return Collections.unmodifiableMap(schemaAnnotations);
+    }
+
+
+    private void loadDocument(File file) throws SAXException, ParserConfigurationException, IOException
     {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setValidating(false);
@@ -88,7 +97,7 @@ public class RolapReader
     }
 
 
-    void loadDocument(Reader reader) throws IOException
+    private void loadDocument(Reader reader) throws IOException
     {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setValidating(false);
@@ -106,21 +115,41 @@ public class RolapReader
 
 
 
-    RolapCubeDef _currentCube = null;
-    RolapCubeDef.DimensionDef _currentDim = null;
-    RolapCubeDef.HierarchyDef _currentHier = null;
-    RolapCubeDef.LevelDef _currentLevel = null;
+    private RolapCubeDef _currentCube = null;
+    private RolapCubeDef.DimensionDef _currentDim = null;
+    private RolapCubeDef.HierarchyDef _currentHier = null;
+    private RolapCubeDef.LevelDef _currentLevel = null;
 
-    void parse()
+    private void parse()
     {
-        for (Node node : it(_document.getElementsByTagName("Cube")))
+        Node schema = _document.getFirstChild();
+        if (!"Schema".equals(schema.getNodeName()))
+            throw new ConfigurationException("Expected to find Schema element at root of document");
+
+        for (Node node : it(schema.getChildNodes()))
         {
-            parseCube(node);
+            switch (node.getNodeName())
+            {
+                default: continue;
+                case "Annotations":
+                {
+                    // just so as not to give the impression Annotation applies to some cubes and not others
+                    if (0 < cubeDefinitions.size())
+                        throw new ConfigurationException("Annotations element should appear before Cube elements");
+                    parseAnnotations(node,schemaAnnotations);
+                    break;
+                }
+                case "Cube":
+                {
+                    parseCube(node);
+                    break;
+                }
+            }
         }
     }
 
 
-    void parseCube(Node cubeNode)
+    private void parseCube(Node cubeNode)
     {
         _currentCube = new RolapCubeDef();
         _currentCube.name = getStringAttribute(cubeNode,"name");
@@ -181,7 +210,7 @@ public class RolapReader
     }
 
 
-    void parseMeasure(Node measureNode)
+    private void parseMeasure(Node measureNode)
     {
         RolapCubeDef.MeasureDef m = new RolapCubeDef.MeasureDef();
         m.name = getStringAttribute(measureNode,"name");
@@ -192,7 +221,7 @@ public class RolapReader
     }
 
 
-    void parseAnnotations(Node node, Map<String,String> map /* OUT */)
+    private void parseAnnotations(Node node, Map<String,String> map /* OUT */)
     {
         for (Node a : it(node.getChildNodes()))
         {
@@ -207,7 +236,7 @@ public class RolapReader
     }
 
 
-    void parseDimension(Node dimNode, @Nullable String name)
+    private void parseDimension(Node dimNode, @Nullable String name)
     {
         _currentDim = new RolapCubeDef.DimensionDef();
 
@@ -226,7 +255,7 @@ public class RolapReader
     }
 
 
-    void parseHierarchy(Node hierNode)
+    private void parseHierarchy(Node hierNode)
     {
         _currentHier = new RolapCubeDef.HierarchyDef();
 
@@ -262,7 +291,7 @@ public class RolapReader
     }
 
 
-    RolapCubeDef.JoinOrTable parseJoinOrTable(Node table)
+    private RolapCubeDef.JoinOrTable parseJoinOrTable(Node table)
     {
         RolapCubeDef.JoinOrTable t = new RolapCubeDef.JoinOrTable();
 
@@ -302,7 +331,7 @@ public class RolapReader
     }
 
 
-    void parseLevel(Node levelNode)
+    private void parseLevel(Node levelNode)
     {
         _currentLevel = new RolapCubeDef.LevelDef();
 
@@ -386,12 +415,12 @@ public class RolapReader
     }
 
 
-    private Iterable<Node> it(NodeList nl)
+    private static Iterable<Node> it(NodeList nl)
     {
         return new _Iterable(nl);
 
     }
-    private class _Iterable implements Iterable<Node>
+    private static class _Iterable implements Iterable<Node>
     {
         final NodeList _nl;
 
@@ -401,9 +430,10 @@ public class RolapReader
         }
 
         @Override
+        @NotNull
         public Iterator<Node> iterator()
         {
-            return new Iterator<Node>()
+            return new Iterator<>()
             {
                 int i=-1;
 

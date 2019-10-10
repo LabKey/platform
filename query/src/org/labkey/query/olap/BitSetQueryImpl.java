@@ -86,10 +86,10 @@ import static org.labkey.query.olap.QubeQuery.OP;
  */
 public class BitSetQueryImpl
 {
-    final boolean mondrianCompatibleNullHandling = false;
+    private final boolean mondrianCompatibleNullHandling = false;
 
-    static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
-    final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+    private static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
+    private final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
     static
     {
         olapServiceUser.setPrincipalType(PrincipalType.SERVICE);
@@ -98,25 +98,22 @@ public class BitSetQueryImpl
         olapServiceUser.setGUID(new GUID());
     }
 
-    final Container container;
-    final Cube cube;
-    final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
-    final QubeQuery qq;
-    final RolapCubeDef rolap;
-    final BindException errors;
-    MeasureDef measure;
-    OlapConnection connection;
-    final String cachePrefix;
-    SqlDialect dialect = null;
-    final User serviceUser;
-    final User user;
-    IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
+    private final Container container;
+    private final Cube cube;
+    private final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
+    private final QubeQuery qq;
+    private final RolapCubeDef rolap;
+    private MeasureDef measure;
+    private OlapConnection connection;
+    private final String cachePrefix;
+    private SqlDialect dialect = null;
+    private final User serviceUser;
+    private final User user;
+    private IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
 
-    MemberSet containerMembers = null;  // null == all
+    private MemberSet containerMembers = null;  // null == all
 
-    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq,
-           BindException errors
-           ) throws SQLException, IOException
+    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq) throws SQLException, IOException
     {
         this.serviceUser = olapServiceUser;
         this.user = user;
@@ -124,9 +121,8 @@ public class BitSetQueryImpl
         this.connection = connection;
         this.qq = qq;
         this.cube = qq.getCube();
-        this.errors = errors;
 
-        if (sd.usesRolap())
+        if (!sd.usesMondrian())
             _dataSourceHelper = new SqlDataSourceHelper();
         else
             _dataSourceHelper = new CubeDataSourceHelper();
@@ -171,14 +167,17 @@ public class BitSetQueryImpl
                 lContainer = l;
         }
 
-        CaseInsensitiveHashSet ids = new CaseInsensitiveHashSet();
-        ids.addAll(containerFilter);
-        MemberSet s = new MemberSet();
-        for (Member m : lContainer.getMembers())
-            if (ids.contains(m.getName()))
-                s.add(m);
+        if (null != lContainer)
+        {
+            CaseInsensitiveHashSet ids = new CaseInsensitiveHashSet();
+            ids.addAll(containerFilter);
+            MemberSet s = new MemberSet();
+            for (Member m : lContainer.getMembers())
+                if (ids.contains(m.getName()))
+                    s.add(m);
+            this.containerMembers = s;
+        }
 
-        this.containerMembers = s;
         return this;
     }
 

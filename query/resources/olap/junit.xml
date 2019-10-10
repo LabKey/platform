@@ -1,5 +1,10 @@
 <Schema name="query" description="JUnit Cube Schema">
 
+    <Annotations>
+        <!-- enable support for MDX -->
+        <Annotation name="EnableMondrian">TRUE</Annotation>
+    </Annotations>
+
 
     <Cube name="JunitCube" visible="true" defaultMeasure="RowCount" cache="true" enabled="true">
 
