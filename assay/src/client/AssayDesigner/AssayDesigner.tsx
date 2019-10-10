@@ -149,7 +149,7 @@ export class App extends React.Component<any, State> {
                             {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
                             {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
                             {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
-                            {/*{this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer)}*/}
+                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer.path : undefined)}
                             {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
                             {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
                             {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
@@ -170,7 +170,7 @@ export class App extends React.Component<any, State> {
         if (value && !hide) {
             return (
                 <tr>
-                    <td style={{verticalAlign: 'top'}}>{label}:&nbsp;&nbsp;&nbsp;</td>
+                    <td style={{verticalAlign: 'top', padding: '3px'}}>{label}:&nbsp;&nbsp;&nbsp;</td>
                     <td>
                         {Utils.isString(value) && value}
                         {Utils.isBoolean(value) && value.toString()}

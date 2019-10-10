@@ -65,6 +65,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowTransformationScript;
 
     private GWTContainer _autoCopyTargetContainer;
+    private String _autoCopyTargetContainerId;
     private boolean _saveScriptFiles;
     private boolean _editableRuns;
     private boolean _editableResults;
@@ -218,6 +219,16 @@ public class GWTProtocol implements IsSerializable
     public void setAutoCopyTargetContainer(GWTContainer autoCopyTargetContainer)
     {
         _autoCopyTargetContainer = autoCopyTargetContainer;
+    }
+
+    public String getAutoCopyTargetContainerId()
+    {
+        return _autoCopyTargetContainerId;
+    }
+
+    public void setAutoCopyTargetContainerId(String autoCopyTargetContainerId)
+    {
+        _autoCopyTargetContainerId = autoCopyTargetContainerId;
     }
 
     public boolean isSaveScriptFiles()

@@ -271,6 +271,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (autoCopyTarget != null)
             {
                 result.setAutoCopyTargetContainer(convertToGWTContainer(autoCopyTarget));
+                result.setAutoCopyTargetContainerId(autoCopyTarget.getId());
             }
         }
 
@@ -294,16 +295,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     private GWTContainer convertToGWTContainer(Container c)
     {
-        GWTContainer parent;
-        if (c.isRoot())
-        {
-            parent = null;
-        }
-        else
-        {
-            parent = convertToGWTContainer(c.getParent());
-        }
-        return new GWTContainer(c.getId(), c.getRowId(), parent, c.getName());
+        return new GWTContainer(c.getId(), c.getRowId(), c.getPath(), c.getName());
     }
 
     private GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop, boolean copy)
@@ -479,16 +471,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     provider.setQCEnabled(protocol, assay.isQcEnabled());
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
-                    String autoCopyTargetContainerId = null;
-                    if (assay.getAutoCopyTargetContainer() != null)
+                    // get the autoCopyTargetContainer from either the id on the assay object entityId
+                    String autoCopyTargetContainerId = assay.getAutoCopyTargetContainer() != null ? assay.getAutoCopyTargetContainer().getEntityId() : assay.getAutoCopyTargetContainerId();
+                    // verify that the autoCopyTargetContainerId is valid
+                    if (autoCopyTargetContainerId != null && ContainerManager.getForId(autoCopyTargetContainerId) == null)
                     {
-                        Container container = ContainerManager.getForId(assay.getAutoCopyTargetContainer().getEntityId());
-                        if (container == null)
-                        {
-                            throw new AssayException("No such auto-copy target container: " + assay.getAutoCopyTargetContainer().getPath());
-                        }
-                        autoCopyTargetContainerId = container.getId();
+                        throw new AssayException("No such auto-copy target container id: " + autoCopyTargetContainerId);
                     }
+
                     if (autoCopyTargetContainerId != null)
                     {
                         props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
