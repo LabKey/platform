@@ -206,6 +206,11 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
                     "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
                     "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+
+                    "EXEC core.executeJavaInitializationCode 'upgradeCode'\n" +                // executeJavaInitializationCode works as a synonym
+                    "EXECUTE core.executeJavaInitializationCode 'upgradeCode'\n" +             // EXECUTE
+                    "execute core.executeJavaInitializationCode'upgradeCode'\n" +              // execute
+
                     "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
                     "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
                     "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
@@ -213,6 +218,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                     "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+
 
             String badSql =
                     "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
@@ -230,7 +236,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             SqlDialect dialect = getEarliestSqlDialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
-            assertEquals(10, good.getCounter());
+            assertEquals(13, good.getCounter());
 
             TestUpgradeCode bad = new TestUpgradeCode();
             dialect.runSql(null, badSql, bad, null, null);

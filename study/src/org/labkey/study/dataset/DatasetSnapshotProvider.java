@@ -466,7 +466,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             int numRowsDeleted;
                             List<String> newRows;
 
-                            numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
+                            numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, null);
 
                             DataIteratorContext dataIteratorContext = new DataIteratorContext();
                             dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);

@@ -427,7 +427,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
         ExprColumn ret = new ExprColumn(this, Column.Input.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
-        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
+        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, getContainerFilter()));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -439,7 +439,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
         ExprColumn ret = new ExprColumn(this, Column.Output.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
-        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
+        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, getContainerFilter()));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -783,7 +783,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         public TableInfo getLookupTableInfo()
         {
-            VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema(), "Experiments");
+            VirtualTable result = new VirtualTable<>(ExperimentServiceImpl.get().getSchema(), "Experiments", getUserSchema());
             for (ExpExperiment experiment : getExperiments())
             {
                 var column = new BaseColumnInfo(experiment.getName(), JdbcType.BOOLEAN);

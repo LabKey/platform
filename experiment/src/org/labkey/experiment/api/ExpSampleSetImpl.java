@@ -508,9 +508,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (materials != null)
         {
             expMaterials = new ArrayList<>(materials.size());
-            for (int i = 0; i < expMaterials.size(); i ++)
+            for (Material material : materials)
             {
-                expMaterials.add(new ExpMaterialImpl(materials.get(i)));
+                expMaterials.add(new ExpMaterialImpl(material));
             }
         }
         for (ExpProtocol protocol : protocols)
