@@ -2361,14 +2361,7 @@ public class QueryView extends WebPartView<Object>
     public List<DisplayColumn> getExportColumns(List<DisplayColumn> list)
     {
         List<DisplayColumn> ret = new ArrayList<>(list);
-        for (Iterator<DisplayColumn> it = ret.iterator(); it.hasNext(); )
-        {
-            DisplayColumn next = it.next();
-            if (next instanceof DetailsColumn || next instanceof UpdateColumn)
-            {
-                it.remove();
-            }
-        }
+        ret.removeIf(next -> next instanceof DetailsColumn || next instanceof UpdateColumn);
         return ret;
     }
 
@@ -2547,17 +2540,19 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType);
-            if (headerType == null)
-                headerType = getColumnHeaderType();
-            ew.setCaptionType(headerType);
-            ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
-            if (prefix != null)
-                ew.setFilenamePrefix(prefix);
-            ew.write(response);
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType))
+            {
+                if (headerType == null)
+                    headerType = getColumnHeaderType();
+                ew.setCaptionType(headerType);
+                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
+                if (prefix != null)
+                    ew.setFilenamePrefix(prefix);
+                ew.write(response);
 
-            if (!templateOnly)
-                logAuditEvent("Exported to Excel", ew.getDataRowCount());
+                if (!templateOnly)
+                    logAuditEvent("Exported to Excel", ew.getDataRowCount());
+            }
         }
     }
 
@@ -2577,9 +2572,8 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            try (OutputStream stream = new BufferedOutputStream(byteStream))
+            try (OutputStream stream = new BufferedOutputStream(byteStream); ExcelWriter ew = getExcelWriter(docType))
             {
-                ExcelWriter ew = getExcelWriter(docType);
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
