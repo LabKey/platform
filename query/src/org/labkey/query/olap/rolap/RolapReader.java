@@ -58,6 +58,7 @@ public class RolapReader
 //    static Logger _log = Logger.getLogger(RolapReader.class);
 
     private Document _document;
+    private String schemaName;
     private final Map<String,String> schemaAnnotations = new TreeMap<>();
     private final Map<String,RolapCubeDef> cubeDefinitions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
@@ -75,6 +76,11 @@ public class RolapReader
         parse();
     }
 
+
+    public String getSchemaName()
+    {
+        return schemaName;
+    }
 
     public List<RolapCubeDef> getCubes()
     {
@@ -126,6 +132,8 @@ public class RolapReader
         if (!"Schema".equals(schema.getNodeName()))
             throw new ConfigurationException("Expected to find Schema element at root of document");
 
+        schemaName = getStringAttribute(schema,"name");
+
         for (Node node : it(schema.getChildNodes()))
         {
             switch (node.getNodeName())
@@ -151,8 +159,8 @@ public class RolapReader
 
     private void parseCube(Node cubeNode)
     {
-        _currentCube = new RolapCubeDef();
-        _currentCube.name = getStringAttribute(cubeNode,"name");
+        String cubeName = getStringAttribute(cubeNode,"name");
+        _currentCube = new RolapCubeDef(schemaName, cubeName);
 
         for (Node node : it(cubeNode.getChildNodes()))
         {

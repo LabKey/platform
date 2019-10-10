@@ -113,7 +113,7 @@ public class BitSetQueryImpl
 
     private MemberSet containerMembers = null;  // null == all
 
-    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq) throws SQLException, IOException
+    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq) throws SQLException
     {
         this.serviceUser = olapServiceUser;
         this.user = user;
@@ -122,10 +122,10 @@ public class BitSetQueryImpl
         this.qq = qq;
         this.cube = qq.getCube();
 
-        if (!sd.usesMondrian())
+//        if (!sd.usesMondrian())
             _dataSourceHelper = new SqlDataSourceHelper();
-        else
-            _dataSourceHelper = new CubeDataSourceHelper();
+//        else
+//            _dataSourceHelper = new CubeDataSourceHelper();
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -137,7 +137,7 @@ public class BitSetQueryImpl
         rolap = r;
         if (null == rolap)
             throw new IllegalStateException("Rolap definition not found: " + cube.getName());
-        String schemaName = rolap.getSchemaName();
+        String schemaName = rolap.getQuerySchemaName();
         QuerySchema s = DefaultSchema.get(serviceUser, c).getSchema(schemaName);
         if (null != s)
             dialect = s.getDbSchema().getSqlDialect();
@@ -1801,7 +1801,7 @@ public class BitSetQueryImpl
             logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
             {
-                QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getSchemaName(),"core"));
+                QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getQuerySchemaName(),"core"));
                 return QueryService.get().select(qs, query, null, true, false);
             }
             catch (QueryParseException|AssertionError x)

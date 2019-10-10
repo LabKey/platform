@@ -25,13 +25,16 @@ import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.query.olap.BitSetQueryImpl;
+import org.labkey.query.olap.Olap4Js;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
@@ -39,6 +42,7 @@ import org.labkey.query.olap.metadata.CachedCube;
 import org.olap4j.Cell;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
+import org.olap4j.OlapStatement;
 import org.olap4j.Position;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Hierarchy;
@@ -47,6 +51,7 @@ import org.olap4j.metadata.Member;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -185,20 +190,26 @@ public class RolapTestCase extends Assert
         qquery.fromJson(query, errors);
         assertFalse(errors.hasErrors());
 
-        Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
         OlapConnection conn = sd.getConnection(getContainer(), getUser());
         BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, conn, qquery);
         try (CellSet cs = bitsetquery.executeQuery())
         {
-            for (Position p : cs.getAxes().get(1).getPositions())
-            {
-                Member m = p.getMembers().get(0);
-                Cell cell = cs.getCell(p);
-                Object v = cell.getValue();
-                Integer i = null==v ? null : ((Number)v).intValue();
-                assertFalse(ret.containsKey(m.getUniqueName()));
-                ret.put(m.getUniqueName(), i);
-            }
+            return oneColumnResult(cs);
+        }
+    }
+
+    private Map<String,Integer> oneColumnResult(CellSet cs)
+    {
+        Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
+        Position colPosition = cs.getAxes().get(0).getPositions().get(0);
+        for (Position rowPosition : cs.getAxes().get(1).getPositions())
+        {
+            Member m = rowPosition.getMembers().get(0);
+            Cell cell = cs.getCell(colPosition, rowPosition);
+            Object v = cell.getValue();
+            Integer i = null==v ? null : ((Number)v).intValue();
+            assertFalse(ret.containsKey(m.getUniqueName()));
+            ret.put(m.getUniqueName(), i);
         }
         return ret;
     }
@@ -896,5 +907,84 @@ public class RolapTestCase extends Assert
                 "}"
         );
         assertEquals(0, cs.size());
+    }
+
+
+    private Map<String,Integer> mdxQuery(String mdx)
+    {
+        OlapStatement stmt = null;
+        CellSet cs = null;
+        OlapConnection conn = null;
+
+        try
+        {
+            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), "query:/junit");
+            assertNotNull(sd);
+            conn = sd.getConnection(getContainer(), getUser());
+            assertNotNull(conn);
+            stmt = conn.createStatement();
+            assertNotNull(stmt);
+            QueryProfiler.getInstance().ensureListenerEnvironment();
+            long ms = System.currentTimeMillis();
+            cs = stmt.executeOlapQuery(mdx);
+            long d = System.currentTimeMillis() - ms;
+            return oneColumnResult(cs);
+        }
+        catch (RuntimeException x)
+        {
+            throw x;
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(cs);
+            ResultSetUtil.close(stmt);
+            if (null != conn)
+            {
+                try
+                {
+                    conn.close();
+                }
+                catch (Exception x)
+                {
+                    fail(x.getMessage());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void mdxQueries()
+    {
+        var cs = mdxQuery("SELECT\n" +
+                "   [MeasuresLevel].[ParticipantCount] ON COLUMNS,\n" +
+                "   [Assay].[Name].members ON ROWS\n" +
+                "FROM junitcube"
+                );
+        //{[Assay].[Flow Cytometry]=40, [Assay].[Gene Expression]=8, [Assay].[Neutralizing Antibody]=8, [Assay].[PDQ]=null, [Assay].[Polymerase Chain Reaction]=8}
+        assertEquals( 5, cs.size());
+        assertEquals(40, (int)cs.get("[Assay].[Flow Cytometry]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Gene Expression]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Neutralizing Antibody]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Polymerase Chain Reaction]"));
+        assertNull( cs.get("[Assay].[PDQ]") );
+        assertTrue( cs.containsKey("[Assay].[PDQ]") );
+
+        cs = mdxQuery("SELECT\n" +
+                "   [MeasuresLevel].[RowCount] ON COLUMNS,\n" +
+                "    NON EMPTY [Assay].[Name].members ON ROWS\n" +
+                "FROM junitcube"
+        );
+        System.out.println(cs); System.out.flush();
+        assertEquals( 4, cs.size());
+        assertEquals(48, (int)cs.get("[Assay].[Flow Cytometry]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Gene Expression]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Neutralizing Antibody]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Polymerase Chain Reaction]"));
+        assertNull( cs.get("[Assay].[PDQ]") );
+        assertFalse( cs.containsKey("[Assay].[PDQ]") );
     }
 }
