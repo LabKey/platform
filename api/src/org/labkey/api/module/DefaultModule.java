@@ -1006,6 +1006,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _labkeyVersion;
     }
 
+    @SuppressWarnings("unused")
     public void setLabkeyVersion(String labkeyVersion)
     {
         _labkeyVersion = labkeyVersion;
