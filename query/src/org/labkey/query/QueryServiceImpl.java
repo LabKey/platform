@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
@@ -68,7 +69,6 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
@@ -150,6 +150,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -476,30 +477,61 @@ public class QueryServiceImpl implements QueryService
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap<>();
 
-        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schemaName, true, false).values())
+        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schemaName, true, false, true, false).values())
             ret.put(queryDef.getName(), queryDef);
 
         return ret;
     }
 
+    /**
+     * Get all custom queries in the database (no file-based module queries) in the container hierarchy.
+     */
     public List<QueryDefinition> getQueryDefs(User user, @NotNull Container container)
     {
-        return new ArrayList<>(getAllQueryDefs(user, container, null, true, false).values());
+        return new ArrayList<>(getAllQueryDefs(user, container, null, true, false, true, false).values());
     }
 
+    /**
+     * Get all custom queries and metadata xml overrides of built-in tables in the database (no file-based module queries) in the container hierarchy.
+     */
+    protected List<QueryDefinition> getQueryDefsAndMetadataOverrides(User user, @NotNull Container container)
+    {
+        return new ArrayList<>(getAllQueryDefs(user, container, null, true, false, true, true).values());
+    }
 
-    private Map<Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, @NotNull Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
+    /**
+     * Get all custom query definitions (sql and metadata xml) or metadata xml overrides for built-in tables.
+     *
+     * @param schemaName When not null include session queries (if there is a request) and file-based module queries.
+     * @param inheritable When true, search up the container hierarchy.
+     * @param includeSnapshots When true, include snapshot queries.
+     * @param includeCustomQueries When true, include custom queries and their metadata xml.
+     * @param includeMetadataOverride When true, include metadata xml overrides for built-in tables.
+     */
+    private Map<Entry<String, String>, QueryDefinition> getAllQueryDefs(
+            User user, @NotNull Container container, @Nullable String schemaName,
+            boolean inheritable, boolean includeSnapshots,
+            boolean includeCustomQueries, boolean includeMetadataOverride)
     {
         Map<Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<>();
 
+        // helper function to add a queryDef to the return map if it hasn't already been added
+        Consumer<QueryDef> addQueryDefToMap = (queryDef) -> {
+            Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
+            ret.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, container, queryDef));
+        };
+
         // session queries have highest priority
-        HttpServletRequest request = HttpView.currentRequest();
-        if (request != null && schemaName != null)
+        if (includeCustomQueries)
         {
-            for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
+            HttpServletRequest request = HttpView.currentRequest();
+            if (request != null && schemaName != null)
             {
-                Entry<String, String> key = new Pair<>(schemaName, qdef.getName());
-                ret.put(key, qdef);
+                for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
+                {
+                    Entry<String, String> key = new Pair<>(schemaName, qdef.getName());
+                    ret.put(key, qdef);
+                }
             }
         }
 
@@ -507,20 +539,33 @@ public class QueryServiceImpl implements QueryService
         if (null != schemaName)
         {
             Path path = createSchemaPath(SchemaKey.fromString(schemaName));
-            for (QueryDefinition queryDef : getFileBasedQueryDefs(user, container, schemaName, path))
+            if (includeCustomQueries)
             {
-                Entry<String, String> key = new Pair<>(schemaName, queryDef.getName());
-                if (!ret.containsKey(key))
-                    ret.put(key, queryDef);
+                for (QueryDefinition queryDef : getFileBasedQueryDefs(user, container, schemaName, path))
+                {
+                    Entry<String, String> key = new Pair<>(schemaName, queryDef.getName());
+                    if (!ret.containsKey(key))
+                        ret.put(key, queryDef);
+                }
+            }
+
+            if (includeMetadataOverride)
+            {
+                findMetadataOverrideInModules(container, user, null, null, false, path)
+                        .forEach(addQueryDefToMap);
             }
         }
 
         // look in the database for query definitions
-        for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true))
+        if (includeCustomQueries)
         {
-            Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-            if (!ret.containsKey(key))
-                ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
+            QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true)
+                    .forEach(addQueryDefToMap);
+        }
+        if (includeMetadataOverride)
+        {
+            QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, false)
+                    .forEach(addQueryDefToMap);
         }
 
         if (!inheritable)
@@ -538,25 +583,41 @@ public class QueryServiceImpl implements QueryService
                 break;
             }
 
-            for (QueryDef queryDef : QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true))
+            if (includeCustomQueries)
             {
-                Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-
-                if (!ret.containsKey(key))
-                    ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
+                QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, true)
+                        .forEach(addQueryDefToMap);
+            }
+            if (includeMetadataOverride)
+            {
+                QueryManager.get().getQueryDefs(containerCur, schemaName, true, includeSnapshots, false)
+                        .forEach(addQueryDefToMap);
             }
         }
 
         // look in the Shared project
+        if (includeCustomQueries)
+        {
+            QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true)
+                    .forEach(addQueryDefToMap);
+        }
+        if (includeMetadataOverride)
+        {
+
+        }
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
-            Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-
-            if (!ret.containsKey(key))
-                ret.put(key, new CustomQueryDefinitionImpl(user, container, queryDef));
+            addCustomQueryDefToMap(user, container, ret, queryDef);
         }
 
         return ret;
+    }
+
+    // Add the QueryDef to the return map if the schemaName/queryName hasn't already be added
+    private void addCustomQueryDefToMap(User user, Container c, Map<Entry<String, String>, QueryDefinition> map, QueryDef queryDef)
+    {
+        Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
+        map.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, c, queryDef));
     }
 
     public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules)
@@ -588,7 +649,20 @@ public class QueryServiceImpl implements QueryService
     {
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>();
 
-        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true).values())
+        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true, true, false).values())
+            ret.put(queryDef.getName(), queryDef);
+
+        return ret.get(name);
+    }
+
+    /**
+     * Get any metadata overrides for built-in tables.
+     */
+    protected QueryDefinition getQueryDefMetadataOverride(User user, @NotNull Container container, String schema, String name)
+    {
+        Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>();
+
+        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true, false, true).values())
             ret.put(queryDef.getName(), queryDef);
 
         return ret.get(name);
@@ -598,7 +672,7 @@ public class QueryServiceImpl implements QueryService
             boolean includeInherited, boolean sharedOnly)
     {
         // Check for a custom query that matches
-        Map<Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
+        Map<Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true, true, false);
         QueryDefinition qd = queryDefs.get(new Pair<>(schema, query));
         if (qd == null)
         {
@@ -1991,34 +2065,40 @@ public class QueryServiceImpl implements QueryService
         return new Path(subDirs);
     }
 
-    private @Nullable QueryDef findMetadataOverrideInModules(UserSchema schema, String tableName, boolean allModules, @Nullable Path dir)
+    // Look for file-based definitions in modules
+    private @Nullable QueryDef findMetadataOverrideInModules(@NotNull UserSchema schema, @NotNull String tableName, boolean allModules, @Nullable Path dir)
     {
-        String schemaName = schema.getSchemaPath().toString();
-
         if (dir == null)
         {
             dir = createSchemaPath(schema.getSchemaPath());
         }
 
-        // Look for file-based definitions in modules
-        Collection<Module> modules = allModules ? ModuleLoader.getInstance().orderModules(ModuleLoader.getInstance().getModules()) : schema.getContainer().getActiveModules(schema.getUser());
+        return findMetadataOverrideInModules(schema.getContainer(), schema.getUser(), schema.getSchemaPath(), tableName, allModules, dir)
+                .findFirst().orElse(null);
+    }
 
-        for (Module module : modules)
+    // Look for file-based definitions in modules
+    private Stream<QueryDef> findMetadataOverrideInModules(Container c, User user, @Nullable SchemaKey schemaPath, @Nullable String tableName, boolean allModules, @Nullable Path dir)
+    {
+        if (dir == null && schemaPath != null)
         {
-            Collection<ModuleQueryMetadataDef> metadataDefs = MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(module).get(dir);
+            dir = createSchemaPath(schemaPath);
+        }
+        Objects.requireNonNull(dir, "dir or schemaPath required");
+        final Path path = dir;
 
-            for (ModuleQueryMetadataDef metadataDef : metadataDefs)
-            {
-                if (metadataDef.getName().equalsIgnoreCase(tableName))
-                {
-                    QueryDef result = metadataDef.toQueryDef(schema.getContainer());
-                    result.setSchema(schemaName);
-                    return result;
-                }
-            }
+        Collection<Module> modules = allModules ? ModuleLoader.getInstance().orderModules(ModuleLoader.getInstance().getModules()) : c.getActiveModules(user);
+
+        Stream<ModuleQueryMetadataDef> metadataDefs = modules.stream()
+                .flatMap(module -> MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(module).get(path).stream());
+
+        // if tableName specified, filter to the metadata that match
+        if (tableName != null)
+        {
+            metadataDefs = metadataDefs.filter(metadata -> tableName.equalsIgnoreCase(metadata.getName()));
         }
 
-        return null;
+        return metadataDefs.map(metadata -> metadata.toQueryDef(c, schemaPath));
     }
 
 
