@@ -2794,9 +2794,8 @@ public class SpecimenController extends BaseStudyController
 
                     if (form.isSendXls())
                     {
-                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream))
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
                         {
-                            ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                             xlsWriter.write(ostream);
                             ostream.flush();
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
@@ -2934,8 +2933,10 @@ public class SpecimenController extends BaseStudyController
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {
-                    ExcelWriter writer = getUtils().getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type);
-                    writer.write(getViewContext().getResponse());
+                    try (ExcelWriter writer = getUtils().getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
+                    {
+                        writer.write(getViewContext().getResponse());
+                    }
                 }
             }
             return null;
