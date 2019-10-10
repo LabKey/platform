@@ -519,6 +519,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
                 if (vocabularyColumn)
                 {
+                    //Getting Object URI's in case of Sample Sets and Data Classes as the object URI column is different (LSID) for these tables
                     String objectURI = (String) oldRow.get(getQueryTable().getDomain().getDomainKind().getObjectUriColumnName());
                     OntologyObject ontologyObject = OntologyManager.getOntologyObject(c, objectURI);
                     ObjectProperty objectProperty = null;
@@ -534,6 +535,10 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                     if (null != objectProperty)
                     {
                         OntologyManager.updateObjectProperty(user, c, OntologyManager.getPropertyDescriptor(objectProperty.getPropertyId()), objectURI, rowEntry.getValue(), null);
+                    }
+                    else
+                    {
+                        OntologyManager.insertProperties(c, objectURI,  new ObjectProperty(objectURI, c, rowEntry.getKey(), rowEntry.getValue()));
                     }
                 }
 
