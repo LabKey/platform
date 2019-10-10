@@ -243,7 +243,7 @@ public class DataIteratorUtil
                     }
                 }
             }
-            if(null == to.first)
+            if(null != to && null == to.first)
             {
                 LOG.info("Column Info null here: - " +  from.getColumnName());
             }
