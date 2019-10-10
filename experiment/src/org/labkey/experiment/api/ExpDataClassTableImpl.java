@@ -138,8 +138,6 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
                 return sampleCountColumnInfo;
             }
-            case Properties:
-                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -160,7 +158,6 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         addColumn(Column.NameExpression).setHidden(true);
         addColumn(Column.SampleSet);
         addColumn(Column.DataCount);
-        addColumn(Column.Properties);
 
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));

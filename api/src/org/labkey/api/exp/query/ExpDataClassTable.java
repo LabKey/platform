@@ -34,7 +34,6 @@ public interface ExpDataClassTable extends ExpTable<ExpDataClassTable.Column>
         Folder,
         NameExpression,
         SampleSet,
-        DataCount,
-        Properties
+        DataCount
     }
 }

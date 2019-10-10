@@ -239,6 +239,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 return dataFileUrl;
 
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
+
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -278,6 +281,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.Folder);
         addColumn(Column.Description);
         addColumn(Column.Alias);
+        addColumn(Column.Properties);
+
+        addVocabularyDomains();
 
         //TODO: may need to expose ExpData.Run as well
 
