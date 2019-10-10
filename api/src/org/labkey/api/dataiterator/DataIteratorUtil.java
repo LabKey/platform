@@ -245,7 +245,7 @@ public class DataIteratorUtil
             }
             if(null != to && null == to.first)
             {
-                LOG.info("Column Info null here: - " +  from.getColumnName());
+                LOG.info("Column Info null here: - " +  from.getColumnName() + " in " + target.getName());
             }
             matches.add(to);
         }
