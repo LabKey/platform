@@ -113,7 +113,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             }
         }
 
-        if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        if (_populated)
         {
             ColumnInfo lsidCol = getColumn("LSID", false);
             if (lsidCol != null)
