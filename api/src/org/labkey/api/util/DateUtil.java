@@ -107,9 +107,8 @@ public class DateUtil
 
 
     // disallow date overflow arithmetic
-    private static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, double nanos)
+    private static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, int ms)
     {
-        int ms = (int)Math.round(nanos/1000000.0);
         Calendar cal = new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, ms);
         if (cal.get(Calendar.YEAR) != year ||
             cal.get(Calendar.MONTH) != mon ||
@@ -649,6 +648,7 @@ validNum:       {
 
         if (nanos < 0)
             nanos = 0;
+        int ms = (int)Math.round(nanos / 1_000_000.0);
         if (sec < 0)
             sec = 0;
         if (min < 0)
@@ -661,7 +661,6 @@ validNum:       {
             if (hour >= 24 || min >= 60 || sec >= 60 || nanos >= 1_000_000_000)
                 throw new ConversionException(s);
 
-            int ms = (int)Math.round(nanos / 1_000_000.0);
             return (hour * 60*60*1000L) + (min * 60*1000L) + (sec * 1000L) + ms;
         }
         
@@ -694,7 +693,7 @@ validNum:       {
 
         try
         {
-            Calendar cal = newCalendarStrict(tz, year, mon, mday, hour, min, sec, nanos);
+            Calendar cal = newCalendarStrict(tz, year, mon, mday, hour, min, sec, ms);
 
             return cal.getTimeInMillis();
         }
@@ -1445,38 +1444,38 @@ Parse:
 
         void assertIllegalDate(String s)
         {
-//            try
-//            {
-//                parseDate(s);
-//                fail("Not a legal date: " + s);
-//            }
-//            catch (ConversionException x)
-//            {
-//            }
+            try
+            {
+                parseDate(s);
+                fail("Not a legal date: " + s);
+            }
+            catch (ConversionException x)
+            {
+            }
         }
 
         void assertIllegalDateTime(String s)
         {
-//            try
-//            {
-//                parseDateTime(s);
-//                fail("Not a legal datetime: " + s);
-//            }
-//            catch (ConversionException x)
-//            {
-//            }
+            try
+            {
+                parseDateTime(s);
+                fail("Not a legal datetime: " + s);
+            }
+            catch (ConversionException x)
+            {
+            }
         }
 
         void assertIllegalTime(String s)
         {
-//            try
-//            {
-//                parseTime(s);
-//                fail("Not a legal datetime: " + s);
-//            }
-//            catch (ConversionException x)
-//            {
-//            }
+            try
+            {
+                parseTime(s);
+                fail("Not a legal datetime: " + s);
+            }
+            catch (ConversionException x)
+            {
+            }
         }
 
 
