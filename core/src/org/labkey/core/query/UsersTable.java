@@ -18,6 +18,7 @@ package org.labkey.core.query;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -222,7 +223,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         if (_illegalColumns == null)
         {
-            _illegalColumns = new HashSet<>();
+            _illegalColumns = Sets.newCaseInsensitiveHashSet();
             if (!getUser().hasRootPermission(UserManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 _illegalColumns.add("Active");
@@ -314,6 +315,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return UsersDomainKind.getDomainURI(getUserSchema().getName(), getName(), UsersDomainKind.getDomainContainer(), getUserSchema().getUser());
     }
 
+    @Override
     public QueryUpdateService getUpdateService()
     {
         // UNDONE: add an 'isUserEditable' bit to the schema and table?
@@ -400,7 +402,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
         return filter;
     }
-
 
     @Override
     public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext) throws ValidationException
