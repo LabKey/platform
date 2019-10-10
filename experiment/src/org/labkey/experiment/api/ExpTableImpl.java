@@ -51,15 +51,18 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
 {
@@ -248,9 +251,49 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 if (props == null)
                     return "&nbsp;";
 
+                HashMap<String, Object> propertyMap;
+
+                if (props instanceof HashMap)
+                {
+                    propertyMap = (HashMap) props;
+
+                    List<String> sortedKeys = propertyMap.keySet().stream().map(val -> val.split("#")[1]).sorted().collect(Collectors.toList());
+
+                    StringBuilder hs = new StringBuilder();
+                    hs.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
+
+                    hs.append("<tr style=\"font-weight: bold;\">");
+                    for (String property : sortedKeys)
+                    {
+                        hs.append("<td class=\"labkey-column-header\">");
+                        hs.append(HtmlString.of(property));
+                        hs.append("</td>");
+                    }
+                    hs.append("</tr>");
+
+                    hs.append("<tr>");
+
+                    for(Map.Entry<String, Object> property : propertyMap.entrySet())
+                    {
+                        hs.append("<td>");
+                        hs.append(HtmlString.of(property.getValue().toString()));
+                        hs.append("</td>");
+
+                    }
+
+                    hs.append("</tr>");
+                    hs.append("</table>");
+
+                    return hs.toString();
+                }
+                else
+                {
                 String html = PageFlowUtil.filter(new JSONObject(props).toString(2));
                 html = html.replaceAll("\\n", "<br>\n");
                 return html;
+                }
+
+
             }
 
         });
