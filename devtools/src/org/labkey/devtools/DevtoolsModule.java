@@ -28,7 +28,7 @@ import java.util.Collections;
 
 public class DevtoolsModule extends CodeOnlyModule
 {
-    public static final String NAME = "LabkeyDeveloperTools";
+    private static final String NAME = "DeveloperTools";
 
     @Override
     public String getName()
