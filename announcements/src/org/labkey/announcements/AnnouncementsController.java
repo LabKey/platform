@@ -2136,8 +2136,14 @@ public class AnnouncementsController extends SpringActionController
 
             ListBean bean = new ListBean(c, url, user, settings, perm, displayAll);
             NavTree menu = new NavTree("");
+            ViewContext context = getViewContext();
+            boolean isAdminMode = PageFlowUtil.isPageAdminMode(context);
 
-            addAdminMenus(bean, menu, getViewContext());
+            if ((bean.emailPrefsURL != null) && !isAdminMode)
+                menu.addChild("Email Preferences", bean.emailPrefsURL);
+
+            if (isAdminMode)
+                addAdminMenus(bean, menu, getViewContext());
 
             setNavMenu(menu);
         }
