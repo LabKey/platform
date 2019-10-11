@@ -1709,14 +1709,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 propMeasures = LABKEY.vis.GenericChartHelper.ensureMeasuresAsArray(propMeasures);
 
                 Ext4.each(propMeasures, function(propMeasure) {
-                    var indexByFieldKey = store.find('fieldKey', propMeasure.fieldKey, null, null, null, true),
-                        indexByName = store.find('fieldKey', propMeasure.name, null, null, null, true);
+                    var indexByFieldKey = store.find('fieldKey', propMeasure.fieldKey, 0, false, false, true),
+                        indexByName = store.find('fieldKey', propMeasure.name, 0, false, false, true);
 
                     if (indexByFieldKey === -1 && indexByName === -1) {
                         if (message == null)
                             message = '';
 
-                        message += sep + 'The saved ' + propName + ' measure, ' + propMeasure.label + ', is not available. It may have been renamed or removed.';
+                        message += sep + 'The saved ' + propName + ' measure, ' + propMeasure.name + ', is not available. It may have been renamed or removed.';
                         sep = ' ';
 
                         this.removeMeasureFromSelection(propName, propMeasure);
