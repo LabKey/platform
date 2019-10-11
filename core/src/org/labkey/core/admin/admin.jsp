@@ -119,7 +119,7 @@
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
-            <h3 class="labkey-page-section-header">Admin Console Links</h3>
+            <h3 class="labkey-page-section-header">Settings</h3>
             <%
                 for (SettingsLinkType type : SettingsLinkType.values())
                 {
