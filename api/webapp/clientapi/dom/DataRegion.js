@@ -4412,8 +4412,7 @@ if (!LABKEY.DataRegions) {
      *  				        Web Part Configuration Properties</a></li>
      *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
      *                      How To Find schemaName, queryName &amp; viewName</a></li>
-     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a> and
-     *                      <a href="https://www.labkey.org/home/Study/demo/wiki-page.view?name=reagentRequest">Demo</a></li>
+     *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a></li>
      *                  <li><a href="https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql">
      *                      LabKey SQL Reference</a></li>
      *              </ul>
