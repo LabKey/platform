@@ -155,6 +155,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private Boolean _consolidateScripts = null;
     private Boolean _manageVersion = null;
+    private String _labkeyVersion = null;
 
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
@@ -989,6 +990,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _manageVersion = manageVersion;
     }
 
+
     @Override
     public boolean shouldManageVersion()
     {
@@ -999,6 +1001,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _manageVersion;
     }
 
+    public String getLabkeyVersion()
+    {
+        return _labkeyVersion;
+    }
+
+    @SuppressWarnings("unused")
+    public void setLabkeyVersion(String labkeyVersion)
+    {
+        _labkeyVersion = labkeyVersion;
+    }
+
     @Override
     public final Map<String, String> getProperties()
     {
@@ -1006,6 +1019,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         props.put("Module Class", getClass().getName());
         props.put("Version", getFormattedVersion());
+        if (StringUtils.isNotBlank(getLabkeyVersion()))
+            props.put("LabKey Version", getLabkeyVersion());
         if (StringUtils.isNotBlank(getAuthor()))
             props.put("Author", getAuthor());
         if (StringUtils.isNotBlank(getMaintainer()))
