@@ -37,22 +37,27 @@
          * Update the display of the notification "inbox" count
          * @private
          */
-        var updateUnreadCount = function ()
-        {
-            if (NOTIFICATION_COUNT_EL && LABKEY.notifications)
-            {
+        var updateUnreadCount = function () {
+            if (NOTIFICATION_COUNT_EL && LABKEY.notifications) {
                 var count = 0;
-                for (var id in LABKEY.notifications)
-                {
-                    if (LABKEY.notifications.hasOwnProperty(id) && LABKEY.notifications[id].RowId
-                        && LABKEY.notifications[id].ReadOn == null && LABKEY.notifications[id].Deleted == undefined)
-                    {
-                        count++;
-                    }
-                }
-                NOTIFICATION_COUNT_EL.html(count > 0 ? count : '');
 
-                _updateGroupDisplay();
+                if (LABKEY.notifications.grouping) {
+                    for (var id in LABKEY.notifications)
+                    {
+                        if (LABKEY.notifications.hasOwnProperty(id) && LABKEY.notifications[id].RowId
+                                && LABKEY.notifications[id].ReadOn == null && LABKEY.notifications[id].Deleted == undefined)
+                        {
+                            count++;
+                        }
+                    }
+
+                    _updateGroupDisplay();
+                }
+                else {
+                    count = LABKEY.notifications.unreadCount;
+                }
+
+                NOTIFICATION_COUNT_EL.html(count > 0 ? count : '');
             }
         };
 
@@ -66,6 +71,11 @@
             if (NOTIFICATION_PANEL_EL)
             {
                 NOTIFICATION_PANEL_EL.slideDown(250, _addCheckHandlers);
+
+                // if not already loaded, refresh the notifications content
+                if (LABKEY.notifications && !LABKEY.notifications.grouping) {
+                    _refreshFromServer();
+                }
             }
         };
 
@@ -123,7 +133,7 @@
                     params: {rowIds: [id]},
                     success: LABKEY.Utils.getCallbackWrapper(function (response)
                     {
-                        if (response.success && response.numUpdated == 1)
+                        if (response && response.success && response.numUpdated == 1)
                         {
                             if (NOTIFICATION_PANEL_EL && id && LABKEY.notifications && LABKEY.notifications[id])
                             {
@@ -465,9 +475,6 @@
                 if (null === _websocket)
                 {
                     openWebsocket();
-
-                    // make an initial call to Ajax in the LABKEY.notifications
-                    _refreshFromServer();
                 }
 
                 var list = _callbacks[event] || [];
