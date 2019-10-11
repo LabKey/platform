@@ -526,7 +526,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
                     for (Map.Entry<String, ObjectProperty> entry : OntologyManager.getPropertyObjects(c, objectURI).entrySet())
                     {
-                        if (entry.getValue().getObjectId() == ontologyObject.getObjectId())
+                        if (entry.getKey().equalsIgnoreCase(rowEntry.getKey()) && entry.getValue().getObjectId() == ontologyObject.getObjectId())
                         {
                             objectProperty = entry.getValue();
                         }
