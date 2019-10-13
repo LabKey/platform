@@ -281,7 +281,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         {
             throw new RuntimeException(e);
         }
-        return ss.getType();
+        return ss.getDomain();
     }
 
     @Override

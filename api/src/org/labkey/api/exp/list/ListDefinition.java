@@ -38,6 +38,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Represents a single list definition, as captured by a domain and some list-specific configuration, and defined
+ * in a single container.
+ */
 public interface ListDefinition extends Comparable<ListDefinition>
 {
     enum KeyType

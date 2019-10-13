@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 /**
+ * Captures options for doing an lineage search
  * Created by Nick Arnold on 2/12/2016.
  */
 public class ExpLineageOptions

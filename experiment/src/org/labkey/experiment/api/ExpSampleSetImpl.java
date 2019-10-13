@@ -68,7 +68,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -145,7 +144,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             return null;
         }
 
-        return getType().getPropertyByURI(uri);
+        return getDomain().getPropertyByURI(uri);
     }
 
     @Override
@@ -236,7 +235,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
-            List<? extends DomainProperty> props = getType().getProperties();
+            List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {
                 result = props.get(0);
@@ -427,13 +426,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
-    }
-
-    @Override
-    @Deprecated
-    public ExpMaterialImpl getSample(String name)
-    {
-        return getSample(getContainer(), name);
     }
 
     @Override

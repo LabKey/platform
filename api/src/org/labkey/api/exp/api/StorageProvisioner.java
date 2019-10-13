@@ -273,10 +273,9 @@ public class StorageProvisioner
         // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
-        String tableName = domain.getStorageTableName();
-        if (null == tableName)
+        if (null == domain.getStorageTableName())
         {
-            tableName = _create(scope, kind, domain);
+            _create(scope, kind, domain);
             return;
         }
 
@@ -286,7 +285,6 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
-        int changeCount = 0;
         for (DomainProperty prop : properties)
         {
             if (prop.getName() == null || prop.getName().length() == 0)
@@ -303,12 +301,10 @@ public class StorageProvisioner
             if (null != spec)
             {
                 change.addColumn(spec);
-                changeCount++;
             }
             if (prop.isMvEnabled())
             {
                 change.addColumn(makeMvColumn(prop));
-                changeCount++;
             }
         }
 
