@@ -45,6 +45,11 @@
 
         function renderNotifications()
         {
+            if (LABKEY.notifications === undefined) {
+                $('#' + <%=q(notificationPanelId)%>).html('<div style="padding: 10px;"><i class="fa fa-spinner fa-pulse"></i> Loading...</div>');
+                return;
+            }
+
             LABKEY.Notification.updateUnreadCount();
             var html = "<div class='labkey-notification-header'><div class='labkey-notification-title'>Notifications</div></div>";
 
