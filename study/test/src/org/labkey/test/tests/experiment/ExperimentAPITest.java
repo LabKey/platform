@@ -50,7 +50,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.pages.AssayDesignerPage;
+import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.APIAssayHelper;
 import org.labkey.test.util.Maps;
@@ -408,9 +408,12 @@ public class ExperimentAPITest extends BaseWebDriverTest
         // 2. Use this adhoc property as a run property and batch a property in ImportRun api
         goToManageAssays();
         APIAssayHelper assayHelper = new APIAssayHelper(this);
-        AssayDesignerPage assayDesigner = assayHelper.createAssayAndEdit("General", assayName);
-        assayDesigner.addRunField("RunIntField", "Run Int Field", FieldDefinition.ColumnType.Integer);
-        assayDesigner.saveAndClose();
+        ReactAssayDesignerPage assayDesignerPage = assayHelper.createAssayDesign("General", assayName);
+        assayDesignerPage.goToFieldProperties("Run Properties")
+            .addField("RunIntField")
+            .setLabel("Run Int Field")
+            .setType(FieldDefinition.ColumnType.Integer);
+        assayDesignerPage.clickNext().clickFinish();
 
         int assayId = assayHelper.getIdFromAssayName(assayName, getProjectName(), false);
 
