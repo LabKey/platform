@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.ObjectUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
@@ -40,7 +40,6 @@
 <%
     HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
     AdminBean bean = me.getModelBean();
-    Container c = getContainer();
     boolean devMode = AppProps.getInstance().isDevMode();
 
     String location = null;
@@ -74,7 +73,7 @@
     </div>
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
-            <h3 class="header-title labkey-page-section-header">Server Information</h3>
+            <h3 class="header-title labkey-page-section-header">LabKey Server <%=h(ObjectUtils.defaultIfNull(bean.labkeyVersion, "Information"))%></h3>
             <% for (NavTree link : bean.getLinks(getViewContext())) { %>
             <div class="header-link">
                 <a href="<%=h(link.getHref())%>"><%=h(link.getText())%></a>
@@ -119,7 +118,7 @@
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
-            <h3 class="labkey-page-section-header">Admin Console Links</h3>
+            <h3 class="labkey-page-section-header">Settings</h3>
             <%
                 for (SettingsLinkType type : SettingsLinkType.values())
                 {
