@@ -40,8 +40,10 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -118,13 +120,39 @@ public class OntologyManager
      */
     public static Map<String, Object> getProperties(Container container, String parentLSID)
     {
+        return OntologyManager.getProperties(null, container, parentLSID);
+    }
+
+    public static Map<String, Object> getProperties(@Nullable UserSchema userSchema, Container container, String parentLSID)
+    {
         Map<String, Object> m = new HashMap<>();
         Map<String, ObjectProperty> propVals = getPropertyObjects(container, parentLSID);
         if (null != propVals)
         {
             for (Map.Entry<String, ObjectProperty> entry : propVals.entrySet())
             {
-                m.put(entry.getKey(), entry.getValue().value());
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getValue().getPropertyId());
+                Object displayVal = null;
+
+                if (null != userSchema && null != pd && pd.isLookup())
+                {
+                    TableInfo tableInfo = DefaultSchema.get(userSchema.getUser(), container).getSchema(pd.getLookupSchema()).getTable(pd.getLookupQuery(), null);
+
+                    if (null != tableInfo)
+                    {
+                        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+                        if (pd.getPropertyType().equals(PropertyType.INTEGER))
+                        {
+                            filter.addCondition(FieldKey.fromParts("RowId"), entry.getValue().value());
+                        }
+                        Map<String, Object> lookUpProp = new TableSelector(tableInfo, filter, null).getMap();
+                        if (null != lookUpProp && !lookUpProp.isEmpty())
+                            displayVal = lookUpProp.get("Name");
+
+                    }
+
+                }
+                m.put(entry.getKey(), null == displayVal ? entry.getValue().value() : displayVal);
             }
         }
 

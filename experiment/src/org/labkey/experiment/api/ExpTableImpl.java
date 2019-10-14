@@ -62,7 +62,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.TreeMap;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
 {
@@ -211,10 +211,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 if (lsid == null)
                     return null;
 
-                Map<String, Object> rawProps = OntologyManager.getProperties(ctx.getContainer(), lsid);
+                Map<String, Object> rawProps = OntologyManager.getProperties(getUserSchema(), ctx.getContainer(), lsid);
                 if (!rawProps.isEmpty())
                 {
-                    // TODO: resolve lookups, evaluate URL expression
                     return rawProps;
                 }
 
@@ -257,13 +256,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 {
                     propertyMap = (HashMap) props;
 
-                    List<String> sortedKeys = propertyMap.keySet().stream().map(val -> val.split("#")[1]).sorted().collect(Collectors.toList());
+                    Map<String, Object> sortedProps = new TreeMap<>();
+
+                    propertyMap.entrySet().forEach(entry -> sortedProps.put(entry.getKey().split("#")[1], entry.getValue()));
 
                     StringBuilder hs = new StringBuilder();
                     hs.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
                     hs.append("<tr style=\"font-weight: bold;\">");
-                    for (String property : sortedKeys)
+                    for (String property : sortedProps.keySet())
                     {
                         hs.append("<td class=\"labkey-column-header\">");
                         hs.append(HtmlString.of(property));
@@ -273,7 +274,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
                     hs.append("<tr>");
 
-                    for(Map.Entry<String, Object> property : propertyMap.entrySet())
+                    for (Map.Entry<String, Object> property : sortedProps.entrySet())
                     {
                         hs.append("<td>");
                         hs.append(HtmlString.of(property.getValue().toString()));
