@@ -17,6 +17,7 @@
 package org.labkey.api.admin;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
@@ -44,6 +45,7 @@ public class AdminBean
     public final String webappDir = ModuleLoader.getServletContext().getRealPath("");
     public final String workingDir = new File("file").getAbsoluteFile().getParent();
     public final String osName = System.getProperty("os.name");
+    public final @Nullable String labkeyVersion = ModuleLoader.getInstance().getCoreModule().getProperties().get("LabKey Version");
     public final String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
     public final String serverGuid = AppProps.getInstance().getServerGUID();
     public final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();

@@ -128,7 +128,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
