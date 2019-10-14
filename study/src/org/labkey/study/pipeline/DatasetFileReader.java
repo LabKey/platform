@@ -137,15 +137,9 @@ public class DatasetFileReader
 
     public void validate(List<String> errors) throws IOException
     {
-        Properties props = new Properties();
-
         if (_datasetsFileName != null)
         {
-            try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
-            {
-                if (is != null)
-                    props.load(is);
-            }
+            _studyImportContext.setProperties(_datasetsDirectory.getInputStream(_datasetsFileName));
         }
 
         if (null == _study)
@@ -168,10 +162,10 @@ public class DatasetFileReader
 
         OneToOneStringMap defaultColumnMap = new OneToOneStringMap();
 
-        for (Map.Entry e : props.entrySet())
+        Map<String, String> properties = _studyImportContext.getProperties();
+        for (String key : properties.keySet())
         {
-            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String) e.getValue());
+            String value = properties.get(key);
             if (!key.startsWith("default."))
                 continue;
             if (key.equals("default.action"))
@@ -210,10 +204,10 @@ public class DatasetFileReader
         // load explicit definitions
         //
 
-        for (Map.Entry e : props.entrySet())
+        for (Map.Entry<String, String> entry : properties.entrySet())
         {
-            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String) e.getValue());
+            String key = entry.getKey();
+            String value = entry.getValue();
             int period = key.indexOf('.');
             if (key.startsWith("default.") || -1 == period)
                 continue;
