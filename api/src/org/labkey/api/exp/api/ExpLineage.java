@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.Pair;
 
@@ -327,6 +328,7 @@ public class ExpLineage
             {
                 json.put("rowId", ((ExpObject)node).getRowId());
                 json.put("url", ((ExpObject)node).detailsURL());
+                json.put("type", ((ExpObject)node).getLSIDNamespacePrefix());
             }
 
             if (node instanceof ExpMaterial)
@@ -337,7 +339,7 @@ public class ExpLineage
                 ExpSampleSet ss = material.getSampleSet();
                 if (ss != null)
                 {
-                    json.put("schemaName", "samples");
+                    json.put("schemaName", SamplesSchema.SCHEMA_NAME);
                     json.put("queryName", ss.getName());
                 }
             }
@@ -357,17 +359,20 @@ public class ExpLineage
             {
                 ExpRun run = (ExpRun)node;
 
-                json.put("cpasType", run.getProtocol().getLSID());
-                AssayService assayService = AssayService.get();
-                if (assayService != null)
+                ExpProtocol protocol = run.getProtocol();
+                if (protocol != null)
                 {
-                    AssayProvider provider = assayService.getProvider(run);
-                    if (provider != null)
+                    json.put("cpasType", protocol.getLSID());
+                    AssayService assayService = AssayService.get();
+                    if (assayService != null)
                     {
-                        ExpProtocol protocol = run.getProtocol();
-                        SchemaKey schemaKey = AssayProtocolSchema.schemaName(provider, protocol);
-                        json.put("schemaName", schemaKey.toString());
-                        json.put("queryName", "Runs");
+                        AssayProvider provider = assayService.getProvider(run);
+                        if (provider != null)
+                        {
+                            SchemaKey schemaKey = AssayProtocolSchema.schemaName(provider, protocol);
+                            json.put("schemaName", schemaKey.toString());
+                            json.put("queryName", "Runs");
+                        }
                     }
                 }
             }
