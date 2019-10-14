@@ -405,10 +405,9 @@ LABKEY.Experiment.saveBatch({
         },
 
         /**
-         * Get parent/child relationships of an ExpData or ExpMaterial.
+         * Get parent/child relationships of ExpData, ExpMaterial, or ExpRun.
          * @param config
-         * @param config.rowId The row id of the seed ExpData or ExpMaterial.  Either rowId or lsid is required.
-         * @param config.lsid The LSID of the seed ExpData or ExpMaterial.  Either rowId or lsid is required.
+         * @param config.lsids Array of LSIDs for the seed ExpData, ExpMaterials, or ExpRun.
          * @param {Number} [config.depth] An optional depth argument.  Defaults to include all.
          * @param {Boolean} [config.parents] Include parents in the lineage response.  Defaults to true.
          * @param {Boolean} [config.children] Include children in the lineage response.  Defaults to true.
@@ -419,10 +418,14 @@ LABKEY.Experiment.saveBatch({
         lineage : function (config)
         {
             var params = {};
-            if (config.rowId)
-                params.rowId = config.rowId;
-            else if (config.lsid)
+            if (config.lsids) {
+                params.lsids = config.lsids;
+            }
+            else if (config.lsid) {
+                // Allow singluar 'lsid' for backwards compatibility with <19.3.
+                // Response will include a top-level 'seed' instead of 'seeds' property.
                 params.lsid = config.lsid;
+            }
 
             if (config.hasOwnProperty('parents'))
                 params.parents = config.parents;

@@ -33,6 +33,10 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -42,10 +46,50 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.AbstractParameter;
+import org.labkey.api.exp.DomainNotFoundException;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidType;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.ProtocolParameter;
+import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -92,10 +136,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
@@ -158,6 +198,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -401,10 +442,10 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<ExpDataImpl> getExpDatas(int... rowids)
+    public @NotNull List<ExpDataImpl> getExpDatas(int... rowids)
     {
         if (rowids.length == 0)
-            return null;
+            return Collections.emptyList();
         Collection<Integer> ids = new ArrayList<>(rowids.length);
         for (int rowid : rowids)
             ids.add(rowid);
@@ -412,18 +453,18 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public List<ExpDataImpl> getExpDatasByLSID(Collection<String> lsids)
+    public @NotNull List<ExpDataImpl> getExpDatasByLSID(Collection<String> lsids)
     {
         if (lsids.size() == 0)
-            return null;
+            return Collections.emptyList();
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN), null).getArrayList(Data.class));
     }
 
     @Override
-    public List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
+    public @NotNull List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
     {
         if (rowids.size() == 0)
-            return null;
+            return Collections.emptyList();
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowids, IN), null).getArrayList(Data.class));
     }
 
@@ -1984,7 +2025,7 @@ public class ExperimentServiceImpl implements ExperimentService
         options.setParents(false);
 
         ExpLineage lineage = getLineage(start, options);
-        return lineage.findRelatedChildSamples();
+        return lineage.findRelatedChildSamples(start);
     }
 
     @Override
@@ -1994,7 +2035,7 @@ public class ExperimentServiceImpl implements ExperimentService
         options.setChildren(false);
 
         ExpLineage lineage = getLineage(start, options);
-        return lineage.findNearestParentDatas();
+        return lineage.findNearestParentDatas(start);
     }
 
 
@@ -2126,25 +2167,48 @@ public class ExperimentServiceImpl implements ExperimentService
     @NotNull
     public ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
     {
-        if (isUnknownMaterial(start))
-            return new ExpLineage(start);
+        return getLineage(context, Set.of(start), options);
+    }
 
-        List<String> lsids = Collections.singletonList(start.getLSID());
-        Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
+    @NotNull
+    public ExpLineage getLineage(@Nullable ContainerUser context, @NotNull Set<ExpLineageItem> seeds, @NotNull ExpLineageOptions options)
+    {
+        // validate seeds
+        List<String> lsids = new ArrayList<>(seeds.size());
+        for (ExpLineageItem seed : seeds)
+        {
+            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem)seed))
+                throw new RuntimeException("Lineage not available for unknown material: " + seed.getLSID());
+
+            // ensure that the protocol output lineage is in the same container as the request
+            if (context != null && !context.getContainer().equals(seed.getContainer()))
+                throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + context.getContainer().getPath() + "', got: " + seed.getContainer().getPath());
+
+            lsids.add(seed.getLSID());
+        }
 
         SQLFragment sqlf = generateExperimentTreeSQL(lsids, options);
-        Set<Integer> dataids = new HashSet<>();
-        Set<Integer> materialids = new HashSet<>();
-        Set<Integer> runids = new HashSet<>();
+        Set<Integer> dataIds = new HashSet<>();
+        Set<Integer> materialIds = new HashSet<>();
+        Set<Integer> runIds = new HashSet<>();
         Set<ExpLineage.Edge> edges = new HashSet<>();
 
-        // add edges for initial runs and roles up
-        for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
-            edges.add(new ExpLineage.Edge(runAndRole.getKey(), start.getLSID(), "no role"));
+        for (ExpLineageItem seed : seeds)
+        {
+            // create additional edges from the run for each ExpMaterial or ExpData seed
+            if (seed instanceof ExpRunItem)
+            {
+                Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate((ExpRunItem)seed, options);
 
-        // add edges for initial runs and roles down
-        for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
-            edges.add(new ExpLineage.Edge(start.getLSID(), runAndRole.getKey(), "no role"));
+                // add edges for initial runs and roles up
+                for (Map.Entry<String, String> runAndRole : pair.first.entrySet())
+                    edges.add(new ExpLineage.Edge(runAndRole.getKey(), seed.getLSID(), "no role"));
+
+                // add edges for initial runs and roles down
+                for (Map.Entry<String, String> runAndRole : pair.second.entrySet())
+                    edges.add(new ExpLineage.Edge(seed.getLSID(), runAndRole.getKey(), "no role"));
+            }
+        }
 
         new SqlSelector(getExpSchema(), sqlf).forEachMap((m)->
         {
@@ -2161,63 +2225,61 @@ public class ExperimentServiceImpl implements ExperimentService
             String role = "no role";
             if (parentRowId == null || childRowId == null)
             {
-                LOG.error(String.format("Node not found for lineage of %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        start.toString(), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+                LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
+                        StringUtils.join(lsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
             }
             else
             {
                 edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
 
-                // process parents
-                if ("Data".equals(parentExpType))
-                    dataids.add(parentRowId);
-                else if ("Material".equals(parentExpType))
-                    materialids.add(parentRowId);
-                else if ("ExperimentRun".equals(parentExpType))
-                    runids.add(parentRowId);
+                // Don't include the seed in the lineage collections
+                if (!lsids.contains(parentLSID))
+                {
+                    // process parents
+                    if ("Data".equals(parentExpType))
+                        dataIds.add(parentRowId);
+                    else if ("Material".equals(parentExpType))
+                        materialIds.add(parentRowId);
+                    else if ("ExperimentRun".equals(parentExpType))
+                        runIds.add(parentRowId);
+                }
 
-                // process children
-                if ("Data".equals(childExpType))
-                    dataids.add(childRowId);
-                else if ("Material".equals(childExpType))
-                    materialids.add(childRowId);
-                else if ("ExperimentRun".equals(childExpType))
-                    runids.add(childRowId);
+                // Don't include the seed in the lineage collections
+                if (!lsids.contains(childLSID))
+                {
+                    // process children
+                    if ("Data".equals(childExpType))
+                        dataIds.add(childRowId);
+                    else if ("Material".equals(childExpType))
+                        materialIds.add(childRowId);
+                    else if ("ExperimentRun".equals(childExpType))
+                        runIds.add(childRowId);
+                }
             }
         });
 
-        Set<ExpData> datas = new HashSet<>();
-        List<ExpDataImpl> expDatas = getExpDatas(dataids);
-        if (expDatas != null)
-        {
-            if (context != null)
-                datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(Collectors.toSet());
-            else
-                datas.addAll(expDatas);
-        }
+        Set<ExpData> datas;
+        List<ExpDataImpl> expDatas = getExpDatas(dataIds);
+        if (context != null)
+            datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(toSet());
+        else
+            datas = new HashSet<>(expDatas);
 
         Set<ExpMaterial> materials;
-        List<ExpMaterialImpl> expMaterials = getExpMaterials(materialids);
+        List<ExpMaterialImpl> expMaterials = getExpMaterials(materialIds);
         if (context != null)
-            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(Collectors.toSet());
+            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(toSet());
         else
             materials = new HashSet<>(expMaterials);
 
         Set<ExpRun> runs;
-        List<ExpRunImpl> expRuns = getExpRuns(runids);
+        List<ExpRunImpl> expRuns = getExpRuns(runIds);
         if (context != null)
-            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(Collectors.toSet());
+            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(toSet());
         else
             runs = new HashSet<>(expRuns);
 
-        if (start instanceof ExpData)
-            datas.remove(start);
-        else if (start instanceof ExpMaterial)
-            materials.remove(start);
-        else if (start instanceof ExpRun)
-            runs.remove(start);
-
-        return new ExpLineage(start, datas, materials, runs, edges);
+        return new ExpLineage(seeds, datas, materials, runs, edges);
     }
 
 
@@ -6007,7 +6069,7 @@ public class ExperimentServiceImpl implements ExperimentService
         DomainKind kind = domain.getDomainKind();
 
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
-        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
         Set<String> propertyUris = new HashSet<>();
@@ -6539,7 +6601,7 @@ public class ExperimentServiceImpl implements ExperimentService
         var runsUsingItems = new ArrayList<ExpRun>();
         if (null != materials && !materials.isEmpty())
         {
-            Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            Set<Integer> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(toSet());
             runsUsingItems.addAll(getDerivedRunsFromMaterial(materialIds));
             runsUsingItems.addAll(getDeleteableSourceRunsFromMaterials(materialIds));
         }

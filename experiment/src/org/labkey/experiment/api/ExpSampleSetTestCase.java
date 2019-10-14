@@ -54,6 +54,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.StringBufferInputStream;
 import java.util.ArrayList;
@@ -648,6 +649,7 @@ public class ExpSampleSetTestCase
         ExpMaterial E = ss.getSample(c, "E");
         assertNotNull(E);
         lineage = ExperimentService.get().getLineage(E, opts);
+        assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'E' to be derived from 'C'", lineage.getMaterials().contains(C));
@@ -657,10 +659,22 @@ public class ExpSampleSetTestCase
                 E.getRowId(), E.getRowId());
         ExpRun derivationRun = E.getRun();
 
-        assertTrue(derivationRun.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun.getMaterialInputs().containsKey(B));
+        assertTrue(derivationRun.getMaterialInputs().containsKey(C));
         assertTrue(derivationRun.getMaterialOutputs().contains(D));
         assertTrue(derivationRun.getMaterialOutputs().contains(E));
+
+        assertEquals(1, lineage.getRuns().size());
+        assertTrue("Expected lineage to include derivation run", lineage.getRuns().contains(derivationRun));
+
+
+        // verify lineage using the derivation run as a seed
+        lineage = ExperimentServiceImpl.get().getLineage(new ViewBackgroundInfo(c, user, null), Set.of(derivationRun), new ExpLineageOptions(true, false, 1));
+        assertTrue("Expected derivationRun to be the seed", lineage.getSeeds().contains(derivationRun));
+        assertEquals(2, lineage.getMaterials().size());
+        assertTrue("Expected 'B' to be input into derivationRun", lineage.getMaterials().contains(B));
+        assertTrue("Expected 'C' to be input into derivationRun", lineage.getMaterials().contains(C));
+        assertTrue("Expected no additional runs in lineage results", lineage.getRuns().isEmpty());
 
 
         // update 'D' to derive from 'B' and 'E'
@@ -681,18 +695,18 @@ public class ExpSampleSetTestCase
         ExpRun derivationRun2 = D2.getRun();
         assertNotEquals("Updating 'D' lineage should create new derivation run", derivationRun.getRowId(), derivationRun2.getRowId());
 
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(E));
-        assertFalse(derivationRun2.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun2.getMaterialInputs().containsKey(B));
+        assertTrue(derivationRun2.getMaterialInputs().containsKey(E));
+        assertFalse(derivationRun2.getMaterialInputs().containsKey(C));
         assertTrue(derivationRun2.getMaterialOutputs().contains(D));
         assertFalse(derivationRun2.getMaterialOutputs().contains(E));
 
         ExpRun oldDerivationRun = ExperimentService.get().getExpRun(derivationRun.getRowId());
         assertEquals(oldDerivationRun.getRowId(), derivationRun.getRowId());
 
-        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(B));
-        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(C));
-        assertFalse(oldDerivationRun.getMaterialInputs().keySet().contains(E));
+        assertTrue(oldDerivationRun.getMaterialInputs().containsKey(B));
+        assertTrue(oldDerivationRun.getMaterialInputs().containsKey(C));
+        assertFalse(oldDerivationRun.getMaterialInputs().containsKey(E));
         assertFalse(oldDerivationRun.getMaterialOutputs().contains(D));
         assertTrue(oldDerivationRun.getMaterialOutputs().contains(E));
 
