@@ -1562,11 +1562,11 @@ public class AssayController extends SpringActionController
         public ApiResponse execute(Object object, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            List<Map<String, Object>> containersInfo = new ArrayList();
+            List<Map<String, Object>> containersInfo = new ArrayList<>();
             for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
             {
                 Container container = study.getContainer();
-                Map<String, Object> containerInfo = new HashMap();
+                Map<String, Object> containerInfo = new HashMap<>();
                 containerInfo.put("id", container.getId());
                 containerInfo.put("name", container.getName());
                 containerInfo.put("path", container.getPath());

@@ -44,7 +44,7 @@ export class App extends React.Component<any, State> {
 
         // hack, if the returnUrl has stripped off the rowId because of encoding/decoding issues (see TODO in AbstractAssayProvider.getManageMenuNavTree()) add it back on
         let returnUrl = ActionURL.getParameter('returnUrl');
-        if (rowId && returnUrl && returnUrl.indexOf('rowId') === returnUrl.length - 5) {
+        if (rowId !== undefined && returnUrl && returnUrl.indexOf('rowId') === returnUrl.length - 5) {
             returnUrl = returnUrl + '=' + rowId
         }
 
@@ -207,7 +207,7 @@ export class App extends React.Component<any, State> {
         }
 
         // check if this is a create assay case with a user that doesn't have permissions
-        if (!model.protocolId && !hasDesignAssayPerm) {
+        if (model.isNew() && !hasDesignAssayPerm) {
             return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>
         }
 
