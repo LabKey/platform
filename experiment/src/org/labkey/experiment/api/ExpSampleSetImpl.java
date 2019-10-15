@@ -33,13 +33,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
@@ -414,12 +412,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public List<ExpMaterialImpl> getSamples()
-    {
-        return getSamples(getContainer());
-    }
-
-    @Override
     public List<ExpMaterialImpl> getSamples(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -439,13 +431,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (material == null)
             return null;
         return new ExpMaterialImpl(material);
-    }
-
-    @Override
-    @NotNull
-    public Domain getType()
-    {
-        return getDomain();
     }
 
     @Override
@@ -478,8 +463,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(colSampleLSID, getLSID());
-        List<ColumnInfo> selectColumns = new ArrayList<>();
-        selectColumns.addAll(tinfoProtocol.getColumns());
+        List<ColumnInfo> selectColumns = new ArrayList<>(tinfoProtocol.getColumns());
         selectColumns.add(colSampleLSID);
         Protocol[] protocols = new TableSelector(tinfoProtocol, selectColumns, filter, null).getArray(Protocol.class);
         ExpProtocol[] ret = new ExpProtocol[protocols.length];
@@ -525,7 +509,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void save(User user)
     {
-        if (ExperimentService.get().getDefaultSampleSetLsid().equals(getLSID()))
+        if (SampleSetService.get().getDefaultSampleSetLsid().equals(getLSID()))
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
@@ -685,7 +669,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public @NotNull Map<String, String> getImportAliasMap() throws IOException
     {
-            return Collections.unmodifiableMap(getImportAliases(_object));
+        return Collections.unmodifiableMap(getImportAliases(_object));
     }
 
     @Override
