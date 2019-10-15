@@ -31,8 +31,6 @@
     final boolean isClosed = StringUtils.equalsIgnoreCase(issue.getStatus(),"closed");
     final boolean isOpen = StringUtils.equalsIgnoreCase(issue.getStatus(),"open");
 %>
-
-
 <table style="min-width:150pt;margin-bottom:15px;">
     <tr><td style="color: darkgray"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
     <% if (!isClosed) { %>
@@ -43,7 +41,6 @@
     <tr><td style="color: darkgray"><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
     <% } %>
 </table>
-
 
 <div>
     <%
