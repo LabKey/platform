@@ -272,14 +272,23 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                     }
                     hs.append("</tr>");
 
-                    hs.append("<tr>");
+                    hs.append("<tr class=\"labkey-row\">");
 
                     for (Map.Entry<String, Object> property : sortedProps.entrySet())
                     {
                         hs.append("<td>");
-                        hs.append(HtmlString.of(property.getValue().toString()));
+                        String val = property.getValue().toString();
+                        if (val.contains("displayValue"))
+                        {
+                            String[] lookupVals = val.substring(1, val.length()-1).split(",");
+                            hs.append(HtmlString.of(lookupVals[0])).append("<br>");
+                            hs.append(HtmlString.of(lookupVals[1]));
+                        }
+                        else
+                        {
+                            hs.append(HtmlString.of(val));
+                        }
                         hs.append("</td>");
-
                     }
 
                     hs.append("</tr>");

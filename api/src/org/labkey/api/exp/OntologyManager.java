@@ -147,7 +147,9 @@ public class OntologyManager
                         }
                         Map<String, Object> lookUpProp = new TableSelector(tableInfo, filter, null).getMap();
                         if (null != lookUpProp && !lookUpProp.isEmpty())
-                            displayVal = lookUpProp.get("Name");
+                        {
+                            displayVal = Map.of("displayValue", lookUpProp.get("Name"),"value", entry.getValue().value());
+                        }
 
                     }
 
