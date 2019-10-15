@@ -465,6 +465,9 @@
                 if (null === _websocket)
                 {
                     openWebsocket();
+
+                    // make an initial call to Ajax in the LABKEY.notifications
+                    _refreshFromServer();
                 }
 
                 var list = _callbacks[event] || [];

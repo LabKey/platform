@@ -24,13 +24,16 @@ import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -72,6 +75,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
@@ -518,26 +523,41 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
                         "FROM exp.data." + firstDataClassName + " AS dc\n" +
                         "ORDER BY dc.RowId\n";
 
-        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, false))
+        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, true))
         {
-            Assert.assertTrue(rs.next());
-            Map<FieldKey, Object> bobMap = rs.getFieldKeyRowMap();
-            assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
-            assertMultiValue(bobMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-1");
+            RenderContext ctx = new RenderContext(new ViewContext());
+            ctx.getViewContext().setRequest(TestContext.get().getRequest());
+            ctx.getViewContext().setUser(user);
+            ctx.getViewContext().setContainer(c);
+            ctx.getViewContext().setActionURL(new ActionURL());
+
+            ColumnInfo colName    = rs.getColumn(rs.findColumn(FieldKey.fromParts("Name")));
+            DisplayColumn dcName  = colName.getRenderer();
+            ColumnInfo colInputsMaterialSampleNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsMaterialSampleNames")));
+            DisplayColumn dcInputsMaterialSampleNames  = colInputsMaterialSampleNames.getRenderer();
+            ColumnInfo colInputsDataAllNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataAllNames")));
+            DisplayColumn dcInputsDataAllNames  = colInputsDataAllNames.getRenderer();
+            ColumnInfo colInputsDataFirstDataClassNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataFirstDataClassNames")));
+            DisplayColumn dcInputsDataFirstDataClassNames  = colInputsDataFirstDataClassNames.getRenderer();
 
             Assert.assertTrue(rs.next());
-            Map<FieldKey, Object> sallyMap = rs.getFieldKeyRowMap();
-            assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
-            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataAllNames")), "jimbo", "bob");
-            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob");
-            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+            ctx.setRow(rs.getRowMap());
+            assertEquals("bob", dcName.getValue(ctx));
+            assertMultiValue(dcInputsMaterialSampleNames.getDisplayValue(ctx), "S-1");
 
             Assert.assertTrue(rs.next());
-            Map<FieldKey, Object> mikeMap = rs.getFieldKeyRowMap();
-            assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
-            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataAllNames")), "sally", "jimbo", "bob");
-            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob", "sally");
-            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+            ctx.setRow(rs.getRowMap());
+            assertEquals("sally", dcName.getValue(ctx));
+            assertMultiValue(dcInputsDataAllNames.getDisplayValue(ctx), "jimbo", "bob");
+            assertMultiValue(dcInputsDataFirstDataClassNames.getDisplayValue(ctx), "bob");
+            assertMultiValue(dcInputsMaterialSampleNames.getDisplayValue(ctx), "S-2", "S-1");
+
+            Assert.assertTrue(rs.next());
+            ctx.setRow(rs.getRowMap());
+            assertEquals("mike", dcName.getValue(ctx));
+            assertMultiValue(dcInputsDataAllNames.getDisplayValue(ctx), "sally", "jimbo", "bob");
+            assertMultiValue(dcInputsDataFirstDataClassNames.getDisplayValue(ctx), "bob", "sally");
+            assertMultiValue(dcInputsMaterialSampleNames.getDisplayValue(ctx), "S-2", "S-1");
 
             assertFalse(rs.next());
         }
