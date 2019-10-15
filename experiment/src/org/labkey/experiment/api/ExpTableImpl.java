@@ -117,7 +117,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             }
         }
 
-        if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        if (_populated)
         {
             ColumnInfo lsidCol = getColumn("LSID", false);
             if (lsidCol != null)
@@ -130,10 +130,13 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 // Attempt to resolve the column name as a property URI if it looks like a URI
                 if (URIUtil.hasURICharacters(name))
                 {
+                    // mark vocab propURI col as Voc column
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
+                        List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), pd);
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        pc.setVocabulary(domainsForPD.stream().anyMatch(d-> d.getDomainKind() instanceof VocabularyDomainKind));
                         // use the property URI as the column's FieldKey name
                         pc.setFieldKey(FieldKey.fromParts(name));
                         pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));

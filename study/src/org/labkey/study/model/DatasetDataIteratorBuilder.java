@@ -167,7 +167,7 @@ class DatasetDataIteratorBuilder implements DataIteratorBuilder
         DatasetColumnsIterator it = new DatasetColumnsIterator(_datasetDefinition, input, context, user);
 
         ValidationException matchError = new ValidationException();
-        ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases, matchError);
+        ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input, table, useImportAliases, matchError, null);
         if (matchError.hasErrors())
             setupError(matchError.getMessage());
 
