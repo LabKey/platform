@@ -45,6 +45,7 @@ public abstract class BaseRequestReportFactory extends TypeReportFactory
         _completedRequestsOnly = completedRequestsOnly;
     }
 
+    @Override
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> superInputs = super.getAdditionalFormInputHtml();

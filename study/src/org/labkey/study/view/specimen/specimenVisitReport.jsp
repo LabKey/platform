@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
@@ -120,7 +121,9 @@ The request has produced no records.
             {
                 rowIndex++;
                 %><tr class="<%=getShadeRowClass(rowIndex + 1)%>" style="vertical-align:top"><%
-                for (int col = 0; col<width ; col++)
+                int colMax = SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting() ? 1 : width;
+
+                for (int col = 0; col<colMax ; col++)
                 {
                     String title = rowtitles[rowIndex][col].first.getDisplayValue();
                     if (title == null || title.length() == 0)
@@ -134,6 +137,7 @@ The request has produced no records.
                         <%= h(title) %>
                     </td><%
                 }
+            if (SpecimenService.get().getRequestCustomizer().omitTypeGroupingsWhenReporting()){ %><td></td><% }
 
                 for (VisitImpl visit : visits)
                 {

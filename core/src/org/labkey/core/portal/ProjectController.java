@@ -57,7 +57,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
@@ -1263,35 +1262,11 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class GetContainersForm
+    public static class BasicGetContainersForm
     {
         private Container[] _container;
-        private boolean _multipleContainers = false;
         private boolean _includeSubfolders = false;
-        private boolean _includeEffectivePermissions = true;
         private int _depth = Integer.MAX_VALUE;
-        private String[] _moduleProperties;
-        private ContainerFilter.Type _containerFilter = null;
-
-        public Container[] getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(Container[] container)
-        {
-            _container = container;
-        }
-
-        public boolean isMultipleContainers()
-        {
-            return _multipleContainers;
-        }
-
-        public void setMultipleContainers(boolean multipleContainers)
-        {
-            _multipleContainers = multipleContainers;
-        }
 
         public boolean isIncludeSubfolders()
         {
@@ -1311,6 +1286,35 @@ public class ProjectController extends SpringActionController
         public void setDepth(int depth)
         {
             _depth = depth;
+        }
+
+        public Container[] getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(Container[] container)
+        {
+            _container = container;
+        }
+
+    }
+
+    public static class GetContainersForm extends BasicGetContainersForm
+    {
+        private boolean _multipleContainers = false;
+        private boolean _includeEffectivePermissions = true;
+        private String[] _moduleProperties;
+        private ContainerFilter.Type _containerFilter = null;
+
+        public boolean isMultipleContainers()
+        {
+            return _multipleContainers;
+        }
+
+        public void setMultipleContainers(boolean multipleContainers)
+        {
+            _multipleContainers = multipleContainers;
         }
 
         public String[] getModuleProperties()
@@ -1588,6 +1592,48 @@ public class ProjectController extends SpringActionController
             }
             else
                 throw new NotFoundException("WebPart not found. Unable to set WebPart permissions.");
+        }
+    }
+
+    /**
+     * Just get the paths the user has read permission for
+     */
+    @RequiresNoPermission
+    public class GetReadableContainersAction extends ReadOnlyApiAction<BasicGetContainersForm>
+    {
+        @Override
+        public ApiResponse execute(BasicGetContainersForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            int requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
+
+            Container c = getContainer();
+            if (form.getContainer() != null && form.getContainer().length > 0)
+                c = form.getContainer()[0];
+
+            List<String> containerPaths = c == null ? Collections.emptyList() : getVisibleChildren(c, 0, requestedDepth);
+            response.put("containers", containerPaths);
+
+            return response;
+        }
+
+        protected List<String> getVisibleChildren(Container parent, int currentDepth, int requestedDepth)
+        {
+            List<String> result = new ArrayList<>();
+            if (requestedDepth >= 0 && currentDepth > requestedDepth)
+                return result;
+
+            if (parent.hasPermission(getUser(), ReadPermission.class))
+            {
+                result.add(parent.getPath());
+            }
+
+            for (Container child : parent.getChildren())
+            {
+                result.addAll(getVisibleChildren(child, currentDepth + 1, requestedDepth));
+            }
+
+            return result;
         }
     }
 
