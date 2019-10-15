@@ -37,7 +37,7 @@ public class RepositorySettings
     private static final String KEY_SPECIMENDATA_EDITABLE = "SpecimenDataEditable";
 
     // Columns to group by n the specimen web part: Group1: Group By 1, Then By 2, Then By 3. Same for Group2
-    private static final String makeKeySpecWebPartGroup(Integer grouping, Integer groupBy)
+    private static String makeKeySpecWebPartGroup(Integer grouping, Integer groupBy)
     {
         return "SpecWebPart_Group" + grouping.toString() + "." + groupBy.toString();
     }
@@ -64,7 +64,7 @@ public class RepositorySettings
         String enableRequests = map.get(KEY_ENABLE_REQUESTS);
         _enableRequests = null == enableRequests ? !_simple : Boolean.parseBoolean(enableRequests);
         String specimenDataEditable = map.get(KEY_SPECIMENDATA_EDITABLE);
-        _specimenDataEditable = null == specimenDataEditable ? false : Boolean.parseBoolean(specimenDataEditable);
+        _specimenDataEditable = null != specimenDataEditable && Boolean.parseBoolean(specimenDataEditable);
 
         String firstGrouping = map.get(makeKeySpecWebPartGroup(0,0));
         if (null != firstGrouping)

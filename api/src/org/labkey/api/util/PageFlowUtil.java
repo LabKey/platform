@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
@@ -48,6 +49,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
@@ -2205,6 +2207,9 @@ public class PageFlowUtil
         json.put("versionString", appProps.getLabKeyVersionString());
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
+            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationsByUser(null, user.getUserId(), true).size()));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
