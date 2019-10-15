@@ -68,8 +68,8 @@
             }
         }
 
-        if (hasTextComment) { %>
-    <label style="text-decoration: underline">Comments</label>
+    if (hasTextComment) { %>
+        <label style="text-decoration: underline">Comments</label>
     <% } %>
     <div style="max-height:4em; overflow-y:hidden;"><%= text(html.toString()) %></div>
 </div>
