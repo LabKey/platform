@@ -28,53 +28,82 @@
     JspView<Issue> me = (JspView<Issue>) HttpView.currentView();
     final Issue issue = me.getModelBean();
     final User user = getUser();
+    final boolean isClosed = StringUtils.equalsIgnoreCase(issue.getStatus(),"closed");
+    final boolean isOpen = StringUtils.equalsIgnoreCase(issue.getStatus(),"open");
 %>
-<table>
-    <tr>
-        <td valign="top">
-            <table style="min-width:150pt;">
-                <tr><td><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
-                <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"closed")) { %>
-                <tr><td><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
-                <% } %>
-                <tr><td><label>Opened:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
-                <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"open")) { %>
-                <tr><td><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
-                <% } %>
-            </table>
-        </td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td valign="top">
-<%
-    StringBuilder html = new StringBuilder();
-    boolean hasTextComment = false;
-    for (Issue.Comment comment : issue.getComments())
-    {
-        String s = comment.getComment();
-        String pattern1 = "<div class=\"labkey-wiki\">";
-        String pattern2 = "</div>";
-        String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
-        Pattern p = Pattern.compile(regexString);
-        Matcher matcher = p.matcher(s);
-        while (matcher.find())
-        {
-            String commentContentText = matcher.group(1);
-            if (!StringUtils.isEmpty(commentContentText))
-            {
-                hasTextComment = true;
-                html.append(commentContentText);
-                html.append("<br>");
-                if (html.length() > 1000)
-                    break;
-            }
-        }
-    }
 
-    if (hasTextComment) { %>
-            <label style="text-decoration: underline">Comments</label>
+
+<table style="min-width:150pt;margin-bottom:10px;">
+    <tr><td style="color: darkgray"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
+    <% if (!isClosed) { %>
+    <tr><td style="color: darkgray"><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
     <% } %>
-            <div style="max-height:4em; overflow-y:hidden; word-break: break-all;"><%= text(html.toString()) %></div>
-        </td>
+    <tr><td style="color: darkgray"><label>Opened:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
+    <% if (!isOpen) { %>
+    <tr><td style="color: darkgray"><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
+    <% } %>
+</table>
+
+
+<table style="table-layout: fixed;width:250pt;margin-bottom:10px;">
+    <tr style="color: darkgray">
+        <td><label>Status:</label></td>
+
+        <% if (!isClosed) { %>
+        <td><label>Assigned&nbsp;To:</label></td>
+        <% } %>
+
+        <td><label>Opened:</label></td>
+
+        <% if (!isOpen) { %>
+        <td><label>Resolved:</label></td>
+        <% } %>
+    </tr>
+
+    <tr>
+        <td style="white-space: nowrap;"><%=h(issue.getStatus())%></td>
+
+        <% if (!isClosed) { %>
+        <td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td>
+        <% } %>
+
+        <td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td>
+
+        <% if (!isOpen) { %>
+        <td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td>
+        <% } %>
+
     </tr>
 </table>
+
+<div>
+    <%
+        StringBuilder html = new StringBuilder();
+        boolean hasTextComment = false;
+        for (Issue.Comment comment : issue.getComments())
+        {
+            String s = comment.getComment();
+            String pattern1 = "<div class=\"labkey-wiki\">";
+            String pattern2 = "</div>";
+            String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
+            Pattern p = Pattern.compile(regexString);
+            Matcher matcher = p.matcher(s);
+            while (matcher.find())
+            {
+                String commentContentText = matcher.group(1);
+                if (!StringUtils.isEmpty(commentContentText))
+                {
+                    hasTextComment = true;
+                    html.append(commentContentText);
+                    html.append("<br>");
+                    if (html.length() > 1000)
+                        break;
+                }
+            }
+        }
+
+        if (hasTextComment) { %>
+    <label style="text-decoration: underline">Comments</label>
+    <% } %>
+    <div style="max-height:4em; overflow-y:hidden;"><%= text(html.toString()) %></div>
+</div>

@@ -451,7 +451,7 @@
                     <a href="<%=h(href)%>"><%=h(hit.title)%></a>
                 </h4>
                 <div class="labkey-search-content">
-                    <div>
+                    <div style="margin-bottom:5px;">
                     <%
                         NavTree nav = getDocumentContext(documentContainer, hit);
                         if (null != nav)
