@@ -70,6 +70,20 @@ public class JspLoader
         }
     }
 
+    public static Class loadClass(String jspFile)
+    {
+        try
+        {
+            ServletContext context = ModuleLoader.getServletContext();
+            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, null, jspFile);
+            return clazz;
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
 
     /**
      * Instantiates a JSP class in a particular directory.
