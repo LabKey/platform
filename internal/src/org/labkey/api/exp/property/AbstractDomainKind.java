@@ -61,11 +61,13 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
 
+    @Override
     public boolean canCreateDefinition(User user, Container container)
     {
         return false;
     }
 
+    @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, AdminPermission.class);
@@ -90,21 +92,25 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     // Override to customize the nav trail on shared pages like edit domain
+    @Override
     public void appendNavTrail(NavTree root, Container c, User user)
     {
     }
 
     // Do any special handling before a PropertyDescriptor is deleted -- do nothing by default
+    @Override
     public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
     {
     }
 
+    @Override
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         return null;
     }
 
     /** @return Errors encountered during the save attempt */
+    @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
