@@ -15,26 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.SpecimenManager"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
-<%@ page import="org.labkey.study.model.SpecimenRequestStatus"%>
+<%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.GroupManager" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.security.xml.GroupEnumType" %>
-<%@ page import="org.labkey.api.security.Group" %>
-<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<SpecimenController.ManageRequestBean> me = (JspView<SpecimenController.ManageRequestBean>) HttpView.currentView();
     SpecimenController.ManageRequestBean bean = me.getModelBean();
     List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
-
-    // trialshare: heavily edit this form to better elaborate the specimen request logic we use.
 %>
 <labkey:errors />
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>" enctype="multipart/form-data" method="POST">
