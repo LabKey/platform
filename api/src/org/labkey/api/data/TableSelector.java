@@ -467,6 +467,17 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return new TableSqlFactory(_filter, _sort, _columns, isResultSet ? 1 : 0, true);
     }
 
+    public SQLFragment getSql()
+    {
+        return getSqlFactory(true).getSql();
+    }
+
+    public Collection<ColumnInfo> getSelectedColumns()
+    {
+        return getSqlFactory(true).getSelectedColumns();
+    }
+
+
     protected class TableSqlFactory extends BaseSqlFactory
     {
         private final @Nullable Filter _filter;
