@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Iterables;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -137,7 +136,6 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -151,6 +149,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
@@ -163,6 +162,8 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -2039,34 +2040,6 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
 
-
-    static final String exp_graph_sql2;
-
-    static final String exp_graph_sql_for_lookup2;
-
-
-    static
-    {
-        try
-        {
-            String sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraph2.sql"), "UTF-8");
-            if (DbSchema.get("exp", DbSchemaType.Module).getSqlDialect().isPostgreSQL())
-                exp_graph_sql2 = StringUtils.replace(StringUtils.replace(sql, "$LSIDTYPE$", "LSIDTYPE"), "$VARCHAR$", "VARCHAR");
-            else
-                exp_graph_sql2 = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$LSIDTYPE$", "NVARCHAR(300)"), "$VARCHAR$", "NVARCHAR"), "||", "+");
-
-            sql = IOUtils.toString(ExperimentServiceImpl.class.getResourceAsStream("ExperimentRunGraphForLookup2.sql"), "UTF-8");
-            if (DbSchema.get("exp", DbSchemaType.Module).getSqlDialect().isPostgreSQL())
-                exp_graph_sql_for_lookup2 = StringUtils.replace(StringUtils.replace(sql, "$LSIDTYPE$", "LSIDTYPE"), "$VARCHAR$", "VARCHAR");
-            else
-                exp_graph_sql_for_lookup2 = StringUtils.replace(StringUtils.replace(StringUtils.replace(sql, "$LSIDTYPE$", "NVARCHAR(300)"), "$VARCHAR$", "NVARCHAR"), "||", "+");
-        }
-        catch (IOException x)
-        {
-            throw new ConfigurationException("Cannot read file ExperimentRunGraph2.sql: " + x.getMessage());
-        }
-    }
-
     public List<ExpRun> oldCollectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         List<ExpRun> runsToInvestigate = new ArrayList<>();
@@ -2295,10 +2268,37 @@ public class ExperimentServiceImpl implements ExperimentService
         return generateExperimentTreeSQL(sqlf, options);
     }
 
-    /* return <ParentsQuery,ChildrenQuery> */
-    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, boolean forLookup, Integer depth)
+
+
+    public static class ExperimentGraphBean
     {
-        String sourceSQL = (forLookup ? exp_graph_sql_for_lookup2 : exp_graph_sql2);
+        public String expType = null;
+    }
+
+    private String getSourceSql(ExpLineageOptions options, String source)
+    {
+        var view = new JspView<>(ExperimentServiceImpl.class, source, options);
+        view.setFrame(WebPartView.FrameType.NOT_HTML);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        try
+        {
+            HttpView.include(view, request, response);
+            String ret;
+            ret = response.getContentAsString().trim();
+            return ret;
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    /* return <ParentsQuery,ChildrenQuery> */
+    private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, ExpLineageOptions options)
+    {
+        String sourceSQL = getSourceSql(options, options.isForLookup() ? "ExperimentRunGraphForLookup2.jsp" : "ExperimentRunGraph2.jsp");
 
         Map<String,String> map = new HashMap<>();
 
@@ -2315,27 +2315,16 @@ public class ExperimentServiceImpl implements ExperimentService
                 select = select.substring(0,select.length()-1).trim();
             if (select.startsWith("("))
                 select = select.substring(1).trim();
-            if (name.equals("$SEED$"))
-                select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
             if (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$"))
                 select = select.replace("$LSIDS$", lsidsFrag.getRawSQL());
             map.put(name, select);
         }
 
-        String seedToken = null;
         String edgesToken = null;
 
         boolean recursive = getExpSchema().getSqlDialect().isPostgreSQL();
 
         String parentsInnerSelect = map.get("$PARENTS_INNER$");
-        // NOTE: Adding depth clause to the inner recursive CTE makes it more efficient, but does mean it won't be shared if we have a lookup by a different depth in the query
-        String parentDepth = "";
-        if (depth != null && depth != 0)
-        {
-            int d = depth < 0 ? depth : (-1 * depth);
-            parentDepth = "AND _Graph.depth - 1 >= " + d;
-        }
-        parentsInnerSelect = StringUtils.replace(parentsInnerSelect, "$AND_STUFF$", parentDepth);
         SQLFragment parentsInnerSelectFrag = new SQLFragment(parentsInnerSelect);
         parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
         String parentsInnerToken = ret.addCommonTableExpression(parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
@@ -2346,15 +2335,7 @@ public class ExperimentServiceImpl implements ExperimentService
         String parentsToken = ret.addCommonTableExpression("$PARENTS$/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment(parentsSelect), recursive);
 
         String childrenInnerSelect = map.get("$CHILDREN_INNER$");
-        childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$SEED$", seedToken);
         childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-        // NOTE: Adding depth clause to the inner recursive CTE makes it more efficient, but does mean it won't be shared if we have a lookup by a different depth in the query
-        String childrenDepth = "";
-        if (depth != null && depth != 0)
-        {
-            childrenDepth = "AND _Graph.depth + 1 <= " + depth;
-        }
-        childrenInnerSelect = StringUtils.replace(childrenInnerSelect, "$AND_STUFF$", childrenDepth);
         SQLFragment childrenInnerSelectFrag = new SQLFragment(childrenInnerSelect);
         childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
         String childrenInnerToken = ret.addCommonTableExpression(childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
@@ -2370,7 +2351,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
-        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options.isForLookup(), options.getDepth());
+        Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options);
         boolean up = options.isParents();
         boolean down = options.isChildren();
 
@@ -2381,8 +2362,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 SQLFragment parents = new SQLFragment();
                 if (options.isForLookup())
                 {
-                    parents.append("\nSELECT MIN(depth) AS depth, self_lsid, ");
-                    parents.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, lsid, MIN(rowid) AS rowid ");
+                    parents.append("\nSELECT MIN(depth) AS depth, self, objectid, ");
+                    parents.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, MIN(lsid) AS lsid, MIN(rowid) AS rowid ");
                     parents.append("\nFROM ").append(tokens.first);
                 }
                 else
@@ -2395,7 +2376,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (options.isForLookup())
                 {
-                    parents.append(and).append("lsid <> self_lsid");
+                    parents.append(and).append("objectid <> self");
                 }
 
                 if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
@@ -2427,7 +2408,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (options.isForLookup())
                 {
-                    parents.append("\nGROUP BY self_lsid, lsid");
+                    parents.append("\nGROUP BY self, objectid");
                 }
                 sqlf.append(parents);
             }
@@ -2443,8 +2424,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (options.isForLookup())
                 {
-                    children.append("\nSELECT MIN(depth) AS depth, self_lsid, ");
-                    children.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) as name, lsid, MIN(rowid) AS rowid ");
+                    children.append("\nSELECT MIN(depth) AS depth, self, objectid, ");
+                    children.append("MIN(container) AS container, MIN(exptype) AS exptype, MIN(cpastype) AS cpastype, MIN(name) AS name, MIN(lsid) AS lsid, MIN(rowid) AS rowid ");
                     children.append("\nFROM ").append(tokens.second);
                 }
                 else
@@ -2457,7 +2438,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (options.isForLookup())
                 {
-                    children.append(and).append("lsid <> self_lsid");
+                    children.append(and).append("objectid <> self");
                 }
 
                 if (options.getExpType() != null && !"NULL".equalsIgnoreCase(options.getExpType()))
@@ -2485,7 +2466,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 if (options.isForLookup())
                 {
-                    children.append("\nGROUP BY self_lsid, lsid");
+                    children.append("\nGROUP BY self, objectid");
                 }
                 sqlf.append(children);
             }

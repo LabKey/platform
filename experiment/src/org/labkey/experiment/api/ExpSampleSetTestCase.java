@@ -20,11 +20,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -45,6 +49,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -54,7 +59,9 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 
 import java.io.StringBufferInputStream;
 import java.util.ArrayList;
@@ -768,11 +775,20 @@ public class ExpSampleSetTestCase
         // query
         TableSelector ts = QueryService.get().selector(listSchema,
                 "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
-        Collection<Map<String, Object>> results = ts.getMapCollection();
-        assertEquals(1, results.size());
-        Map<String, Object> row = results.iterator().next();
-        assertEquals("sally", row.get("SampleId"));
-        assertEquals("bob", row.get("MySampleParent"));
-    }
+        Results results = ts.getResults();
+        RenderContext ctx = new RenderContext(new ViewContext());
+        ctx.getViewContext().setRequest(TestContext.get().getRequest());
+        ctx.getViewContext().setUser(user);
+        ctx.getViewContext().setContainer(c);
+        ctx.getViewContext().setActionURL(new ActionURL());
+        ColumnInfo sampleId       = results.getColumn(results.findColumn(FieldKey.fromParts("SampleId")));
+        DisplayColumn dcSampleId  = sampleId.getRenderer();
+        ColumnInfo mySampleParent = results.getColumn(results.findColumn(FieldKey.fromParts("MySampleParent")));
+        DisplayColumn dcMySampleParent = mySampleParent.getRenderer();
 
+        assertTrue(results.next());
+        ctx.setRow(results.getRowMap());
+        assertEquals("sally", dcSampleId.getValue(ctx));
+        assertEquals("bob", dcMySampleParent.getDisplayValue(ctx));
+    }
 }

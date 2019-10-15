@@ -32,6 +32,7 @@ public class ExpLineageOptions
     private String _expType;
     private String _cpasType;
     private boolean _forLookup = false;
+    private boolean _useObjectIds = false;
 
     public ExpLineageOptions()
     {
@@ -124,5 +125,18 @@ public class ExpLineageOptions
     public void setForLookup(boolean b)
     {
         _forLookup = b;
+    }
+
+    public boolean isUseObjectIds()
+    {
+        return _useObjectIds;
+    }
+
+    /** user provides SQLFragment that selects objectids rather than lsids
+     * TODO switch all usages to objectids
+     */
+    public void setUseObjectIds(boolean useObjectIds)
+    {
+        _useObjectIds = useObjectIds;
     }
 }
