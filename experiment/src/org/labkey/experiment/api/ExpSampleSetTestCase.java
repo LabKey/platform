@@ -771,9 +771,11 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         String sampleName = "SamplesWithVocabularyProperties";
         String sampleType = "TypeA";
         String updatedSampleType = "TypeB";
+        String sampleColor = "Blue";
+        int sampleAge = 5;
 
         Domain mockDomain = createVocabularyTestDomain(user, c);
-        String sampleTypePropertyURI = mockDomain.getProperties().get(1).getPropertyURI();
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
 
         //create sample set
         ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
@@ -787,19 +789,26 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         // insert a sample
         ArrayListMap<String, Object> row = new ArrayListMap<>();
         row.put("name", "TestSample");
-        row.put(sampleTypePropertyURI, sampleType);
+        row.put(vocabularyPropertyURIs.get(typePropertyName), sampleType);
+        row.put(vocabularyPropertyURIs.get(colorPropertyName), sampleColor);
+        row.put(vocabularyPropertyURIs.get(agePropertyName), null); // inserting a property with null value
         List<Map<String, Object>> rows = buildRows(row);
 
         var insertedSample = insertRows(c, rows ,sampleName, schema);
 
         assertEquals("Custom Property is not inserted", sampleType,
-                OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(sampleTypePropertyURI).getStringValue());
+                OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
+
+        //Verifying property with null value is not inserted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(agePropertyName)).size());
 
         //update inserted sample
         ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
         rowToUpdate.put("name", "TestSample");
         rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
-        rowToUpdate.put(sampleTypePropertyURI, updatedSampleType);
+        rowToUpdate.put(vocabularyPropertyURIs.get(typePropertyName), updatedSampleType);
+        rowToUpdate.put(vocabularyPropertyURIs.get(colorPropertyName), null); // nulling out existing property
+        rowToUpdate.put(vocabularyPropertyURIs.get(agePropertyName), sampleAge); //inserting a new property in update rows
         List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
 
         List<Map<String, Object>> oldKeys = new ArrayList<>();
@@ -810,8 +819,14 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
         var updatedSample = updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
         assertEquals("Custom Property is not updated", updatedSampleType,
-                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(sampleTypePropertyURI).getStringValue());
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
 
+        //Verify property updated to a null value gets deleted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(colorPropertyName)).size());
+
+        //Verify property inserted during update rows in inserted
+        assertEquals("New Property is not inserted with update rows", sampleAge,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(agePropertyName)).getFloatValue().intValue());
     }
 
 }

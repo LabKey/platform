@@ -936,9 +936,11 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         String dataClassName = "DataClassesWithVocabularyProperties";
         int dataClassAge = 2;
         int updatedDataClassAge = 4;
+        String dataClassType = "TypeB";
+        String dataClassColor = "Orange";
 
         Domain mockDomain = createVocabularyTestDomain(user, c);
-        String dataClassAgePropertyURI = mockDomain.getProperties().get(0).getPropertyURI();
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
 
         ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
                 dataClassName, null, List.of(new GWTPropertyDescriptor("DataClassName", "string")), Collections.emptyList(),
@@ -946,21 +948,30 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         assertNotNull(dataClass);
 
         //insert a data class
-        ArrayListMap<String, Object> row = new ArrayListMap<>();
-        row.put("DataClassName", "TestDataClass");
-        row.put(dataClassAgePropertyURI, dataClassAge);
-        List<Map<String, Object>> rows = buildRows(row);
+        ArrayListMap<String, Object> rowToInsert = new ArrayListMap<>();
+        rowToInsert.put("DataClassName", "TestDataClass");
+        //inserting a property with null value
+        rowToInsert.put(vocabularyPropertyURIs.get(colorPropertyName), null);
+        rowToInsert.put(vocabularyPropertyURIs.get(agePropertyName), dataClassAge);
+        rowToInsert.put(vocabularyPropertyURIs.get(typePropertyName), dataClassType);
+        List<Map<String, Object>> rowsToInsert = buildRows(rowToInsert);
 
-        var insertedDataClass = insertRows( c, rows, dataClassName);
+        var insertedDataClass = insertRows( c, rowsToInsert, dataClassName);
 
         assertEquals("Custom Property is not inserted", dataClassAge,
-                OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(dataClassAgePropertyURI).getFloatValue().intValue());
+                OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(agePropertyName)).getFloatValue().intValue());
 
+        //Verifying property with null value is not inserted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(colorPropertyName)).size());
 
         ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
         rowToUpdate.put("DataClassName", "TestDataClass");
         rowToUpdate.put("RowId", insertedDataClass.get(0).get("RowId"));
-        rowToUpdate.put(dataClassAgePropertyURI, updatedDataClassAge);
+        rowToUpdate.put(vocabularyPropertyURIs.get(typePropertyName), null);
+        // updating existing property with null value
+        rowToUpdate.put(vocabularyPropertyURIs.get(agePropertyName), updatedDataClassAge);
+        //inserting a new property in update rows
+        rowToUpdate.put(vocabularyPropertyURIs.get(colorPropertyName), dataClassColor);
         List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
 
         List<Map<String, Object>> oldKeys = new ArrayList<>();
@@ -971,6 +982,13 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 
         updateRows(c, rowsToUpdate, oldKeys, dataClassName);
         assertEquals("Custom Property is not updated",
-                updatedDataClassAge, OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(dataClassAgePropertyURI).getFloatValue().intValue());
+                updatedDataClassAge, OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(agePropertyName)).getFloatValue().intValue());
+
+        //Verify property inserted during update rows in inserted
+        assertEquals("New Property is not inserted with update rows", dataClassColor,
+                OntologyManager.getPropertyObjects(c, insertedDataClass.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(colorPropertyName)).getStringValue());
+
+        //Verify property updated to a null value gets deleted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(typePropertyName)).size());
     }
 }

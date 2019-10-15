@@ -20,6 +20,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,9 @@ public class ExpProvisionedTableTestHelper
     protected static SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
 
     final User user = TestContext.get().getUser();
+    protected String agePropertyName = "Age";
+    protected String colorPropertyName = "Color";
+    protected String typePropertyName = "Type";
 
     protected Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
     {
@@ -36,18 +40,29 @@ public class ExpProvisionedTableTestHelper
 
         GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
         prop1.setRangeURI("int");
-        prop1.setName("Age");
+        prop1.setName(agePropertyName);
 
         GWTPropertyDescriptor prop2 = new GWTPropertyDescriptor();
         prop2.setRangeURI("string");
-        prop2.setName("Type");
+        prop2.setName(typePropertyName);
+
+        GWTPropertyDescriptor prop3 = new GWTPropertyDescriptor();
+        prop3.setRangeURI("string");
+        prop3.setName(colorPropertyName);
 
         GWTDomain mockDomain = new GWTDomain();
         mockDomain.setName(domainName);
         mockDomain.setDescription(domainDescription);
-        mockDomain.setFields(List.of(prop1, prop2));
+        mockDomain.setFields(List.of(prop1, prop2, prop3));
 
         return DomainUtil.createDomain("Vocabulary", mockDomain, null, c, user, domainName, null);
+    }
+
+    protected Map<String, String> getVocabularyPropertyURIS(Domain domain)
+    {
+        Map<String, String> propertyURIs = new HashMap<>();
+        domain.getProperties().forEach(dp -> propertyURIs.put(dp.getName(), dp.getPropertyURI()));
+        return propertyURIs;
     }
 
     protected List<Map<String, Object>> buildRows(ArrayListMap row)
