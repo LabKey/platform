@@ -16,6 +16,7 @@
 package org.labkey.remoteapi;
 
 import org.apache.commons.io.IOUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -38,7 +39,7 @@ import java.io.InputStream;
  */
 public class SelectRowsStreamHack
 {
-    public static DataIteratorBuilder go(Connection cn, String container, SelectRowsCommand cmd) throws IOException, CommandException
+    public static DataIteratorBuilder go(Connection cn, String container, SelectRowsCommand cmd, Container targetContainer) throws IOException, CommandException
     {
         final Command.Response response = cmd._execute(cn, container);
         return new DataIteratorBuilder()
@@ -49,7 +50,7 @@ public class SelectRowsStreamHack
                 try
                 {
                     final InputStream is = response.getInputStream();
-                    final JSONDataLoader loader = new JSONDataLoader(is, false, null);
+                    final JSONDataLoader loader = new JSONDataLoader(is, false, targetContainer);
                     WrapperDataIterator wrapper = new WrapperDataIterator(loader.getDataIterator(context))
                     {
                         @Override

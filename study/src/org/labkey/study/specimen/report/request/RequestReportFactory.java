@@ -32,6 +32,7 @@ import java.util.List;
  */
 public class RequestReportFactory extends BaseRequestReportFactory
 {
+    @Override
     public String getLabel()
     {
         return "Requested Summary";
@@ -43,11 +44,13 @@ public class RequestReportFactory extends BaseRequestReportFactory
         return "RequestedSummary";
     }
 
+    @Override
     public boolean allowsAvailabilityFilter()
     {
         return false;
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         Location[] locations = SpecimenManager.getInstance().getSitesWithRequests(getContainer());
@@ -73,6 +76,7 @@ public class RequestReportFactory extends BaseRequestReportFactory
         return reports;
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.RequestReportAction.class;

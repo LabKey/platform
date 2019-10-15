@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -102,6 +103,32 @@ public interface SpecimenService
     Domain getSpecimenEventDomain(Container container, User user);
 
     Map<String, String> getSpecimenImporterTsvColumnMap();
+
+    SpecimenRequestCustomizer getRequestCustomizer();
+
+    void registerRequestCustomizer(SpecimenRequestCustomizer customizer);
+
+    /** Hooks to allow other modules to control a few items about how specimens are treated */
+    interface SpecimenRequestCustomizer
+    {
+        /** @return whether or not a specimen request must include at least one vial */
+        boolean allowEmptyRequests();
+
+        /** @return null if users should always supply a destination site for a given request, or the site's id if they should all be the same */
+        Integer getDefaultDestinationSiteId();
+
+        /** @return true if reports shouldn't give the option to group based on primary, additive, or derivative types */
+        boolean omitTypeGroupingsWhenReporting();
+
+        /** @return whether the current user can make changes to the status of the request */
+        boolean canChangeStatus(User user);
+
+        /** @return true if a variety of warning types including vial status, the inclusion of vials spanning multiple locations, and more should be suppressed in the UI  */
+        boolean hideRequestWarnings();
+
+        /** @return a message to show the user after a request has been submitted */
+        HtmlString getSubmittedMessage(Container c, int requestId);
+    }
 
     interface SampleInfo
     {

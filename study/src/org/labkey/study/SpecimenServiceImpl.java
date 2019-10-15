@@ -40,6 +40,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -74,6 +75,45 @@ public class SpecimenServiceImpl implements SpecimenService
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
     private final Map<String, SpecimenTransform> _specimenTransformMap = new ConcurrentHashMap<>();
     private final List<SpecimenChangeListener> _changeListeners = new CopyOnWriteArrayList<>();
+
+    private SpecimenRequestCustomizer _specimenRequestCustomizer = new SpecimenRequestCustomizer()
+    {
+        @Override
+        public boolean allowEmptyRequests()
+        {
+            return false;
+        }
+
+        @Override
+        public Integer getDefaultDestinationSiteId()
+        {
+            return null;
+        }
+
+        @Override
+        public boolean omitTypeGroupingsWhenReporting()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean canChangeStatus(User user)
+        {
+            return true;
+        }
+
+        @Override
+        public boolean hideRequestWarnings()
+        {
+            return false;
+        }
+
+        @Override
+        public HtmlString getSubmittedMessage(Container c, int requestId)
+        {
+            return HtmlString.EMPTY_STRING;
+        }
+    };
 
     private class StudyParticipantVisit implements ParticipantVisit
     {
@@ -388,5 +428,17 @@ public class SpecimenServiceImpl implements SpecimenService
             colNameMap.put(specimenColumn.getDbColumnName(), specimenColumn.getTsvColumnName());
         }
         return colNameMap;
+    }
+
+    @Override
+    public SpecimenRequestCustomizer getRequestCustomizer()
+    {
+        return _specimenRequestCustomizer;
+    }
+
+    @Override
+    public void registerRequestCustomizer(SpecimenRequestCustomizer customizer)
+    {
+        _specimenRequestCustomizer = customizer;
     }
 }
