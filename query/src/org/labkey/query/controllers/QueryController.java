@@ -350,7 +350,7 @@ public class QueryController extends SpringActionController
             final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
             try
             {
-                DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd);
+                DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd, getContainer());
                 // immediately close the source after opening it, this is a test.
                 source.getDataIterator(new DataIteratorContext()).close();
             }
