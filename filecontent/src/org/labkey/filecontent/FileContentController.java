@@ -1353,9 +1353,10 @@ public class FileContentController extends SpringActionController
                         .forEach(columns::add);
             }
 
+            // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
             final int MAX_ROW_COUNT = 10000;
-            int rowCount = 0;
-            for (Map<String, Object> data : new TableSelector(tableInfo, columns, null, null).getMapCollection())
+
+            new TableSelector(tableInfo, columns, null, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");
                 if (null != encodedUrl)
@@ -1386,11 +1387,8 @@ public class FileContentController extends SpringActionController
                         }
                     }
                     rows.add(row);
-                    // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
-                    if (rowCount++ > MAX_ROW_COUNT)
-                        break;
                 }
-            }
+            });
             response.put("rows", rows);
             response.put("success", true);
             return response;
