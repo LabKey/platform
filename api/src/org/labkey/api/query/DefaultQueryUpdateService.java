@@ -33,6 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
@@ -55,7 +56,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -382,7 +382,22 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
             // We want a map using the DbTable column names as keys, so figure out the right name to use
             String dbName = queryToDb.containsKey(name) ? queryToDb.get(name) : name;
+
+
             rowStripped.put(dbName, row.get(key));
+        }
+
+        //resolves other properties not in the Domain
+        for (Map.Entry<String, Object> entry: row.entrySet())
+        {
+            if (!rowStripped.containsKey(entry.getKey()))
+            {
+               ColumnInfo resolvedColumnInfo = getQueryTable().getColumn(entry.getKey());
+               if (null != resolvedColumnInfo)
+               {
+                   rowStripped.put(entry.getKey(), entry.getValue());
+               }
+            }
         }
 
         convertTypes(container, rowStripped);
@@ -493,6 +508,40 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             // Update the lsid in the row: the lsid may have not existed in the row before the update.
             lsid = lsids.get(0);
             row.put(objectUriCol.getName(), lsid);
+        }
+
+        for (Map.Entry<String, Object> rowEntry : row.entrySet())
+        {
+            if (getQueryTable().getColumn(rowEntry.getKey()) instanceof PropertyColumn)
+            {
+                boolean vocabularyColumn = ((PropertyColumn) getQueryTable().getColumn(rowEntry.getKey())).isVocabulary();
+
+                if (vocabularyColumn)
+                {
+                    //Getting Object URI's in case of Sample Sets and Data Classes as the object URI column is different (LSID) for these tables
+                    String objectURI = (String) oldRow.get(getQueryTable().getDomain().getDomainKind().getObjectUriColumnName());
+                    OntologyObject ontologyObject = OntologyManager.getOntologyObject(c, objectURI);
+                    ObjectProperty objectProperty = null;
+
+                    for (Map.Entry<String, ObjectProperty> entry : OntologyManager.getPropertyObjects(c, objectURI).entrySet())
+                    {
+                        if (entry.getKey().equalsIgnoreCase(rowEntry.getKey()) && entry.getValue().getObjectId() == ontologyObject.getObjectId())
+                        {
+                            objectProperty = entry.getValue();
+                        }
+                    }
+
+                    if (null != objectProperty)
+                    {
+                        OntologyManager.updateObjectProperty(user, c, OntologyManager.getPropertyDescriptor(objectProperty.getPropertyId()), objectURI, rowEntry.getValue(), null);
+                    }
+                    else
+                    {
+                        OntologyManager.insertProperties(c, objectURI,  new ObjectProperty(objectURI, c, rowEntry.getKey(), rowEntry.getValue()));
+                    }
+                }
+
+            }
         }
 
         return Table.update(user, getDbTable(), row, keys);

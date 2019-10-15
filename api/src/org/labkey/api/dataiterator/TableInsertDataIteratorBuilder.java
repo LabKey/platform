@@ -2,6 +2,7 @@ package org.labkey.api.dataiterator;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.DomainProperty;
 
 import java.util.Set;
 
@@ -14,6 +15,7 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
     Set<String> addlSkipColumns = null;
     Set<String> dontUpdate = null;
     boolean commitRowsBeforeContinuing = false;
+    private Set<DomainProperty> vocabularyProperties;
 
     public TableInsertDataIteratorBuilder(DataIteratorBuilder data, TableInfo table, Container c)
     {
@@ -52,10 +54,16 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         return this;
     }
 
+    public TableInsertDataIteratorBuilder setVocabularyProperties(Set<DomainProperty> vocabularyProperties)
+    {
+        this.vocabularyProperties = vocabularyProperties;
+        return this;
+    }
+
     @Override
     public DataIterator getDataIterator(DataIteratorContext context)
     {
-        DataIterator di = TableInsertDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns, dontUpdate, commitRowsBeforeContinuing);
+        DataIterator di = TableInsertDataIterator.create(builder, table, container, context, keyColumns, addlSkipColumns, dontUpdate, vocabularyProperties, commitRowsBeforeContinuing);
         if (null == di)
         {
             //noinspection ThrowableNotThrown

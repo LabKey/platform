@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -35,6 +36,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
@@ -85,7 +87,7 @@ import static org.junit.Assert.assertTrue;
  * Date: 11/24/16
  */
 @TestWhen(TestWhen.When.BVT)
-public class ExpSampleSetTestCase
+public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 {
     Container c;
 
@@ -776,5 +778,71 @@ public class ExpSampleSetTestCase
         ctx.setRow(results.getRowMap());
         assertEquals("sally", dcSampleId.getValue(ctx));
         assertEquals("bob", dcMySampleParent.getDisplayValue(ctx));
+    }
+
+    @Test
+    public void testSampleSetWithVocabularyProperties() throws Exception
+    {
+        User user = TestContext.get().getUser();
+
+        String sampleName = "SamplesWithVocabularyProperties";
+        String sampleType = "TypeA";
+        String updatedSampleType = "TypeB";
+        String sampleColor = "Blue";
+        int sampleAge = 5;
+
+        Domain mockDomain = createVocabularyTestDomain(user, c);
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
+
+        //create sample set
+        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        assertNotNull(ss);
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+
+        // insert a sample
+        ArrayListMap<String, Object> row = new ArrayListMap<>();
+        row.put("name", "TestSample");
+        row.put(vocabularyPropertyURIs.get(typePropertyName), sampleType);
+        row.put(vocabularyPropertyURIs.get(colorPropertyName), sampleColor);
+        row.put(vocabularyPropertyURIs.get(agePropertyName), null); // inserting a property with null value
+        List<Map<String, Object>> rows = buildRows(row);
+
+        var insertedSample = insertRows(c, rows ,sampleName, schema);
+
+        assertEquals("Custom Property is not inserted", sampleType,
+                OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
+
+        //Verifying property with null value is not inserted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(agePropertyName)).size());
+
+        //update inserted sample
+        ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+        rowToUpdate.put("name", "TestSample");
+        rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+        rowToUpdate.put(vocabularyPropertyURIs.get(typePropertyName), updatedSampleType);
+        rowToUpdate.put(vocabularyPropertyURIs.get(colorPropertyName), null); // nulling out existing property
+        rowToUpdate.put(vocabularyPropertyURIs.get(agePropertyName), sampleAge); //inserting a new property in update rows
+        List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
+
+        List<Map<String, Object>> oldKeys = new ArrayList<>();
+        ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+        oldKey.put("name", "TestSample");
+        oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+        oldKeys.add(oldKey);
+
+        var updatedSample = updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+        assertEquals("Custom Property is not updated", updatedSampleType,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
+
+        //Verify property updated to a null value gets deleted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(colorPropertyName)).size());
+
+        //Verify property inserted during update rows in inserted
+        assertEquals("New Property is not inserted with update rows", sampleAge,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(agePropertyName)).getFloatValue().intValue());
     }
 }
