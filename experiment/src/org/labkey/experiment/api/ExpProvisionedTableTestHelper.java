@@ -36,7 +36,7 @@ public class ExpProvisionedTableTestHelper
     protected Domain createVocabularyTestDomain(User user, Container c) throws ValidationException
     {
         String domainName = "TestVocabularyDomain";
-        String domainDescription = "This is a mock vocabulary";
+        String domainDescription = "This is a test vocabulary";
 
         GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
         prop1.setRangeURI("int");
@@ -50,12 +50,12 @@ public class ExpProvisionedTableTestHelper
         prop3.setRangeURI("string");
         prop3.setName(colorPropertyName);
 
-        GWTDomain mockDomain = new GWTDomain();
-        mockDomain.setName(domainName);
-        mockDomain.setDescription(domainDescription);
-        mockDomain.setFields(List.of(prop1, prop2, prop3));
+        GWTDomain domain = new GWTDomain();
+        domain.setName(domainName);
+        domain.setDescription(domainDescription);
+        domain.setFields(List.of(prop1, prop2, prop3));
 
-        return DomainUtil.createDomain("Vocabulary", mockDomain, null, c, user, domainName, null);
+        return DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null);
     }
 
     protected Map<String, String> getVocabularyPropertyURIS(Domain domain)
