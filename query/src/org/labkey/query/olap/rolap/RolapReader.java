@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * Created by matthew on 8/16/14.
  *
@@ -119,6 +121,11 @@ public class RolapReader
     }
 
 
+    // TODO, it would be great to give informative errors if the XML is not well formed
+    // CONSIDER: use xsd? or validate by hand?
+    void validate()
+    {
+    }
 
 
     private RolapCubeDef _currentCube = null;
@@ -133,6 +140,8 @@ public class RolapReader
             throw new ConfigurationException("Expected to find Schema element at root of document");
 
         schemaName = getStringAttribute(schema,"name");
+        if (isBlank(schemaName))
+            throw new ConfigurationException("Schema element should have 'name' attribute");
 
         for (Node node : it(schema.getChildNodes()))
         {
@@ -154,12 +163,17 @@ public class RolapReader
                 }
             }
         }
+
+        validate();
     }
 
 
     private void parseCube(Node cubeNode)
     {
         String cubeName = getStringAttribute(cubeNode,"name");
+        if (isBlank(cubeName))
+            throw new ConfigurationException("Cube element should have 'name' attribute");
+
         _currentCube = new RolapCubeDef(schemaName, cubeName);
 
         for (Node node : it(cubeNode.getChildNodes()))

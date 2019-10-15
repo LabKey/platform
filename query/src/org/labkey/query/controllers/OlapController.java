@@ -738,7 +738,8 @@ public class OlapController extends SpringActionController
                     throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
                 schema.checkCanReadSchemaOlap();
                 schema.checkCanExecuteMDX();
-                // TODO
+                // TODO currently only CountDistinctQueryAction supports ContainerFilter
+                // TODO cubes accessible by MDX should typically be constrained to one container
                 //  cf = schema.getOlapContainerFilter();
             }
 
@@ -751,6 +752,7 @@ public class OlapController extends SpringActionController
 
             QubeQuery qquery = new QubeQuery(cube);
             qquery.fromJson(q, errors);
+            // TODO see above
             // if (null != cf)
             //    mdx.setContainerFilter(cf);
             if (errors.hasErrors())

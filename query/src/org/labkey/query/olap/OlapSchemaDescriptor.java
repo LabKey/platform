@@ -25,7 +25,6 @@ import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.security.User;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.labkey.query.olap.rolap.RolapReader;
-import org.labkey.remoteapi.assay.Run;
 import org.olap4j.OlapConnection;
 import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.Catalog;
@@ -142,8 +141,7 @@ public abstract class OlapSchemaDescriptor
     boolean shouldWarmCube(Container c)
     {
         // Give the module a chance to respectfully decline the cube warming operation
-        // without throwing an error.  This may happen in Argos, for example, if we are trying to
-        // warm the cube in a Portal Selection container
+        // without throwing an error.
         if (_olapSchemaInfo != null)
             return _olapSchemaInfo.shouldWarmCube(c);
 

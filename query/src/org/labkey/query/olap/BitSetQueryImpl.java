@@ -122,10 +122,7 @@ public class BitSetQueryImpl
         this.qq = qq;
         this.cube = qq.getCube();
 
-//        if (!sd.usesMondrian())
-            _dataSourceHelper = new SqlDataSourceHelper();
-//        else
-//            _dataSourceHelper = new CubeDataSourceHelper();
+        _dataSourceHelper = new SqlDataSourceHelper();
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -1429,7 +1426,14 @@ public class BitSetQueryImpl
    }
 
 
-    // return sets/counts from the cube,
+    /*
+    // NOTE (please don't delete)
+    //
+    // This class enables executing CountDistinct queries using an MDX cube as a source
+    // This is not currently used or tested, but if we have cubes loaded into Mondrian
+    // it makes a lot of sense to query from there instead of reselecting from source tables.
+    // If we want to enable that, this code is probably 95% there.
+
     class CubeDataSourceHelper implements IDataSourceHelper
     {
         CellSet execute(String query)
@@ -1548,7 +1552,7 @@ public class BitSetQueryImpl
         /**
          * return a set of members in <MemberSetResult=outer> that intersect (non empty cross join) with <MemberSetResult=sub>.
          * Note that this basically gives OR or UNION semantics w/respect to the sub members.
-         */
+         * /
         public MemberSet membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
         {
             MemberSet set;
@@ -1605,7 +1609,7 @@ public class BitSetQueryImpl
 
         /**
          * return a set of members in <Level=outer> that intersect (non empty cross join) with <Member=sub>
-         */
+         * /
         public MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
             if (same(sub.getHierarchy(), outer.getHierarchy()))
@@ -1768,6 +1772,7 @@ public class BitSetQueryImpl
             return m;
         }
     }
+    */
 
 
     boolean same(MetadataElement a, MetadataElement b)
