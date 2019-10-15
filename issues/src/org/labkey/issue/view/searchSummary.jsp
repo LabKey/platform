@@ -33,7 +33,7 @@
 %>
 
 
-<table style="min-width:150pt;margin-bottom:10px;">
+<table style="min-width:150pt;margin-bottom:15px;">
     <tr><td style="color: darkgray"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
     <% if (!isClosed) { %>
     <tr><td style="color: darkgray"><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
@@ -44,37 +44,6 @@
     <% } %>
 </table>
 
-
-<table style="table-layout: fixed;width:250pt;margin-bottom:10px;">
-    <tr style="color: darkgray">
-        <td><label>Status:</label></td>
-
-        <% if (!isClosed) { %>
-        <td><label>Assigned&nbsp;To:</label></td>
-        <% } %>
-
-        <td><label>Opened:</label></td>
-
-        <% if (!isOpen) { %>
-        <td><label>Resolved:</label></td>
-        <% } %>
-    </tr>
-
-    <tr>
-        <td style="white-space: nowrap;"><%=h(issue.getStatus())%></td>
-
-        <% if (!isClosed) { %>
-        <td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td>
-        <% } %>
-
-        <td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td>
-
-        <% if (!isOpen) { %>
-        <td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td>
-        <% } %>
-
-    </tr>
-</table>
 
 <div>
     <%
