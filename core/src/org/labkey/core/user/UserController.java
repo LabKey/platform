@@ -916,7 +916,7 @@ public class UserController extends SpringActionController
             boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
-            getModifiableUser(_pkVal);
+            getModifiableUser(_pkVal); // Will throw if specified user is guest or non-existent
 
             if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
