@@ -17,14 +17,17 @@
 package org.labkey.study.designer;
 
 import org.apache.poi.ss.usermodel.Sheet;
-import org.labkey.api.data.*;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.reader.ColumnDescriptor;
 
-import java.util.*;
-import java.sql.SQLException;
 import java.io.Writer;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: Mark Igra
@@ -48,7 +51,7 @@ public class MapArrayExcelWriter extends ExcelWriter
     }
 
     @Override
-    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+    public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
         for (currentRow = 0; currentRow < maps.size(); currentRow++)
         {
@@ -70,7 +73,6 @@ public class MapArrayExcelWriter extends ExcelWriter
             setName(name);
             setCaption(caption);
             this.valueClass = valueClass;
-
         }
 
         @Override

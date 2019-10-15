@@ -29,7 +29,6 @@ import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialectManager;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -82,18 +81,12 @@ import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
-import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -222,6 +215,7 @@ public class DbScope
     public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
     {
         @NotNull
+        @Override
         public String getKind()
         {
             return "NORMAL";
@@ -569,6 +563,7 @@ public class DbScope
                 throw new SQLException("For testing purposes - simulated autocommit setting failure");
             }
 
+            LOG.debug("setAutoCommit(false)");
             conn.setAutoCommit(false);
             connectionSetupSuccessful = true;
         }
@@ -629,7 +624,7 @@ public class DbScope
     /** Won't retry if we're already in a transaction
      * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
      */
-    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn)
+    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
         // don't retry if we're already in a transaction, it won't help
         ReturnType ret = null;
@@ -639,7 +634,7 @@ public class DbScope
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
-            try (DbScope.Transaction transaction = ensureTransaction())
+            try (DbScope.Transaction transaction = ensureTransaction(extraLocks))
             {
                 ret = fn.exec(transaction);
                 transaction.commit();
@@ -1672,8 +1667,8 @@ public class DbScope
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions
-            Set<Runnable> tasks = new HashSet<>(getRunnables(transaction));
+            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashSet
+            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction));
 
             for (Runnable task : tasks)
             {
@@ -1953,6 +1948,7 @@ public class DbScope
                             CommitTaskOption.PRECOMMIT.run(this);
                             conn.commit();
                             conn.setAutoCommit(true);
+                            LOG.debug("setAutoCommit(true)");
                         }
                         finally
                         {
@@ -2556,7 +2552,7 @@ public class DbScope
 
             final Object notifier = new Object();
 
-            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsers(), user.getUserId());
+            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
             // let's try to intentionally cause a deadlock
@@ -2594,7 +2590,11 @@ public class DbScope
                 lockHome.lock();
                 txFg.commit();
             }
-            catch (Throwable x)
+            catch (InterruptedException x)
+            {
+                throw new RuntimeException(x);
+            }
+            catch (DeadlockLoserDataAccessException x)
             {
                 fgException = x;
             }
@@ -2610,7 +2610,7 @@ public class DbScope
                 }
             }
 
-            assert bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException;
+            assertTrue( bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException );
         }
 
         @Test
