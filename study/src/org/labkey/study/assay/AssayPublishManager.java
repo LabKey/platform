@@ -59,6 +59,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
@@ -575,25 +576,25 @@ public class AssayPublishManager implements AssayPublishService
     @NotNull
     public DatasetDefinition createDataset(User user, StudyImpl study, String name, @Nullable Integer datasetId, boolean isDemographicData)
     {
-        return createAssayDataset(user, study, name, null, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, null, false);
+        return createAssayDataset(user, study, name, null, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, null, false, KeyManagementType.None);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, @Nullable ExpProtocol protocol)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false, KeyManagementType.None);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField, KeyManagementType.None);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
@@ -610,10 +611,12 @@ public class AssayPublishManager implements AssayPublishService
                 newDataset.setCategoryId(categoryId);
             if (keyPropertyName != null)
                 newDataset.setKeyPropertyName(keyPropertyName);
-            newDataset.setDemographicData(isDemographicData);
-            newDataset.setUseTimeKeyField(useTimeKeyField);
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
+
+            newDataset.setDemographicData(isDemographicData);
+            newDataset.setUseTimeKeyField(useTimeKeyField);
+            newDataset.setKeyManagementType(managementType);
 
             StudyManager.getInstance().createDatasetDefinition(user, newDataset);
 

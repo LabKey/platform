@@ -125,12 +125,16 @@
     <table>
         <tr>
             <td>
-                <input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);"<%=checked(displaySuccess.equals(""))%>>Send email notifications if the pipeline job succeeds
+                <label>
+                    <input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);"<%=checked(displaySuccess.equals(""))%>>Send email notifications if the pipeline job succeeds
+                </label>
             </td>
         </tr>
         <tr style="display:<%=displaySuccess%>">
             <td style="padding-left: 20px;">
-                <input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess"<%=checked(notifyOwnerOnSuccess)%>><%=text(getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner"))%>
+                <label>
+                    <input value="true" type=checkbox id="notifyOwnerOnSuccess" name="notifyOwnerOnSuccess"<%=checked(notifyOwnerOnSuccess)%>><%=text(getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_SUCCESS, c, "Send to owner"))%>
+                </label>
             </td>
         </tr>
         <tr style="display:<%=displaySuccess%>">
@@ -171,12 +175,16 @@
     <table>
         <tr>
             <td>
-                <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(displayError.equals(""))%>>Send email notification(s) if the pipeline job fails
+                <label>
+                    <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(displayError.equals(""))%>>Send email notification(s) if the pipeline job fails
+                </label>
             </td>
         </tr>
         <tr style="display:<%=displayError%>">
             <td style="padding-left: 20px;">
-                <input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError"<%=checked(notifyOwnerOnError)%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send to owner")%>
+                <label>
+                    <input type=checkbox id="notifyOwnerOnError" name="notifyOwnerOnError"<%=checked(notifyOwnerOnError)%>><%=getTitle(PipelineEmailPreferences.PREF_NOTIFY_OWNER_ON_ERROR, c, "Send to owner")%>
+                </label>
             </td>
         </tr>
         <tr style="display:<%=displayError%>">

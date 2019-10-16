@@ -23,20 +23,18 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.gwt.client.util.ColorGenerator;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
-import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -46,10 +44,10 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.view.AssayGWTView;
-import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -179,35 +177,6 @@ public class PlateController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
-        }
-    }
-
-    public class TemplateViewBean
-    {
-        private PlateTemplate _template;
-        private ColorGenerator _colorGenerator;
-        private WellGroup.Type _type;
-
-        public TemplateViewBean(PlateTemplate template, WellGroup.Type type)
-        {
-            _template = template;
-            _type = type;
-            _colorGenerator = new ColorGenerator();
-        }
-
-        public ColorGenerator getColorGenerator()
-        {
-            return _colorGenerator;
-        }
-
-        public PlateTemplate getTemplate()
-        {
-            return _template;
-        }
-
-        public WellGroup.Type getType()
-        {
-            return _type;
         }
     }
 

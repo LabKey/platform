@@ -81,7 +81,7 @@ public class TimelineModule extends CodeOnlyModule
             @Override
             public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
             {
-                return new JspView<>(TimelineView.class, "customizeTimeline.jsp", webPart);
+                return new JspView<>("/org/labkey/timeline/view/customizeTimeline.jsp", webPart);
             }
         }));
     }

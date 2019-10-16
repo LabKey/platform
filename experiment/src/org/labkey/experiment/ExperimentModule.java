@@ -35,6 +35,9 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolAttachmentType;
+import org.labkey.api.exp.api.ExpRunAttachmentType;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.FilterProtocolInputCriteria;
@@ -50,11 +53,13 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.assay.AssayProvider;
@@ -70,6 +75,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
@@ -87,6 +93,7 @@ import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
+import org.labkey.experiment.api.VocabularyDomainKind;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -128,11 +135,13 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     public static final String EXPERIMENT_RUN_WEB_PART_NAME = "Experiment Runs";
 
+    @Override
     public String getName()
     {
         return MODULE_NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 19.21;
@@ -145,6 +154,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         return new ExperimentUpgradeCode();
     }
 
+    @Override
     protected void init()
     {
         addController("experiment", ExperimentController.class);
@@ -160,6 +170,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ExpSchema.register(this);
         PropertyService.get().registerDomainKind(new SampleSetDomainKind());
         PropertyService.get().registerDomainKind(new DataClassDomainKind());
+        PropertyService.get().registerDomainKind(new VocabularyDomainKind());
 
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
@@ -180,13 +191,20 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
                 "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
+
+        RoleManager.registerPermission(new DesignVocabularyPermission(), true);
+
+        AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
+        AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
     }
 
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -194,6 +212,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunGroupWebPart(portalCtx, WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), webPart);
@@ -204,6 +223,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new RunTypeWebPart();
@@ -214,6 +234,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         result.add(new ExperimentRunWebPartFactory());
         BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
@@ -222,15 +243,17 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         sampleSetFactory.addLegacyNames("Narrow Sample Sets");
         result.add(sampleSetFactory);
         result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
-                WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);
+                WebPartView view = new JspView<>("/org/labkey/experiment/samplesAndAnalytes.jsp", webPart);
                 view.setTitle("Samples");
                 return view;
             }
         });
 
         result.add(new AlwaysAvailableWebPartFactory("Data Classes", false, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new DataClassWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx, webPart);
@@ -239,6 +262,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         BaseWebPartFactory narrowProtocolFactory = new BaseWebPartFactory(PROTOCOL_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
         {
+            @Override
             public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 return new ProtocolWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
@@ -285,6 +309,27 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return ExperimentJSONConverter.serializeData(data, user);
                 }
             });
+            ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
+                @Override
+                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace("materialSource:", ""));
+                    if (rowId == 0)
+                        return null;
+
+                    ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(rowId);
+                    if (sampleSet == null)
+                        return null;
+
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null);
+
+                    //Need to map to proper Icon
+                    properties.put("type", "sampleSet");
+
+                    return properties;
+                }
+            });
+
             ss.addResourceResolver("material", new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
@@ -391,6 +436,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }
     }
 
+    @Override
     @NotNull
     public Collection<String> getSummary(Container c)
     {
@@ -426,7 +472,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (dataClassCount > 0)
             list.add(dataClassCount + " Data Class" + (dataClassCount > 1 ? "es" : ""));
 
-        int sampleSetCount = ExperimentService.get().getSampleSets(c, null, false).size();
+        int sampleSetCount = SampleSetService.get().getSampleSets(c, null, false).size();
         if (sampleSetCount > 0)
             list.add(sampleSetCount + " Sample Set" + (sampleSetCount > 1 ? "s" : ""));
 
@@ -458,7 +504,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             Lsid.TestCase.class,
             LSIDRelativizer.TestCase.class,
             LsidUtils.TestCase.class,
-            GraphAlgorithms.TestCase.class
+            GraphAlgorithms.TestCase.class,
+            PropertyController.TestCase.class
         ));
     }
 
@@ -481,6 +528,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
 
+    @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
 //        if (c == ContainerManager.getSharedContainer())
@@ -506,6 +554,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     }
 
+    @Override
     public void indexDeleted()
     {
         // Clear the last indexed time on all material sources

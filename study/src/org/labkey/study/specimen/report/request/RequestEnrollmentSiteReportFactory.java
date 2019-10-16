@@ -15,10 +15,12 @@
  */
 package org.labkey.study.specimen.report.request;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Location;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
@@ -51,11 +53,13 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         _enrollmentSiteId = enrollmentSiteId;
     }
 
+    @Override
     public boolean allowsAvailabilityFilter()
     {
         return false;
     }
 
+    @Override
     public String getLabel()
     {
         Location location = _enrollmentSiteId != null ? StudyManager.getInstance().getLocation(getContainer(), _enrollmentSiteId) : null;
@@ -68,6 +72,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         return "RequestedByEnrollmentLocation";
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         final Set<LocationImpl> locations;
@@ -107,14 +112,16 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
         return reports;
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.RequestEnrollmentSiteReportAction.class;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         Set<LocationImpl> locations = SpecimenManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);

@@ -22,11 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -39,14 +36,12 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.api.util.PageFlowUtil.urlProvider;
+import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 /**
  * User: brittp
@@ -82,10 +77,6 @@ public class PageConfig
 	{
 		Default, True, False
 	}
-
-    public static final String SESSION_WARNINGS_BANNER_KEY = "PAGE_CONFIG$SESSION_WARNINGS_BANNER_KEY";
-
-    private static Collection<String> STATIC_ADMIN_WARNINGS;
 
     private Template _template = Template.Home;
     private String _title;
@@ -405,108 +396,30 @@ public class PageConfig
         _resources.add(resource);
     }
 
-    // Check warning conditions that will never change after the server has started up. This will be called
-    // once per server session; no need to test on every request.
-    private static Collection<String> getStaticAdminWarnings()
-    {
-        if (STATIC_ADMIN_WARNINGS != null)
-        {
-            return STATIC_ADMIN_WARNINGS;
-        }
-
-        List<String> messages = new LinkedList<>();
-        Warnings warnings = Warnings.of(messages);
-        WarningService.get().forEachProvider(p -> p.addStaticWarnings(warnings));
-
-        messages = Collections.unmodifiableList(messages);
-        if (ModuleLoader.getInstance().isStartupComplete())
-        {
-            // We should have our full list of warnings at this point, so safe to cache them
-            STATIC_ADMIN_WARNINGS = messages;
-        }
-        return messages;
-    }
-
-    protected final static String DISMISSAL_SCRIPT_FORMAT =
-            "<script type=\"text/javascript\">\n" +
-            "    (function($) {\n" +
-            "        function dismissMessage() {\n" +
-            "            var config = {\n" +
-            "                url: %1$s,\n" +
-            "                method: 'POST',\n" +
-            "                success: function () {$(\".lk-dismissable-warn\").hide()},\n" +
-            "                failure: LABKEY.Utils.displayAjaxErrorResponse\n" +
-            "            };\n" +
-            "            LABKEY.Ajax.request(config); \n" +
-            "            return false;\n" +
-            "        }\n" +
-            "       $('body').on('click', 'a.lk-dismissable-warn-close', function() {\n" +
-            "           dismissMessage();\n" +
-            "       });" +
-            "    })(jQuery);\n" +
-            "</script>\n";
-
-    public static void appendDismissableMessageHtml(ViewContext viewContext, List<String> warnings, StringBuilder html)
-    {
-        html.append("<div class=\"alert alert-warning alert-dismissable\">")
-            .append("<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>")
-            .append("<div class=\"lk-dismissable-warn\">");
-        appendMessageContent(warnings, html);
-        html.append("</div>");
-        CoreUrls coreUrls = urlProvider(CoreUrls.class);
-        if (coreUrls != null)
-        {
-            String dismissURL = coreUrls.getDismissCoreWarningActionURL(viewContext).toString();
-            html.append(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
-        }
-        html.append("</div>");
-    }
-
     // For now, gives a central place to render messaging
     public String renderSiteMessages(ViewContext context)
     {
-        // Collect warnings
-        List<String> warningMessages = new LinkedList<>();
-        User user = context.getUser();
-
-        if (null != user && user.hasSiteAdminPermission())
-            warningMessages.addAll(getStaticAdminWarnings());
-
-        Warnings warnings = Warnings.of(warningMessages);
-        WarningService.get().forEachProvider(p->p.addWarnings(warnings, context));
-
-        List<String> dismissibleWarningMessages = new LinkedList<>();
-        Warnings dismissibleWarnings = Warnings.of(dismissibleWarningMessages);
-        WarningService.get().forEachProvider(p->p.addDismissibleWarnings(dismissibleWarnings, context));
-
-        // Render warnings
         StringBuilder messages = new StringBuilder();
-
-        if (!warningMessages.isEmpty())
-        {
-            messages.append("<div class=\"alert alert-warning\" role=\"alert\">");
-            appendMessageContent(warningMessages, messages);
-            messages.append("</div>");
-        }
 
         // Keep an empty div for re-addition of dismissable messages onto the page
         messages.append("<div class=\"lk-dismissable-alert-ct\">");
         if (context != null && context.getRequest() != null)
         {
+            Warnings warnings = WarningService.get().getWarnings(context);
             HttpSession session = context.getRequest().getSession(true);
 
             if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) == null)
                 session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
 
-            // If the sesstion attribute has explicitly been set to false & there are no more warnings, remove it
-            else if (!(boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && dismissibleWarningMessages.isEmpty())
+            // If the session attribute has explicitly been set to false & there are no more warnings, remove it
+            else if (!(boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) && warnings.isEmpty())
                 session.removeAttribute(SESSION_WARNINGS_BANNER_KEY);
 
             if (session.getAttribute(SESSION_WARNINGS_BANNER_KEY) != null &&
                     (boolean) session.getAttribute(SESSION_WARNINGS_BANNER_KEY) &&
-                    !dismissibleWarningMessages.isEmpty())
+                    !warnings.isEmpty())
             {
-                appendDismissableMessageHtml(context, dismissibleWarningMessages, messages);
+                messages.append(WarningService.get().getWarningsHtml(warnings, context));
             }
         }
         messages.append("</div>");
@@ -517,22 +430,6 @@ public class PageConfig
         messages.append("</noscript>");
 
         return messages.toString();
-    }
-
-    public static void appendMessageContent(List<String> messages, StringBuilder html)
-    {
-        if (!messages.isEmpty())
-        {
-            if (messages.size() == 1)
-                html.append(messages.get(0));
-            else
-            {
-                html.append("<ul>");
-                for (String msg : messages)
-                    html.append("<li>").append(msg).append("</li>");
-                html.append("</ul>");
-            }
-        }
     }
 
     public JSONObject getPortalContext()

@@ -191,7 +191,7 @@ class ErrorView extends HttpView
         if (_includeStopImpersonatingButton)
         {
             ActionURL stopUrl = PageFlowUtil.urlProvider(LoginUrls.class).getStopImpersonatingURL(c, getViewContext().getActionURL());
-            out.println(PageFlowUtil.button("Stop Impersonating").onClick(PageFlowUtil.postOnClickJavaScript(stopUrl)));
+            out.println(PageFlowUtil.button("Stop Impersonating").href(stopUrl).usePost());
         }
 
         out.println("<br>");

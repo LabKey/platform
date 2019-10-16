@@ -74,9 +74,11 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         return rgn;
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
-        return root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
+        root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
+        return root;
     }
 
     /**
@@ -85,7 +87,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
      */
     public static List<Integer> getCheckboxIds(ViewContext context)
     {
-        Set<String> idStrings = DataRegionSelection.getSelected(context, null, true, false);
+        Set<String> idStrings = DataRegionSelection.getSelected(context, null, false);
 
         DataRegionSelection.clearAll(context, null);
         DataRegionSelection.setSelected(context, null, idStrings, true);

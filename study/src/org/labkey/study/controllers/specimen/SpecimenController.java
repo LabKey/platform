@@ -85,6 +85,7 @@ import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SamplesUrls;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -232,6 +233,18 @@ public class SpecimenController extends BaseStudyController
         {
             return SpecimenController.getSamplesURL(c);
         }
+
+        @Override
+        public ActionURL getManageRequestStatusURL(Container c, int requestId)
+        {
+            return new ActionURL(ManageRequestStatusAction.class, c).addParameter("id", requestId);
+        }
+
+        @Override
+        public ActionURL getRequestDetailsURL(Container c, int requestId)
+        {
+            return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -274,13 +287,15 @@ public class SpecimenController extends BaseStudyController
     private NavTree appendSpecimenRequestsNavTrail(NavTree root)
     {
         root = appendBaseSpecimenNavTrail(root);
-        return root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
+        return root;
     }
 
     private NavTree appendSpecimenRequestNavTrail(NavTree root, int requestId)
     {
         root = appendSpecimenRequestsNavTrail(root);
-        return root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
+        root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
+        return root;
     }
 
 
@@ -1634,7 +1649,7 @@ public class SpecimenController extends BaseStudyController
             if ("post".equalsIgnoreCase(utils.getViewContext().getRequest().getMethod()) &&
                     (utils.getViewContext().getRequest().getParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY) != null))
             {
-                ids = DataRegionSelection.getSelected(utils.getViewContext(), null, true, true);
+                ids = DataRegionSelection.getSelected(utils.getViewContext(), null, true);
                 if (isFromGroupedView())
                     return utils.getRequestableBySampleHash(ids, getPreferredLocation());
                 else
@@ -1772,8 +1787,16 @@ public class SpecimenController extends BaseStudyController
             _specimenRequest.setCreated(ts);
             _specimenRequest.setModified(ts);
             _specimenRequest.setEntityId(GUID.makeGUID());
-            if (form.getDestinationLocation() > 0)
+            Integer defaultSiteId = SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId();
+            // Default takes precedence if set
+            if (defaultSiteId != null)
+            {
+                _specimenRequest.setDestinationSiteId(defaultSiteId);
+            }
+            else if (form.getDestinationLocation() > 0)
+            {
                 _specimenRequest.setDestinationSiteId(form.getDestinationLocation());
+            }
             _specimenRequest.setStatusId(SpecimenManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -2642,7 +2665,7 @@ public class SpecimenController extends BaseStudyController
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             List<Vial> vials = request.getVials();
-            if (vials != null && vials.size() > 0)
+            if (!vials.isEmpty() || SpecimenService.get().getRequestCustomizer().allowEmptyRequests())
             {
                 SpecimenRequestStatus newStatus = SpecimenManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), true);
                 request = request.createMutable();
@@ -2792,9 +2815,8 @@ public class SpecimenController extends BaseStudyController
 
                     if (form.isSendXls())
                     {
-                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream))
+                        try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream(); OutputStream ostream = new BufferedOutputStream(byteStream); ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type))
                         {
-                            ExcelWriter xlsWriter = getUtils().getSpecimenListXlsWriter(request, originatingOrProvidingLocation, receivingLocation, type);
                             xlsWriter.write(ostream);
                             ostream.flush();
                             formFiles.add(new ByteArrayAttachmentFile(xlsWriter.getFilenamePrefix() + "." + xlsWriter.getDocumentType().name(), byteStream.toByteArray(), xlsWriter.getDocumentType().getMimeType()));
@@ -2932,8 +2954,10 @@ public class SpecimenController extends BaseStudyController
                 }
                 else if (EXPORT_XLS.equals(form.getExport()))
                 {
-                    ExcelWriter writer = getUtils().getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type);
-                    writer.write(getViewContext().getResponse());
+                    try (ExcelWriter writer = getUtils().getSpecimenListXlsWriter(specimenRequest, sourceLocation, destLocation, type))
+                    {
+                        writer.write(getViewContext().getResponse());
+                    }
                 }
             }
             return null;
@@ -3696,7 +3720,7 @@ public class SpecimenController extends BaseStudyController
                     }
                 }
                 if (selectedVials == null || selectedVials.size() == 0)
-                    return new HtmlView("No vials selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+                    return new HtmlView("No vials selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
             }
 
             return new JspView<>("/org/labkey/study/view/specimen/updateComments.jsp",
@@ -4164,6 +4188,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageActorOrder.jsp", study);
+        }
+
+        @Override
         public boolean handlePost(BulkEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
@@ -4219,8 +4249,10 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(Form form, boolean reshow, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
-            return new JspView<>("/org/labkey/study/view/specimen/" + _jsp + ".jsp", getStudyRedirectIfNull());
+            return getJspView(getStudyRedirectIfNull());
         }
+
+        protected abstract JspView<StudyImpl> getJspView(StudyImpl study);
 
         @Override
         public NavTree appendNavTrail(NavTree root)
@@ -4249,6 +4281,12 @@ public class SpecimenController extends BaseStudyController
         public ManageActorsAction()
         {
             super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
+        }
+
+        @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageActors.jsp", study);
         }
 
         @Override
@@ -4335,6 +4373,12 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageStatusOrder.jsp", study);
+        }
+
+        @Override
         public boolean handlePost(BulkEditForm form, BindException errors)
         {
             getUtils().ensureSpecimenRequestsConfigured(false);
@@ -4383,6 +4427,12 @@ public class SpecimenController extends BaseStudyController
         public ManageStatusesAction()
         {
             super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
+        }
+
+        @Override
+        protected JspView<StudyImpl> getJspView(StudyImpl study)
+        {
+            return new JspView<>("/org/labkey/study/view/specimen/manageStatuses.jsp", study);
         }
 
         @Override

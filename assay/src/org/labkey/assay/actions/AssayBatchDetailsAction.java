@@ -85,8 +85,10 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
         Container c = getContainer();
         ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-        return super.appendNavTrail(root)
-                .addChild(_protocol.getName() + " Batches", batchListURL)
-                .addChild(_exp.getName() + " Details");
+        NavTree ret = super.appendNavTrail(root);
+        ret.addChild(_protocol.getName() + " Batches", batchListURL);
+        ret.addChild(_exp.getName() + " Details");
+
+        return ret;
     }
 }

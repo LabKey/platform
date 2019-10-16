@@ -57,6 +57,7 @@ import org.labkey.data.xml.AuditType;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.TableCustomizerType;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -331,19 +332,20 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
 
-    public NamedObjectList getSelectList(String columnName)
+    @Override
+    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
     {
         if (columnName == null)
             return getSelectList(getPkColumnNames());
 
         ColumnInfo column = getColumn(columnName);
-        if (column == null /*|| column.isKeyField()*/)
+        if (column == null)
             return new NamedObjectList();
 
         return getSelectList(Collections.singletonList(column.getName()));
     }
 
-    private NamedObjectList getSelectList(List<String> columnNames)
+    private @NotNull NamedObjectList getSelectList(List<String> columnNames)
     {
         StringBuilder pkColumnSelect = new StringBuilder();
         String sep = "";

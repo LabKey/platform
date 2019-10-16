@@ -155,7 +155,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     public ReportIdentifier getReportId()
     {
-        return ReportService.get().getReportIdentifier(getProperty(Prop.reportId));
+        return ReportService.get().getReportIdentifier(getProperty(Prop.reportId), null, null);
     }
 
     public void setReportKey(String key){_reportKey = key;}

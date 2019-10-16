@@ -71,23 +71,27 @@ import java.util.Set;
 
 public class ListModule extends SpringModule
 {
+    @Override
     public String getName()
     {
         return "List";
     }
 
     // Note: ExperimentModule handles the list schema
+    @Override
     public double getVersion()
     {
         return 19.20;
     }
 
     // Note: ExperimentModule handles the list schema
+    @Override
     public boolean hasScripts()
     {
         return true;
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
@@ -97,6 +101,7 @@ public class ListModule extends SpringModule
         return result;
     }
 
+    @Override
     protected void init()
     {
         addController("list", ListController.class);

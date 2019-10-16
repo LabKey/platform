@@ -48,7 +48,7 @@ public class LinkBarView extends WebPartView
         out.write("<table width=\"100%\" cellpadding=0><tr><td>");
         for (Pair<String, String> link : _links)
         {
-            out.write(PageFlowUtil.textLink(link.first, link.second) + "&nbsp;");
+            out.write(PageFlowUtil.link(link.first).href(link.second) + "&nbsp;");
         }
         out.write("</td></tr>");
         if (_drawLine)

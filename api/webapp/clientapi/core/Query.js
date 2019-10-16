@@ -262,7 +262,7 @@ LABKEY.Query = new function()
                 dataObject.maxRows = config.maxRows;
             if (config.offset && config.offset > 0)
                 dataObject.offset = config.offset;
-            if (config.includeTotalCount != undefined)
+            if (config.includeTotalCount !== undefined)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
             if (config.containerFilter)
@@ -504,7 +504,7 @@ LABKEY.Query = new function()
             if (config.containerFilter)
                 dataObject.containerFilter = config.containerFilter;
 
-            if (config.includeTotalCount)
+            if (config.includeTotalCount !== undefined)
                 dataObject.includeTotalCount = config.includeTotalCount;
 
             if (config.includeDetailsColumn)
@@ -893,10 +893,39 @@ LABKEY.Query = new function()
         deleteRows : function(config)
         {
             if (arguments.length > 1)
-            {
                 config = configFromArgs(arguments);
-            }
             config.action = "deleteRows.api";
+            return sendJsonQueryRequest(config);
+        },
+
+        /**
+         * Delete all rows in a table.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {Function} config.success Function called when the "truncateTable" function executes successfully.
+         Will be called with arguments:
+         the parsed response data, the XMLHttpRequest object and (optionally) the "options" object.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @returns {Mixed} In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+         */
+        truncateTable : function(config)
+        {
+            config.action = "truncateTable.api";
             return sendJsonQueryRequest(config);
         },
 
@@ -1079,6 +1108,9 @@ LABKEY.Query = new function()
          * the results. Default is true.
          * @param {Boolean} [config.includeColumns] If set to false, information about the available columns in this
          * query will not be included in the results. Default is true.
+         * @param {Boolean} [config.queryDetailColumns] If set to true, and includeColumns is set to true, information
+         * about the available columns will be the same details as specified by LABKEY.Query.getQueryDetails for columns.
+         * Defaults to false.
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
          * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
@@ -1096,7 +1128,8 @@ LABKEY.Query = new function()
                 schemaName: 'schemaName',
                 includeColumns: 'includeColumns',
                 includeUserQueries: 'includeUserQueries',
-                includeSystemQueries: 'includeSystemQueries'
+                includeSystemQueries: 'includeSystemQueries',
+                queryDetailColumns: 'queryDetailColumns'
             }, false, false);
 
             return LABKEY.Ajax.request({

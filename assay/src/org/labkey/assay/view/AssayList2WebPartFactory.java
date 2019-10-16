@@ -33,7 +33,7 @@ public class AssayList2WebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        WebPartView view = new JspView<>(this.getClass(), "assayList2.jsp", null);
+        WebPartView view = new JspView<>("/org/labkey/assay/view/assayList2.jsp", null);
         view.setTitle("Assays");
         return view;
     }

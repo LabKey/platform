@@ -224,7 +224,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             errors.reject(SpringActionController.ERROR_MSG, "No table has been set to receive imported data");
         }
 
-        return new JspView<>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
+        return new JspView<>("/org/labkey/api/query/import.jsp", bean, errors);
     }
 
 

@@ -27,6 +27,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
@@ -423,24 +424,31 @@ public abstract class UploadSamplesHelper
         Integer rowId;
         try
         {
-            if (sampleSetName == null)
-                rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-            else
-                rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-
-            if (rowId == null)
-                return null;
+            rowId = ConvertHelper.convert(sampleName, Integer.class);
         }
-        catch (ConversionException e)
+        catch (ConversionException e1)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
-            if (sampleSetName == null)
+            try
             {
-                sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
+                if (sampleSetName == null)
+                    rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+                else
+                    rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+
+                if (rowId == null)
+                    return null;
             }
-            sb.append(" " + e.getMessage());
-            throw new ValidationException(sb.toString());
+            catch (ConversionException e2)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+                if (sampleSetName == null)
+                {
+                    sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
+                }
+                sb.append(" " + e2.getMessage());
+                throw new ValidationException(sb.toString());
+            }
         }
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
@@ -451,16 +459,22 @@ public abstract class UploadSamplesHelper
             throws ValidationException
     {
         Integer rowId;
-
         try
         {
-            rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-            if (rowId == null)
-                return null;
+            rowId = ConvertHelper.convert(dataName, Integer.class);
         }
-        catch (ConversionException e)
+        catch (ConversionException e1)
         {
-            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e.getMessage());
+            try
+            {
+                rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+                if (rowId == null)
+                    return null;
+            }
+            catch (ConversionException e2)
+            {
+                throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
+            }
         }
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
@@ -475,7 +489,7 @@ public abstract class UploadSamplesHelper
 
 
     /* this might be generally useful
-     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similiar functionality, but SampleTranslator
+     * See SimpleTranslator.selectAll(@NotNull Set<String> skipColumns) for similar functionality, but SampleTranslator
      * copies data, this is straight pass through.
      */
     static class DropColumnsDataIterator extends WrapperDataIterator
@@ -678,6 +692,7 @@ public abstract class UploadSamplesHelper
         @Override
         public void close() throws IOException
         {
+            super.close();
             if (null != nameState)
                 nameState.close();
         }

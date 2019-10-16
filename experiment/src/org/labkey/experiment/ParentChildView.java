@@ -145,6 +145,9 @@ public class ParentChildView extends VBox
         }
 
         QueryView queryView = new QueryView(schema, settings, null);
+        // Issue 38018: Sample Set: Multiple data inputs from different containers are not shown in the Parent Data grid
+        // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
+        queryView.setContainerFilter(ContainerFilter.EVERYTHING);
         TableInfo table = queryView.getTable();
 
         CustomView v = queryView.getCustomView();
@@ -222,12 +225,10 @@ public class ParentChildView extends VBox
         {
             protected TableInfo createTable()
             {
-                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), getContainerFilter());
+                // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
+                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), ContainerFilter.EVERYTHING);
                 table.setMaterials(materials);
                 table.populate(ss, false);
-                // We've already set an IN clause that restricts us to showing just data that we have permission
-                // to view
-                table.setContainerFilter(ContainerFilter.EVERYTHING);
 
                 List<FieldKey> defaultVisibleColumns = new ArrayList<>();
                 if (ss == null)

@@ -26,8 +26,8 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
@@ -274,23 +274,7 @@ public class UserController extends SpringActionController
         boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
         boolean isAnyAdmin = isUserManager || c.hasPermission(user, AdminPermission.class);
 
-        assert isOwnRecord || isAnyAdmin;
-
-        SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c, currentURL) + "userId=${UserId}", "details");
-        rgn.addDisplayColumn(0, accountDetails);
-
-        if (isAnyAdmin)
-        {
-            SimpleDisplayColumn securityDetails = new UrlColumn(new UserUrlsImpl().getUserAccessURL(c) + "userId=${UserId}", "permissions");
-            rgn.addDisplayColumn(1, securityDetails);
-        }
-
         ButtonBar gridButtonBar = new ButtonBar();
-
-        if (isUserManager)
-        {
-            rgn.setShowRecordSelectors(true);
-        }
 
         populateUserGridButtonBar(gridButtonBar, isUserManager, isAnyAdmin);
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
@@ -392,11 +376,13 @@ public class UserController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(new UserUrlsImpl().getSiteUsersURL());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -441,10 +427,12 @@ public class UserController extends SpringActionController
             _active = active;
         }
 
+        @Override
         public void validateCommand(UserIdForm form, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
             DeactivateUsersBean bean = new DeactivateUsersBean(_active, form.getRedirUrl());
@@ -476,6 +464,7 @@ public class UserController extends SpringActionController
             return new JspView<>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
         }
 
+        @Override
         public boolean handlePost(UserIdForm form, BindException errors) throws Exception
         {
             if (null == form.getUserId())
@@ -500,12 +489,14 @@ public class UserController extends SpringActionController
                 && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
         }
 
+        @Override
         public ActionURL getSuccessURL(UserIdForm form)
         {
             return null != form.getRedirUrl() ? form.getRedirUrl()
                     : new UserUrlsImpl().getSiteUsersURL();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
@@ -535,10 +526,12 @@ public class UserController extends SpringActionController
     @RequiresPermission(UserManagementPermission.class)
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
+        @Override
         public void validateCommand(UserIdForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
             String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
@@ -572,6 +565,7 @@ public class UserController extends SpringActionController
             return new JspView<>("/org/labkey/core/user/deleteUsers.jsp", bean, errors);
         }
 
+        @Override
         public boolean handlePost(UserIdForm form, BindException errors) throws Exception
         {
             if (null == form.getUserId())
@@ -597,11 +591,13 @@ public class UserController extends SpringActionController
                 && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin delete a site admin
         }
 
+        @Override
         public ActionURL getSuccessURL(UserIdForm userIdForm)
         {
             return new UserUrlsImpl().getSiteUsersURL();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
@@ -647,6 +643,7 @@ public class UserController extends SpringActionController
             super(ShowUsersForm.class);
         }
 
+        @Override
         protected QueryView createQueryView(final ShowUsersForm form, BindException errors, boolean forExport, String dataRegion)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
@@ -719,6 +716,7 @@ public class UserController extends SpringActionController
             return users;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
@@ -796,6 +794,7 @@ public class UserController extends SpringActionController
             requiresProjectAdminOrBetter();
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
@@ -812,6 +811,7 @@ public class UserController extends SpringActionController
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
@@ -829,10 +829,10 @@ public class UserController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public class ShowUserPreferencesAction extends RedirectAction<Object>
+    public class ShowUserPreferencesAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public URLHelper getURL(Object form, Errors errors)
+        public URLHelper getRedirectURL(Object form)
         {
             String domainURI = UsersDomainKind.getDomainURI(CoreQuerySchema.NAME, CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
@@ -903,6 +903,7 @@ public class UserController extends SpringActionController
         Integer _pkVal;
         PropertyValue _deletedAttachments;
 
+        @Override
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors)
         {
             User user = getUser();
@@ -1060,6 +1061,7 @@ public class UserController extends SpringActionController
             return _pkVal.equals(_userId);
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm form, BindException errors) throws Exception
         {
             User postingUser = getUser();
@@ -1120,7 +1122,7 @@ public class UserController extends SpringActionController
             else
                 return;
 
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(getContainer().getId(), message.toString(), targetUser);
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(getContainer().getId(), message, targetUser);
             AuditLogService.get().addEvent(getUser(), event);
         }
 
@@ -1168,6 +1170,7 @@ public class UserController extends SpringActionController
             return form.getReturnActionURL(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(getContainer(), NumberUtils.toInt(form.getPkVal().toString()), null));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _pkVal);
@@ -1450,6 +1453,7 @@ public class UserController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (_showNavTrail)
@@ -1489,6 +1493,7 @@ public class UserController extends SpringActionController
     {
         private int _detailsUserId;
 
+        @Override
         public ModelAndView getView(UserQueryForm form, BindException errors)
         {
             User user = getUser();
@@ -1691,6 +1696,7 @@ public class UserController extends SpringActionController
             return changeEmail;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(UserManager.getEmailForId(_detailsUserId));
@@ -1714,6 +1720,7 @@ public class UserController extends SpringActionController
         private boolean _isPasswordPrompt = false;
         private ValidEmail _validRequestedEmail;
 
+        @Override
         public void validateCommand(UserForm target, Errors errors)
         {
             if (target.getIsChangeEmailRequest())
@@ -1749,6 +1756,7 @@ public class UserController extends SpringActionController
             }
         }
 
+        @Override
         public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
         {
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
@@ -1894,6 +1902,7 @@ public class UserController extends SpringActionController
             }
         }
 
+        @Override
         public boolean handlePost(UserForm form, BindException errors) throws Exception
         {
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
@@ -1990,6 +1999,7 @@ public class UserController extends SpringActionController
             return !errors.hasErrors();
         }
 
+        @Override
         public ActionURL getSuccessURL(UserForm form)
         {
             boolean isUserManager = getUser().hasRootPermission(UserManagementPermission.class);
@@ -2050,6 +2060,7 @@ public class UserController extends SpringActionController
             return false;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _urlUserId);
@@ -2313,9 +2324,11 @@ public class UserController extends SpringActionController
             setDescription("Sent to the user and administrator when a user requests to change their email address.");
             setPriority(1);
             _replacements.add(new ReplacementParam<String>("currentEmailAddress", String.class, "Current email address for the current user"){
+                @Override
                 public String getValue(Container c) {return _currentEmailAddress;}
             });
             _replacements.add(new ReplacementParam<String>("newEmailAddress", String.class, "Requested email address for the current user"){
+                @Override
                 public String getValue(Container c) {return _requestedEmailAddress;}
             });
             _replacements.addAll(super.getValidReplacements());
@@ -2370,9 +2383,11 @@ public class UserController extends SpringActionController
             setDescription("Sent to the user and administrator when a user has changed their email address.");
             setPriority(1);
             _replacements.add(new ReplacementParam<String>("oldEmailAddress", String.class, "Old email address for the current user"){
+                @Override
                 public String getValue(Container c) {return _oldEmailAddress;}
             });
             _replacements.add(new ReplacementParam<String>("newEmailAddress", String.class, "New email address for the current user"){
+                @Override
                 public String getValue(Container c) {return _newEmailAddress;}
             });
             _replacements.addAll(super.getValidReplacements());
@@ -2461,6 +2476,7 @@ public class UserController extends SpringActionController
         protected static final String PROP_USER_ID = "userId";
         protected static final String PROP_USER_NAME = "displayName";
 
+        @Override
         public ApiResponse execute(GetUsersForm form, BindException errors)
         {
             Container container = getContainer();
@@ -2635,6 +2651,7 @@ public class UserController extends SpringActionController
     // All three impersonate API actions have the same form
     private abstract class ImpersonateApiAction<FORM> extends MutatingApiAction<FORM>
     {
+        @Override
         protected String getCommandClassMethodName()
         {
             return "impersonate";

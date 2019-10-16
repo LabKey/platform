@@ -113,7 +113,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             }
         }
 
-        if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        if (_populated)
         {
             ColumnInfo lsidCol = getColumn("LSID", false);
             if (lsidCol != null)
@@ -126,10 +126,13 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 // Attempt to resolve the column name as a property URI if it looks like a URI
                 if (URIUtil.hasURICharacters(name))
                 {
+                    // mark vocab propURI col as Voc column
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
+                        List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), pd);
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                        pc.setVocabulary(domainsForPD.stream().anyMatch(d-> d.getDomainKind() instanceof VocabularyDomainKind));
                         // use the property URI as the column's FieldKey name
                         pc.setFieldKey(FieldKey.fromParts(name));
                         pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
@@ -377,6 +380,38 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     public String getPublicSchemaName()
     {
         return _publicSchemaName == null ? _userSchema.getSchemaName() : _publicSchemaName;
+    }
+
+    @Override
+    public void setFilterPatterns(String columnName, String... patterns)
+    {
+        checkLocked();
+        if (patterns != null)
+        {
+            SQLFragment condition = new SQLFragment();
+            condition.append("(");
+            String separator = "";
+            for (String pattern : patterns)
+            {
+                condition.append(separator);
+                condition.append(_rootTable.getColumn(columnName).getAlias());
+                // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
+                // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol,
+                // and in other cases we're passed a pattern that matches against all protocols of a given type
+                if (pattern.contains("%"))
+                {
+                    condition.append(" LIKE ?");
+                }
+                else
+                {
+                    condition.append(" = ?");
+                }
+                condition.add(pattern);
+                separator = " OR ";
+            }
+            condition.append(")");
+            addCondition(condition);
+        }
     }
 
 }

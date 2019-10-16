@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
 
@@ -45,7 +47,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     private boolean _isComplete = true;
 
     // for resource tracking
-    private Throwable _debugCreated = null;
+    private StackTraceElement[] _debugCreated = null;
     protected boolean _wasClosed = false;
 
 
@@ -65,8 +67,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     {
         super(rs, queryLogging);
         MemTracker.getInstance().put(this);
-        //noinspection ConstantConditions,AssertWithSideEffects
-        assert null != (_debugCreated = new Throwable("created ResultSetImpl"));
+        _debugCreated = MiniProfiler.getTroubleshootingStackTrace();
         _maxRows = maxRows;
         _connection = connection;
         _scope = scope;
@@ -166,8 +167,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         if (!_wasClosed)
         {
             close();
-            if (null != _debugCreated)
-                _log.error("ResultSet was not closed", _debugCreated);
+            _log.error("ResultSet was not closed. Creation stacktrace:" + ExceptionUtil.renderStackTrace(_debugCreated));
         }
         super.finalize();
     }

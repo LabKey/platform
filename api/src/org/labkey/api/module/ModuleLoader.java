@@ -67,6 +67,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -139,7 +140,7 @@ public class ModuleLoader implements Filter
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
 
-    public static final double EARLIEST_UPGRADE_VERSION = 16.3;
+    public static final double EARLIEST_UPGRADE_VERSION = 17.2;
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
@@ -216,7 +217,7 @@ public class ModuleLoader implements Filter
     }
 
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
-    private final List<String> _duplicateModuleErrors = new ArrayList<>();
+    private final List<HtmlString> _duplicateModuleErrors = new ArrayList<>();
     private Map<String, ModuleContext> _contextMap = new HashMap<>();
     private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
@@ -324,7 +325,12 @@ public class ModuleLoader implements Filter
         }
         catch (NoSuchMethodException e)
         {
-            throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />", e);
+            // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
+            File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
+            if (!webinfModulesDir.isDirectory())
+                throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />", e);
+            File[] modules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
+            explodedModuleDirs = null==modules ? Collections.emptyList() : Arrays.asList(modules);
         }
         catch (InvocationTargetException e)
         {
@@ -368,7 +374,7 @@ public class ModuleLoader implements Filter
                 @Override
                 public void addStaticWarnings(Warnings warnings)
                 {
-                    for (String error : _duplicateModuleErrors)
+                    for (HtmlString error : _duplicateModuleErrors)
                     {
                         warnings.add(error);
                     }
@@ -434,8 +440,14 @@ public class ModuleLoader implements Filter
             }
         }
 
-        if (!downgradedModules.isEmpty())
+        if (WarningService.get().showAllWarnings() || !downgradedModules.isEmpty())
         {
+            if (WarningService.get().showAllWarnings() && downgradedModules.isEmpty())
+            {
+                downgradedModules.add("core");
+                downgradedModules.add("flow");
+            }
+
             int count = downgradedModules.size();
             String message = "This server is running with " + StringUtilsLabKey.pluralize(count, "downgraded module") + ". The server will not operate properly and could corrupt your data. You should immediately stop the server and contact LabKey for assistance. Modules affected: " + downgradedModules.toString();
             _log.error(message);
@@ -444,7 +456,7 @@ public class ModuleLoader implements Filter
                 @Override
                 public void addStaticWarnings(Warnings warnings)
                 {
-                    warnings.add(message);
+                    warnings.add(HtmlString.of(message));
                 }
             });
         }
@@ -680,7 +692,7 @@ public class ModuleLoader implements Filter
                     {
                         String error = "Module with name '" + module.getName() + "' has already been loaded from "
                                 + moduleNameToFile.get(module.getName()).getAbsolutePath() + ". Skipping additional copy of the module in " + moduleDir + ". You should delete the extra copy and restart the server.";
-                        _duplicateModuleErrors.add(error);
+                        _duplicateModuleErrors.add(HtmlString.of(error));
                         _log.error(error);
                     }
                     else if (!moduleNamePattern.matcher(module.getName()).matches())
@@ -2017,64 +2029,64 @@ public class ModuleLoader implements Filter
     private void loadStartupProps()
     {
         File propsDir = new File(_webappDir.getParent(), "startup");
-        if (!propsDir.isDirectory())
-            return;
-
-        File newinstall = new File(propsDir,"newinstall");
-        if (newinstall.isFile())
+        if (propsDir.isDirectory())
         {
-            _newInstall = true;
-            if (newinstall.canWrite())
-                newinstall.delete();
-            else
-                throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
-        }
-
-        File[] propFiles = propsDir.listFiles((File dir, String name) -> StringUtils.equalsIgnoreCase(FileUtil.getExtension(name),("properties")));
-
-        if (propFiles != null)
-        {
-            List<File> sortedPropFiles = Arrays.stream(propFiles)
-                .sorted(Comparator.comparing(File::getName).reversed())
-                .collect(Collectors.toList());
-
-            for (File propFile : sortedPropFiles)
+            File newinstall = new File(propsDir, "newinstall");
+            if (newinstall.isFile())
             {
-                try (FileInputStream in = new FileInputStream(propFile))
-                {
-                    Properties props = new Properties();
-                    props.load(in);
-
-                    for (Map.Entry<Object, Object> entry : props.entrySet())
-                    {
-                        if (entry.getKey() instanceof String && entry.getValue() instanceof String)
-                        {
-                            ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
-                            if (_configPropertyMap.containsMapping(config.getScope(), config))
-                                _configPropertyMap.removeMapping(config.getScope(), config);
-                            _configPropertyMap.put(config.getScope(), config);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error parsing startup config properties file '" + propFile.getAbsolutePath() + "'", e);
-                }
+                _newInstall = true;
+                if (newinstall.canWrite())
+                    newinstall.delete();
+                else
+                    throw new ConfigurationException("file 'newinstall'  exists, but is not writeable: " + newinstall.getAbsolutePath());
             }
 
-            // load any system properties with the labkey prop prefix
-            for (Map.Entry<Object, Object> entry : System.getProperties().entrySet())
-            {
-                String name = String.valueOf(entry.getKey());
-                String value = String.valueOf(entry.getValue());
+            File[] propFiles = propsDir.listFiles((File dir, String name) -> StringUtils.equalsIgnoreCase(FileUtil.getExtension(name), ("properties")));
 
-                if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+            if (propFiles != null)
+            {
+                List<File> sortedPropFiles = Arrays.stream(propFiles)
+                        .sorted(Comparator.comparing(File::getName).reversed())
+                        .collect(Collectors.toList());
+
+                for (File propFile : sortedPropFiles)
                 {
-                    ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
-                    if (_configPropertyMap.containsMapping(config.getScope(), config))
-                        _configPropertyMap.removeMapping(config.getScope(), config);
-                    _configPropertyMap.put(config.getScope(), config);
+                    try (FileInputStream in = new FileInputStream(propFile))
+                    {
+                        Properties props = new Properties();
+                        props.load(in);
+
+                        for (Map.Entry<Object, Object> entry : props.entrySet())
+                        {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String)
+                            {
+                                ConfigProperty config = createConfigProperty(entry.getKey().toString(), entry.getValue().toString());
+                                if (_configPropertyMap.containsMapping(config.getScope(), config))
+                                    _configPropertyMap.removeMapping(config.getScope(), config);
+                                _configPropertyMap.put(config.getScope(), config);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _log.error("Error parsing startup config properties file '" + propFile.getAbsolutePath() + "'", e);
+                    }
                 }
+            }
+        }
+
+        // load any system properties with the labkey prop prefix
+        for (Map.Entry<Object, Object> entry : System.getProperties().entrySet())
+        {
+            String name = String.valueOf(entry.getKey());
+            String value = String.valueOf(entry.getValue());
+
+            if (name != null && name.startsWith(ConfigProperty.SYS_PROP_PREFIX) && value != null)
+            {
+                ConfigProperty config = createConfigProperty(name.substring(ConfigProperty.SYS_PROP_PREFIX.length()), value);
+                if (_configPropertyMap.containsMapping(config.getScope(), config))
+                    _configPropertyMap.removeMapping(config.getScope(), config);
+                _configPropertyMap.put(config.getScope(), config);
             }
         }
     }

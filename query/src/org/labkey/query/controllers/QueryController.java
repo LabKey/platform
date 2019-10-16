@@ -350,7 +350,7 @@ public class QueryController extends SpringActionController
             final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
             try
             {
-                DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd);
+                DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd, getContainer());
                 // immediately close the source after opening it, this is a test.
                 source.getDataIterator(new DataIteratorContext()).close();
             }
@@ -734,7 +734,7 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(BeginAction.class, getContainer());
                 url.addParameter("schemaName", schemaKey.toString());
                 url.addParameter("queryName", queryName);
-                (new BeginAction(getViewContext())).appendNavTrail(root)
+                new BeginAction(getViewContext()).appendNavTrail(root)
                         .addChild(schemaName + " Schema", url);
             }
             catch (NullPointerException e)
@@ -866,8 +866,8 @@ public class QueryController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root)
-                    .addChild("New Query", new QueryUrlsImpl().urlNewQuery(getContainer()));
+            new SchemaAction(_form).appendNavTrail(root);
+            root.addChild("New Query", new QueryUrlsImpl().urlNewQuery(getContainer()));
             return root;
         }
     }
@@ -1039,10 +1039,7 @@ public class QueryController extends SpringActionController
 
             for (XmlValidationError xmle : xmlErrors)
             {
-                String message = (null != xmle.getOffendingQName()) ?
-                        "Metadata validation error with '" + xmle.getOffendingQName().getLocalPart() + "'" :
-                        "Metadata validation error";
-                errors.reject(ERROR_MSG, message);
+                errors.reject(ERROR_MSG, XmlBeansUtil.getErrorMessage(xmle));
             }
         }
 
@@ -1231,6 +1228,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class ExecuteQueryAction extends QueryViewAction
     {
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
@@ -1248,9 +1246,10 @@ public class QueryController extends SpringActionController
             return queryView;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             TableInfo ti = null;
             try
             {
@@ -1271,9 +1270,10 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class RawTableMetaDataAction extends QueryViewAction
     {
-        private String _schemaName;
-        private String _tableName;
+        private String _dbSchemaName;
+        private String _dbTableName;
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             _form = form;
@@ -1282,53 +1282,56 @@ public class QueryController extends SpringActionController
             String userSchemaName = queryView.getSchema().getName();
             TableInfo ti = queryView.getTable();
 
-            DbSchema schema = ti.getSchema();
-            DbScope scope = schema.getScope();
-            _schemaName = schema.getName();
+            DbScope scope = ti.getSchema().getScope();
 
-            // Try to get the underlying schema table and use the meta data name, #12015
-            if (ti instanceof FilteredTable)
-                ti = ((FilteredTable) ti).getRealTable();
-
-            if (ti instanceof SchemaTableInfo)
-                _tableName = ti.getMetaDataName();
-            else if (ti instanceof LinkedTableInfo)
-                _tableName = ti.getName();
-            else
-                _tableName = ti.getSelectName();
-
-            if (null == _tableName)
-            {
-                TableInfo tableInfo = schema.getTable(ti.getName());
-                if (null != tableInfo)
-                    _tableName = tableInfo.getMetaDataName();
-            }
-
-            ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
-            url.addParameter("schemaName", userSchemaName);
-
+            // Test for provisioned table
             if (ti.getDomain() != null)
             {
                 Domain domain = ti.getDomain();
                 if (domain.getStorageTableName() != null)
                 {
                     // Use the real table and schema names for getting the metadata
-                    _tableName = domain.getStorageTableName();
-                    _schemaName = domain.getDomainKind().getStorageSchemaName();
+                    _dbTableName = domain.getStorageTableName();
+                    _dbSchemaName = domain.getDomainKind().getStorageSchemaName();
                 }
             }
 
+            // No domain or domain with non-provisioned storage (e.g., core.Users)
+            if (null == _dbSchemaName || null == _dbTableName)
+            {
+                DbSchema dbSchema = ti.getSchema();
+                _dbSchemaName = dbSchema.getName();
 
-            SqlDialect dialect = scope.getSqlDialect();
+                // Try to get the underlying schema table and use the meta data name, #12015
+                if (ti instanceof FilteredTable)
+                    ti = ((FilteredTable) ti).getRealTable();
 
-            if (null != _tableName)
+                if (ti instanceof SchemaTableInfo)
+                    _dbTableName = ti.getMetaDataName();
+                else if (ti instanceof LinkedTableInfo)
+                    _dbTableName = ti.getName();
+
+                if (null == _dbTableName)
+                {
+                    TableInfo tableInfo = dbSchema.getTable(ti.getName());
+                    if (null != tableInfo)
+                        _dbTableName = tableInfo.getMetaDataName();
+                }
+            }
+
+            if (null != _dbTableName)
             {
                 VBox result = new VBox();
-                HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _schemaName, url, _tableName);
+
+                ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
+                url.addParameter("schemaName", userSchemaName);
+
+                SqlDialect dialect = scope.getSqlDialect();
+                HttpView scopeInfo = new ScopeView("Scope and Schema Information", scope, _dbSchemaName, url, _dbTableName);
 
                 result.addView(scopeInfo);
 
-                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _schemaName, _tableName))
+                try (JdbcMetaDataLocator locator = dialect.getJdbcMetaDataLocator(scope, _dbSchemaName, _dbTableName))
                 {
                     JdbcMetaDataSelector columnSelector = new JdbcMetaDataSelector(locator,
                             (dbmd, l) -> dbmd.getColumns(l.getCatalogName(), l.getSchemaName(), l.getTableName(), null));
@@ -1362,11 +1365,12 @@ public class QueryController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             (new SchemaAction(_form)).appendNavTrail(root);
-            if (null != _tableName)
-                root.addChild("JDBC Meta Data For Table \"" + _schemaName + "." + _tableName + "\"");
+            if (null != _dbTableName)
+                root.addChild("JDBC Meta Data For Table \"" + _dbSchemaName + "." + _dbTableName + "\"");
             return root;
         }
     }
@@ -1468,8 +1472,8 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ModelAndView result = super.getView(form, errors);
             _print = true;
+            ModelAndView result = super.getView(form, errors);
             String title = form.getQueryName();
             if (StringUtils.isEmpty(title))
                 title = form.getSchemaName();
@@ -1815,10 +1819,12 @@ public class QueryController extends SpringActionController
         QueryDefinition _query = null;
         QueryForm _form = null;
 
+        @Override
         public void validateCommand(QueryForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(QueryForm form, boolean reshow, BindException errors)
         {
             _form = form;
@@ -1833,19 +1839,22 @@ public class QueryController extends SpringActionController
             return new GWTView(MetadataEditor.class, props);
         }
 
+        @Override
         public boolean handlePost(QueryForm form, BindException errors)
         {
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(QueryForm metadataForm)
         {
             return _query.urlFor(QueryAction.metadataQuery);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             root.addChild("Edit Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
             return root;
         }
@@ -2121,10 +2130,12 @@ public class QueryController extends SpringActionController
         PropertiesForm _form = null;
         private String _queryName;
 
+        @Override
         public void validateCommand(PropertiesForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(PropertiesForm form, boolean reshow, BindException errors)
         {
             // assertQueryExists requires that it be well-formed
@@ -2140,6 +2151,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/propertiesQuery.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(PropertiesForm form, BindException errors) throws Exception
         {
             // assertQueryExists requires that it be well-formed
@@ -2179,6 +2191,7 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(PropertiesForm propertiesForm)
         {
             ActionURL url = new ActionURL(BeginAction.class, propertiesForm.getViewContext().getContainer());
@@ -2188,14 +2201,16 @@ public class QueryController extends SpringActionController
             return url;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             root.addChild("Edit query properties");
             return root;
         }
     }
 
+    @ActionNames("truncateTable")
     @RequiresPermission(AdminPermission.class)
     public class TruncateTableAction extends MutatingApiAction<QueryForm>
     {
@@ -2267,7 +2282,7 @@ public class QueryController extends SpringActionController
             if (updateService == null)
                 throw new UnsupportedOperationException("Unable to delete - no QueryUpdateService registered for " + form.getSchemaName() + "." + form.getQueryName());
 
-            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), null, true, true);
+            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), null, true);
             List<ColumnInfo> pks = table.getPkColumns();
             int numPks = pks.size();
 
@@ -2335,6 +2350,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class DetailsQueryRowAction extends UserSchemaAction
     {
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             ButtonBar bb = new ButtonBar();
@@ -2405,11 +2421,13 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             return false;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
@@ -2435,6 +2453,7 @@ public class QueryController extends SpringActionController
 
         Map<String, Object> insertedRow = null;
 
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             InsertView view = new InsertView(tableForm, errors);
@@ -2442,6 +2461,7 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             List<Map<String, Object>> list = doInsertUpdate(tableForm, errors, true);
@@ -2488,6 +2508,7 @@ public class QueryController extends SpringActionController
             return super.getSuccessURL(form);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
@@ -2499,6 +2520,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public static class UpdateQueryRowAction extends UserSchemaAction
     {
+        @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
             ButtonBar bb = createSubmitCancelButtonBar(tableForm);
@@ -2507,12 +2529,14 @@ public class QueryController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
         {
             doInsertUpdate(tableForm, errors, false);
             return 0 == errors.getErrorCount();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             super.appendNavTrail(root);
@@ -3259,7 +3283,7 @@ public class QueryController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            new SchemaAction(_form).appendNavTrail(root);
             root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
             root.addChild("Import Data");
             return root;
@@ -3618,7 +3642,7 @@ public class QueryController extends SpringActionController
                 //issue 13967: provide better message for OptimisticConflictException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            catch (ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
+            catch (QueryUpdateServiceException | ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
             {
                 //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037), and DataIntegrity (uniqueness) (Issue 22779)
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
@@ -3886,12 +3910,14 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             setHelpTopic(new HelpTopic("externalSchemas"));
             return new JspView<>("/org/labkey/query/view/admin.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root);
@@ -3955,6 +3981,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", connectionMap, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root);
@@ -3970,11 +3997,13 @@ public class QueryController extends SpringActionController
             super(commandClass);
         }
 
+        @Override
         public void validateCommand(F form, Errors errors)
         {
             form.validate(errors);
         }
 
+        @Override
         public boolean handlePost(F form, BindException errors) throws Exception
         {
             try
@@ -3996,11 +4025,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(F form)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction(getViewContext()).appendNavTrail(root);
@@ -4104,6 +4135,7 @@ public class QueryController extends SpringActionController
             super(commandClass);
         }
 
+        @Override
         public void validateCommand(F form, Errors errors)
         {
             form.validate(errors);
@@ -4135,6 +4167,7 @@ public class QueryController extends SpringActionController
             return def;
         }
 
+        @Override
         public boolean handlePost(F form, BindException errors) throws Exception
         {
             T def = form.getBean();
@@ -4162,11 +4195,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(F externalSchemaForm)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new AdminAction(getViewContext()).appendNavTrail(root);
@@ -4183,11 +4218,13 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
+        @Override
         protected LinkedSchemaDef getCurrent(int externalId)
         {
             return QueryManager.get().getLinkedSchemaDef(getContainer(), externalId);
         }
 
+        @Override
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors)
         {
             LinkedSchemaDef def = getDef(form, reshow, errors);
@@ -4205,11 +4242,13 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
+        @Override
         protected ExternalSchemaDef getCurrent(int externalId)
         {
             return QueryManager.get().getExternalSchemaDef(getContainer(), externalId);
         }
 
+        @Override
         public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors)
         {
             ExternalSchemaDef def = getDef(form, reshow, errors);
@@ -4867,11 +4906,13 @@ public class QueryController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root);
@@ -4910,10 +4951,12 @@ public class QueryController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
     {
+        @Override
         public void validateCommand(InternalSourceViewForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
@@ -4924,6 +4967,7 @@ public class QueryController extends SpringActionController
             return new JspView<>("/org/labkey/query/view/internalSourceView.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(InternalSourceViewForm form, BindException errors)
         {
             CstmView view = form.getViewAndCheckPermission();
@@ -4937,11 +4981,13 @@ public class QueryController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(InternalSourceViewForm form)
         {
             return new ActionURL(ManageViewsAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new ManageViewsAction(getViewContext()).appendNavTrail(root);
@@ -5041,14 +5087,32 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public static class SelectNoneAction extends MutatingApiAction<SelectForm>
     {
-        public ApiResponse execute(final SelectForm form, BindException errors)
+        @Override
+        public void validateForm(SelectForm form, Errors errors)
         {
-            DataRegionSelection.clearAll(getViewContext(), form.getKey());
-            return new DataRegionSelection.SelectionResponse(0);
+            if (form.getSchemaName().isEmpty() != (form.getQueryName() == null))
+            {
+                errors.reject(ERROR_MSG, "Both schemaName and queryName are required");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            if (form.getQueryName() == null)
+            {
+                DataRegionSelection.clearAll(getViewContext(), form.getKey());
+                return new DataRegionSelection.SelectionResponse(0);
+            }
+            else
+            {
+                int count = DataRegionSelection.setSelectionForAll(form, false);
+                return new DataRegionSelection.SelectionResponse(count);
+            }
         }
     }
 
-    public static class SelectForm
+    public static class SelectForm extends QueryForm
     {
         protected String key;
 
@@ -5067,6 +5131,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public static class SelectAllAction extends MutatingApiAction<QueryForm>
     {
+        @Override
         public void validateForm(QueryForm form, Errors errors)
         {
             if (form.getSchemaName().isEmpty() ||
@@ -5076,9 +5141,10 @@ public class QueryController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(final QueryForm form, BindException errors) throws Exception
         {
-            int count = DataRegionSelection.selectAll(form);
+            int count = DataRegionSelection.setSelectionForAll(form, true);
             return new DataRegionSelection.SelectionResponse(count);
         }
     }
@@ -5086,10 +5152,28 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class GetSelectedAction extends ReadOnlyApiAction<SelectForm>
     {
-        public ApiResponse execute(final SelectForm form, BindException errors)
+        @Override
+        public void validateForm(SelectForm form, Errors errors)
         {
-            Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), true, false);
-            return new ApiSimpleResponse("selected", selected);
+            if (form.getSchemaName().isEmpty() != (form.getQueryName() == null))
+            {
+                errors.reject(ERROR_MSG, "Both schemaName and queryName are required");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
+        {
+            if (form.getQueryName() == null)
+            {
+                Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), false);
+                return new ApiSimpleResponse("selected", selected);
+            }
+            else
+            {
+                List<String> selected = DataRegionSelection.getSelected(form);
+                return new ApiSimpleResponse("selected", selected);
+            }
         }
     }
 
@@ -5097,6 +5181,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class SetCheckAction extends MutatingApiAction<SetCheckForm>
     {
+        @Override
         public ApiResponse execute(final SetCheckForm form, BindException errors)
         {
             String[] ids = form.getId(getViewContext().getRequest());
@@ -5249,6 +5334,7 @@ public class QueryController extends SpringActionController
         private boolean _includeUserQueries = true;
         private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
+        private boolean _queryDetailColumns = false;
 
         public String getSchemaName()
         {
@@ -5289,6 +5375,16 @@ public class QueryController extends SpringActionController
         {
             _includeColumns = includeColumns;
         }
+
+        public boolean isQueryDetailColumns()
+        {
+            return _queryDetailColumns;
+        }
+
+        public void setQueryDetailColumns(boolean queryDetailColumns)
+        {
+            _queryDetailColumns = queryDetailColumns;
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5313,14 +5409,12 @@ public class QueryController extends SpringActionController
             //user-defined queries
             if (form.isIncludeUserQueries())
             {
-                Map<String,QueryDefinition> queryDefMap = uschema.getQueryDefs();
-                for (Map.Entry<String,QueryDefinition> entry : queryDefMap.entrySet())
+                for (QueryDefinition qdef : uschema.getQueryDefs().values())
                 {
-                    QueryDefinition qdef = entry.getValue();
                     if (!qdef.isTemporary())
                     {
                         ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
                     }
                 }
             }
@@ -5336,7 +5430,7 @@ public class QueryController extends SpringActionController
                     if (qdef != null)
                     {
                         ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns()));
                     }
                 }
             }
@@ -5345,7 +5439,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns)
         {
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("name", qdef.getName());
@@ -5380,23 +5474,34 @@ public class QueryController extends SpringActionController
                 {
                     if (includeColumns)
                     {
-                        //enumerate the columns
-                        List<Map<String, Object>> cinfos = new ArrayList<>();
-                        for(ColumnInfo col : table.getColumns())
-                        {
-                            Map<String, Object> cinfo = new HashMap<>();
-                            cinfo.put("name", col.getName());
-                            if (null != col.getLabel())
-                                cinfo.put("caption", col.getLabel());
-                            if (null != col.getShortLabel())
-                                cinfo.put("shortCaption", col.getShortLabel());
-                            if (null != col.getDescription())
-                                cinfo.put("description", col.getDescription());
+                        Collection<Map<String, Object>> columns;
 
-                            cinfos.add(cinfo);
+                        if (useQueryDetailColumns)
+                        {
+                            columns = JsonWriter
+                                    .getNativeColProps(table, Collections.emptyList(), null, false, false)
+                                    .values();
                         }
-                        if (cinfos.size() > 0)
-                            qinfo.put("columns", cinfos);
+                        else
+                        {
+                            columns = new ArrayList<>();
+                            for (ColumnInfo col : table.getColumns())
+                            {
+                                Map<String, Object> cinfo = new HashMap<>();
+                                cinfo.put("name", col.getName());
+                                if (null != col.getLabel())
+                                    cinfo.put("caption", col.getLabel());
+                                if (null != col.getShortLabel())
+                                    cinfo.put("shortCaption", col.getShortLabel());
+                                if (null != col.getDescription())
+                                    cinfo.put("description", col.getDescription());
+
+                                columns.add(cinfo);
+                            }
+                        }
+
+                        if (columns.size() > 0)
+                            qinfo.put("columns", columns);
                     }
                     if (table instanceof DatasetTable)
                         title = table.getTitle();
@@ -5818,11 +5923,13 @@ public class QueryController extends SpringActionController
      * Action used to redirect QueryAuditProvider [details] column to the exported table's grid view.
      */
     @RequiresPermission(AdminPermission.class)
-    public class QueryExportAuditRedirectAction extends RedirectAction<QueryExportAuditForm>
+    public class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
-        @Override
-        public URLHelper getURL(QueryExportAuditForm form, Errors errors)
+        public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
+            if (form.getRowId() == 0)
+                throw new NotFoundException("Query export audit rowid required");
+
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
             TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
 
@@ -5859,13 +5966,6 @@ public class QueryController extends SpringActionController
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url;
-        }
-
-        @Override
-        public void validateCommand(QueryExportAuditForm form, Errors errors)
-        {
-            if (form.getRowId() == 0)
-                throw new NotFoundException("Query export audit rowid required");
         }
     }
 

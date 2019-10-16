@@ -62,14 +62,7 @@ public class ProductRegistry
 
         if (_productMap.containsKey(provider.getProductId()))
             throw new IllegalArgumentException("Product key '" + provider.getProductId() + " already registered by module '" + _productMap.get(provider.getProductId()).getModuleName() + "'");
-        Collection<String> sectionNames = provider.getSectionNames();
-        Set<String> alreadyRegistered = sectionNames.stream().filter((name) -> _sectionMap.containsKey(name)).collect(Collectors.toSet());
-        if (!alreadyRegistered.isEmpty()) {
-            String message = alreadyRegistered.stream()
-                    .map((cat) -> "'" + cat + "' registered by product '" + _sectionMap.get(cat).getProductId() + "' in module '" +  _sectionMap.get(cat).getModuleName() + "'")
-                    .collect(Collectors.joining("; "));
-            throw new IllegalArgumentException("Product menu sections already registered: " + message);
-        }
+
         _productMap.put(provider.getProductId(), provider);
         provider.getSectionNames().forEach(name -> _sectionMap.put(name, provider));
     }
@@ -215,21 +208,6 @@ public class ProductRegistry
             {
                 // this is the expected outcome
                 assertTrue(e.getMessage().contains("already registered"));
-            }
-        }
-
-        @Test
-        public void registerDuplicateSections()
-        {
-            try
-            {
-                registry.registerMenuItemsProvider(new TestMenuProvider("testModule", "unusedId", List.of("Section A", "SECTION B")));
-                fail("No exception thrown when registering a duplicate menu section");
-            }
-            catch (IllegalArgumentException e)
-            {
-                // this is the expected outcome
-                assertTrue(e.getMessage().contains("'SECTION B' registered"));
             }
         }
 

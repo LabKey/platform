@@ -36,7 +36,7 @@
     <tr>
         <td>
             <br>
-            <labkey:form action="<%=h(buildURL(PlateController.HandleCopyAction.class))%>" method="POST">
+            <labkey:form action="<%=buildURL(PlateController.HandleCopyAction.class)%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
                 <input type="hidden" name="templateName" value="<%= h(bean.getTemplateName()) %>">
                 <%= button("Cancel").href(PlateController.PlateTemplateListAction.class, getContainer()) %>

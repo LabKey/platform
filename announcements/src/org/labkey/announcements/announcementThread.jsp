@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
@@ -80,7 +81,7 @@ else if (null == announcementModel.getApproved() && c.hasPermission(user, AdminP
 <table style="table-layout:fixed;width:100%">
 <tr>
     <td class="labkey-announcement-title labkey-force-word-break" width="33%" align=left><span><%=h(announcementModel.getTitle())%></span></td>
-    <td class="labkey-announcement-title" width="33%" align=center><%=text(announcementModel.getCreatedByName(bean.includeGroups, user, true, false))%></td>
+    <td class="labkey-announcement-title" width="33%" align=center><%=text(AnnouncementManager.getUserDetailsLink(c, user, announcementModel.getCreatedBy(), bean.includeGroups, false))%></td>
     <td class="labkey-announcement-title" width="33%" align="right" nowrap><%
 
 if (false && !bean.print && null != discussionSrc)
@@ -167,11 +168,10 @@ if (!announcementModel.getResponses().isEmpty())
     <td width="2%">&nbsp;</td>
     <td colspan="2" width="100%">
         <table class="labkey-announcement-thread" width=100%><%
-
         for (AnnouncementModel r : announcementModel.getResponses())
         {%>
             <tr class="labkey-alternate-row">
-                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=text(r.getCreatedByName(bean.includeGroups, user, true, false) + " responded:")%></td>
+                <td class="labkey-bordered" style="border-right: 0 none"><a name="row:<%=r.getRowId()%>"></a><%=text(AnnouncementManager.getUserDetailsLink(c, user, r.getCreatedBy(), bean.includeGroups, false) + " responded:")%></td>
                 <td class="labkey-bordered" style="border-left: 0 none" align="right"><%
                 if (bean.perm.allowUpdate(r) && !bean.print)
                 {

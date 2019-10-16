@@ -48,7 +48,6 @@
         <tr>
             <td></td>
             <td class="labkey-bordered" style="padding:3px;font-weight:bold">Column Field&nbsp;<%=fieldDropDown("colField", "colSelection", bean.getColumns(), bean.getColField(), false, true, null)%></td>
-
         </tr>
     <tr>
         <td class="labkey-bordered" style="padding:3px;font-weight:bold">Row&nbsp;Field<br><%=fieldDropDown("rowField", "rowSelection", bean.getColumns(), bean.getRowField(), false, true, null)%>
@@ -59,19 +58,37 @@
             Compute<br>
             <table><tr>
                 <td>
-                    <input id="cbCount" type=checkbox name=stats value=Count<%=checked(stats.contains("Count"))%>><span>&nbsp;Count of Records</span><br>
-                    <input id="cbSum" type=checkbox name=stats value=Sum <%=checked(stats.contains("Sum"))%>><span>&nbsp;Sum</span>
+                    <label>
+                        <input id="cbCount" type=checkbox name=stats value=Count<%=checked(stats.contains("Count"))%>><span>&nbsp;Count of Records</span>
+                    </label>
+                    <br>
+                    <label>
+                        <input id="cbSum" type=checkbox name=stats value=Sum <%=checked(stats.contains("Sum"))%>><span>&nbsp;Sum</span>
+                    </label>
                 </td>
                 <td>
-                    <input id="cbStdDev" type=checkbox name=stats value=StdDev<%=checked(stats.contains("StdDev"))%>><span>&nbsp;StdDev</span><br>
-                    <input id="cbMean" type=checkbox name=stats value=Mean<%=checked(stats.contains("Mean"))%>><span>&nbsp;Mean</span>
+                    <label>
+                        <input id="cbStdDev" type=checkbox name=stats value=StdDev<%=checked(stats.contains("StdDev"))%>><span>&nbsp;StdDev</span>
+                    </label>
+                    <br>
+                    <label>
+                        <input id="cbMean" type=checkbox name=stats value=Mean<%=checked(stats.contains("Mean"))%>><span>&nbsp;Mean</span>
+                    </label>
                 </td>
                 <td>
-                    <input id="cbMin" type=checkbox name=stats value=Min<%=checked(stats.contains("Min"))%>><span>&nbsp;Min</span><br>
-                    <input id="cbMax" type=checkbox name=stats value=Max<%=checked(stats.contains("Max"))%>><span>&nbsp;Max</span>
+                    <label>
+                        <input id="cbMin" type=checkbox name=stats value=Min<%=checked(stats.contains("Min"))%>><span>&nbsp;Min</span>
+                    </label>
+                    <br>
+                    <label>
+                        <input id="cbMax" type=checkbox name=stats value=Max<%=checked(stats.contains("Max"))%>><span>&nbsp;Max</span>
+                    </label>
                 </td>
                 <td valign=top>
-                    <input id="cbMedian" type=checkbox name=stats value=Median<%=checked(stats.contains("Median"))%>><span>&nbsp;Median</span><br>
+                    <label>
+                        <input id="cbMedian" type=checkbox name=stats value=Median<%=checked(stats.contains("Median"))%>><span>&nbsp;Median</span>
+                    </label>
+                    <br>
                 </td>
             </tr></table>
         </td>

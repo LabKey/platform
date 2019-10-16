@@ -231,7 +231,7 @@ public class QuerySettings
                 _ignoreUserFilter = true;
             }
 
-            setReportId(ReportService.get().getReportIdentifier(_getParameter(param(QueryParam.reportId))));
+            setReportId(ReportService.get().getReportIdentifier(_getParameter(param(QueryParam.reportId)), null, null));
         }
 
         // Ignore maxRows and offset parameters when not PAGINATED.

@@ -84,6 +84,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,9 +99,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.regex.Pattern;
-
-import static org.apache.commons.lang3.StringUtils.startsWith;
 
 /**
  * Standard base class for modules, supplies no-op implementations for many optional methods.
@@ -157,6 +155,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private Boolean _consolidateScripts = null;
     private Boolean _manageVersion = null;
+    private String _labkeyVersion = null;
 
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
@@ -294,7 +293,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     // Map controller class to canonical name
     private void addControllerClass(Class<? extends Controller> controllerClass, String primaryName)
     {
-        assert !_controllerNameToClass.values().contains(controllerClass) : "Controller class '" + controllerClass + "' is already registered";
+        assert !_controllerNameToClass.containsValue(controllerClass) : "Controller class '" + controllerClass + "' is already registered";
         _controllerClassToName.put(controllerClass, primaryName);
         addControllerName(primaryName, controllerClass);
     }
@@ -463,11 +462,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         addWebPart(name, c, location, -1, new HashMap<>());
     }
 
-    protected void addWebPart(String name, Container c, String location, Map<String, String> properties)
-    {
-        addWebPart(name, c, location, -1, properties);
-    }
-
     protected void addWebPart(String name, Container c, String location, int partIndex)
     {
         addWebPart(name, c, location, partIndex, new HashMap<>());
@@ -539,7 +533,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    protected static final Set<SupportedDatabase> ALL_DATABASES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql)));
+    protected static final Set<SupportedDatabase> ALL_DATABASES = Set.of(SupportedDatabase.mssql, SupportedDatabase.pgsql);
 
     private Set<SupportedDatabase> _supportedDatabases = ALL_DATABASES;
 
@@ -718,6 +712,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _buildType;
     }
 
+    @SuppressWarnings("unused")
     public void setBuildType(String buildType)
     {
         _buildType = buildType;
@@ -730,6 +725,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _organizationUrl;
     }
 
+    @SuppressWarnings("unused")
     public final void setOrganizationUrl(String organizationUrl)
     {
         checkLocked();
@@ -743,6 +739,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _license;
     }
 
+    @SuppressWarnings("unused")
     public final void setLicense(String license)
     {
         checkLocked();
@@ -756,6 +753,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _licenseUrl;
     }
 
+    @SuppressWarnings("unused")
     public final void setLicenseUrl(String licenseUrl)
     {
         checkLocked();
@@ -992,6 +990,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _manageVersion = manageVersion;
     }
 
+
     @Override
     public boolean shouldManageVersion()
     {
@@ -1002,6 +1001,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _manageVersion;
     }
 
+    public String getLabkeyVersion()
+    {
+        return _labkeyVersion;
+    }
+
+    @SuppressWarnings("unused")
+    public void setLabkeyVersion(String labkeyVersion)
+    {
+        _labkeyVersion = labkeyVersion;
+    }
+
     @Override
     public final Map<String, String> getProperties()
     {
@@ -1009,6 +1019,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         props.put("Module Class", getClass().getName());
         props.put("Version", getFormattedVersion());
+        if (StringUtils.isNotBlank(getLabkeyVersion()))
+            props.put("LabKey Version", getLabkeyVersion());
         if (StringUtils.isNotBlank(getAuthor()))
             props.put("Author", getAuthor());
         if (StringUtils.isNotBlank(getMaintainer()))
@@ -1304,7 +1316,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public Controller getController(HttpServletRequest request, String name)
     {
-        Class cls = _controllerNameToClass.get(name);
+        Class<? extends Controller> cls = _controllerNameToClass.get(name);
         if (null == cls)
             return null;
 
@@ -1312,13 +1324,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    public Controller getController(@Nullable HttpServletRequest request, Class cls)
+    public Controller getController(@Nullable HttpServletRequest request, Class<? extends Controller> cls)
     {
         try
         {
-            return (Controller)cls.newInstance();
+            return cls.getConstructor().newInstance();
         }
-        catch (IllegalAccessException | InstantiationException x)
+        catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException x)
         {
             throw new RuntimeException(x);
         }
@@ -1386,7 +1398,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     _sourcePathMatched = true;
                     String moduleEnlistmentId = getEnlistmentId();
 
-                    if (null != moduleEnlistmentId)
+                    if (StringUtils.isNotBlank(moduleEnlistmentId))
                     {
                         String serverEnlistmentId = AppProps.getInstance().getEnlistmentId();
                         boolean useSource = (null != serverEnlistmentId && serverEnlistmentId.equals(moduleEnlistmentId));
@@ -1448,21 +1460,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         return fileNames;
     }
-
-
-    // TODO: Delete
-    private boolean isInternalJar(String jarFilename, Pattern moduleJarPattern)
-    {
-        jarFilename = jarFilename.toLowerCase();
-        if (StringUtils.equals(jarFilename,"schemas.jar"))
-            return true;
-        // HACK "flow-engine.jar" is internal "docker-java-3.0.0.jar" is not internal
-        // moduleJarPattern pattern needs some sort of fix perhaps
-        if (startsWith(jarFilename,"docker-java"))
-            return false;
-        return jarFilename.matches(moduleJarPattern.pattern());
-    }
-
 
     @Override
     @NotNull

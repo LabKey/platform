@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
@@ -60,7 +61,7 @@ public interface ForeignKey
     /**
      * Convenience for getLookupTableInfo.getSelectList(getLookupColumnName())
      */
-    NamedObjectList getSelectList(RenderContext ctx);
+    @NotNull NamedObjectList getSelectList(RenderContext ctx);
 
     /**
      * @return The container id of the foreign user schema table.  Null means current container.

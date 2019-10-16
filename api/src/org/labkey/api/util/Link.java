@@ -21,60 +21,44 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
+
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.Attribute.*;
 
 public class Link extends DisplayElement implements HasHtmlString
 {
-    private LinkBuilder lb;
+    private final LinkBuilder lb;
 
     public Link(LinkBuilder linkBuilder)
     {
         lb = linkBuilder;
 
         if (lb.usePost && null != lb.onClick)
-            throw new IllegalStateException("Can't specify usePost and onClick");
+            throw new IllegalStateException("Can't specify both usePost and onClick");
     }
 
     @Override
     public HtmlString getHtmlString()
     {
-        StringBuilder sb = new StringBuilder();
+        return HtmlString.unsafe(appendTo(new StringBuilder()).toString());
+    }
 
-        sb.append("<a href=\"");
-
-        if (lb.usePost)
-            sb.append("javascript:void(0);");
-        else
-            sb.append(PageFlowUtil.filter(lb.href));
-
-        sb.append("\"");
-
-        boolean icon = lb.iconCls != null;
-
-        if (null != lb.cssClass || icon)
-            sb.append(" class=\"").append(icon ? lb.iconCls : lb.cssClass).append("\"");
-
-        if (null != lb.attributes)
-            sb.append(" ").append(lb.attributes);
-
-        if (null != lb.id)
-            sb.append(" id=\"").append(lb.id).append("\"");
-
-        if (lb.usePost)
-            sb.append(" onClick=\"").append(PageFlowUtil.postOnClickJavaScript(lb.href)).append("\"");
-        else if (null != lb.onClick)
-            sb.append(" onClick=\"").append(lb.onClick).append("\"");
-
-        if (null != lb.tooltip)
-            sb.append(" data-tt=\"tooltip\" data-placement=\"top\" title data-original-title=\"").append(lb.tooltip).append("\"");
-
-        sb.append(">");
-
-        if (!icon)
-            sb.append(PageFlowUtil.filter(lb.text));
-
-        sb.append("</a>");
-
-        return HtmlString.unsafe(sb.toString());
+    @Override
+    public Appendable appendTo(Appendable out)
+    {
+        A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
+                .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
+                .id(lb.id)
+                .at(lb.usePost, href, null, lb.href)
+                .at(lb.usePost, onclick, PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage), lb.onClick)
+                .data(null != lb.tooltip, "tt", "tooltip")
+                .data(null != lb.tooltip, "placement","top")
+                .data(null != lb.tooltip, "original-title", lb.tooltip),
+            lb.iconCls!=null ? null : lb.text
+        ).appendTo(out);
+        return out;
     }
 
     @Override // TODO: HtmlString - remove this
@@ -86,7 +70,7 @@ public class Link extends DisplayElement implements HasHtmlString
     @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
-        out.write(getHtmlString().toString());
+        appendTo(out);
     }
 
     public static class LinkBuilder extends DisplayElementBuilder<Link, LinkBuilder>

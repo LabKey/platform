@@ -44,6 +44,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -101,6 +102,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -150,7 +152,6 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResolver;
@@ -191,13 +192,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.labkey.api.view.template.PageConfig.SESSION_WARNINGS_BANNER_KEY;
+import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
 /**
  * User: jeckels
@@ -284,15 +284,15 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDismissCoreWarningActionURL(ViewContext viewContext)
+        public ActionURL getDismissWarningsActionURL(ViewContext viewContext)
         {
-            return new ActionURL(CoreController.DismissCoreWarningsAction.class, viewContext.getContainer());
+            return new ActionURL(DismissWarningsAction.class, viewContext.getContainer());
         }
 
         @Override
-        public ActionURL getDisplayCoreWarningActionURL(ViewContext viewContext)
+        public ActionURL getDisplayWarningsActionURL(ViewContext viewContext)
         {
-            return new ActionURL(CoreController.DisplayCoreWarningsAction.class, viewContext.getContainer());
+            return new ActionURL(DisplayWarningsAction.class, viewContext.getContainer());
         }
 
         @Override
@@ -2302,7 +2302,10 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class DismissCoreWarningsAction extends MutatingApiAction
+    @AllowedDuringUpgrade
+    // Remove this annotation once @glass is corrected to call dismissWarnings.api and Biologics moves to 19.3
+    @ActionNames("dismissWarnings, dismissCoreWarnings") @RemoveIn20_1
+    public class DismissWarningsAction extends MutatingApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -2314,30 +2317,27 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class DisplayCoreWarningsAction extends MutatingApiAction
+    @AllowedDuringUpgrade
+    public class DisplayWarningsAction extends MutatingApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            // Reset Session Attribute so warnings will display on next pageload
-            HttpSession session = getViewContext().getRequest().getSession(true);
+            // Reset Session Attribute so warnings will display on next page load
+            ViewContext context = getViewContext();
+            HttpSession session = context.getRequest().getSession(true);
             session.setAttribute(SESSION_WARNINGS_BANNER_KEY, true);
-
-            // Collect all dismissable warnings from server
-            List<String> dismissibleWarningMessages = new LinkedList<>();
-            Warnings dismissibleWarnings = Warnings.of(dismissibleWarningMessages);
-            WarningService.get().forEachProvider(p->p.addDismissibleWarnings(dismissibleWarnings, getViewContext()));
 
             JSONObject json = new JSONObject();
             json.put("success", true);
 
-            if (!dismissibleWarningMessages.isEmpty())
-            {
-                // Prepare warnings content for optional client-side consumption
-                StringBuilder warningsHtml = new StringBuilder();
-                PageConfig.appendDismissableMessageHtml(getViewContext(), dismissibleWarningMessages, warningsHtml);
+            // Collect server-side warnings
+            Warnings warnings = WarningService.get().getWarnings(context);
 
-                json.put("dismissableCoreWarningsHtml", warningsHtml.toString());
+            if (!warnings.isEmpty())
+            {
+                // Send warnings content for optional client-side consumption
+                json.put("warningsHtml", WarningService.get().getWarningsHtml(warnings, context).toString());
             }
 
             return new ApiSimpleResponse(json);

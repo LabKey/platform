@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.specimen.settings.StatusSettings" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -66,7 +67,7 @@ function showSystemRows(value)
             {
         %>
                 <tr <%= text(status.isSystemStatus() ? "id=\"systemStatusRow\"" : "") %> <%= text(!showSystemStatuses && status.isSystemStatus() ? "style=\"display:none\"" : "") %>>
-                    <td align="center"><%= status.isSystemStatus() ? "1" : status.getSortOrder() + 1 %></td>
+                    <td align="center"><%= status.isSystemStatus() ? 1 : status.getSortOrder() + 1 %></td>
                     <td>
                         <%
                             if (!status.isSystemStatus())
@@ -131,8 +132,9 @@ function showSystemRows(value)
         Allowing users to build up specimen requests over multiple
         searches is generally more convenient, but requires the coordinator to watch for abandoned unsubmitted requests.
     </p>
+    <label>
     <input type="checkbox" name="useShoppingCart"<%=checked(settings.isUseShoppingCart())%> onclick='showSystemRows(this.checked);'>
-    Allow requests to be built over multiple searches before submission<br/>
+        Allow requests to be built over multiple searches before submission</label><br/>
 
     <br/>
 

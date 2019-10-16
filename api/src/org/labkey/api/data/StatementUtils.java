@@ -89,6 +89,9 @@ public class StatementUtils
     // builder style methods
     //
 
+    //Vocabulary adhoc properties
+    private Set<DomainProperty> _vocabularyProperties = new HashSet<>();
+
     public StatementUtils(@NotNull Operation op, @NotNull TableInfo table)
     {
         _operation = op;
@@ -157,6 +160,11 @@ public class StatementUtils
         return this;
     }
 
+    public StatementUtils setVocabularyProperties(Set<DomainProperty> vocabularyProperties)
+    {
+        _vocabularyProperties = vocabularyProperties;
+        return this;
+    }
 
     /**
      * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship
@@ -375,6 +383,56 @@ public class StatementUtils
         }
     }
 
+    private void appendSQLFObjectProperty(SQLFragment sqlfObjectProperty, DomainProperty dp, String objectIdVar, String ifTHEN, String ifEND)
+    {
+        PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
+        ParameterHolder v = createParameter(dp.getName(), dp.getPropertyURI(), propertyType.getJdbcType());
+        ParameterHolder mv = createParameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR);
+        sqlfObjectProperty.append("IF (");
+        appendPropertyValue(sqlfObjectProperty, dp, v);
+        sqlfObjectProperty.append(" IS NOT NULL");
+        if (dp.isMvEnabled())
+        {
+            sqlfObjectProperty.append(" OR ");
+            appendParameterOrVariable(sqlfObjectProperty, mv);
+            sqlfObjectProperty.append(" IS NOT NULL");
+        }
+        sqlfObjectProperty.append(")");
+        sqlfObjectProperty.append(ifTHEN);
+        sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
+        sqlfObjectProperty.append(propertyType.getValueTypeColumn());
+        sqlfObjectProperty.append(") VALUES (");
+        sqlfObjectProperty.append(objectIdVar);
+        sqlfObjectProperty.append(",").append(dp.getPropertyId());
+        sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
+        sqlfObjectProperty.append(",");
+        if (dp.isMvEnabled())
+            appendParameterOrVariable(sqlfObjectProperty, mv);
+        else
+            sqlfObjectProperty.append("NULL");
+        sqlfObjectProperty.append(",");
+        appendPropertyValue(sqlfObjectProperty, dp, v);
+        sqlfObjectProperty.append(");\n");
+        sqlfObjectProperty.append(ifEND);
+        sqlfObjectProperty.append(";\n");
+    }
+
+    private void appendSQLFDeleteObjectProperty(SQLFragment sqlfDelete, String objectIdVar, List<? extends DomainProperty> domainProperties, Set<DomainProperty> vocabularyProperties)
+    {
+        var properties = null == domainProperties ? vocabularyProperties : domainProperties;
+        sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
+        sqlfDelete.append(objectIdVar);
+        sqlfDelete.append(" AND PropertyId IN (");
+        String separator = "";
+        for (DomainProperty property : properties)
+        {
+            sqlfDelete.append(separator);
+            separator = ", ";
+            sqlfDelete.append(property.getPropertyId());
+        }
+        sqlfDelete.append(");\n");
+    }
+
     public Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
         if (!(_table instanceof UpdateableTableInfo))
@@ -475,12 +533,11 @@ public class StatementUtils
 //        _dontUpdateColumnNames.add("CreatedBy");
 
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
-
-        if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain))
+        if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty())
         {
             properties = (null==domain||isMaterializedDomain) ? Collections.emptyList() : domain.getProperties();
 
-            if (alwaysInsertExpObject || !properties.isEmpty())
+            if (alwaysInsertExpObject || !properties.isEmpty() || !_vocabularyProperties.isEmpty())
             {
                 if (!_dialect.isPostgreSQL() && !_dialect.isSqlServer())
                     throw new IllegalStateException("Domains are only supported for sql server and postgres");
@@ -496,7 +553,7 @@ public class StatementUtils
                 // Insert a new row in exp.Object if there isn't already a row for this object
 
                 // Grab the object's ObjectId based on the pk of the base table
-                if (hasObjectURIColumn)
+                if (hasObjectURIColumn || !_vocabularyProperties.isEmpty())
                 {
                     if (Operation.merge == _operation)
                     {
@@ -540,20 +597,19 @@ public class StatementUtils
                 appendParameterOrVariable(sqlfSelectObject, containerParameter);
                 sqlfSelectObject.append(" AND ").append(sqlfWhereObjectURI).append(");\n");
 
-                if (Operation.insert != _operation && !properties.isEmpty())
+                if (Operation.insert != _operation && (!properties.isEmpty() || !_vocabularyProperties.isEmpty()))
                 {
                     // Clear out any existing property values for this domain
-                    sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
-                    sqlfDelete.append(objectIdVar);
-                    sqlfDelete.append(" AND PropertyId IN (");
-                    String separator = "";
-                    for (DomainProperty property : properties)
+                    if (!properties.isEmpty())
                     {
-                        sqlfDelete.append(separator);
-                        separator = ", ";
-                        sqlfDelete.append(property.getPropertyId());
+                        appendSQLFDeleteObjectProperty(sqlfDelete, objectIdVar, properties, null);
                     }
-                    sqlfDelete.append(");\n");
+
+                    // Clear out any existing ad hoc property
+                    if (!_vocabularyProperties.isEmpty())
+                    {
+                        appendSQLFDeleteObjectProperty(sqlfDelete, objectIdVar, null, _vocabularyProperties);
+                    }
                 }
             }
         }
@@ -795,49 +851,15 @@ public class StatementUtils
                 // ignore property that 'wraps' a hard column
                 if (done.contains(dp.getName()))
                     continue;
-                PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
-                ParameterHolder v = createParameter(dp.getName(), dp.getPropertyURI(), propertyType.getJdbcType());
-                ParameterHolder mv = createParameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, JdbcType.VARCHAR);
-                sqlfObjectProperty.append("IF (");
-                appendPropertyValue(sqlfObjectProperty, dp, v);
-                sqlfObjectProperty.append(" IS NOT NULL");
-                if (dp.isMvEnabled())
-                {
-                    sqlfObjectProperty.append(" OR ");
-                    appendParameterOrVariable(sqlfObjectProperty, mv);
-                    sqlfObjectProperty.append(" IS NOT NULL");
-                }
-                sqlfObjectProperty.append(")");
-                sqlfObjectProperty.append(ifTHEN);
-                sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
-                switch (propertyType.getStorageType())
-                {
-                    case 's':
-                        sqlfObjectProperty.append("stringValue");
-                        break;
-                    case 'd':
-                        sqlfObjectProperty.append("dateTimeValue");
-                        break;
-                    case 'f':
-                        sqlfObjectProperty.append("floatValue");
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown property type: " + propertyType);
-                }
-                sqlfObjectProperty.append(") VALUES (");
-                sqlfObjectProperty.append(objectIdVar);
-                sqlfObjectProperty.append(",").append(dp.getPropertyId());
-                sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
-                sqlfObjectProperty.append(",");
-                if (dp.isMvEnabled())
-                    appendParameterOrVariable(sqlfObjectProperty, mv);
-                else
-                    sqlfObjectProperty.append("NULL");
-                sqlfObjectProperty.append(",");
-                appendPropertyValue(sqlfObjectProperty, dp, v);
-                sqlfObjectProperty.append(");\n");
-                sqlfObjectProperty.append(ifEND);
-                sqlfObjectProperty.append(";\n");
+                appendSQLFObjectProperty(sqlfObjectProperty, dp, objectIdVar, ifTHEN, ifEND);
+            }
+        }
+
+        if (!_vocabularyProperties.isEmpty())
+        {
+            for (DomainProperty vocProp: _vocabularyProperties)
+            {
+                appendSQLFObjectProperty(sqlfObjectProperty, vocProp, objectIdVar, ifTHEN, ifEND);
             }
         }
 

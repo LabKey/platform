@@ -120,8 +120,8 @@ public class ReturnURLString
                     // Allow 'localhost' for servers in dev mode
                     boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(h.getHost());
 
-                    //look in the list of configured external redirect urls
-                    for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectURLs())
+                    //look in the list of configured external redirect hosts
+                    for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectHosts())
                     {
                         if (StringUtils.isNotBlank(externalRedirectHostURL) && externalRedirectHostURL.equalsIgnoreCase(h.getHost()))
                             isConfigured = true;
@@ -141,7 +141,7 @@ public class ReturnURLString
                         }
 
                         LOG.warn("Rejected external host redirect " + logMessageDetails +
-                                "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Admin Console Links --> External Redirect URLs");
+                                "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
                         return false;
                     }
                     else

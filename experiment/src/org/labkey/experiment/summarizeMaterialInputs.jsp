@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.DisplayColumnGroup" %>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
 <%@ page import="org.labkey.experiment.DerivedSamplePropertyHelper" %>
-<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.data.TableViewForm" %>
-<%@ page import="org.labkey.api.data.DisplayColumnGroup" %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%

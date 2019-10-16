@@ -72,14 +72,14 @@ public class HelpTopic
     // the provided text, using the standard target, etc. Use in cases where LabKey standard link style doesn't fit in.
     public HtmlString getSimpleLinkHtml(String displayText)
     {
-        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).attributes(TARGET_MAP).clearClasses().getHtmlString();
+        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).target(TARGET_NAME).clearClasses().getHtmlString();
     }
 
     // TODO: Use this in places where it makes sense (search results page, etc.)
     // Create a standard LabKey style link (all caps + arrow right) to the help topic, displaying the provided text, using the standard target, etc.
     public HtmlString getLinkHtml(String displayText)
     {
-        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).attributes(TARGET_MAP).getHtmlString();
+        return PageFlowUtil.link(displayText).href(getHelpTopicHref()).target(TARGET_NAME).getHtmlString();
     }
 
     // Create a NavTree for a menu item that links to the help topic, displaying the provided text, using the standard target, etc.

@@ -25,7 +25,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm<? extends AssayProvider>> me = (JspView<AssayRunUploadForm<? extends AssayProvider>>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
@@ -56,13 +56,13 @@
         <tr>
             <% if (visibleCollectors.size() > 1)
             { %>
-                <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="radio" name="dataCollectorName"<%=checked(first)%> onclick="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
+                <td><input value="<%= h(collector.getShortName()) %>" id="<%=makeHtmlId(collector.getShortName())%>" type="radio" name="dataCollectorName"<%=checked(first)%> onclick="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
             <% }
             else
             { %>
-                <td><input value="<%= h(collector.getShortName()) %>" id="<%=h(collector.getShortName()).replace(" ", "")%>" type="hidden" name="dataCollectorName" /></td>
+                <td><input value="<%= h(collector.getShortName()) %>" id="<%=makeHtmlId(collector.getShortName())%>" type="hidden" name="dataCollectorName" /></td>
             <% } %>
-            <td><label for="<%=h(collector.getShortName()).replace(" ", "")%>"><%= text(collector.getDescription(bean)) %></label></td>
+            <td><label for="<%=makeHtmlId(collector.getShortName())%>"><%= text(collector.getDescription(bean)) %></label></td>
         </tr>
         <tr style="visibility: <%= text(first ? "visible" : "collapse") %>;" id="collector-<%= h(collector.getShortName()) %>">
             <td></td>

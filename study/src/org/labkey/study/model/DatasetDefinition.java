@@ -747,7 +747,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     /**
      * Deletes rows without auditing
      */
-    public int deleteRows(User user, @Nullable Date cutoff)
+    public int deleteRows(@Nullable Date cutoff)
     {
         int count;
 
@@ -776,7 +776,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
             count = executor.execute(studyDataFrag);
-            StudyManager.datasetModified(this, user, true);
+            StudyManager.datasetModified(this, true);
 
             transaction.commit();
 
@@ -896,16 +896,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
-                else if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                else
                 {
-                    result.add(UpdatePermission.class);
-                    result.add(DeletePermission.class);
-                    result.add(InsertPermission.class);
-                }
-                else if (studyPolicy.hasPermission(user, ReadSomePermission.class))
-                {
-                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                    {
+                        result.add(UpdatePermission.class);
+                        result.add(DeletePermission.class);
+                        result.add(InsertPermission.class);
+                    }
+                    // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
+                    // so check for a custom security policy even if they have UpdatePermission on the study's policy
+                    if (studyPolicy.hasPermission(user, ReadSomePermission.class))
+                    {
+                        // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                        result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    }
                 }
             }
         }
@@ -1074,7 +1079,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         try (Transaction transaction = scope.ensureTransaction())
         {
             Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
-            StudyManager.datasetModified(this, user, true);
+            StudyManager.datasetModified(this, true);
             transaction.commit();
         }
     }
@@ -1134,11 +1139,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public void setKeyManagementType(@NotNull KeyManagementType type)
     {
         _keyManagementType = type;
     }
 
+    @Override
     @NotNull
     public KeyManagementType getKeyManagementType()
     {
@@ -1211,7 +1218,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public class DatasetSchemaTableInfo extends SchemaTableInfo
     {
         private Container _container;
-        boolean _multiContainer = false;
+        boolean _multiContainer;
         BaseColumnInfo _ptid;
 
         TableInfo _storage;
@@ -1365,7 +1372,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     continue;
                 }
 
-                var wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
+                var wrapped = newDatasetColumnInfo(this, col, p.getPropertyDescriptor());
                 addColumn(wrapped);
 
                 // Set the FK if the property descriptor is configured as a lookup or a conceptURI.
@@ -1574,7 +1581,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     
-    static BaseColumnInfo newDatasetColumnInfo(User user, TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
+    static BaseColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
     {
         var ci = newDatasetColumnInfo(tinfo, from, p.getPropertyURI());
         // We are currently assuming the db column name is the same as the propertyname
@@ -1799,7 +1806,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
 
     /** Do the actual delete from the underlying table, without auditing */
-    public void deleteRows(User user, Collection<String> allLSIDs)
+    public void deleteRows(Collection<String> allLSIDs)
     {
         List<Collection<String>> rowLSIDSlices = slice(allLSIDs);
 
@@ -1819,7 +1826,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 }
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
-                StudyManager.datasetModified(this, user, true);
+                StudyManager.datasetModified(this, true);
             }
             transaction.commit();
         }
@@ -1930,7 +1937,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     {
         try
         {
-            assert !transaction.getConnection().isClosed() : "Connection should not be closed!";
+            if (transaction.getConnection().isClosed())
+            {
+                ((ConnectionWrapper)transaction.getConnection()).logAndCheckException(new SQLException("Connection should not be closed! see https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=34735"));
+                assert false : "Connection should not be closed!";
+            }
         }
         catch (SQLException e)
         {
@@ -1954,7 +1965,8 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 Pump p = new Pump(insert.getDataIterator(context), context);
                 checkConnection(transaction);
                 p.run();
-                checkConnection(transaction);
+                if (!context.getErrors().hasErrors())
+                    checkConnection(transaction);
             }
             long end = System.currentTimeMillis();
 
@@ -1963,7 +1975,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 throw errors;
 
             _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
-            StudyManager.datasetModified(this, user, true);
+            StudyManager.datasetModified(this, true);
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
@@ -2490,7 +2502,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             mergeData.remove("lsid");
             mergeData.remove("participantsequencenum");
 
-            deleteRows(u, Collections.singletonList(lsid));
+            deleteRows(Collections.singletonList(lsid));
 
             List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
 
@@ -2559,7 +2571,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            deleteRows(u, lsids);
+            deleteRows(lsids);
 
             for (Map<String, Object> oldData : oldDatas)
             {

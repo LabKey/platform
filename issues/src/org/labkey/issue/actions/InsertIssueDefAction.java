@@ -48,6 +48,7 @@ public class InsertIssueDefAction extends UserSchemaAction
 {
     private List<Map<String, Object>> _results;
 
+    @Override
     public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
     {
         InsertView view = new InsertView(tableForm, errors)
@@ -85,6 +86,7 @@ public class InsertIssueDefAction extends UserSchemaAction
         return view;
     }
 
+    @Override
     public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
     {
         _results = doInsertUpdate(tableForm, errors, true);
@@ -114,6 +116,7 @@ public class InsertIssueDefAction extends UserSchemaAction
         return super.getSuccessURL(form);
     }
 
+    @Override
     public NavTree appendNavTrail(NavTree root)
     {
         super.appendNavTrail(root);

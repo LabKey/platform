@@ -15,6 +15,8 @@
  */
 package org.labkey.core;
 
+import com.google.common.collect.Sets;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
@@ -78,6 +80,9 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.core.qc.QCStateImporter;
 import org.labkey.core.qc.QCStateWriter;
 import org.labkey.api.query.AliasManager;
@@ -233,14 +238,17 @@ import org.labkey.core.security.validators.PermissionsValidator;
 import org.labkey.core.statistics.AnalyticsProviderRegistryImpl;
 import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
-import org.labkey.core.test.TestController;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
+import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
+import org.labkey.core.wiki.MarkdownServiceImpl;
+import org.labkey.core.wiki.RadeoxRenderer;
+import org.labkey.core.wiki.WikiRenderingServiceImpl;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
@@ -323,7 +331,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("login", LoginController.class);
         addController("junit", JunitController.class);
         addController("core", CoreController.class);
-        addController("test", TestController.class);
         addController("analytics", AnalyticsController.class);
         addController("project", ProjectController.class);
         addController("util", UtilController.class);
@@ -353,6 +360,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
+        WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
+        VcsService.setInstance(new VcsServiceImpl());
         ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
 
         try
@@ -394,6 +403,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+        AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
+                "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
+                        "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
 
         // test authentication provider implementations... dev mode only
         if (AppProps.getInstance().isDevMode())
@@ -994,6 +1006,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fileContentService.addFileListener(WebFilesResolverImpl.get());
 
         RoleManager.registerPermission(new QCAnalystPermission());
+
+        try
+        {
+            MarkdownService.setInstance(new MarkdownServiceImpl());
+        }
+        catch (Exception e)
+        {
+            LOG.error(e);
+        }
     }
 
     @Override
@@ -1044,6 +1065,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 filenames.add(name);
         }
 
+        // For now, add in the /lib jars as well. TODO: Stop putting jars in /WEB-INF/lib -- doesn't seem necessary any more
+        filenames.addAll(super.getJarFilenames());
+
         return filenames;
     }
 
@@ -1074,78 +1098,83 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        @SuppressWarnings({"unchecked"})
-        Set<Class> testClasses = new HashSet<>(Arrays.asList(
-                Table.TestCase.class,
-                Table.DataIteratorTestCase.class,
-                SchemaXMLTestCase.class,
-                DbSchema.TableSelectTestCase.class,
-                DbSchema.TransactionTestCase.class,
-                DbSchema.CachingTestCase.class,
-                DbSchema.DDLMethodsTestCase.class,
-                DbSchema.SchemaCasingTestCase.class,
-                TableViewFormTestCase.class,
-                ActionURL.TestCase.class,
-                URLHelper.TestCase.class,
-                SecurityManager.TestCase.class,
-                PropertyManager.TestCase.class,
-                ContainerManager.TestCase.class,
-                TabLoader.TabLoaderTestCase.class,
-                MapLoader.MapLoaderTestCase.class,
-                GroupManager.TestCase.class,
-                AttachmentServiceImpl.TestCase.class,
-                WebdavResolverImpl.TestCase.class,
-                MimeMap.TestCase.class,
-                ModuleStaticResolverImpl.TestCase.class,
-                StorageProvisioner.TestCase.class,
-                RhinoService.TestCase.class,
-                MarkdownService.TestCase.class,
-                DbScope.GroupConcatTestCase.class,
-                DbScope.TransactionTestCase.class,
-                SimpleTranslator.TranslateTestCase.class,
-                ResultSetDataIterator.TestCase.class,
-                ExceptionUtil.TestCase.class,
-                ViewCategoryManager.TestCase.class,
-                TableSelectorTestCase.class,
-                RowTrackingResultSetWrapper.TestCase.class,
-                SqlSelectorTestCase.class,
-                ResultSetSelectorTestCase.class,
-                NestedGroupsTest.class,
-                ModulePropertiesTestCase.class,
-                ModuleInfoTestCase.class,
-                PortalJUnitTest.class,
-                ContainerDisplayColumn.TestCase.class,
-                AliasManager.TestCase.class,
-                AtomicDatabaseInteger.TestCase.class,
-                DbSequenceManager.TestCase.class,
-                //RateLimiter.TestCase.class,
-                StatementUtils.TestCase.class,
-                StatementDataIterator.TestCase.class,
-                Encryption.TestCase.class,
-                NotificationServiceImpl.TestCase.class,
-                JspTemplate.TestCase.class,
-                SQLFragment.TestCase.class,
-                DavController.TestCase.class,
-                DomainTemplateGroup.TestCase.class,
-                AdminController.TestCase.class,
-                CoreController.TestCase.class,
-                FilesSiteSettingsAction.TestCase.class,
-                LoginController.TestCase.class,
-                LoggerController.TestCase.class,
-                SecurityController.TestCase.class,
-                SecurityApiActions.TestCase.class,
-                SqlScriptController.TestCase.class,
-                UserController.TestCase.class,
-                FolderTypeManager.TestCase.class,
-                ModuleHtmlView.TestCase.class,
-                Portal.TestCase.class,
-                MultiValuedMapCollectors.TestCase.class,
-                PostgreSql92Dialect.TestCase.class,
-                AdminController.SerializationTest.class,
-                ProductRegistry.TestCase.class,
-                ContainerFilter.TestCase.class,
-                AdminController.ModuleVersionTestCase.class
-        ));
+        // Must be mutable since we add the dialect tests below
+        Set<Class> testClasses = Sets.newHashSet
+        (
+            AbstractQueryUpdateService.TestCase.class,
+            ActionURL.TestCase.class,
+            AdminController.ModuleVersionTestCase.class,
+            AdminController.SerializationTest.class,
+            AdminController.TestCase.class,
+            AliasManager.TestCase.class,
+            AtomicDatabaseInteger.TestCase.class,
+            AttachmentServiceImpl.TestCase.class,
+            ContainerDisplayColumn.TestCase.class,
+            ContainerFilter.TestCase.class,
+            ContainerManager.TestCase.class,
+            CoreController.TestCase.class,
+            DavController.TestCase.class,
+            DbSchema.CachingTestCase.class,
+            DbSchema.DDLMethodsTestCase.class,
+            DbSchema.SchemaCasingTestCase.class,
+            DbSchema.TableSelectTestCase.class,
+            DbSchema.TransactionTestCase.class,
+            DbScope.GroupConcatTestCase.class,
+            DbScope.TransactionTestCase.class,
+            DbSequenceManager.TestCase.class,
+            DomainTemplateGroup.TestCase.class,
+            DomTestCase.class,
+            Encryption.TestCase.class,
+            ExceptionUtil.TestCase.class,
+            FilesSiteSettingsAction.TestCase.class,
+            FolderTypeManager.TestCase.class,
+            GroupManager.TestCase.class,
+            JspTemplate.TestCase.class,
+            LoggerController.TestCase.class,
+            LoginController.TestCase.class,
+            MapLoader.MapLoaderTestCase.class,
+            MarkdownService.TestCase.class,
+            MimeMap.TestCase.class,
+            ModuleHtmlView.TestCase.class,
+            ModuleInfoTestCase.class,
+            ModulePropertiesTestCase.class,
+            ModuleStaticResolverImpl.TestCase.class,
+            MultiValuedMapCollectors.TestCase.class,
+            NestedGroupsTest.class,
+            NotificationServiceImpl.TestCase.class,
+            Portal.TestCase.class,
+            PortalJUnitTest.class,
+            PostgreSql92Dialect.TestCase.class,
+            ProductRegistry.TestCase.class,
+            PropertyManager.TestCase.class,
+            RadeoxRenderer.RadeoxRenderTest.class,
+            //RateLimiter.TestCase.class,
+            ResultSetDataIterator.TestCase.class,
+            ResultSetSelectorTestCase.class,
+            RhinoService.TestCase.class,
+            RowTrackingResultSetWrapper.TestCase.class,
+            SchemaXMLTestCase.class,
+            SecurityApiActions.TestCase.class,
+            SecurityController.TestCase.class,
+            SecurityManager.TestCase.class,
+            SimpleTranslator.TranslateTestCase.class,
+            SQLFragment.TestCase.class,
+            SqlScriptController.TestCase.class,
+            SqlSelectorTestCase.class,
+            StatementDataIterator.TestCase.class,
+            StatementUtils.TestCase.class,
+            StorageProvisioner.TestCase.class,
+            Table.DataIteratorTestCase.class,
+            Table.TestCase.class,
+            TableSelectorTestCase.class,
+            TableViewFormTestCase.class,
+            TabLoader.TabLoaderTestCase.class,
+            TempTableInClauseGenerator.TestCase.class,
+            URLHelper.TestCase.class,
+            UserController.TestCase.class,
+            ViewCategoryManager.TestCase.class,
+            WebdavResolverImpl.TestCase.class
+        );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
 

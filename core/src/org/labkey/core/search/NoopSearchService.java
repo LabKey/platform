@@ -23,7 +23,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -339,12 +338,6 @@ public class NoopSearchService implements SearchService
     public boolean isRunning()
     {
         return false;
-    }
-
-    @Override
-    public List<SecurableResource> getSecurableResources(User user)
-    {
-        return Collections.emptyList();
     }
 
     @Override

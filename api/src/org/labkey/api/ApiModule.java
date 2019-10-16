@@ -24,11 +24,9 @@ import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.dataiterator.DataIteratorUtil;
-import org.labkey.api.exp.api.ExpRunAttachmentType;
 import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.reports.report.ReportType;
@@ -63,9 +61,6 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AuthenticationLogoType.get());
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
-        // TODO: why is this here instead of in ExperimentModule?
-        if (ModuleLoader.getInstance().hasModule("Experiment"))
-            AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
 
         // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
         if (AppProps.getInstance().isDevMode())

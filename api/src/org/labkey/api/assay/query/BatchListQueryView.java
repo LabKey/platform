@@ -24,7 +24,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.assay.actions.ShowSelectedRunsAction;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -65,9 +64,7 @@ public class BatchListQueryView extends QueryView
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
-        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(getContainer(), _protocol, ShowSelectedRunsAction.class);
-        if (getTable().getContainerFilter() != null && getTable().getContainerFilter().getType() != null)
-            target.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
+        ActionURL target = PageFlowUtil.urlProvider(AssayUrls.class).getShowSelectedRunsURL(getContainer(), _protocol, getTable().getContainerFilter());
         ActionButton viewSelectedButton = new ActionButton(target, "Show Runs");
         viewSelectedButton.setURL(target);
         viewSelectedButton.setActionType(ActionButton.Action.POST);
@@ -77,5 +74,4 @@ public class BatchListQueryView extends QueryView
         List<ActionButton> buttons = AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false);
         bar.addAll(buttons);
     }
-
 }

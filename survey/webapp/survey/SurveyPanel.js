@@ -161,22 +161,24 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
         // add a delayed task for automatically saving the survey responses
         if (this.canEdit)
         {
-            if (!this.disableAutoSave)
-            {
-                Ext4.TaskManager.stopAll();
-                var autoSaveFn = function(count){
-                    // without btn/event arguments so we don't show the success msg
-                    this.saveSurvey(null, null, false, null, null);
-                };
-                this.autoSaveTask = Ext4.TaskManager.start({
-                    run: autoSaveFn,
-                    interval: this.autosaveInterval || 60000, // default is 1 min
-                    scope: this
-                });
-            }
-
+            this.createAutoSaveTask(this.disableAutoSave, this.autosaveInterval);
             // check dirty state on page navigation
             window.onbeforeunload = LABKEY.beforeunload(this.isSurveyDirty, this);
+        }
+    },
+
+    createAutoSaveTask : function(disableAutoSave, autoSaveInterval) {
+
+        Ext4.TaskManager.stopAll();
+        if (!disableAutoSave) {
+            Ext4.TaskManager.start({
+                run : function(count){
+                    // without btn/event arguments so we don't show the success msg
+                    this.saveSurvey(null, null, false, null, null);
+                },
+                interval: autoSaveInterval || 60000, // default is 1 min
+                scope: this
+            });
         }
     },
 
@@ -251,6 +253,10 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                             this.setSurveyLayout(metadata);
                             this.setNavigateOnSave(metadata);
                             this.generateSurveySections(metadata);
+
+                            if (metadata.survey && (metadata.survey.disableAutoSave || metadata.survey.autoSaveInterval)){
+                                this.createAutoSaveTask(metadata.survey.disableAutoSave, metadata.survey.autoSaveInterval);
+                            }
                         };
 
                         if (metadata.survey.beforeLoad && metadata.survey.beforeLoad.fn){

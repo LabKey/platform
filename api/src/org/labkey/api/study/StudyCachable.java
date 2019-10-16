@@ -19,13 +19,15 @@ package org.labkey.api.study;
 import org.labkey.api.data.Container;
 
 /**
+ * An object owned by a study that's eligible to be cached.
  * User: brittp
  * Date: Feb 10, 2006
- * Time: 2:39:32 PM
  */
 public interface StudyCachable<T>
 {
+    /** Create a new, mutable copy of this object */
     T createMutable();
+    /** Make this object immutable */
     void lock();
     Container getContainer();
     Object getPrimaryKey();

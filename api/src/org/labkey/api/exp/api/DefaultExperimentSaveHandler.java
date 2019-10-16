@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -242,7 +243,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
-    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
+    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
         String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
@@ -255,7 +256,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             {
                 throw new NotFoundException("Could not find experiment run " + runId);
             }
-            if (!batch.getContainer().equals(context.getContainer()))
+            if (null != batch && !batch.getContainer().equals(context.getContainer()))
             {
                 throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
             }
@@ -494,17 +495,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (materialName != null && materialName.length() > 0)
             {
                 if (sampleSet != null)
-                    material = sampleSet.getSample(materialName);
+                    material = sampleSet.getSample(context.getContainer(), materialName);
                 else
                 {
                     List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(materialName, context.getContainer(), context.getUser());
-                    if (materials != null)
-                    {
-                        if (materials.size() > 1)
-                            throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleSet to disambiguate the desired material.");
-                        if (materials.size() == 1)
-                            material = materials.get(0);
-                    }
+                    if (materials.size() > 1)
+                        throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleSet to disambiguate the desired material.");
+                    if (materials.size() == 1)
+                        material = materials.get(0);
                 }
 
                 if (material == null)
@@ -525,7 +523,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (materialProperties.size() > 0)
             {
-                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getType().getProperties() : Collections.emptyList();
+                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getDomain().getProperties() : Collections.emptyList();
                 handleProperties(context, material, dps, materialProperties);
             }
         }
@@ -574,5 +572,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             material.setCpasType(sampleSet.getLSID());
         material.save(viewContext.getUser());
         return material;
+    }
+
+    @Override
+    public ExpRun handleRunWithoutBatch(ViewContext context, JSONObject runJson, ExpProtocol protocol) throws ExperimentException, ValidationException
+    {
+        return handleRun(context, runJson, protocol, null);
     }
 }

@@ -28,6 +28,7 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -73,7 +74,7 @@
 <input type="hidden" id="targetFolder" name="target" value="">
 <table class="button-bar">
     <tr>
-        <td><%= button("Confirm Move").href("#").onClick("action('confirmmove');").attributes("id=\"confirm-move-btn\" style=\"display: none;\"") %></td>
+        <td><%= button("Confirm Move").href("#").onClick("action('confirmmove');").id("confirm-move-btn").style("display: none;") %></td>
         <td><%=generateBackButton("Cancel")%></td>
     </tr>
 </table>
@@ -101,7 +102,7 @@
 
         // Move Button -- Disable
         var moveBtn = Ext.get('confirm-move-btn');
-        moveBtn.replaceClass('labkey-button', 'labkey-disabled-button');
+        moveBtn.addClass('labkey-disabled-button');
         moveBtn.show();
 
         folderTree = new Ext.tree.TreePanel({

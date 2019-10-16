@@ -39,12 +39,16 @@
 <labkey:form action="<%=h(new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()))%>" method="POST">
     <table>
         <tr>
-            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Off</td>
+            <td valign=top nowrap>
+                <label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Off</label>
+            </td>
             <td style="padding-left: 1em;"><p>Do NOT add Google Analytics tracking script to pages on this web site.</p></td>
         </tr>
 
         <tr>
-            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;On</td>
+            <td valign=top nowrap>
+                <label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.enabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;On</label>
+            </td>
             <td style="padding-left: 1em;"><p>Add Google Analytics tracking script to pages on this web site.
                 <p>If you have opted to use Google Analytics, you must provide an Account ID.
                     If you use the Account ID <code><%=h(AnalyticsServiceImpl.DEFAULT_ACCOUNT_ID)%></code>,
@@ -59,7 +63,9 @@
         </tr>
 
         <tr>
-            <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Custom</td>
+            <td valign=top nowrap>
+                <label><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.script%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;Custom</label>
+            </td>
             <td style="padding-left: 1em;"><p>Add custom script to the head of every  page.  Include required &lt;script&gt; tags.</p>
                 <p><b>NOTE:</b> You can mess up your site if you make a mistake here.  You may want to take this opportunity to bookmark this page.  Just in case.</p>
                 <p><textarea <%=text(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> style="width:600px; height:400px;" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea></p></td>

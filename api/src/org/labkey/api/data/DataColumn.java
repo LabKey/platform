@@ -29,6 +29,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.PageFlowUtil;
@@ -48,7 +49,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
 
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
@@ -548,7 +552,7 @@ public class DataColumn extends DisplayColumn
             // CONSIDER: stringify values in collection?
             return ((Collection)value).contains(entryName);
         }
-        return null != valueStr && entryName.equals(valueStr);
+        return null != entryName && entryName.equals(valueStr);
     }
 
     protected String getSelectInputDisplayValue(NamedObject entry)
@@ -596,136 +600,29 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
-            NamedObject[] entries = entryList.toArray();
-            String valueStr = ConvertUtils.convert(value);
-
-            Select.SelectBuilder select = new Select.SelectBuilder()
-                    .disabled(disabledInput)
-                    .multiple("select.multiple".equalsIgnoreCase(_inputType))
-                    .name(getInputPrefix() + formFieldName);
-
-            List<Option> options = new ArrayList<>();
-
-            // add empty option
-            options.add(new Option.OptionBuilder().build());
-
-            for (NamedObject entry : entries)
-            {
-                String entryName = entry.getName();
-                Option.OptionBuilder option = new Option.OptionBuilder()
-                        .selected(isSelectInputSelected(entryName, value, valueStr))
-                        .value(entryName);
-
-                if (null != entry.getObject())
-                    option.label(getSelectInputDisplayValue(entry));
-
-                options.add(option.build());
-            }
-
-            out.write(select.addOptions(options).toString());
-
-            // disabled inputs are not posted with the form, so we output a hidden form element:
-            if (disabledInput)
-                renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderSelectFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {
-            TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
-                    .columns(_inputLength)
-                    .rows(_inputRows)
-                    .name(getInputPrefix() + formFieldName)
-                    .disabled(disabledInput)
-                    .value(strVal);
-
-            out.write(input.build().toString());
-
-            // disabled inputs are not posted with the form, so we output a hidden form element:
-            if (disabledInput)
-                renderHiddenFormInput(ctx, out, formFieldName, value);
+            renderTextAreaFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("file"))
         {
-            Input.InputBuilder input = new Input.InputBuilder()
-                    .type("file")
-                    .name(getInputPrefix() + formFieldName)
-                    .disabled(disabledInput)
-                    .needsWrapping(false);
-
-            out.write(input.build().toString());
+            renderFileFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("checkbox"))
         {
-            boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
-
-            Input.InputBuilder input = new Input.InputBuilder()
-                    .type("checkbox")
-                    .name(getInputPrefix() + formFieldName)
-                    .disabled(disabledInput)
-                    .value("1")
-                    .checked(checked)
-                    .needsWrapping(false);
-
-            out.write(input.build().toString());
-
-            /*
-             * Checkboxes are weird. If set to FALSE they don't post at all, so it's impossible to tell
-             * the difference between values that weren't on the html form at all and ones that were set
-             * to false by the user.
-             *
-             * To fix this, each checkbox posts a hidden field named @columnName.  Spring parameter
-             * binding uses these special fields to set all unposted checkbox values to false.
-             */
-            out.write("<input type=\"hidden\" name=\"");
-            out.write(SpringActionController.FIELD_MARKER);
-            out.write(PageFlowUtil.filter(formFieldName));
-            out.write("\" value=\"1\">");
-            // disabled inputs are not posted with the form, so we output a hidden form element:
-            if (disabledInput)
-                renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");
+            renderCheckboxFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else
         {
             if (getAutoCompleteURLPrefix() != null)
             {
-                String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
-                StringBuilder sb = new StringBuilder();
-
-                sb.append("<script type=\"text/javascript\">");
-                sb.append("Ext4.onReady(function(){\n" +
-                    "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                    "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
-                    "            completionUrl   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
-                    "            sharedStore     : true,\n" +
-                    "            sharedStoreId   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
-                    "            tagConfig   : {\n" +
-                    "                tag     : 'input',\n" +
-                    "                type    : 'text',\n" +
-                    "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
-                    "                size    : " + _inputLength + ",\n" +
-                    "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
-                    "                autocomplete : 'off'\n" +
-                    "            }\n" +
-                    "        });\n" +
-                    "      });\n");
-                sb.append("</script>\n");
-                sb.append("<div id='").append(renderId).append("'></div>");
-                out.write(sb.toString());
+                renderAutoCompleteFormInput(ctx, out, formFieldName, value, strVal, disabledInput, getAutoCompleteURLPrefix());
             }
             else
             {
-                Input.InputBuilder input = new Input.InputBuilder()
-                        .name(getInputPrefix() + formFieldName)
-                        .disabled(disabledInput)
-                        .size(_inputLength)
-                        .value(strVal)
-                        .needsWrapping(false);
-
-                out.write(input.build().toString());
-
-                // disabled inputs are not posted with the form, so we output a hidden form element:
-                if (disabledInput)
-                    renderHiddenFormInput(ctx, out, formFieldName, value);
+                renderTextFormInput(ctx, out, formFieldName, value, strVal, disabledInput);
             }
         }
 
@@ -745,6 +642,161 @@ public class DataColumn extends DisplayColumn
             col = getColumnInfo();
 
         return ctx.getForm() == null || col == null ? "" : ctx.getErrors(col);
+    }
+
+    protected void renderSelectFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        NamedObjectList entryList = _boundColumn.getFk().getSelectList(ctx);
+        if (!entryList.isComplete())
+        {
+            // When incomplete, there are too many select options to render -- use a simple text input instead.
+            // TODO: if the FK target is public, we can generate an auto-complete input
+            String textInputValue = strVal;
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+            {
+                Object displayValue = getDisplayValue(ctx);
+                textInputValue = Objects.toString(displayValue, strVal);
+            }
+            renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);
+        }
+        else
+        {
+            Select.SelectBuilder select = new Select.SelectBuilder()
+                    .disabled(disabledInput)
+                    .multiple("select.multiple".equalsIgnoreCase(_inputType))
+                    .name(getInputPrefix() + formFieldName);
+
+            List<Option> options = new ArrayList<>();
+
+            // add empty option
+            options.add(new Option.OptionBuilder().build());
+
+            for (NamedObject entry : entryList)
+            {
+                String entryName = entry.getName();
+                Option.OptionBuilder option = new Option.OptionBuilder()
+                        .selected(isSelectInputSelected(entryName, value, strVal))
+                        .value(entryName);
+
+                if (null != entry.getObject())
+                    option.label(getSelectInputDisplayValue(entry));
+
+                options.add(option.build());
+            }
+
+            out.write(select.addOptions(options).toString());
+
+            // disabled inputs are not posted with the form, so we output a hidden form element:
+            if (disabledInput)
+                renderHiddenFormInput(ctx, out, formFieldName, value);
+        }
+    }
+
+    protected void renderFileFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        Input.InputBuilder input = new Input.InputBuilder()
+                .type("file")
+                .name(getInputPrefix() + formFieldName)
+                .disabled(disabledInput)
+                .needsWrapping(false);
+
+        out.write(input.build().toString());
+    }
+
+    protected void renderCheckboxFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        boolean checked = ColumnInfo.booleanFromObj(ConvertUtils.convert(value));
+
+        Input.InputBuilder input = new Input.InputBuilder()
+                .type("checkbox")
+                .name(getInputPrefix() + formFieldName)
+                .disabled(disabledInput)
+                .value("1")
+                .checked(checked)
+                .needsWrapping(false);
+
+        out.write(input.build().toString());
+
+        /*
+         * Checkboxes are weird. If set to FALSE they don't post at all, so it's impossible to tell
+         * the difference between values that weren't on the html form at all and ones that were set
+         * to false by the user.
+         *
+         * To fix this, each checkbox posts a hidden field named @columnName.  Spring parameter
+         * binding uses these special fields to set all unposted checkbox values to false.
+         */
+        out.write("<input type=\"hidden\" name=\"");
+        out.write(SpringActionController.FIELD_MARKER);
+        out.write(PageFlowUtil.filter(formFieldName));
+        out.write("\" value=\"1\">");
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        if (disabledInput)
+            renderHiddenFormInput(ctx, out, formFieldName, checked ? "1" : "");
+    }
+
+    protected void renderTextAreaFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        TextArea.TextAreaBuilder input = new TextArea.TextAreaBuilder()
+                .columns(_inputLength)
+                .rows(_inputRows)
+                .name(getInputPrefix() + formFieldName)
+                .disabled(disabledInput)
+                .value(strVal);
+
+        out.write(input.build().toString());
+
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        if (disabledInput)
+            renderHiddenFormInput(ctx, out, formFieldName, value);
+    }
+
+    protected void renderTextFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)
+            throws IOException
+    {
+        Input.InputBuilder input = new Input.InputBuilder()
+                .name(getInputPrefix() + formFieldName)
+                .disabled(disabledInput)
+                .size(_inputLength)
+                .value(strVal)
+                .needsWrapping(false);
+
+        out.write(input.build().toString());
+
+        // disabled inputs are not posted with the form, so we output a hidden form element:
+        if (disabledInput)
+            renderHiddenFormInput(ctx, out, formFieldName, value);
+    }
+
+    protected void renderAutoCompleteFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput, String autoCompleteURLPrefix)
+            throws IOException
+    {
+        String renderId = "auto-complete-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<script type=\"text/javascript\">");
+        sb.append("Ext4.onReady(function(){\n" +
+                "        Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
+                "            renderTo        : " + PageFlowUtil.jsString(renderId) + ",\n" +
+                "            completionUrl   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
+                "            sharedStore     : true,\n" +
+                "            sharedStoreId   : " + PageFlowUtil.jsString(getAutoCompleteURLPrefix()) + ",\n" +
+                "            tagConfig   : {\n" +
+                "                tag     : 'input',\n" +
+                "                type    : 'text',\n" +
+                "                name    : " + PageFlowUtil.jsString(formFieldName) + ",\n" +
+                "                size    : " + _inputLength + ",\n" +
+                "                value   : " + PageFlowUtil.jsString(strVal) + ",\n" +
+                "                autocomplete : 'off'\n" +
+                "            }\n" +
+                "        });\n" +
+                "      });\n");
+        sb.append("</script>\n");
+        sb.append("<div id='").append(renderId).append("'></div>");
+        out.write(sb.toString());
     }
 
     protected String getAutoCompleteURLPrefix()

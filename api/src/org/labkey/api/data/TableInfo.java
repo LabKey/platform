@@ -45,6 +45,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -179,14 +180,13 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     DatabaseTableType getTableType();
 
-    /** Get select list for named (hopefully unique!) column to title column. */
-    NamedObjectList getSelectList(String columnName);
-
-    /** Get select list for named (hopefully unique!) column to title column, including filter on table. */
-    default NamedObjectList getSelectList(String columnName, List<FilterType> filters)
-    {
-        return getSelectList(columnName);       // If not overridden; ignore filter
-    }
+    /**
+     * Get select list for named (hopefully unique!) column to title column, including filter on table.
+     * If maxRows is exceeded, the NamedObjectList will be marked as incomplete.
+     * When maxRows is null a default maxRows will be used. To select all rows, set maxRows to {@link Table#ALL_ROWS}.
+     * @see NamedObjectList#isComplete()
+     */
+    @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn);
 
     ColumnInfo getColumn(@NotNull String colName);
 
@@ -582,5 +582,30 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     {
         return null;
     }
+
+    default boolean hasInsertURLOverride()
+    {
+        return false;
+    }
+
+    default boolean hasUpdateURLOverride()
+    {
+        return false;
+    }
+
+    default boolean hasDeleteURLOverride()
+    {
+        return false;
+    }
+
+    /**
+     * Allow QueryView to render insert, update, and other buttons if the metadata xml provides URL
+     * overrides and the underlying table doesn't support insert/update/delete operations,
+     * such as a query table.
+     */
+    default boolean allowQueryTableURLOverrides()
+    {
+        return false;
+    };
 
 }

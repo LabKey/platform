@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     @Override
@@ -93,7 +94,7 @@
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Copy/paste text</h3>
         <span class="lk-import-expando pull-right">
-            <%=button("&ndash;").textAsHTML(true).href("#").id(copyPasteDivId + "Expando") %>
+            <%=button(NDASH).href("#").id(copyPasteDivId + "Expando") %>
         </span>
         <div class="clearfix"></div>
     </div>

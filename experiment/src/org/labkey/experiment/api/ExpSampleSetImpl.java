@@ -33,13 +33,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
@@ -68,7 +66,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -145,7 +142,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             return null;
         }
 
-        return getType().getPropertyByURI(uri);
+        return getDomain().getPropertyByURI(uri);
     }
 
     @Override
@@ -236,7 +233,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
-            List<? extends DomainProperty> props = getType().getProperties();
+            List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {
                 result = props.get(0);
@@ -415,25 +412,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public List<ExpMaterialImpl> getSamples()
-    {
-        return getSamples(getContainer());
-    }
-
-    @Override
     public List<ExpMaterialImpl> getSamples(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
-    }
-
-    @Override
-    @Deprecated
-    public ExpMaterialImpl getSample(String name)
-    {
-        return getSample(getContainer(), name);
     }
 
     @Override
@@ -447,13 +431,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (material == null)
             return null;
         return new ExpMaterialImpl(material);
-    }
-
-    @Override
-    @NotNull
-    public Domain getType()
-    {
-        return getDomain();
     }
 
     @Override
@@ -486,8 +463,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(colSampleLSID, getLSID());
-        List<ColumnInfo> selectColumns = new ArrayList<>();
-        selectColumns.addAll(tinfoProtocol.getColumns());
+        List<ColumnInfo> selectColumns = new ArrayList<>(tinfoProtocol.getColumns());
         selectColumns.add(colSampleLSID);
         Protocol[] protocols = new TableSelector(tinfoProtocol, selectColumns, filter, null).getArray(Protocol.class);
         ExpProtocol[] ret = new ExpProtocol[protocols.length];
@@ -508,9 +484,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (materials != null)
         {
             expMaterials = new ArrayList<>(materials.size());
-            for (int i = 0; i < expMaterials.size(); i ++)
+            for (Material material : materials)
             {
-                expMaterials.add(new ExpMaterialImpl(materials.get(i)));
+                expMaterials.add(new ExpMaterialImpl(material));
             }
         }
         for (ExpProtocol protocol : protocols)
@@ -533,7 +509,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void save(User user)
     {
-        if (ExperimentService.get().getDefaultSampleSetLsid().equals(getLSID()))
+        if (SampleSetService.get().getDefaultSampleSetLsid().equals(getLSID()))
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
@@ -693,7 +669,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public @NotNull Map<String, String> getImportAliasMap() throws IOException
     {
-            return Collections.unmodifiableMap(getImportAliases(_object));
+        return Collections.unmodifiableMap(getImportAliases(_object));
     }
 
     @Override

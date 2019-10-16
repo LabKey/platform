@@ -17,13 +17,11 @@ package org.labkey.bigiron.mssql;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.bigiron.AbstractClrInstallationManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.bigiron.BigIronController;
 
@@ -112,8 +110,7 @@ public class GroupConcatInstallationManager extends AbstractClrInstallationManag
     @Override
     protected void addAdminWarningMessages(Warnings warnings)
     {
-        ActionURL downloadURL = new ActionURL(BigIronController.DownloadGroupConcatInstallScriptAction.class, ContainerManager.getRoot());
-        warnings.add("The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. <a href=\"" + downloadURL + "\">Download installation script.</a> " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions."));
+        addAdminWarningMessage(warnings, "The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server.", BigIronController.DownloadGroupConcatInstallScriptAction.class, "groupconcatinstall");
     }
 
     public static class TestCase extends Assert

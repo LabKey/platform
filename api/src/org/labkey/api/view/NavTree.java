@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -44,10 +46,10 @@ public class NavTree implements Collapsible
 {
     private static final NavTree MENU_SEPARATOR = new NavTree("-");
 
-    private String _text;  // TODO: Change to "display"... but there's already a "display" property (??)
+    private String _text;
     private String _href;
     private boolean _selected = false;
-    private boolean _collapsed = false;
+    private boolean _collapsed;
     private boolean _canCollapse = true;
     private boolean _strong = false;
     private boolean _emphasis = false;
@@ -64,6 +66,8 @@ public class NavTree implements Collapsible
     private String _tip;
     private URLHelper _imageURL;
     private String _menuFilterItemCls = null;
+    private boolean _usePost = false;
+    private String _confirmMessage = null;
 
     private final @NotNull List<NavTree> _children = new LinkedList<>();
 
@@ -164,7 +168,7 @@ public class NavTree implements Collapsible
 
     public String getHref()
     {
-        return _href;
+        return _usePost ? "javascript:void(0);" : _href;
     }
 
     public String getEscapedKey()
@@ -178,6 +182,9 @@ public class NavTree implements Collapsible
         addChild(MENU_SEPARATOR);
     }
 
+    /**
+     * @return The child, not the parent!
+     */
     public NavTree addChild(NavTree child)
     {
         if (null != child._text)
@@ -187,41 +194,55 @@ public class NavTree implements Collapsible
         return child;
     }
 
+    /**
+     * @return The child, not the parent!
+     */
     public NavTree addChild(int pos, NavTree child)
     {
         _children.add(pos, child);
         return child;
     }
 
-    public NavTree addChild(String display)
+    /**
+     * @return The child, not the parent!
+     */
+    public NavTree addChild(String text)
     {
-        return addChild(new NavTree(display));
+        return addChild(new NavTree(text));
     }
 
 
-    public NavTree addChild(String display, String href)
+    /**
+     * @return The child, not the parent!
+     */
+    public NavTree addChild(String text, String href)
     {
-        return addChild(new NavTree(display, href));
+        return addChild(new NavTree(text, href));
     }
 
 
-    public NavTree addChild(String display, String href, String imageSrc)
+    /**
+     * @return The child, not the parent! (NOTE: this method used to return the parent; changed for consistency with other addChild() methods.)
+     */
+    public NavTree addChild(String text, String href, String imageSrc)
     {
-        addChild(new NavTree(display, href, imageSrc));
-        return this;
+        return addChild(new NavTree(text, href, imageSrc));
     }
 
-    public NavTree addChild(String display, String href, String imageSrc, String imageCls)
+    /**
+     * @return The child, not the parent! (NOTE: this method used to return the parent; changed for consistency with other addChild() methods.)
+     */
+    public NavTree addChild(String text, String href, String imageSrc, String imageCls)
     {
-        addChild(new NavTree(display, href, imageSrc, imageCls));
-        return this;
+        return addChild(new NavTree(text, href, imageSrc, imageCls));
     }
 
-
-    public NavTree addChild(String display, @NotNull URLHelper urlhelp)
+    /**
+     * @return The child, not the parent! (NOTE: this method used to return the parent; changed for consistency with other addChild() methods.)
+     */
+    public NavTree addChild(String text, @NotNull URLHelper urlhelp)
     {
-        addChild(display, urlhelp.getLocalURIString());
-        return this;
+        return addChild(text, urlhelp.getLocalURIString());
     }
 
 
@@ -237,6 +258,7 @@ public class NavTree implements Collapsible
         addChildren(Arrays.asList(list));
     }
 
+    @Override
     @NotNull
     public List<NavTree> getChildren()
     {
@@ -264,6 +286,7 @@ public class NavTree implements Collapsible
      * @param path Path of folders to expand
      * @return Named subtree
      */
+    @Override
     public NavTree findSubtree(@Nullable String path)
     {
         if (null == path || path.length() == 0 || "/".equals(path))
@@ -356,11 +379,13 @@ public class NavTree implements Collapsible
         return _imageWidth;
     }
 
+    @Override
     public boolean isCollapsed()
     {
         return _collapsed;
     }
 
+    @Override
     public void setCollapsed(boolean collapsed)
     {
         _collapsed = collapsed;
@@ -376,6 +401,7 @@ public class NavTree implements Collapsible
         _canCollapse = canCollapse;
     }
 
+    @Override
     public String getId()
     {
         return _id;
@@ -418,8 +444,22 @@ public class NavTree implements Collapsible
 
     public String getScript()
     {
-        return _script;
-    }
+        final String script;
+
+        if (_usePost)
+        {
+            if (null != _script)
+                throw new IllegalStateException("Can't specify both usePost and setScript");
+
+            script = PageFlowUtil.postOnClickJavaScript(_href, _confirmMessage);
+        }
+        else
+        {
+            script = _script;
+        }
+
+        return script;
+   }
 
     public void setScript(String script)
     {
@@ -486,6 +526,23 @@ public class NavTree implements Collapsible
     public String getMenuFilterItemCls()
     {
         return _menuFilterItemCls;
+    }
+
+    public NavTree usePost()
+    {
+        _usePost = true;
+        return this;
+    }
+
+    public NavTree usePost(String confirmMessage)
+    {
+        _confirmMessage = confirmMessage;
+        return usePost();
+    }
+
+    public boolean isPost()
+    {
+        return _usePost;
     }
 
     public String childrenToJS()
@@ -595,6 +652,24 @@ public class NavTree implements Collapsible
         }
         sb.append("}");
         return sb;
+    }
+
+    /**
+     * Generate a LinkBuilder from key properties of this NavTree.
+     * @return A LinkBuilder populated with properties from this NavTree
+     */
+    public LinkBuilder toLinkBuilder()
+    {
+        // Copy key properties. We could copy others, if needed by future code paths.
+        LinkBuilder lb = new LinkBuilder(_text).href(_href).onClick(_script);
+
+        if (_usePost)
+            lb.usePost(_confirmMessage);
+
+        if (isNoFollow())
+            lb.nofollow();
+
+        return lb;
     }
 
     @Deprecated

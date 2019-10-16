@@ -15,10 +15,16 @@
  */
 package org.labkey.study.specimen.report.request;
 
+import org.apache.xpath.operations.Bool;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Select;
 import org.labkey.study.specimen.report.specimentype.TypeReportFactory;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
+
+import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * User: brittp
@@ -39,17 +45,27 @@ public abstract class BaseRequestReportFactory extends TypeReportFactory
         _completedRequestsOnly = completedRequestsOnly;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> superInputs = super.getAdditionalFormInputHtml();
+        List<Pair<String, HtmlString>> superInputs = super.getAdditionalFormInputHtml();
 
-        StringBuilder builder = new StringBuilder();
-        builder.append("<select name=\"completedRequestsOnly\">\n");
-        builder.append("<option value=\"false\">Include in-process requests</option>\n");
-        builder.append("<option value=\"true\"").append(_completedRequestsOnly ? " SELECTED" : "");
-        builder.append(">Completed requests only</option>\n");
-        builder.append("</select>");
-        superInputs.add(new Pair<>("Request status", builder.toString()));
+        Select.SelectBuilder sb = new Select.SelectBuilder();
+
+        sb.addOption(new Option.OptionBuilder()
+            .value(Boolean.toString(false))
+            .label("Include in-process requests")
+            .build()
+        );
+
+        sb.addOption(new Option.OptionBuilder()
+            .value(Boolean.toString(true))
+            .label("Completed requests only")
+            .selected(_completedRequestsOnly)
+            .build()
+        );
+
+        superInputs.add(new Pair<>("Request status", unsafe(sb.toString())));
         return superInputs;
     }
 }

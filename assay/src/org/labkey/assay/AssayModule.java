@@ -17,17 +17,26 @@
 package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayBatchDomainKind;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayProviderSchema;
+import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssayRunDomainKind;
+import org.labkey.api.assay.AssayRunType;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.TsvDataHandler;
+import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.assay.AssayBatchDomainKind;
-import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -37,13 +46,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.AssayProviderSchema;
-import org.labkey.api.assay.AssayRunType;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.TsvDataHandler;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
@@ -60,10 +65,12 @@ import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
+import javax.servlet.ServletContext;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -166,6 +173,35 @@ public class AssayModule extends SpringModule
             {
                 Container targetContainer = container.getContainerFor(ContainerType.DataType.folderManagement);
                 adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(targetContainer)));
+            }
+        });
+
+        // Issue 24850: add modules associated with assays that have an active definition
+        // Register ModuleDependencyProvider in a StartupListener to make sure the expected schemas exist.
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Assay";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                ContainerManager.registerModuleDependencyProvider((dependencies, c) -> {
+                    AssayService svc = AssayService.get();
+                    List<ExpProtocol> activeProtocols = svc.getAssayProtocols(c);
+                    for (ExpProtocol p : activeProtocols)
+                    {
+                        AssayProvider ap = svc.getProvider(p);
+                        if (ap != null)
+                        {
+                            for (Module m : ap.getRequiredModules())
+                                dependencies.add(m);
+                        }
+                    }
+                });
             }
         });
     }

@@ -140,20 +140,25 @@ public class ReportsController extends BaseStudyController
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
+
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             _study = getStudy();
             return StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (_study == null)
-                return root.addChild("No Study In Folder");
+                root.addChild("No Study In Folder");
             else if (getContainer().hasPermission(getUser(), AdminPermission.class))
-                return root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
-                return root.addChild("Views");
+                root.addChild("Views");
+
+            return root;
         }
     }
 
@@ -163,7 +168,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors)
         {
             String reportIdParam = getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam, getViewContext().getUser(), getViewContext().getContainer());
 
             Report report = null;
 
@@ -1313,7 +1318,7 @@ public class ReportsController extends BaseStudyController
         protected Report getReport(ScriptReportBean form)
         {
             String reportIdParam = form.getViewContext().getActionURL().getParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(reportIdParam, getViewContext().getUser(), getViewContext().getContainer());
             if (null != reportId)
             {
                 form.setReportId(reportId);
@@ -1561,7 +1566,7 @@ public class ReportsController extends BaseStudyController
             Report report = getParticipantReport(form);
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getViewContext().getUser(), getViewContext().getContainer());
 
             response.put("success", true);
             response.put("reportId", reportId);
@@ -1742,7 +1747,7 @@ public class ReportsController extends BaseStudyController
             Report report = getReport(form);
 
             int rowId = ReportService.get().saveReport(getViewContext(), key, report);
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getViewContext().getUser(), getViewContext().getContainer());
 
             response.put("success", true);
             response.put("reportId", reportId);

@@ -17,6 +17,7 @@ package org.labkey.api.premium;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -90,5 +91,4 @@ public interface PremiumService
             return false;
         }
     }
-
 }

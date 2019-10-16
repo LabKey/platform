@@ -39,23 +39,13 @@ public class UrlColumn extends SimpleDisplayColumn
         setURL(url);
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object value = getValue(ctx);
         String url = renderURL(ctx);
 
         if (value != null && url != null)
-        {
-            Map<String, String> props;
-            if (_linkTarget != null)
-            {
-                props = Collections.singletonMap("target", _linkTarget);
-            }
-            else
-            {
-                props = Collections.emptyMap();
-            }
-            out.write(PageFlowUtil.textLink(value.toString(), url, null, null, props));
-        }
+            out.write(PageFlowUtil.link(value.toString()).href(url).target(_linkTarget).toString());
     }
 }

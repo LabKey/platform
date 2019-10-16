@@ -27,6 +27,7 @@ List apache = [
         "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
         "commons-io:commons-io:${commonsIoVersion}",
         "org.apache.commons:commons-compress:${commonsCompressVersion}",
+        "org.tukaani:xz:${tukaaniXZVersion}",         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
         "org.apache.commons:commons-lang3:${commonsLang3Version}",
         "org.apache.commons:commons-math3:${commonsMath3Version}",
         "commons-net:commons-net:${commonsNetVersion}",
@@ -112,11 +113,11 @@ configurations {
     all*.exclude group: "org.json", module: "json"
 }
 
-// this is required for compiling the API jar file.
+// declared separately to include the gwtsrc directory
 sourceSets {
   main {
     java {
-      srcDirs =["src", "gwtsrc"]
+      srcDirs = ["src", "gwtsrc", "$project.buildDir/xb"]
     }
     // TODO move resources files into resources directory to avoid this overlap
     resources {
@@ -127,12 +128,11 @@ sourceSets {
   }
 }
 
+
 dependencies {
   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle))
   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
-  BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: project.path, depProjectConfig: "xmlSchema")
-
-  compile project.files(project.tasks.schemasJar)
+  compile project.tasks.schemasCompile.outputs.files
 
   BuildUtils.addTomcatBuildDependencies(project, "implementation")
   // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
@@ -154,12 +154,6 @@ dependencies {
   // These are required for running unit tests through the server junit controller
   external test
 
-  jspCompile files(project.tasks.jar)
-  jspCompile apache, jackson, spring
-  webappCompile files(project.tasks.jar)
-  webappCompile "com.google.code.kaptcha:kaptcha:${kaptchaVersion}"
-  webappCompile "org.springframework:spring-context:${springVersion}"
-  webappCompile "com.sun.mail:jakarta.mail:${javaMailVersion}"
-  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"))
-  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: BuildUtils.getInternalProjectPath(project.gradle))
+  jspImplementation files(project.tasks.jar)
+  jspImplementation apache, jackson, spring
 }

@@ -53,7 +53,7 @@ public class VaccineStudyWebPart extends JspView<VaccineStudyWebPart.Model>
 
     public VaccineStudyWebPart(Model model)
     {
-        super(VaccineStudyWebPart.class, "vaccineStudy.jsp", model);
+        super("/org/labkey/study/view/vaccineStudy.jsp", model);
         assert (null != model.getStudyId() && 0 != model.getStudyId());
         String title = null;
         if (null != model.getPanel())

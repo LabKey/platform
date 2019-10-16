@@ -67,6 +67,7 @@
             </xs:element>
             <!--<xs:element name="initialInputs"/>-->
             <xs:element name="tasks" type="TasksType"/>
+            <xs:element name="triggerConfiguration" type="TriggerConfigurationType" minOccurs="0"/>
         </xs:sequence>
         <xs:attributeGroup ref="NameVersionAttrGroup"/>
         <xs:attribute name="splittable" type="xs:boolean" use="optional">
@@ -79,6 +80,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="TriggerConfigurationType">
+        <xs:attribute name="allow" type="xs:boolean" default="true"/>
     </xs:complexType>
 
     <!--

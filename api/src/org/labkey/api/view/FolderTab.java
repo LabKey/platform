@@ -143,7 +143,12 @@ public abstract class FolderTab
 
                 if (parts.size() > 0)
                 {
-                    Portal.saveParts(container, getDbName(), parts);
+                    // When portal page first loads a folder tab it populates FolderType webparts into the database. We can't switch
+                    // project-begin.view to POST, but this ensure pattern is not a viable CSRF attack vector.
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        Portal.saveParts(container, getDbName(), parts);
+                    }
                 }
             }
         }

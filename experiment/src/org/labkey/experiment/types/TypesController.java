@@ -141,7 +141,7 @@ public class TypesController extends SpringActionController
             StorageProvisioner.ProvisioningReport report = StorageProvisioner.getProvisioningReport(form.getDomainUri());
             if (report.getProvisionedDomains().size() == 1)
                 form.report = report.getProvisionedDomains().iterator().next();
-            return new JspView<>(this.getClass(), "repair.jsp", form, errors);
+            return new JspView<>("/org/labkey/experiment/types/repair.jsp", form, errors);
         }
 
         @Override

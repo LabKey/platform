@@ -219,7 +219,7 @@ public class DomainUtil
             //set property as PK
             if (pkColMap.containsKey(p.getName()))
             {
-                p.setPrimaryKey(true);
+                p.setIsPrimaryKey(true);
             }
 
             //fully lock shared columns or columns not in the same container (ex. for dataset domain)
@@ -266,6 +266,9 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
+        gwtDomain.setAllowAttachmentProperties(dd.getDomainKind().allowAttachmentProperties());
+        gwtDomain.setAllowFileLinkProperties(dd.getDomainKind().allowFileLinkProperties());
+        gwtDomain.setAllowFlagProperties(dd.getDomainKind().allowFlagProperties());
         return gwtDomain;
     }
 
@@ -468,7 +471,7 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        ValidationException ve = DomainUtil.validateProperties(null, domain, null);
+        ValidationException ve = DomainUtil.validateProperties(null, domain, null, null);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -487,7 +490,7 @@ public class DomainUtil
         assert orig.getDomainURI().equals(update.getDomainURI());
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
-        ValidationException validationException = validateProperties(d, update, d.getDomainKind());
+        ValidationException validationException = validateProperties(d, update, d.getDomainKind(), orig);
 
         if (validationException.hasErrors())
         {
@@ -901,11 +904,12 @@ public class DomainUtil
      * @param domain The updated domain to validate
      * @return List of errors strings found during the validation
      */
-    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind)
+    public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
     {
         Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
+        Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
         for (Object f : updates.getFields())
         {
@@ -915,19 +919,24 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Name field must not be blank."));
+                exception.addError(new SimpleValidationError("Please provide a name for each field."));
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name) && field.getPropertyId() <= 0)
+            if (null != reservedNames && reservedNames.contains(name))
             {
-                exception.addFieldError(name, "\"" + name + "\" is a reserved field name in \"" + domain.getName() + "\".");
+                //check if a new field is a reserved field or an existing field is updated to a reserved field
+                String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
+                if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
+                {
+                    exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
+                }
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "All property names must be unique. Duplicate found: " + name + ".";
+                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;
@@ -940,5 +949,22 @@ public class DomainUtil
         }
 
         return exception;
+    }
+
+    @Nullable
+    private static Map<Integer, String> getOriginalFieldPropertyIdNameMap(@Nullable GWTDomain orig)
+    {
+        if (null != orig)
+        {
+            Map<Integer, String> propertyIdMap = new HashMap<>();
+
+            for (Object f : orig.getFields())
+            {
+                GWTPropertyDescriptor origField = (GWTPropertyDescriptor) f;
+                propertyIdMap.put(origField.getPropertyId(), origField.getName());
+            }
+            return propertyIdMap;
+        }
+        return null;
     }
 }

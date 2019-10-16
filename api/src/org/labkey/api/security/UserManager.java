@@ -48,11 +48,13 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Result;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -1116,5 +1118,56 @@ public class UserManager
     {
         Set<UserRelationships> existing = getRelationships(user, other);
         return relationships.stream().anyMatch(existing::contains);
+    }
+
+    /**
+     * Return the HTML tag for the user details page of the displayedUserId.
+     * @param container The current container
+     * @param currentUser The current logged in user
+     * @param displayedUserId The user id of the url we want to navigate to
+     * @return The HTML string to navigate to the displayedUserId's user details page
+     */
+    public static String getUserDetailsHTMLLink(Container container, User currentUser, int displayedUserId)
+    {
+        User displayUser = getUser(displayedUserId);
+
+        boolean isDeletedUser = displayUser == null;
+
+        if (isDeletedUser)
+            return PageFlowUtil.filter("<" + displayedUserId + ">");
+
+        String displayName = displayUser.getDisplayName(currentUser);
+        ActionURL url = getUserDetailsURL(container, currentUser, displayedUserId);
+
+        // currentUser has permissions to see user details of the displayed user
+        if (url != null)
+        {
+            return "<a class=\"labkey-link\" href=\"" + url +
+                    "\">" + PageFlowUtil.filter(displayName) + "</a>";
+        }
+
+        return PageFlowUtil.filter(displayName);
+    }
+
+    /**
+     * Return the ActionURL for the user details page of the displayedUserId.
+     * If the user does not have permissions to see the user details page or the displayed
+     * user id is a guest, return the URL an empty URL.
+     * @param container The current container
+     * @param currentUser The current logged in user
+     * @param displayedUserId The user id of the url we want to navigate to
+     * @return A string URL to navigate to the displayedUserIds user details page.
+     */
+    public static ActionURL getUserDetailsURL(Container container, User currentUser, Integer displayedUserId)
+    {
+        if (SecurityManager.canSeeUserDetails(container, currentUser) && !UserIdRenderer.isGuestUserId(displayedUserId))
+        {
+            if (displayedUserId != null)
+            {
+                return PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, displayedUserId, null);
+            }
+        }
+
+        return null;
     }
 }

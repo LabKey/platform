@@ -36,6 +36,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -143,6 +144,9 @@ public class ReplacedRunFilter
         for (Type type : Type.values())
         {
             SimpleFilter typeFilter = new SimpleFilter();
+            // pick up sort/filter parameters from the post body as well.  The URL parameters take precedence, though.
+            Map<String, String[]> sortFilterParams = view.getSettings().getSortFilterURL().getParameterMap();
+            sortFilterParams.putAll(url.getParameterMap());
 
             type.addCondition(typeFilter, fieldKey);
             URLHelper helper = new URLHelper(false);
@@ -152,12 +156,13 @@ public class ReplacedRunFilter
             String paramName = parameters.get(0).getKey();
             String paramValue = parameters.get(0).getValue();
 
-            if (url.getParameterMap().containsKey(paramName))
+            if (sortFilterParams.containsKey(paramName))
             {
                 try
                 {
                     Boolean b1 = (Boolean) ConvertUtils.convert(paramValue, Boolean.class);
-                    Boolean b2 = (Boolean) ConvertUtils.convert(url.getParameter(paramName), Boolean.class);
+                    // there can be only one value for this filter
+                    Boolean b2 = (Boolean) ConvertUtils.convert(sortFilterParams.get(paramName)[0], Boolean.class);
                     if (Objects.equals(b1, b2))
                     {
                         return new ReplacedRunFilter(type);

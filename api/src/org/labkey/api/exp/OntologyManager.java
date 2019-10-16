@@ -31,6 +31,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -75,6 +76,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.search.SearchService.PROPERTY;
 
@@ -2021,6 +2023,15 @@ public class OntologyManager
         return pd;
     }
 
+    public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
+    {
+        List<? extends Domain> domainsInContainer = PropertyService.get().getDomains(container);
+        return domainsInContainer
+                .stream()
+                .filter(d -> null != d.getPropertyByURI(pd.getPropertyURI()))
+                .collect(Collectors.toList());
+    }
+
     private static class DomainDescriptorLoader implements CacheLoader<String, DomainDescriptor>
     {
         @Override
@@ -2391,6 +2402,32 @@ public class OntologyManager
         domainDescByIDCache.remove(getIDCacheKey(dd));
         domainPropertiesCache.remove(getURICacheKey(dd));
         return dd;
+    }
+
+    public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject) throws ValidationException
+    {
+        ObjectProperty oprop;
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        {
+            OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), container, pd.getContainer());
+
+            oprop = new ObjectProperty(lsid, container, pd, value);
+            if (value != null)
+            {
+                oprop.setPropertyId(pd.getPropertyId());
+                OntologyManager.insertProperties(container, expObject == null ? lsid : expObject.getLSID(), oprop);
+            }
+            else
+            {
+                // We still need to validate blanks
+                List<ValidationError> errors = new ArrayList<>();
+                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, oprop, errors, new ValidatorContext(pd.getContainer(), user));
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
+            }
+            transaction.commit();
+        }
+        return oprop;
     }
 
     public static void clearCaches()

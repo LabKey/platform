@@ -32,7 +32,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase"%>
+<%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
@@ -104,7 +104,7 @@
             maxColumns--;
         }
 
-        %><labkey:panel title="<%=h(entry.getKey())%>"><%
+        %><labkey:panel title="<%=entry.getKey()%>"><%
         startReportSection(out, entry.getKey(), bean);
 
         for (DataViewInfo view : entry.getValue())

@@ -35,8 +35,8 @@ public class DemoMode
 {
     private final static Set<Pair<Container, User>> SET = new HashSet<>();
 
-    // Return an obfuscated version of the id.  This is the choke point for all obfuscation... currently returns
-    // a string of astericks the same length as the input.  Null results in an empty string.
+    // Return an obfuscated version of the id. This is the choke point for all obfuscation... currently returns
+    // a string of asterisks the same length as the input. Null results an empty string.
     @NotNull
     public static String obfuscate(@Nullable String id)
     {

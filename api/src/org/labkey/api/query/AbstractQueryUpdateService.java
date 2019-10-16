@@ -20,6 +20,12 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -32,15 +38,17 @@ import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
-import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
@@ -51,10 +59,14 @@ import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -62,7 +74,10 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
@@ -70,11 +85,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -141,7 +160,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         StandardDataIteratorBuilder etl = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
 
         DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
-        dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption() == InsertOption.IMPORT ? getAttachmentDirectory(): null, container, getAttachmentParentFactory());
+        dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, QueryService.AuditAction.INSERT, user, container);
 
         return dib;
@@ -245,7 +264,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             if (null != rows)
             {
-                MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(context), false);
+                MapDataIterator maps = DataIteratorUtil.wrapMap(it, false);
                 it = new WrapperDataIterator(maps)
                 {
                     @Override
@@ -783,5 +802,200 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
         return result;
+    }
+
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class TestCase extends Assert
+    {
+        static TabLoader getTestData() throws IOException
+        {
+            TabLoader testData = new TabLoader(new StringReader("pk,i,s\n0,0,zero\n1,1,one\n2,2,two"),true);
+            testData.parseAsCSV();
+            testData.getColumns()[0].clazz = Integer.class;
+            testData.getColumns()[1].clazz = Integer.class;
+            testData.getColumns()[2].clazz = String.class;
+            return testData;
+        }
+
+        @BeforeClass
+        public static void createList() throws Exception
+        {
+            deleteList();
+
+            TabLoader testData = getTestData();
+            String hash = GUID.makeHash();
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            ListService s = ListService.get();
+            UserSchema lists = (UserSchema)DefaultSchema.get(user, c).getSchema("lists");
+            assertNotNull(lists);
+
+            ListDefinition R = s.createList(c, "R", ListDefinition.KeyType.Integer);
+            R.setKeyName("pk");
+            Domain d = requireNonNull(R.getDomain());
+            for (int i=0 ; i<testData.getColumns().length ; i++)
+            {
+                DomainProperty p = d.addProperty();
+                p.setPropertyURI(d.getName() + hash + "#" + testData.getColumns()[i].name);
+                p.setName(testData.getColumns()[i].name);
+                p.setRangeURI(testData.getColumns()[i].clazz == Integer.class ? PropertyType.INTEGER.getTypeUri() : PropertyType.STRING.getTypeUri());
+            }
+            R.save(user);
+            TableInfo rTableInfo = lists.getTable("R", null);
+            assertNotNull(rTableInfo);
+        }
+
+        public static List<Map<String,Object>> getRows()
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            UserSchema lists = (UserSchema)DefaultSchema.get(user, c).getSchema("lists");
+            TableInfo rTableInfo = requireNonNull(lists.getTable("R", null));
+            return Arrays.asList(new TableSelector(rTableInfo, TableSelector.ALL_COLUMNS, null, new Sort("PK")).getMapArray());
+        }
+
+        @Before
+        public void resetList() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            qus.truncateRows(user, c, null, null);
+        }
+
+        @AfterClass
+        public static void deleteList() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            ListService s = ListService.get();
+            Map<String, ListDefinition> m = s.getLists(c);
+            if (m.containsKey("R"))
+                m.get("R").delete(user);
+        }
+
+        void validateDefaultData(List<Map<String,Object>> rows)
+        {
+            assertEquals(rows.size(), 3);
+
+            assertEquals(0, rows.get(0).get("pk"));
+            assertEquals(1, rows.get(1).get("pk"));
+            assertEquals(2, rows.get(2).get("pk"));
+
+            assertEquals(0, rows.get(0).get("i"));
+            assertEquals(1, rows.get(1).get("i"));
+            assertEquals(2, rows.get(2).get("i"));
+
+            assertEquals("zero", rows.get(0).get("s"));
+            assertEquals("one", rows.get(1).get("s"));
+            assertEquals("two", rows.get(2).get("s"));
+        }
+
+        @Test
+        public void INSERT() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            assert(getRows().size()==0);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            BatchValidationException errors = new BatchValidationException();
+            var rows = qus.insertRows(user, c, getTestData().load(), errors, null, null);
+            assertFalse(errors.hasErrors());
+            validateDefaultData(rows);
+            validateDefaultData(getRows());
+
+            qus.insertRows(user, c, getTestData().load(), errors, null, null);
+            assertTrue(errors.hasErrors());
+        }
+
+        @Test
+        public void UPSERT() throws Exception
+        {
+            /* not sure how you use/test ImportOptions.UPSERT
+             * the only row returning QUS method is insertRows(), which doesn't let you specify the InsertOption?
+             */
+        }
+
+        @Test
+        public void IMPORT() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            assert(getRows().size()==0);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            BatchValidationException errors = new BatchValidationException();
+            var count = qus.importRows(user, c, getTestData(), errors, null, null);
+            assertFalse(errors.hasErrors());
+            assert(count == 3);
+            validateDefaultData(getRows());
+
+            qus.importRows(user, c, getTestData(), errors, null, null);
+            assertTrue(errors.hasErrors());
+        }
+
+        @Test
+        public void MERGE() throws Exception
+        {
+            assert(getRows().size()==0);
+            INSERT();
+
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            var mergeRows = new ArrayList<Map<String,Object>>();
+            mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
+            mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
+            BatchValidationException errors = new BatchValidationException();
+            var count = qus.mergeRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), errors, null, null);
+            assertFalse(errors.hasErrors());
+            assertEquals(count,2);
+            var rows = getRows();
+            // test existing row value is updated
+            assertEquals("TWO", rows.get(2).get("s"));
+            // test existing row value is not updated
+            assertEquals(2, rows.get(2).get("i"));
+            // test new row
+            assertEquals("THREE", rows.get(3).get("s"));
+            assertNull(rows.get(3).get("i"));
+        }
+
+        @Test
+        public void REPLACE() throws Exception
+        {
+            assert(getRows().size()==0);
+            INSERT();
+
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            TableInfo rTableInfo = ((UserSchema)DefaultSchema.get(user, c).getSchema("lists")).getTable("R", null);
+            QueryUpdateService qus = requireNonNull(rTableInfo.getUpdateService());
+            var mergeRows = new ArrayList<Map<String,Object>>();
+            mergeRows.add(CaseInsensitiveHashMap.of("pk",2,"s","TWO"));
+            mergeRows.add(CaseInsensitiveHashMap.of("pk",3,"s","THREE"));
+            DataIteratorContext context = new DataIteratorContext();
+            context.setInsertOption(InsertOption.REPLACE);
+            var count = qus.loadRows(user, c, new ListofMapsDataIterator(mergeRows.get(0).keySet(), mergeRows), context, null);
+            assertFalse(context.getErrors().hasErrors());
+            assertEquals(count,2);
+            var rows = getRows();
+            // test existing row value is updated
+            assertEquals("TWO", rows.get(2).get("s"));
+            // test existing row value is updated
+            assertNull(rows.get(2).get("i"));
+            // test new row
+            assertEquals("THREE", rows.get(3).get("s"));
+            assertNull(rows.get(3).get("i"));
+        }
+
+        @Test
+        public void IMPORT_IDENTITY()
+        {
+            // TODO
+        }
     }
 }

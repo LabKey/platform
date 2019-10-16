@@ -132,7 +132,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         {
             super.populateButtonBar(view, bar);
 
-            if (!AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
+            if (null != AssayPublishService.get() && !AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             {
                 ActionURL publishURL = PageFlowUtil.urlProvider(StudyUrls.class).getCopyToStudyURL(getContainer(), _protocol);
                 for (Pair<String, String> param : publishURL.getParameters())

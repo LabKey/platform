@@ -20,6 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Objects;
 
@@ -63,5 +68,24 @@ public class UserIdRenderer extends DataColumn
             return "Guest";
         }
         return super.getFormattedValue(ctx);
+    }
+
+    @Override
+    public String renderURL(RenderContext ctx)
+    {
+        var loggedInUser = ctx.getViewContext().getUser();
+        Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
+        boolean isDeletedUser = UserManager.getUser(displayedUserId) == null;
+
+        if (!isDeletedUser && displayedUserId != null)
+        {
+               ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, displayedUserId);
+               if (url != null)
+               {
+                   return url.toString();
+               }
+        }
+
+        return null;
     }
 }

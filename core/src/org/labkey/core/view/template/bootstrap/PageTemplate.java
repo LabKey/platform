@@ -21,11 +21,10 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.BannerProperties;
 import org.labkey.api.settings.FooterProperties;
 import org.labkey.api.settings.TemplateProperties;
 import org.labkey.api.view.ActionURL;
@@ -49,7 +48,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ListIterator;
 
 public class PageTemplate extends JspView<PageConfig>
 {
@@ -102,7 +100,7 @@ public class PageTemplate extends JspView<PageConfig>
         page.setAppBar(generateAppBarModel(context, page));
 
         setView("navigation", getNavigationView(context, page));
-        setView("footer", getTemplateResource(new FooterProperties()));
+        setView("footer", new FooterProperties(c).getView());
     }
 
     private AppBar generateAppBarModel(ViewContext context, PageConfig page)
@@ -156,12 +154,17 @@ public class PageTemplate extends JspView<PageConfig>
         }
         page.setMetaTag("authenticatedUser", null == authenticatedUser ? "-" : StringUtils.defaultString(authenticatedUser.getEmail(),user.getDisplayName(user)));
         page.setMetaTag("impersonatedUser", null == impersonatedUser ? "-" : StringUtils.defaultString(impersonatedUser.getEmail(),user.getDisplayName(user)));
-
     }
 
     protected ModelAndView getBodyTemplate(PageConfig page, ModelAndView body)
     {
         JspView view = new JspView<>("/org/labkey/core/view/template/bootstrap/body.jsp", page);
+
+        Container c = this.getViewContext().getContainer();
+        TemplateProperties banner = new BannerProperties(c);
+        if (!banner.isShowOnlyInProjectRoot() || (c.equals(c.getProject())))
+            view.setView("banner", banner.getView());
+
         view.setBody(body);
         view.setFrame(FrameType.NONE);
         return view;
@@ -313,36 +316,6 @@ public class PageTemplate extends JspView<PageConfig>
     {
         ActionURL url = getViewContext().cloneActionURL();
         return url.setExtraPath("__r" + getViewContext().getContainer().getRowId());
-    }
-
-    public static HtmlView getTemplateResource(TemplateProperties prop)
-    {
-        HtmlView view = null;
-        if (prop.isDisplay())
-        {
-            Module coreModule = ModuleLoader.getInstance().getCoreModule();
-            List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-            if (null != ModuleLoader.getInstance().getModule(prop.getModule()))
-            {
-                modules.add(ModuleLoader.getInstance().getModule(prop.getModule()));
-            }
-            ListIterator<Module> i = modules.listIterator(modules.size());
-            while (i.hasPrevious())
-            {
-                view = ModuleHtmlView.get(i.previous(), prop.getFileName());
-                if (null != view)
-                    break;
-            }
-            if (null == view)
-            {
-                view = ModuleHtmlView.get(coreModule, prop.getFileName());
-            }
-            if (null != view)
-            {
-                view.setFrame(FrameType.NONE);
-            }
-        }
-        return view;
     }
 
     public static String getTemplatePrefix(PageConfig page)

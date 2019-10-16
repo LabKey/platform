@@ -98,7 +98,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (count > 0)
         {
-            StudyManager.datasetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
@@ -110,7 +110,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
-            StudyManager.datasetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
@@ -154,7 +154,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.datasetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container);
         }
         return result;
@@ -170,8 +170,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             dupePolicy = DatasetDefinition.CheckForDuplicates.never;
         }
-        else
-        if (context.getInsertOption() == InsertOption.MERGE)
+        else if (context.getInsertOption().mergeRows)
         {
             dupePolicy = DatasetDefinition.CheckForDuplicates.sourceOnly;
         }
@@ -426,7 +425,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     protected int truncateRows(User user, Container container)
     {
-       return _dataset.deleteRows(user, (Date) null);
+       return _dataset.deleteRows((Date) null);
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

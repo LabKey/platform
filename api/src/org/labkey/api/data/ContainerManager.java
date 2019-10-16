@@ -110,6 +110,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -1581,7 +1582,7 @@ public class ContainerManager
 
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
 
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction())
+        DbScope.RetryFn<Boolean> tryDeleteContainer = (tx) ->
         {
             deletingContainers.put(c.getId(), user.getUserId());
 
@@ -1591,7 +1592,6 @@ public class ContainerManager
             if (sel.exists())
             {
                 _removeFromCache(c);
-                t.commit();
                 return false;
             }
 
@@ -1618,7 +1618,7 @@ public class ContainerManager
 
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
-            t.addCommitTask(() ->
+            tx.addCommitTask(() ->
             {
                 // Be sure that we've waited until any threads that might be populating the cache have finished
                 // before we guarantee that we've removed this now-deleted container
@@ -1633,14 +1633,22 @@ public class ContainerManager
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
-            t.commit();
+            return true;
+        };
+
+        try
+        {
+            boolean success = CORE.getSchema().getScope().executeWithRetry(tryDeleteContainer);
+            if (success)
+            {
+                LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
+            }
+            return success;
         }
         finally
         {
             deletingContainers.remove(c.getId());
         }
-        LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
-        return true;
     }
 
     public static boolean isDeletable(Container c)
@@ -2196,6 +2204,17 @@ public class ContainerManager
         }
     }
 
+    private static final List<ModuleDependencyProvider> MODULE_DEPENDENCY_PROVIDERS = new CopyOnWriteArrayList<>();
+
+    public static void registerModuleDependencyProvider(ModuleDependencyProvider provider)
+    {
+        MODULE_DEPENDENCY_PROVIDERS.add(provider);
+    }
+
+    public static void forEachModuleDependencyProvider(Consumer<ModuleDependencyProvider> action)
+    {
+        MODULE_DEPENDENCY_PROVIDERS.forEach(action);
+    }
 
     public static Container createDefaultSupportContainer()
     {

@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.controllers.property;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
@@ -25,10 +26,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties({
         "_Ts",
-        "allowFileLinkProperties",
-        "allowAttachmentProperties",
-        "allowFlagProperties",
-
         // CONSIDER: Exclude mandatory and reserved names for now, but we may need it when re-implementing a domain designer
         "mandatoryFieldNames",
         "reservedFieldNames",
@@ -39,7 +36,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "defaultValueOptions",
         "defaultValuesURL",
         "provisioned",
+        "domainException",
 })
+
+@JsonFilter("listDomainsActionFilter")
+
 public interface GWTDomainMixin
 {
 }

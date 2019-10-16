@@ -34,7 +34,32 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.assay.AssayResultTable;
+import org.labkey.api.assay.AssayRunsView;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.AssayView;
+import org.labkey.api.assay.ReplacedRunFilter;
+import org.labkey.api.assay.actions.AssayDetailRedirectAction;
+import org.labkey.api.assay.actions.AssayResultDetailsAction;
+import org.labkey.api.assay.actions.AssayRunDetailsAction;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.actions.AssayRunsAction;
+import org.labkey.api.assay.actions.BaseAssayAction;
+import org.labkey.api.assay.actions.DesignerAction;
+import org.labkey.api.assay.actions.PlateBasedUploadWizardAction;
+import org.labkey.api.assay.actions.ProtocolIdForm;
+import org.labkey.api.assay.actions.ReimportRedirectAction;
+import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.BaseColumnInfo;
@@ -51,7 +76,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -85,35 +109,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.assay.actions.AssayDetailRedirectAction;
-import org.labkey.api.assay.actions.AssayResultDetailsAction;
-import org.labkey.api.assay.actions.AssayResultsAction;
-import org.labkey.api.assay.actions.AssayRunDetailsAction;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.actions.AssayRunsAction;
-import org.labkey.api.assay.actions.BaseAssayAction;
-import org.labkey.api.assay.actions.DesignerAction;
-import org.labkey.api.assay.actions.PlateBasedUploadWizardAction;
-import org.labkey.api.assay.actions.ProtocolIdForm;
-import org.labkey.api.assay.actions.ReimportRedirectAction;
-import org.labkey.api.assay.actions.ShowSelectedDataAction;
-import org.labkey.api.assay.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.actions.TransformResultsAction;
-import org.labkey.api.assay.actions.UploadWizardAction;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayResultTable;
-import org.labkey.api.assay.AssayRunsView;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.AssayView;
-import org.labkey.api.assay.plate.PlateBasedAssayProvider;
-import org.labkey.api.assay.ReplacedRunFilter;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -128,20 +124,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
-import org.labkey.assay.actions.AssayBatchDetailsAction;
-import org.labkey.assay.actions.AssayBatchesAction;
-import org.labkey.assay.actions.DeleteAction;
-import org.labkey.assay.actions.DeleteProtocolAction;
-import org.labkey.assay.actions.GetAssayBatchAction;
-import org.labkey.assay.actions.GetAssayBatchesAction;
-import org.labkey.assay.actions.GetProtocolAction;
-import org.labkey.assay.actions.ImportAction;
-import org.labkey.assay.actions.ImportRunApiAction;
-import org.labkey.assay.actions.PipelineDataCollectorRedirectAction;
-import org.labkey.assay.actions.SaveAssayBatchAction;
-import org.labkey.assay.actions.SaveProtocolAction;
-import org.labkey.assay.actions.TemplateAction;
-import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.actions.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -177,6 +160,8 @@ public class AssayController extends SpringActionController
             GetAssayBatchAction.class,
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
+            GetAssayRunAction.class,
+            SaveAssayRunsAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
             TransformResultsAction.class,
@@ -224,7 +209,9 @@ public class AssayController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assays", new ActionURL(BeginAction.class, getContainer())).addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Assays", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            return root;
         }
     }
 
@@ -527,8 +514,11 @@ public class AssayController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
-                    new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy Assay Design");
+            root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
+            root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
+            root.addChild("Copy Assay Design");
+
+            return root;
         }
     }
 
@@ -974,7 +964,7 @@ public class AssayController extends SpringActionController
 
         public ActionURL getAssayListURL(Container container)
         {
-            return getProtocolURL(container, null, AssayController.BeginAction.class);
+            return getProtocolURL(container, null, BeginAction.class);
         }
 
         public ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
@@ -1038,6 +1028,12 @@ public class AssayController extends SpringActionController
             if (containerFilter != null && containerFilter.getType() != null)
                 result.addParameter("Data." + QueryParam.containerFilterName, containerFilter.getType().name());
             return result;
+        }
+
+        @Override
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol)
+        {
+            return getProtocolURL(container, protocol, AssayResultsAction.class);
         }
 
         public ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
@@ -1128,13 +1124,50 @@ public class AssayController extends SpringActionController
         @Override
         public ActionURL getSetResultFlagURL(Container container)
         {
-            return new ActionURL(AssayController.SetResultFlagAction.class, container);
+            return new ActionURL(SetResultFlagAction.class, container);
         }
 
         @Override
         public ActionURL getChooseAssayTypeURL(Container container)
         {
             return new ActionURL(ChooseAssayTypeAction.class, container);
+        }
+
+        @Override
+        public ActionURL getShowSelectedDataURL(Container container, ExpProtocol protocol)
+        {
+            return getProtocolURL(container, protocol, ShowSelectedDataAction.class);
+        }
+
+        @Override
+        public ActionURL getShowSelectedRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter)
+        {
+            ActionURL url = getProtocolURL(container, protocol, ShowSelectedRunsAction.class);
+
+            if (containerFilter != null && containerFilter.getType() != null)
+                url.addParameter("containerFilterName", containerFilter.getType().name());
+
+            return url;
+        }
+
+        @Override
+        public ActionURL getSetDefaultValuesAssayURL(Container container, String providerName, Domain domain, ActionURL returnUrl)
+        {
+            ActionURL url = new ActionURL(SetDefaultValuesAssayAction.class, container);
+            url.addParameter("providerName", providerName);
+            url.addParameter("domainId", domain.getTypeId());
+            url.addReturnURL(returnUrl);
+
+            return url;
+        }
+
+        @Override
+        public String getBatchIdFilterParam()
+        {
+            // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
+            ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, ContainerManager.getHomeContainer());
+            fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME, AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
+            return fakeURL.getParameters().get(0).getKey();
         }
     }
 
@@ -1170,7 +1203,9 @@ public class AssayController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             NavTree result = super.appendNavTrail(root);
-            return result.addChild(_protocol.getName() + " Upload Jobs");
+            result.addChild(_protocol.getName() + " Upload Jobs");
+
+            return result;
         }
     }
 
@@ -1474,7 +1509,7 @@ public class AssayController extends SpringActionController
 
                 if (run != null)
                 {
-                    QCState state = QCStateManager.getInstance().getQCStateForRowId(getContainer(), form.getState());
+                    QCState state = QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), form.getState());
                     if (state != null)
                         svc.setQCStates(run.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
                 }
@@ -1510,9 +1545,11 @@ public class AssayController extends SpringActionController
             Container c = getContainer();
             ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-            return super.appendNavTrail(root)
-                    .addChild(_protocol.getName() + " Batches", batchListURL)
-                    .addChild("Data Import");
+            NavTree ret = super.appendNavTrail(root);
+            ret.addChild(_protocol.getName() + " Batches", batchListURL);
+            ret.addChild("Data Import");
+
+            return ret;
         }
     }
 }

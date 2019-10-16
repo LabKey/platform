@@ -20,7 +20,27 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.AggregateColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CrosstabDimension;
+import org.labkey.api.data.CrosstabMeasure;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabSettings;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.AliasManager;
@@ -293,23 +313,28 @@ public class QueryPivot extends QueryRelation
         // get the context they need before trying to run it
         QueryProfiler.getInstance().ensureListenerEnvironment();
 
-        try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
+        try
         {
-            JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
-            int columnCount = rs.getMetaData().getColumnCount();
-            while (rs.next())
+            for (Object p : sqlPivotValues.getParams())
+                if (p instanceof QueryService.ParameterDecl)
+                    throw new QueryService.NamedParameterNotProvided(((QueryService.ParameterDecl) p).getName());
+            try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
             {
-                Object value = rs.getObject(1);
-                IConstant wrap = wrapConstant(value, type, rs.wasNull());
-                String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
-                // CONSIDER: error on name collision
-                _pivotValues.put(name, wrap);
+                JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
+                int columnCount = rs.getMetaData().getColumnCount();
+                while (rs.next())
+                {
+                    Object value = rs.getObject(1);
+                    IConstant wrap = wrapConstant(value, type, rs.wasNull());
+                    String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
+                    // CONSIDER: error on name collision
+                    _pivotValues.put(name, wrap);
+                }
             }
         }
         catch (QueryService.NamedParameterNotProvided npnp)
         {
             parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
-            parseError(npnp.getMessage(), null);
         }
         catch (UnauthorizedException e)
         {
@@ -850,8 +875,20 @@ public class QueryPivot extends QueryRelation
         @Override
         public List<FieldKey> getDefaultVisibleColumns()
         {
-            ArrayList<FieldKey> list = new ArrayList<>();
+            // If we've been configured with default columns, use them
+            if (_defaultVisibleColumns != null)
+            {
+                // Translate from Iterable to List
+                List<FieldKey> result = new ArrayList<>();
+                for (FieldKey col : _defaultVisibleColumns)
+                {
+                    result.add(col);
+                }
+                return result;
+            }
 
+            // Otherwise calculate them
+            List<FieldKey> list = new ArrayList<>();
             for (ColumnInfo col : getColumns())
             {
                 if (_aggregates.containsKey(col.getFieldKey().getName()))
@@ -1093,7 +1130,7 @@ public class QueryPivot extends QueryRelation
         @Override
         public NamedObjectList getSelectList(RenderContext ctx)
         {
-            return null;
+            return new NamedObjectList();
         }
 
         @Override

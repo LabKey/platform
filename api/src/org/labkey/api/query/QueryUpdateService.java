@@ -46,24 +46,32 @@ public interface QueryUpdateService
     enum InsertOption
     {
         // interactive/api
-        INSERT(false, false, false, true),
-        UPSERT(false, true, false, false),
+        INSERT(false, false, false, false, false),
+        UPSERT(false, true, false, false, false),  // like merge, but with reselectids
+
         // bulk
-        IMPORT(true, false, true, false),
-        MERGE(true, true, false, false),
-        IMPORT_IDENTITY(true, false, true, false);
+        IMPORT(true, false, true, false, false),
+        MERGE(true, true, false, false, false),   // insert or update
+        REPLACE(true, true, false, true, false),  // insert or replace, like merge but NULL out columns not in the import
+        IMPORT_IDENTITY(true, false, true, false, true);
 
         final public boolean batch;
         final public boolean mergeRows;
         final public boolean useImportAliases;
         final public boolean reselectIds;
+        final public boolean replace;
+        final public boolean identity_insert;
 
-        InsertOption(boolean batch, boolean merge, boolean aliases, boolean selectIds)
+        InsertOption(boolean batch, boolean merge, boolean aliases, boolean replace, boolean identity_insert)
         {
             this.batch = batch;
             mergeRows = merge;
             useImportAliases = aliases;
-            reselectIds = selectIds;
+            reselectIds = !batch;                           // currently reselectIds and batch are not really independent (batch should probably go away)
+            assert !replace || merge;                       // replace is only meaningful for merge
+            this.replace = replace;
+            assert !identity_insert || (batch && !merge);   // identity_insert is only supported for bulk_insert
+            this.identity_insert = identity_insert;
         }
     }
 

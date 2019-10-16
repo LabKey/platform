@@ -38,7 +38,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
     SpecimenController.ReportConfigurationBean bean = me.getModelBean();
@@ -102,7 +102,7 @@ This folder does not contain a study.
             String formName = "form" + showHideSuffix;
 %>
     <tr><td>
-    <labkey:form action="<%=new ActionURL(factory.getAction(), container)%>" name="<%=h(formName)%>" method="GET">
+    <labkey:form action="<%=new ActionURL(factory.getAction(), container)%>" name="<%=formName%>" method="GET">
         <%
             if (bean.isListView())
             {
@@ -123,7 +123,7 @@ This folder does not contain a study.
         %>
         <div class="<%=rowClass%>">
             <div>
-                <span id="reportParameters<%= text(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
+                <span id="reportParameters<%= unsafe(showHideSuffix) %>" style="display:<%= text(bean.isListView() ? "none" : "block") %>; padding: 10px 0;">
                 <table>
                 <%
                     if (showCohorts && factory.allowsCohortFilter())
@@ -139,7 +139,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
-                            <select name="<%= CohortFilterFactory.Params.cohortId %>">
+                            <select name="<%= CohortFilterFactory.Params.cohortId %>" class="form-control">
                                 <option value="">All Cohorts</option>
                             <%
                                 for (CohortImpl cohort : cohorts)
@@ -161,12 +161,12 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter type</td>
                         <td>
-                            <select name="<%= CohortFilterFactory.Params.cohortFilterType %>">
+                            <select name="<%= CohortFilterFactory.Params.cohortFilterType %>" class="form-control">
                             <%
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
                             %>
-                                <option value="<%= type.name() %>"<%=selected(type == selectedCohortType)%>>
+                                <option value="<%=type%>"<%=selected(type == selectedCohortType)%>>
                                     <%= h(type.getTitle()) %>
                                 </option>
                             <%
@@ -191,7 +191,7 @@ This folder does not contain a study.
                         <tr>
                             <td style="<%= optionLabelStyle %>"><%= h(study.getSubjectNounSingular()) %> Group</td>
                             <td>
-                                <select name="participantGroupFilter">
+                                <select name="participantGroupFilter" class="form-control">
                                     <option value="">All Groups</option>
                                     <%
                                         for (ParticipantCategoryImpl cat : categories)
@@ -234,12 +234,12 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Availability status</td>
                         <td>
-                            <select name="statusFilterName">
+                            <select name="statusFilterName" class="form-control">
                             <%
                                 for (SpecimenVisitReportParameters.Status status : SpecimenVisitReportParameters.Status.values())
                                 {
                             %>
-                                <option value="<%= status.name() %>"<%=selected(factory.getStatusFilter() == status)%>>
+                                <option value="<%=status%>"<%=selected(factory.getStatusFilter() == status)%>>
                                     <%= h(status.getCaption()) %>
                                 </option>
                             <%
@@ -252,7 +252,7 @@ This folder does not contain a study.
                     }
                     if (factory.allowsCustomViewFilter())
                     {
-                        String viewPickerHtml = factory.getCustomViewPicker(views);
+                        HtmlString viewPickerHtml = factory.getCustomViewPicker(views);
                 %>
                     <tr>
                         <td style="<%= optionLabelStyle %>">Base</td>
@@ -263,8 +263,9 @@ This folder does not contain a study.
                 <%
                     }
 
-                    List<Pair<String, String>> additionalFormInputs = factory.getAdditionalFormInputHtml();
-                    for (Pair<String, String> inputPair : additionalFormInputs)
+                    // AdditionalFormInputs values are html generated in classes that extend SpecimenVisitReportParameters
+                    List<Pair<String, HtmlString>> additionalFormInputs = factory.getAdditionalFormInputHtml();
+                    for (Pair<String, HtmlString> inputPair : additionalFormInputs)
                     {
                 %>
                     <tr>
@@ -281,17 +282,31 @@ This folder does not contain a study.
                     <tr>
                         <td>&nbsp;</td>
                         <td>
-                            <input type="checkbox" name="hideEmptyColumns"<%=checked(factory.isHideEmptyColumns())%>> Hide Empty Columns<br>
-                            <input type="checkbox" name="viewVialCount"<%=checked(!atLeastOneChecked || factory.isViewVialCount())%>> Vial Counts<br>
-                            <input type="checkbox" name="viewVolume"<%=checked(factory.isViewVolume())%>> Total Volume<br>
+                            <label>
+                                <input type="checkbox" name="hideEmptyColumns"<%=checked(factory.isHideEmptyColumns())%>> Hide Empty Columns
+                            </label>
+                            <br>
+                            <label>
+                                <input type="checkbox" name="viewVialCount"<%=checked(!atLeastOneChecked || factory.isViewVialCount())%>> Vial Counts
+                            </label>
+                            <br>
+                            <label>
+                                <input type="checkbox" name="viewVolume"<%=checked(factory.isViewVolume())%>> Total Volume
+                            </label>
+                            <br>
                 <%
-                    if (factory.allowsParticipantAggregegates())
+                    if (factory.allowsParticipantAggregates())
                     {
                 %>
-                            <input type="checkbox" name="viewParticipantCount"<%=checked(factory.isViewParticipantCount())%>>
-                            <%= h(StudyService.get().getSubjectNounSingular(container)) %> Counts<br>
-                            <input type="checkbox" name="viewPtidList"<%=checked(factory.isViewPtidList())%>>
-                            <%= h(StudyService.get().getSubjectColumnName(container)) %>  List
+                            <label>
+                                <input type="checkbox" name="viewParticipantCount"<%=checked(factory.isViewParticipantCount())%>>
+                                <%= h(StudyService.get().getSubjectNounSingular(container)) %> Counts
+                            </label>
+                            <br>
+                            <label>
+                                <input type="checkbox" name="viewPtidList"<%=checked(factory.isViewPtidList())%>>
+                                <%= h(StudyService.get().getSubjectColumnName(container)) %>  List
+                            </label>
                 <%
                     }
                 %>

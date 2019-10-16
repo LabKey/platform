@@ -162,7 +162,7 @@ public class DatasetImportRunnable implements Runnable
             {
                 assert cpuDelete.start();
                 _logger.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
-                int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null, _studyImportContext.getUser());
+                int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null);
                 _logger.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }

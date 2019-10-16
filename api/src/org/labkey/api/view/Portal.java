@@ -59,9 +59,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.beans.MutablePropertyValues;
@@ -84,6 +86,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.DOM.Attribute.*;
 
 /**
  * Manages the configuration of portal pages, which can be configured by admins to show
@@ -1091,15 +1096,15 @@ public class Portal
         {
             if (bean.rightEmpty)
             {
-                StringBuilder leftWidget = addWebPartWidget(bean, viewContext, "", "pull-left");
+                HtmlString leftWidget = addWebPartWidget(bean, viewContext, "", "pull-left");
                 AddWebParts newBean = new AddWebParts();
                 newBean.pageId = bean.pageId;
                 newBean.location = WebPartFactory.LOCATION_RIGHT;
                 newBean.rightEmpty = true;
                 newBean.scope = bean.scope;
                 // Add right webpart dropdown should be hidden on extra small screens
-                StringBuilder rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
-                return leftWidget.append(rightWidget).toString();
+                HtmlString rightWidget = addWebPartWidget(newBean, viewContext, "hidden-xs", "pull-right");
+                return leftWidget.toString() + rightWidget.toString();
             }
 
             return addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left").toString();
@@ -1111,12 +1116,12 @@ public class Portal
             newBean.location = WebPartFactory.LOCATION_BODY;
             newBean.rightEmpty = false;
             newBean.scope = bean.scope;
-            StringBuilder leftBottomWidget = addWebPartWidget(newBean, viewContext, "visible-xs-inline visible-sm-inline", "pull-left");
+            HtmlString leftBottomWidget = addWebPartWidget(newBean, viewContext, "visible-xs-inline visible-sm-inline", "pull-left");
             // Add right webpart dropdown should be hidden on extra small screens
-            StringBuilder rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
-            StringBuilder rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
+            HtmlString rightBottomWidget = addWebPartWidget(bean, viewContext, "visible-sm-inline", "pull-right");
+            HtmlString rightMainWidget = addWebPartWidget(bean, viewContext, "visible-md-inline visible-lg-inline", "pull-left");
 
-            return leftBottomWidget.append(rightBottomWidget).append(rightMainWidget).toString();
+            return leftBottomWidget.toString() + rightBottomWidget.toString() + rightMainWidget.toString();
         }
         else
         {
@@ -1125,49 +1130,75 @@ public class Portal
         }
     }
 
-    private static StringBuilder addWebPartWidget(AddWebParts bean, ViewContext viewContext, String visibilityClass, String pullClass)
+    private static HtmlString addWebPartWidget(AddWebParts bean, ViewContext viewContext, String visibilityClass, String pullClass)
     {
         Container c = viewContext.getContainer();
         ActionURL currentURL = viewContext.getActionURL();
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div>\n");
-        sb.append("<form method=\"POST\" class=\"form-inline ").append(pullClass).append(" ").append(visibilityClass).append("\" action=\"").append(PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c)).append("\">\n");
-        sb.append("<input type=\"hidden\" name=\"X-LABKEY-CSRF\" value=\"").append(PageFlowUtil.filter(CSRFUtil.getExpectedToken(viewContext))).append("\"/>\n");
-        sb.append("<input type=\"hidden\" name=\"pageId\" value=\"").append(PageFlowUtil.filter(bean.pageId)).append("\"/>\n");
-        sb.append("<input type=\"hidden\" name=\"location\" value=\"").append(bean.location).append("\"/>\n");
-        sb.append(ReturnUrlForm.generateHiddenFormField(currentURL)).append("\n");
-        sb.append("<div class=\"input-group\">\n");
-        sb.append("<select name=\"name\" class=\"form-control\">\n");
-        sb.append("<option value=\"\">&lt;Select Web Part&gt;</option>\n");
-
         Set<String> partsSeen = new HashSet<>();
+
+        List<Renderable> OPTIONS = new ArrayList<>();
+
         if (null != bean.scope && !"folder".equals(bean.scope))
         {
-            int count = 0;
-            for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet())
+            Portal.getPartsToAdd(c, bean.scope, bean.location).entrySet().forEach(entry ->
             {
-                if (partsSeen.add(entry.getKey()))
+                if (partsSeen.add(entry.getValue()))
                 {
-                    sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
-                    count++;
+                    OPTIONS.add(OPTION(
+                            at(value, entry.getValue()),
+                            entry.getKey()));
                 }
-            }
-            if (count > 0)
-            {
-                    sb.append("<option value=\"\"><hr></option>\n");
-            }
-        }
-        for (Map.Entry<String, String> entry : Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet())
-        {
-            if (partsSeen.add(entry.getKey()))
-                sb.append("<option value=\"").append(entry.getKey()).append("\">").append(entry.getValue()).append("</option>\n");
-        }
-        sb.append("</select>\n");
-        sb.append("<span class=\"input-group-btn\">\n");
-        sb.append(PageFlowUtil.button("Add").submit(true)).append("\n");
-        sb.append("</span>\n</div>\n</form>\n</div>\n");
+            });
 
-        return sb;
+            if (OPTIONS.size() > 0)
+                OPTIONS.add(OPTION(at(value, ""), HR()));
+        }
+
+        Portal.getPartsToAdd(c, FOLDER_PORTAL_PAGE, bean.location).entrySet().forEach(entry ->
+        {
+            if (partsSeen.add(entry.getValue()))
+            {
+                OPTIONS.add(OPTION(
+                        at(value, entry.getValue()),
+                        entry.getKey()
+                ));
+            }
+        });
+
+       return createHtml(
+                DIV(
+                        LK.FORM(
+                                at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
+                                        .cl("form-inline").cl(pullClass).cl(visibilityClass),
+
+                                INPUT(
+                                        at(type, "hidden", name, "X-LABKEY-CSRF", value, CSRFUtil.getExpectedToken(viewContext))
+                                ),
+                                INPUT(
+                                        at(type, "hidden", name, "pageId", value, bean.pageId)
+                                ),
+                                INPUT(
+                                        at(type, "hidden", name, "location", value, bean.location)
+                                ),
+                                ReturnUrlForm.generateHiddenFormField(currentURL),
+                                DIV(
+                                        cl("input-group"),
+                                        SELECT(
+                                                at(name, "name").cl("form-control"),
+                                                OPTION(
+                                                        at(value, ""),
+                                                        "<Select Web Part>"),
+                                                OPTIONS.stream()
+
+                                        ),
+                                        SPAN(
+                                                cl("input-group-button"),
+                                                new Button.ButtonBuilder("Add").submit(true).build()
+                                        )
+                                )
+                        )
+                )
+        );
     }
 
     public static void addViewToRegion(HttpView template, String regionName, HttpView view)
@@ -1468,7 +1499,7 @@ public class Portal
             for (WebPartFactory factory : module.getWebPartFactories())
             {
                 if (factory.isAvailable(c, scope, location))
-                    webPartNames.put(factory.getName(), factory.getDisplayName(c, location));
+                    webPartNames.put(factory.getDisplayName(c, location), factory.getName());
             }
         }
 

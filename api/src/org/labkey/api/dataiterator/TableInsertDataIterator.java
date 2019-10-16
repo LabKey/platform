@@ -31,6 +31,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
 
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,31 +57,33 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     private final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
     private final Set<String> _keyColumns = new CaseInsensitiveHashSet();
+    private Set<DomainProperty> _adhocPropColumns = new LinkedHashSet<>();
 
 
     @Deprecated // use TableInsertDataIteratorBuilder
     public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
         DataIteratorBuilder builder = DataIteratorBuilder.wrap(data);
-        return (TableInsertDataIterator)create(builder, table, null, context, null, null, null, false);
+        return (TableInsertDataIterator)create(builder, table, null, context, null, null, null, null, false);
     }
 
     /** If container != null, it will be set as a constant in the insert statement */
     @Deprecated // use TableInsertDataIteratorBuilder
     public static TableInsertDataIterator create(DataIteratorBuilder builder, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
-        return (TableInsertDataIterator)create(builder, table, c, context, null, null, null, false);
+        return (TableInsertDataIterator)create(builder, table, c, context, null, null, null, null, false);
     }
 
     @Deprecated  // use TableInsertDataIteratorBuilder
     public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
                                       @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
-        return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, false);
+        return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, null, false);
     }
 
     public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
-         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, boolean commitRowsBeforeContinuing)
+         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, @Nullable Set<DomainProperty> vocabularyColumns , boolean commitRowsBeforeContinuing)
+            //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
         // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
         DataIterator di = data.getDataIterator(context);
@@ -99,7 +103,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             dontUpdate.addAll(context.getDontUpdateColumnNames());
         }
 
-        if (context.getInsertOption() == InsertOption.MERGE)
+        if (context.getInsertOption().mergeRows && !context.getInsertOption().replace)
         {
             // If the target has additional columns that aren't present in the source, don't overwrite (update) existing values...
             Set<String> targetOnlyColumnNames = table.getColumns()
@@ -138,6 +142,11 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             var emb = new EmbargoDataIterator(context, ti, null, null);
             ti.setEmbargoDataIterator(emb);
             ret = emb;
+        }
+
+        if (null != vocabularyColumns && vocabularyColumns.size() > 0)
+        {
+            ti.setAdhocPropColumns(vocabularyColumns);
         }
 
         return ret;
@@ -240,7 +249,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
             _conn = _scope.getConnection();
 
             Parameter.ParameterMap stmt;
-            if (_insertOption == InsertOption.MERGE)
+            if (_insertOption.mergeRows)
             {
                 stmt = getMergeStatement(constants);
             }
@@ -273,15 +282,17 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     protected Parameter.ParameterMap getInsertStatement(Map<String, Object> constants) throws SQLException
     {
         Parameter.ParameterMap stmt;
-        if (_insertOption == InsertOption.IMPORT_IDENTITY)
+        if (_insertOption.identity_insert)
             setAutoIncrement(INSERT.ON);
 
+        //pass in the voc cols in this builder
         StatementUtils utils = new StatementUtils(StatementUtils.Operation.insert, _table)
                 .skip(_skipColumnNames)
                 .allowSetAutoIncrement(_context.supportsAutoIncrementKey())
                 .updateBuiltinColumns(false)
                 .selectIds(_selectIds)
-                .constants(constants);
+                .constants(constants)
+                .setVocabularyProperties(_adhocPropColumns);
         stmt = utils.createStatement(_conn, _c, null);
         return stmt;
     }
@@ -346,8 +357,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         super.close();
         if (null != _scope && null != _conn)
         {
-            if (_insertOption == InsertOption.IMPORT_IDENTITY ||
-                (_insertOption == InsertOption.MERGE && _context.supportsAutoIncrementKey()))
+            if (_insertOption.identity_insert ||
+                (_insertOption.mergeRows && _context.supportsAutoIncrementKey()))
             {
                 setAutoIncrement(INSERT.OFF);
             }
@@ -402,5 +413,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
                 }
             }
         }
+    }
+
+    public void setAdhocPropColumns(Set<DomainProperty> adhocPropColumns)
+    {
+        _adhocPropColumns = adhocPropColumns;
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.resource;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.Path;
 
@@ -29,45 +30,62 @@ import java.util.Collections;
  */
 abstract public class AbstractResource implements Resource
 {
+    @NotNull
     private final Path _path;
+    @Nullable
     final Resolver _resolver;
 
-    protected AbstractResource(Path path, @Nullable Resolver resolver)
+    protected AbstractResource(@NotNull Path path, @Nullable Resolver resolver)
     {
         _path = path;
         _resolver = resolver;
     }
 
-    protected AbstractResource(Path folder, String name, Resolver resolver)
+    protected AbstractResource(@NotNull Path folder, @NotNull String name, @Nullable Resolver resolver)
     {
-        this(folder.append(name), resolver);
+        this(folder.append(validateName(name)), resolver);
     }
 
-    protected AbstractResource(Resource folder, String name, Resolver resolver)
+    protected AbstractResource(@NotNull Resource folder, @NotNull String name, @Nullable Resolver resolver)
     {
-        this(folder.getPath().append(name), resolver);
+        this(folder.getPath().append(validateName(name)), resolver);
     }
 
+    private static String validateName(String name)
+    {
+        if (name == null || name.isEmpty())
+        {
+            throw new IllegalArgumentException("Name cannot be null or the empty string. Use the constructor that does not take a name instead.");
+        }
+        return name;
+    }
+
+
+    @Nullable @Override
     public Resolver getResolver()
     {
         return _resolver;
     }
 
+    @NotNull @Override
     public Path getPath()
     {
         return _path;
     }
 
+    @Override
     public String getName()
     {
         return _path.getName();
     }
 
+    @Override
     public boolean exists()
     {
         return false;
     }
 
+    @Override
     public boolean isCollection()
     {
         return false;
@@ -83,11 +101,13 @@ abstract public class AbstractResource implements Resource
         return null;
     }
 
+    @Override
     public boolean isFile()
     {
         return false;
     }
 
+    @Override
     public Collection<String> listNames()
     {
         return Collections.emptyList();
@@ -98,21 +118,25 @@ abstract public class AbstractResource implements Resource
         return Collections.emptyList();
     }
 
+    @Override
     public long getVersionStamp()
     {
         return getLastModified();
     }
-    
+
+    @Override
     public long getLastModified()
     {
         return Long.MIN_VALUE;
     }
 
+    @Override
     public InputStream getInputStream() throws IOException
     {
         return null;
     }
 
+    @Override
     public String toString()
     {
         Resolver r = getResolver();

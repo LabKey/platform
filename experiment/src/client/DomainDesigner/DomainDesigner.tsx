@@ -13,32 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as React from 'react'
-import {Button, ButtonToolbar, Col, Row} from "react-bootstrap";
-import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain} from "@glass/domainproperties"
 
-interface StateProps {
-    schemaName?: string,
-    queryName?: string,
-    domainId?: number,
-    returnUrl?: string,
-    domain?: DomainDesign,
-    submitting: boolean,
-    message?: string,
-    messageType?: string,
-    showConfirm: boolean,
+import {List} from "immutable";
+import * as React from 'react'
+import {Button} from "react-bootstrap";
+import {ActionURL} from "@labkey/api";
+import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
+import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
+
+import "@glass/base/dist/base.css"
+import "@glass/domainproperties/dist/domainproperties.css"
+import "./domainDesigner.scss";
+
+interface IAppState {
     dirty: boolean
+    domain: DomainDesign
+    domainId: number
+    messages?: List<IBannerMessage>,
+    queryName: string
+    returnUrl: string
+    schemaName: string
+    showConfirm: boolean
+    submitting: boolean
 }
 
-export class App extends React.PureComponent<any, StateProps> {
+export class App extends React.PureComponent<any, Partial<IAppState>> {
 
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
+
+        let messages = List<IBannerMessage>().asMutable();
+        if ((!schemaName || !queryName) && !domainId) {
+            let msg =  'Missing required parameter: domainId or schemaName and queryName.';
+            let msgType = 'danger';
+            let bannerMsg ={message : msg, messageType : msgType};
+            messages.push(bannerMsg);
+        }
 
         this.state = {
             schemaName,
@@ -46,14 +58,14 @@ export class App extends React.PureComponent<any, StateProps> {
             domainId,
             returnUrl,
             submitting: false,
-            message: ((schemaName && queryName) || domainId) ? undefined : 'Missing required parameter: domainId or schemaName and queryName.',
+            messages: messages.asImmutable(),
             showConfirm: false,
             dirty: false
         };
     }
 
     componentDidMount() {
-        const { schemaName, queryName, domainId } = this.state;
+        const { schemaName, queryName, domainId, messages } = this.state;
 
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
@@ -61,7 +73,9 @@ export class App extends React.PureComponent<any, StateProps> {
                     this.setState(() => ({domain}));
                 })
                 .catch(error => {
-                    this.setState(() => ({message: error.exception, messageType: 'danger'}));
+                    this.setState(() => ({
+                        messages : messages.set(0, {message: error.exception, messageType: 'danger'})
+                    }));
                 });
         }
 
@@ -79,41 +93,75 @@ export class App extends React.PureComponent<any, StateProps> {
         window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
-    submitHandler = () => {
-        const { domain } = this.state;
+    submitHandler = (navigate : boolean) => {
+        const { domain, submitting } = this.state;
 
-        // NOTE: temp values for name and pk since those are not available inputs currently
-        // const name = 'list_' + Math.floor(Math.random() * 10000);
-        // const options = {
-        //     keyName: domain.fields.size > 0 ? domain.fields.get(0).name : undefined
-        // };
+        if (submitting) {
+            return;
+        }
 
-        this.setState(() => ({submitting: true}));
+        this.setState({
+            submitting: true
+        });
 
-        // saveDomain(domain, 'VarList', options, name )
         saveDomain(domain)
             .then((savedDomain) => {
-                //const newDomain = clearFieldDetails(savedDomain);
-                this.navigate();
-            })
-            .catch(error => {
+
                 this.setState(() => ({
+                    domain: savedDomain,
                     submitting: false,
-                    message: error.exception,
-                    messageType: 'danger'
+                    dirty: false
                 }));
-            });
+
+                this.showMessage("Save Successful", 'success', 0);
+                window.scrollTo(0, 0);
+
+                if (navigate) {
+                    this.navigate();
+                }
+            })
+            .catch((badDomain) => {
+
+                let bannerMsgs = getBannerMessages(badDomain);
+
+                window.scrollTo(0, 0);
+
+                this.setState(() => ({
+                    domain: badDomain,
+                    submitting: false,
+                    messages: bannerMsgs
+                }));
+            })
     };
 
+    submitAndNavigate = () => {
+        this.submitHandler(true);
+    }
+
     onChangeHandler = (newDomain, dirty) => {
+
+        let bannerMsgs = getBannerMessages(newDomain);
+
         this.setState((state) => ({
             domain: newDomain,
-            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
+            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
+            messages: bannerMsgs
         }));
     };
 
-    dismissAlert = () => {
-        this.setState(() => ({message: null, messageType: null}));
+    dismissAlert = (index: any) => {
+        this.setState(() => ({
+            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
+        }));
+    };
+
+    showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
+
+        const { messages } = this.state;
+
+        this.setState(Object.assign({}, additionalState, {
+            messages : messages.set(index, {message: message, messageType: messageType})
+        }));
     };
 
     onCancelBtnHandler = () => {
@@ -140,18 +188,39 @@ export class App extends React.PureComponent<any, StateProps> {
     renderNavigateConfirm() {
         return (
             <ConfirmModal
-                title='Confirm Leaving Page'
-                msg='You have unsaved changes. Are you sure you would like to leave this page before saving your changes?'
+                title='Keep unsaved changes?'
+                msg='You have made changes to this domain that have not yet been saved. Do you want to save these changes before leaving?'
                 confirmVariant='success'
-                onConfirm={this.navigate}
-                onCancel={this.hideConfirm}
+                onConfirm={this.submitAndNavigate}
+                onCancel={this.navigate}
+                cancelButtonText='No, Discard Changes'
+                confirmButtonText='Yes, Save Changes'
             />
         )
     }
 
+    renderButtons() {
+        const { submitting, dirty } = this.state;
+
+        return (
+            <WizardNavButtons
+                cancel={this.onCancelBtnHandler}
+                containerClassName=""
+                includeNext={false}>
+                <Button
+                    type='submit'
+                    bsClass='btn btn-success'
+                    onClick={() => this.submitHandler(true)}
+                    disabled={submitting || !dirty}>
+                    Save
+                </Button>
+            </WizardNavButtons>
+        )
+    }
+
     render() {
-        const { domain, message, messageType, submitting, showConfirm, dirty } = this.state;
-        const isLoading = domain === undefined && message === undefined;
+        const { domain, messages, showConfirm } = this.state;
+        const isLoading = domain === undefined && messages === undefined;
 
         if (isLoading) {
             return <LoadingSpinner/>
@@ -159,38 +228,18 @@ export class App extends React.PureComponent<any, StateProps> {
 
         return (
             <>
-                { domain &&
-                <Row>
-                    <Col xs={12}>
-                        <ButtonToolbar>
-                            <Button
-                                type='button'
-                                className={'domain-designer-button'}
-                                bsClass='btn'
-                                onClick={this.onCancelBtnHandler}
-                                disabled={submitting}>
-                                Cancel
-                            </Button>
-                            <Button
-                                type='button'
-                                className={'domain-designer-button'}
-                                bsClass='btn btn-success'
-                                onClick={this.submitHandler}
-                                disabled={submitting || !dirty}>
-                                Save Changes
-                            </Button>
-                        </ButtonToolbar>
-                    </Col>
-                </Row>}
                 { showConfirm && this.renderNavigateConfirm() }
-                { message && <Alert bsStyle={messageType} onDismiss={this.dismissAlert}>{message}</Alert> }
+                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
+                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
+                }
                 { domain &&
-                <DomainForm
-                    domain={domain}
-                    onChange={this.onChangeHandler}
-                />}
+                    <DomainForm
+                        domain={domain}
+                        onChange={this.onChangeHandler}
+                    />
+                }
+                { domain && this.renderButtons() }
             </>
         )
     }
 }
-

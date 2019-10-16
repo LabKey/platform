@@ -17,8 +17,10 @@
 package org.labkey.api.wiki;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.WebPartFactory;
@@ -44,15 +46,6 @@ public interface WikiService
         ServiceRegistry.get().registerService(WikiService.class, impl);
     }
 
-    /** Name of the UserSchema exposed by the Wiki module */
-    String SCHEMA_NAME = "wiki";
-
-    /** Name of the table exposed with the list of renderer types */
-    String RENDERER_TYPE_TABLE_NAME = "RendererType";
-
-    String WIKI_PREFIX = "<div class=\"labkey-wiki\">";
-    String WIKI_SUFFIX = "</div>";
-
     WebPartView getView(Container c, String name, boolean renderContentOnly);
     WebPartView getHistoryView(Container c, String name);
 
@@ -60,22 +53,20 @@ public interface WikiService
 
     void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
 
-    /**
-     * Register a provider of macros.
-     * @param name For macros of form {module:viewName} this is the module name
-     * @param provider
-     */
-    void registerMacroProvider(String name, MacroProvider provider);
-
+    @Deprecated
+    @RemoveIn20_1
     String getFormattedHtml(WikiRendererType rendererType, String source);
+    @Deprecated
+    @RemoveIn20_1
     String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
 
-    WikiRendererType getDefaultWikiRendererType();
-    WikiRendererType getDefaultMessageRendererType();
     List<String> getNames(Container c);
 
     void addWikiListener(WikiChangeListener listener);
     void removeWikiListener(WikiChangeListener listener);
 
     void registerWikiPartFactory(WebPartFactory partFactory, WikiPartFactory.Privilege privilege, String activeModuleName);
+
+    /** For columns that want a lookup to the canonical RendererType column. Be sure to null check WikiService before adding your FK. */
+    TableInfo getRendererTypeTable(User user, Container container);
 }

@@ -22,7 +22,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -34,6 +36,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.OntologyManager;
@@ -55,6 +58,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
@@ -66,6 +70,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
@@ -77,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,6 +112,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if ("Property".equalsIgnoreCase(name))
                 return createPropertyColumn("Property");
+
+            // Attempt to resolve the column name as a property URI if it looks like a URI
+            if (URIUtil.hasURICharacters(name))
+            {
+                ColumnInfo lsidCol = getColumn("LSID", false);
+                // mark vocab propURI col as Voc column
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
+                if (pd != null)
+                {
+                    List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), pd);
+                    PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                    pc.setVocabulary(domainsForPD.stream().anyMatch(d-> d.getDomainKind() instanceof VocabularyDomainKind));
+                    // use the property URI as the column's FieldKey name
+                    pc.setFieldKey(FieldKey.fromParts(name));
+                    pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
+                    return pc;
+                }
+            }
         }
         return result;
     }
@@ -161,7 +185,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SourceProtocolApplication:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
-                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 columnInfo.setHidden(true);
@@ -186,7 +210,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
-                col.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this sample");
                 col.setUserEditable(false);
                 col.setReadOnly(true);
@@ -408,32 +432,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new LookupForeignKey("lsid")
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
-            public TableInfo getLookupTableInfo()
-            {
-                ExpSchema expSchema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
-                if (ss != null)
-                {
-                    // Be sure that we can resolve the sample set if it's defined in a separate container
-                    expSchema.setContainerFilter(new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), ss.getContainer()));
-                }
-                return expSchema.getTable(ExpSchema.TableType.SampleSets);
-            }
-
             @Override
-            public StringExpression getURL(ColumnInfo parent)
+            protected ContainerFilter getLookupContainerFilter()
             {
-                return super.getURL(parent, true);
+                // Be sure that we can resolve the sample set if it's defined in a separate container.
+                // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
+                // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
+                Set<Container> containers = new HashSet<>();
+                if (null != ss)
+                    containers.add(ss.getContainer());
+                containers.add(getContainer());
+                if (getContainer().getProject() != null)
+                    containers.add(getContainer().getProject());
+                containers.add(ContainerManager.getSharedContainer());
+                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+
+                if (null != _containerFilter && _containerFilter != ContainerFilter.CURRENT)
+                    cf = new UnionContainerFilter(_containerFilter, cf);
+                return cf;
             }
         });
+
         typeColumnInfo.setReadOnly(true);
         typeColumnInfo.setShownInInsertView(false);
 
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
 
         var runCol = addColumn(ExpMaterialTable.Column.Run);
-        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey());
+        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
         runCol.setShownInUpdateView(false);
 
@@ -490,7 +518,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public Domain getDomain()
     {
-        return _ss == null ? null : _ss.getType();
+        return _ss == null ? null : _ss.getDomain();
     }
 
     public static String appendNameExpressionDescription(String currentDescription, String nameExpression)

@@ -167,8 +167,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         public abstract void setMetadata(Workbook workbook, Map<String, String> metadata);
     }
 
-    public static final int MAX_ROWS_EXCEL_97 = 65535;
-
     protected static final String SHEET_DRAWING = "~~excel-sheet-drawing~~";
     protected static final String SHEET_IMAGE_SIZES = "~~excel-sheet-image-sizes~~";
     protected static final String SHEET_IMAGE_PICTURES = "~~excel-sheet-image-pictures~~";
@@ -885,18 +883,17 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         if (null == rs)
             return;
 
-        try (rs)
-        {
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            ctx.setResults(rs);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+        ctx.setResults(rs);
 
-            // Output all the rows, but don't exceed the document's maximum number of rows
-            while (rs.next() && _currentRow <= _docType.getMaxRows())
-            {
-                ctx.setRow(factory.getRowMap(rs));
-                renderGridRow(sheet, ctx, visibleColumns);
-            }
+        // Output all the rows, but don't exceed the document's maximum number of rows
+        while (rs.next() && _currentRow <= _docType.getMaxRows())
+        {
+            ctx.setRow(factory.getRowMap(rs));
+            renderGridRow(sheet, ctx, visibleColumns);
         }
+
+        // Note: No need to close() the ResultSet; ExcelWriter.close() handles that
     }
 
 
@@ -948,7 +945,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setCommentLines(@NotNull List<String> commentLines)
     {
-        _commentLines = Collections.unmodifiableList(new ArrayList<>(commentLines));
+        _commentLines = List.copyOf(commentLines);
     }
 
     @Override

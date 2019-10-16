@@ -25,8 +25,8 @@ import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
@@ -64,6 +64,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -83,7 +84,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -142,9 +143,11 @@ public class LoginController extends SpringActionController
 
     public static class LoginUrlsImpl implements LoginUrls
     {
+        @Override
         public NavTree appendAuthenticationNavTrail(NavTree root)
         {
-            root.addChild("Admin Console", AdminController.getShowAdminURL()).addChild("Authentication", getConfigureURL());
+            root.addChild("Admin Console", AdminController.getShowAdminURL());
+            root.addChild("Authentication", getConfigureURL());
             return root;
         }
 
@@ -932,8 +935,8 @@ public class LoginController extends SpringActionController
             {
                 returnURL.setFragment(form.getUrlhash().replace("#", ""));
             }
-            String otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnURL);
-            response.put("otherLoginMechanismsContent", otherLoginMechanisms);
+            HtmlString otherLoginMechanisms = AuthenticationManager.getLoginPageLogoHtml(returnURL);
+            response.put("otherLoginMechanismsContent", null != otherLoginMechanisms ? otherLoginMechanisms.toString() : null);
             return response;
         }
     }
@@ -1004,11 +1007,8 @@ public class LoginController extends SpringActionController
         else if (isAdminOnlyMode())
         {
             String content = "The site is currently undergoing maintenance.";
-            WikiService wikiService = WikiService.get();
-            if (null != wikiService)
-            {
-                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
-            }
+            WikiRenderingService wikiService = WikiRenderingService.get();
+            content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }
@@ -2200,11 +2200,10 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
-    // where the caller has a secrete (the authentication token).
-    public class InvalidateTokenAction extends RedirectAction<TokenAuthenticationForm>
+    // where the caller has a secret (the authentication token).
+    public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
-        @Override
-        public @Nullable URLHelper getURL(TokenAuthenticationForm form, Errors errors)
+        public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
             if (null != form.getLabkeyToken())
                 TokenAuthenticationManager.get().invalidateKey(form.getLabkeyToken());
@@ -2586,7 +2585,7 @@ public class LoginController extends SpringActionController
                 html.append("<td id=\"").append(id1).append("\">");
                 html.append(logo);
                 html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
-                html.append(PageFlowUtil.textLink("delete", "javascript:{}", "deleteLogo('" + prefix + "');", "")); // RE_CHECK
+                html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + prefix + "');").toString()); // RE_CHECK
                 html.append("</td>\n");
 
                 return html.toString();

@@ -18,6 +18,7 @@ package org.labkey.api.data.bigiron;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
@@ -28,7 +29,12 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.Warnings;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.sql.Connection;
 
@@ -172,6 +178,19 @@ public abstract class AbstractClrInstallationManager
 
         // Attempt to install the new version
         install(context);
+    }
+
+    // Helper to generate standard warning message
+    protected void addAdminWarningMessage(Warnings warnings, String text, Class<? extends Controller> downloadActionClass, @Nullable String helpTopic)
+    {
+        ActionURL downloadURL = new ActionURL(downloadActionClass, ContainerManager.getRoot());
+        HtmlStringBuilder builder = HtmlStringBuilder.of(text + " ");
+        builder.append(new Link.LinkBuilder("Download installation script.").href(downloadURL).clearClasses().getHtmlString());
+
+        if (null != helpTopic)
+            builder.append(" ").append(new HelpTopic(helpTopic).getSimpleLinkHtml("View installation instructions."));
+
+        warnings.add(builder.getHtmlString());
     }
 
     protected abstract DbSchema getSchema();

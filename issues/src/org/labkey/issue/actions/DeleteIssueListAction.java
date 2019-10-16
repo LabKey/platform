@@ -60,7 +60,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
         if (!getContainer().getProject().hasPermission(getUser(), AdminPermission.class))
             throw new UnauthorizedException("You must be at least a project admin to be able to delete an issue list.");
 
-        Set<String> ids = DataRegionSelection.getSelected(getViewContext(), null, true, true);
+        Set<String> ids = DataRegionSelection.getSelected(getViewContext(), null, true);
 
         for (String id : ids)
         {

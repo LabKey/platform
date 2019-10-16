@@ -80,7 +80,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,11 +105,11 @@ import java.util.stream.Collectors;
 public class AnnouncementManager
 {
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("message", "Messages");
+    public static final WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.MARKDOWN;
 
     private static final CommSchema _comm = CommSchema.getInstance();
     private static final CoreSchema _core = CoreSchema.getInstance();
-
-    public static EmailOption EMAIL_DEFAULT_OPTION = EmailOption.MESSAGES_MINE;
+    private static final EmailOption DEFAULT_EMAIL_OPTION = EmailOption.MESSAGES_MINE;
 
     private AnnouncementManager()
     {
@@ -292,9 +292,7 @@ public class AnnouncementManager
                 WikiRendererType currentRendererType = (null == rendererTypeName ? null : WikiRendererType.valueOf(rendererTypeName));
                 if (null == currentRendererType)
                 {
-                    WikiService wikiService = WikiService.get();
-                    if (null != wikiService)
-                        currentRendererType = wikiService.getDefaultMessageRendererType();
+                    currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 }
                 sendNotificationEmails(ann, currentRendererType, c, user);
             }
@@ -582,7 +580,7 @@ public class AnnouncementManager
 
         if (props.isEmpty())
         {
-            return EMAIL_DEFAULT_OPTION.getValue();
+            return DEFAULT_EMAIL_OPTION.getValue();
         }
         else
         {
@@ -839,6 +837,32 @@ public class AnnouncementManager
         }
     }
 
+    public static String getUserDetailsLink(Container container, User currentUser, int formattedUserId, boolean includeGroups, boolean forEmail)
+    {
+        String result;
+
+        // Email link shows display name and not html link
+        if (forEmail)
+        {
+            result = PageFlowUtil.filter(UserManager.getDisplayName(formattedUserId, currentUser));
+        }
+        else
+        {
+            result = UserManager.getUserDetailsHTMLLink(container, currentUser, formattedUserId);
+        }
+
+        if (includeGroups)
+        {
+            String groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
+            if (groupList.length() > 0)
+            {
+                result += " (" + (groupList) + ")";
+            }
+        }
+
+        return result;
+    }
+
 
     public static class TestCase extends Assert
     {
@@ -944,7 +968,8 @@ public class AnnouncementManager
                 {
                     if (notificationBean == null)
                         return null;
-                    return notificationBean.announcementModel.getCreatedByName(notificationBean.includeGroups, notificationBean.recipient, false, true);
+
+                    return getUserDetailsLink(c, notificationBean.recipient,  notificationBean.announcementModel.getCreatedBy(),notificationBean.includeGroups, true);
                 }
             });
 
@@ -996,7 +1021,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -1022,7 +1047,7 @@ public class AnnouncementManager
                 }
             });
 
-            _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.HTML)
+            _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.Plain)
             {
                 public String getValue(Container c)
                 {
@@ -1034,13 +1059,19 @@ public class AnnouncementManager
         }
 
         @Override
-        public boolean hasMultipleContentTypes()
+        public @Nullable String renderTextBody(Container c)
         {
-            // Don't include plain text variant if the source of the message is HTML
-            return super.hasMultipleContentTypes() &&
-                    (notificationBean == null ||
-                            notificationBean.announcementModel == null ||
-                            !WikiRendererType.HTML.name().equals(notificationBean.announcementModel.getRendererType()));
+            if (notificationBean != null &&
+                    notificationBean.announcementModel != null &&
+                    WikiRendererType.HTML.name().equals(notificationBean.announcementModel.getRendererType()))
+            {
+                // We don't support flattening HTML source messages into a plain text version, so just send a
+                // fixed value for the replacement. Including the plain text version is mostly to help improve our
+                // spam filtering scores. See issues 38578 and 36734.
+                return "Plain text version unavailable, please refer to the HTML version of this email.";
+            }
+
+            return super.renderTextBody(c);
         }
 
         public List<ReplacementParam> getValidReplacements()
@@ -1168,8 +1199,8 @@ public class AnnouncementManager
             this.bodyText = a.getBody();
             if (!settings.isSecure())
             {
-                WikiService wikiService = WikiService.get();
-                this.body = null != wikiService ? wikiService.getFormattedHtml(currentRendererType, a.getBody()) : null;
+                WikiRenderingService renderingService = WikiRenderingService.get();
+                this.body = renderingService.getFormattedHtml(currentRendererType, a.getBody());
             }
             else
             {

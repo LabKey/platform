@@ -184,7 +184,8 @@ public abstract class BaseStudyController extends SpringActionController
     protected NavTree _appendNavTrailDatasetAdmin(NavTree root)
     {
         _appendManageStudy(root);
-        return root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
+        root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
+        return root;
     }
 
     protected NavTree _appendNavTrail(NavTree root)

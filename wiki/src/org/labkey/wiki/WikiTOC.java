@@ -286,8 +286,8 @@ public class WikiTOC extends NavTreeMenu
             if (showExpandOption)
             {
                 out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                out.println(PageFlowUtil.textLink("expand all", "javascript:void(0);", "LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)", ""));
-                out.println(PageFlowUtil.textLink("collapse all", "javascript:void(0);", "LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)", ""));
+                out.println(PageFlowUtil.link("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)"));
+                out.println(PageFlowUtil.link("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)"));
             }
 
             out.println("</td>\n</tr>\n</table>");

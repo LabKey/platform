@@ -25,6 +25,8 @@ SOFTWARE.
 */
 
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -85,7 +87,7 @@ import java.util.*;
  * @author JSON.org
  * @version 2
  */
-public class JSONObject extends HashMap<String, Object>
+public class JSONObject extends HashMap<String, Object> implements HasHtmlString
 {
     // kevink: restore the Null class removed in r10087.  It is used by Jackson's JsonOrgModule for serialization of org.json
     /**
@@ -1171,6 +1173,11 @@ public class JSONObject extends HashMap<String, Object>
         }
     }
 
+    @Override
+    public HtmlString getHtmlString()
+    {
+        return HtmlString.unsafe(toString());
+    }
 
     /**
      * Make a prettyprinted JSON text of this JSONObject.

@@ -343,6 +343,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         if (xpipeline.isSetDescription())
             pipeline._description = xpipeline.getDescription();
 
+        if (xpipeline.isSetHelp())
+            pipeline._helpText = xpipeline.getHelp();
+
         if (xpipeline.isSetAnalyzeURL())
             pipeline._analyzeURL = xpipeline.getAnalyzeURL();
 
@@ -427,6 +430,9 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // Initial file types
         pipeline._initialFileTypesFromTask = true;
         pipeline._initialFileTypes = initialTaskFactory.getInputTypes();
+
+        // Allow trigger configuration by default
+        pipeline._allowForTriggerConfiguration = !xpipeline.isSetTriggerConfiguration() || xpipeline.getTriggerConfiguration().getAllow();
 
         // Misconfiguration: the user will never be able to start this pipeline
         if (pipeline._initialFileTypes == null || pipeline._initialFileTypes.isEmpty())

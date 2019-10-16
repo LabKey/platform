@@ -262,7 +262,7 @@
         %>
     </table>
     <div class="labkey-button-bar-separate">
-        <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
+        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <table class="lk-fields-table" style="margin-top:10px;">
@@ -401,7 +401,7 @@
         <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
     <div class="labkey-button-bar-separate" style="margin-bottom:10px">
-        <%= button("Save").submit(true).attributes("name=\"" + bean.getAction() + "\"").disableOnClick(true) %>
+        <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <% final Collection<Issue.Comment> comments = issue.getComments();

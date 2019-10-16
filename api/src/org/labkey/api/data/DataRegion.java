@@ -923,7 +923,7 @@ public class DataRegion extends DisplayElement
     {
         ParameterView(Collection<QueryService.ParameterDecl> params, Map<String, Object> defaults)
         {
-            super(DataRegion.class, "parameterForm.jsp", new ParameterViewBean(DataRegion.this.getDomId(), DataRegion.this.getName(), params, defaults));
+            super("/org/labkey/api/data/parameterForm.jsp", new ParameterViewBean(DataRegion.this.getDomId(), DataRegion.this.getName(), params, defaults));
         }
     }
 
@@ -1809,17 +1809,7 @@ public class DataRegion extends DisplayElement
 
         if (value != null && url != null)
         {
-            Map<String, String> props;
-            if (column.getLinkTarget() != null)
-            {
-                props = Collections.singletonMap("target", column.getLinkTarget());
-            }
-            else
-            {
-                props = Collections.emptyMap();
-            }
-
-            out.write(PageFlowUtil.iconLink(iconCls, value.toString(), url, null, null, props));
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).target(column.getLinkTarget()).toString());
         }
     }
 

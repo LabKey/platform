@@ -123,8 +123,8 @@ public interface PipeRoot extends SecurableResource
 
     void configureForm(SetupForm form);
 
-    /** @return true if this root is based on the site level root */
-    boolean isDefault();
+    /** @return true if this root is based a file root, whether it's set at the server, project, or folder level */
+    boolean isFileRoot();
 
     /** @return true if this root is based on cloud storage */
     boolean isCloudRoot();

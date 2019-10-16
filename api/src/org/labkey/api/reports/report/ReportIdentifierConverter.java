@@ -30,6 +30,6 @@ public class ReportIdentifierConverter implements Converter
         if (null == value || value.equals("null") || !type.equals(ReportIdentifier.class))
             return null;
         else
-            return ReportService.get().getReportIdentifier(value.toString());
+            return ReportService.get().getReportIdentifier(value.toString(), null, null);
     }
 }

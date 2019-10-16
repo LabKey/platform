@@ -126,6 +126,7 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         private List<Integer> _objectId;
         private boolean _attemptPublish;
         private boolean _validate;
+        private boolean _includeTimestamp;
         private String _dataRegionSelectionKey;
         private String _containerFilterName;
         private PublishResultsQueryView.DefaultValueSource _defaultValueSource = PublishResultsQueryView.DefaultValueSource.Assay;
@@ -218,6 +219,16 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         public void setValidate(boolean validate)
         {
             _validate = validate;
+        }
+
+        public boolean isIncludeTimestamp()
+        {
+            return _includeTimestamp;
+        }
+
+        public void setIncludeTimestamp(boolean includeTimestamp)
+        {
+            _includeTimestamp = includeTimestamp;
         }
 
         public String getContainerFilterName()
@@ -319,7 +330,8 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         if (publishConfirmForm.getContainerFilterName() != null)
             settings.setContainerFilterName(publishConfirmForm.getContainerFilterName());
         PublishResultsQueryView queryView = new PublishResultsQueryView(provider, _protocol, schema, settings,
-                _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched);
+                _allObjects, _targetStudy, _postedTargetStudies, _postedVisits, _postedDates, _postedPtids, publishConfirmForm.getDefaultValueSourceEnum(), mismatched,
+                publishConfirmForm.isIncludeTimestamp());
 
         List<ActionButton> buttons = new ArrayList<>();
         URLHelper returnURL = publishConfirmForm.getReturnURLHelper();
@@ -341,6 +353,19 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         validateButton.setScript("return assayPublish_onCopyToStudy(this)", true);
         buttons.add(validateButton);
 
+        TimepointType timepointType = null;
+        if (_targetStudy != null)
+            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
+
+        if (timepointType != null && !timepointType.equals(TimepointType.VISIT))
+        {
+            publishURL.replaceParameter("defaultValueSource", PublishResultsQueryView.DefaultValueSource.Assay.toString());
+            publishURL.replaceParameter("includeTimestamp", "true");
+            ActionButton includeTimeButton = new ActionButton(publishURL, "Display DateTime");
+            includeTimeButton.setScript("return assayPublish_onCopyToStudy(this)", true);
+            buttons.add(includeTimeButton);
+        }
+
         if (mismatched)
         {
             publishURL.deleteParameter("validate");
@@ -358,10 +383,6 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
         buttons.add(cancelButton);
 
         queryView.setButtons(buttons);
-
-        TimepointType timepointType = null;
-        if (_targetStudy != null)
-            timepointType = AssayPublishService.get().getTimepointType(_targetStudy);
 
         return new VBox(new JspView<>("/org/labkey/study/assay/view/publishHeader.jsp",
                 new PublishConfirmBean(timepointType, mismatched), errors), queryView);
@@ -557,9 +578,9 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
     public NavTree appendNavTrail(NavTree root)
     {
         getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
-        NavTree result = root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
-        result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
-        return result;
+        root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
+        root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+        root.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
+        return root;
     }
 }

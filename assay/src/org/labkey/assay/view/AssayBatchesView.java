@@ -16,25 +16,22 @@
 
 package org.labkey.assay.view;
 
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.query.ExpExperimentTable;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.assay.actions.AssayBatchDetailsAction;
-import org.labkey.api.assay.actions.ShowSelectedRunsAction;
-import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayView;
 import org.labkey.api.assay.query.BatchListQueryView;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.assay.actions.AssayBatchDetailsAction;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,20 +58,16 @@ public class AssayBatchesView extends AssayView
 
         BatchListQueryView batchesView = new BatchListQueryView(protocol, schema, settings)
         {
+            @Override
             public List<DisplayColumn> getDisplayColumns()
             {
                 List<DisplayColumn> ret = super.getDisplayColumns();
-
-                // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
-                ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, context.getContainer());
-                fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
-                        AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-                String key = fakeURL.getParameters().get(0).getKey();
+                String key = PageFlowUtil.urlProvider(AssayUrls.class).getBatchIdFilterParam();
 
                 // Need to make sure that we keep the same container filter after following the link
                 ExpExperimentTable tableInfo = (ExpExperimentTable)getTable();
                 ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(context.getContainer(), protocol, tableInfo.getContainerFilter());
-                DetailsURL expr = new DetailsURL(runsURL, Collections.singletonMap(key,"RowId"));
+                DetailsURL expr = new DetailsURL(runsURL, Collections.singletonMap(key, "RowId"));
 
                 // find the Name column and update URL
                 ColumnInfo name = tableInfo.getColumn(ExpExperimentTable.Column.Name);

@@ -157,7 +157,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
     }
 
     @Override
-    public DataLoaderFactory findFactory(String filename, String contentType, InputStream is, FileType guessFormat)
+    public DataLoaderFactory findFactory(String filename, @Nullable String contentType, InputStream is, FileType guessFormat)
     {
         List<DataLoaderFactory> matches = new ArrayList<>(10);
         byte[] header = null;
@@ -279,7 +279,7 @@ public class DataLoaderServiceImpl implements DataLoaderService
         return createLoader(file, null, hasColumnHeaders, null, null);
     }
 
-    public DataLoader createLoader(File file, String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
+    public DataLoader createLoader(File file, @Nullable String contentType, boolean hasColumnHeaders, Container mvIndicatorContainer, @Nullable FileType guessFormat) throws IOException
     {
         DataLoaderFactory factory = findFactory(file, contentType, guessFormat);
 

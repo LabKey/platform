@@ -16,7 +16,11 @@
 package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Select;
 import org.labkey.study.specimen.report.SpecimenVisitReportParameters;
 import org.labkey.study.specimen.report.SpecimenVisitReport;
 import org.labkey.study.model.SpecimenTypeSummary;
@@ -24,12 +28,13 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import static org.labkey.api.util.HtmlString.unsafe;
 
 /**
  * User: brittp
@@ -62,31 +67,44 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return reports;
     }
 
-    public boolean allowsParticipantAggregegates()
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         return Collections.singletonList(getSpecimenTypePicker());
     }
 
-    private void appendOptions(List<? extends SpecimenTypeSummary.TypeCount> types, StringBuilder builder, String parentId, String selectedId, int indent)
+    private void appendOptions(List<? extends SpecimenTypeSummary.TypeCount> types, Select.SelectBuilder builder, String parentId, String selectedId, int indent)
     {
         for (SpecimenTypeSummary.TypeCount type : types)
         {
+            String spacing = generateSpacing(indent);
             String label = getLabel(type);
+            HtmlString encodedLabel = unsafe(spacing + HtmlString.of(label));
+
             String id = parentId != null ? parentId + TYPE_COMPONENT_SEPARATOR + label : label;
-            builder.append("<option value=\"").append(id).append("\"");
-            if (id.equals(selectedId))
-                builder.append(" SELECTED");
-            builder.append(">");
-            for (int i = 0; i < indent*5; i++)
-                builder.append("&nbsp;");
-            builder.append(PageFlowUtil.filter(label)).append("</option>\n");
+            builder.addOption(new Option.OptionBuilder()
+                    .value(id)
+                    .label(encodedLabel)
+                    .selected(id.equals(selectedId))
+                    .build());
+
             appendOptions(type.getChildren(), builder, id, selectedId, indent + 1);
         }
+    }
+
+    private String generateSpacing(int indent)
+    {
+        String spacing = "";
+        for (int i = 0; i < indent * 5; i++)
+        {
+            spacing = spacing.concat(HtmlString.NBSP.toString());
+        }
+        return spacing;
     }
 
     public String getSelectedType()
@@ -148,26 +166,32 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return null;
     }
 
-    protected Pair<String, String> getSpecimenTypePicker()
+    protected Pair<String, HtmlString> getSpecimenTypePicker()
     {
-        StringBuilder builder = new StringBuilder();
+        Select.SelectBuilder select = new Select.SelectBuilder();
         SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer(), getUser());
-        builder.append("<select name=\"selectedType\">\n");
-        builder.append("<option value=\"" + ALL_PRIMARY_TYPES_FORM_VALUE + "\"");
-        builder.append(ALL_PRIMARY_TYPES_FORM_VALUE.equals(_selectedType) ? "SELECTED" : "");
-        builder.append(">One report per primary type</option>\n");
+        select.name("selectedType");
 
-        builder.append("<option value=\"" + ALL_DERIVATIVE_TYPES_FORM_VALUE + "\"");
-        builder.append(ALL_DERIVATIVE_TYPES_FORM_VALUE.equals(_selectedType) ? "SELECTED" : "");
-        builder.append(">One report per derivative type</option>\n");
+        select.addOption(new Option.OptionBuilder()
+            .value(ALL_PRIMARY_TYPES_FORM_VALUE)
+            .label("One report per primary type")
+            .selected(ALL_PRIMARY_TYPES_FORM_VALUE.equals(_selectedType))
+            .build());
 
-        builder.append("<option value=\"" + ALL_ADDITIVE_TYPES_FORM_VALUE + "\"");
-        builder.append(ALL_ADDITIVE_TYPES_FORM_VALUE.equals(_selectedType) ? "SELECTED" : "");
-        builder.append(">One report per additive type</option>\n");
+        select.addOption(new Option.OptionBuilder()
+                .value(ALL_DERIVATIVE_TYPES_FORM_VALUE)
+                .label("One report per derivative type")
+                .selected(ALL_DERIVATIVE_TYPES_FORM_VALUE.equals(_selectedType))
+                .build());
 
-        appendOptions(summary.getPrimaryTypes(), builder, null, _selectedType, 0);
-        builder.append("</select>");
-        return new Pair<>("Specimen type", builder.toString());
+        select.addOption(new Option.OptionBuilder()
+                .value(ALL_ADDITIVE_TYPES_FORM_VALUE)
+                .label("One report per additive type")
+                .selected(ALL_ADDITIVE_TYPES_FORM_VALUE.equals(_selectedType))
+                .build());
+
+        appendOptions(summary.getPrimaryTypes(), select, null, _selectedType, 0);
+        return new Pair<>("Specimen type", unsafe(select.toString()));
     }
 
     public String getLabel()

@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LabKeyJspWriter extends JspWriterWrapper
 {
     private static final Logger LOG = Logger.getLogger(LabKeyJspWriter.class);
+    private static final Logger LOGSTRING = Logger.getLogger(LabKeyJspWriter.class.getName()+".string");
+
 
     private static final AtomicInteger CHAR_ARRAY_INVOCATIONS = new AtomicInteger();
     private static final AtomicInteger STRING_INVOCATIONS = new AtomicInteger();
@@ -54,7 +56,11 @@ public class LabKeyJspWriter extends JspWriterWrapper
     public void print(String s) throws IOException
     {
         STRING_INVOCATIONS.incrementAndGet();
-        UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString());
+        if (UNIQUE_STRING_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
+        {
+            LOGSTRING.info(" A JSP is printing a string!", new Throwable());
+        }
+
         super.print(s);
     }
 
@@ -67,7 +73,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
             {
                 obj = ((HasHtmlString) obj).getHtmlString();
             }
-            else if (!(obj instanceof Number))
+            else if (!(obj instanceof Number) && !(obj instanceof Boolean))
             {
                 OBJECT_INVOCATIONS.incrementAndGet();
                 if (UNIQUE_OBJECT_INVOCATIONS.add(Thread.currentThread().getStackTrace()[2].toString()))
@@ -75,7 +81,7 @@ public class LabKeyJspWriter extends JspWriterWrapper
                     if (null == obj)
                         LOG.info("A JSP is attempting to render a null object!", new Throwable());
                     else
-                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getSimpleName(), new Throwable());
+                        LOG.info("A JSP is rendering an object of class " + obj.getClass().getName(), new Throwable());
                 }
             }
         }

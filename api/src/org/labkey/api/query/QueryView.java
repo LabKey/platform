@@ -358,7 +358,7 @@ public class QueryView extends WebPartView<Object>
                     if (getUser().isPlatformDeveloper())
                     {
                         out.write(" ");
-                        out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
+                        out.print(PageFlowUtil.link(StringUtils.defaultString(resolveText, "resolve")).href(resolveURL));
                     }
                 }
                 out.write("<br>");
@@ -816,12 +816,6 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected boolean canDelete()
-    {
-        TableInfo table = getTable();
-        return table != null && table.hasPermission(getUser(), DeletePermission.class);
-    }
-
     protected boolean canInsert()
     {
         TableInfo table = getTable();
@@ -832,6 +826,30 @@ public class QueryView extends WebPartView<Object>
     {
         TableInfo table = getTable();
         return table != null && table.hasPermission(getUser(), UpdatePermission.class) && table.getUpdateService() != null;
+    }
+
+    protected boolean canDelete()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasPermission(getUser(), DeletePermission.class);
+    }
+
+    private boolean allowQueryTableInsertURLOverride()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasInsertURLOverride() && table.allowQueryTableURLOverrides();
+    }
+
+    private boolean allowQueryTableUpdateURLOverride()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasUpdateURLOverride() && table.allowQueryTableURLOverrides();
+    }
+
+    private boolean allowQueryTableDeleteURLOverride()
+    {
+        TableInfo table = getTable();
+        return table != null && table.hasDeleteURLOverride() && table.allowQueryTableURLOverrides();
     }
 
     public boolean showInsertNewButton()
@@ -911,19 +929,13 @@ public class QueryView extends WebPartView<Object>
 
         populateChartsReports(bar);
 
-        if (canInsert() && (showInsertNewButton() || showImportDataButton()))
+
+        if ((canInsert() || allowQueryTableInsertURLOverride()) && (showInsertNewButton() || showImportDataButton()))
         {
             bar.add(createInsertMenuButton());
         }
 
-//        if (/* showUpdateButton() && */canUpdate())
-//        {
-//            ActionButton editMultipleButton = createEditMultipleButton();
-//            if (editMultipleButton != null)
-//                bar.add(editMultipleButton);
-//        }
-
-        if (showDeleteButton() && canDelete())
+        if ((canDelete() || allowQueryTableDeleteURLOverride()) && showDeleteButton())
         {
             bar.add(createDeleteButton());
         }
@@ -1186,7 +1198,7 @@ public class QueryView extends WebPartView<Object>
             {
                 return false;
             }
-            Set<String> selected = DataRegionSelection.getSelected(context, _selectionKey, true, false);
+            Set<String> selected = DataRegionSelection.getSelected(context, _selectionKey, false);
             return !selected.isEmpty();
         }
 
@@ -1645,6 +1657,7 @@ public class QueryView extends WebPartView<Object>
                 item = new NavTree(label, url.toString());
                 item.setSelected(true);
             }
+            item.setScript("LABKEY.DataRegions['" + getDataRegionName() + "'].clearSelected({quiet: true});");
             item.setId(getBaseMenuId() + ":GridViews:" + label);
             button.addMenuItem(item);
         }
@@ -1928,18 +1941,6 @@ public class QueryView extends WebPartView<Object>
     protected boolean canViewReport(User user, Container c, Report report)
     {
         return true;
-    }
-
-    protected String textLink(String text, ActionURL url, String anchorElementId)
-    {
-        if (url == null)
-            return null;
-        return PageFlowUtil.textLink(text, url, anchorElementId).concat("&nbsp;");
-    }
-
-    protected String textLink(String text, ActionURL url)
-    {
-        return textLink(text, url, null);
     }
 
     public void addCustomizeViewItems(MenuButton button)
@@ -2360,14 +2361,7 @@ public class QueryView extends WebPartView<Object>
     public List<DisplayColumn> getExportColumns(List<DisplayColumn> list)
     {
         List<DisplayColumn> ret = new ArrayList<>(list);
-        for (Iterator<DisplayColumn> it = ret.iterator(); it.hasNext(); )
-        {
-            DisplayColumn next = it.next();
-            if (next instanceof DetailsColumn || next instanceof UpdateColumn)
-            {
-                it.remove();
-            }
-        }
+        ret.removeIf(next -> next instanceof DetailsColumn || next instanceof UpdateColumn);
         return ret;
     }
 
@@ -2546,17 +2540,19 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType);
-            if (headerType == null)
-                headerType = getColumnHeaderType();
-            ew.setCaptionType(headerType);
-            ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
-            if (prefix != null)
-                ew.setFilenamePrefix(prefix);
-            ew.write(response);
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType))
+            {
+                if (headerType == null)
+                    headerType = getColumnHeaderType();
+                ew.setCaptionType(headerType);
+                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
+                if (prefix != null)
+                    ew.setFilenamePrefix(prefix);
+                ew.write(response);
 
-            if (!templateOnly)
-                logAuditEvent("Exported to Excel", ew.getDataRowCount());
+                if (!templateOnly)
+                    logAuditEvent("Exported to Excel", ew.getDataRowCount());
+            }
         }
     }
 
@@ -2576,9 +2572,8 @@ public class QueryView extends WebPartView<Object>
         if (table != null)
         {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            try (OutputStream stream = new BufferedOutputStream(byteStream))
+            try (OutputStream stream = new BufferedOutputStream(byteStream); ExcelWriter ew = getExcelWriter(docType))
             {
-                ExcelWriter ew = getExcelWriter(docType);
                 ew.setCaptionType(headerType);
                 ew.setShowInsertableColumnsOnly(false, null);
                 ew.setMetadata(metadata);
@@ -2742,7 +2737,7 @@ public class QueryView extends WebPartView<Object>
         if (table == null)
             throw new IllegalStateException();
 
-        return DataRegionSelection.selectAll(this, this.getSelectionKey());
+        return DataRegionSelection.setSelectionForAll(this, this.getSelectionKey(), true);
     }
 
     protected void logAuditEvent(String comment, int dataRowCount)
@@ -2888,7 +2883,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_showUpdateColumn && canUpdate())
+        if (_showUpdateColumn && (canUpdate() || allowQueryTableUpdateURLOverride()))
         {
             StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
 

@@ -402,15 +402,15 @@ public class ActionButton extends DisplayElement implements Cloneable
         {
             DataRegion dataRegion = ctx.getCurrentRegion();
             assert dataRegion != null : "ActionButton.setRequiresSelection() needs to be rendered in context of a DataRegion";
-            attributes.put("labkey-requires-selection", dataRegion.getName());
+            attributes.put("data-labkey-requires-selection", dataRegion.getName());
             if (_requiresSelectionMinCount != null)
-                attributes.put("labkey-requires-selection-min-count", _requiresSelectionMinCount.toString());
+                attributes.put("data-labkey-requires-selection-min-count", _requiresSelectionMinCount.toString());
             if (_requiresSelectionMaxCount != null)
-                attributes.put("labkey-requires-selection-max-count", _requiresSelectionMaxCount.toString());
+                attributes.put("data-labkey-requires-selection-max-count", _requiresSelectionMaxCount.toString());
         }
         
         if (_noFollow)
-            attributes.put("rel", "nofollow");
+            button.nofollow();
 
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))
         {
@@ -420,21 +420,16 @@ public class ActionButton extends DisplayElement implements Cloneable
             if (_script != null)
                 onClickScript.append(getScript(ctx));
 
-            String actionName = getActionName(ctx);
-            if (actionName != null)
-                attributes.put("name", actionName);
-
             button.onClick(onClickScript.toString())
-                    .submit(true);
+                    .submit(true)
+                    .name(getActionName(ctx));
         }
         else if (_actionType.equals(Action.LINK))
         {
-            if (_target != null)
-                attributes.put("target", _target);
             if (_script != null)
                 button.onClick(getScript(ctx));
 
-            button.href(getURL(ctx));
+            button.href(getURL(ctx)).target(_target);
         }
         else
         {

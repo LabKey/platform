@@ -50,10 +50,10 @@ public class StudyListWebPartFactory extends AlwaysAvailableWebPartFactory
             if ("grid".equals(webPart.getPropertyMap().get(DISPLAY_TYPE_PROPERTY)))
                 view = new StudyListQueryView(portalCtx);
             else
-                view = new JspView<>(this.getClass(), "studyListWide.jsp", null);
+                view = new JspView<>("/org/labkey/study/view/studyListWide.jsp", null);
         }
         else
-            view = new JspView<>(this.getClass(), "studyList.jsp", null);
+            view = new JspView<>("/org/labkey/study/view/studyList.jsp", null);
         view.setTitle("Studies");
         return view;
     }
@@ -61,6 +61,6 @@ public class StudyListWebPartFactory extends AlwaysAvailableWebPartFactory
     @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        return new JspView<>(this.getClass(), "customizeStudyList.jsp", webPart);
+        return new JspView<>("/org/labkey/study/view/customizeStudyList.jsp", webPart);
     }
 }

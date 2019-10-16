@@ -127,6 +127,7 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -395,8 +396,10 @@ public class FileContentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
-            return (new BeginAction(getViewContext())).appendNavTrail(root)
-                    .addChild(name);
+            NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
+            ret.addChild(name);
+
+            return ret;
         }
     }
 
@@ -547,8 +550,10 @@ public class FileContentController extends SpringActionController
 
        public NavTree appendNavTrail(NavTree root)
        {
-           return (new BeginAction(getViewContext())).appendNavTrail(root)
-                   .addChild("Administer File System Access");
+           NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
+           ret.addChild("Administer File System Access");
+
+           return ret;
        }
    }
 
@@ -1340,7 +1345,19 @@ public class FileContentController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> rows = new ArrayList<>();
             TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
-            new TableSelector(tableInfo).forEachMap(data ->
+
+            // add lookup display columns
+            List<ColumnInfo> columns = new ArrayList<>(tableInfo.getColumns());
+            if (form.getCustomProperties() != null)
+            {
+                Arrays.stream(form.getCustomProperties())
+                        .map(tableInfo::getColumn)
+                        .filter(column -> null != column && column.getDisplayField() != null)
+                        .map(ColumnInfo::getDisplayField)
+                        .forEach(columns::add);
+            }
+
+            new TableSelector(tableInfo, columns, null, null).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");
                 if (null != encodedUrl)
@@ -1357,8 +1374,10 @@ public class FileContentController extends SpringActionController
                             ColumnInfo column = tableInfo.getColumn(property);
                             if (null != column)
                             {
+                                ColumnInfo displayColumn = column.getDisplayField();
+
                                 Map<String, Object> map = new HashMap<>();
-                                map.put("value", data.get(column.getAlias()));
+                                map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
                                 StringExpression url = column.getEffectiveURL();
                                 if (null != url)
                                     map.put("url", url.eval(data));
@@ -1577,7 +1596,7 @@ public class FileContentController extends SpringActionController
     {
         public IFrameView(String url)
         {
-			super(FileContentController.class, "view/iframe.jsp", url);
+			super("/org/labkey/filecontent/view/iframe.jsp", url);
         }
     }
 

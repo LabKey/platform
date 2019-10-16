@@ -20,13 +20,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.actions.AssayDetailRedirectAction;
+import org.labkey.api.assay.actions.AssayResultDetailsAction;
+import org.labkey.api.assay.actions.AssayRunDetailsAction;
 import org.labkey.api.assay.query.BatchListQueryView;
+import org.labkey.api.assay.query.ResultsQueryView;
+import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -75,16 +79,10 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.actions.AssayDetailRedirectAction;
-import org.labkey.api.assay.actions.AssayResultDetailsAction;
-import org.labkey.api.assay.actions.AssayRunDetailsAction;
-import org.labkey.api.assay.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.assay.StudyDatasetColumn;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.assay.query.ResultsQueryView;
-import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -132,6 +130,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
+    public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
+    {
+        return SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName());
+    }
+
     @Deprecated
     public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
@@ -140,7 +143,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public AssayProtocolSchema(User user, Container container, @NotNull AssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        super(SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName()), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
+        super(schemaName(provider, protocol), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
 
         if (protocol == null)
             throw new NotFoundException("Assay protocol not found");
@@ -344,13 +347,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
         result.populate();
         ActionURL runsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), protocol, result.getContainerFilter());
 
-        // Unfortunately this seems to be the best way to figure out the name of the URL parameter to filter by batch id
-        ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, getContainer());
-        fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME,
-                AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
-        String paramName = fakeURL.getParameters().get(0).getKey();
-
         Map<String, String> urlParams = new HashMap<>();
+        String paramName = PageFlowUtil.urlProvider(AssayUrls.class).getBatchIdFilterParam();
         urlParams.put(paramName, "RowId");
         result.setDetailsURL(new DetailsURL(runsURL, urlParams));
 
@@ -601,7 +599,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     @Nullable
     protected RunListQueryView createRunsQueryView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        RunListQueryView queryView = new RunListQueryView(this, settings, new org.labkey.api.assay.AssayRunType(getProtocol(), getContainer()));
+        RunListQueryView queryView = new RunListQueryView(this, settings, new AssayRunType(getProtocol(), getContainer()));
 
         if (getProvider().hasCustomView(ExpProtocol.AssayDomainTypes.Run, true))
         {
@@ -622,7 +620,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             {
                 // need to create a new protocol schema with the contextual role added to the user
                 AssayProtocolSchema schema = AssayService.get().getProvider(getProtocol()).createProtocolSchema(context.getUser(), getContainer(), getProtocol(), getTargetStudy());
-                return new RunListQueryView(schema, settings, new org.labkey.api.assay.AssayRunType(getProtocol(), getContainer()));
+                return new RunListQueryView(schema, settings, new AssayRunType(getProtocol(), getContainer()));
             }
         };
         decorator.addQCWarningIndicator(queryView, context, settings, errors);
@@ -805,62 +803,67 @@ public abstract class AssayProtocolSchema extends AssaySchema
     public Set<String> addCopiedToStudyColumns(AbstractTableInfo table, boolean setVisibleColumns)
     {
         Set<String> visibleColumnNames = new HashSet<>();
-        int datasetIndex = 0;
-        Set<String> usedColumnNames = new HashSet<>();
-        for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
+        StudyService svc = StudyService.get();
+
+        if (null != svc)
         {
-            if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
+            int datasetIndex = 0;
+            Set<String> usedColumnNames = new HashSet<>();
+            for (final Dataset assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
             {
-                continue;
+                if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
+                {
+                    continue;
+                }
+
+                String datasetIdColumnName = "dataset" + datasetIndex++;
+                final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
+                datasetColumn.setHidden(true);
+                datasetColumn.setUserEditable(false);
+                datasetColumn.setShownInInsertView(false);
+                datasetColumn.setShownInUpdateView(false);
+                datasetColumn.setReadOnly(true);
+                table.addColumn(datasetColumn);
+
+                String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
+                        "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
+
+                String studyName = assayDataset.getStudy().getLabel();
+                if (studyName == null)
+                    continue; // No study in that folder
+                String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
+
+                // column names must be unique. Prevent collisions
+                while (usedColumnNames.contains(studyColumnName))
+                    studyColumnName = studyColumnName + datasetIndex;
+                usedColumnNames.add(studyColumnName);
+
+                final ExprColumn studyCopiedColumn = new ExprColumn(table,
+                        studyColumnName,
+                        new SQLFragment(studyCopiedSql),
+                        JdbcType.VARCHAR,
+                        datasetColumn);
+                final String copiedToStudyColumnCaption = "Copied to " + studyName;
+                studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
+                studyCopiedColumn.setUserEditable(false);
+                studyCopiedColumn.setReadOnly(true);
+                studyCopiedColumn.setShownInInsertView(false);
+                studyCopiedColumn.setShownInUpdateView(false);
+                studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
+
+                table.addColumn(studyCopiedColumn);
+
+                visibleColumnNames.add(studyCopiedColumn.getName());
             }
-
-            String datasetIdColumnName = "dataset" + datasetIndex++;
-            final StudyDatasetColumn datasetColumn = new StudyDatasetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
-            datasetColumn.setHidden(true);
-            datasetColumn.setUserEditable(false);
-            datasetColumn.setShownInInsertView(false);
-            datasetColumn.setShownInUpdateView(false);
-            datasetColumn.setReadOnly(true);
-            table.addColumn(datasetColumn);
-
-            String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
-
-            String studyName = assayDataset.getStudy().getLabel();
-            if (studyName == null)
-                continue; // No study in that folder
-            String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
-
-            // column names must be unique. Prevent collisions
-            while (usedColumnNames.contains(studyColumnName))
-                studyColumnName = studyColumnName + datasetIndex;
-            usedColumnNames.add(studyColumnName);
-
-            final ExprColumn studyCopiedColumn = new ExprColumn(table,
-                studyColumnName,
-                new SQLFragment(studyCopiedSql),
-                JdbcType.VARCHAR,
-                datasetColumn);
-            final String copiedToStudyColumnCaption = "Copied to " + studyName;
-            studyCopiedColumn.setLabel(copiedToStudyColumnCaption);
-            studyCopiedColumn.setUserEditable(false);
-            studyCopiedColumn.setReadOnly(true);
-            studyCopiedColumn.setShownInInsertView(false);
-            studyCopiedColumn.setShownInUpdateView(false);
-            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
-
-            table.addColumn(studyCopiedColumn);
-
-            visibleColumnNames.add(studyCopiedColumn.getName());
-        }
-        if (setVisibleColumns)
-        {
-            List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
-            for (String columnName : visibleColumnNames)
+            if (setVisibleColumns)
             {
-                visibleColumns.add(new FieldKey(null, columnName));
+                List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
+                for (String columnName : visibleColumnNames)
+                {
+                    visibleColumns.add(new FieldKey(null, columnName));
+                }
+                table.setDefaultVisibleColumns(visibleColumns);
             }
-            table.setDefaultVisibleColumns(visibleColumns);
         }
 
         return visibleColumnNames;
@@ -883,7 +886,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public void fixupRenderers(final ColumnRenderPropertiesImpl col, BaseColumnInfo columnInfo)
     {
-        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
+        StudyService svc = StudyService.get();
+
+        if (null != svc && AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
         {
             columnInfo.setFk(new LookupForeignKey("Folder", "Label")
             {

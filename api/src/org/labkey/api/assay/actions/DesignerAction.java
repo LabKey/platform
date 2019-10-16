@@ -20,6 +20,9 @@ import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -72,31 +75,14 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         {
             _protocol = form.getProtocol(!form.isCopy());
         }
-        catch (NotFoundException ignored) { /* User is probably creating a new assay design */ }
-        Map<String, String> properties = new HashMap<>();
-        if (_protocol != null)
+        catch (NotFoundException ignored)
         {
-            properties.put("protocolId", "" + _protocol.getRowId());
-            properties.put("copy", Boolean.toString(form.isCopy()));
+            /* User is probably creating a new assay design */
         }
+
         AssayProvider provider = AssayService.get().getProvider(form.getProviderName());
         if (provider == null)
-        {
             provider = form.getProvider();
-        }
-        properties.put("providerName", provider.getName());
-        properties.put("osName", System.getProperty("os.name").toLowerCase());
-        properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
-        properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
-
-        // if the provider supports QC and if there is a valid QC service registered
-        if (AssayQCService.getProvider().supportsQC())
-            properties.put("supportsQC", Boolean.toString(provider.supportsQC()));
-
-        if (form.getReturnURLHelper() != null)
-        {
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
-        }
 
         // hack for 4404 : Lookup picker performance is terrible when there are many containers
         ContainerManager.getAllChildren(ContainerManager.getRoot());
@@ -106,8 +92,37 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         {
             result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
         }
+
+        // use new UX Assay Designer view for GPAT assays if experimental flag is turned on, but not yet ready for "copy"
+        if ("General".equalsIgnoreCase(provider.getName()) && !form.isCopy() && ExperimentService.get().useUXDomainDesigner())
+        {
+            result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
+        }
+        else
+        {
+            Map<String, String> properties = new HashMap<>();
+            if (_protocol != null)
+            {
+                properties.put("protocolId", "" + _protocol.getRowId());
+                properties.put("copy", Boolean.toString(form.isCopy()));
+            }
+
+            properties.put("providerName", provider.getName());
+            properties.put("osName", System.getProperty("os.name").toLowerCase());
+            properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
+            properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
+
+            // if the provider supports QC and if there is a valid QC service registered
+            if (AssayQCService.getProvider().supportsQC())
+                properties.put("supportsQC", Boolean.toString(provider.supportsQC()));
+
+            if (form.getReturnURLHelper() != null)
+                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
+
+            result.addView(createGWTView(properties));
+        }
+
         setHelpTopic(new HelpTopic("defineAssaySchema"));
-        result.addView(createGWTView(properties));
         return result;
     }
 

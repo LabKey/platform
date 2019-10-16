@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.core.workbook.CreateWorkbookBean" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -108,7 +109,7 @@
         <tr>
             <td class="labkey-form-label">Description:</td>
             <td>
-                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == bean.getDescription() ? "" : h(bean.getDescription())%></textarea>
+                <textarea id="workbookDescription" name="description" rows="4" cols="40" class="cwb-input"><%=null == bean.getDescription() ? HtmlString.EMPTY_STRING : h(bean.getDescription())%></textarea>
             </td>
         </tr>
         <% if (folderTypes.size() > 1) { %>

@@ -16,11 +16,21 @@
 package org.labkey.api.view.template;
 
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.view.ViewContext;
 
 import java.util.function.Consumer;
 
 public interface WarningService
 {
+    String SESSION_WARNINGS_BANNER_KEY = "PAGE_CONFIG$SESSION_WARNINGS_BANNER_KEY";
+
+    default boolean showAllWarnings()
+    {
+        // Set to true to test most of the warning messages
+        return false;
+    }
+
     static WarningService get()
     {
         return ServiceRegistry.get().getService(WarningService.class);
@@ -33,4 +43,6 @@ public interface WarningService
 
     void register(WarningProvider provider);
     void forEachProvider(Consumer<WarningProvider> consumer);
+    Warnings getWarnings(ViewContext context);
+    HtmlString getWarningsHtml(Warnings warnings, ViewContext context);
 }

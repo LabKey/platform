@@ -109,7 +109,8 @@ public class ConditionalFormat extends GWTConditionalFormat
         {
             sb.append("background-color: #");
             sb.append(getBackgroundColor());
-            sb.append(";");
+            // Issue 38333: add !important so that the conditional format wins out when grid row click/hover style applied
+            sb.append(" !important;");
         }
 
         return sb.toString();

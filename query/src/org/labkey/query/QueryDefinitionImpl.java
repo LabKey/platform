@@ -22,9 +22,9 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -76,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -368,12 +367,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             for (XmlError xmle : xmlErrors)
             {
-                String message = (xmle instanceof XmlValidationError && null != ((XmlValidationError)xmle).getOffendingQName()) ?
-                        "Metadata validation error with '" + ((XmlValidationError)xmle).getOffendingQName().getLocalPart() + "'" :
-                        "Metadata validation error";
-                if (-1 != xmle.getLine())
-                    message += " [Line " + xmle.getLine() + "]";
-                errors.add(new MetadataParseException(message));
+                errors.add(new MetadataParseException(xmle));
             }
         }
 
@@ -539,7 +533,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             TableInfo table = _cache.get(key);
             if (table == null)
             {
-                table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
+                // Occasionally called with a get, but simple table creation is not a serious vector for CSRF attacks
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    table = createTable(schema, errors, includeMetadata, null, skipSuggestedColumns, allowDuplicateColumns);
+                }
 
                 if (null == table)
                     return null;

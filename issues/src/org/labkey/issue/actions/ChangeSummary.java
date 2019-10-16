@@ -47,7 +47,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.issue.CustomColumnConfiguration;
 import org.labkey.issue.IssueUpdateEmailTemplate;
 import org.labkey.issue.IssuesController;
@@ -235,15 +235,9 @@ public class ChangeSummary
         formattedComment.append("<div class=\"wiki\">");
         formattedComment.append(sbHTMLChanges);
         //render issues as plain text with links
-        WikiService wikiService = WikiService.get();
-        if (null != wikiService)
-        {
-            String html = wikiService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
-            formattedComment.append(html);
-        }
-        else
-            formattedComment.append(comment);
-
+        WikiRenderingService renderingService = WikiRenderingService.get();
+        String html = renderingService.getFormattedHtml(WikiRendererType.TEXT_WITH_LINKS, comment);
+        formattedComment.append(html);
         formattedComment.append("</div>");
 
         return new ChangeSummary(issueListDef, issue, previous, issue.addComment(user, formattedComment.toString()),

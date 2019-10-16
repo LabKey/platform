@@ -59,8 +59,8 @@ public class JspLoader
         try
         {
             ServletContext context = ModuleLoader.getServletContext();
-            Class clazz = _jspClassLoader.loadClass(context, packageName, jspFile);
-            HttpJspPage ret = (HttpJspPage) clazz.newInstance();
+            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, packageName, jspFile);
+            HttpJspPage ret = clazz.getConstructor().newInstance();
             ret.init(new JspServletConfig(context));
             return ret;
         }

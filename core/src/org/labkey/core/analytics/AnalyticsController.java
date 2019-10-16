@@ -86,7 +86,7 @@ public class AnalyticsController extends SpringActionController
         public ModelAndView getView(SettingsForm settingsForm, boolean reshow, BindException errors)
         {
             getPageConfig().setAllowTrackingScript(PageConfig.TrueFalse.False);
-            return new JspView<>(AnalyticsController.class, "analyticsSettings.jsp", settingsForm, errors);
+            return new JspView<>("/org/labkey/core/analytics/analyticsSettings.jsp", settingsForm, errors);
         }
 
         public boolean handlePost(SettingsForm settingsForm, BindException errors)

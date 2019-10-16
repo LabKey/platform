@@ -15,33 +15,36 @@
  */
 package org.labkey.audit;
 
-import org.labkey.api.action.RedirectAction;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.admin.AdminUrls;
-import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Date;
 
@@ -65,10 +68,10 @@ public class AuditController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class BeginAction extends RedirectAction
+    public class BeginAction extends SimpleRedirectAction
     {
         @Override
-        public URLHelper getURL(Object o, Errors errors)
+        public URLHelper getRedirectURL(Object o)
         {
             if (getContainer() != null && getContainer().isRoot())
                 return new ActionURL(ShowAuditLogAction.class, getContainer());
@@ -160,6 +163,7 @@ public class AuditController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowSiteSettingsAuditDetailsAction extends SimpleViewAction<SiteSettingsAuditDetailsForm>
     {
+        @Override
         public ModelAndView getView(SiteSettingsAuditDetailsForm form, BindException errors)
         {
             if (null == form.getId() || form.getId().intValue() < 0)
@@ -182,14 +186,17 @@ public class AuditController extends SpringActionController
             return new JspView<>("/org/labkey/audit/siteSettingsAuditDetails.jsp", model);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
 
             ActionURL urlLog = new ActionURL(ShowAuditLogAction.class, ContainerManager.getRoot());
             urlLog.addParameter("view", SiteSettingsAuditProvider.AUDIT_EVENT_TYPE);
-            root = root.addChild("Audit Log", urlLog);
-            return root.addChild("Site Settings Audit Event Details");
+            root.addChild("Audit Log", urlLog);
+            root.addChild("Site Settings Audit Event Details");
+
+            return root;
         }
     }
 }

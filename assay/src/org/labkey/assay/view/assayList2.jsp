@@ -60,7 +60,7 @@
     if (proj.hasPermission(getUser(), InsertPermission.class))
     {
 %>
-        <td style="padding-right: 5px;"><%= button("Import Data").href(new ActionURL("experiment", "assayDataImport", proj)) %></td>
+        <td style="padding-right: 5px;"><%= button("Import Data").href(new ActionURL("assay", "assayDataImport", proj)) %></td>
 <%
     }
 

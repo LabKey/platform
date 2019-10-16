@@ -41,7 +41,6 @@ import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
@@ -81,6 +80,7 @@ import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -98,6 +98,12 @@ import static java.util.Collections.unmodifiableCollection;
 abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable, MemTrackable
 {
     private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
+
+    /**
+     * Default lookup select list max size.
+     * @see TableInfo#getSelectList(String, List, Integer, String)
+     */
+    private static final int MAX_SELECT_LIST = 10_000;
 
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final ActionURL LINK_DISABLER_ACTION_URL;
@@ -127,10 +133,16 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     protected List<Pair<String, StringExpression>> _importTemplates;
 
     protected DetailsURL _gridURL;
+
     protected DetailsURL _insertURL;
     protected DetailsURL _updateURL;
     protected DetailsURL _deleteURL;
     protected DetailsURL _importURL;
+
+    private boolean _hasInsertURLOverride;
+    private boolean _hasUpdateURLOverride;
+    private boolean _hasDeleteURLOverride;
+
     protected ButtonBarConfig _buttonBarConfig;
     protected AggregateRowConfig _aggregateRowConfig;
 
@@ -296,30 +308,28 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     abstract protected SQLFragment getFromSQL();
 
     @Override
-    public NamedObjectList getSelectList(String columnName)
+    public @NotNull NamedObjectList getSelectList(@Nullable String columnName, List<FilterType> filters, Integer maxRows, @Nullable String titleColumn)
     {
-        return getSelectList(columnName, Collections.emptyList());
-    }
+        ColumnInfo titleColumnInfo = null;
+        if (titleColumn != null)
+        {
+            titleColumnInfo = getColumn(titleColumn);
+        }
 
-
-    @Override
-    public NamedObjectList getSelectList(String columnName, List<FilterType> filters)
-    {
         if (columnName == null)
         {
             List<ColumnInfo> pkColumns = getPkColumns();
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
             else
-                return getSelectList(pkColumns.get(0), Collections.emptyList());
+                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);
-        return getSelectList(column, filters);
+        return getSelectList(column, filters, maxRows, titleColumnInfo);
     }
 
-
-    public NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters)
+    private @NotNull NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters, Integer maxRows, ColumnInfo titleColumnInfo)
     {
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
@@ -330,7 +340,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         List<ColumnInfo> cols;
         final int titleIndex;
-        if (firstColumn == titleColumn)
+        if (titleColumnInfo != null && !(firstColumn.equals(titleColumnInfo)))
+        {
+            cols = Arrays.asList(firstColumn, titleColumnInfo);
+            titleIndex = 2;
+        }
+        else if (firstColumn == titleColumn)
         {
             cols = Arrays.asList(firstColumn);
             titleIndex = 1;
@@ -352,7 +367,31 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
-        new TableSelector(this, cols, filter, sort).forEach(rs -> ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex))));
+
+        // If no maxRows is specified, use the default MAX_SELECT_LIST
+        if (maxRows == null)
+            maxRows = MAX_SELECT_LIST;
+
+        TableSelector ts = new TableSelector(this, cols, filter, sort).setMaxRows(maxRows);
+        try (TableResultSet rs = ts.getResultSet(true))
+        {
+            if (rs.isComplete())
+            {
+                while (rs.next())
+                {
+                    ret.put(new SimpleNamedObject(rs.getString(1), rs.getString(titleIndex)));
+                }
+            }
+            else
+            {
+                // too many rows to render a <select> option list
+                return NamedObjectList.INCOMPLETE;
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
 
         return ret;
     }
@@ -1091,14 +1130,23 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             _importURL = DetailsURL.fromXML(xmlTable.getImportUrl(), errors);
 
         if (xmlTable.isSetInsertUrl())
+        {
             _insertURL = DetailsURL.fromXML(xmlTable.getInsertUrl(), errors);
+            _hasInsertURLOverride = true;
+        }
 
         if (xmlTable.isSetUpdateUrl())
+        {
             _updateURL = DetailsURL.fromXML(xmlTable.getUpdateUrl(), errors);
+            _hasUpdateURLOverride = true;
+        }
 
         if (xmlTable.isSetDeleteUrl())
+        {
             _deleteURL = DetailsURL.fromXML(xmlTable.getDeleteUrl(), errors);
-
+            _hasDeleteURLOverride = true;
+        }
+        
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
 
@@ -1738,6 +1786,24 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public Set<ColumnInfo> getAllInvolvedColumns(Collection<ColumnInfo> selectColumns)
     {
         return new HashSet<>(selectColumns);
+    }
+
+    @Override
+    public boolean hasInsertURLOverride()
+    {
+        return _hasInsertURLOverride;
+    }
+
+    @Override
+    public boolean hasUpdateURLOverride()
+    {
+        return _hasUpdateURLOverride;
+    }
+
+    @Override
+    public boolean hasDeleteURLOverride()
+    {
+        return _hasDeleteURLOverride;
     }
 
     public static class TestCase extends Assert{

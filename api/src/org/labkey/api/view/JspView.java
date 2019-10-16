@@ -20,7 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
-import org.labkey.api.jsp.AbstractJspBase;
+import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
@@ -44,8 +45,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 {
     protected String _path;
     protected HttpJspPage _page;
-    @Nullable
-    protected Errors _errors;
+    protected @Nullable Errors _errors;
 
     // HttpJspPage constructors
 
@@ -73,23 +73,23 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
     // String constructors 
 
-    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
-    public JspView(String page)
+    /** @param jspPath path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
+    public JspView(String jspPath)
     {
-        this(page, null);
+        this(jspPath, null);
     }
 
-    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
-    public JspView(String page, @Nullable ModelClass model)
+    /** @param jspPath path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
+    public JspView(String jspPath, @Nullable ModelClass model)
     {
         super(model);
         setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
-        _path = page;
-        _page = JspLoader.createPage((String)null, page);
+        _path = jspPath;
+        _page = JspLoader.createPage((String)null, jspPath);
 
-        if (_page instanceof AbstractJspBase)
-            addClientDependencies(((AbstractJspBase)_page).getClientDependencies());
+        if (_page instanceof JspBase)
+            addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
     /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
@@ -103,6 +103,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
      * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
      * @param jspName the file name of the JSP, without any path information
      */
+    @Deprecated // Do not use. Use the string constructors instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
     public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model)
     {
         super(model);
@@ -111,8 +113,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _path = jspName;
         _page = JspLoader.createPage(packageClass, jspName);
 
-        if (_page instanceof AbstractJspBase)
-            addClientDependencies(((AbstractJspBase)_page).getClientDependencies());
+        if (_page instanceof JspBase)
+            addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
 
@@ -120,6 +122,8 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
      * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
      * @param jspName the file name of the JSP, without any path information
      */
+    @Deprecated // Do not use. Use the string constructors instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
     public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model, @Nullable Errors errors)
     {
         this(packageClass, jspName, model);

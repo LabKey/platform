@@ -29,9 +29,11 @@
 <%
     UpdateQCStateForm form = (UpdateQCStateForm) HttpView.currentView().getModelBean();
     String currentState = null;
+    String protocolContainerPath = null;
 
     if (form.getRuns().size() == 1)
     {
+        // for single row selections, display the current QC state
         ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
         if (run != null)
         {
@@ -39,6 +41,11 @@
             currentState = state != null ? state.getLabel() : null;
         }
     }
+
+    // get the protocol container to determine the folder where QC states are defined
+    ExpRun expRun = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
+    if (expRun != null)
+        protocolContainerPath = expRun.getProtocol().getContainer().getPath();
 %>
 
 <script type="application/javascript">
@@ -88,6 +95,7 @@
             LABKEY.Query.selectRows({
                 schemaName  : 'core',
                 queryName   : 'qcstate',
+                containerPath : <%=q(protocolContainerPath)%>,
                 scope       : this,
                 columns     : 'rowid, label',
                 success     : function(data){setQCStates(data);},
@@ -138,5 +146,5 @@
     %>
     <labkey:input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
     <labkey:button text="update" submit="false" onclick="saveState();"/>
-    <labkey:button text="cancel" href="<%=h(form.getReturnUrl())%>" onclick="LABKEY.setSubmit(true);"/>
+    <labkey:button text="cancel" href="<%=form.getReturnUrl()%>" onclick="LABKEY.setSubmit(true);"/>
 </labkey:form>

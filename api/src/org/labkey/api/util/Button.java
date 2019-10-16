@@ -15,12 +15,21 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
+import java.util.Map;
+
+import static org.labkey.api.util.DOM.Attribute;
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.DOM.LK.*;
+import static org.labkey.api.util.DOM.Attribute.*;
+
 
 /**
  * Basic button UI element. Might be a simple link, have a JavaScript handler, etc.
@@ -38,35 +47,50 @@ public class Button extends DisplayElement implements HasHtmlString
     // Composable members
     private final String cssClass;
     private final String iconCls;
-    private final String text; // required
+    private final String text;
+    private final HtmlString html; // required
     private final String href;
     private final String onClick;
     private final String id;
-    private final String attributes;
+    private final Map<String, String> attributes;
     private final String tooltip;
     private final String typeCls;
     private final boolean disableOnClick;
     private final boolean dropdown;
     private final boolean enabled;
     private final boolean submit;
-    private final boolean textAsHTML;
+    private final boolean usePost;
+    private final String rel;
+    private final String name;
+    private final String style;
+    private final String confirmMessage;
+    private final String target;
 
     private Button(ButtonBuilder builder)
     {
         this.cssClass = builder.cssClass;
         this.dropdown = builder.dropdown;
-        this.text = builder.text;
-        this.textAsHTML = builder.textAsHTML;
+        this.text     = builder.text;   // used as tooltip if tooltip not provided
+        this.html     = builder.html;
         this.href = builder.href;
         this.onClick = builder.onClick;
         this.iconCls = builder.iconCls;
         this.id = builder.id;
-        this.attributes = builder.attributes;
+        this.attributes = builder.attributes == null ? Collections.emptyMap() : builder.attributes;
         this.disableOnClick = builder.disableOnClick;
         this.enabled = builder.enabled;
         this.submit = builder.submit;
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
+        this.usePost = builder.usePost;
+        this.rel = builder.rel;
+        this.name = builder.name;
+        this.style = builder.style;
+        this.confirmMessage = builder.confirmMessage;
+        this.target = builder.target;
+
+        if (this.usePost && null != this.onClick)
+            throw new IllegalStateException("Can't specify both usePost and onClick");
     }
 
     public String getCssClass()
@@ -79,19 +103,29 @@ public class Button extends DisplayElement implements HasHtmlString
         return text;
     }
 
+    public String getTarget()
+    {
+        return target;
+    }
+
     public boolean isDropdown()
     {
         return dropdown;
     }
 
-    public boolean isTextAsHTML()
-    {
-        return textAsHTML;
-    }
-
     public String getHref()
     {
-        return href;
+        return usePost ? "javascript:void(0);" : href;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public String getRel()
+    {
+        return rel;
     }
 
     public String getOnClick()
@@ -104,12 +138,17 @@ public class Button extends DisplayElement implements HasHtmlString
         return iconCls;
     }
 
+    public String getStyle()
+    {
+        return style;
+    }
+
     public String getId()
     {
         return id;
     }
 
-    public String getAttributes()
+    public Map<String,String> getAttributes()
     {
         return attributes;
     }
@@ -132,13 +171,12 @@ public class Button extends DisplayElement implements HasHtmlString
     private String generateOnClick(String id)
     {
         // prepare onclick method and overrides
-        final String onClick = getOnClick() == null ? "" : getOnClick();
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href, confirmMessage) : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
 
         // quoted CSS classes used in scripting
-        final String qCls = quote + CLS + quote;
         final String qDisabledCls = quote + DISABLEDCLS + quote;
 
         // check if the disabled class is applied, if so, do nothing onclick
@@ -192,74 +230,25 @@ public class Button extends DisplayElement implements HasHtmlString
     public HtmlString getHtmlString()
     {
         boolean iconOnly = getIconCls() != null;
-        StringBuilder sb = new StringBuilder();
         String submitId = GUID.makeGUID();
-        final String text = getText() != null ? (isTextAsHTML() ? getText() : PageFlowUtil.filter(getText())) : null;
+        final String tip = StringUtils.defaultString(tooltip, !iconOnly ? null : StringUtils.trimToNull(getText()));
 
-        if (isSubmit())
-        {
-            sb.append("<input type=\"submit\" tab-index=\"-1\" style=\"position:absolute;left:-9999px;width:1px;height:1px;\" ");
-            sb.append("id=\"").append(submitId).append("\"/>");
-        }
+        var attrs = at(attributes)
+            .id(getId())
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
+            .data("placement", "top")
+            .cl(CLS, typeCls, getCssClass())
+            .cl(!isEnabled(), DISABLEDCLS)
+            .cl(isSubmit(), PRIMARY_CLS)
+            .cl(isDropdown(), "labkey-down-arrow")
+            .cl(iconOnly, "icon-only");
 
-        sb.append("<a class=\"").append(CLS);
-        if (!isEnabled())
-            sb.append(" ").append(DISABLEDCLS);
-
-        if (typeCls != null)
-            sb.append(" ").append(PageFlowUtil.filter(typeCls));
-        else if (isSubmit())
-            sb.append(" ").append(PRIMARY_CLS);
-
-        if (isDropdown())
-            sb.append(" labkey-down-arrow");
-        if (getCssClass() != null)
-            sb.append(" ").append(PageFlowUtil.filter(getCssClass()));
-        if (iconOnly)
-            sb.append(" icon-only");
-        sb.append("\" ");
-        //-- enabled
-
-        // id
-        if (getId() != null)
-            sb.append("id=\"").append(PageFlowUtil.filter(getId())).append("\" ");
-        // -- id
-
-        // href
-        if (getHref() != null)
-            sb.append("href=\"").append(PageFlowUtil.filter(getHref())).append("\" ");
-        //-- href
-
-        // onclick
-        sb.append("onclick=\"").append(PageFlowUtil.filter(generateOnClick(submitId))).append("\" ");
-        //-- onclick
-
-        // attributes -- expected to be pre-filtered
-        sb.append(getAttributes() == null ? "" : getAttributes());
-        //-- attributes
-
-        String tip = tooltip != null ? tooltip : (iconOnly && text != null ? text : null);
-        if (tip != null)
-        {
-            sb.append("data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(tip).append("\" ");
-        }
-
-        sb.append(">");
-
-        if (iconOnly)
-        {
-            sb.append("<i class=\"fa fa-").append(getIconCls()).append("\"></i>");
-            sb.append("</a>"); // for now, just show icon w/o text
-        }
-        else
-        {
-            sb.append("<span>");
-            if (text != null)
-                sb.append(text);
-            sb.append("</span></a>");
-        }
-
-        return HtmlString.unsafe(sb.toString());
+        return createHtmlFragment(
+            isSubmit() ?
+            INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
+            A(attrs, iconOnly ? FA(getIconCls()) : SPAN(html))
+        );
     }
 
     public static class ButtonBuilder extends DisplayElementBuilder<Button, ButtonBuilder>
@@ -269,11 +258,18 @@ public class Button extends DisplayElement implements HasHtmlString
         private boolean dropdown;
         private boolean enabled = true;
         private boolean submit;
-        private boolean textAsHTML;
+        private HtmlString html;
 
         public ButtonBuilder(@NotNull String text)
         {
             this.text = text;
+            this.html = HtmlString.of(text);
+        }
+
+        public ButtonBuilder(@NotNull HtmlString html)
+        {
+            this.text = null;
+            this.html = html;
         }
 
         @Override
@@ -285,13 +281,6 @@ public class Button extends DisplayElement implements HasHtmlString
         public ButtonBuilder dropdown(boolean dropdown)
         {
             this.dropdown = dropdown;
-            return this;
-        }
-
-        @Deprecated // use Map<String, String> version instead
-        public ButtonBuilder attributes(String attributes)
-        {
-            this.attributes = attributes;
             return this;
         }
 
@@ -321,18 +310,6 @@ public class Button extends DisplayElement implements HasHtmlString
         {
             this.submit = submit;
             return this;
-        }
-
-        public ButtonBuilder textAsHTML(boolean textAsHTML)
-        {
-            this.textAsHTML = textAsHTML;
-            return this;
-        }
-
-        @Override
-        public ButtonBuilder usePost()
-        {
-            throw new IllegalStateException("Not yet implemented for ButtonBuilder");
         }
 
         @NotNull

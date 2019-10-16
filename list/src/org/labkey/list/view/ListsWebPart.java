@@ -82,7 +82,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
         if (_narrow)
             renderNarrowView(model, out);
         else
-            include(new JspView<Object>(this.getClass(), "listsWebPart.jsp", model));
+            include(new JspView<Object>("/org/labkey/list/view/listsWebPart.jsp", model));
     }
 
     private void renderNarrowView(ViewContext model, PrintWriter out)

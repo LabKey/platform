@@ -136,7 +136,7 @@ public interface Module extends Comparable<Module>
 
     /**
      * Called on every module in REVERSE dependency order before versionUpdate() is called, as long as at least one module
-     * requires updating.  This is a fine place to drop views and other dependent objects.
+     * requires updating. This is a fine place to drop views and other dependent objects.
      */
     void beforeUpdate(ModuleContext moduleContext);
 
@@ -190,8 +190,8 @@ public interface Module extends Comparable<Module>
     @NotNull Collection<String> getSummary(Container c);
 
     /**
-     * Returns a map of pageflow to controller class (for example, "wiki" -> WikiController) whose
-     * functionality is considered part of this module.  All pageflows in the system
+     * Returns a map of pageflow name to controller class (for example, "wiki" -> WikiController) whose
+     * functionality is considered part of this module. All pageflows in the system
      * must be associated with one (and only one) module.
      *
      * @return A map of pageflow name to controller class
@@ -325,8 +325,8 @@ public interface Module extends Comparable<Module>
     Controller getController(HttpServletRequest request, String name);
 
     /**
-     * return a list of locations to look for static website files.  Files in these directories have no security.
-     * @return
+     * return a list of locations to look for static website files. Files in these directories have no security.
+     * @return a list of static file locations
      */
     @NotNull
     List<File> getStaticFileDirectories();

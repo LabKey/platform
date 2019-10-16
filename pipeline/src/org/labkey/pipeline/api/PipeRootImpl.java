@@ -548,7 +548,7 @@ public class PipeRootImpl implements PipeRoot
     public boolean mayInheritPolicy()
     {
         // configured pipeline roots should not inherit policies from the container, but default pipeline root does
-        return isDefault();
+        return isFileRoot();
     }
 
     public boolean isSearchable()
@@ -637,7 +637,7 @@ public class PipeRootImpl implements PipeRoot
     }
 
     @Override
-    public boolean isDefault()
+    public boolean isFileRoot()
     {
         return ROOT_BASE.files == _defaultRoot;
     }

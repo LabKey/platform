@@ -112,6 +112,7 @@ import org.labkey.api.study.AssaySpecimenConfig;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DataspaceContainerFilter;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -146,12 +147,7 @@ import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
-import org.labkey.study.query.studydesign.StudyProductDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -273,27 +269,13 @@ public class StudyManager
                 // Make sure the misses are cached
                 for (Container studylessChild : siblingsWithNoStudies)
                 {
-                    StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), new CacheLoader<String, Object>()
-                    {
-                        @Override
-                        public Object load(String key, @Nullable Object argument)
-                        {
-                            return Collections.emptyList();
-                        }
-                    });
+                    StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), (key, argument) -> Collections.emptyList());
                 }
 
                 // Make sure the sibling hits are cached
                 for (final Study study : siblingsStudies)
                 {
-                    StudyCache.get(getTableInfo(), study.getContainer(), getCacheId(filterArg), new CacheLoader<String, Object>()
-                    {
-                        @Override
-                        public Object load(String key, @Nullable Object argument)
-                        {
-                            return Collections.singletonList(study);
-                        }
-                    });
+                    StudyCache.get(getTableInfo(), study.getContainer(), getCacheId(filterArg), (key, argument) -> Collections.singletonList(study));
                 }
 
                 return result;
@@ -314,37 +296,11 @@ public class StudyManager
             }
         };
 
-        _visitHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoVisit();
-            }
-        }, VisitImpl.class);
+        _visitHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoVisit(), VisitImpl.class);
 
-//        _locationHelper = new QueryHelper<>(new TableInfoGetter()
-//        {
-//            public TableInfo getTableInfo()
-//            {
-//                return StudySchema.getInstance().getTableInfoSite();
-//            }
-//        }, LocationImpl.class);
+        _assaySpecimenHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoAssaySpecimen(), AssaySpecimenConfigImpl.class);
 
-        _assaySpecimenHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoAssaySpecimen();
-            }
-        }, AssaySpecimenConfigImpl.class);
-
-        _cohortHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoCohort();
-            }
-        }, CohortImpl.class);
+        _cohortHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoCohort(), CohortImpl.class);
 
         /* Whenever we explicitly invalidate a dataset, unmaterialize it as well
          * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
@@ -396,7 +352,7 @@ public class StudyManager
         // NOTE: We really don't want to have multiple instances of DatasetDefinitions in-memory, only return the
         // datasets that are cached under container.containerId/ds.entityId
 
-        private QueryHelper<DatasetDefinition> helper = new QueryHelper<DatasetDefinition>(
+        private QueryHelper<DatasetDefinition> helper = new QueryHelper<>(
                 () -> StudySchema.getInstance().getTableInfoDataset(),
                 DatasetDefinition.class)
         {
@@ -1618,7 +1574,7 @@ public class StudyManager
 
                     int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
                     if (count > 0)
-                        StudyManager.datasetModified(def, user, true);
+                        StudyManager.datasetModified(def, true);
                 }
 
                 for (VisitImpl visit : visits)
@@ -1746,17 +1702,23 @@ public class StudyManager
         {
             return true;
         }
-        if (!location.isRepository() && !location.isClinic() && !location.isSal() && !location.isEndpoint())
-        {   // It has no location type, so allow it
-            return true;
-        }
-        return false;
+        // If it has no location type, allow it
+        return !location.isRepository() && !location.isClinic() && !location.isSal() && !location.isEndpoint();
     }
 
     @Nullable
     public LocationImpl getLocation(Container container, int id)
     {
-//        return _locationHelper.get(container, id);
+        // If a default ID has been registered, just use that
+        Integer defaultSiteId = SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId();
+        if(defaultSiteId != null && id == defaultSiteId.intValue())
+        {
+            LocationImpl location = new LocationImpl(container, "User Request");
+            location.setRowId(defaultSiteId);
+            location.setDescription("User requested location.");
+            return location;
+        }
+
         List<LocationImpl> locations = getLocations(container, new SimpleFilter(FieldKey.fromParts("RowId"), id), null);
         if (!locations.isEmpty())
             return locations.get(0);
@@ -2472,8 +2434,7 @@ public class StudyManager
         }
 
         // Make a copy (it's immutable) so that we can sort it. See issue 17875
-        List<DatasetDefinition> datasets = new ArrayList<>(_datasetHelper.get(study.getContainer(), filter, null));
-        return datasets;
+        return new ArrayList<>(_datasetHelper.get(study.getContainer(), filter, null));
     }
 
 
@@ -2598,22 +2559,17 @@ public class StudyManager
     // domainURI -> <Container,DatasetId>
     private static Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
 
-    private CacheLoader<String, Pair<String, Integer>> loader = new CacheLoader<String, Pair<String, Integer>>()
-    {
-        @Override
-        public Pair<String, Integer> load(String domainURI, Object argument)
-        {
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT Container, DatasetId FROM study.Dataset WHERE TypeURI=?");
-            sql.add(domainURI);
+    private CacheLoader<String, Pair<String, Integer>> loader = (domainURI, argument) -> {
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT Container, DatasetId FROM study.Dataset WHERE TypeURI=?");
+        sql.add(domainURI);
 
-            Map<String, Object> map = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getMap();
+        Map<String, Object> map = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getMap();
 
-            if (null == map)
-                return null;
-            else
-                return new Pair<>((String)map.get("Container"), (Integer)map.get("DatasetId"));
-        }
+        if (null == map)
+            return null;
+        else
+            return new Pair<>((String)map.get("Container"), (Integer)map.get("DatasetId"));
     };
 
 
@@ -2627,12 +2583,15 @@ public class StudyManager
                 return null;
 
             Container c = ContainerManager.getForId(p.first);
-            Study study = StudyManager.getInstance().getStudy(c);
-            if (null != c && null != study)
+            if (c != null)
             {
-                DatasetDefinition ret = StudyManager.getInstance().getDatasetDefinition(study, p.second);
-                if (null != ret && null != ret.getDomain() && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
-                    return ret;
+                Study study = StudyManager.getInstance().getStudy(c);
+                if (null != study)
+                {
+                    DatasetDefinition ret = StudyManager.getInstance().getDatasetDefinition(study, p.second);
+                    if (null != ret && null != ret.getDomain() && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
+                        return ret;
+                }
             }
             domainCache.remove(domainURI);
         }
@@ -2758,17 +2717,12 @@ public class StudyManager
     }
 
 
-    public int purgeDataset(DatasetDefinition dataset, User user)
-    {
-        return purgeDataset(dataset, null, user);
-    }
-
     /**
      * Delete all rows from a dataset or just those newer than the cutoff date.
      */
-    public int purgeDataset(DatasetDefinition dataset, Date cutoff, User user)
+    public int purgeDataset(DatasetDefinition dataset, @Nullable Date cutoff)
     {
-        return dataset.deleteRows(user, cutoff);
+        return dataset.deleteRows(cutoff);
     }
 
     /**
@@ -2976,8 +2930,6 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoSpecimenComment(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoSpecimenComment());
 
-            // study data provisioned tables
-            //deleteStudyDataProvisionedTables(c, user); // NOTE: this looks to be handled by the OntologyManager
             deleteStudyDesignData(c, user, studyDesignTables);
 
             Table.delete(StudySchema.getInstance().getTableInfoTreatmentVisitMap(), containerFilter);
@@ -3023,35 +2975,6 @@ public class StudyManager
         assert verifyAllTablesWereDeleted(deletedTables);
     }
 
-
-    /**
-     * Drops the domains for the provisioned study data tables : Product, Treatment, ProductAntigen
-     * TreatmentProductMap, TreatmentVisitMap...
-     * @param c
-     * @param user
-     */
-    private void deleteStudyDataProvisionedTables(Container c, User user)
-    {
-        StudyProductDomainKind productDomainKind = new StudyProductDomainKind();
-        String productDomainURI = productDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PRODUCT_TABLE_NAME, c, null);
-        StorageProvisioner.drop(PropertyService.get().getDomain(c, productDomainURI));
-
-        StudyProductAntigenDomainKind productAntigenDomainKind = new StudyProductAntigenDomainKind();
-        String productAntigenDomainURI = productAntigenDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME, c, null);
-        StorageProvisioner.drop(PropertyService.get().getDomain(c, productAntigenDomainURI));
-
-        StudyTreatmentProductDomainKind studyTreatmentProductDomainKind = new StudyTreatmentProductDomainKind();
-        String treatmentProductDomainURI = studyTreatmentProductDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME, c, null);
-        StorageProvisioner.drop(PropertyService.get().getDomain(c, treatmentProductDomainURI));
-
-        StudyTreatmentDomainKind studyTreatmentDomainKind = new StudyTreatmentDomainKind();
-        String treatmentDomainURI = studyTreatmentDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.TREATMENT_TABLE_NAME, c, null);
-        StorageProvisioner.drop(PropertyService.get().getDomain(c, treatmentDomainURI));
-
-        StudyPersonnelDomainKind studyPersonnelDomainKind = new StudyPersonnelDomainKind();
-        String personnelDomainURI = studyPersonnelDomainKind.generateDomainURI(StudyQuerySchema.SCHEMA_NAME, StudyQuerySchema.PERSONNEL_TABLE_NAME, c, null);
-        StorageProvisioner.drop(PropertyService.get().getDomain(c, personnelDomainURI));
-    }
 
     private void deleteStudyDesignData(Container c, User user, List<TableInfo> studyDesignTables)
     {
@@ -3150,7 +3073,7 @@ public class StudyManager
         }
 
 
-        return pds.toArray(new ParticipantDataset[pds.size()]);
+        return pds.toArray(new ParticipantDataset[0]);
     }
 
 
@@ -3166,8 +3089,7 @@ public class StudyManager
         //delete that group's role assignments in all dataset policies
         Role restrictedReader = RoleManager.getRole(RestrictedReaderRole.class);
 
-        Set<SecurableResource> resources = new HashSet<>();
-        resources.addAll(getDatasetDefinitions(study));
+        Set<SecurableResource> resources = new HashSet<>(getDatasetDefinitions(study));
 
         Set<UserPrincipal> principals = new HashSet<>();
 
@@ -4314,31 +4236,29 @@ public class StudyManager
      * Called when a dataset has been modified in order to set the modified time, plus any other related actions.
      * @param fireNotification - true to fire the changed notification.
      */
-    public static void datasetModified(DatasetDefinition def, User user, boolean fireNotification)
+    public static void datasetModified(DatasetDefinition def, boolean fireNotification)
     {
         // Issue 19285 - run this as a commit task.  This has the benefit of only running per set of batch changes
         // under the same transaction and only running if the transaction is committed.  If no transaction is active then
         // the code is run immediately
         DbScope scope = StudySchema.getInstance().getScope();
-        scope.addCommitTask(getInstance().getDatasetModifiedRunnable(def, user, fireNotification), CommitTaskOption.POSTCOMMIT);
+        scope.addCommitTask(getInstance().getDatasetModifiedRunnable(def, fireNotification), CommitTaskOption.POSTCOMMIT);
     }
 
-    public Runnable getDatasetModifiedRunnable(DatasetDefinition def, User user, boolean fireNotification)
+    public Runnable getDatasetModifiedRunnable(DatasetDefinition def, boolean fireNotification)
     {
-        return new DatasetModifiedRunnable(def, user, fireNotification);
+        return new DatasetModifiedRunnable(def, fireNotification);
     }
 
     private class DatasetModifiedRunnable implements Runnable
     {
-        private final @NotNull User _user;
         private final @NotNull
         DatasetDefinition _def;
         private final boolean _fireNotification;
 
-        private DatasetModifiedRunnable(@NotNull DatasetDefinition def, @NotNull User user, boolean fireNotification)
+        private DatasetModifiedRunnable(@NotNull DatasetDefinition def, boolean fireNotification)
         {
             _def = def;
-            _user = user;
             _fireNotification = fireNotification;
         }
 
@@ -4371,10 +4291,7 @@ public class StudyManager
             DatasetModifiedRunnable that = (DatasetModifiedRunnable) o;
             if (getDatasetId() != that.getDatasetId())
                 return false;
-            if (!getContainer().equals(that.getContainer()))
-                return false;
-
-            return true;
+            return getContainer().equals(that.getContainer());
         }
 
         @Override

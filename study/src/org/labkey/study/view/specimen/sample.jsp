@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.model.SpecimenComment" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.labkey.study.security.permissions.SetSpecimenCommentsPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.SpecimenEventBean> me = (JspView<SpecimenController.SpecimenEventBean>) HttpView.currentView();
@@ -55,7 +56,7 @@
     </tr>
     <tr>
         <th align="right">Collection Date</th>
-        <td><%=vial.getDrawTimestamp() != null ? formatDateTime(vial.getDrawTimestamp()) : "Unknown"%></td>
+        <td><%=vial.getDrawTimestamp() != null ? formatDateTime(vial.getDrawTimestamp()) : h("Unknown")%></td>
     </tr>
     <tr>
         <th align="right">Collection Location</th>

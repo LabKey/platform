@@ -26,17 +26,13 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.Transient;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -46,6 +42,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE_RENDERER_TYPE;
 
 /**
  * Bean Class for AnnouncementModel.
@@ -181,37 +179,6 @@ public class AnnouncementModel extends Entity implements Serializable
         _parentId = parentId;
     }
 
-    public String getCreatedByName(boolean includeGroups, User currentUser, boolean htmlFormatted, boolean forEmail)
-    {
-        String result = UserManager.getDisplayNameOrUserId(getCreatedBy(), currentUser);
-
-        if (includeGroups)
-        {
-            User user = UserManager.getUser(getCreatedBy());
-
-            if (null != user)
-            {
-                Container container = ContainerManager.getForId(getContainerId());
-                String groupList = SecurityManager.getGroupList(container, user);
-
-                if (htmlFormatted && !forEmail)
-                {
-                    result = "<a class=\"announcement-title-link\" href=\"" +
-                            PageFlowUtil.filter(PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(container, user.getUserId(), null)) +
-                            "\">" + PageFlowUtil.filter(result) + "</a>";
-                }
-
-                if (groupList.length() > 0)
-                    result += " (" + (htmlFormatted ? PageFlowUtil.filter(groupList) : groupList) + ")";
-
-                return result;
-            }
-        }
-
-        return htmlFormatted ? PageFlowUtil.filter(result) : result;
-    }
-
-
     public String getAssignedToName(User currentUser)
     {
         return UserManager.getDisplayNameOrUserId(getAssignedTo(), currentUser);
@@ -257,11 +224,10 @@ public class AnnouncementModel extends Entity implements Serializable
     {
         if (_rendererType == null)
         {
-            WikiService wikiService = WikiService.get();
-            _rendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
+            _rendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
         }
 
-        return null != _rendererType ? _rendererType.name() : "none";
+        return _rendererType.name();
     }
 
     public void setRendererType(String rendererType)
@@ -277,18 +243,15 @@ public class AnnouncementModel extends Entity implements Serializable
 
     private String getFormattedHtml(@Nullable String attachPrefix)
     {
-        WikiService wikiService = WikiService.get();
-
-        if (null == wikiService)
-            return null;
+        WikiRenderingService renderingService = WikiRenderingService.get();
 
         if (_rendererType == null)
-            _rendererType = wikiService.getDefaultMessageRendererType();
+            _rendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
 
         if (null == attachPrefix)
-            return wikiService.getFormattedHtml(_rendererType, _body);
+            return renderingService.getFormattedHtml(_rendererType, _body);
         else
-            return wikiService.getFormattedHtml(_rendererType, _body, attachPrefix, getAttachments());
+            return renderingService.getFormattedHtml(_rendererType, _body, attachPrefix, getAttachments());
     }
 
     public String getStatus()

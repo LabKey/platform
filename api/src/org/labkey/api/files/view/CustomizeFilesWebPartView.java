@@ -208,7 +208,7 @@ public class CustomizeFilesWebPartView extends JspView<CustomizeFilesWebPartView
                 if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK))
                 {
                     PipeRoot root = PipelineService.get().findPipelineRoot(c);
-                    treeFileRoot = FilesWebPart.getRootPath(c, root != null && root.isDefault() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
+                    treeFileRoot = FilesWebPart.getRootPath(c, root != null && root.isFileRoot() ? FileContentService.FILES_LINK : FileContentService.PIPELINE_LINK, null, true);
                 }
                 else if (legacyFileRoot.startsWith(FileContentService.CLOUD_LINK))
                 {

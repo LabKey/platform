@@ -3,6 +3,7 @@
     <parsers>
         <parser class="org.apache.tika.parser.DefaultParser">
             <parser-exclude class="org.apache.tika.parser.asm.ClassParser"/>
+            <parser-exclude class="org.apache.tika.parser.hdf.HDFParser" />   <!--ISSUE 38386: Could take a dependency on: edu.ucar:netcdf-java:${netcdfVersion} -->
         </parser>
     </parsers>
 </properties>

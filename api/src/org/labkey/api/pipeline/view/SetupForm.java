@@ -159,7 +159,7 @@ public class SetupForm extends ReturnUrlForm
         if (parent != null)
         {
             PipeRoot root = PipelineService.get().findPipelineRoot(parent);
-            return root != null && !root.isDefault();
+            return root != null && !root.isFileRoot();
         }
         return false;
     }

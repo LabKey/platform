@@ -15,9 +15,11 @@
  */
 package org.labkey.study.specimen.report.participant;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.specimen.SpecimenController;
@@ -80,14 +82,16 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         return reports;
     }
 
-    public boolean allowsParticipantAggregegates()
+    @Override
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
 
-    public List<Pair<String, String>> getAdditionalFormInputHtml()
+    @Override
+    public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
-        List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
+        List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
         Set<LocationImpl> locations = SpecimenManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);
@@ -105,6 +109,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         _enrollmentSiteId = enrollmentSiteId;
     }
 
+    @Override
     public String getLabel()
     {
         return StudyService.get().getSubjectNounSingular(getContainer()) + " by Enrollment Location";
@@ -116,6 +121,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         return "ParticipantByEnrollmentLocation";
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.ParticipantSiteReportAction.class;

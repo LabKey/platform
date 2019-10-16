@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Location;
 import org.labkey.study.SpecimenManager;
@@ -92,6 +93,7 @@ public class SpecimenRequest extends AbstractStudyCachable<SpecimenRequest> impl
         _destinationSiteId = destinationSiteId;
     }
 
+    @NotNull
     public List<Vial> getVials()
     {
         return SpecimenManager.getInstance().getRequestVials(this);

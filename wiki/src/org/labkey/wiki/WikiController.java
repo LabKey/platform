@@ -342,7 +342,8 @@ public class WikiController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Start Page", getUrl());
+            root.addChild("Start Page", getUrl());
+            return root;
         }
     }
 
@@ -606,8 +607,10 @@ public class WikiController extends SpringActionController
             setHelpTopic("wikiUserGuide#manage");
             if (null == _wikiVersion)
                 _wikiVersion = _wiki.getLatestVersion();
-            return (new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root))
-                    .addChild("Manage \"" + _wikiVersion.getTitle() + "\"");
+            new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root);
+            root.addChild("Manage \"" + _wikiVersion.getTitle() + "\"");
+
+            return root;
         }
 
         public ActionURL getUrl()
@@ -1322,8 +1325,10 @@ public class WikiController extends SpringActionController
             String pageTitle = _wikiversion.getTitle();
             pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiSelectManager.getVersionCount(_wiki) + ")");
 
-            return new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root)
-                    .addChild(pageTitle, getUrl());
+            new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            root.addChild(pageTitle, getUrl());
+
+            return root;
         }
 
         public ActionURL getUrl()
@@ -1430,7 +1435,10 @@ public class WikiController extends SpringActionController
             String pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            return new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root).addChild(pageTitle);
+            new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root);
+            root.addChild(pageTitle);
+
+            return root;
         }
     }
 
@@ -1554,8 +1562,10 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#history");
-            return new PageAction(getViewContext(), _wiki,_wikiversion).appendNavTrail(root).
-                    addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
+            new PageAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            root.addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
+
+            return root;
         }
 
         public ActionURL getUrl()
@@ -1838,35 +1848,6 @@ public class WikiController extends SpringActionController
      }
 
 
-    /**
-     * Don't display a name for CreatedBy "0" (Guest)
-     */
-    public static class DisplayColumnCreatedBy extends DataColumn
-    {
-        public DisplayColumnCreatedBy(ColumnInfo col)
-        {
-            super(col);
-        }
-
-        public Object getValue(RenderContext ctx)
-        {
-            Map rowMap = ctx.getRow();
-            String displayName = (String)rowMap.get("createdBy$displayName");
-            return (null != displayName ? displayName : "Guest");
-        }
-
-        public Class getValueClass()
-        {
-            return String.class;
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            out.write(PageFlowUtil.filter(getValue(ctx).toString()));
-        }
-    }
-
-
     public static class ContainerForm
     {
         private String _id;
@@ -2003,9 +1984,10 @@ public class WikiController extends SpringActionController
         private WikiVersion _wikiVer = null;
         private Wiki _wiki = null;
 
+        @Override
         public ModelAndView getView(EditWikiForm form, BindException errors)
         {
-            //get the wiki
+            //region get the wiki
             Wiki wiki = null;
             WikiVersion curVersion = null;
 
@@ -2018,8 +2000,9 @@ public class WikiController extends SpringActionController
                 }
 
             }
+            //endregion
 
-            //check permissions
+            //region check permissions
             BaseWikiPermissions perms = getPermissions();
 
             if (null == wiki)
@@ -2041,8 +2024,9 @@ public class WikiController extends SpringActionController
                 if (!perms.allowUpdate(wiki))
                     throw new UnauthorizedException("You do not have permissions to edit this wiki page!");
             }
+            //endregion
 
-            //get the user's editor preference
+            //region get the user's editor preference
             Map<String, String> properties = PropertyManager.getProperties(getUser(),
                     getContainer(), SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE);
             boolean useVisualEditor = !("false".equalsIgnoreCase(properties.get(SetEditorPreferenceAction.PROP_USE_VISUAL_EDITOR)));
@@ -2054,14 +2038,17 @@ public class WikiController extends SpringActionController
             WikiEditModel model = new WikiEditModel(getContainer(), wiki, curVersion,
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
                     form.getWebPartId(), getUser());
+            //endregion
 
-            //stash the wiki so we can build the nav trail
+            //region stash the wiki so we can build the nav trail
             _wiki = wiki;
             _wikiVer = curVersion;
+            //endregion
 
             return new JspView<>("/org/labkey/wiki/view/wikiEdit.jsp", model);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#edit");
@@ -2069,10 +2056,15 @@ public class WikiController extends SpringActionController
             {
                 ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getContainer());
                 pageUrl.addParameter("name", _wiki.getName());
-                return root.addChild(_wikiVer.getTitle(), pageUrl).addChild("Edit");
+                root.addChild(_wikiVer.getTitle(), pageUrl);
+                root.addChild("Edit");
             }
             else
-                return root.addChild("New Page");
+            {
+                root.addChild("New Page");
+            }
+
+            return root;
         }
     }
 
@@ -2484,7 +2476,6 @@ public class WikiController extends SpringActionController
                 names = Collections.emptyList();
             else
                 names = Arrays.asList(deleteNames);
-
             String message = getWikiManager().updateAttachments(getUser(), wiki, names, getAttachmentFileList());
 
             if (null != message)

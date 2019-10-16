@@ -91,7 +91,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.ExperimentListenerImpl;
@@ -345,9 +345,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
-        WikiService wikiService = WikiService.get();
-        if(null != wikiService)
-            wikiService.registerMacroProvider("study", new StudyMacroProvider());
+        WikiRenderingService wikiService = WikiRenderingService.get();
+        wikiService.registerMacroProvider("study", new StudyMacroProvider());
         registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
         AuditLogService.get().registerAuditType(new AssayAuditProvider());

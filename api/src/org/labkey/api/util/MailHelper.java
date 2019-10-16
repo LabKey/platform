@@ -23,6 +23,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
@@ -59,6 +60,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -86,14 +88,26 @@ public class MailHelper
         {
             try
             {
-                InitialContext ctx = new InitialContext();
-                Context envCtx = (Context) ctx.lookup("java:comp/env");
-                _session = (Session) envCtx.lookup("mail/Session");
+                /* first check if specified in startup properties */
+                var config = ModuleLoader.getInstance().getConfigProperties("mail_smtp");
+                var properties = new Properties();
+                config.forEach(p -> properties.put("mail.smtp." + p.getName(), p.getValue()));
+                if (!properties.isEmpty())
+                {
+                    _session = Session.getInstance(properties);
+                }
+                else
+                {
+                    /* check if specified in tomcat config */
+                    InitialContext ctx = new InitialContext();
+                    Context envCtx = (Context) ctx.lookup("java:comp/env");
+                    _session = (Session) envCtx.lookup("mail/Session");
+                }
 
                 if ("true".equalsIgnoreCase(_session.getProperty("mail.smtp.ssl.enable")) ||
                     "true".equalsIgnoreCase(_session.getProperty("mail.smtp.starttls.enable")))
                 {
-                    setSession(Session.getInstance(_session.getProperties(), new Authenticator() {
+                    _session = Session.getInstance(_session.getProperties(), new Authenticator() {
                         @Override
                         protected PasswordAuthentication getPasswordAuthentication()
                         {
@@ -102,7 +116,7 @@ public class MailHelper
 
                             return new PasswordAuthentication(username, password);
                         }
-                    }));
+                    });
                 }
             }
             catch (Exception e)

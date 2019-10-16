@@ -18,7 +18,6 @@ package org.labkey.study.controllers;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;

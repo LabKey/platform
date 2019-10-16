@@ -119,7 +119,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             return NO_TERMS;
 
         WikiService service = WikiService.get();
-        //No wiki service. Must be in weird state. Don't do terms here...
+        //No wiki service. Wiki module most not be present. Don't do terms here...
         if (null == service)
             return NO_TERMS;
 

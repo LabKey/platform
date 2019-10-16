@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.element.DisplayField;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.element.TextArea;
@@ -162,6 +163,11 @@ public class InputTag extends SimpleTagBase
     public void setState(String state)
     {
         this.state = state;
+    }
+
+    public void setContextContent(HtmlString contextContent)
+    {
+        this.contextContent = contextContent.toString();
     }
 
     public void setContextContent(String contextContent)

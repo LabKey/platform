@@ -616,7 +616,7 @@ public class RReport extends ExternalScriptEngineReport
          */
         for (String includedReport : ((RReportDescriptor)getDescriptor()).getIncludedReports())
         {
-            ReportIdentifier reportId = ReportService.get().getReportIdentifier(includedReport);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(includedReport, context.getUser(), context.getContainer());
 
             if (reportId != null)
             {

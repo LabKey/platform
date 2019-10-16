@@ -419,16 +419,14 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         else
         {
             ActionURL url = projectURLProvider.getHidePortalPageURL(container, portalPageId, ctx.getActionURL());
-            NavTree hide = new NavTree("Hide");
-            hide.setScript(PageFlowUtil.postOnClickJavaScript(url));
+            NavTree hide = new NavTree("Hide", url).usePost();
             menu.addChild(hide);
         }
 
         if (portalPage.isCustomTab())
         {
             ActionURL url = projectURLProvider.getDeletePortalPageURL(container, portalPageId, ctx.getActionURL());
-            NavTree delete = new NavTree("Delete");
-            delete.setScript(PageFlowUtil.postOnClickJavaScript(url));
+            NavTree delete = new NavTree("Delete", url).usePost();
             menu.addChild(delete);
         }
 

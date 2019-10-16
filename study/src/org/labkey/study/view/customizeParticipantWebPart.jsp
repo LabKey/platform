@@ -26,7 +26,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.view.SubjectDetailsWebPartFactory" %>
 <%@ page import="java.util.EnumSet" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -55,7 +55,7 @@
         <td>
             <labkey:autoCompleteText name="<%= SubjectDetailsWebPartFactory.PARTICIPANT_ID_KEY %>"
                                      url="<%=ptidCompletionBase%>"
-                                     value="<%=h(participantId)%>"/>
+                                     value="<%=participantId%>"/>
         </td>
     </tr>
     <tr>

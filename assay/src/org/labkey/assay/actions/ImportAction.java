@@ -144,7 +144,7 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
 
         for (String fileName : files)
         {
-            if (fileName.indexOf("/") != -1 || fileName.indexOf("\\") != -1)
+            if (fileName.contains("/") || fileName.contains("\\"))
             {
                 throw new NotFoundException(fileName);
             }

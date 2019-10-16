@@ -180,8 +180,10 @@
                         <table>
                             <tr>
                                 <td>
-                                    <input type="checkbox" id="<%=ID_PREFIX%>showAttachments"/>
-                                    Show Attached Files
+                                    <label>
+                                        <input type="checkbox" id="<%=ID_PREFIX%>showAttachments"/>
+                                        Show Attached Files
+                                    </label>
                                 </td>
                             </tr>
                         </table>

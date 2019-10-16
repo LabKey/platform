@@ -44,7 +44,7 @@
         titleLabel = "Optional title for the Issues Summary web part.";
     }
 %>
-<labkey:form method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
+<labkey:form method="post" action="<%=webPart.getCustomizePostURL(context)%>">
     <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Issue List Definition:</td>

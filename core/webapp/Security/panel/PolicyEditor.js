@@ -261,7 +261,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         var me = this;
         for (r=0; r < this.roles.length; r++){
             role = this.roles[r];
-            var isDeveloper = -1!==role.uniqueName.indexOf("Developer") || -1!==role.uniqueName.indexOf("Analyst")
+            const isDeveloper = (-1 !== role.uniqueName.indexOf("Developer")) || ((-1 !== role.uniqueName.indexOf("Analyst")) && (-1 === role.uniqueName.indexOf("QCAnalyst")));
             roleRows.push({
                 layout: 'hbox',
                 itemId: role.uniqueName.replace(/\./g, '_'),

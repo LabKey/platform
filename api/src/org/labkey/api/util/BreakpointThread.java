@@ -35,6 +35,7 @@ public class BreakpointThread extends Thread implements ShutdownListener
         ContextListener.addShutdownListener(this);
     }
 
+    @Override
     public void run()
     {
         while (!_shutdown)
@@ -48,18 +49,20 @@ public class BreakpointThread extends Thread implements ShutdownListener
     }
 
 
+    @Override
     public void shutdownPre()
     {
         _shutdown = true;
         interrupt();
     }
 
+    @Override
     public void shutdownStarted()
     {
         try
         {
             join(2000);
         }
-        catch (InterruptedException e) {}
+        catch (InterruptedException ignored) {}
     }
 }

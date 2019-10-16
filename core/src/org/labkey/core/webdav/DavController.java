@@ -5992,14 +5992,14 @@ public class DavController extends SpringActionController
 
             if ("html".equals(getViewContext().getRequest().getParameter("listing")))
             {
-                JspView<ListPage> v = new JspView<>(DavController.class, "list.jsp", page);
+                JspView<ListPage> v = new JspView<>("/org/labkey/core/webdav/list.jsp", page);
                 v.setFrame(WebPartView.FrameType.NONE);
                 PrintTemplate print = new PrintTemplate(getViewContext(), v, config);
                 print.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
             else
             {
-                JspView<ListPage> v = new JspView<>(DavController.class, "davListing.jsp", page);
+                JspView<ListPage> v = new JspView<>("/org/labkey/core/webdav/davListing.jsp", page);
                 config.addClientDependencies(v.getClientDependencies());
 
                 DefaultModelAndView template = new AppTemplate(getViewContext(), v, config);

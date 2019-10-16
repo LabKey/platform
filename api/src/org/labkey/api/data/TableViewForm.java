@@ -31,11 +31,13 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -58,6 +60,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
 
 /**
  * Basic form for handling posts into views.
@@ -404,6 +408,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
+        RemapCache cache = new RemapCache();        // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
 
         for (String propName : keys)
         {
@@ -467,10 +472,31 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             }
             catch (ConversionException e)
             {
-                String error = SpringActionController.ERROR_CONVERSION;
-                if (null != propType)
-                    error += "." + propType.getSimpleName();
-                errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
+                boolean skipError = false;
+
+                if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+                {
+                    ColumnInfo col = getColumnByFormFieldName(propName);
+                    if (col != null && col.getFk() != null)
+                    {
+                        ForeignKey fk = col.getFk();
+                        Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, str);
+
+                        if (remappedValue != null)
+                        {
+                            values.put(propName, remappedValue);
+                            skipError = true;
+                        }
+                    }
+                }
+
+                if (!skipError)
+                {
+                    String error = SpringActionController.ERROR_CONVERSION;
+                    if (null != propType)
+                        error += "." + propType.getSimpleName();
+                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
+                }
             }
         }
 
@@ -746,7 +772,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         if (_isBulkUpdate)
         {
-            Set<String> selected = DataRegionSelection.getSelected(context, null, true, false);
+            Set<String> selected = DataRegionSelection.getSelected(context, null, false);
             _selectedRows = selected.toArray(new String[selected.size()]);
         }
         else

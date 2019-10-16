@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -76,8 +77,11 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
 
     protected BaseColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
     {
-        var ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
-        ret.setFk(new LineageForeignKey(table.getUserSchema(), table, inputs));
+        var ret = table.wrapColumn(alias, table.getRealTable().getColumn("objectid"));
+        if (1==1) // use LineageDisplayColumn
+            ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs));
+        else    // use MultiValueForeignKey
+            ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(),new SQLFragment("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs));
         ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);

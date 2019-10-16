@@ -35,6 +35,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Selector that is driven by SQL, which subclasses can control how it's interpreted (LabKey SQL, raw DB SQL, etc)
+ */
 public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends SqlExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector<SELECTOR>
 {
     int _maxRows = Table.ALL_ROWS;

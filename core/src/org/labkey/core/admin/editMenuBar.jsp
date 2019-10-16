@@ -16,10 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -34,11 +34,7 @@
         <p style="font-weight: bold"> Entering Page Admin Mode is necessary to change webparts.</p>
     <%}%>
     <p>
-        <%if (!isAdminMode){%>
-            <a href="javascript:void(0)" class="btn btn-primary" onclick="<%=PageFlowUtil.postOnClickJavaScript(toggleUrl)%>">Enter Admin Mode</a>
-        <%} else {%>
-            <a href="javascript:void(0)" class="btn btn-primary" onclick="<%=PageFlowUtil.postOnClickJavaScript(toggleUrl)%>">Exit Admin Mode</a>
-        <%}%>
+        <%=button((isAdminMode ? "Exit" : "Enter") + " Admin Mode").href(toggleUrl).usePost().primary(true)%>
         <%= button("Refresh Menu Bar").href(refreshURL) %>
     </p>
     <div style="padding: 8px 0;">

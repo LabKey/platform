@@ -36,6 +36,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -119,6 +120,7 @@ import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
@@ -126,6 +128,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
+import org.labkey.api.util.HtmlString;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -352,7 +355,8 @@ public class StudyController extends BaseStudyController
 
         sb.append(getVisitLabelPlural());
 
-        return root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
+        root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
+        return root;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -722,7 +726,7 @@ public class StudyController extends BaseStudyController
             {
                 String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
 
-                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
+                ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId, getViewContext().getUser(), getViewContext().getContainer());
                 if (identifier != null)
                     _report = identifier.getReport(getViewContext());
             }
@@ -860,7 +864,7 @@ public class StudyController extends BaseStudyController
                 if (def != null &&
                     QueryService.get().getCustomView(getUser(), getContainer(), getUser(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
                 {
-                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
+                    ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null && reportId.getReport(getViewContext()) != null)
                     {
                         ActionURL newURL = url.clone().deleteParameter(DATASET_VIEW_NAME_PARAMETER_NAME).
@@ -1716,7 +1720,6 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors)
         {
-
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
             QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, StudyQuerySchema.LOCATION_TABLE_NAME);
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
@@ -2505,10 +2508,10 @@ public class StudyController extends BaseStudyController
 
             // TODO need a shorthand for this check
             if (_def.isShared() && _def.getContainer().equals(_def.getDefinitionContainer()))
-                return new HtmlView("Error", "Cannot insert dataset data in this folder.  Use a sub-study to import data.", form.getDatasetId());
+                return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
-                return new HtmlView("Error", "Dataset is not yet defined. <a href=\"datasetDetails.view?id=%d\">Show Dataset Details</a>", form.getDatasetId());
+            throw new NotFoundException("Dataset is not yet defined.");
 
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
@@ -2675,7 +2678,7 @@ public class StudyController extends BaseStudyController
                 @Override
                 public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                 {
-                    out.write(PageFlowUtil.textLink("Download Data File", "downloadTsv.view?id=" + ctx.get("RowId")));
+                    out.write(PageFlowUtil.link("Download Data File").href("downloadTsv.view?id=" + ctx.get("RowId")).toString());
                 }
             };
             dr.addDisplayColumn(dc);
@@ -2866,7 +2869,7 @@ public class StudyController extends BaseStudyController
                     StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
-            def.deleteRows(getUser(), allLsids);
+            def.deleteRows(allLsids);
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
@@ -2934,7 +2937,7 @@ public class StudyController extends BaseStudyController
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, true, false);
+                Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), null, false);
                 List<Map<String, Object>> keys = new ArrayList<>(lsids.size());
                 for (String lsid : lsids)
                     keys.add(Collections.singletonMap("lsid", lsid));
@@ -3599,9 +3602,9 @@ public class StudyController extends BaseStudyController
             }
             Set<String> lsids = null;
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
-                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+                lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No data rows selected.  " + PageFlowUtil.textLink("back", "javascript:back()"));
+                return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser(), true);
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
@@ -3643,7 +3646,7 @@ public class StudyController extends BaseStudyController
         {
             if (!updateQCForm.isUpdate())
                 return false;
-            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), true, false);
+            Set<String> lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
 
             QCState newState = null;
             if (updateQCForm.getNewState() != null)
@@ -3683,6 +3686,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DatasetServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService() throws IllegalStateException
         {
             return new DatasetServiceImpl(getViewContext(), getStudyThrowIfNull(), StudyManager.getInstance());
@@ -3707,10 +3711,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ResetPipelineAction extends FormHandlerAction<ResetPipelinePathForm>
     {
+        @Override
         public void validateCommand(ResetPipelinePathForm form, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ResetPipelinePathForm form, BindException errors) throws Exception
         {
             for (File f : form.getValidatedFiles(getContainer()))
@@ -3723,6 +3729,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public URLHelper getSuccessURL(ResetPipelinePathForm form)
         {
             String redirect = form.getRedirect();
@@ -3744,6 +3751,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DefaultDatasetReportAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             ViewContext context = getViewContext();
@@ -3759,7 +3767,7 @@ public class StudyController extends BaseStudyController
                 String defaultView = getDefaultView(context, datasetId);
                 if (!StringUtils.isEmpty(defaultView))
                 {
-                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView);
+                    ReportIdentifier reportId = ReportService.get().getReportIdentifier(defaultView, getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null)
                         url.addParameter(DATASET_REPORT_ID_PARAMETER_NAME, defaultView);
                     else
@@ -3779,14 +3787,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageUndefinedTypesAction extends SimpleViewAction
     {
-        StudyImpl study;
-
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            study = getStudyRedirectIfNull();
-            return new StudyJspView<>(study, "manageUndefinedTypes.jsp", o, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "manageUndefinedTypes.jsp", o, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
@@ -3794,9 +3801,13 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    // TODO: Delete? Doesn't seem to be used. Dataset import "Download Template" button invokes query-exportExcelTemplate.
     @RequiresPermission(ReadPermission.class)
+    @DeprecatedAction
+    @RemoveIn20_1
     public class TemplateAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             Study study = getStudyThrowIfNull();
@@ -3830,7 +3841,7 @@ public class StudyController extends BaseStudyController
                 else // DATE or NONE
                     ignoreColumns.add("Date");
             }
-            if (def.getKeyManagementType() == Dataset.KeyManagementType.None)
+            if (def.getKeyManagementType() == KeyManagementType.None)
             {
                 // Do not include a server-managed key field
                 ignoreColumns.add(def.getKeyPropertyName());
@@ -3891,6 +3902,7 @@ public class StudyController extends BaseStudyController
             return _defaultView;
         }
 
+        @SuppressWarnings("unused")
         public void setDefaultView(String defaultView)
         {
             _defaultView = "defaultGrid".equals(defaultView) ? "" : defaultView;
@@ -3898,51 +3910,46 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ViewPreferencesAction extends SimpleViewAction<ViewPreferencesForm>
+    public class ViewPreferencesAction extends FormViewAction<ViewPreferencesForm>
     {
         private StudyImpl _study;
         private Dataset _def;
 
-        public ModelAndView getView(ViewPreferencesForm form, BindException errors)
+        private int init(ViewPreferencesForm form)
         {
-            _study = getStudyRedirectIfNull();
-
             int dsid = form.getDatasetId();
-            String defaultView = form.getDefaultView();
-
+            _study = getStudyRedirectIfNull();
             _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+            return dsid;
+        }
+
+        @Override
+        public ModelAndView getView(ViewPreferencesForm form, boolean reshow, BindException errors) throws Exception
+        {
+            init(form);
             if (_def != null)
             {
                 List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
-                if (defaultView != null)
-                {
-                    setDefaultView(dsid, defaultView);
-                }
-                else
-                {
-                    defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
-                    if (!StringUtils.isEmpty(defaultView))
-                    {
-                        boolean defaultExists = false;
-                        for (Pair<String, String> view : views)
-                        {
-                            if (StringUtils.equals(view.getValue(), defaultView))
-                            {
-                                defaultExists = true;
-                                break;
-                            }
-                        }
-                        if (!defaultExists)
-                            setDefaultView(dsid, "");
-                    }
-                }
-
                 ViewPrefsBean bean = new ViewPrefsBean(views, _def);
                 return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
             }
             throw new NotFoundException("Invalid dataset ID");
         }
 
+        @Override
+        public boolean handlePost(ViewPreferencesForm form, BindException errors) throws Exception
+        {
+            int dsid = init(form);
+            String defaultView = form.getDefaultView();
+            if ((_def != null) && (defaultView != null))
+            {
+                setDefaultView(dsid, defaultView);
+                return true;
+            }
+            throw new NotFoundException("Invalid dataset ID");
+        }
+
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("Set Default"));
@@ -3958,6 +3965,12 @@ public class StudyController extends BaseStudyController
             root.addChild(new NavTree("Preferences"));
             return root;
         }
+
+        @Override
+        public URLHelper getSuccessURL(ViewPreferencesForm viewPreferencesForm) { return null; }
+
+        @Override
+        public void validateCommand(ViewPreferencesForm target, Errors errors) { }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -3965,6 +3978,7 @@ public class StudyController extends BaseStudyController
     {
         private String path;
 
+        @Override
         public ModelAndView getView(PipelinePathForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
@@ -4004,6 +4018,7 @@ public class StudyController extends BaseStudyController
                     getStudyRedirectIfNull(), "importStudyBatch.jsp", new ImportStudyBatchBean(reader, path), errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
@@ -4066,6 +4081,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ImportStudyFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
+        @Override
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
@@ -4088,23 +4104,16 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    private static class PipelineSetupView extends JspView<String>
-    {
-        private PipelineSetupView(String actionDescription)
-        {
-            super("/org/labkey/study/view/pipelineSetup.jsp", actionDescription);
-        }
-    }
-
-
     @RequiresPermission(ReadPermission.class)
     public class TypeNotFoundAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new StudyJspView<StudyImpl>(getStudyRedirectIfNull(), "typeNotFound.jsp", null, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Type Not Found");
@@ -4149,6 +4158,7 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
@@ -4867,7 +4877,7 @@ public class StudyController extends BaseStudyController
                         if (jdataset.has("keyPropertyManaged") && jdataset.getBoolean("keyPropertyManaged"))
                         {
                             dataset = dataset.createMutable();
-                            dataset.setKeyManagementType(Dataset.KeyManagementType.RowId);
+                            dataset.setKeyManagementType(KeyManagementType.RowId);
                             StudyManager.getInstance().updateDatasetDefinition(getUser(), dataset);
                         }
 
@@ -5065,7 +5075,7 @@ public class StudyController extends BaseStudyController
                 // if this snapshot is being created from an existing dataset, copy key field settings
                 int datasetId = NumberUtils.toInt(getViewContext().getActionURL().getParameter(DatasetDefinition.DATASETKEY), -1);
                 String additionalKey = null;
-                DatasetDefinition.KeyManagementType keyManagementType = Dataset.KeyManagementType.None;
+                DatasetDefinition.KeyManagementType keyManagementType = KeyManagementType.None;
                 boolean isDemographicData = false;
                 boolean useTimeKeyField = false;
                 List<ColumnInfo> columnsToProvision = new ArrayList<>();
@@ -5081,7 +5091,7 @@ public class StudyController extends BaseStudyController
                         useTimeKeyField = sourceDef.getUseTimeKeyField();
 
                         // make sure we provision any managed key fields
-                        if ((additionalKey != null) && (keyManagementType != Dataset.KeyManagementType.None))
+                        if ((additionalKey != null) && (keyManagementType != KeyManagementType.None))
                         {
                             TableInfo sourceTable = sourceDef.getTableInfo(getUser());
                             ColumnInfo col = sourceTable.getColumn(FieldKey.fromParts(additionalKey));
@@ -5096,7 +5106,7 @@ public class StudyController extends BaseStudyController
                 if (def != null)
                 {
                     form.setSnapshotDatasetId(def.getDatasetId());
-                    if (keyManagementType != Dataset.KeyManagementType.None)
+                    if (keyManagementType != KeyManagementType.None)
                     {
                         def = def.createMutable();
                         def.setKeyManagementType(keyManagementType);
@@ -6322,10 +6332,9 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DatasetDetailRedirectAction extends RedirectAction<DatasetDetailRedirectForm>
+    public class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
-        @Override
-        public URLHelper getURL(DatasetDetailRedirectForm form, Errors errors)
+        public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             if (study == null)
@@ -7079,7 +7088,7 @@ public class StudyController extends BaseStudyController
                     case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false);
+                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
 
                         if (def != null)
                         {
@@ -7096,7 +7105,7 @@ public class StudyController extends BaseStudyController
                         break;
                     case placeHolder:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false);
+                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
                         if (def != null)
                         {
                             def.provisionTable();

@@ -42,7 +42,7 @@ import java.util.TreeMap;
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable, HasResolvedTables
 {
     QueryRelation _relation;
-    private ContainerFilter _containerFilter;
+
 
     public QueryTableInfo(QueryRelation relation, String name)
     {
@@ -91,24 +91,19 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
     public void setContainerFilter(@NotNull ContainerFilter containerFilter)
     {
-        checkLocked();
-        ContainerFilter.logSetContainerFilter(containerFilter, "Query", StringUtils.defaultString(_relation._query._name, "anonymous"));
-        _containerFilter = containerFilter;
-        _relation.setContainerFilter(containerFilter);
+        throw new UnsupportedOperationException();
     }
 
     public boolean hasDefaultContainerFilter()
     {
-        return _containerFilter == null;
+        return null!=getUserSchema() && getContainerFilter() == getUserSchema().getDefaultContainerFilter();
     }
 
     @NotNull
     @Override
     public ContainerFilter getContainerFilter()
     {
-        if (_containerFilter == null)
-            return ContainerFilter.CURRENT;
-        return _containerFilter;
+        return _relation._query.getContainerFilter();
     }
 
     public boolean hasSort()
@@ -186,5 +181,11 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public Set<SchemaKey> getResolvedTables()
     {
         return _relation.getResolvedTables();
+    }
+
+    @Override
+    public boolean allowQueryTableURLOverrides()
+    {
+        return true;
     }
 }

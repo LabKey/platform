@@ -18,6 +18,7 @@ package org.labkey.core.view.template.bootstrap;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -532,7 +533,7 @@ public class ViewServiceImpl implements ViewService
                         {
                             try
                             {
-                                link.setText(link.getText());
+                                link.setText(link.getText());  // Huh? Looks like a total no-op to me.
                                 PopupMenu more = new PopupMenu(link, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
                                 more.setOffset("-7");
                                 more.render(out);
@@ -542,20 +543,16 @@ public class ViewServiceImpl implements ViewService
                                 throw new RuntimeException(e);
                             }
                         }
-                        out.print(sep);
-                        String linkHref = link.getHref();
-                        String linkText = link.getText();
 
-                        if (null != linkHref && 0 < linkHref.length())
+                        out.print(sep);
+
+                        if (StringUtils.isNotEmpty(link.getHref()) || null != link.getScript())
                         {
-                            out.print("<a href=\"" + linkHref + "\"");
-                            if (link.isNoFollow())
-                                out.print(" rel=\"nofollow\"");
-                            out.print(">" + linkText + "</a>");
-                        }
-                        else if (link.getScript() != null)
-                        {
-                            out.print("<a onClick=\"" + PageFlowUtil.filter(link.getScript()) + "\">" + linkText + "</a>");
+                            // Display this NavTree as a simple link. Delegate to LinkBuilder to avoid replicating all its rendering code.
+                            final Link.LinkBuilder lb = link.toLinkBuilder();
+                            lb.clearClasses();
+
+                            out.println(lb);
                         }
                     }
                     out.print("</div>");

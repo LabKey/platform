@@ -30,8 +30,8 @@
 <p>You are running the Enterprise Pipeline.</p>
 <p>
     <labkey:button text="Force Status Refresh" href="<%= new ActionURL(StatusController.ForceRefreshAction.class, ContainerManager.getRoot()) %>" />
-    <labkey:helpPopup title="Force Status Refresh">Under normal operations, this should not be required, but if there were network problems
-    that prevented a callback with status information, this can update a job.</labkey:helpPopup>
+    <%=helpPopup("Force Status Refresh",
+        "Under normal operations, this should not be required, but if there were network problems that prevented a callback with status information, this can update a job.")%>
 </p>
 Your configuration references the following execution locations:
 <ul>

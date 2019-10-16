@@ -124,7 +124,6 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
 import org.springframework.beans.PropertyValues;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindException;
@@ -146,6 +145,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE_RENDERER_TYPE;
 
 /**
  * Shows a set of announcementModels or bulletin board items with replies.
@@ -247,7 +248,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
+            root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
+            return root;
         }
     }
 
@@ -275,7 +277,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
+            root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
+            return root;
         }
     }
 
@@ -942,9 +945,12 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
-                             .addChild("Respond to " + getSettings().getConversationName());
+            NavTree child = new BeginAction(getViewContext()).appendNavTrail(root);
+            if (_parent != null)
+            {
+                child.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
+                        .addChild("Respond to " + getSettings().getConversationName());
+            }
             return root;
         }
     }
@@ -1082,7 +1088,6 @@ public class AnnouncementsController extends SpringActionController
             Container c = getViewContext().getContainer();
 
             // In reshow case we leave all form values as is so user can correct the errors.
-            WikiService wikiService = WikiService.get();
             WikiRendererType currentRendererType;
             Integer assignedTo;
 
@@ -1092,8 +1097,8 @@ public class AnnouncementsController extends SpringActionController
             {
                 String rendererTypeName = (String) form.get("rendererType");
 
-                if (null == rendererTypeName && null != wikiService)
-                    currentRendererType = wikiService.getDefaultMessageRendererType();
+                if (null == rendererTypeName)
+                    currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 else
                     currentRendererType = WikiRendererType.valueOf(rendererTypeName);
 
@@ -1109,7 +1114,7 @@ public class AnnouncementsController extends SpringActionController
 
                 String expires = DateUtil.formatDate(c, cal.getTime());
                 form.set("expires", expires);
-                currentRendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
+                currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 assignedTo = settings.getDefaultAssignedTo();
             }
             else
@@ -1332,6 +1337,7 @@ public class AnnouncementsController extends SpringActionController
     {
         private String _title;
 
+        @Override
         public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
         {
             ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());
@@ -1358,6 +1364,7 @@ public class AnnouncementsController extends SpringActionController
             return tv;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).appendNavTrail(root).addChild(_title, getActionURL());
@@ -1605,7 +1612,7 @@ public class AnnouncementsController extends SpringActionController
             MessageConfigService.ConfigTypeProvider provider = form.getProvider();
             String srcIdentifier = getContainer().getId();
 
-            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
+            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true);
 
             if (!selections.isEmpty() && provider != null)
             {
@@ -2129,8 +2136,14 @@ public class AnnouncementsController extends SpringActionController
 
             ListBean bean = new ListBean(c, url, user, settings, perm, displayAll);
             NavTree menu = new NavTree("");
+            ViewContext context = getViewContext();
+            boolean isAdminMode = PageFlowUtil.isPageAdminMode(context);
 
-            addAdminMenus(bean, menu, getViewContext());
+            if ((bean.emailPrefsURL != null) && !isAdminMode)
+                menu.addChild("Email Preferences", bean.emailPrefsURL);
+
+            if (isAdminMode)
+                addAdminMenus(bean, menu, getViewContext());
 
             setNavMenu(menu);
         }
@@ -2581,7 +2594,7 @@ public class AnnouncementsController extends SpringActionController
                         url.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                         url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                         url.addParameter("unsubscribe", true);
-                        buttons.addChild("unsubscribe").setScript(PageFlowUtil.postOnClickJavaScript(url));
+                        buttons.addChild("unsubscribe", url).usePost();
                     }
                     else
                     {
@@ -2619,7 +2632,7 @@ public class AnnouncementsController extends SpringActionController
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                             subscribeThreadURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                            subscribeTree.addChild("thread").setScript(PageFlowUtil.postOnClickJavaScript(subscribeThreadURL));
+                            subscribeTree.addChild("thread", subscribeThreadURL).usePost();
                             buttons.addChild(subscribeTree);
                         }
                     }
@@ -2816,7 +2829,8 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
+            root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
+            return root;
         }
 
         @Override

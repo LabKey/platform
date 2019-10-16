@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 /**
+ * A DocumentWriter that holds its contents in memory as a byte array such that it can be cached for reuse
  * User: jeckels
  * Date: Nov 18, 2005
  */
@@ -64,21 +65,25 @@ public class CacheableWriter implements DocumentWriter
         _contentType = contentType;
     }
 
+    @Override
     public void setContentType(String contentType)
     {
         _contentType = contentType;
     }
 
+    @Override
     public void setContentDisposition(String value)
     {
         _disposition = value;
     }
 
+    @Override
     public void setContentLength(int size)
     {
         _size = size;
     }
 
+    @Override
     public OutputStream getOutputStream()
     {
         return _bOut;

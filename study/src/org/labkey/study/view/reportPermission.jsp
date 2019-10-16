@@ -19,22 +19,21 @@
 <%@ page import="org.labkey.api.reports.Report"%>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.Group"%>
+<%@ page import="org.labkey.api.security.RoleAssignment"%>
 <%@ page import="org.labkey.api.security.SecurityManager"%>
 <%@ page import="org.labkey.api.security.SecurityPolicy"%>
 <%@ page import="org.labkey.api.security.SecurityPolicyManager"%>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
-<%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.RoleAssignment" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!

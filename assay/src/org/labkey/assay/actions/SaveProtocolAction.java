@@ -40,6 +40,8 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
         boolean isNew = protocol.getProtocolId() == null || protocol.getProtocolId() == 0;
         if (isNew)
         {
+            if (protocol.getName() == null)
+                throw new IllegalArgumentException("Name is required to create an assay design.");
             if (!getContainer().hasPermission(getUser(), DesignAssayPermission.class))
                 throw new UnauthorizedException("You do not have sufficient permissions to create this assay design.");
         }

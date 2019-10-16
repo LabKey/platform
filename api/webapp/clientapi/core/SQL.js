@@ -45,7 +45,6 @@
 
     function parseRows(text,sep,eol)
     {
-        console.log(new Date());
         var rows = text.split(eol);
         if ("" === trimRight(rows[rows.length-1]))
             rows.pop();

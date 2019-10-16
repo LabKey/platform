@@ -26,7 +26,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.SendParticipantGroupAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.SendParticipantGroupForm" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page extends="org.labkey.api.jsp.OldJspBase" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SendParticipantGroupForm> me = (JspView<SendParticipantGroupForm>) HttpView.currentView();
     SendParticipantGroupForm bean = me.getModelBean();
@@ -54,12 +54,12 @@
     <br/>Additionally, any further modifications to this saved group will be reflected in the sent group.</p>
 
 <labkey:errors/>
-<labkey:form action="<%=h(urlFor(SendParticipantGroupAction.class))%>" method="POST" layout="horizontal" >
+<labkey:form action="<%=urlFor(SendParticipantGroupAction.class)%>" method="POST" layout="horizontal" >
 
     <b>Recipients (one per line):</b>
     <labkey:autoCompleteTextArea
         name="recipientList" id="recipientList" rows="6" cols="95"
-        url="<%=h(completionUrl)%>" value="<%=h(bean.getRecipientList())%>"
+        url="<%=completionUrl%>" value="<%=bean.getRecipientList()%>"
     />
     <br/>
 

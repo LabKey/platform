@@ -27,7 +27,7 @@ public class TimelineView extends JspView<TimelineSettings>
 {
     public TimelineView(TimelineSettings timelineSettings)
     {
-        super(TimelineView.class, "timeline.jsp", timelineSettings);
+        super("/org/labkey/timeline/view/timeline.jsp", timelineSettings);
         setTitle(timelineSettings.getWebPartTitle());
     }
 }

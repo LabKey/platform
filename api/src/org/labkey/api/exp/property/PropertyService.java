@@ -31,6 +31,7 @@ import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface PropertyService
 {
@@ -54,11 +55,16 @@ public interface PropertyService
 
     List<DomainKind> getDomainKinds();
 
+    List<DomainKind> getDomainKinds(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
+
     /** Get all the domains in the specified container. */
     List<? extends Domain> getDomains(Container container);
 
     /** Get all the domains in the specified container and optionally project and shared. */
     List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared);
+
+    /** Get all the domains in the specified container and specified Domain Kinds. */
+    List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
 
     /** Creates an in-memory Domain. It is not automatically saved to the database */
     @NotNull
