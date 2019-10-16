@@ -1014,6 +1014,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         return _requestEventHelper.create(user, event);
     }
 
+    @NotNull
     public List<Vial> getRequestVials(SpecimenRequest request)
     {
         final Container container = request.getContainer();

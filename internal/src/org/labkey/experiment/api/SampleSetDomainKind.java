@@ -29,6 +29,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -68,6 +69,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     private static final Logger logger;
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
+
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
@@ -315,5 +317,17 @@ public class SampleSetDomainKind extends AbstractDomainKind
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return template instanceof SampleSetTemplateType;
+    }
+
+    @Override
+    public String getObjectUriColumnName()
+    {
+        return OBJECT_URI_COLUMN_NAME;
+    }
+
+    @Override
+    public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
+    {
+        return UpdateableTableInfo.ObjectUriType.schemaColumn;
     }
 }

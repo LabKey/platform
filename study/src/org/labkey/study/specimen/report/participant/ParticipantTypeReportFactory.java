@@ -16,6 +16,7 @@
 package org.labkey.study.specimen.report.participant;
 
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.element.Option;
@@ -66,11 +67,12 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return reports;
     }
 
-    public boolean allowsParticipantAggregegates()
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
 
+    @Override
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         return Collections.singletonList(getSpecimenTypePicker());

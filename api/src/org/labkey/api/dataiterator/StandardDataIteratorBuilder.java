@@ -171,7 +171,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
         // match up the columns, validate that there is no more than one source column that matches the target column
         //
         ValidationException setupError = new ValidationException();
-        ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target, _useImportAliases, setupError);
+        ArrayList<ColumnInfo> matches = DataIteratorUtil.matchColumns(input, _target, _useImportAliases, setupError, _c);
 
         ArrayList<TranslateHelper> targetCols = new ArrayList<>(input.getColumnCount()+1);
         for (int i=1 ; i<=input.getColumnCount() ; i++)

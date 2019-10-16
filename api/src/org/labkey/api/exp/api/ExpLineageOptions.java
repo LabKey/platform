@@ -15,19 +15,35 @@
  */
 package org.labkey.api.exp.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.List;
+
 /**
  * Created by Nick Arnold on 2/12/2016.
  */
 public class ExpLineageOptions
 {
-    private int _rowId;
-    private String _lsid;
+    private boolean _singleSeedRequested = false;
+    private List<String> _lsids;
     private int _depth;
     private boolean _parents = true;
     private boolean _children = true;
     private String _expType;
     private String _cpasType;
     private boolean _forLookup = false;
+    private boolean _useObjectIds = false;
+
+    public ExpLineageOptions()
+    {
+    }
+
+    public ExpLineageOptions(boolean parents, boolean children, int depth)
+    {
+        _parents = parents;
+        _children = children;
+        _depth = depth;
+    }
 
     public int getDepth()
     {
@@ -39,34 +55,26 @@ public class ExpLineageOptions
         _depth = depth;
     }
 
-    public String getLsid()
-    {
-        return _lsid;
-    }
-
     public void setLsid(String lsid)
     {
-        _lsid = lsid;
+        _lsids = List.of(lsid);
+        _singleSeedRequested = true;
     }
 
-    public String getLSID()
+    public List<String> getLsids()
     {
-        return getLsid();
+        return _lsids;
     }
 
-    public void setLSID(String lsid)
+    public void setLsids(List<String> lsids)
     {
-        setLsid(lsid);
+        _lsids = lsids;
     }
 
-    public int getRowId()
+    @JsonIgnore
+    public boolean isSingleSeedRequested()
     {
-        return _rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        _rowId = rowId;
+        return _singleSeedRequested;
     }
 
     public boolean isParents()
@@ -117,5 +125,18 @@ public class ExpLineageOptions
     public void setForLookup(boolean b)
     {
         _forLookup = b;
+    }
+
+    public boolean isUseObjectIds()
+    {
+        return _useObjectIds;
+    }
+
+    /** user provides SQLFragment that selects objectids rather than lsids
+     * TODO switch all usages to objectids
+     */
+    public void setUseObjectIds(boolean useObjectIds)
+    {
+        _useObjectIds = useObjectIds;
     }
 }

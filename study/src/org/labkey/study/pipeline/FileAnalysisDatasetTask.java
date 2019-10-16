@@ -18,7 +18,6 @@ package org.labkey.study.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -84,7 +83,9 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
         {
             FileAnalysisJobSupport jobSupport = getJob().getJobSupport(FileAnalysisJobSupport.class);
             Map<String, String> params = jobSupport.getParameters();
-
+            if (params != null)
+                _ctx.setProperties(params);
+            
             if (params.containsKey(DATASET_ID_KEY) && params.containsKey(DATASET_NAME_KEY))
             {
                 _ctx.getLogger().error("Dataset ID and name cannot be specified at the same time.");

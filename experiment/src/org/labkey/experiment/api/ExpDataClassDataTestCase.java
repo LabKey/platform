@@ -21,15 +21,19 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
@@ -39,6 +43,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -56,7 +62,6 @@ import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -64,8 +69,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
@@ -73,6 +76,8 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 
@@ -92,15 +97,15 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * User: kevink
  * Date: 12/27/15
  */
 @TestWhen(TestWhen.When.BVT)
-public class ExpDataClassDataTestCase
+public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 {
-    private static SchemaKey expDataSchemaKey = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
 
     Container c;
 
@@ -120,24 +125,6 @@ public class ExpDataClassDataTestCase
         //ContainerManager.deleteAll(c, TestContext.get().getUser());
     }
 
-    private static List<Map<String, Object>> insertRows(Container c, List<Map<String, Object>> rows, String tableName)
-            throws Exception
-    {
-        final User user = TestContext.get().getUser();
-
-        BatchValidationException errors = new BatchValidationException();
-        UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
-        TableInfo table = schema.getTable(tableName);
-        Assert.assertNotNull(table);
-
-        QueryUpdateService qus = table.getUpdateService();
-        Assert.assertNotNull(qus);
-
-        List<Map<String, Object>> ret = qus.insertRows(user, c, rows, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
-        return ret;
-    }
 
     // validate name is not null
     @Test
@@ -537,26 +524,41 @@ public class ExpDataClassDataTestCase
                         "FROM exp.data." + firstDataClassName + " AS dc\n" +
                         "ORDER BY dc.RowId\n";
 
-        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, false))
+        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, true))
         {
-            Assert.assertTrue(rs.next());
-            Map<FieldKey, Object> bobMap = rs.getFieldKeyRowMap();
-            assertEquals("bob", bobMap.get(FieldKey.fromParts("Name")));
-            assertMultiValue(bobMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-1");
+            RenderContext ctx = new RenderContext(new ViewContext());
+            ctx.getViewContext().setRequest(TestContext.get().getRequest());
+            ctx.getViewContext().setUser(user);
+            ctx.getViewContext().setContainer(c);
+            ctx.getViewContext().setActionURL(new ActionURL());
+
+            ColumnInfo colName    = rs.getColumn(rs.findColumn(FieldKey.fromParts("Name")));
+            DisplayColumn dcName  = colName.getRenderer();
+            ColumnInfo colInputsMaterialSampleNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsMaterialSampleNames")));
+            DisplayColumn dcInputsMaterialSampleNames  = colInputsMaterialSampleNames.getRenderer();
+            ColumnInfo colInputsDataAllNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataAllNames")));
+            DisplayColumn dcInputsDataAllNames  = colInputsDataAllNames.getRenderer();
+            ColumnInfo colInputsDataFirstDataClassNames    = rs.getColumn(rs.findColumn(FieldKey.fromParts("InputsDataFirstDataClassNames")));
+            DisplayColumn dcInputsDataFirstDataClassNames  = colInputsDataFirstDataClassNames.getRenderer();
 
             Assert.assertTrue(rs.next());
-            Map<FieldKey, Object> sallyMap = rs.getFieldKeyRowMap();
-            assertEquals("sally", sallyMap.get(FieldKey.fromParts("Name")));
-            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataAllNames")), "jimbo", "bob");
-            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob");
-            assertMultiValue(sallyMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+            ctx.setRow(rs.getRowMap());
+            assertEquals("bob", dcName.getValue(ctx));
+            assertMultiValue(dcInputsMaterialSampleNames.getDisplayValue(ctx), "S-1");
 
             Assert.assertTrue(rs.next());
-            Map<FieldKey, Object> mikeMap = rs.getFieldKeyRowMap();
-            assertEquals("mike", mikeMap.get(FieldKey.fromParts("Name")));
-            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataAllNames")), "sally", "jimbo", "bob");
-            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsDataFirstDataClassNames")), "bob", "sally");
-            assertMultiValue(mikeMap.get(FieldKey.fromParts("InputsMaterialSampleNames")), "S-2", "S-1");
+            ctx.setRow(rs.getRowMap());
+            assertEquals("sally", dcName.getValue(ctx));
+            assertMultiValue(dcInputsDataAllNames.getDisplayValue(ctx), "jimbo", "bob");
+            assertMultiValue(dcInputsDataFirstDataClassNames.getDisplayValue(ctx), "bob");
+            assertMultiValue(dcInputsMaterialSampleNames.getDisplayValue(ctx), "S-2", "S-1");
+
+            Assert.assertTrue(rs.next());
+            ctx.setRow(rs.getRowMap());
+            assertEquals("mike", dcName.getValue(ctx));
+            assertMultiValue(dcInputsDataAllNames.getDisplayValue(ctx), "sally", "jimbo", "bob");
+            assertMultiValue(dcInputsDataFirstDataClassNames.getDisplayValue(ctx), "bob", "sally");
+            assertMultiValue(dcInputsMaterialSampleNames.getDisplayValue(ctx), "S-2", "S-1");
 
             assertFalse(rs.next());
         }
@@ -945,5 +947,80 @@ public class ExpDataClassDataTestCase
             Assert.assertTrue("Expected a SQLException", t instanceof SQLException);
             Assert.assertTrue("Expected a constraint violation", RuntimeSQLException.isConstraintException((SQLException)t));
         }
+    }
+
+    @Test
+    public void testDataClassWithVocabularyProperties() throws Exception
+    {
+        User user = TestContext.get().getUser();
+
+        String dataClassName = "DataClassesWithVocabularyProperties";
+        int dataClassAge = 2;
+        int updatedDataClassAge = 4;
+        String dataClassType = "TypeB";
+        String dataClassColor = "Orange";
+
+        Domain testDomain = createVocabularyTestDomain(user, c);
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(testDomain);
+
+        final String colorPropertyURI = vocabularyPropertyURIs.get(colorPropertyName);
+        final String agePropertyURI = vocabularyPropertyURIs.get(agePropertyName);
+        final String typePropertyURI = vocabularyPropertyURIs.get(typePropertyName);
+
+        ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
+                dataClassName, null, List.of(new GWTPropertyDescriptor("OtherProp", "string")), Collections.emptyList(),
+                null, null, null);
+        assertNotNull(dataClass);
+
+        // insert a data class
+        ArrayListMap<String, Object> rowToInsert = new ArrayListMap<>();
+        rowToInsert.put("OtherProp", "OtherValue");
+        // inserting a property with null value
+        rowToInsert.put(colorPropertyURI, null);
+        rowToInsert.put(agePropertyURI, dataClassAge);
+        rowToInsert.put(typePropertyURI, dataClassType);
+        List<Map<String, Object>> rowsToInsert = buildRows(rowToInsert);
+
+        var insertedDataClassRows = insertRows(c, rowsToInsert, dataClassName);
+        assertEquals(1, insertedDataClassRows.size());
+
+        var insertedDataClass = insertedDataClassRows.get(0);
+        Integer insertedRowId = (Integer)insertedDataClass.get("RowId");
+        String insertedLsid = (String)insertedDataClass.get("LSID");
+
+        Map<String, ObjectProperty> insertedProps = OntologyManager.getPropertyObjects(c, insertedLsid);
+        assertEquals("Expected only two properties after insert: " + insertedProps, 2, insertedProps.size());
+        assertEquals("Custom Property is not inserted", dataClassAge, insertedProps.get(agePropertyURI).getFloatValue().intValue());
+
+        // Verifying property with null value is not inserted
+        assertFalse("Property with null value is present.", insertedProps.containsKey(colorPropertyURI));
+
+        ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+        rowToUpdate.put("RowId", insertedRowId);
+        rowToUpdate.put(typePropertyURI, null);
+        // updating existing property with null value
+        rowToUpdate.put(agePropertyURI, updatedDataClassAge);
+        // inserting a new property in update rows
+        rowToUpdate.put(colorPropertyURI, dataClassColor);
+        List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
+
+        List<Map<String, Object>> oldKeys = new ArrayList<>();
+        ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+        oldKey.put("RowId", insertedRowId);
+        oldKeys.add(oldKey);
+
+        updateRows(c, rowsToUpdate, oldKeys, dataClassName);
+
+        Map<String, ObjectProperty> updatedProps = OntologyManager.getPropertyObjects(c, insertedLsid);
+        assertEquals("Expected only two properties after update: " + updatedProps, 2, updatedProps.size());
+        assertEquals("Custom Property is not updated",
+                updatedDataClassAge, updatedProps.get(agePropertyURI).getFloatValue().intValue());
+
+        // Verify property inserted during update rows in inserted
+        assertEquals("New Property is not inserted with update rows", dataClassColor,
+                updatedProps.get(colorPropertyURI).getStringValue());
+
+        // Verify property updated to a null value gets deleted
+        assertFalse("Property with null value is present.", updatedProps.containsKey(typePropertyURI));
     }
 }

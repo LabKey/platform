@@ -1,4 +1,8 @@
-<Schema name="Study" description="HIV Collaborative Dataspace">
+<Schema name="Study" description="Example specimen cube">
+
+    <Annotations>
+        <Annotation name="EnableMondrian">TRUE</Annotation>
+    </Annotations>
 
     <Cube name="SpecimenCube" visible="true" defaultMeasure="ParticipantCount" cache="true" enabled="true">
         <Table schema="study" name="SpecimenSummary" />
