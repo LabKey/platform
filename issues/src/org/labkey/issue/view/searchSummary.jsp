@@ -32,13 +32,13 @@
     final boolean isOpen = StringUtils.equalsIgnoreCase(issue.getStatus(),"open");
 %>
 <table style="min-width:150pt;margin-bottom:15px;">
-    <tr><td style="color: darkgray"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
+    <tr><td style="color: #777777"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
     <% if (!isClosed) { %>
-    <tr><td style="color: darkgray"><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
+    <tr><td style="color: #777777"><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
     <% } %>
-    <tr><td style="color: darkgray"><label>Opened:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
+    <tr><td style="color: #777777"><label>Opened:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
     <% if (!isOpen) { %>
-    <tr><td style="color: darkgray"><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
+    <tr><td style="color: #777777"><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
     <% } %>
 </table>
 
