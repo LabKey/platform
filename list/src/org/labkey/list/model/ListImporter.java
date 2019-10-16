@@ -325,7 +325,6 @@ public class ListImporter
         }
 
         log.info(successfulLists + " list" + (1 == successfulLists ? "" : "s") + " imported successfully");
-        log.info(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
         if (failedLists > 0)
         {
             log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
