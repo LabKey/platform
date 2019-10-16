@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 /** An instance of an {@link ExpProtocol}, with actual inputs and outputs */
-public interface ExpRun extends ExpObject
+public interface ExpRun extends ExpObject, ExpLineageItem
 {
     /** @return the experiments (AKA run groups in the UI) of which this run is a member */
     List<? extends ExpExperiment> getExperiments();

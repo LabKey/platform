@@ -54,6 +54,9 @@ import java.util.TreeSet;
  */
 public abstract class AbstractDomainKind extends DomainKind
 {
+
+    public static final String OBJECT_URI_COLUMN_NAME = "lsid";
+
     @Override
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)
     {
