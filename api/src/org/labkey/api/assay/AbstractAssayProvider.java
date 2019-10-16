@@ -504,7 +504,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Pair<Domain, Map<DomainProperty, Object>> createRunDomain(Container c, User user)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
-        domain.setDescription("Define the run properties for this assay design. The user is prompted for these properties once per run and they will be applied to all rows in the run.");
+        domain.setDescription("Define the run fields for this assay design. The user is prompted for these fields once per run and they will be applied to all rows in the run.");
         return new Pair<>(domain, Collections.emptyMap());
     }
 
@@ -516,7 +516,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user, boolean includeStandardProperties)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
-        domain.setDescription("Define the batch properties for this assay design. The user is prompted for these properties once for each set of runs they import to this assay.");
+        domain.setDescription("Define the batch fields for this assay design. The user is prompted for these fields once for each set of runs they import to this assay.");
 
         if (includeStandardProperties)
         {
