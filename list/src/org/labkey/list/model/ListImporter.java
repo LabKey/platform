@@ -301,6 +301,7 @@ public class ListImporter
 
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
         int failedLists = 0;
+        int successfulLists = 0;
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
@@ -318,11 +319,13 @@ public class ListImporter
             if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
             {
                 failedLists++;
+            } else {
+                successfulLists++;
             }
         }
 
-        int size = lists.size() - failedLists;
-        log.info(size + " list" + (1 == size ? "" : "s") + " imported" + (failedLists == 0 ? ", all successfully" : ""));
+        log.info(successfulLists + " list" + (1 == successfulLists ? "" : "s") + " imported successfully");
+        log.info(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
         if (failedLists > 0)
         {
             log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
