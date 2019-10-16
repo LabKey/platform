@@ -1381,7 +1381,7 @@ public class QueryServiceImpl implements QueryService
             ret.put(existingColumn.getFieldKey(), existingColumn);
         }
 
-        // Consider that the fieldKey may have come from a URL field that is a colunm's alias
+        // Consider that the fieldKey may have come from a URL field that is a column's alias
         Map<String, ColumnInfo> mapAlias = new HashMap<>();
         table.getColumns().forEach(col -> mapAlias.put(col.getAlias().toLowerCase(), col));
 

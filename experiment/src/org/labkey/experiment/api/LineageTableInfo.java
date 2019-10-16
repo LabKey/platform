@@ -49,16 +49,16 @@ import org.labkey.api.util.StringExpression;
  */
 public class LineageTableInfo extends VirtualTable
 {
-    private @NotNull SQLFragment _lsids;
+    private @NotNull SQLFragment _objectids;
     private boolean _parents;
     private @Nullable Integer _depth;
     private @Nullable String _expType;
     private @Nullable String _cpasType;
 
-    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment lsids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
+    public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment objectids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
     {
         super(schema.getDbSchema(), name, schema);
-        _lsids = lsids;
+        _objectids = objectids;
         _parents = parents;
 
         // depth is negative for parent values
@@ -68,9 +68,8 @@ public class LineageTableInfo extends VirtualTable
         _expType = expType;
         _cpasType = cpasType;
 
-        var selfLsid = new BaseColumnInfo(FieldKey.fromParts("self_lsid"), this, JdbcType.VARCHAR);
-        selfLsid.setSqlTypeName("lsidtype");
-        addColumn(selfLsid);
+        var self = new BaseColumnInfo(FieldKey.fromParts("self"), this, JdbcType.INTEGER);
+        addColumn(self);
 
         var selfRowId = new BaseColumnInfo(FieldKey.fromParts("self_rowid"), this, JdbcType.INTEGER);
         addColumn(selfRowId);
@@ -100,6 +99,8 @@ public class LineageTableInfo extends VirtualTable
         var parentRowId = new BaseColumnInfo(FieldKey.fromParts("rowId"), this, JdbcType.INTEGER);
         //parentRowId.setFk(new QueryForeignKey("exp", schema.getContainer(), schema.getContainer(), schema.getUser(), "Materials", "rowId", "Name"));
         addColumn(parentRowId);
+
+        setTitleColumn("Name");
     }
 
     private ForeignKey createLsidLookup(String expType, String cpasType)
@@ -263,7 +264,8 @@ public class LineageTableInfo extends VirtualTable
         if (_depth != null)
             options.setDepth(_depth);
 
-        SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_lsids, options);
+        options.setUseObjectIds(true);
+        SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_objectids, options);
 
         String comment = String.format("<LineageTableInfo parents=%b, depth=%d, expType=%s, cpasType=%s>\n", _parents, _depth, _expType, _cpasType);
 

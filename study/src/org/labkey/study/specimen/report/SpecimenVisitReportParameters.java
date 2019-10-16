@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.jsp.taglib.AutoCompleteTextTag;
 import org.labkey.api.query.CustomView;
@@ -506,7 +507,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
     }
 
-    public boolean allowsParticipantAggregegates()
+    public boolean allowsParticipantAggregates()
     {
         return true;
     }

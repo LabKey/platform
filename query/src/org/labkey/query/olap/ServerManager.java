@@ -223,7 +223,7 @@ public class ServerManager
     public static Cube getCachedCube(@NotNull OlapSchemaDescriptor sd, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
             throws SQLException, IOException
     {
-        if (sd.usesRolap())
+        if (!sd.usesMondrian())
             return getCachedCubeRolap(sd, c, user, cubeName, null);
         else
             return getCachedCubeMondrian(sd, conn, c, user, schemaName, cubeName, errors);
@@ -509,7 +509,7 @@ public class ServerManager
         if (errors.hasErrors())
             return;
 
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery, errors);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery);
         try(CellSet ignored = bitsetquery.executeQuery()){}
     }
 
