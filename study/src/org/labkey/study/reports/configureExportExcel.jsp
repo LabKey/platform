@@ -91,7 +91,7 @@ for (LocationImpl location : locations)
         {   %>
             <input type=hidden name=reportType value="<%=text(ExportExcelReport.TYPE)%>">
             <input type=hidden id=params name=params value="locationId=-1">
-            <%= button("Save").submit(true).onClick("this.form.action=" + qh(buildURL(ReportsController.SaveReportAction.class)) + ";") %>
+            <%= button("Save").submit(true).onClick("this.form.action=" + q(buildURL(ReportsController.SaveReportAction.class)) + ";") %>
 
         <script type="text/javascript">
         var sites = {};
