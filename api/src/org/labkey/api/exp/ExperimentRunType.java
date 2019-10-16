@@ -28,9 +28,12 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Objects;
 import java.util.Set;
 
 /**
+ * Provides some basic stats and recognition for experiment runs of a particular type.
+ *
  * User: jeckels
  * Date: Sep 25, 2006
  */
@@ -96,7 +99,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
 
         final ExperimentRunType that = (ExperimentRunType) o;
 
-        return !(_description != null ? !_description.equals(that._description) : that._description != null);
+        return Objects.equals(_description, that._description);
     }
 
     public int hashCode()

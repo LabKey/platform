@@ -6490,7 +6490,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Map<String, List<ExpMaterialImpl>> potentialParents = new HashMap<>();
         for (ExpSampleSet sampleSet : SampleSetService.get().getSampleSets(container, user, true))
         {
-            List<ExpMaterial> samples = new ArrayList<>(sampleSet.getSamples());
+            List<ExpMaterial> samples = new ArrayList<>(sampleSet.getSamples(sampleSet.getContainer()));
             if (!container.equals(sampleSet.getContainer()))
             {
                 samples.addAll(((ExpSampleSetImpl)sampleSet).getSamples(container));

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 
 /**
+ * Captures options for doing an lineage search
  * Created by Nick Arnold on 2/12/2016.
  */
 public class ExpLineageOptions
