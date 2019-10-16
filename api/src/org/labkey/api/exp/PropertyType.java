@@ -628,4 +628,19 @@ public enum PropertyType
         }
         return ExcelFactory.getCellStringValue(cell);
     }
+
+    public String getValueTypeColumn()
+    {
+        switch (this.getStorageType())
+        {
+            case 's':
+                return "stringValue";
+            case 'd':
+                return "dateTimeValue";
+            case 'f':
+                return "floatValue";
+            default:
+                throw new IllegalArgumentException("Unknown property type: " + this);
+        }
+    }
 }

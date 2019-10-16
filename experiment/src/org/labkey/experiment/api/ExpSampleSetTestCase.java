@@ -19,18 +19,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
@@ -45,6 +51,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -54,6 +61,9 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 
 import java.io.StringBufferInputStream;
 import java.util.ArrayList;
@@ -78,7 +88,7 @@ import static org.junit.Assert.assertTrue;
  * Date: 11/24/16
  */
 @TestWhen(TestWhen.When.BVT)
-public class ExpSampleSetTestCase
+public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 {
     Container c;
 
@@ -648,6 +658,7 @@ public class ExpSampleSetTestCase
         ExpMaterial E = ss.getSample(c, "E");
         assertNotNull(E);
         lineage = ExperimentService.get().getLineage(E, opts);
+        assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'E' to be derived from 'C'", lineage.getMaterials().contains(C));
@@ -657,10 +668,22 @@ public class ExpSampleSetTestCase
                 E.getRowId(), E.getRowId());
         ExpRun derivationRun = E.getRun();
 
-        assertTrue(derivationRun.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun.getMaterialInputs().containsKey(B));
+        assertTrue(derivationRun.getMaterialInputs().containsKey(C));
         assertTrue(derivationRun.getMaterialOutputs().contains(D));
         assertTrue(derivationRun.getMaterialOutputs().contains(E));
+
+        assertEquals(1, lineage.getRuns().size());
+        assertTrue("Expected lineage to include derivation run", lineage.getRuns().contains(derivationRun));
+
+
+        // verify lineage using the derivation run as a seed
+        lineage = ExperimentServiceImpl.get().getLineage(new ViewBackgroundInfo(c, user, null), Set.of(derivationRun), new ExpLineageOptions(true, false, 1));
+        assertTrue("Expected derivationRun to be the seed", lineage.getSeeds().contains(derivationRun));
+        assertEquals(2, lineage.getMaterials().size());
+        assertTrue("Expected 'B' to be input into derivationRun", lineage.getMaterials().contains(B));
+        assertTrue("Expected 'C' to be input into derivationRun", lineage.getMaterials().contains(C));
+        assertTrue("Expected no additional runs in lineage results", lineage.getRuns().isEmpty());
 
 
         // update 'D' to derive from 'B' and 'E'
@@ -681,18 +704,18 @@ public class ExpSampleSetTestCase
         ExpRun derivationRun2 = D2.getRun();
         assertNotEquals("Updating 'D' lineage should create new derivation run", derivationRun.getRowId(), derivationRun2.getRowId());
 
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(E));
-        assertFalse(derivationRun2.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun2.getMaterialInputs().containsKey(B));
+        assertTrue(derivationRun2.getMaterialInputs().containsKey(E));
+        assertFalse(derivationRun2.getMaterialInputs().containsKey(C));
         assertTrue(derivationRun2.getMaterialOutputs().contains(D));
         assertFalse(derivationRun2.getMaterialOutputs().contains(E));
 
         ExpRun oldDerivationRun = ExperimentService.get().getExpRun(derivationRun.getRowId());
         assertEquals(oldDerivationRun.getRowId(), derivationRun.getRowId());
 
-        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(B));
-        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(C));
-        assertFalse(oldDerivationRun.getMaterialInputs().keySet().contains(E));
+        assertTrue(oldDerivationRun.getMaterialInputs().containsKey(B));
+        assertTrue(oldDerivationRun.getMaterialInputs().containsKey(C));
+        assertFalse(oldDerivationRun.getMaterialInputs().containsKey(E));
         assertFalse(oldDerivationRun.getMaterialOutputs().contains(D));
         assertTrue(oldDerivationRun.getMaterialOutputs().contains(E));
 
@@ -754,11 +777,86 @@ public class ExpSampleSetTestCase
         // query
         TableSelector ts = QueryService.get().selector(listSchema,
                 "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
-        Collection<Map<String, Object>> results = ts.getMapCollection();
-        assertEquals(1, results.size());
-        Map<String, Object> row = results.iterator().next();
-        assertEquals("sally", row.get("SampleId"));
-        assertEquals("bob", row.get("MySampleParent"));
+        Results results = ts.getResults();
+        RenderContext ctx = new RenderContext(new ViewContext());
+        ctx.getViewContext().setRequest(TestContext.get().getRequest());
+        ctx.getViewContext().setUser(user);
+        ctx.getViewContext().setContainer(c);
+        ctx.getViewContext().setActionURL(new ActionURL());
+        ColumnInfo sampleId       = results.getColumn(results.findColumn(FieldKey.fromParts("SampleId")));
+        DisplayColumn dcSampleId  = sampleId.getRenderer();
+        ColumnInfo mySampleParent = results.getColumn(results.findColumn(FieldKey.fromParts("MySampleParent")));
+        DisplayColumn dcMySampleParent = mySampleParent.getRenderer();
+
+        assertTrue(results.next());
+        ctx.setRow(results.getRowMap());
+        assertEquals("sally", dcSampleId.getValue(ctx));
+        assertEquals("bob", dcMySampleParent.getDisplayValue(ctx));
     }
 
+    @Test
+    public void testSampleSetWithVocabularyProperties() throws Exception
+    {
+        User user = TestContext.get().getUser();
+
+        String sampleName = "SamplesWithVocabularyProperties";
+        String sampleType = "TypeA";
+        String updatedSampleType = "TypeB";
+        String sampleColor = "Blue";
+        int sampleAge = 5;
+
+        Domain mockDomain = createVocabularyTestDomain(user, c);
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
+
+        //create sample set
+        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        assertNotNull(ss);
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+
+        // insert a sample
+        ArrayListMap<String, Object> row = new ArrayListMap<>();
+        row.put("name", "TestSample");
+        row.put(vocabularyPropertyURIs.get(typePropertyName), sampleType);
+        row.put(vocabularyPropertyURIs.get(colorPropertyName), sampleColor);
+        row.put(vocabularyPropertyURIs.get(agePropertyName), null); // inserting a property with null value
+        List<Map<String, Object>> rows = buildRows(row);
+
+        var insertedSample = insertRows(c, rows ,sampleName, schema);
+
+        assertEquals("Custom Property is not inserted", sampleType,
+                OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
+
+        //Verifying property with null value is not inserted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(agePropertyName)).size());
+
+        //update inserted sample
+        ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+        rowToUpdate.put("name", "TestSample");
+        rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+        rowToUpdate.put(vocabularyPropertyURIs.get(typePropertyName), updatedSampleType);
+        rowToUpdate.put(vocabularyPropertyURIs.get(colorPropertyName), null); // nulling out existing property
+        rowToUpdate.put(vocabularyPropertyURIs.get(agePropertyName), sampleAge); //inserting a new property in update rows
+        List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
+
+        List<Map<String, Object>> oldKeys = new ArrayList<>();
+        ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+        oldKey.put("name", "TestSample");
+        oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+        oldKeys.add(oldKey);
+
+        var updatedSample = updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+        assertEquals("Custom Property is not updated", updatedSampleType,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
+
+        //Verify property updated to a null value gets deleted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(colorPropertyName)).size());
+
+        //Verify property inserted during update rows in inserted
+        assertEquals("New Property is not inserted with update rows", sampleAge,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(agePropertyName)).getFloatValue().intValue());
+    }
 }

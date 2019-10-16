@@ -16,11 +16,6 @@
             if (n != null)
                 n.appendTo(out);
     }
-    // Allow passing CharSequence directly as body content, or require wrapping?
-    public HtmlString txt(String s)
-    {
-        return HtmlString.of(s);
-    }
 %>
 <% dom(out,
 
@@ -30,6 +25,11 @@
 
         TABLE(TR(TD(cl("link").at(style,"border:solid 1px red"),
                 link("begin", getContainer().getStartURL(getUser()))))),
+
+        HR(),
+
+        TABLE(TR(TD(cl("link").at(style,"border:solid 1px red"),
+                link("new window", getContainer().getStartURL(getUser())).target("blank")))),
 
         HR(),
 

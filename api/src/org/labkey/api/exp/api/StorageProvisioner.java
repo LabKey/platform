@@ -273,10 +273,9 @@ public class StorageProvisioner
         // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
-        String tableName = domain.getStorageTableName();
-        if (null == tableName)
+        if (null == domain.getStorageTableName())
         {
-            tableName = _create(scope, kind, domain);
+            _create(scope, kind, domain);
             return;
         }
 
@@ -286,7 +285,6 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
-        int changeCount = 0;
         for (DomainProperty prop : properties)
         {
             if (prop.getName() == null || prop.getName().length() == 0)
@@ -303,12 +301,10 @@ public class StorageProvisioner
             if (null != spec)
             {
                 change.addColumn(spec);
-                changeCount++;
             }
             if (prop.isMvEnabled())
             {
                 change.addColumn(makeMvColumn(prop));
-                changeCount++;
             }
         }
 
@@ -547,7 +543,7 @@ public class StorageProvisioner
                 map.put(scn, name);
         }
 
-        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map);
+        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map, domain);
 
         for (ColumnInfo from : sti.getColumns())
         {
@@ -607,12 +603,19 @@ public class StorageProvisioner
     {
         private final SchemaTableInfo _inner;
         private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
+        private Domain _domain;
 
         _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
         {
             super(schema, name);
             _inner = inner;
             _map.putAll(map);
+        }
+
+        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map, Domain domain)
+        {
+            this(schema, name, inner, map);
+            _domain = domain;
         }
 
         @Override
@@ -709,14 +712,14 @@ public class StorageProvisioner
         @Override
         public ObjectUriType getObjectUriType()
         {
-            return null;
+            return _domain.getDomainKind().getObjectUriColumn();
         }
 
         @Nullable
         @Override
         public String getObjectURIColumnName()
         {
-            return null;
+            return _domain.getDomainKind().getObjectUriColumnName();
         }
 
         @Nullable

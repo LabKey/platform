@@ -15,6 +15,7 @@
  */
 package org.labkey.core.notification;
 
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
@@ -44,8 +45,10 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Created by matthew on 5/11/2016.
@@ -262,9 +265,51 @@ public class NotificationController extends SpringActionController
         public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("notifications", PageFlowUtil.getNotificationJson(getUser()));
+            response.put("notifications", getNotificationJson(getUser()));
             response.put("success", true);
             return response;
+        }
+
+        private JSONObject getNotificationJson(User user)
+        {
+            Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
+            Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
+            int unreadCount = 0;
+            boolean hasRead = false;
+
+            NotificationService service = NotificationService.get();
+            if (service != null && user != null && !user.isGuest())
+            {
+                List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
+                for (Notification notification : userNotifications)
+                {
+                    if (notification.getReadOn() != null)
+                    {
+                        hasRead = true;
+                        continue;
+                    }
+
+                    Map<String, Object> notifPropMap = notification.asPropMap();
+                    notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), user));
+                    notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
+                    notificationsPropMap.put(notification.getRowId(), notifPropMap);
+
+                    String groupLabel = service.getNotificationTypeLabel(notification.getType());
+                    if (!notificationGroupingsMap.containsKey(groupLabel))
+                    {
+                        notificationGroupingsMap.put(groupLabel, new ArrayList<>());
+                    }
+                    notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
+
+                    unreadCount++;
+                }
+            }
+
+            JSONObject notifications = new JSONObject(notificationsPropMap);
+            notifications.put("grouping", notificationGroupingsMap);
+            notifications.put("unreadCount", unreadCount);
+            notifications.put("hasRead", hasRead);
+            return notifications;
         }
     }
 }
