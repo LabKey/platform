@@ -1,5 +1,5 @@
 <%@ page import="org.junit.Test" %>
-<%@ page import="static junit.framework.TestCase.*" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 
 <%!
