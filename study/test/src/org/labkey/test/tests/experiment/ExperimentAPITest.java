@@ -409,11 +409,11 @@ public class ExperimentAPITest extends BaseWebDriverTest
         goToManageAssays();
         APIAssayHelper assayHelper = new APIAssayHelper(this);
         ReactAssayDesignerPage assayDesignerPage = assayHelper.createAssayDesign("General", assayName);
-        assayDesignerPage.goToFieldProperties("Run Properties")
+        assayDesignerPage.goToRunFields()
             .addField("RunIntField")
             .setLabel("Run Int Field")
             .setType(FieldDefinition.ColumnType.Integer);
-        assayDesignerPage.clickNext().clickFinish();
+        assayDesignerPage.clickFinish();
 
         int assayId = assayHelper.getIdFromAssayName(assayName, getProjectName(), false);
 
