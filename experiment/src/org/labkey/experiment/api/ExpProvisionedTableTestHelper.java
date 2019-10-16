@@ -72,9 +72,9 @@ public class ExpProvisionedTableTestHelper
         return rows;
     }
 
-    private QueryUpdateService getQueryUpdateService(Container c, UserSchema schema, String tableName)
+    private QueryUpdateService getQueryUpdateService(UserSchema schema, String tableName)
     {
-        TableInfo table = schema.getTable(tableName);
+        TableInfo table = schema.getTable(tableName, null);
         Assert.assertNotNull(table);
 
         QueryUpdateService qus = table.getUpdateService();
@@ -87,7 +87,7 @@ public class ExpProvisionedTableTestHelper
     {
         BatchValidationException errors = new BatchValidationException();
         UserSchema userSchema = null == schema ? QueryService.get().getUserSchema(user, c, expDataSchemaKey) : schema;
-        List<Map<String, Object>> ret = getQueryUpdateService(c, userSchema, tableName).insertRows(user, c, rows, errors, null, null);
+        List<Map<String, Object>> ret = getQueryUpdateService(userSchema, tableName).insertRows(user, c, rows, errors, null, null);
         if (errors.hasErrors())
             throw errors;
         return ret;
@@ -102,7 +102,7 @@ public class ExpProvisionedTableTestHelper
     protected List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName, @Nullable UserSchema schema) throws Exception
     {
         UserSchema userSchema = null == schema ? QueryService.get().getUserSchema(user, c, expDataSchemaKey) : schema;
-        List<Map<String, Object>> ret = getQueryUpdateService(c, userSchema, tableName).updateRows(user, c, rowsToUpdate, oldKeys, null, null);
+        List<Map<String, Object>> ret = getQueryUpdateService(userSchema, tableName).updateRows(user, c, rowsToUpdate, oldKeys, null, null);
         return ret;
     }
 

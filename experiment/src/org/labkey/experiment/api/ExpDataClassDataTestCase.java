@@ -45,6 +45,7 @@ import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -60,15 +61,19 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
@@ -1022,5 +1027,88 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 
         // Verify property updated to a null value gets deleted
         assertFalse("Property with null value is present.", updatedProps.containsKey(typePropertyURI));
+    }
+
+    @Test
+    public void testViewSupportForVocabularyDomains() throws Exception
+    {
+        User user = TestContext.get().getUser();
+
+        // Create a sample set with name
+        String sampleName = "CarLocations";
+        String sampleOneLocation = "California";
+
+        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+
+        // Insert a sample into sample set
+        ArrayListMap<String, Object> row = new ArrayListMap<>();
+        row.put("name", sampleOneLocation);
+
+        List<Map<String, Object>> rows = buildRows(row);
+
+        var insertedSampleRows = insertRows(c, rows ,sampleName, schema);
+
+        var insertedSample = insertedSampleRows.get(0);
+        Integer insertedSampleRowId = (Integer)insertedSample.get("RowId");
+
+        // Create a vocab domain with lookup prop to the sample set
+        String domainName = "LookUpVocabularyDomain";
+        String domainDescription = "This is a lookup vocabulary for car locations.";
+        String locationPropertyName = "Location";
+        String lookUpSchema = "samples";
+
+        GWTPropertyDescriptor prop1 = new GWTPropertyDescriptor();
+        prop1.setRangeURI("int");
+        prop1.setName(locationPropertyName);
+        prop1.setLookupSchema(lookUpSchema);
+        prop1.setLookupQuery(sampleName);
+
+        GWTDomain domain = new GWTDomain();
+        domain.setName(domainName);
+        domain.setDescription(domainDescription);
+        domain.setFields(List.of(prop1));
+
+        Domain lookUpDomain = DomainUtil.createDomain("Vocabulary", domain, null, c, user, domainName, null);
+
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(lookUpDomain);
+        final String locationPropertyURI = vocabularyPropertyURIs.get(locationPropertyName);
+
+        // Create a data class
+        String dataClassName = "CarsDataClasses";
+        String carName1 = "Tesla";
+
+        ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
+                dataClassName, null, List.of(new GWTPropertyDescriptor("OtherProp", "string")), Collections.emptyList(),
+                null, null, null);
+
+        UserSchema userSchema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
+
+        // insert a data class with vocab look up prop using row id of inserted sample
+        ArrayListMap<String, Object> rowToInsert = new ArrayListMap<>();
+        rowToInsert.put("Name", carName1);
+        rowToInsert.put("OtherProp", "OtherValue");
+        rowToInsert.put(locationPropertyURI, insertedSampleRowId);
+        List<Map<String, Object>> rowsToInsert = buildRows(rowToInsert);
+        insertRows(c, rowsToInsert, dataClassName);
+
+        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(locationPropertyURI, c);
+        TableInfo tableInfo = DefaultSchema.get(userSchema.getUser(), c).getSchema(pd.getLookupSchema()).getTable(pd.getLookupQuery(), null);
+        ColumnInfo vocabularyDomainColumn = tableInfo.getColumn(domainName + lookUpDomain.getTypeId());
+        ColumnInfo propertiesColumn = tableInfo.getColumn("Properties");
+
+        // Verify vocabulary domains got attached to the data class
+        assertNotNull("TestVocabularyDomain is not present in table columns.", vocabularyDomainColumn);
+
+        // Verify properties column got attached to the data class
+        assertNotNull("Properties column is not present in table columns.", propertiesColumn);
+
+        // Verify the values for lookup props
+        Map<String, Object> lookUpProp = new TableSelector(tableInfo, SimpleFilter.createContainerFilter(c), null).getMap();
+        String insertedLookUpValue = lookUpProp.getOrDefault("Name", null).toString();
+        assertEquals("Look up value is not found or equal.", sampleOneLocation, insertedLookUpValue);
     }
 }

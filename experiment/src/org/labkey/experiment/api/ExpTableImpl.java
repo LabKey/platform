@@ -305,11 +305,10 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 html = html.replaceAll("\\n", "<br>\n");
                 return html;
                 }
-
-
             }
 
         });
+        col.setCalculated(true);
         return col;
     }
 
@@ -419,6 +418,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         colProperty.setHidden(true);
         colProperty.setUserEditable(false);
         colProperty.setIsUnselectable(true);
+        colProperty.setCalculated(true);
         addColumn(colProperty);
 
         return colProperty;
