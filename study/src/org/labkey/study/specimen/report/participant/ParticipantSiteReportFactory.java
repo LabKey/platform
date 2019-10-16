@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report.participant;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyService;
@@ -81,11 +82,13 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         return reports;
     }
 
-    public boolean allowsParticipantAggregegates()
+    @Override
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
 
+    @Override
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
@@ -106,6 +109,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         _enrollmentSiteId = enrollmentSiteId;
     }
 
+    @Override
     public String getLabel()
     {
         return StudyService.get().getSubjectNounSingular(getContainer()) + " by Enrollment Location";
@@ -117,6 +121,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
         return "ParticipantByEnrollmentLocation";
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.ParticipantSiteReportAction.class;

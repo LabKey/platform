@@ -1129,11 +1129,24 @@ public class UserManager
      */
     public static String getUserDetailsHTMLLink(Container container, User currentUser, int displayedUserId)
     {
-        String displayName = getUser(displayedUserId).getDisplayName(currentUser);
+        User displayUser = getUser(displayedUserId);
 
-        return "<a class=\"labkey-link\" href=\"" +
-                getUserDetailsURL(container, currentUser, displayedUserId) +
-                "\">" + PageFlowUtil.filter(displayName) + "</a>";
+        boolean isDeletedUser = displayUser == null;
+
+        if (isDeletedUser)
+            return PageFlowUtil.filter("<" + displayedUserId + ">");
+
+        String displayName = displayUser.getDisplayName(currentUser);
+        ActionURL url = getUserDetailsURL(container, currentUser, displayedUserId);
+
+        // currentUser has permissions to see user details of the displayed user
+        if (url != null)
+        {
+            return "<a class=\"labkey-link\" href=\"" + url +
+                    "\">" + PageFlowUtil.filter(displayName) + "</a>";
+        }
+
+        return PageFlowUtil.filter(displayName);
     }
 
     /**

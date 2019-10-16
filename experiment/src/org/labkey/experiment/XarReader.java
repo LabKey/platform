@@ -457,7 +457,7 @@ public class XarReader extends AbstractXarImporter
         materialSource.setContainer(getContainer());
         materialSource.setMaterialLSIDPrefix(LsidUtils.resolveLsidFromTemplate(sampleSet.getMaterialLSIDPrefix(), getRootContext(), ExpMaterial.DEFAULT_CPAS_TYPE));
 
-        Domain domain = materialSource.getType();
+        Domain domain = materialSource.getDomain();
         if (sampleSet.getKeyFieldArray() != null && sampleSet.getKeyFieldArray().length > 0)
         {
             List<String> propertyURIs = new ArrayList<>(sampleSet.getKeyFieldArray().length);

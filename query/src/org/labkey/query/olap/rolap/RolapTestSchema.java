@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -122,6 +123,64 @@ public class RolapTestSchema extends UserSchema
     }
 
 
+    class ParticipantForeignKey extends LookupForeignKey
+    {
+        ParticipantForeignKey()
+        {
+            super("ptid");
+        }
+        @Override
+        public TableInfo getLookupTableInfo()
+        {
+            return RolapTestSchema.this.createParticipant();
+        }
+    }
+    class StudyForeignKey extends LookupForeignKey
+    {
+        StudyForeignKey()
+        {
+            super("studyid");
+        }
+        @Override
+        public TableInfo getLookupTableInfo()
+        {
+            return RolapTestSchema.this.createStudy();
+        }
+    }
+    class VisitForeignKey extends LookupForeignKey
+    {
+        VisitForeignKey()
+        {
+            super("visitid");
+        }
+        @Override
+        public TableInfo getLookupTableInfo()
+        {
+            return RolapTestSchema.this.createVisit();
+        }
+    }
+    class AssayForeignKey extends LookupForeignKey
+    {
+        AssayForeignKey()
+        {
+            super("name","label");
+        }
+        @Override
+        public TableInfo getLookupTableInfo()
+        {
+            return RolapTestSchema.this.createAssay();
+        }
+    }
+    static class _ColumnInfo extends BaseColumnInfo
+    {
+        _ColumnInfo(String name, JdbcType type, ForeignKey fk)
+        {
+            super(name, type);
+            setFk(fk);
+        }
+    }
+
+
     static final Object[] row(Object... values)
     {
         return values;
@@ -132,20 +191,12 @@ public class RolapTestSchema extends UserSchema
     {
         BaseColumnInfo[] cols = new BaseColumnInfo[]
         {
-            new BaseColumnInfo("ptid", JdbcType.VARCHAR),
-            new BaseColumnInfo("studyid", JdbcType.VARCHAR),
-            new BaseColumnInfo("visitid", JdbcType.VARCHAR),
-            new BaseColumnInfo("assay", JdbcType.VARCHAR),
-            new BaseColumnInfo("positivity", JdbcType.INTEGER)
+            new _ColumnInfo("ptid", JdbcType.VARCHAR, new ParticipantForeignKey()),
+            new _ColumnInfo("studyid", JdbcType.VARCHAR, new StudyForeignKey()),
+            new _ColumnInfo("visitid", JdbcType.VARCHAR, new VisitForeignKey()),
+            new _ColumnInfo("assay", JdbcType.VARCHAR, new AssayForeignKey()),
+            new _ColumnInfo("positivity", JdbcType.INTEGER, null)
         };
-        cols[0].setFk(new LookupForeignKey("ptid")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return RolapTestSchema.this.createParticipant();
-            }
-        });
         Object[][] data = new Object[][]
         {
             row("P001001", "S001", "V0", "mRNA", 0),

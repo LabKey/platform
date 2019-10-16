@@ -85,6 +85,7 @@ import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SamplesUrls;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -231,6 +232,18 @@ public class SpecimenController extends BaseStudyController
         public ActionURL getSamplesURL(Container c)
         {
             return SpecimenController.getSamplesURL(c);
+        }
+
+        @Override
+        public ActionURL getManageRequestStatusURL(Container c, int requestId)
+        {
+            return new ActionURL(ManageRequestStatusAction.class, c).addParameter("id", requestId);
+        }
+
+        @Override
+        public ActionURL getRequestDetailsURL(Container c, int requestId)
+        {
+            return new ActionURL(ManageRequestAction.class, c).addParameter("id", requestId);
         }
     }
 
@@ -1774,8 +1787,16 @@ public class SpecimenController extends BaseStudyController
             _specimenRequest.setCreated(ts);
             _specimenRequest.setModified(ts);
             _specimenRequest.setEntityId(GUID.makeGUID());
-            if (form.getDestinationLocation() > 0)
+            Integer defaultSiteId = SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId();
+            // Default takes precedence if set
+            if (defaultSiteId != null)
+            {
+                _specimenRequest.setDestinationSiteId(defaultSiteId);
+            }
+            else if (form.getDestinationLocation() > 0)
+            {
                 _specimenRequest.setDestinationSiteId(form.getDestinationLocation());
+            }
             _specimenRequest.setStatusId(SpecimenManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), false).getRowId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -2644,7 +2665,7 @@ public class SpecimenController extends BaseStudyController
             SpecimenRequest request = SpecimenManager.getInstance().getRequest(getContainer(), form.getId());
             requiresEditRequestPermissions(request);
             List<Vial> vials = request.getVials();
-            if (vials != null && vials.size() > 0)
+            if (!vials.isEmpty() || SpecimenService.get().getRequestCustomizer().allowEmptyRequests())
             {
                 SpecimenRequestStatus newStatus = SpecimenManager.getInstance().getInitialRequestStatus(getContainer(), getUser(), true);
                 request = request.createMutable();

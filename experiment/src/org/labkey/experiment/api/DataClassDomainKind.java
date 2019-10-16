@@ -25,6 +25,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -274,5 +275,18 @@ public class DataClassDomainKind extends AbstractDomainKind
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return template instanceof DataClassTemplateType;
+    }
+
+
+    @Override
+    public String getObjectUriColumnName()
+    {
+        return OBJECT_URI_COLUMN_NAME;
+    }
+
+    @Override
+    public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
+    {
+        return UpdateableTableInfo.ObjectUriType.schemaColumn;
     }
 }
