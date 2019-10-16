@@ -1654,7 +1654,7 @@ public class SecurityManager
     {
         Container proj = c.getProject();
 
-        if (null == proj)
+        if (null == proj || u == null)
             return "";
 
         int[] groupIds = u.getGroups();

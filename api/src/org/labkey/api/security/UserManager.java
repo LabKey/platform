@@ -1132,26 +1132,21 @@ public class UserManager
         User displayUser = getUser(displayedUserId);
 
         boolean isDeletedUser = displayUser == null;
-        String displayName;
 
-        if (!isDeletedUser)
-        {
-            displayName = displayUser.getDisplayName(currentUser);
-        }
-        else
-        {
-            displayName = String.valueOf(displayedUserId);
-        }
+        if (isDeletedUser)
+            return PageFlowUtil.filter("<" + displayedUserId + ">");
 
+        String displayName = displayUser.getDisplayName(currentUser);
         ActionURL url = getUserDetailsURL(container, currentUser, displayedUserId);
 
-        if (url != null && !isDeletedUser)
+        // currentUser has permissions to see user details of the displayed user
+        if (url != null)
         {
             return "<a class=\"labkey-link\" href=\"" + url +
                     "\">" + PageFlowUtil.filter(displayName) + "</a>";
         }
 
-        return "<" + PageFlowUtil.filter(displayName) + ">";
+        return PageFlowUtil.filter(displayName);
     }
 
     /**
