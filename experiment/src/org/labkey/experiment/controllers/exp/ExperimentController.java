@@ -658,10 +658,10 @@ public class ExperimentController extends SpringActionController
             }
 
             // Not all sample sets can be edited
-            DomainKind domainKind = _source.getType().getDomainKind();
-            if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
+            DomainKind domainKind = _source.getDomain().getDomainKind();
+            if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getDomain()))
             {
-                ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
+                ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
                 if (editURL != null)
                 {
                     editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
@@ -3504,7 +3504,7 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
 
-            Domain domain = sampleSet.getType();
+            Domain domain = sampleSet.getDomain();
             DomainKind kind = domain.getDomainKind();
             _successUrl = kind.urlEditDefinition(domain, getViewContext());
             URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();

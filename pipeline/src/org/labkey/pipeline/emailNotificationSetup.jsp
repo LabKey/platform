@@ -237,5 +237,5 @@
         </tr>
     </table>
     <%= button("Update").submit(true) %>
-    <%= button("Reset to Default").submit(true).onClick("this.form.action=" + qh(buildURL(PipelineController.ResetEmailNotificationAction.class)) + ";") %></td>
+    <%= button("Reset to Default").submit(true).onClick("this.form.action=" + q(buildURL(PipelineController.ResetEmailNotificationAction.class)) + ";") %></td>
 </labkey:form>

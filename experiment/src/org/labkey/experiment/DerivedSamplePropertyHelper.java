@@ -82,10 +82,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             {
                 dps.add(_nameProperty);
             }
-            for (DomainProperty property : sampleSet.getType().getProperties())
-            {
-                dps.add(property);
-            }
+            dps.addAll(sampleSet.getDomain().getProperties());
         }
         else
         {
@@ -186,7 +183,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             for (DomainProperty pd : _sampleSet.getIdCols())
                 idColNames.add(pd.getName());
             List<DomainProperty> properties = new ArrayList<>();
-            for (DomainProperty dp : _sampleSet.getType().getProperties())
+            for (DomainProperty dp : _sampleSet.getDomain().getProperties())
             {
                 if (idColNames.contains(dp.getName()))
                     properties.add(dp);
