@@ -35,6 +35,7 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 
 public interface Domain extends IPropertyType
 {
@@ -66,6 +67,8 @@ public interface Domain extends IPropertyType
     DomainProperty addProperty(PropertyStorageSpec spec);
 
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
+
+    public Lock getDatabaseLock();
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;
