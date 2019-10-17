@@ -52,6 +52,7 @@ public class Link extends DisplayElement implements HasHtmlString
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
                 .id(lb.id)
                 .at(lb.usePost, href, null, lb.href)
+                .at(target, lb.target)
                 .at(lb.usePost, onclick, PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage), lb.onClick)
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")

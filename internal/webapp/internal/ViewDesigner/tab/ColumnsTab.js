@@ -84,7 +84,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.ColumnsTab', {
                 store: this.getColumnStore(),
                 deferEmptyText: false,
                 multiSelect: false,
-                height: 196,
+                height: 350,
                 autoScroll: true,
                 overItemCls: 'x4-view-over',
                 itemSelector: '.labkey-customview-item',
