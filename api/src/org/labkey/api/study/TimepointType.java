@@ -19,14 +19,17 @@ package org.labkey.api.study;
 import org.labkey.api.util.EnumHasHtmlString;
 
 /**
+ * List of ways that a study can group events based on their time.
  * User: markigra
  * Date: Oct 31, 2007
- * Time: 12:24:31 PM
  */
 public enum TimepointType implements EnumHasHtmlString<TimepointType>
 {
+    /** Events should be explicitly assigned a visit number */
     VISIT(true),
+    /** Events will be tracked based on their date, but will still be grouped into buckets based on their offset from the subject's start date */
     DATE(false),
+    /** Events will be tracked based on their date, but no effort will be made to group them or maintain date offsets from a start date */
     CONTINUOUS(false);
 
     private final boolean _visitBased;

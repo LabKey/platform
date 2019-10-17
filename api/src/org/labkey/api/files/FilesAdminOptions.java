@@ -39,9 +39,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Configuration for a file web part UI, including what buttons and file actions should be exposed to users.
  * User: klum
  * Date: Feb 2, 2010
- * Time: 9:35:36 AM
  */
 public class FilesAdminOptions
 {

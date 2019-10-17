@@ -37,9 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * Manages instances of {@link LsidHandler} to figure out who owns an LSID and can provide services or UI for its type.
  * User: migra
  * Date: Aug 17, 2005
- * Time: 2:37:30 PM
  */
 public class LsidManager
 {
