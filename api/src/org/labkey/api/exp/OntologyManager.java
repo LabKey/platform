@@ -27,8 +27,31 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExpObject;
@@ -41,10 +64,8 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -121,41 +142,13 @@ public class OntologyManager
      */
     public static Map<String, Object> getProperties(Container container, String parentLSID)
     {
-        return OntologyManager.getProperties(null, container, parentLSID);
-    }
-
-    public static Map<String, Object> getProperties(@Nullable UserSchema userSchema, Container container, String parentLSID)
-    {
         Map<String, Object> m = new HashMap<>();
         Map<String, ObjectProperty> propVals = getPropertyObjects(container, parentLSID);
         if (null != propVals)
         {
             for (Map.Entry<String, ObjectProperty> entry : propVals.entrySet())
             {
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getValue().getPropertyId());
-                Object displayVal = null;
-
-                if (null != userSchema && null != pd && pd.isLookup())
-                {
-                    TableInfo tableInfo = DefaultSchema.get(userSchema.getUser(), container).getSchema(pd.getLookupSchema()).getTable(pd.getLookupQuery(), null);
-
-                    if (null != tableInfo)
-                    {
-                        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-                        if (pd.getPropertyType().equals(PropertyType.INTEGER))
-                        {
-                            filter.addCondition(FieldKey.fromParts("RowId"), entry.getValue().value());
-                        }
-                        Map<String, Object> lookUpProp = new TableSelector(tableInfo, filter, null).getMap();
-                        if (null != lookUpProp && !lookUpProp.isEmpty())
-                        {
-                            displayVal = Map.of("displayValue", lookUpProp.get("Name"),"value", entry.getValue().value());
-                        }
-
-                    }
-
-                }
-                m.put(entry.getKey(), null == displayVal ? entry.getValue().value() : displayVal);
+                m.put(entry.getKey(), entry.getValue().value());
             }
         }
 

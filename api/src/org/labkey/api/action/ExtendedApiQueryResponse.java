@@ -20,12 +20,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.MVDisplayColumn;
+import org.labkey.api.data.NestedPropertyDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -111,20 +114,45 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
     protected Object createColMap(DisplayColumn dc)
     {
-        if (_arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
+        return createColMap(getRenderContext(), dc, _arrayMultiValueColumns, _includeFormattedValue, _doItWithStyle);
+    }
+
+    public static Object createColMap(
+            RenderContext ctx,
+            DisplayColumn dc,
+            boolean arrayMultiValueColumns,
+            boolean includeFormattedValue,
+            boolean doItWithStyle)
+    {
+        if (dc instanceof NestedPropertyDisplayColumn)
+        {
+            NestedPropertyDisplayColumn npc = (NestedPropertyDisplayColumn) dc;
+
+            Map<String, Object> nestedProperties = new LinkedHashMap<>();
+            for (Pair<RenderContext, DisplayColumn> pair : npc.getNestedDisplayColumns(ctx))
+            {
+                RenderContext nestedCtx = pair.first;
+                DisplayColumn nestedCol = pair.second;
+
+                String key = npc.getNestedColumnKey(nestedCol);
+                nestedProperties.put(key, createColMap(nestedCtx, nestedCol, arrayMultiValueColumns, includeFormattedValue, doItWithStyle));
+            }
+            return nestedProperties;
+        }
+        else if (arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn)
         {
             // render MultiValue columns as an array of 'value', 'displayValue', and 'url' objects
             IMultiValuedDisplayColumn mdc = (IMultiValuedDisplayColumn)dc;
 
-            List<Object> values = mdc.getJsonValues(getRenderContext());
+            List<Object> values = mdc.getJsonValues(ctx);
             if (values == null)
                 return null;
 
-            List<String> urls = mdc.renderURLs(getRenderContext());
-            List<Object> display = mdc.getDisplayValues(getRenderContext());
+            List<String> urls = mdc.renderURLs(ctx);
+            List<Object> display = mdc.getDisplayValues(ctx);
             List<String> formatted = null;
-            if (_includeFormattedValue)
-                formatted = mdc.getFormattedTexts(getRenderContext());
+            if (includeFormattedValue)
+                formatted = mdc.getFormattedTexts(ctx);
 
 
             assert values.size() == urls.size() && values.size() == display.size();
@@ -134,10 +162,10 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
                 Object value = values.get(i);
                 Object displayValue = display.get(i);
                 String formattedValue = null;
-                if (_includeFormattedValue)
+                if (includeFormattedValue)
                     formattedValue = formatted.get(i);
                 String url = urls.get(i);
-                ColMap nested = makeColMap(value, displayValue, formattedValue, url);
+                ColMap nested = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
 
                 // TODO: missing value indicators ?
 
@@ -148,32 +176,30 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         else
         {
             //column value
-            Object value = dc.getJsonValue(_ctx);
-            Object displayValue = dc.getDisplayValue(getRenderContext());
+            Object value = dc.getJsonValue(ctx);
+            Object displayValue = dc.getDisplayValue(ctx);
             String formattedValue = null;
-            if (_includeFormattedValue)
-                formattedValue = dc.getFormattedText(getRenderContext());
+            if (includeFormattedValue)
+                formattedValue = dc.getFormattedText(ctx);
 
             String url = null;
             if (null != value)
-                url = dc.renderURL(getRenderContext());
+                url = dc.renderURL(ctx);
 
             //in the extended response format, each column will have a map of its own
             //that will contain entries for value, mvValue, mvIndicator, etc.
-            Map<ColMapEntry, Object> colMap = makeColMap(value, displayValue, formattedValue, url);
+            Map<ColMapEntry, Object> colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue);
 
             //missing values
             if (dc instanceof MVDisplayColumn)
             {
                 MVDisplayColumn mvColumn = (MVDisplayColumn)dc;
-                RenderContext ctx = getRenderContext();
                 colMap.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
                 colMap.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
             }
 
-            if (_doItWithStyle)
+            if (doItWithStyle)
             {
-                RenderContext ctx = getRenderContext();
                 String style = dc.getCssStyle(ctx);
                 if (!StringUtils.isEmpty(style))
                     colMap.put(ColMapEntry.style, style);
@@ -183,7 +209,9 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         }
     }
 
-    protected ColMap makeColMap(@Nullable Object value, @Nullable Object displayValue, @Nullable String formattedValue, @Nullable String url)
+    protected static ColMap makeColMap(
+            @Nullable Object value, @Nullable Object displayValue, @Nullable String formattedValue, @Nullable String url,
+            boolean includeFormattedValue)
     {
         ColMap colMap = new ColMap();
 
@@ -194,7 +222,7 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         if (null != displayValue && !displayValue.equals(value))
             colMap.put(ColMapEntry.displayValue, displayValue);
 
-        if (_includeFormattedValue && formattedValue != null && !formattedValue.equals(displayValue))
+        if (includeFormattedValue && formattedValue != null && !formattedValue.equals(displayValue))
             colMap.put(ColMapEntry.formattedValue, formattedValue);
 
         if (value != null && url != null)

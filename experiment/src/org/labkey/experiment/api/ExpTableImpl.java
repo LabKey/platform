@@ -18,14 +18,11 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -50,19 +47,13 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
 {
@@ -134,12 +125,11 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
-                        List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), pd);
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
-                        pc.setVocabulary(domainsForPD.stream().anyMatch(d-> d.getDomainKind() instanceof VocabularyDomainKind));
                         // use the property URI as the column's FieldKey name
+                        String label = pc.getLabel();
                         pc.setFieldKey(FieldKey.fromParts(name));
-                        pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
+                        pc.setLabel(label);
                         return pc;
                     }
                 }
@@ -200,114 +190,14 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     // Expensive render-time fetching of all ontology properties attached to the object row
-    // TODO: Can we pre-fetch all properties referenced by the rows in the outer select and only include those properties?
-    // TODO: How to handle lookup values?
     protected ColumnInfo createPropertiesColumn(String name)
     {
         var col = new AliasedColumn(this, name, getLSIDColumn());
-        col.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
-        {
-            @Override
-            public Object getValue(RenderContext ctx)
-            {
-                String lsid = (String)super.getValue(ctx);
-                if (lsid == null)
-                    return null;
-
-                Map<String, Object> rawProps = OntologyManager.getProperties(getUserSchema(), ctx.getContainer(), lsid);
-                if (!rawProps.isEmpty())
-                {
-                    return rawProps;
-                }
-
-                return null;
-            }
-
-            @Override
-            public Object getExcelCompatibleValue(RenderContext ctx)
-            {
-                return toJSONObjectString(ctx);
-            }
-
-            @Override
-            public String getTsvFormattedValue(RenderContext ctx)
-            {
-                return toJSONObjectString(ctx);
-            }
-
-            // return json string
-            private String toJSONObjectString(RenderContext ctx)
-            {
-                Object props = getValue(ctx);
-                if (props == null)
-                    return null;
-
-                return new JSONObject(props).toString(2);
-            }
-
-            // return html formatted value
-            @Override
-            public @NotNull String getFormattedValue(RenderContext ctx)
-            {
-                Object props = getValue(ctx);
-                if (props == null)
-                    return "&nbsp;";
-
-                HashMap<String, Object> propertyMap;
-
-                if (props instanceof HashMap)
-                {
-                    propertyMap = (HashMap) props;
-
-                    Map<String, Object> sortedProps = new TreeMap<>();
-
-                    propertyMap.entrySet().forEach(entry -> sortedProps.put(entry.getKey().split("#")[1], entry.getValue()));
-
-                    StringBuilder hs = new StringBuilder();
-                    hs.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
-
-                    hs.append("<tr style=\"font-weight: bold;\">");
-                    for (String property : sortedProps.keySet())
-                    {
-                        hs.append("<td class=\"labkey-column-header\">");
-                        hs.append(HtmlString.of(property));
-                        hs.append("</td>");
-                    }
-                    hs.append("</tr>");
-
-                    hs.append("<tr class=\"labkey-row\">");
-
-                    for (Map.Entry<String, Object> property : sortedProps.entrySet())
-                    {
-                        hs.append("<td>");
-                        String val = property.getValue().toString();
-                        if (val.contains("displayValue"))
-                        {
-                            String[] lookupVals = val.substring(1, val.length()-1).split(",");
-                            hs.append(HtmlString.of(lookupVals[0])).append("<br>");
-                            hs.append(HtmlString.of(lookupVals[1]));
-                        }
-                        else
-                        {
-                            hs.append(HtmlString.of(val));
-                        }
-                        hs.append("</td>");
-                    }
-
-                    hs.append("</tr>");
-                    hs.append("</table>");
-
-                    return hs.toString();
-                }
-                else
-                {
-                String html = PageFlowUtil.filter(new JSONObject(props).toString(2));
-                html = html.replaceAll("\\n", "<br>\n");
-                return html;
-                }
-            }
-
-        });
+        col.setDescription("Includes all properties set for this row");
+        col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
         col.setCalculated(true);
         return col;
     }
@@ -418,6 +308,8 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         colProperty.setHidden(true);
         colProperty.setUserEditable(false);
         colProperty.setIsUnselectable(true);
+        // As this column wraps the LSID (which is required for insert), we need
+        // to mark this as a calculated column so it won't be required during insert
         colProperty.setCalculated(true);
         addColumn(colProperty);
 
