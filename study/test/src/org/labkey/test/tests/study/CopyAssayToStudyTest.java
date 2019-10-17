@@ -216,7 +216,6 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         assertFormElementEquals(Locator.name("comments"), "");
         setFormElement(Locator.name("name"), TEST_RUN3);
         setFormElement(Locator.name("comments"), TEST_RUN3_COMMENTS);
-        setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "0"), TEST_ASSAY_RUN_PROP1);
         setFormElement(Locator.name(TEST_ASSAY_RUN_PROP_NAME + "5"), PROTOCOL_DOC2);
         clickButton("Save and Finish");
 
