@@ -928,10 +928,12 @@ public class AssayDesignerMainPanel extends AbstractDesignerMainPanel implements
                 // One extra for the blank row
                 assert _autoCopyTargetListBox.getItemCount() == _autoCopyTargets.size() + 1;
                 _assay.setAutoCopyTargetContainer(_autoCopyTargets.get(_autoCopyTargetListBox.getSelectedIndex() - 1));
+                _assay.setAutoCopyTargetContainerId(_assay.getAutoCopyTargetContainer().getEntityId());
             }
             else
             {
                 _assay.setAutoCopyTargetContainer(null);
+                _assay.setAutoCopyTargetContainerId(null);
             }
 
             _assay.setProviderName(_providerName);
