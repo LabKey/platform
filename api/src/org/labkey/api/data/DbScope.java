@@ -248,6 +248,7 @@ public class DbScope
 
     public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
     {
+        @Override
         @NotNull
         public String getKind()
         {

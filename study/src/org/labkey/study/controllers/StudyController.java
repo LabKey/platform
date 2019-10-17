@@ -3880,8 +3880,10 @@ public class StudyController extends BaseStudyController
 
             Results rs = dr.getResultSet(ctx);
             List<DisplayColumn> cols = dr.getDisplayColumns();
-            ExcelWriter xl = new ExcelWriter(rs, cols);
-            xl.write(response);
+            try (ExcelWriter xl = new ExcelWriter(rs, cols))
+            {
+                xl.write(response);
+            }
         }
     }
 
