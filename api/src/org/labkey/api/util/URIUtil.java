@@ -209,7 +209,7 @@ public class URIUtil
      */
     public static boolean hasURICharacters(String propertyURI)
     {
-        return StringUtils.containsAny(propertyURI, ':', '/', '#', '%', '?');
+        return StringUtils.containsAny(propertyURI, ':', '/', '#', '%', '?') && propertyURI.startsWith("urn:");
     }
 
 }

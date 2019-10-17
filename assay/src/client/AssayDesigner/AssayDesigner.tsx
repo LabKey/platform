@@ -15,15 +15,17 @@
  */
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
-import {ActionURL, Security} from "@labkey/api";
+import {ActionURL, Security, Utils} from "@labkey/api";
 import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
-import { Alert, LoadingSpinner, PermissionTypes } from "@glass/base";
+import {Alert, LoadingSpinner, PermissionTypes} from "@glass/base";
 
 import "@glass/base/dist/base.css"
 import "@glass/domainproperties/dist/domainproperties.css"
 
 type State = {
     protocolId: number,
+    providerName?: string,
+    copy?: boolean,
     returnUrl: string,
     model?: AssayProtocolModel,
     isLoadingModel: boolean,
@@ -38,18 +40,26 @@ export class App extends React.Component<any, State> {
     {
         super(props);
 
-        const { rowId, returnUrl } = ActionURL.getParameters();
+        const { rowId, copy, providerName } = ActionURL.getParameters();
+
+        // hack, if the returnUrl has stripped off the rowId because of encoding/decoding issues (see TODO in AbstractAssayProvider.getManageMenuNavTree()) add it back on
+        let returnUrl = ActionURL.getParameter('returnUrl');
+        if (rowId !== undefined && returnUrl && returnUrl.indexOf('rowId') === returnUrl.length - 5) {
+            returnUrl = returnUrl + '=' + rowId
+        }
 
         this.state = {
             protocolId: rowId,
+            providerName,
+            copy,
             isLoadingModel: true,
             returnUrl,
-            dirty: false
+            dirty: copy || false // default to dirty state for assay copy case
         };
     }
 
     componentDidMount() {
-        const { protocolId } = this.state;
+        const { protocolId, providerName, copy } = this.state;
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
@@ -66,9 +76,9 @@ export class App extends React.Component<any, State> {
             }
         });
 
-        // if URL has a protocol RowId, look up the assay design info
-        if (protocolId) {
-            fetchProtocol(protocolId)
+        // if URL has a protocol RowId, look up the assay design info. otherwise use the providerName to get the template
+        if (protocolId || providerName) {
+            fetchProtocol(protocolId, providerName, copy)
                 .then((model) => {
                     this.setState(() => ({
                         model,
@@ -82,9 +92,11 @@ export class App extends React.Component<any, State> {
                     }));
                 });
         }
-        // else we are on this page to create a new assay design
         else {
-            this.setState(() => ({isLoadingModel: false}));
+            this.setState(() => ({
+                message: 'Missing required parameter: rowId or providerName',
+                isLoadingModel: false
+            }));
         }
 
         window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
@@ -130,8 +142,21 @@ export class App extends React.Component<any, State> {
                         <div className={"panel-title"}>{model.name}</div>
                     </Panel.Heading>
                     <Panel.Body>
-                        <p>Provider: {model.providerName}</p>
-                        <p>Description: {model.description}</p>
+                        <table>
+                            {this.renderReadOnlyProperty('Provider', model.providerName)}
+                            {this.renderReadOnlyProperty('Description', model.description)}
+                            {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
+                            {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
+                            {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
+                            {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
+                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer.path : undefined)}
+                            {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
+                            {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
+                            {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
+                            {this.renderReadOnlyProperty('Module-Provided Scripts', model.moduleTransformScripts, model.moduleTransformScripts.size === 0)}
+                            {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
+                            {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
+                        </table>
                     </Panel.Body>
                 </Panel>
                 {model.domains.map((domain, index) => (
@@ -139,6 +164,21 @@ export class App extends React.Component<any, State> {
                 ))}
             </>
         )
+    }
+
+    renderReadOnlyProperty(label: string, value: any, hide?: boolean) {
+        if (value && !hide) {
+            return (
+                <tr>
+                    <td style={{verticalAlign: 'top', padding: '3px'}}>{label}:&nbsp;&nbsp;&nbsp;</td>
+                    <td>
+                        {Utils.isString(value) && value}
+                        {Utils.isBoolean(value) && value.toString()}
+                        {typeof value === 'object' && value.map((val) => <div>{val}</div>)}
+                    </td>
+                </tr>
+            )
+        }
     }
 
     renderDesignerView() {
@@ -167,7 +207,7 @@ export class App extends React.Component<any, State> {
         }
 
         // check if this is a create assay case with a user that doesn't have permissions
-        if (model === undefined && !hasDesignAssayPerm) {
+        if (model.isNew() && !hasDesignAssayPerm) {
             return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>
         }
 
