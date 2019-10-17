@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -295,7 +294,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         StudySnapshot snapshot = null;
 
         if (optionsId != null)
-            snapshot = StudyManager.getInstance().getRefreshStudySnapshot(optionsId);
+            snapshot = StudyManager.getInstance().getStudySnapshot(optionsId);
 
         PHI snapshotPhiLevel = (snapshot != null) ? snapshot.getSnapshotSettings().getPhiLevel() : PHI.NotPHI;
         Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, snapshotPhiLevel);
