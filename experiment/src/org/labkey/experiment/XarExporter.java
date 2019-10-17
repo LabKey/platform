@@ -557,7 +557,7 @@ public class XarExporter
             xSampleSet.setNameExpression(sampleSet.getNameExpression());
         }
 
-        Domain domain = sampleSet.getType();
+        Domain domain = sampleSet.getDomain();
         queueDomain(domain);
     }
 

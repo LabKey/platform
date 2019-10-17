@@ -1315,7 +1315,7 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         if (measureUndefined)
         {
-            message = 'The measure ' + measure.label + ' was not found. It may have been renamed or removed.';
+            message = 'The measure, ' + measure.name + ', was not found. It may have been renamed or removed.';
             return {success: false, message: message};
         }
 
@@ -1670,7 +1670,7 @@ LABKEY.vis.GenericChartHelper = new function(){
                 var measure = measuresArr[j];
                 if (LABKEY.Utils.isObject(measure)) {
                     if (measure.name && !LABKEY.Utils.isDefined(firstRecord[measure.name])) {
-                        return {success: false, messages: ['The measure, ' + measure.label + ', is not available. It may have been renamed or removed.']};
+                        return {success: false, messages: ['The measure, ' + measure.name + ', is not available. It may have been renamed or removed.']};
                     }
 
                     var validation;

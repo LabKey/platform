@@ -919,7 +919,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJavaUpgradeCode\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*,?\\s*(\\d)?;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*,?\\s*(\\d)?;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
     // Split Microsoft SQL scripts on GO statements

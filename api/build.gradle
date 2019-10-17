@@ -154,6 +154,6 @@ dependencies {
   // These are required for running unit tests through the server junit controller
   external test
 
-  jspCompile files(project.tasks.jar)
-  jspCompile apache, jackson, spring
+  jspImplementation files(project.tasks.jar)
+  jspImplementation apache, jackson, spring
 }

@@ -29,6 +29,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -69,6 +70,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     public static final String NAME = "SampleSet";
     public static final String PROVISIONED_SCHEMA_NAME = "expsampleset";
 
+
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
     private static final Set<PropertyStorageSpec.Index> INDEXES;
     private static final Set<String> RESERVED_NAMES;
@@ -101,6 +103,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     {
     }
 
+    @Override
     public String getKindName()
     {
         return NAME;
@@ -133,6 +136,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         return null;
     }
 
+    @Override
     public String generateDomainURI(String schemaName, String queryName, Container container, User user)
     {
         return ExperimentService.get().generateLSID(container, ExpSampleSet.class, queryName);
@@ -140,7 +144,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
 
     private ExpSampleSet getSampleSet(Domain domain)
     {
-        return ExperimentService.get().getSampleSet(domain.getTypeURI());
+        return SampleSetService.get().getSampleSet(domain.getTypeURI());
     }
 
     @Override
@@ -149,6 +153,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         return false;
     }
 
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleSet ss = getSampleSet(domain);
@@ -159,6 +164,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         return (ActionURL) ss.detailsURL();
     }
 
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
@@ -185,8 +191,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         try
         {
             Map<String, String> aliases = ss.getImportAliasMap();
-            if (aliases != null)
-                reserved.addAll(aliases.keySet());
+            reserved.addAll(aliases.keySet());
 
         }
         catch (IOException e)
@@ -209,7 +214,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     }
 
 
-
+    @Override
     public String getTypeLabel(Domain domain)
     {
         ExpSampleSet ss = getSampleSet(domain);
@@ -218,6 +223,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         return ss.getName();
     }
 
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         SQLFragment ret = new SQLFragment("SELECT exp.object.objectid FROM exp.object INNER JOIN exp.material ON exp.object.objecturi = exp.material.lsid WHERE exp.material.cpastype = ?");
@@ -230,7 +236,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     {
         // Cannot edit default sample set
         ExpSampleSet ss = getSampleSet(domain);
-        if (ss == null || ExperimentService.get().getDefaultSampleSetLsid().equals(domain.getTypeURI()))
+        if (ss == null || SampleSetService.get().getDefaultSampleSetLsid().equals(domain.getTypeURI()))
         {
             return false;
         }
@@ -271,7 +277,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         ExpSampleSet ss;
         try
         {
-            ss = ExperimentService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
+            ss = SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
         }
         catch (SQLException e)
         {
@@ -281,13 +287,13 @@ public class SampleSetDomainKind extends AbstractDomainKind
         {
             throw new RuntimeException(e);
         }
-        return ss.getType();
+        return ss.getDomain();
     }
 
     @Override
     public void deleteDomain(User user, Domain domain)
     {
-        ExpSampleSet ss = ExperimentService.get().getSampleSet(domain.getTypeURI());
+        ExpSampleSet ss = SampleSetService.get().getSampleSet(domain.getTypeURI());
         if (ss == null)
             throw new NotFoundException("Sample Set not found: " + domain);
 
@@ -298,7 +304,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     public TableInfo getTableInfo(User user, Container container, String name)
     {
         UserSchema schema = new SamplesSchema(user, container);
-        return schema.getTable(name);
+        return schema.getTable(name, null);
     }
 
     @Override
@@ -306,7 +312,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     {
         super.invalidate(domain);
 
-        ExpSampleSet ss = ExperimentService.get().getSampleSet(domain.getTypeURI());
+        ExpSampleSet ss = SampleSetService.get().getSampleSet(domain.getTypeURI());
         if (ss != null)
             SampleSetService.get().indexSampleSet(ss);
     }
@@ -315,5 +321,17 @@ public class SampleSetDomainKind extends AbstractDomainKind
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return template instanceof SampleSetTemplateType;
+    }
+
+    @Override
+    public String getObjectUriColumnName()
+    {
+        return OBJECT_URI_COLUMN_NAME;
+    }
+
+    @Override
+    public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
+    {
+        return UpdateableTableInfo.ObjectUriType.schemaColumn;
     }
 }

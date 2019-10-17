@@ -197,6 +197,6 @@ public class SamplesSchema extends AbstractExpSchema
         if (ss == null)
             throw new NotFoundException("Sample set '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
-        return ss.getType().getTypeURI();
+        return ss.getDomain().getTypeURI();
     }
 }

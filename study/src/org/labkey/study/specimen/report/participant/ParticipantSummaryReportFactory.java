@@ -32,6 +32,7 @@ import java.util.Collections;
  */
 public class ParticipantSummaryReportFactory extends SpecimenVisitReportParameters
 {
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
@@ -41,6 +42,7 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
         return Collections.singletonList(report);
     }
 
+    @Override
     public String getLabel()
     {
         return StudyService.get().getSubjectNounSingular(getContainer()) + " Summary";
@@ -52,11 +54,13 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
         return "ParticipantSummary";
     }
 
-    public boolean allowsParticipantAggregegates()
+    @Override
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
-    
+
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.ParticipantSummaryReportAction.class;

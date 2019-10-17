@@ -348,22 +348,12 @@ CREATE TABLE core.ShortURL
 GO
 
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
--- script runner to invoke the specified method at this point in the script running process.  See usages of the
--- UpgradeCode interface for more details.
+-- script runner to invoke the specified method at this point in the script running process. See implementations of
+-- the UpgradeCode interface for more details.
 CREATE PROCEDURE core.executeJavaUpgradeCode(@Name VARCHAR(255)) AS
 BEGIN
     DECLARE @notice VARCHAR(255)
-    SET @notice = 'Empty function that signals script runner to execute Java code.  See usages of UpgradeCode.java.'
-END;
-
-GO
-
--- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
--- imports a tabular data file (TSV, XLSX, etc.) into the specified table.
-CREATE PROCEDURE core.bulkImport(@schema VARCHAR(200), @table VARCHAR(200), @filename VARCHAR(200)) AS
-BEGIN
-    DECLARE @notice VARCHAR(255)
-    SET @notice = 'Empty function that signals script runner to bulk import a file into a table.'
+    SET @notice = 'Empty function that signals script runner to execute Java initialization code. See implementations of UpgradeCode.java.'
 END;
 
 GO
@@ -419,248 +409,8 @@ CREATE TABLE core.Notifications
 
 GO
 
-CREATE PROCEDURE core.fn_dropifexists (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL)
-AS
-BEGIN
-  DECLARE @ret_code INTEGER
-  DECLARE @print_cmds CHAR(1)
-  SELECT @print_cmds ='F'
-  DECLARE @fullname VARCHAR(300)
-  SELECT @ret_code = 0
-  SELECT @fullname = (@objschema + '.' + @objname)
-  IF (UPPER(@objtype)) = 'TABLE'
-    BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsTable') =1
-        BEGIN
-          EXEC('DROP TABLE ' + @fullname )
-          SELECT @ret_code = 1
-        END
-      ELSE IF @objname LIKE '##%' AND OBJECT_ID('tempdb.dbo.' + @objname) IS NOT NULL
-        BEGIN
-          EXEC('DROP TABLE ' + @objname )
-          SELECT @ret_code = 1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'VIEW'
-    BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsView') =1
-        BEGIN
-          EXEC('DROP VIEW ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'INDEX'
-    BEGIN
-      DECLARE @fullername VARCHAR(500)
-      SELECT @fullername = @fullname + '.' + @subobjname
-      IF INDEXPROPERTY(OBJECT_ID(@fullname), @subobjname, 'IndexID') IS NOT NULL
-        BEGIN
-          EXEC('DROP INDEX ' + @fullername )
-          SELECT @ret_code =1
-        END
-      ELSE IF EXISTS (SELECT * FROM sys.indexes si
-      WHERE si.name = @subobjname
-            AND OBJECT_NAME(si.object_id) <> @objname)
-        BEGIN
-          RAISERROR ('Index does not belong to specified table ' , 16, 1)
-          RETURN @ret_code
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'CONSTRAINT'
-    BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(@objschema + '.' + @subobjname), 'IsConstraint') = 1
-        BEGIN
-          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @subobjname)
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'DEFAULT'
-    BEGIN
-      DECLARE @DEFAULT sysname
-      SELECT 	@DEFAULT = s.name
-      FROM sys.objects s
-        join sys.columns c ON s.object_id = c.default_object_id
-      WHERE
-        s.type = 'D'
-        and c.object_id = OBJECT_ID(@fullname)
-        and c.name = @subobjname
-
-      IF @DEFAULT IS NOT NULL AND OBJECTPROPERTY(OBJECT_ID(@objschema + '.' + @DEFAULT), 'IsConstraint') = 1
-        BEGIN
-          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-          if (@print_cmds='T') PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'SCHEMA'
-    BEGIN
-      DECLARE @schemaid INT, @principalid int
-
-      SELECT @schemaid=schema_id, @principalid=principal_id
-      FROM sys.schemas
-      WHERE name = @objschema
-
-      IF @schemaid IS NOT NULL
-        BEGIN
-          IF (@objname is NOT NULL AND @objname NOT IN ('', '*'))
-            BEGIN
-              RAISERROR ('Invalid @objname for @objtype of SCHEMA   must be either "*" (to drop all dependent objects) or NULL (for dropping empty schema )' , 16, 1)
-              RETURN @ret_code
-            END
-          ELSE IF (@objname = '*' )
-            BEGIN
-              DECLARE @fkConstName sysname, @fkTableName sysname, @fkSchema sysname
-              DECLARE fkCursor CURSOR LOCAL for
-                SELECT object_name(sfk.object_id) as fk_constraint_name, object_name(sfk.parent_object_id) as fk_table_name,
-                       schema_name(sfk.schema_id) as fk_schema_name
-                FROM sys.foreign_keys sfk
-                  INNER JOIN sys.objects fso ON (sfk.referenced_object_id = fso.object_id)
-                WHERE fso.schema_id=@schemaid
-                      AND sfk.type = 'F'
-
-              OPEN fkCursor
-              FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
-              WHILE @@fetch_status = 0
-                BEGIN
-                  SELECT @fullname = @fkSchema + '.' +@fkTableName
-                  EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-                  if (@print_cmds='T') PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-
-                  FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
-                END
-              CLOSE fkCursor
-              DEALLOCATE fkCursor
-
-              DECLARE @soName sysname, @parent INT, @type CHAR(2), @fkschemaid int
-              DECLARE soCursor CURSOR LOCAL for
-                SELECT so.name, so.type, so.parent_object_id, so.schema_id
-                FROM sys.objects so
-                WHERE (so.schema_id=@schemaid)
-                ORDER BY (CASE  WHEN so.type='V' THEN 1
-                          WHEN so.type='P' THEN 2
-                          WHEN so.type IN ('FN', 'IF', 'TF', 'FS', 'FT') THEN 3
-                          WHEN so.type='AF' THEN 4
-                          WHEN so.type='U' THEN 5
-                          WHEN so.type='SN' THEN 6
-                          ELSE 7
-                          END)
-              OPEN soCursor
-              FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
-              WHILE @@fetch_status = 0
-                BEGIN
-                  SELECT @fullname = @objschema + '.' + @soName
-                  IF (@type = 'V')
-                    BEGIN
-                      EXEC('DROP VIEW ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP VIEW ' + @fullname)
-                    END
-                  ELSE IF (@type = 'P')
-                    BEGIN
-                      EXEC('DROP PROCEDURE ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP PROCEDURE ' + @fullname)
-                    END
-                  ELSE IF (@type IN ('FN', 'IF', 'TF', 'FS', 'FT'))
-                    BEGIN
-                      EXEC('DROP FUNCTION ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP FUNCTION ' + @fullname)
-                    END
-                  ELSE IF (@type = 'AF')
-                    BEGIN
-                      EXEC('DROP AGGREGATE ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP AGGREGATE ' + @fullname)
-                    END
-                  ELSE IF (@type = 'U')
-                    BEGIN
-                      EXEC('DROP TABLE ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP TABLE ' + @fullname)
-                    END
-                  ELSE IF (@type = 'SN')
-                    BEGIN
-                      EXEC('DROP SYNONYM ' + @fullname)
-                      if (@print_cmds='T') PRINT('DROP SYNONYM ' + @fullname)
-                    END
-                  ELSE
-                    BEGIN
-                      DECLARE @msg NVARCHAR(255)
-                      SELECT @msg=' Found object of type: ' + @type + ' name: ' + @fullname + ' in this schema.  Schema not dropped. '
-                      RAISERROR (@msg, 16, 1)
-                      RETURN @ret_code
-                    END
-                  FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
-                END
-              CLOSE soCursor
-              DEALLOCATE soCursor
-            END
-
-          IF (@objSchema != 'dbo')
-            BEGIN
-              DECLARE @approlename sysname
-              SELECT @approlename = name
-              FROM sys.database_principals
-              WHERE principal_id=@principalid AND type='A'
-
-              IF (@approlename IS NOT NULL)
-                BEGIN
-                  EXEC sp_dropapprole @approlename
-                  if (@print_cmds='T') PRINT ('sp_dropapprole '+ @approlename)
-                END
-              ELSE
-                BEGIN
-                  EXEC('DROP SCHEMA ' + @objschema)
-                  if (@print_cmds='T') PRINT('DROP SCHEMA ' + @objschema)
-                END
-            END
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'PROCEDURE'
-    BEGIN
-      IF (@objschema = 'sys')
-        BEGIN
-          RAISERROR ('Invalid @objschema, not attempting to drop sys object', 16, 1)
-          RETURN @ret_code
-        END
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsProcedure') =1
-        BEGIN
-          EXEC('DROP PROCEDURE ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'FUNCTION'
-    BEGIN
-      IF EXISTS (SELECT 1 FROM sys.objects o JOIN sys.schemas s ON o.schema_id = s.schema_id WHERE s.name = @objschema AND o.name = @objname AND o.type IN ('FN', 'IF', 'TF', 'FS', 'FT'))
-        BEGIN
-          EXEC('DROP FUNCTION ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'AGGREGATE'
-    BEGIN
-      IF EXISTS (SELECT 1 FROM sys.objects o JOIN sys.schemas s ON o.schema_id = s.schema_id WHERE s.name = @objschema AND o.name = @objname AND o.type = 'AF')
-        BEGIN
-          EXEC('DROP AGGREGATE ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE IF (UPPER(@objtype)) = 'SYNONYM'
-    BEGIN
-      IF EXISTS (SELECT 1 FROM sys.objects o JOIN sys.schemas s ON o.schema_id = s.schema_id WHERE s.name = @objschema AND o.name = @objname AND o.type = 'SN')
-        BEGIN
-          EXEC('DROP SYNONYM ' + @fullname )
-          SELECT @ret_code =1
-        END
-    END
-  ELSE
-    RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, ', 16,1, @objtype )
-
-  RETURN @ret_code;
-END
-GO
-
 /* core-15.30-16.10.sql */
 
-EXEC core.fn_dropifexists 'bulkImport', 'core', 'PROCEDURE';
-GO
 -- An empty stored procedure (similar to executeJavaUpgradeCode) that, when detected by the script runner,
 -- imports a tabular data file (TSV, XLSX, etc.) into the specified table.
 CREATE PROCEDURE core.bulkImport(@schema VARCHAR(200), @table VARCHAR(200), @filename VARCHAR(200), @preserveEmptyString bit = 0) AS
@@ -691,7 +441,7 @@ ALTER TABLE core.UsersData ADD ExpirationDate DATETIME;
 GO
 
 -- Add ability to drop columns
-ALTER PROCEDURE [core].[fn_dropifexists] (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL, @printCmds BIT = 0)
+CREATE PROCEDURE [core].[fn_dropifexists] (@objname VARCHAR(250), @objschema VARCHAR(50), @objtype VARCHAR(50), @subobjname VARCHAR(250) = NULL, @printCmds BIT = 0)
 AS
 BEGIN
   /*
@@ -704,7 +454,7 @@ BEGIN
        objname    Required. For TABLE, VIEW, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, this is the name of the object to be dropped
                    for SCHEMA, specify '*' to drop all dependent objects, or NULL to drop an empty schema
                    for INDEX, CONSTRAINT, DEFAULT, or COLUMN, specify the name of the table
-       objschema  Requried. The name of the schema for the object, or the schema being dropped
+       objschema  Required. The name of the schema for the object, or the schema being dropped
        objtype    Required. The type of object being dropped. Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, COLUMN
        subobjtype Optional. When dropping INDEX, CONSTRAINT, DEFAULT, or COLUMN, the name of the object being dropped
        printCmds  Optional, 1 or 0. If 1, the cascading drop commands for SCHEMA and COLUMN will be printed for debugging purposes
@@ -867,7 +617,7 @@ BEGIN
                   ELSE
                     BEGIN
                       DECLARE @msg NVARCHAR(255)
-                      SELECT @msg=' Found object of type: ' + @type + ' name: ' + @fullname + ' in this schema.  Schema not dropped. '
+                      SELECT @msg=' Found object of type: ' + @type + ' name: ' + @fullname + ' in this schema. Schema not dropped. '
                       RAISERROR (@msg, 16, 1)
                       RETURN @ret_code
                     END
