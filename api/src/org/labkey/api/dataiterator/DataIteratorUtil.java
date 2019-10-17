@@ -229,7 +229,7 @@ public class DataIteratorUtil
             if (null == to)
             {
                 // 1. here if (from.name - propURI ) and no match then ask targetTableInfo to getCol and if it returns then there is a match
-                if(URIUtil.hasURICharacters(from.getColumnName()))
+                if(URIUtil.hasURICharacters(from.getColumnName()) && null != container)
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(from.getColumnName(), container);
                     if (null != pd)
