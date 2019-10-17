@@ -27,7 +27,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,19 +43,12 @@ public interface ExpSampleSet extends ExpObject
 
 
     /** pass in a container to request a sample */
-    @Deprecated
-    List<? extends ExpMaterial> getSamples();
     List<? extends ExpMaterial> getSamples(Container c);
 
     /** pass in a container to request a sample */
-    @Deprecated
-    ExpMaterial getSample(String name);
     ExpMaterial getSample(Container c, String name);
 
-    // use getDomain()
-    @NotNull @Deprecated
-    Domain getType();
-
+    @NotNull
     Domain getDomain();
 
     String getDescription();
