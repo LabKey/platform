@@ -41,7 +41,7 @@ public class JspClassLoader
 
     private transient ClassLoader _loader;
 
-    JspClassLoader()
+    public JspClassLoader()
     {
         ServletContext context = ModuleLoader.getServletContext();
         Set<String> paths = context.getResourcePaths("/WEB-INF/jsp/");

@@ -35,9 +35,7 @@ import java.util.TreeMap;
 */
 public class JunitManager
 {
-    private static final Map<String, List<Class>> _testCases;
-
-    static
+    public static synchronized Map<String, List<Class>> getTestCases()
     {
         Map<String, List<Class>> testCases = new TreeMap<>();
 
@@ -45,7 +43,7 @@ public class JunitManager
         {
             Set<Class> moduleClazzes = new HashSet<>();
 
-            moduleClazzes.addAll(module.getIntegrationTests());
+            module.getIntegrationTestFactories().forEach(f -> moduleClazzes.add(f.create()));
             moduleClazzes.addAll(module.getUnitTests());
 
             if (!moduleClazzes.isEmpty())
@@ -56,12 +54,6 @@ public class JunitManager
                 testCases.put(module.getName(), Collections.unmodifiableList(moduleClazzList));
             }
         }
-
-        _testCases = Collections.unmodifiableMap(testCases);
-    }
-
-    public static Map<String, List<Class>> getTestCases()
-    {
-        return _testCases;
+        return Collections.unmodifiableMap(testCases);
     }
 }

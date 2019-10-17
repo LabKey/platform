@@ -25,7 +25,7 @@ public class GWTContainer implements Serializable
 {
     private String _entityId;
     private int _rowId;
-    private GWTContainer _parent;
+    private String _path;
     private String _name;
 
     /** Required for GWT serialization */
@@ -34,11 +34,11 @@ public class GWTContainer implements Serializable
     {
     }
 
-    public GWTContainer(String entityId, int rowId, GWTContainer parent, String name)
+    public GWTContainer(String entityId, int rowId, String path, String name)
     {
         _entityId = entityId;
         _rowId = rowId;
-        _parent = parent;
+        _path = path;
         _name = name;
     }
 
@@ -52,11 +52,6 @@ public class GWTContainer implements Serializable
         return _rowId;
     }
 
-    public GWTContainer getParent()
-    {
-        return _parent;
-    }
-
     public String getName()
     {
         return _name;
@@ -64,11 +59,7 @@ public class GWTContainer implements Serializable
 
     public String getPath()
     {
-        if (_parent != null)
-        {
-            return _parent.getPath() + "/" + getName();
-        }
-        return getName();
+        return _path;
     }
 
     @Override
