@@ -1666,14 +1666,6 @@ public class UserController extends SpringActionController
                     if (getContainer().isRoot())
                         settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
 
-
-                    List<FieldKey> columns = new ArrayList<>();
-
-                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED));
-                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED_BY));
-                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_COMMENT));
-
-                    settings.setFieldKeys(columns);
                     settings.setBaseFilter(filter);
                     settings.setQueryName(UserManager.USER_AUDIT_EVENT);
 
