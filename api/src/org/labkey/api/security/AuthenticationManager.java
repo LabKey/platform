@@ -287,20 +287,9 @@ public class AuthenticationManager
 
         HtmlStringBuilder html = HtmlStringBuilder.of("");
 
-        for (SSOAuthenticationProvider provider : ssoProviders)
-        {
-            if (!provider.isConfigurationAware() && !provider.isAutoRedirect())
-            {
-                LinkFactory factory = provider.getLinkFactory();
-                html.append(HtmlString.unsafe("<li>"));
-                html.append(factory.getLink(currentURL, prefix));
-                html.append(HtmlString.unsafe("</li>"));
-            }
-        }
-
         for (SSOAuthenticationConfiguration configuration : ssoConfigurations)
         {
-            if (configuration.getAuthenticationProvider().isConfigurationAware() && !configuration.isAutoRedirect())
+            if (!configuration.isAutoRedirect())
             {
                 LinkFactory factory = configuration.getLinkFactory();
                 html.append(HtmlString.unsafe("<li>"));
@@ -566,6 +555,10 @@ public class AuthenticationManager
             sep = PROP_SEPARATOR;
         }
 
+        String providers = String.join(PROP_SEPARATOR, activeNames);
+
+        assert providers.equals(sb.toString());
+
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(PROVIDERS_KEY, sb.toString());
         props.save();
@@ -597,15 +590,14 @@ public class AuthenticationManager
     }
 
     /**
-     * Return the first SSOAuthenticationProvider that is set to auto redirect from the login page.
-     * @return
+     * Return the first SSOAuthenticationConfiguration that is set to auto redirect from the login page.
      */
-    public static SSOAuthenticationProvider getSSOAuthProviderAutoRedirect()
+    public static @Nullable SSOAuthenticationConfiguration getAutoRedirectSSOAuthConfiguration()
     {
-        for (SSOAuthenticationProvider provider : getActiveProviders(SSOAuthenticationProvider.class))
+        for (SSOAuthenticationConfiguration config : AuthenticationConfigurationCache.getActive(SSOAuthenticationConfiguration.class))
         {
-            if (provider.isAutoRedirect())
-                return provider;
+            if (config.isAutoRedirect())
+                return config;
         }
 
         return null;

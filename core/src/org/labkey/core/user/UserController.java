@@ -1568,8 +1568,8 @@ public class UserController extends SpringActionController
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            // see if any of the SSO auth providers are set to autoRedirect from the login action
-            boolean isLoginAutoRedirect = AuthenticationManager.getSSOAuthProviderAutoRedirect() != null;
+            // see if any of the SSO auth configurations are set to autoRedirect from the login action
+            boolean isLoginAutoRedirect = AuthenticationManager.getAutoRedirectSSOAuthConfiguration() != null;
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {

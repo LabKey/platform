@@ -46,9 +46,8 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
-import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -1049,9 +1048,9 @@ public class LoginController extends SpringActionController
         else if (request.getParameter("_skipAutoRedirect") == null && AuthenticationManager.hasSSOAuthenticationProvider())
         {
             // see if any of the SSO auth providers are set to autoRedirect from the login action
-            SSOAuthenticationProvider ssoAuthenticationProvider = AuthenticationManager.getSSOAuthProviderAutoRedirect();
-            if (ssoAuthenticationProvider != null)
-                return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
+            SSOAuthenticationConfiguration ssoAuthenticationConfiguration = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+            if (ssoAuthenticationConfiguration != null)
+                return HttpView.redirect(ssoAuthenticationConfiguration.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
         }
 
         page.setTemplate(PageConfig.Template.Dialog);
@@ -1480,25 +1479,15 @@ public class LoginController extends SpringActionController
             final URLHelper url;
             String configurationName = form.getConfiguration();
 
-            if (null != configurationName)
-            {
-                SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(configurationName);
+            if (null == configurationName)
+                throw new NotFoundException("Configuration parameter was not provided");
 
-                if (null == configuration)
-                    throw new NotFoundException("Authentication configuration is not valid");
+            SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(configurationName);
 
-                url = configuration.getUrl(csrf);
-            }
-            else
-            {
-                // Check for valid, active, SSO provider  TODO: Delete this section
-                SSOAuthenticationProvider provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
+            if (null == configuration)
+                throw new NotFoundException("Authentication configuration is not valid");
 
-                if (null == provider)
-                    throw new NotFoundException("Authentication provider is not valid");
-
-                url = provider.getURL(csrf);
-            }
+            url = configuration.getUrl(csrf);
 
             return HttpView.redirect(url.getURIString());
         }
@@ -1520,6 +1509,7 @@ public class LoginController extends SpringActionController
         protected boolean _unrecoverableError = false;
         protected URLHelper _successUrl = null;
 
+        @Override
         public void validateCommand(SetPasswordForm form, Errors errors)
         {
             ValidEmail email = form.getValidEmail(getViewContext(), errors);
@@ -1549,6 +1539,7 @@ public class LoginController extends SpringActionController
             return null != _email ? _email.getEmailAddress() : form.getEmail();
         }
 
+        @Override
         public ModelAndView getView(SetPasswordForm form, boolean reshow, BindException errors) throws Exception
         {
             verifyBeforeView(form, reshow, errors);
@@ -1582,6 +1573,7 @@ public class LoginController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
             AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), getAuditMessage(), clearVerification(), errors);
@@ -1593,11 +1585,13 @@ public class LoginController extends SpringActionController
             return true;
         }
 
+        @Override
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
             return _successUrl;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -1734,6 +1728,7 @@ public class LoginController extends SpringActionController
             return "Verified and chose a password.";
         }
 
+        @Override
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
             return null;
@@ -1971,7 +1966,7 @@ public class LoginController extends SpringActionController
             }
 
             // Issue 33321: this action does make sense if the server is set to auto redirect from the login page
-            if (AuthenticationManager.getSSOAuthProviderAutoRedirect() != null)
+            if (AuthenticationManager.getAutoRedirectSSOAuthConfiguration() != null)
             {
                 errors.reject("setPassword", "This action is invalid for a server set to use SSO auto redirect.");
                 _unrecoverableError = true;
@@ -2526,7 +2521,6 @@ public class LoginController extends SpringActionController
     public static class AuthLogoBean
     {
         public final SSOAuthenticationConfiguration configuration;
-        public final SSOAuthenticationProvider provider;
         public final String headerLogo;
         public final String loginPageLogo;
         public final boolean reshow;
@@ -2534,16 +2528,6 @@ public class LoginController extends SpringActionController
         private AuthLogoBean(SSOAuthenticationConfiguration configuration, boolean reshow)
         {
             this.configuration = configuration;
-            this.provider = null;
-            this.reshow = reshow;
-            headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
-            loginPageLogo = getAuthLogoHtml(AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
-        }
-
-        private AuthLogoBean(SSOAuthenticationProvider provider, boolean reshow)
-        {
-            this.configuration = null;
-            this.provider = provider;
             this.reshow = reshow;
             headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
             loginPageLogo = getAuthLogoHtml(AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
@@ -2551,7 +2535,7 @@ public class LoginController extends SpringActionController
 
         public String getAuthLogoHtml(String prefix)
         {
-            LinkFactory factory = null != configuration ? configuration.getLinkFactory() : provider.getLinkFactory();
+            LinkFactory factory = configuration.getLinkFactory();
             String logo = factory.getImg(prefix);
 
             if (null == logo)

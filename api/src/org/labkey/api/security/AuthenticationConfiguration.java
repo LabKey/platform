@@ -29,6 +29,13 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider>
         AP getAuthenticationProvider();
         LinkFactory getLinkFactory();
         URLHelper getUrl(String secret);
+
+        /**
+         * Allows an SSO auth configuration to specify that it should be used automatically instead of showing the standard
+         * login form with an SSO link. Ex. if CAS auth is the only option, allow autoRedirect to that provider URL instead
+         * of showing the login page.
+         * @return boolean indicates if this configuration is set to autoRedirect
+         */
         default boolean isAutoRedirect()
         {
             return false;

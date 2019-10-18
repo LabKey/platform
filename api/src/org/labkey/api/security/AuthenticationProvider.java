@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -121,31 +120,10 @@ public interface AuthenticationProvider
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
     {
-        /**
-         * Return the external service's URL.
-         * @return The redirect URL
-         */
-        @Deprecated // Moving to SSOAuthenticationConfiguration
-        default URLHelper getURL(String secret)
+        @Override
+        default boolean isConfigurationAware()
         {
-            throw new IllegalStateException("Shouldn't be called");
-        }
-
-        @Deprecated // Moving to SSOAuthenticationConfiguration
-        default LinkFactory getLinkFactory()
-        {
-            throw new IllegalStateException("Shouldn't be called");
-        }
-
-        /**
-         * Allows an SSO auth provider to define that it should be used automatically instead of showing the standard
-         * login form with an SSO link. Ex. if CAS auth is the only option, allow autoRedirect to that provider URL from
-         * the login action.
-         * @return boolean indicating if this provider is set to autoRedirect
-         */
-        default boolean isAutoRedirect()
-        {
-            return false;
+            return true; // All SSO providers are configuration-aware
         }
     }
 
