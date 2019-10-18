@@ -382,6 +382,7 @@ public class AuthenticationManager
             _allProviders.add(authProvider);
 
         AuthenticationProviderCache.clear();
+        AuthenticationConfigurationCache.clear();
     }
 
 
@@ -532,6 +533,7 @@ public class AuthenticationManager
     {
         setAuthConfigProperty(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
         AuthenticationProviderCache.clear();
+        AuthenticationConfigurationCache.clear();
     }
 
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
@@ -563,6 +565,7 @@ public class AuthenticationManager
         props.put(PROVIDERS_KEY, sb.toString());
         props.save();
         AuthenticationProviderCache.clear();
+        AuthenticationConfigurationCache.clear();
     }
 
     // Provider names stored in properties; they're not necessarily all valid providers
