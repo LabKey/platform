@@ -43,16 +43,19 @@ import static org.labkey.api.util.HtmlString.unsafe;
  */
 public class TypeCohortReportFactory extends TypeReportFactory
 {
+    @Override
     public boolean allowsCohortFilter()
     {
         return false;
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.TypeCohortReportAction.class;
     }
 
+    @Override
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> inputs = super.getAdditionalFormInputHtml();
@@ -84,6 +87,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         return inputs;
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<CohortFilter> reportCohorts = new ArrayList<>();
@@ -106,6 +110,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
         return reports;
     }
 
+    @Override
     public String getLabel()
     {
         CohortFilter filter = getCohortFilter();

@@ -134,10 +134,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpData getExpData(String lsid);
 
+    @NotNull
     List<? extends ExpData> getExpDatas(int... rowid);
 
+    @NotNull
     List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
 
+    @NotNull
     List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
 
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);

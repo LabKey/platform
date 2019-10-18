@@ -189,7 +189,7 @@ public abstract class BulkPropertiesUploadForm<ProviderType extends AssayProvide
                 // Look for a sample set with the right name
                 if (sampleSetName.equals(sampleSet.getName()))
                 {
-                    for (ExpMaterial sample : sampleSet.getSamples())
+                    for (ExpMaterial sample : sampleSet.getSamples(sampleSet.getContainer()))
                     {
                         // Look for a sample with the right name
                         if (sample.getName().equals(sampleName))

@@ -95,7 +95,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     {
         String domainLsid = getPresubstitutionLsid(ASSAY_DOMAIN_SAMPLE_WELLGROUP);
         Domain sampleWellGroupDomain = PropertyService.get().createDomain(c, domainLsid, "Sample Fields");
-        sampleWellGroupDomain.setDescription("The user will be prompted to enter these properties for each of the sample well groups in their chosen plate template.");
+        sampleWellGroupDomain.setDescription("Define the sample fields for this assay design. The user will be prompted to enter these fields for each of the sample well groups in their chosen plate template.");
         return new Pair<>(sampleWellGroupDomain, Collections.emptyMap());
     }
 

@@ -114,34 +114,27 @@
             "that are scoped directly to that report or wiki page. Administrators can disable this feature.";
 %>
 <tr>
-    <td class="labkey-form-label">Enable Object-Level Discussions
-        <%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
+    <td class="labkey-form-label">Enable Object-Level Discussions<%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
     <td><input type="checkbox" name="enableDiscussion" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
-    <td><input type="text" name="logoHref" size="50" value="<%= h(laf.getUnsubstitutedLogoHref()) %>"></td>
+    <td><input type="text" name="logoHref" size="50" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Support link (specifies page where users can request support)</td>
-    <td><input type="text" name="reportAProblemPath" size="50" value="<%= h(laf.getUnsubstitutedReportAProblemPath()) %>"></td>
+    <td><input type="text" name="reportAProblemPath" size="50" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</td>
-    <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%= h(laf.getSupportEmail()) %>"></td>
+    <td style="vertical-align: top;"><input type="text" name="supportEmail" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
 </tr>
-<% if (bean.getCustomPageElementLink(c) != null) { %>
-    <tr>
-        <td class="labkey-form-label" ><%=link("Configure Custom Page Elements", bean.getCustomPageElementLink(c))%></td>
-    </tr>
-<%}%>
 <tr>
     <td colspan=2>Customize settings used in system emails (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">
-        System email address (<i>from</i> address for system notification emails)
-        <%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
+        System email address (<i>from</i> address for system notification emails)<%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
     <td><input type="text" name="systemEmailAddress" size="50" value="<%= h(laf.getSystemEmailAddress()) %>" <%=h(!hasAdminOpsPerm ? "disabled" : "")%>></td>
 </tr>

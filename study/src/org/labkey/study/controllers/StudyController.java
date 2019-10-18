@@ -128,7 +128,6 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.study.assay.PublishConfirmAction;
 import org.labkey.study.assay.PublishStartAction;
@@ -2870,7 +2869,7 @@ public class StudyController extends BaseStudyController
                     StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
-            def.deleteRows(getUser(), allLsids);
+            def.deleteRows(allLsids);
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
@@ -3881,8 +3880,10 @@ public class StudyController extends BaseStudyController
 
             Results rs = dr.getResultSet(ctx);
             List<DisplayColumn> cols = dr.getDisplayColumns();
-            ExcelWriter xl = new ExcelWriter(rs, cols);
-            xl.write(response);
+            try (ExcelWriter xl = new ExcelWriter(rs, cols))
+            {
+                xl.write(response);
+            }
         }
     }
 
@@ -7636,7 +7637,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(SnapshotSettingsForm form, boolean reshow, BindException errors)
         {
             _study = getStudyRedirectIfNull();
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(_study.getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(_study.getStudySnapshot());
 
             if (null == snapshot)
             {
@@ -7667,7 +7668,7 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(SnapshotSettingsForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(study.getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(study.getStudySnapshot());
             assert null != snapshot;
             snapshot.setRefresh(form.isRefresh());
             StudyManager.getInstance().updateStudySnapshot(snapshot, getUser());

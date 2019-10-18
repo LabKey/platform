@@ -20,6 +20,7 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -28,6 +29,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -38,6 +43,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URIUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -58,6 +65,9 @@ import java.util.stream.StreamSupport;
  */
 public class DataIteratorUtil
 {
+
+    private static final Logger LOG = Logger.getLogger(DataIteratorUtil.class);
+
     public static Map<FieldKey, ColumnInfo> createFieldKeyMap(DataIterator di)
     {
         Map<FieldKey, ColumnInfo> map = new LinkedHashMap<>();
@@ -196,7 +206,7 @@ public class DataIteratorUtil
 
 
     /* NOTE doesn't check column mapping collisions */
-    protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases)
+    protected static ArrayList<Pair<ColumnInfo,MatchType>> _matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, Container container)
     {
         Map<String,Pair<ColumnInfo,MatchType>> targetMap = _createTableMap(target, useImportAliases);
         ArrayList<Pair<ColumnInfo,MatchType>> matches = new ArrayList<>(input.getColumnCount()+1);
@@ -216,6 +226,27 @@ public class DataIteratorUtil
                 to = targetMap.get(from.getPropertyURI());
             if (null == to)
                 to = targetMap.get(from.getName());
+            if (null == to)
+            {
+                // 1. here if (from.name - propURI ) and no match then ask targetTableInfo to getCol and if it returns then there is a match
+                if (URIUtil.hasURICharacters(from.getColumnName()) && null != container)
+                {
+                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(from.getColumnName(), container);
+                    if (null != pd)
+                    {
+                        List<Domain> domains = OntologyManager.getDomainsForPropertyDescriptor(container, pd);
+                        List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
+                        if (!vocabularyDomains.isEmpty())
+                        {
+                            to = Pair.of(target.getColumn(from.getColumnName()), MatchType.propertyuri);
+                        }
+                    }
+                }
+            }
+            if(null != to && null == to.first)
+            {
+                LOG.info("Column Info null here: - " +  from.getColumnName() + " in " + target.getName());
+            }
             matches.add(to);
         }
         return matches;
@@ -223,16 +254,16 @@ public class DataIteratorUtil
 
 
     /** throws ValidationException only if there are unresolvable ambiguity in the source->destination column mapping */
-    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError)
+    public static ArrayList<ColumnInfo> matchColumns(DataIterator input, TableInfo target, boolean useImportAliases, ValidationException setupError, @Nullable Container container)
     {
-        ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases);
+        ArrayList<Pair<ColumnInfo,MatchType>> matches = _matchColumns(input, target, useImportAliases, container);
         MultiValuedMap<FieldKey,Integer> duplicatesMap = new ArrayListValuedHashMap<>(input.getColumnCount()+1);
 
         for (int i=1 ; i<= input.getColumnCount() ; i++)
         {
             Pair<ColumnInfo,MatchType> match = matches.get(i);
             if (null != match)
-                duplicatesMap.put(match.first.getFieldKey(),i);
+                duplicatesMap.put(match.first.getFieldKey(), i);
         }
 
         // handle duplicates, by priority

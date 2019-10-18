@@ -350,7 +350,7 @@ public class QueryController extends SpringActionController
             final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
             try
             {
-                DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd);
+                DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd, getContainer());
                 // immediately close the source after opening it, this is a test.
                 source.getDataIterator(new DataIteratorContext()).close();
             }
@@ -1039,10 +1039,7 @@ public class QueryController extends SpringActionController
 
             for (XmlValidationError xmle : xmlErrors)
             {
-                String message = (null != xmle.getOffendingQName()) ?
-                        "Metadata validation error with '" + xmle.getOffendingQName().getLocalPart() + "'" :
-                        "Metadata validation error";
-                errors.reject(ERROR_MSG, message);
+                errors.reject(ERROR_MSG, XmlBeansUtil.getErrorMessage(xmle));
             }
         }
 
@@ -3645,7 +3642,7 @@ public class QueryController extends SpringActionController
                 //issue 13967: provide better message for OptimisticConflictException
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
-            catch (ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
+            catch (QueryUpdateServiceException | ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
             {
                 //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037), and DataIntegrity (uniqueness) (Issue 22779)
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());

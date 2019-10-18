@@ -33,6 +33,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.action.StatusReportingRunnableAction;
+import org.labkey.api.jsp.JspTest;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -71,6 +72,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.*;
 import static org.labkey.api.util.DOM.Attribute.*;
 import static org.labkey.api.util.HtmlString.NBSP;
@@ -111,11 +113,16 @@ public class JunitController extends SpringActionController
                     createHtmlFragment(
                         TR(TD(at(colspan,"3"),A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)),module))),
                         testCases.get(module).stream().map(clazz ->
-                            TR(
-                                TD(at(style,"width:60px;"), NBSP),
-                                showRunButtons ? TD(at(style,"font-size:66%; color:gray;"), getScope(clazz).name(), NBSP, NBSP) : null,
-                                TD(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName())), clazz.getName())
-                            ))
+                            {
+                                String displayName = clazz.getName();
+                                if (startsWith(displayName,"org.labkey.jsp.compiled."))
+                                    displayName = displayName.substring("org.labkey.jsp.compiled.".length());
+                                return TR(
+                                    TD(at(style,"width:60px;"), NBSP),
+                                    showRunButtons ? TD(at(style,"font-size:66%; color:gray;"), getScope(clazz).name(), NBSP, NBSP) : null,
+                                    TD(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName())), displayName)
+                                ));
+                            }
             ))))).appendTo(out);
 
             if (showRunButtons)
@@ -192,9 +199,22 @@ public class JunitController extends SpringActionController
     static private TestWhen.When getScope(Class cls)
     {
         TestWhen ann = (TestWhen)cls.getAnnotation(TestWhen.class);
-        if (null == ann)
-            return TestWhen.When.DRT;
-        return ann.value();
+        if (null != ann)
+            return ann.value();
+        if (JspTest.class.isAssignableFrom(cls))
+        {
+            if (JspTest.DRT.class.isAssignableFrom(cls))
+                return TestWhen.When.DRT;
+            if (JspTest.BVT.class.isAssignableFrom(cls))
+                return TestWhen.When.BVT;
+            if (JspTest.DAILY.class.isAssignableFrom(cls))
+                return TestWhen.When.DAILY;
+            if (JspTest.WEEKLY.class.isAssignableFrom(cls))
+                return TestWhen.When.WEEKLY;
+            if (JspTest.PERFORMANCE.class.isAssignableFrom(cls))
+                return TestWhen.When.PERFORMANCE;
+        }
+        return TestWhen.When.DRT;
     }
 
 
@@ -487,7 +507,7 @@ public class JunitController extends SpringActionController
             if (testCase == null)
                 throw new RuntimeException("testCase parameter required");
 
-            Class clazz = Class.forName(testCase);
+            Class clazz = findTestClass(form.getTestCase());
             JunitRunner.RunnerResult result = JunitRunner.run(clazz);
 
             int status = HttpServletResponse.SC_OK;
@@ -597,7 +617,7 @@ public class JunitController extends SpringActionController
     }
 
 
-    private Class findTestClass(String testCase)
+    private static Class findTestClass(String testCase)
     {
         Map<String, List<Class>> testCases = JunitManager.getTestCases();
 

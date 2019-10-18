@@ -22,9 +22,9 @@ import org.labkey.api.files.FileContentService;
 import java.io.Serializable;
 
 /**
+ * Bean class that holds a file root definition, pointing to a path available on the web server and bound to a container.
  * User: klum
  * Date: Jan 29, 2010
- * Time: 11:26:31 AM
  */
 public class FileRoot implements Serializable
 {

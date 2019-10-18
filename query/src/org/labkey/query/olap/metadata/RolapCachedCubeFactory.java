@@ -24,7 +24,6 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.query.olap.rolap.RolapCubeDef;
-import org.olap4j.OlapException;
 import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
@@ -53,10 +52,10 @@ public class RolapCachedCubeFactory
     public RolapCachedCubeFactory(RolapCubeDef rolap, QuerySchema s) throws SQLException
     {
         this.rolap = rolap;
-        this.schema = s.getSchema(rolap.getSchemaName());
+        this.schema = s.getSchema(rolap.getQuerySchemaName());
 
         if (null == schema)
-            throw new SQLException("Schema not found: " + rolap.getSchemaName());
+            throw new SQLException("Schema not found: " + rolap.getQuerySchemaName());
     }
 
 

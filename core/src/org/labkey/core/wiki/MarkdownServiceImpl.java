@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.wiki.renderer;
+package org.labkey.core.wiki;
 
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
@@ -55,7 +55,6 @@ public class MarkdownServiceImpl implements MarkdownService
             invocable = (Invocable) engine;
             invocable.invokeMethod(mdCompiled, "render", "# call render method here to ensure that nashorn compiles this method before use by app");
         }
-
     }
 
     @Override

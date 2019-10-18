@@ -20,7 +20,6 @@ import mondrian.olap.Annotation;
 import mondrian.olap.MondrianException;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +49,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.QueryLogging;
@@ -57,7 +57,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -77,8 +76,8 @@ import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -133,6 +132,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -159,6 +159,7 @@ public class OlapController extends SpringActionController
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class OlapForm
     {
         private String configId;
@@ -197,6 +198,7 @@ public class OlapController extends SpringActionController
     }
 
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class CubeForm extends OlapForm
     {
         private boolean includeMembers = true;
@@ -266,7 +268,7 @@ public class OlapController extends SpringActionController
                 rethrowOlapException(x);
             }
 
-            String schemaName = getAnnotation(cube,"SchemaName");
+            String schemaName = cubeSchemaName();
             if (null != schemaName)
             {
                 UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
@@ -291,7 +293,7 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
-            if (d.usesRolap())
+            if (!d.usesMondrian())
             {
                 rolap = d.getRolapCubeDefinitionByName(cube.getName());
             }
@@ -351,7 +353,7 @@ public class OlapController extends SpringActionController
             // Validate the module is installed
             try
             {
-                Module m = d.lookupModule();
+                d.lookupModule();
             }
             catch (NotFoundException e)
             {
@@ -361,7 +363,7 @@ public class OlapController extends SpringActionController
             try
             {
                 // Instantiating the RolapReader will validate the definition and throw IllegalArgumentException
-                RolapReader rr = new RolapReader(new StringReader(d.getDefinition()));
+                new RolapReader(new StringReader(d.getDefinition()));
             }
             catch (IllegalArgumentException | IOException e)
             {
@@ -513,7 +515,7 @@ public class OlapController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(CustomOlapDescriptorForm form, BindException errors)
         {
-            return new HtmlView("Are you sure you want do delete the custom olap definition '" + PageFlowUtil.filter(form.getBean().getName()) + "'?");
+            return new HtmlView(HtmlString.of("Are you sure you want do delete the custom olap definition '" + form.getBean().getName() + "'?"));
         }
 
         @Override
@@ -627,9 +629,9 @@ public class OlapController extends SpringActionController
     class MDXCacheLoader implements CacheLoader<String,byte[]>
     {
         @Override
-        public byte[] load(String key, @Nullable Object argument)
+        public byte[] load(@NotNull String key, @Nullable Object argument)
         {
-            ExecuteMdxForm form = (ExecuteMdxForm)argument;
+            ExecuteMdxForm form = (ExecuteMdxForm) Objects.requireNonNull(argument);
             OlapController controller = OlapController.this;
 
             OlapStatement stmt = null;
@@ -728,7 +730,6 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
-            ContainerFilter cf = null;
             String schemaName = getAnnotation(cube,"SchemaName");
             if (null != schemaName)
             {
@@ -737,20 +738,21 @@ public class OlapController extends SpringActionController
                     throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
                 schema.checkCanReadSchemaOlap();
                 schema.checkCanExecuteMDX();
-                cf = schema.getOlapContainerFilter();
+                // TODO currently only CountDistinctQueryAction supports ContainerFilter
+                // TODO cubes accessible by MDX should typically be constrained to one container
+                //  cf = schema.getOlapContainerFilter();
             }
 
-            // does not override schema.checkCanExecuteMDX()
-            String allowMDX = getAnnotation(cube, "AllowMDX");
-            if (null != allowMDX && Boolean.FALSE == ConvertUtils.convert(allowMDX, Boolean.class))
+            // this check does not override schema.checkCanExecuteMDX()
+            if (!allowMDX())
             {
-                errors.reject(ERROR_MSG, "this cube does not allow mdx queries: " + cube.getName());
+                errors.reject(ERROR_MSG, "This cube does not allow mdx queries via the public API: " + cube.getName());
                 return null;
             }
 
             QubeQuery qquery = new QubeQuery(cube);
             qquery.fromJson(q, errors);
-            // TODO
+            // TODO see above
             // if (null != cf)
             //    mdx.setContainerFilter(cf);
             if (errors.hasErrors())
@@ -798,14 +800,14 @@ public class OlapController extends SpringActionController
  *
  * joinLevel : ""
  * name of the level that relates the row, column, and dataFilter results (e.g. ParticipantVisit).  In some sense,
- * the whereFilter applies directly to all the rows of the fact table, but the whole point of the cube/olap strategry
+ * the whereFilter applies directly to all the rows of the fact table, but the whole point of the cube/olap strategy
  * is to reduce the data-size as much as possible.  In some sense, the joinLevel indicates the useful level of
  * granularity for the fact table filter.
  * if not specified, this is the same as the countDistinctLevel
  * (optional)
  *
  * whereFilter : []
- * This filter is is used the data processed by the query.  The result will be a set of members of
+ * This is used to filter the data processed by the query.  The result will be a set of members of
  * the joinLevel.  If joinLevel==countDistinctLevel then this will be functionally equivalent to the countFilter:[]
  * e.g. (ParticipantVisit)
  * (optional)
@@ -817,7 +819,6 @@ public class OlapController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    @Deprecated // same as countFilter
     public class CountDistinctQueryAction extends ReadOnlyApiAction<JsonQueryForm>
     {
         @Override
@@ -845,7 +846,7 @@ public class OlapController extends SpringActionController
             }
 
             ContainerFilter cf = null;
-            String schemaName = getAnnotation(cube,"SchemaName");
+            String schemaName = cubeSchemaName();
             if (null != schemaName)
             {
                 UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
@@ -876,7 +877,7 @@ public class OlapController extends SpringActionController
                 try
                 {
                     start = System.currentTimeMillis();
-                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, null, qquery, errors);
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, null, qquery);
                     if (null != cf)
                         bitsetquery.setContainerFilter(getContainerCollection(cf));
                     cs = bitsetquery.executeQuery();
@@ -1005,7 +1006,7 @@ public class OlapController extends SpringActionController
             if (StringUtils.isNotEmpty(form.getCubeName()))
                 cube = getCube(form, errors);
 
-            return new JspView("/org/labkey/query/view/cube.jsp", cube, errors);
+            return new JspView<>("/org/labkey/query/view/cube.jsp", cube, errors);
         }
 
 
@@ -1020,7 +1021,7 @@ public class OlapController extends SpringActionController
     // for testing
     @RequiresPermission(AdminPermission.class)
     @Action(ActionType.SelectData.class)
-    public class TestMdxAction extends SimpleViewAction<OlapForm>
+    static public class TestMdxAction extends SimpleViewAction<OlapForm>
     {
         @Override
         public ModelAndView getView(OlapForm form, BindException errors)
@@ -1046,7 +1047,7 @@ public class OlapController extends SpringActionController
     // for testing
     @RequiresPermission(AdminPermission.class)
     @Action(ActionType.SelectData.class)
-    public class TestJsonAction extends SimpleViewAction<OlapForm>
+    static public class TestJsonAction extends SimpleViewAction<OlapForm>
     {
         @Override
         public ModelAndView getView(OlapForm form, BindException errors)
@@ -1069,10 +1070,9 @@ public class OlapController extends SpringActionController
     }
 
 
-
     // TODO move these annotations out of the schema.xml file, and into a separate .config.xml file
     @Nullable
-    private String getAnnotation(Cube cube, String name)  throws SQLException
+    private static String getAnnotation(Cube cube, String name)  throws SQLException
     {
         Annotated annotated = cube instanceof Annotated ? (Annotated)cube :
                 cube instanceof OlapWrapper ? ((OlapWrapper)cube).unwrap(Annotated.class) :
@@ -1093,7 +1093,33 @@ public class OlapController extends SpringActionController
     }
 
 
+    private boolean getBooleanAnnotation(String name, boolean defaultValue)  throws SQLException
+    {
+        String value = getAnnotation(_cube, name);
+        if (null == value)
+            return defaultValue;
+        return (boolean)JdbcType.BOOLEAN.convert(value);
+    }
 
+    /**
+     * NOTE: The annotation "AllowMDX" means allow client API
+     */
+    private boolean allowMDX()  throws SQLException
+    {
+        return getBooleanAnnotation("AllowMDX", false);
+    }
+
+    private String cubeSchemaName()  throws SQLException
+    {
+        String schemaName = _olapSchemaDescriptor.getSchemaAnnotations().get("SchemaName");
+        // check cube for backwards compat, prefer olapdescriptor annotation
+        if (null == schemaName)
+            schemaName = getAnnotation(_cube, "SchemaName");
+        return schemaName;
+    }
+
+
+    private OlapSchemaDescriptor _olapSchemaDescriptor = null;
     private Cube _cube = null;
 
     private Cube getCube(OlapForm form, BindException errors) throws SQLException, IOException
@@ -1123,6 +1149,7 @@ public class OlapController extends SpringActionController
             return null;
         }
         _cube = cube;
+        _olapSchemaDescriptor = d;
         return _cube;
     }
 
@@ -1153,9 +1180,9 @@ public class OlapController extends SpringActionController
     private OlapConnection _connection = null;
 
     @Nullable
-    OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
+    private OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
     {
-        if (d == null || d.usesRolap())
+        if (d == null || !d.usesMondrian())
             return null;
 
         if (null == _connection)
@@ -1169,7 +1196,7 @@ public class OlapController extends SpringActionController
 
     private MondrianServer _server = null;
 
-    MondrianServer getServer()
+    private MondrianServer getServer()
     {
         if (null == _server)
         {
@@ -1518,6 +1545,7 @@ public class OlapController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("unused")
     @RequiresNoPermission
     public class GetActiveAppConfigAction extends ReadOnlyApiAction
     {
@@ -1566,8 +1594,8 @@ public class OlapController extends SpringActionController
                 controller.new EditDefinitionAction(),
                 controller.new DeleteDefinitionAction(),
                 controller.new TestBrowserAction(),
-                controller.new TestMdxAction(),
-                controller.new TestJsonAction(),
+                new TestMdxAction(),
+                new TestJsonAction(),
                 controller.new InsertAppAction(),
                 controller.new DeleteAppAction(),
                 controller.new ManageAppsAction(),

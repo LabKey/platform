@@ -66,7 +66,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
@@ -699,16 +699,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
         else
         {
-            WikiService ws = WikiService.get();
-
-            if (null != ws)
-            {
-                return ws.getFormattedHtml(getDescriptionWikiRendererType(), description);
-            }
-            else
-            {
-                return PageFlowUtil.filter(description, true);
-            }
+            WikiRenderingService wrs = WikiRenderingService.get();
+            return wrs.getFormattedHtml(getDescriptionWikiRendererType(), description);
         }
     }
 
@@ -814,7 +806,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         if (_studySnapshotType == null && getStudySnapshot() != null)
         {
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(getStudySnapshot());
             if (snapshot != null)
             {
                 _studySnapshotType = snapshot.getType();

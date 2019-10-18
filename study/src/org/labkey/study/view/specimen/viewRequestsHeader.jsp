@@ -36,13 +36,13 @@ Filter by status: <select onChange="document.location=options[selectedIndex].val
     ActionURL current = context.cloneActionURL();
     current.deleteParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL);
 %>
-    <option value="<%= current.getLocalURIString() %>">All Statuses</option>
+    <option value="<%= h(current.getLocalURIString()) %>">All Statuses</option>
 <%
     for (SpecimenRequestStatus status : bean.getStauses())
     {
         current.replaceParameter(SpecimenController.ViewRequestsHeaderBean.PARAM_STATUSLABEL, status.getLabel());
 %>
-    <option value="<%= current.getLocalURIString() %>" <%=selected(bean.isFilteredStatus(status))%>><%= h(status.getLabel()) %></option>
+    <option value="<%= h(current.getLocalURIString()) %>" <%=selected(bean.isFilteredStatus(status))%>><%= h(status.getLabel()) %></option>
 <%
     }
 %>
@@ -52,7 +52,7 @@ Filter by status: <select onChange="document.location=options[selectedIndex].val
     if (userFilter != null)
     {
 %>
-<b>Showing requests from user <%= userFilter %></b>
+<b>Showing requests from user <%= h(userFilter) %></b>
 <%
     }
 %>
