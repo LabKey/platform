@@ -128,7 +128,7 @@
 <%
         }
 
-        StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(study.getStudySnapshot());
+        StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(study.getStudySnapshot());
         assert null != snapshot;
         Container parent = null==snapshot.getSource() ? null : ContainerManager.getForId(snapshot.getSource());
 

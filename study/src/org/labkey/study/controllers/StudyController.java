@@ -7635,7 +7635,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(SnapshotSettingsForm form, boolean reshow, BindException errors)
         {
             _study = getStudyRedirectIfNull();
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(_study.getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(_study.getStudySnapshot());
 
             if (null == snapshot)
             {
@@ -7666,7 +7666,7 @@ public class StudyController extends BaseStudyController
         public boolean handlePost(SnapshotSettingsForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(study.getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(study.getStudySnapshot());
             assert null != snapshot;
             snapshot.setRefresh(form.isRefresh());
             StudyManager.getInstance().updateStudySnapshot(snapshot, getUser());
