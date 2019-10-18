@@ -225,39 +225,31 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
     public Object getExcelCompatibleValue(RenderContext ctx)
     {
         updateInnerContext(ctx);
-        return toJSONObjectString();
+        return toJSONObjectString(ctx);
     }
 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
         updateInnerContext(ctx);
-        return toJSONObjectString();
+        return toJSONObjectString(ctx);
     }
 
     // return json object in same style as select rows response
-    private JSONObject toJSONObject()
+    private JSONObject toJSONObject(RenderContext ctx)
     {
         if (innerCtxLsid != null && !innerCtxCols.isEmpty())
         {
-            JSONObject json = new JSONObject();
-            for (var pair : innerCtxCols)
-            {
-                // create an object shape similar to ExtendedApiQueryResponse
-                Object colMap = ExtendedApiQueryResponse.createColMap(innerCtx, pair.second, true, true, false);
-
-                // use name for niceness? or propertyURI as key to avoid collisions?
-                json.put(pair.first.getPropertyURI(), colMap);
-            }
-            return json;
+            Object colMap = ExtendedApiQueryResponse.createColMap(ctx, this, true, true, false);
+            return new JSONObject(colMap);
         }
 
         return null;
     }
 
-    private String toJSONObjectString()
+    private String toJSONObjectString(RenderContext ctx)
     {
-        JSONObject json = toJSONObject();
+        JSONObject json = toJSONObject(ctx);
         if (json == null)
             return null;
 
