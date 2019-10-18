@@ -2980,7 +2980,7 @@ public class QueryController extends SpringActionController
                 fancyResponse.includeFormattedValue(includeFormattedValue);
                 response = fancyResponse;
             }
-            if (getRequestedApiVersion() >= 9.1)
+            else if (getRequestedApiVersion() >= 9.1)
             {
                 response = new ExtendedApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
