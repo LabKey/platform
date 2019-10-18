@@ -281,9 +281,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.Folder);
         addColumn(Column.Description);
         addColumn(Column.Alias);
-        addColumn(Column.Properties);
-
-        addVocabularyDomains();
 
         //TODO: may need to expose ExpData.Run as well
 
@@ -362,12 +359,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         addColumn(Column.DataFileUrl);
 
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         ColumnInfo colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
-
 
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
         gridUrl.addParameter("rowId", _dataClass.getRowId());

@@ -184,9 +184,9 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(Column.LSID).setHidden(true);
 
         addVocabularyDomains();
+        addColumn(Column.Properties);
 
         setTitleColumn("Name");
-        addColumn(Column.Properties);
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, _userSchema.getContainer()), Collections.singletonMap("rowId", "RowId"));
         setDetailsURL(detailsURL);

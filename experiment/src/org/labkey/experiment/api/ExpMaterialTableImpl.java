@@ -483,13 +483,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setGridURL(new DetailsURL(gridUrl));
         }
 
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
 
-        addVocabularyDomains();
 
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
@@ -500,8 +502,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setTitleColumn(Column.Name.toString());
 
         setDefaultVisibleColumns(defaultCols);
-
-        addColumn(Column.Properties);
     }
 
     public Domain getDomain()

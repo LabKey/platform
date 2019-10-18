@@ -134,11 +134,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.ViewOrDownload);
         addColumn(Column.Generated);
         addColumn(Column.LastIndexed);
-        addColumn(Column.Properties);
 
         addFileColumns(false);
-
-        addVocabularyDomains();
 
         setDefaultColumns();
         setTitleColumn("Name");
@@ -153,12 +150,14 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
 
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
-
     }
 
     public List<String> addFileColumns(boolean isFilesTable)
