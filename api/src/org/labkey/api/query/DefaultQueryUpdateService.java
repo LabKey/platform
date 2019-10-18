@@ -352,7 +352,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             queryToDb.put(entry.getValue(), entry.getKey());
         }
 
-        //resolves other properties not in the Domain
+        //resolve passed in row including columns in the table and other properties (vocabulary properties) not in the Domain/table
         for (Map.Entry<String, Object> entry: row.entrySet())
         {
             if (!rowStripped.containsKey(entry.getKey()))
