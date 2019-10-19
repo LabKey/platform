@@ -1055,8 +1055,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
                 if (null != pipelinetest)
                 {
-                    assertEquals("Task pipelines from pipelinetest module", 9, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
-                    assertEquals("Task factories from pipelinetest module", 3, TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task pipelines from pipelinetest module", 10, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task factories from pipelinetest module", 2, TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
                 }
 
                 Module pipelinetest2 = ModuleLoader.getInstance().getModule("pipelinetest2");
