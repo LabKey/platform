@@ -1,4 +1,4 @@
-package org.labkey.core.authentication.test;
+package org.labkey.devtools.authentication;
 
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;

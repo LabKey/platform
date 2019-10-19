@@ -10,8 +10,8 @@
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.authentication.test.TestSsoController.TestSsoConfigureForm" %>
-<%@ page import="org.labkey.core.authentication.test.TestSsoProvider" %>
+<%@ page import="org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm" %>
+<%@ page import="org.labkey.devtools.authentication.TestSsoProvider" %>
 <%@ page import="org.springframework.web.servlet.ModelAndView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
