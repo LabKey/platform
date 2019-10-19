@@ -18,16 +18,22 @@ package org.labkey.core.authentication.test;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
+import org.labkey.api.security.PickAuthLogoAction;
+import org.labkey.api.security.PickAuthLogoAction.AuthLogoForm;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -92,5 +98,49 @@ public class TestSsoController extends SpringActionController
         {
             return AuthenticationResponse.createSuccessResponse(provider, new ValidEmail(form.getEmail()));
         }
+    }
+
+    public static class TestSsoConfigureForm extends AuthLogoForm
+    {
+    }
+
+    @AdminConsoleAction
+    public class ConfigureAction extends PickAuthLogoAction<TestSsoConfigureForm>
+    {
+        @Override
+        public ModelAndView getView(TestSsoConfigureForm form, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/authentication/test/testSsoConfigure.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("authenticationModule");
+            return root;
+        }
+
+        @Override
+        public void validateCommand(TestSsoConfigureForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(TestSsoConfigureForm form, BindException errors)
+        {
+            super.handlePost(form, errors);
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(TestSsoConfigureForm form)
+        {
+            return getConfigureURL(form.getConfiguration());  // Redirect to same action -- reload props from database
+        }
+    }
+
+    public static ActionURL getConfigureURL(String configuration)
+    {
+        return new ActionURL(ConfigureAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration);
     }
 }

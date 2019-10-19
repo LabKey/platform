@@ -30,12 +30,13 @@ import java.util.Map;
  */
 public class TestSsoProvider implements SSOAuthenticationProvider
 {
-    static final String NAME = "TestSSO";
+    public static final String NAME = "TestSSO";
+    static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
     public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
     {
-        String key = NAME; // TODO: TestSSOConfigurationProperties?
+        String key = SET_KEY; // TODO: TestSSOConfigurationProperties?
         Map<String, String> m = PropertyManager.getProperties(key);
         Map<String, String> map = new HashMap<>(m);
         map.put("Provider", NAME);
@@ -49,7 +50,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     @Override
     public ActionURL getConfigurationLink()
     {
-        return null;
+        return TestSsoController.getConfigureURL(SET_KEY);
     }
 
     @NotNull

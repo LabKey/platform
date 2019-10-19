@@ -92,7 +92,7 @@ public abstract class PickAuthLogoAction<F extends PickAuthLogoAction.AuthLogoFo
         return true;
     }
 
-    public static class AuthLogoForm extends ReturnUrlForm
+    public static abstract class AuthLogoForm extends ReturnUrlForm
     {
         private String _configuration;
         private String[] _deletedLogos;
