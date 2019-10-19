@@ -22,6 +22,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
+<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="static org.labkey.api.query.QueryUpdateService.InsertOption.MERGE" %>
+<%@ page import="org.labkey.api.query.QueryUpdateService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     @Override
@@ -76,7 +79,7 @@
     }
 </style>
 <div id="<%=text(errorDivId)%>" class="labkey-error">
-<labkey:errors></labkey:errors>&nbsp;
+<labkey:errors/>&nbsp;
 </div>
 <div class="panel panel-portal" style="width: 760px;">
     <div class="panel-heading">
@@ -99,7 +102,7 @@
         <div class="clearfix"></div>
     </div>
     <div class="panel-body">
-        <div id="<%=text(copyPasteDivId)%>"></div>
+        <div id="<%=unsafe(copyPasteDivId)%>"></div>
     </div>
 </div>
 <script type="text/javascript"> (function(){
@@ -123,7 +126,7 @@
 
     function toggleExpanded(toggleButton, toggleDiv, collapseButton, collapseDiv)
     {
-        var collapsed = -1!=toggleButton.dom.innerHTML.indexOf("+");
+        var collapsed = -1 !== toggleButton.dom.innerHTML.indexOf("+");
         toggleButton.dom.innerHTML = collapsed ? "&ndash;" : "+";
         toggleDiv.parent().setStyle("display",collapsed?"block":"none");
 
@@ -185,7 +188,7 @@
                 else if ("rowCount" in action.result)
                 {
                     rowCount = action.result.rowCount;
-                    msg = rowCount + " row" + (rowCount!=1?"s":"") + " " + successMessageSuffix + ".";
+                    msg = rowCount + " row" + (rowCount !==1 ? "s" : "") + " " + successMessageSuffix + ".";
                 }
 
                 if (msg && "rowCount" in action.result && action.result.rowCount > 0)
@@ -194,20 +197,7 @@
                 }
                 else if("rowCount" in action.result && action.result.rowCount <= 0)
                 {
-                    <%
-                    if (bean.acceptZeroResults) {%>
-                    if (rowCount == 0)
-                        showSuccessMessage("Upload successful, but 0 updates occurred");
-                    else {
-                        showError();
-                    }
-                    <%
-                    } else {
-                    %>
                     showError();
-                    <%
-                    }
-                    %>
                 }
                 else
                     window.location = returnUrl;
@@ -229,7 +219,6 @@
                     case Ext4.form.Action.SERVER_INVALID:
                         serverInvalid(action.result);
                         break;
-                    break;
                 }
                 LABKEY.Utils.signalWebDriverTest('importFailureSignal');
             }
@@ -292,7 +281,7 @@
             _getGlobalErrors(collection, errors.errors, rowNumber);
         }
 
-        if (collection.length == count)
+        if (collection.length === count)
         {
             // don't want to double up messages, so ignore errors.exception unless there are no other messages
             if (errors["exception"])
@@ -311,14 +300,17 @@
         return collection;
     }
 
-    function getImportOptions()
+    function getImportOptions(index)
     {
         <%
         if (bean.showImportOptions) {
         %>
             return [{
-                xtype: 'radiogroup',
+                xtype: 'checkbox',
+                id:'insertOption' + index,
                 itemId: 'insertOption',
+                name: 'insertOption',
+                inputValue: <%=q(QueryUpdateService.InsertOption.MERGE.name())%>,
                 fieldLabel: 'Import Options',
                 preventMark: true,
                 helpPopup: LABKEY.Utils.encodeHtml(
@@ -376,8 +368,8 @@
             minWidth:600,
             timeout: Ext4.Ajax.timeout,
 
-            items: getImportOptions().concat([
-                <%=text(extraFormFields)%>
+            items: getImportOptions(1).concat([
+                <%=unsafe(extraFormFields)%>
                 {
                     xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                 },
@@ -428,7 +420,7 @@
             }]
         });
         importTsvForm.render(importTsvDiv);
-        var resizer = new Ext4.Resizable(<%=q(tsvId)%>, {
+        new Ext4.Resizable(<%=q(tsvId)%>, {
             wrap:true,
             handles: 'se',
             minWidth: 200,
@@ -451,8 +443,8 @@
             defaultType: 'textfield',
             timeout: Ext4.Ajax.timeout,
 
-            items: getImportOptions().concat([
-                    <%=text(extraFormFields)%>
+            items: getImportOptions(0).concat([
+                    <%=unsafe(extraFormFields)%>
                     {
                         xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                     },
