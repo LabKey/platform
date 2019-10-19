@@ -272,14 +272,18 @@ LABKEY.Domain.create({
 
         listDomains : function(config)
         {
+            var params = {
+                includeFields: config.includeFields,
+                includeProjectAndShared: config.includeProjectAndShared
+            };
+
+            if (config.domainKinds)
+                params.domainKinds = config.domainKinds;
+
             listDomains(
                     config.success,
                     config.failure,
-                    {
-                        includeFields: config.includeFields,
-                        includeProjectAndShared: config.includeProjectAndShared,
-                        domainKinds: config.domainKinds
-                    },
+                    params,
                     config.containerPath);
         },
 
