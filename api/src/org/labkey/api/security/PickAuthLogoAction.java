@@ -24,6 +24,19 @@ public abstract class PickAuthLogoAction<F extends PickAuthLogoAction.AuthLogoFo
     @Override
     public void validateCommand(F form, Errors errors)
     {
+        String configuration = form.getConfiguration();
+
+        if (null == configuration)
+        {
+            throw new NotFoundException("Must provide configuration parameter");
+        }
+        else
+        {
+            SSOAuthenticationConfiguration ssoConfiguration = AuthenticationManager.getSSOConfiguration(configuration);
+
+            if (null == ssoConfiguration)
+                throw new NotFoundException("Configuration not found");
+        }
     }
 
     @Override

@@ -478,6 +478,11 @@ public class AuthenticationManager
         return AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key);
     }
 
+    public static @Nullable SSOAuthenticationConfiguration getSSOConfiguration(String key)
+    {
+        return AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, key);
+    }
+
     public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
     {
         return AuthenticationProviderCache.getProvider(SSOAuthenticationProvider.class, name);

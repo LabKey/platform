@@ -110,6 +110,7 @@ public class TestSsoController extends SpringActionController
         @Override
         public ModelAndView getView(TestSsoConfigureForm form, boolean reshow, BindException errors)
         {
+            validateCommand(form, errors);
             return new JspView<>("/org/labkey/devtools/authentication/testSsoConfigure.jsp", form, errors);
         }
 
@@ -118,11 +119,6 @@ public class TestSsoController extends SpringActionController
         {
             setHelpTopic("authenticationModule");
             return root;
-        }
-
-        @Override
-        public void validateCommand(TestSsoConfigureForm form, Errors errors)
-        {
         }
 
         @Override
