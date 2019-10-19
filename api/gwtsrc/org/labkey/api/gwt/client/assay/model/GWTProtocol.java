@@ -58,8 +58,14 @@ public class GWTProtocol implements IsSerializable
     private List<String> _availableDetectionMethods;
     private String _selectedDetectionMethod;
 
+    private boolean _allowBackgroundUpload;
+    private boolean _allowEditableResults;
+    private boolean _allowQCStates;
+    private boolean _allowSpacesInPath;
     private boolean _allowTransformationScript;
+
     private GWTContainer _autoCopyTargetContainer;
+    private String _autoCopyTargetContainerId;
     private boolean _saveScriptFiles;
     private boolean _editableRuns;
     private boolean _editableResults;
@@ -215,6 +221,16 @@ public class GWTProtocol implements IsSerializable
         _autoCopyTargetContainer = autoCopyTargetContainer;
     }
 
+    public String getAutoCopyTargetContainerId()
+    {
+        return _autoCopyTargetContainerId;
+    }
+
+    public void setAutoCopyTargetContainerId(String autoCopyTargetContainerId)
+    {
+        _autoCopyTargetContainerId = autoCopyTargetContainerId;
+    }
+
     public boolean isSaveScriptFiles()
     {
         return _saveScriptFiles;
@@ -293,5 +309,45 @@ public class GWTProtocol implements IsSerializable
     public void setQcEnabled(boolean qcEnabled)
     {
         _qcEnabled = qcEnabled;
+    }
+
+    public boolean isAllowSpacesInPath()
+    {
+        return _allowSpacesInPath;
+    }
+
+    public void setAllowSpacesInPath(boolean allowSpacesInPath)
+    {
+        _allowSpacesInPath = allowSpacesInPath;
+    }
+
+    public boolean isAllowQCStates()
+    {
+        return _allowQCStates;
+    }
+
+    public void setAllowQCStates(boolean allowQCStates)
+    {
+        _allowQCStates = allowQCStates;
+    }
+
+    public boolean isAllowEditableResults()
+    {
+        return _allowEditableResults;
+    }
+
+    public void setAllowEditableResults(boolean allowEditableResults)
+    {
+        _allowEditableResults = allowEditableResults;
+    }
+
+    public boolean isAllowBackgroundUpload()
+    {
+        return _allowBackgroundUpload;
+    }
+
+    public void setAllowBackgroundUpload(boolean allowBackgroundUpload)
+    {
+        _allowBackgroundUpload = allowBackgroundUpload;
     }
 }

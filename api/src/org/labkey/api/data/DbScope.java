@@ -598,7 +598,21 @@ public class DbScope
                         transactions.add(result);
                         stackDepth = transactions.size();
                     }
-                    serverLocks.forEach(Lock::lock);
+                    boolean serverLockSuccess = false;
+                    try
+                    {
+                        serverLocks.forEach(Lock::lock);
+                        serverLockSuccess = true;
+                    }
+                    finally
+                    {
+                        if (!serverLockSuccess)
+                        {
+                            // We're throwing an exception so the caller will never get the transaction object to
+                            // be able to close it, so do it now
+                            result.close();
+                        }
+                    }
                     if (stackDepth > 2)
                         LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
@@ -2670,7 +2684,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                assert(x instanceof NullPointerException);
+                assertTrue(x instanceof NullPointerException);
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
 
@@ -2687,7 +2701,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                assert(x instanceof NullPointerException);
+                assertTrue(x instanceof NullPointerException);
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
         }
