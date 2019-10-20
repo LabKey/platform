@@ -137,80 +137,81 @@ public class ExportExcelReport extends RedirectReport
             siteFilter.addWhereClause(study.getSubjectColumnName() + " IN (SELECT ParticipantId FROM study.Participant WHERE CurrentSiteId=" + locationId + ")", new Object[0]);
         }
 
-        ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xls);
-
-        for (DatasetDefinition def : study.getDatasets())
+        try (ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xls))
         {
-            if (def.getTypeURI() == null)
-                continue;
-
-            if (checkUserPermissions && !def.canRead(user))
-                continue;
-
-            Sort sort = new Sort(StudyService.get().getSubjectColumnName(study.getContainer()) + ",SequenceNum");
-
-            UserSchema schema = QueryService.get().getUserSchema(user, study.getContainer(), StudyQuerySchema.SCHEMA_NAME);
-            DatasetQuerySettings settings = (DatasetQuerySettings)schema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
-            settings.setBaseFilter(siteFilter);
-            settings.setBaseSort(sort);
-
-            QueryView queryView = schema.createView(context, settings, errors);
-            String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDatasetId());
-
-            writer.setDisplayColumns(queryView.getExportColumns(queryView.getDisplayColumns()));
-            renderSheet(writer, label, queryView.getResults());
-        }
-
-        if (writer.getWorkbook().getNumberOfSheets() == 0)
-        {
-            writer.setHeaders(Arrays.asList("No permissions"));
-            writer.renderNewSheet();
-        }
-        else
-        {
-            //
-            // PARTICIPANTS
-            //
-            //  "SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM study.Participant LEFT OUTER JOIN study.Site ON study.Participant.CurrentSiteId = study.Site.RowId\n" +
-            //  "WHERE study.Participant.container='" + study.getContainer().getId() + "'\n" +
-            //  (locationId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + locationId + "\n") +
-            //  "ORDER BY 1")
-            TableInfo locationTableInfo = studySchema.getTableInfoSite(getContainer());
-            TableInfo participantTableInfo = studySchema.getTableInfoParticipant();
-            if (null == locationTableInfo || null == participantTableInfo)
-                throw new IllegalStateException("TableInfo not found.");
-
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM ")
-                    .append(participantTableInfo.getFromSQL("p")).append(" LEFT OUTER JOIN ")
-                    .append(locationTableInfo.getFromSQL("l")).append(" ON ")
-                    .append(participantTableInfo.getColumn("CurrentSiteId").getValueSql("p"))
-                    .append(locationTableInfo.getColumn("RowId").getValueSql("l")).append("\n")
-                    .append("WHERE ").append(participantTableInfo.getColumn("Container").getValueSql("p")).append("=?");
-            sql.add(study.getContainer());
-            sql.append("\n");
-            if (locationId != 0)
+            for (DatasetDefinition def : study.getDatasets())
             {
-                sql.append("AND ").append(participantTableInfo.getColumn("CurrentSiteId").getValueSql("p")).append("=?");
-                sql.add(locationId);
-                sql.append("\n");
+                if (def.getTypeURI() == null)
+                    continue;
+
+                if (checkUserPermissions && !def.canRead(user))
+                    continue;
+
+                Sort sort = new Sort(StudyService.get().getSubjectColumnName(study.getContainer()) + ",SequenceNum");
+
+                UserSchema schema = QueryService.get().getUserSchema(user, study.getContainer(), StudyQuerySchema.SCHEMA_NAME);
+                DatasetQuerySettings settings = (DatasetQuerySettings) schema.getSettings(context, DatasetQueryView.DATAREGION, def.getName());
+                settings.setBaseFilter(siteFilter);
+                settings.setBaseSort(sort);
+
+                QueryView queryView = schema.createView(context, settings, errors);
+                String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDatasetId());
+
+                writer.setDisplayColumns(queryView.getExportColumns(queryView.getDisplayColumns()));
+                renderSheet(writer, label, queryView.getResults());
             }
-            sql.append("ORDER BY 1");
-            ResultSet rs = new SqlSelector(studySchema.getSchema(), sql.getSQL()).getResultSet();
-            writer.createColumns(rs.getMetaData());
 
-            String label = StudyService.get().getSubjectNounPlural(study.getContainer());
-            writer.setResultSet(rs);
-            writer.setAutoSize(true);
-            writer.setCaptionRowVisible(true);
+            if (writer.getWorkbook().getNumberOfSheets() == 0)
+            {
+                writer.setHeaders(Arrays.asList("No permissions"));
+                writer.renderNewSheet();
+            }
+            else
+            {
+                //
+                // PARTICIPANTS
+                //
+                //  "SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM study.Participant LEFT OUTER JOIN study.Site ON study.Participant.CurrentSiteId = study.Site.RowId\n" +
+                //  "WHERE study.Participant.container='" + study.getContainer().getId() + "'\n" +
+                //  (locationId == 0 ? "" : "AND study.Participant.CurrentSiteId=" + locationId + "\n") +
+                //  "ORDER BY 1")
+                TableInfo locationTableInfo = studySchema.getTableInfoSite(getContainer());
+                TableInfo participantTableInfo = studySchema.getTableInfoParticipant();
+                if (null == locationTableInfo || null == participantTableInfo)
+                    throw new IllegalStateException("TableInfo not found.");
 
-            if (label.length() > 0)
-                writer.setSheetName(label);
+                SQLFragment sql = new SQLFragment();
+                sql.append("SELECT ParticipantId, COALESCE(Label,CAST(RowId AS VARCHAR(10))) AS Site FROM ")
+                        .append(participantTableInfo.getFromSQL("p")).append(" LEFT OUTER JOIN ")
+                        .append(locationTableInfo.getFromSQL("l")).append(" ON ")
+                        .append(participantTableInfo.getColumn("CurrentSiteId").getValueSql("p"))
+                        .append(locationTableInfo.getColumn("RowId").getValueSql("l")).append("\n")
+                        .append("WHERE ").append(participantTableInfo.getColumn("Container").getValueSql("p")).append("=?");
+                sql.add(study.getContainer());
+                sql.append("\n");
+                if (locationId != 0)
+                {
+                    sql.append("AND ").append(participantTableInfo.getColumn("CurrentSiteId").getValueSql("p")).append("=?");
+                    sql.add(locationId);
+                    sql.append("\n");
+                }
+                sql.append("ORDER BY 1");
+                ResultSet rs = new SqlSelector(studySchema.getSchema(), sql.getSQL()).getResultSet();
+                writer.createColumns(rs.getMetaData());
 
-            writer.renderNewSheet();
+                String label = StudyService.get().getSubjectNounPlural(study.getContainer());
+                writer.setResultSet(rs);
+                writer.setAutoSize(true);
+                writer.setCaptionRowVisible(true);
+
+                if (label.length() > 0)
+                    writer.setSheetName(label);
+
+                writer.renderNewSheet();
+            }
+
+            writer.write(context.getResponse(), study.getLabel());
         }
-
-        writer.write(context.getResponse(), study.getLabel());
     }
 
 

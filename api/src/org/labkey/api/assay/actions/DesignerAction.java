@@ -93,8 +93,8 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
         }
 
-        // use new UX Assay Designer view for GPAT assays if experimental flag is turned on, but not yet ready for "copy"
-        if ("General".equalsIgnoreCase(provider.getName()) && !form.isCopy() && ExperimentService.get().useUXDomainDesigner())
+        // use new UX Assay Designer view if experimental flag is turned on
+        if (ExperimentService.get().useUXDomainDesigner())
         {
             result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
         }

@@ -200,7 +200,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     renderButtons() {
-        const { submitting, dirty } = this.state;
+        const { submitting } = this.state;
 
         return (
             <WizardNavButtons
@@ -211,7 +211,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     type='submit'
                     bsClass='btn btn-success'
                     onClick={() => this.submitHandler(true)}
-                    disabled={submitting || !dirty}>
+                    disabled={submitting}
+                >
                     Save
                 </Button>
             </WizardNavButtons>
@@ -236,6 +237,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     <DomainForm
                         domain={domain}
                         onChange={this.onChangeHandler}
+                        showHeaderFieldCount={false}
                     />
                 }
                 { domain && this.renderButtons() }

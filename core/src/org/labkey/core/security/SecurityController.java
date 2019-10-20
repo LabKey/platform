@@ -34,7 +34,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportPermission;
@@ -1026,26 +1025,29 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
-            {
-                @Override
-                public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+            try (ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
                 {
-                    for (Pair<Integer, String> memberGroup : memberGroups)
+                    @Override
+                    public void renderGrid (RenderContext ctx, Sheet sheet, List < ExcelColumn > visibleColumns) throws
+                    SQLException, MaxRowsExceededException
                     {
-                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                        row.put("displayName", memberGroup.getValue());
-                        row.put("userId", memberGroup.getKey());
-                        ctx.setRow(row);
-                        renderGridRow(sheet, ctx, visibleColumns);
+                        for (Pair<Integer, String> memberGroup : memberGroups)
+                        {
+                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                            row.put("displayName", memberGroup.getValue());
+                            row.put("userId", memberGroup.getKey());
+                            ctx.setRow(row);
+                            renderGridRow(sheet, ctx, visibleColumns);
+                        }
+                        super.renderGrid(ctx, sheet, visibleColumns);
                     }
-                    super.renderGrid(ctx, sheet, visibleColumns);
-                }
-            };
-            ew.setAutoSize(true);
-            ew.setSheetName(group + " Members");
-            ew.setFooter(group + " Members");
-            ew.write(response);
+                })
+            {
+                ew.setAutoSize(true);
+                ew.setSheetName(group + " Members");
+                ew.setFooter(group + " Members");
+                ew.write(response);
+            }
         }
     }
 
