@@ -101,6 +101,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
@@ -121,7 +124,7 @@ public class OntologyManager
     private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
     private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
     private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
-    private static final StringKeyCache<List<DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
+    private static final StringKeyCache<Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -642,7 +645,7 @@ public class OntologyManager
             m.put(value.getPropertyURI(), value);
         }
 
-        m = Collections.unmodifiableMap(m);
+        m = unmodifiableMap(m);
         mapCache.put(objectLSID, m);
         return m;
     }
@@ -2129,52 +2132,54 @@ public class OntologyManager
         if (includeProjectAndShared && user == null)
             throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
 
-        String key = container.getId();
-        List<DomainDescriptor> dds = domainDescByContainerCache.get(key);
-
-        if (null != dds && !dds.isEmpty())
-            return dds;
-        else
-            dds = new ArrayList<>();
-
-        Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
-        {
-            ret.put(dd.getDomainURI(), dd);
-            dds.add(dd);
-        }
+        Map<String, DomainDescriptor> dds = getCachedDomainDescriptors(container, user);
 
         if (includeProjectAndShared)
         {
+            dds = new LinkedHashMap<>(dds);
             Container project = container.getProject();
-            if (project != null && project.hasPermission(user, ReadPermission.class))
+            if (project != null)
             {
-                addDomainDescriptors(ret, dds, sql, project);
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(project, user).entrySet())
+                {
+                    dds.putIfAbsent(entry.getKey(), entry.getValue());
+                }
             }
 
             if (_sharedContainer.hasPermission(user, ReadPermission.class))
             {
-                addDomainDescriptors(ret, dds, sql, _sharedContainer);
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(_sharedContainer, user).entrySet())
+                {
+                    dds.putIfAbsent(entry.getKey(), entry.getValue());
+                }
             }
         }
-        domainDescByContainerCache.put(container.getId(), dds);
 
-        return Collections.unmodifiableCollection(ret.values());
+        return unmodifiableCollection(dds.values());
     }
 
-    private static void addDomainDescriptors(Map<String, DomainDescriptor> ret, List<DomainDescriptor> dds, String sql, Container container)
+    @NotNull
+    private static Map<String, DomainDescriptor> getCachedDomainDescriptors(@NotNull Container c, @Nullable User user)
     {
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
-        {
-            if (!ret.containsKey(dd.getDomainURI()))
-            {
-                ret.put(dd.getDomainURI(), dd);
-                dds.add(dd);
-            }
+        if (user != null && !c.hasPermission(user, ReadPermission.class))
+            return Collections.emptyMap();
 
+        String key = c.getId();
+        Map<String, DomainDescriptor> dds = domainDescByContainerCache.get(key);
+        if (dds != null)
+            return dds;
+
+        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+
+        dds = new LinkedHashMap<>();
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        {
+            dds.putIfAbsent(dd.getDomainURI(), dd);
         }
+
+        dds = unmodifiableMap(dds);
+        domainDescByContainerCache.put(key, dds);
+        return dds;
     }
 
     public static String getURICacheKey(DomainDescriptor dd)
@@ -2229,7 +2234,7 @@ public class OntologyManager
                 c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
                 _sharedContainer.getProject().getId()
         );
-        result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
+        result = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
         //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
         //Descriptors returned from this method come direct from DB and have correct values.
         List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(result.size());
@@ -2264,7 +2269,7 @@ public class OntologyManager
                 pd.setRequired(propertyURI.getValue().booleanValue());
                 result.add(pd);
             }
-            return Collections.unmodifiableList(result);
+            return unmodifiableList(result);
         }
         return null;
     }
