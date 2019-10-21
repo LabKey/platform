@@ -394,15 +394,15 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         convertTypes(container, rowStripped);
-        setSpecialColumns(container, row, user, UpdatePermission.class);
+        setSpecialColumns(container, rowStripped, user, UpdatePermission.class);
         validateUpdateRow(rowStripped);
 
-        if (row.get("container") != null)
+        if (rowStripped.get("container") != null)
         {
-            Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), UpdatePermission.class);
+            Container rowContainer = UserSchema.translateRowSuppliedContainer(rowStripped.get("container"), container, user, getQueryTable(), UpdatePermission.class);
             if (rowContainer == null)
             {
-                throw new ValidationException("Unknown container: " + row.get("container"));
+                throw new ValidationException("Unknown container: " + rowStripped.get("container"));
             }
             else
             {
@@ -412,7 +412,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             }
         }
 
-        Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(row, container) : getKeys(oldRow, container));
+        Map<String,Object> updatedRow = _update(user, container, rowStripped, oldRow, oldRow == null ? getKeys(rowStripped, container) : getKeys(oldRow, container));
 
         //when passing a map for the row, the Table layer returns the map of fields it updated, which excludes
         //the primary key columns as well as those marked read-only. So we can't simply return the map returned
