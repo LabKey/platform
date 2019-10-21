@@ -559,7 +559,7 @@ public class ApiQueryResponse implements ApiResponse
             return ensureJSONDate(value);
     }
 
-    protected Object ensureJSONDate(Object value)
+    protected static Object ensureJSONDate(Object value)
     {
         return value instanceof Date ? DateUtil.formatJsonDateTime((Date)value) : value;
     }

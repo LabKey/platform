@@ -2863,11 +2863,14 @@ public class AdminController extends SpringActionController
             }
 
             String message = PageFlowUtil.jsString(sb);
-            html.append("<td><a href=\"#\" onClick=\"alert(");
-            html.append(message);
-            html.append(");return false;\">");
-            html.append(PageFlowUtil.filter(description));
-            html.append("</a></td>");
+            if (!message.isEmpty())
+            {
+                html.append("<td><a href=\"#\" onClick=\"alert(");
+                html.append(message);
+                html.append(");return false;\">");
+                html.append(PageFlowUtil.filter(description));
+                html.append("</a></td>");
+            }
         }
 
         private void appendLongs(StringBuilder html, Long... stats)

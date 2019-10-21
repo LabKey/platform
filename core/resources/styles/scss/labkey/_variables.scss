@@ -73,8 +73,8 @@ $lk-state-info-text: #31708f !default;
 $lk-state-info-bg: #d9edf7 !default;
 $lk-state-info-border: darken(adjust-hue($lk-state-info-bg, -10), 7%) !default;
 
-$lk-state-warning-text: #494949 !default;
-$lk-state-warning-bg: $lk-gray-blue !default;
+$lk-state-warning-text: #8a6d3b !default;
+$lk-state-warning-bg: #fcf8e3 !default;
 $lk-state-warning-border: darken(adjust-hue($lk-state-warning-bg, -10), 5%) !default;
 
 $lk-state-danger-text: #a94442 !default;
