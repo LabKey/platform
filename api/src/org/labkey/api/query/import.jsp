@@ -312,19 +312,13 @@
                 name: 'insertOption',
                 inputValue: <%=q(QueryUpdateService.InsertOption.MERGE.name())%>,
                 fieldLabel: 'Import Options',
+                boxLabel: 'Update data for existing rows during import',
                 preventMark: true,
                 helpPopup: LABKEY.Utils.encodeHtml(
-                        '<dl>' +
-                        '<dt>Insert</dt>' +
-                        '<dd style="margin-left:1em">Insert new records and error if there are any input rows corresponding to existing records in the database.</dd> ' +
-                        '<dt>Insert and Replace</dt>' +
-                        '<dd style="margin-left:1em">Insert all new records and replace the data for rows corresponding to existing records in the database.' +
-                        '<br>' +
-                        // Issue 37728: Insert/Update on Samples will clear out any existing data even if it's not being updated
-                        '<b class="labkey-error fa fa-exclamation-triangle"></b> ' +
-                        '<em>When replacing an existing record, any columns not present will be replaced will null values.</em>' +
-                        '</dd>' +
-                        '</dl>'),
+                    '<p>By default, import will insert new rows, and the operation will fail if there are existing row identifiers that match.</p>' +
+                    '<p>When update is selected, data will be updated for matching row identifiers, and new rows will be created for any that do not match.' +
+                    ' Data will not be changed for any columns not in the imported data/file.</p>'
+                ),
                 columns: 1,
                 defaults: {
                     xtype: 'radio',
