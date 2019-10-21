@@ -51,7 +51,6 @@ public class PropertyColumn extends LookupColumn
     protected Container _container;
     protected boolean _parentIsObjectId = false;
     private final boolean _joinOnContainer;
-    private boolean _isVocabulary;
 
     public PropertyColumn(@NotNull PropertyDescriptor pd, @NotNull TableInfo tinfoParent, @NotNull String parentLsidColumn, Container container, User user, boolean joinOnContainer)
     {
@@ -317,11 +316,7 @@ public class PropertyColumn extends LookupColumn
 
     public boolean isVocabulary()
     {
-        return _isVocabulary;
+        return _pd.isVocabulary();
     }
 
-    public void setVocabulary(boolean vocabulary)
-    {
-        _isVocabulary = vocabulary;
-    }
 }
