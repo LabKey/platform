@@ -1860,15 +1860,7 @@ public class DavController extends SpringActionController
 
                 resourceWriter.sendData();
             }
-            catch (ConfigurationException x)
-            {
-                throw x;
-            }
-            catch (IOException x)
-            {
-                throw x;
-            }
-            catch (DavException x)
+            catch (ConfigurationException | IOException | DavException | CloudStoreService.ServiceException x)
             {
                 throw x;
             }
@@ -1880,13 +1872,15 @@ public class DavController extends SpringActionController
             {
                 if (resourceWriter != null)
                 {
-                    try {
-                        resourceWriter.endResponse();
-                        resourceWriter.sendData();
-                    }
-                    catch (Exception e) { }
+                    resourceWriter.endResponse();
                 }
             }
+
+            try
+            {
+                resourceWriter.sendData();
+            }
+            catch (Exception ignored) { }
 
             close(writer, "response writer");
             return WebdavStatus.SC_MULTI_STATUS;

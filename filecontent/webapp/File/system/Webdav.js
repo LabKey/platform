@@ -189,6 +189,20 @@
                 reader: {
                     root: 'files',
                     totalProperty: 'fileCount'
+                },
+                listeners : {
+                    exception : function(proxy, response, operation) {
+                       if (operation.error)
+                           if (operation.error.status === 503) {
+                               var errorPrefix = '';
+                               if (response && response.responseText && response.responseText.indexOf('Cloud service') > -1)
+                                   errorPrefix = 'Cloud ';
+                               Ext4.Msg.alert("Error", errorPrefix + "Service Unavailable");
+                           }
+                           else {
+                               Ext4.Msg.alert("Error", "Unable to load files");
+                           }
+                    }
                 }
             };
 
