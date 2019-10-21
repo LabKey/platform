@@ -45,6 +45,7 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
         RunCount,
         Folder,
         BatchProtocolId,
+        Properties
     }
 
     BaseColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);

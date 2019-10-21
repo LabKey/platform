@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -56,7 +57,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -266,9 +266,13 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
-        gwtDomain.setAllowAttachmentProperties(dd.getDomainKind().allowAttachmentProperties());
-        gwtDomain.setAllowFileLinkProperties(dd.getDomainKind().allowFileLinkProperties());
-        gwtDomain.setAllowFlagProperties(dd.getDomainKind().allowFlagProperties());
+        DomainKind kind = dd.getDomainKind();
+        if (kind != null)
+        {
+            gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
+            gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
+            gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+        }
         return gwtDomain;
     }
 

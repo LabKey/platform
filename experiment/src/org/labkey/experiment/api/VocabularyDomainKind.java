@@ -8,6 +8,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -16,6 +17,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.writer.ContainerUser;
@@ -60,7 +62,10 @@ public class VocabularyDomainKind extends AbstractDomainKind
     @Override
     public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return null;
+        if (!containerUser.getContainer().isContainerFor(ContainerType.DataType.domainDefinitions))
+            return null;
+
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
     }
 
     @Override

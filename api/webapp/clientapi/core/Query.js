@@ -205,6 +205,7 @@ LABKEY.Query = new function()
          * @param {Boolean} [config.includeDetailsColumn] Include the Details link column in the set of columns (defaults to false).
          *       If included, the column will have the name "~~Details~~". The underlying table/query must support details links
          *       or the column will be omitted in the response.
+         * @param {Boolean} [config.includeMetadata] Include metadata for the selected columns.  Defaults to true.
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
          *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
          *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
@@ -273,6 +274,9 @@ LABKEY.Query = new function()
 
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;
+
+            if (config.includeMetadata !== undefined)
+                dataObject.includeMetadata = config.includeMetadata;
 
             var qsParams = {};
             if (config.sort)
@@ -380,6 +384,7 @@ LABKEY.Query = new function()
         * @param {Boolean} [config.includeUpdateColumn] Include the Update (or edit) link column in the set of columns (defaults to false).
         *       If included, the column will have the name "~~Update~~". The underlying table/query must support update links
         *       or the column will be omitted in the response.
+         * @param {Boolean} [config.includeMetadata] Include metadata for the selected columns.  Defaults to true.
         * @param {String} [config.selectionKey] Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
         *         Not used unless <code>config.showRows</code> is 'selected' or 'unselected'.
         * @param {Boolean} [config.ignoreFilter] If true, the command will ignore any filter that may be part of the chosen view.
@@ -512,6 +517,9 @@ LABKEY.Query = new function()
 
             if (config.includeUpdateColumn)
                 dataObject.includeUpdateColumn = config.includeUpdateColumn;
+
+            if (config.includeMetadata !== undefined)
+                dataObject.includeMetadata = config.includeMetadata;
 
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;

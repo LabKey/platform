@@ -100,6 +100,9 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 setupNonEditableCol(batchProtocolCol);
                 return batchProtocolCol;
             }
+
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new UnsupportedOperationException("Unknown column " + column);
         }
@@ -179,6 +182,10 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         defaultCols.add(FieldKey.fromParts(Column.Folder.toString()));
         setDefaultVisibleColumns(defaultCols);
         addColumn(Column.LSID).setHidden(true);
+
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         setTitleColumn("Name");
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, _userSchema.getContainer()), Collections.singletonMap("rowId", "RowId"));
