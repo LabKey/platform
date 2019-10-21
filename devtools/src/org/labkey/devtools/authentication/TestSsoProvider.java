@@ -66,10 +66,4 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     {
         return "A trivial, insecure SSO authentication provider (for test purposes only)";
     }
-
-    @Override
-    public boolean isConfigurationAware()
-    {
-        return true;
-    }
 }

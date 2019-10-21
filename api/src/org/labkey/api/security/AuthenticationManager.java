@@ -279,10 +279,9 @@ public class AuthenticationManager
 
     private static @Nullable HtmlString getAuthLogoHtml(URLHelper currentURL, String prefix)
     {
-        Collection<SSOAuthenticationProvider> ssoProviders = AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class);
         Collection<SSOAuthenticationConfiguration> ssoConfigurations = AuthenticationConfigurationCache.getActive(SSOAuthenticationConfiguration.class);
 
-        if (ssoProviders.isEmpty())
+        if (ssoConfigurations.isEmpty())
             return null;
 
         HtmlStringBuilder html = HtmlStringBuilder.of("");
@@ -478,14 +477,14 @@ public class AuthenticationManager
         return AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key);
     }
 
+    public static @NotNull <AC extends AuthenticationConfiguration> Collection<AC> getActiveConfigurations(Class<AC> clazz)
+    {
+        return AuthenticationConfigurationCache.getActive(clazz);
+    }
+
     public static @Nullable SSOAuthenticationConfiguration getSSOConfiguration(String key)
     {
         return AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, key);
-    }
-
-    public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
-    {
-        return AuthenticationProviderCache.getProvider(SSOAuthenticationProvider.class, name);
     }
 
     public static @Nullable ResetPasswordProvider getResetPasswordProvider(String name)
@@ -543,7 +542,6 @@ public class AuthenticationManager
 
     private static final String AUTHENTICATION_CATEGORY = "Authentication";
     private static final String PROVIDERS_KEY = "Authentication";
-    private static final String CONFIGURATIONS_KEY = "Configurations";
     private static final String PROP_SEPARATOR = ":";
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
@@ -578,18 +576,6 @@ public class AuthenticationManager
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String activeProviderProp = props.get(PROVIDERS_KEY);
-
-        Set<String> set = new HashSet<>();
-        Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
-
-        return set;
-    }
-
-    // Configuration keys stored in properties; includes enabled, disabled, and (perhaps) invalid configurations
-    static Set<String> getConfigurationKeysFromProperties()
-    {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
-        String activeProviderProp = props.get(CONFIGURATIONS_KEY);
 
         Set<String> set = new HashSet<>();
         Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
@@ -822,13 +808,14 @@ public class AuthenticationManager
         {
             AuthenticationResponse firstFailure = null;
 
-            for (LoginFormAuthenticationProvider authProvider : getActiveProviders(LoginFormAuthenticationProvider.class))
+            for (LoginFormAuthenticationConfiguration<LoginFormAuthenticationProvider> configuration : AuthenticationConfigurationCache.getActive(LoginFormAuthenticationConfiguration.class))
             {
                 AuthenticationResponse authResponse;
 
                 try
                 {
-                    authResponse = authProvider.authenticate(id, password, returnURL);
+                    LoginFormAuthenticationProvider provider = configuration.getAuthenticationProvider();
+                    authResponse = provider.authenticate(configuration, id, password, returnURL);
                 }
                 catch (RedirectException e)
                 {
@@ -870,7 +857,7 @@ public class AuthenticationManager
                 }
             }
 
-            // Login failed all providers... log the first interesting failure (but only if logFailures == true)
+            // Login failed all form configurations... log the first interesting failure (but only if logFailures == true)
             if (null != firstFailure)
             {
                 User user = null;
@@ -1437,21 +1424,13 @@ public class AuthenticationManager
 
     public static class LinkFactory
     {
-        private final SSOAuthenticationProvider _provider;
         private final String _providerName;
+        private final SSOAuthenticationConfiguration _configuration;
 
-        private SSOAuthenticationConfiguration _configuration = null;
-
-        public LinkFactory(SSOAuthenticationProvider provider)
+        public LinkFactory(SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider> configuration)
         {
-            _provider = provider;
-            _providerName = provider.getName(); // Just for convenience
-        }
-
-        public LinkFactory(SSOAuthenticationConfiguration configuration)
-        {
-            this(configuration.getAuthenticationProvider());
             _configuration = configuration;
+            _providerName = configuration.getAuthenticationProvider().getName();
         }
 
         private @NotNull HtmlString getLink(URLHelper returnURL, String prefix)
@@ -1468,14 +1447,7 @@ public class AuthenticationManager
         @SuppressWarnings("ConstantConditions")
         public ActionURL getURL(URLHelper returnURL, boolean skipProfile)
         {
-            if (null != _configuration)
-            {
-                return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
-            }
-            else
-            {   // TODO: Delete
-                return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_provider, returnURL, skipProfile);
-            }
+            return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
         }
 
         public String getImg(String prefix)

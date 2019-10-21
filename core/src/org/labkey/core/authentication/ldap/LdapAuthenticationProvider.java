@@ -18,9 +18,9 @@ package org.labkey.core.authentication.ldap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -28,67 +28,88 @@ import org.labkey.api.view.ActionURL;
 import javax.naming.NamingException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.labkey.api.ldap.LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY;
 
 /**
  * User: adam
  * Date: Oct 12, 2007
  * Time: 1:31:18 PM
  */
-public class LdapAuthenticationProvider implements LoginFormAuthenticationProvider
+public class LdapAuthenticationProvider implements LoginFormAuthenticationProvider<LdapConfiguration>
 {
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
 
+    @Override
+    public LdapConfiguration getAuthenticationConfiguration(boolean active)
+    {
+        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
+        Map<String, String> map = new HashMap<>(props);
+        map.put("Provider", getName());
+        map.put("Enabled", Boolean.toString(active));
+        map.put("Name", getName());
+
+        return new LdapConfiguration(LDAP_AUTHENTICATION_CATEGORY_KEY, this, map);
+    }
+
+    @Override
     public void activate()
     {
         LdapAuthenticationManager.activate();
     }
 
+    @Override
     public void deactivate()
     {
         LdapAuthenticationManager.deactivate();
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return "LDAP";
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
         return "Uses the LDAP protocol to authenticate against an institution's directory server";
     }
 
+    @Override
     public ActionURL getConfigurationLink()
     {
         return LdapController.getConfigureURL(false);
     }
 
+    @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(LdapConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         // Consider: allow user ids other than email
         ValidEmail email = new ValidEmail(id);
 
-        if (!SecurityManager.isLdapEmail(email))
+        if (!configuration.isLdapEmail(email))
             return AuthenticationResponse.createFailureResponse(this, FailureReason.notApplicable);
 
         //
         // Attempt to authenticate by iterating through all the LDAP servers.
-        // List of servers is stored as a site property in the database
         //
-        String[] ldapServers = LdapAuthenticationManager.getServers();
-        boolean saslAuthentication = LdapAuthenticationManager.useSASL();
+        boolean saslAuthentication = configuration.isSasl();
+        String principalTemplate = configuration.getPrincipalTemplate();
 
-        for (String server : ldapServers)
+        for (String server : configuration.getServers())
         {
-            if (null == server || 0 == server.length())
+            if (server.isEmpty())
                 continue;
 
             try
             {
-                if (LdapAuthenticationManager.authenticate(server, email, password, saslAuthentication))
+                if (LdapAuthenticationManager.authenticate(server, email, password, principalTemplate, saslAuthentication))
                     return AuthenticationResponse.createSuccessResponse(this, email);
                 else
                     return AuthenticationResponse.createFailureResponse(this, FailureReason.badCredentials);
@@ -106,6 +127,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     @Override
     public @NotNull Collection<String> getPropertyCategories()
     {
-        return Collections.singleton(LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY);
+        return Collections.singleton(LDAP_AUTHENTICATION_CATEGORY_KEY);
     }
 }

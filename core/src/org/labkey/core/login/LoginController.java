@@ -288,34 +288,6 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getPickLogosURL(AuthenticationProvider provider)
-        {
-            return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot()).addParameter("provider", provider.getName());
-        }
-
-        @Deprecated // TODO: Delete
-        @Override
-        public ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL, boolean skipProfile)
-        {
-            ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
-            url.addParameter("provider", provider.getName());
-            if (skipProfile)
-            {
-                url.addParameter("skipProfile", 1);
-            }
-            if (null != returnURL)
-            {
-                String fragment = returnURL.getFragment();
-                if (!returnURL.isReadOnly())
-                    returnURL.setFragment(null);
-                url.addReturnURL(returnURL);
-                if (!StringUtils.isBlank(fragment))
-                    url.replaceParameter("urlhash", "#" + fragment);
-            }
-            return url;
-        }
-
-        @Override
         public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());

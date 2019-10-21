@@ -112,10 +112,16 @@ public interface AuthenticationProvider
         }
     }
 
-    interface LoginFormAuthenticationProvider extends PrimaryAuthenticationProvider
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
-        @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+        @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+
+        @Override
+        default boolean isConfigurationAware()
+        {
+            return true;
+        }
     }
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider

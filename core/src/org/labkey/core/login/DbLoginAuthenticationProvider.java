@@ -18,6 +18,8 @@ package org.labkey.core.login;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
@@ -37,27 +39,46 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EmptyStackException;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY;
 
 /**
  * User: adam
  * Date: Oct 12, 2007
  * Time: 1:31:18 PM
  */
-public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider
+public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
+    @Override
+    public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
+    {
+        Map<String, String> props = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+        Map<String, String> map = new HashMap<>(props);
+        map.put("Provider", getName());
+        map.put("Enabled", "true");
+        map.put("Name", getName());
+
+        return new DbLoginConfiguration(DATABASE_AUTHENTICATION_CATEGORY_KEY, this, map);
+    }
+
+    @Override
     public boolean isPermanent()
     {
         return true;
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return "Database";
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
@@ -72,7 +93,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
@@ -86,7 +107,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         // Password is correct for this user; now check password rules and expiration.
 
-        PasswordRule rule = DbLoginManager.getPasswordRule();
+        PasswordRule rule = configuration.getPasswordRule();
         Collection<String> messages = new LinkedList<>();
 
         if (!rule.isValidForLogin(password, user, messages))
@@ -95,7 +116,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         }
         else
         {
-            PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
+            PasswordExpiration expiration = configuration.getExpiration();
 
             if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
             {
@@ -157,6 +178,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
     }
 
+    @Override
     public ActionURL getConfigurationLink()
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
@@ -165,6 +187,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     @Override
     public @NotNull Collection<String> getPropertyCategories()
     {
-        return Collections.singleton(DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY);
+        return Collections.singleton(DATABASE_AUTHENTICATION_CATEGORY_KEY);
     }
 }

@@ -2,18 +2,17 @@ package org.labkey.devtools.authentication;
 
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
-import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
 
-public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration
+public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<TestSsoProvider>
 {
     private final LinkFactory _linkFactory = new LinkFactory(this);
 
-    protected TestSsoConfiguration(String key, AuthenticationProvider provider, Map props)
+    protected TestSsoConfiguration(String key, TestSsoProvider provider, Map<String, String> props)
     {
         super(key, provider, props);
     }

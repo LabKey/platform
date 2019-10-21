@@ -48,14 +48,14 @@ public class LdapAuthenticationManager
 {
     private static final Logger _log = Logger.getLogger(LdapAuthenticationManager.class);
 
-    private static volatile LdapAuthenticator _authenticator = (url, email, password, saslAuthentication) -> connect(url, substituteEmailTemplate(getPrincipalTemplate(), email), password, saslAuthentication);
+    private static volatile LdapAuthenticator _authenticator = (url, email, password, principalTemplate, saslAuthentication) -> connect(url, substituteEmailTemplate(principalTemplate, email), password, saslAuthentication);
 
     //
     // Attempt LDAP authentication on a single server
     //
-    public static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication) throws NamingException
+    public static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, String principalTemplate, boolean saslAuthentication) throws NamingException
     {
-        return _authenticator.authenticate(url, email, password, saslAuthentication);
+        return _authenticator.authenticate(url, email, password, principalTemplate, saslAuthentication);
     }
 
 
@@ -132,8 +132,9 @@ public class LdapAuthenticationManager
     {
         AuthenticationManager.setLdapDomain("");
     }
-    
-    private enum Key {Servers, Domain, PrincipalTemplate, SASL}
+
+    // TODO: Move to LdapConfiguration?
+    public enum Key {Servers, Domain, PrincipalTemplate, SASL}
 
     public static void saveProperties(Config config)
     {

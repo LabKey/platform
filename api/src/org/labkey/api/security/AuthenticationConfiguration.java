@@ -13,8 +13,10 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider>
     // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
     List<Class<? extends AuthenticationConfiguration>> ALL_CONFIGURATION_INTERFACES = Arrays.asList(
         AuthenticationConfiguration.class,
-        SSOAuthenticationConfiguration.class
-        // TODO: More to come...
+            SSOAuthenticationConfiguration.class,
+            LoginFormAuthenticationConfiguration.class
+
+            // TODO: More to come...
     );
 
     @NotNull String getKey();
@@ -22,11 +24,8 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider>
     @NotNull AP getAuthenticationProvider();
     boolean enabled();
 
-    interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends AuthenticationConfiguration
+    interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends AuthenticationConfiguration<AP>
     {
-        @NotNull
-        @Override
-        AP getAuthenticationProvider();
         LinkFactory getLinkFactory();
         URLHelper getUrl(String secret);
 

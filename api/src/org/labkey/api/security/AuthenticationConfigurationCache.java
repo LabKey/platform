@@ -2,6 +2,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
@@ -120,14 +121,14 @@ public class AuthenticationConfigurationCache
                 .forEach(providerClass -> map.put(providerClass, configuration));
         }
 
-        private <T extends AuthenticationConfiguration> Collection<T> getAll(Class<T> clazz)
+        private @NotNull <T extends AuthenticationConfiguration> Collection<T> getAll(Class<T> clazz)
         {
             Collection<T> configurations = (Collection<T>) _allMap.get(clazz);
 
             return null != configurations ? configurations : Collections.emptyList();
         }
 
-        private <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
+        private @NotNull <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
         {
             Collection<T> configurations = (Collection<T>) _activeMap.get(clazz);
 
@@ -141,7 +142,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    static <T extends AuthenticationConfiguration> Collection<T> getConfigurations(Class<T> clazz)
+    static @NotNull <T extends AuthenticationConfiguration> Collection<T> getConfigurations(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getAll(clazz);
     }
@@ -152,7 +153,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    static <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
+    static @NotNull <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getActive(clazz);
     }
