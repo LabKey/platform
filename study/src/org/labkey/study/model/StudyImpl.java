@@ -806,7 +806,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         if (_studySnapshotType == null && getStudySnapshot() != null)
         {
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(getStudySnapshot());
             if (snapshot != null)
             {
                 _studySnapshotType = snapshot.getType();

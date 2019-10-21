@@ -333,6 +333,7 @@ public class IssueManager
 
                 factory.toMap(issue, row);
                 row.putAll(issue.getProperties());
+                row.remove("Related");
 
                 BatchValidationException batchErrors = new BatchValidationException();
                 List<Map<String, Object>> results;

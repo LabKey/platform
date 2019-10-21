@@ -47,6 +47,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -301,6 +302,7 @@ public class ListImporter
 
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
         int failedLists = 0;
+        int successfulLists = 0;
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
@@ -318,14 +320,15 @@ public class ListImporter
             if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
             {
                 failedLists++;
+            } else {
+                successfulLists++;
             }
         }
 
-        int size = lists.size() - failedLists;
-        log.info(size + " list" + (1 == size ? "" : "s") + " imported" + (failedLists == 0 ? ", all successfully" : ""));
+        log.info(StringUtilsLabKey.pluralize(successfulLists, "list") + " imported successfully");
         if (failedLists > 0)
         {
-            log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
+            log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
         }
         if (fileTypeMap.size() > 0)
         {

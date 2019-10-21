@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.ArrayUtils;
@@ -233,12 +235,12 @@ public class StudySnapshot
         private List<String> reports = new ArrayList<>();
         /* Folder Objects */
         private List<String> folderObjects = new ArrayList<>();
+
         /* Publish Options */
-        /* removeProtectedColumns is only here for legacy studies, no longer readable
-           Jackson serializer gets cranky if it sees properties it doesn't know about */
-        private boolean removeProtectedColumns;
-        private boolean removePhiColumns;
-        private PHI phiLevel;
+        /* removeProtectedColumns is here for legacy studies. setter allows reading the property from old snapshots and
+           translating to the appropriate PHI level, but we no longer write it */
+        private Boolean removeProtectedColumns = null;
+        private PHI phiLevel = null;
         private boolean shiftDates;
         private boolean useAlternateParticipantIds;
         private boolean maskClinic;
@@ -333,7 +335,6 @@ public class StudySnapshot
                 studyObjects = null; // indicates all selected
             else if (def.getStudyProps() != null && def.getStudyProps().length > 0)
                 studyObjects = Arrays.asList(def.getStudyProps());
-
         }
 
         private void loadLists(StudyExportContext ctx, ChildStudyDefinition def)
@@ -426,13 +427,24 @@ public class StudySnapshot
             return useAlternateParticipantIds;
         }
 
-        /* removeProtectedColumns is only here for legacy studies, no longer readable
-           Jackson serializer gets cranky if it sees properties it doesn't know about */
+        /* removeProtectedColumns is here only for legacy studies. This getter is ignored, because we no longer want to
+           write the property to new snapshots. The setter below allows us to read it from old, serialized settings */
+        @JsonIgnore
         public boolean isRemoveProtectedColumns()
         {
-            return false;
+            return removeProtectedColumns;
         }
 
+        /* This setter lets us read the "removeProtectedColumns" property from old, serialized settings and translate it
+           to the appropriate PHI level (see getPhiLevel()). */
+        @JsonProperty
+        public void setRemoveProtectedColumns(boolean removeProtectedColumns)
+        {
+            this.removeProtectedColumns = removeProtectedColumns;
+        }
+
+        /* We no longer read or write this property, but it might exist in old, serialized settings. */
+        @JsonIgnore
         public boolean isRemovePhiColumns()
         {
             return false;
@@ -440,7 +452,11 @@ public class StudySnapshot
 
         public PHI getPhiLevel()
         {
-            return phiLevel;
+            if (null != phiLevel)
+                return phiLevel;
+
+            // Must be a legacy study -- return NotPHI if "removeProtected": true
+            return Boolean.TRUE.equals(removeProtectedColumns) ? PHI.NotPHI : PHI.Restricted;
         }
 
         public boolean isShiftDates()
