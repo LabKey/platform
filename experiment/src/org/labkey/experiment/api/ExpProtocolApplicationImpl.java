@@ -37,9 +37,11 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
@@ -47,6 +49,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     private List<ExpDataImpl> _inputDatas;
     private List<ExpMaterialImpl> _outputMaterials;
     private List<ExpDataImpl> _outputDatas;
+    private Map<Collection<String>, Collection<String>> _lsidMap;
 
     // For serialization
     protected ExpProtocolApplicationImpl() {}
