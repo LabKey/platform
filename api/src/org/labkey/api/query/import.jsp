@@ -315,7 +315,8 @@
                 boxLabel: 'Update data for existing rows during import',
                 preventMark: true,
                 helpPopup: LABKEY.Utils.encodeHtml(
-                    '<p>By default, import will insert new rows, and the operation will fail if there are existing row identifiers that match.</p>' +
+                    '<p>By default, import will insert new rows based on the data/file provided. The operation will fail ' +
+                    'if there are existing row identifiers that match those being imported.</p>' +
                     '<p>When update is selected, data will be updated for matching row identifiers, and new rows will be created for any that do not match.' +
                     ' Data will not be changed for any columns not in the imported data/file.</p>'
                 ),
