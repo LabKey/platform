@@ -28,6 +28,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
@@ -36,7 +37,11 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.labkey.api.exp.api.ExperimentJSONConverter.VOCABULARY_DOMAIN;
 
 /**
  * Bean class for property types managed via the ontology system and stored in exp.PropertyDescriptor.
@@ -487,6 +492,22 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public void setMvIndicatorStorageColumnName(String mvIndicatorStorageColumnName)
     {
         _mvIndicatorStorageColumnName = mvIndicatorStorageColumnName;
+    }
+
+    Boolean _vocabulary = null;
+
+    // returns true if this property is a member of a VocabularyDomainKind
+    public boolean isVocabulary()
+    {
+        if (_vocabulary == null)
+        {
+            List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), this);
+            _vocabulary = domainsForPD.stream()
+                    .map(Domain::getDomainKind)
+                    .filter(Objects::nonNull)
+                    .anyMatch(d -> VOCABULARY_DOMAIN.equals(d.getKindName()));
+        }
+        return _vocabulary;
     }
 }
 
