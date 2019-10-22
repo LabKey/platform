@@ -969,7 +969,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             String javaHome = System.getenv("JAVA_HOME");
             if (javaHome != null)
             {
-                javaHome = javaHome.replace("/", File.separator); // Match normalized file separators from `getExecutablePath`
+                javaHome = javaHome.replaceAll("[/\\\\]", File.separator); // Match normalized file separators from `getExecutablePath`
                 String installPath = "${JAVA_HOME}/bin";
                 String found = _impl.getExecutablePath("jar", installPath, null, null, null);
                 assertEquals("Failed to expand environment variable correctly.", javaHome + File.separator + "bin" + File.separator + "jar", found);
