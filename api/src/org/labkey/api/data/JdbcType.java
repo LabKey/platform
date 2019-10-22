@@ -457,14 +457,14 @@ public enum JdbcType
 
     public Object convert(Object o) throws ConversionException
     {
+        if (null == o)
+            return null;
+
         // Unwrap first
         if (o instanceof MvFieldWrapper)
         {
             o = ((MvFieldWrapper) o).getValue();
         }
-
-        if (null == o)
-            return null;
 
         if (cls.isAssignableFrom(o.getClass()))
             return o;
