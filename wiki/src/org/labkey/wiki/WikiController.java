@@ -41,6 +41,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.module.FolderType;
+import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -83,7 +85,6 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
@@ -898,7 +899,10 @@ public class WikiController extends SpringActionController
         {
             // Ensure the destination container and set collaboration folder type, #30597
             c = ContainerManager.ensureContainer(destContainer);
-            ContainerManager.setFolderType(c, new CollaborationFolderType(), getUser(), errors);
+            FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
+
+            if (null != collaboration)
+                ContainerManager.setFolderType(c, collaboration, getUser(), errors);
         }
 
         return c;
