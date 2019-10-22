@@ -233,7 +233,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     Map<String, Object> dataMap = new HashMap<>();
 
                     String runLSID = (String)runLSIDColumn.getValue(rs);
-                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId());
+                    int resultRowId = (int)rowIdColumn.getValue(rs);
+                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId(), resultRowId);
 
                     if (sourceContainer == null)
                     {
@@ -314,9 +315,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    protected String getSourceLSID(String runLSID, int dataId)
+    protected String getSourceLSID(String runLSID, int dataId, int resultRowId)
     {
-        return runLSID;
+        return getResultRowLSIDExpression() + resultRowId;
     }
 
     public void registerLsidHandler()
@@ -1490,7 +1491,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public String getResultRowLSIDExpression()
     {
-        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + (getResultRowLSIDPrefix() != null ? getResultRowLSIDPrefix() : "");
+        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + (getResultRowLSIDPrefix() != null ? getResultRowLSIDPrefix() : "") + ".Protocol-";
     }
 
     @Override

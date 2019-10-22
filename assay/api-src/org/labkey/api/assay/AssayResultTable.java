@@ -267,8 +267,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         SQLFragment sql = new SQLFragment(getSqlDialect().concatenate(
-                "'" + schema.getProvider().getResultRowLSIDExpression() + ":" +
-                this.getSchemaTableInfo().getName() + ":'",
+                "'" + schema.getProvider().getResultRowLSIDExpression() +
+                schema.getProtocol().getRowId()+ ":'",
                 "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
 
         var lsidCol = new ExprColumn(this, "LSID", sql, JdbcType.VARCHAR);
