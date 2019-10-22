@@ -1013,7 +1013,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (Exception e)
         {
-            LOG.error(e);
+            LOG.error("Exception registering MarkdownServiceImpl", e);
         }
     }
 
