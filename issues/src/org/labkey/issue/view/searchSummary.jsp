@@ -28,53 +28,48 @@
     JspView<Issue> me = (JspView<Issue>) HttpView.currentView();
     final Issue issue = me.getModelBean();
     final User user = getUser();
+    final boolean isClosed = StringUtils.equalsIgnoreCase(issue.getStatus(),"closed");
+    final boolean isOpen = StringUtils.equalsIgnoreCase(issue.getStatus(),"open");
 %>
-<table>
-    <tr>
-        <td valign="top">
-            <table style="min-width:150pt;">
-                <tr><td><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
-                <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"closed")) { %>
-                <tr><td><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
-                <% } %>
-                <tr><td><label>Opened:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
-                <% if (!StringUtils.equalsIgnoreCase(issue.getStatus(),"open")) { %>
-                <tr><td><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
-                <% } %>
-            </table>
-        </td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
-        <td valign="top">
-<%
-    StringBuilder html = new StringBuilder();
-    boolean hasTextComment = false;
-    for (Issue.Comment comment : issue.getComments())
-    {
-        String s = comment.getComment();
-        String pattern1 = "<div class=\"labkey-wiki\">";
-        String pattern2 = "</div>";
-        String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
-        Pattern p = Pattern.compile(regexString);
-        Matcher matcher = p.matcher(s);
-        while (matcher.find())
+<table style="min-width:150pt;margin-bottom:15px;">
+    <tr><td style="color: #777777"><label>Status:</label></td><td style="white-space: nowrap;"><%=h(issue.getStatus())%></td></tr>
+    <% if (!isClosed) { %>
+    <tr><td style="color: #777777"><label>Assigned&nbsp;To:</label></td><td style="white-space: nowrap;"><%=h(issue.getAssignedToName(user))%></td></tr>
+    <% } %>
+    <tr><td style="color: #777777"><label>Opened:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getCreated())%></td></tr>
+    <% if (!isOpen) { %>
+    <tr><td style="color: #777777"><label>Resolved:</label></td><td style="white-space: nowrap;"><%=formatDate(issue.getResolved())%></td></tr>
+    <% } %>
+</table>
+
+<div>
+    <%
+        StringBuilder html = new StringBuilder();
+        boolean hasTextComment = false;
+        for (Issue.Comment comment : issue.getComments())
         {
-            String commentContentText = matcher.group(1);
-            if (!StringUtils.isEmpty(commentContentText))
+            String s = comment.getComment();
+            String pattern1 = "<div class=\"labkey-wiki\">";
+            String pattern2 = "</div>";
+            String regexString = Pattern.quote(pattern1) + "(?s)(.*?)" + Pattern.quote(pattern2);
+            Pattern p = Pattern.compile(regexString);
+            Matcher matcher = p.matcher(s);
+            while (matcher.find())
             {
-                hasTextComment = true;
-                html.append(commentContentText);
-                html.append("<br>");
-                if (html.length() > 1000)
-                    break;
+                String commentContentText = matcher.group(1);
+                if (!StringUtils.isEmpty(commentContentText))
+                {
+                    hasTextComment = true;
+                    html.append(commentContentText);
+                    html.append("<br>");
+                    if (html.length() > 1000)
+                        break;
+                }
             }
         }
-    }
 
     if (hasTextComment) { %>
-            <label style="text-decoration: underline">Comments</label>
+        <label style="text-decoration: underline">Comments</label>
     <% } %>
-            <div style="max-height:4em; overflow-y:hidden; word-break: break-all;"><%= text(html.toString()) %></div>
-        </td>
-    </tr>
-</table>
+    <div style="max-height:4em; overflow-y:hidden;"><%= text(html.toString()) %></div>
+</div>

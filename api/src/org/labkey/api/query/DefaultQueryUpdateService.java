@@ -352,50 +352,43 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             queryToDb.put(entry.getValue(), entry.getKey());
         }
 
-        for (ColumnInfo col : getQueryTable().getColumns())
-        {
-            final String name = col.getName();
-            String key = name;
-            if (!row.containsKey(key))
-            {
-                // Check if the row map contains an alias for the column
-                Optional<String> firstAlias = col.getImportAliasSet().stream().filter(row::containsKey).findFirst();
-                if (!firstAlias.isPresent())
-                    continue;
-                key = firstAlias.get();
-            }
-
-            // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
-            if (col.isReadOnly() || col.isCalculated())
-                continue;
-
-            //when updating a row, we should strip the following fields, as they are
-            //automagically maintained by the table layer, and should not be allowed
-            //to change once the record exists.
-            //unfortunately, the Table.update() method doesn't strip these, so we'll
-            //do that here.
-            // Owner, CreatedBy, Created, EntityId
-            if ((!retainCreation && (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("Created")))
-                || (!allowOwner && name.equalsIgnoreCase("Owner"))
-                || name.equalsIgnoreCase("EntityId"))
-                continue;
-
-            // We want a map using the DbTable column names as keys, so figure out the right name to use
-            String dbName = queryToDb.containsKey(name) ? queryToDb.get(name) : name;
-
-
-            rowStripped.put(dbName, row.get(key));
-        }
-
-        //resolves other properties not in the Domain
+        //resolve passed in row including columns in the table and other properties (vocabulary properties) not in the Domain/table
         for (Map.Entry<String, Object> entry: row.entrySet())
         {
             if (!rowStripped.containsKey(entry.getKey()))
             {
-               ColumnInfo resolvedColumnInfo = getQueryTable().getColumn(entry.getKey());
-               if (null != resolvedColumnInfo)
+               ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+               if (null != col)
                {
-                   rowStripped.put(entry.getKey(), entry.getValue());
+                   final String name = col.getName();
+                   String key = name;
+                   if (!row.containsKey(key))
+                   {
+                       // Check if the row map contains an alias for the column
+                       Optional<String> firstAlias = col.getImportAliasSet().stream().filter(row::containsKey).findFirst();
+                       if (!firstAlias.isPresent())
+                           continue;
+                       key = firstAlias.get();
+                   }
+
+                   // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
+                   if (col.isReadOnly() || col.isCalculated())
+                       continue;
+
+                   //when updating a row, we should strip the following fields, as they are
+                   //automagically maintained by the table layer, and should not be allowed
+                   //to change once the record exists.
+                   //unfortunately, the Table.update() method doesn't strip these, so we'll
+                   //do that here.
+                   // Owner, CreatedBy, Created, EntityId
+                   if ((!retainCreation && (name.equalsIgnoreCase("CreatedBy") || name.equalsIgnoreCase("Created")))
+                           || (!allowOwner && name.equalsIgnoreCase("Owner"))
+                           || name.equalsIgnoreCase("EntityId"))
+                       continue;
+
+                   // We want a map using the DbTable column names as keys, so figure out the right name to use
+                   String dbName = queryToDb.containsKey(name) ? queryToDb.get(name) : name;
+                   rowStripped.put(dbName, entry.getValue());
                }
             }
         }

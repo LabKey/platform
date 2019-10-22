@@ -176,7 +176,7 @@ public class ChangeSummary
             sbHTMLChanges.append("<table class=issues-Changes>");
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "AssignedTo", previous.getAssignedToName(user), issue.getAssignedToName(user), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "AssignedTo", newIssue ? null : previous.getAssignedToName(user), issue.getAssignedToName(user), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Notify",
                     StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
                     StringUtils.join(issue.getNotifyListDisplayNames(null),";"),

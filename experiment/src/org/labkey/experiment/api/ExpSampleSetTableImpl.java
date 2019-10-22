@@ -78,6 +78,8 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
                 return sampleCountColumnInfo;
             }
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -98,6 +100,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
         addColumn(ExpSampleSetTable.Column.SampleCount);
+        addColumn(Column.Properties);
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId"));
