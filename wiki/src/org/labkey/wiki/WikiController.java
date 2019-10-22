@@ -37,20 +37,15 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.exceptions.OptimisticConflictException;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -102,8 +97,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2511,96 +2504,6 @@ public class WikiController extends SpringActionController
 
             resp.put("attachments", attachments);
             return resp;
-        }
-    }
-
-
-    public static class TransformWikiForm
-    {
-        private String _body;
-        private String _fromFormat;
-        private String _toFormat;
-
-        public String getBody()
-        {
-            return _body;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setBody(String body)
-        {
-            _body = body;
-        }
-
-        public String getFromFormat()
-        {
-            return _fromFormat;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setFromFormat(String fromFormat)
-        {
-            _fromFormat = fromFormat;
-        }
-
-        public String getToFormat()
-        {
-            return _toFormat;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setToFormat(String toFormat)
-        {
-            _toFormat = toFormat;
-        }
-    }
-
-    @RequiresNoPermission
-    public class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
-    {
-        public ApiResponse execute(TransformWikiForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            String newBody = form.getBody();
-            Container container = getContainer();
-
-            //transform from wiki to HTML
-            if (StringUtils.equals(WikiRendererType.RADEOX.name(),form.getFromFormat())
-                    && StringUtils.equals(WikiRendererType.HTML.name(),form.getToFormat()))
-            {
-                Wiki wiki = new Wiki(container, "_transform_temp");
-                WikiVersion wikiver = new WikiVersion("_transform_temp");
-                wikiver.setCacheContent(false);
-
-                if (null != form.getBody())
-                    wikiver.setBody(form.getBody());
-
-                wikiver.setRendererType(form.getFromFormat());
-                newBody = wikiver.getHtmlForConvert(getContainer(), wiki);
-            }
-
-            //transform from markdown to html
-            if (StringUtils.equals(WikiRendererType.MARKDOWN.name(),form.getFromFormat())
-                    && StringUtils.equals(WikiRendererType.HTML.name(),form.getToFormat()))
-            {
-                Wiki wiki = new Wiki(container, "_transform_temp");
-                WikiVersion wikiver = new WikiVersion("_transform_temp");
-                wikiver.setCacheContent(false);
-
-                if (null != form.getBody())
-                    wikiver.setBody(form.getBody());
-
-                wikiver.setRendererType(form.getFromFormat());
-
-                MarkdownService markdownService = MarkdownService.get();
-                newBody = markdownService.toHtml(form.getBody());
-            }
-
-            response.put("toFormat", form.getToFormat());
-            response.put("fromFormat", form.getFromFormat());
-            response.put("body", newBody);
-
-            return response;
         }
     }
 
