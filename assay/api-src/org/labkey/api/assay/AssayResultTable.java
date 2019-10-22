@@ -266,6 +266,17 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             ContainerForeignKey.initColumn(folderCol, _userSchema);
         }
 
+        SQLFragment sql = new SQLFragment(getSqlDialect().concatenate(
+                "'" + schema.getProvider().getResultRowLSIDExpression() + ":" +
+                this.getSchemaTableInfo().getName() + ":'",
+                "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
+
+        var lsidCol = new ExprColumn(this, "LSID", sql, JdbcType.VARCHAR);
+        lsidCol.setCalculated(true);
+        lsidCol.setUserEditable(false);
+        lsidCol.setReadOnly(true);
+        addColumn(lsidCol);
+
         setDefaultVisibleColumns(visibleColumns);
     }
 
