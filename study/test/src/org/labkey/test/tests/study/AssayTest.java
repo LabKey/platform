@@ -24,8 +24,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.AssayDesignerPage;
+import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.DataRegionTable;
@@ -712,12 +711,13 @@ public class AssayTest extends AbstractAssayTest
         clickProject(getProjectName());
 
         waitAndClickAndWait(Locator.linkWithText(TEST_ASSAY));
-        AssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
-        PropertiesEditor dataFields = designerPage.dataFields();
-        dataFields.selectField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
-        dataFields.selectField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
-        dataFields.selectField(4).markForDeletion();
-        designerPage.save();
+        ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
+
+//        PropertiesEditor dataFields = designerPage.dataFields();
+//        dataFields.selectField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
+//        dataFields.selectField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
+//        dataFields.selectField(4).markForDeletion();
+//        designerPage.save();
 
         //ensure that label has changed in run data in Lab 1 folder
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
