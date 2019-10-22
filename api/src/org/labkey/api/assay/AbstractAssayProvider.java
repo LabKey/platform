@@ -84,6 +84,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -125,6 +126,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.PageFlowUtil.encode;
+
 /**
  * User: jeckels
  * Date: Sep 14, 2007
@@ -164,6 +167,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
+    protected final String _resultRowLSIDPrefix;
     protected final Set<Module> _requiredModules = new HashSet<>();
 
     private final Module _declaringModule;
@@ -173,10 +177,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, @Nullable AssayDataType dataType, Module declaringModule)
     {
-        _dataType = dataType;
+        this(protocolLSIDPrefix, runLSIDPrefix, null, dataType, declaringModule);
+    }
+
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, @Nullable AssayDataType dataType, Module declaringModule)
+    {
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
+        _resultRowLSIDPrefix = resultRowLSIDPrefix;
         _declaringModule = declaringModule;
+        _dataType = dataType;
     }
 
     public AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy)
@@ -1470,6 +1480,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public String getRunLSIDPrefix()
     {
         return _runLSIDPrefix;
+    }
+
+    public String getResultRowLSIDPrefix()
+    {
+        return _resultRowLSIDPrefix;
+    }
+
+    @Override
+    public String getResultRowLSIDExpression()
+    {
+        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + (getResultRowLSIDPrefix() != null ? getResultRowLSIDPrefix() : "");
     }
 
     @Override
