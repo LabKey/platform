@@ -119,6 +119,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Collections.emptySet;
 
 public class PropertyController extends SpringActionController
 {
@@ -1248,18 +1251,18 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm containerDomainForm, boolean includeProjectAndShared)
+    private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm form, boolean includeProjectAndShared)
     {
-        List<GWTDomain> gwtDomains = new ArrayList<>();
-        if (containerDomainForm.getDomainKinds() != null)
+        Stream<? extends Domain> domains;
+        if (form.getDomainKinds() != null && !form.getDomainKinds().isEmpty())
         {
-            PropertyService.get().getDomains(c, user, containerDomainForm.getDomainKinds(), includeProjectAndShared).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+            domains = PropertyService.get().getDomainsStream(c, user, form.getDomainKinds(), includeProjectAndShared);
         }
         else
         {
-            PropertyService.get().getDomains(c).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+            domains = PropertyService.get().getDomainsStream(c, user, emptySet(), includeProjectAndShared);
         }
-        return gwtDomains;
+        return domains.map(d -> DomainUtil.getDomainDescriptor(getUser(), d)).collect(Collectors.toList());
     }
 
 

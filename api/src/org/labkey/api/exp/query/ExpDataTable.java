@@ -59,7 +59,8 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         Generated,
         LastIndexed,
         Inputs,
-        Outputs
+        Outputs,
+        Properties
     }
 
     void setExperiment(ExpExperiment experiment);
