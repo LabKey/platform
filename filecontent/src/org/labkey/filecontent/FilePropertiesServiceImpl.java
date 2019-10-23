@@ -20,7 +20,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -46,8 +49,9 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
     {
         GWTDomain domain = super.getDomainDescriptor(typeURI);
         if (domain != null)
-            domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+        {
+            setDefaultValues(domain, typeURI);
+        }
         return domain;
     }
 
@@ -56,8 +60,9 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
     {
         GWTDomain<? extends GWTPropertyDescriptor> domain = super.getDomainDescriptor(typeURI, domainContainer);
         if (domain != null)
-            domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE }, DefaultValueType.FIXED_EDITABLE);
+        {
+            setDefaultValues(domain, typeURI);
+        }
         return domain;
     }
 

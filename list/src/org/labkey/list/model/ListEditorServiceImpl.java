@@ -472,8 +472,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
 
         domain.setAllowAttachmentProperties(true);
-        domain.setDefaultValueOptions(new DefaultValueType[]
-                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+        setDefaultValues(domain, domain.getDomainURI());
         return domain;
     }
 
