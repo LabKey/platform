@@ -6367,14 +6367,15 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
+        // TODO if allowAttachmentProperties, allowFileLinkProperties, and showDefaultValueSettings are all moved to the domain kind, we can drop the params here and get them from Domain
         @Override
         public ActionURL getDomainEditorURL(Container container, Domain domain, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings)
         {
-            if (!ExperimentService.get().useUXDomainDesigner())
-                return getDomainEditorURL(container, domain.getTypeURI(), allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings);
-
-            ActionURL url = new ActionURL("experiment", "domainDesigner", container);
-            url.addParameter("domainId", domain.getTypeId());
+            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
+            if (ExperimentService.get().useUXDomainDesigner())
+                url.addParameter("domainId", domain.getTypeId());
+            else
+                url.addParameter("domainURI", domain.getTypeURI());
             applyDomainEditorUrlParams(allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings, url);
             return url;
         }
