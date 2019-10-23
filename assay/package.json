@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@glass/base": "0.19.0",
-    "@glass/domainproperties": "0.0.42-fb-messed-up-6"
+    "@glass/domainproperties": "0.0.42"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
