@@ -28,6 +28,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.FileBrowser;
 import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
@@ -1150,23 +1151,13 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
 
         log("Study Properties: adding custom fields");
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Edit Additional Properties"));
-        waitForText("No fields have been defined.");
-
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Field Properties").find();
-        editor.addField(new FieldDefinition("cust_string")
-            .setType(FieldDefinition.ColumnType.String));
-        editor.addField(new FieldDefinition("cust_integer")
-                .setType(FieldDefinition.ColumnType.Integer));
-        editor.addField(new FieldDefinition("cust_dateTime")
-                .setType(FieldDefinition.ColumnType.DateTime));
-        editor.addField(new FieldDefinition("cust_double")
-                .setType(FieldDefinition.ColumnType.Double));
-        editor.addField(new FieldDefinition("cust_multiline")
-                .setType(FieldDefinition.ColumnType.MultiLine));
-
-        clickButton("Save", WAIT_FOR_JAVASCRIPT);
+        DomainFormPanel domainFormPanel = goToStudyEditAdditionalProperties();
+        domainFormPanel.addField("cust_string").setType(FieldDefinition.ColumnType.String).setLabel("cust_string");
+        domainFormPanel.addField("cust_integer").setType(FieldDefinition.ColumnType.Integer).setLabel("cust_integer");
+        domainFormPanel.addField("cust_dateTime").setType(FieldDefinition.ColumnType.DateAndTime).setLabel("cust_dateTime");
+        domainFormPanel.addField("cust_double").setType(FieldDefinition.ColumnType.Decimal).setLabel("cust_double");
+        domainFormPanel.addField("cust_multiline").setType(FieldDefinition.ColumnType.MultiLine).setLabel("cust_multiline");
+        clickButton("Save");
 
         // add data and export
         Map studyProperties = toMap(new Object[][]{
