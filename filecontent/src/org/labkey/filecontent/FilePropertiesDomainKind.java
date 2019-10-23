@@ -21,6 +21,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -99,5 +100,17 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return _reservedFieldSet;
+    }
+
+    @Override
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return new DefaultValueType[] { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE };
+    }
+
+    @Override
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return DefaultValueType.FIXED_EDITABLE;
     }
 }

@@ -15,12 +15,10 @@
  */
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import $ from 'jquery'
-
 import { App } from './DomainDesigner'
 
-$(() => ReactDOM.render(
-    <App/>,
-    document.getElementById('app'))
-);
+// Need to wait for container element to be available in labkey wrapper before render
+window.addEventListener('DOMContentLoaded', (event) => {
+    ReactDOM.render(<App/>, document.getElementById('app'));
+});
 
