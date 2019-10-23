@@ -84,7 +84,7 @@ public class StudyDefinitionController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain, false, false, false);
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(_domain.getContainer(), _domain, _domain.getDomainKind().allowAttachmentProperties(), _domain.getDomainKind().allowFileLinkProperties(), false);
             form.propagateReturnURL(url);
             return url;
         }

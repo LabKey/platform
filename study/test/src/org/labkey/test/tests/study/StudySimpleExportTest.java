@@ -1151,7 +1151,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
 
         log("Study Properties: adding custom fields");
-        DomainFormPanel domainFormPanel = goToStudyEditAdditionalProperties();
+        DomainFormPanel domainFormPanel = goToStudyEditAdditionalProperties(true);
         domainFormPanel.addField("cust_string").setType(FieldDefinition.ColumnType.String).setLabel("cust_string");
         domainFormPanel.addField("cust_integer").setType(FieldDefinition.ColumnType.Integer).setLabel("cust_integer");
         domainFormPanel.addField("cust_dateTime").setType(FieldDefinition.ColumnType.DateAndTime).setLabel("cust_dateTime");
