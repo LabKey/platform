@@ -1101,9 +1101,19 @@ public class PropertyController extends SpringActionController
             GWTDomain domain = super.getDomainDescriptor(typeURI);
             if (domain == null)
                 return null;
-            
-            domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+
+            Domain dom = PropertyService.get().getDomain(getContainer(), typeURI);
+            if (dom != null)
+            {
+                DomainKind kind = dom.getDomainKind();
+                domain.setDefaultValueOptions(kind.getDefaultValueOptions(dom), kind.getDefaultDefaultType(dom));
+            }
+            else
+            {
+                domain.setDefaultValueOptions(new DefaultValueType[]
+                        { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+            }
+
             return domain;
         }
     }
