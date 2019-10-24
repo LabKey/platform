@@ -370,6 +370,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExpProtocolApplication outputProtocolApp = run.getOutputProtocolApplication();
 
             //call to ProvenanceService.addProvenanceOutputs
+
+            for (Map.Entry<DomainProperty, String> runProperty : runProperties.entrySet())
+            {
+                String propertyName = runProperty.getKey().getPropertyDescriptor().getName();
+                if (propertyName.equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY))
+                {
+                    ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
+                    ProvenanceService.get().addProvenanceInputs(inputProtocolApp, Set.of(runProperty.getValue()));
+                }
+            }
+
             ProvenanceService.get().addProvenanceOutputs(outputProtocolApp, outputLSIDs);
 
             ExperimentService.get().queueSyncRunEdges(run);
