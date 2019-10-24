@@ -25,7 +25,7 @@ public interface ProvenanceService
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
     }
 
-    void addProvenanceInputs(ExpProtocolApplication app, List<String> inputLSIDs);
+    Map<Integer, Set<String>> addProvenanceInputs(ExpProtocolApplication app, Set<String> inputLSIDs);
 
     Map<Integer, Set<String>> addProvenanceOutputs(ExpProtocolApplication app, Set<String> outputLSIDs);
 
