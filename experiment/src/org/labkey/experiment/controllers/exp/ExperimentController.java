@@ -1019,10 +1019,12 @@ public class ExperimentController extends SpringActionController
             if (table.hasPermission(getUser(), UpdatePermission.class))
             {
                 ActionURL updateUrl = _dataClass.urlUpdate(getUser(), getContainer(), getViewContext().getActionURL());
+                updateUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                 ActionButton editButton = new ActionButton("Edit", updateUrl);
                 bb.add(editButton);
 
                 ActionURL editFields = _dataClass.urlEditDefinition(getViewContext());
+                editFields.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                 ActionButton editFieldsButton = new ActionButton("Edit Fields", editFields);
                 bb.add(editFieldsButton);
             }
@@ -6380,6 +6382,7 @@ public class ExperimentController extends SpringActionController
             return url;
         }
 
+        // TODO after we finish conversion to new domain designer (and remove GWT designer), I believe we can remove these
         private void applyDomainEditorUrlParams(boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings, ActionURL url)
         {
             if (allowAttachmentProperties)
