@@ -41,7 +41,7 @@ public class MarkdownServiceImpl implements MarkdownService
         LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         engine = svc.getEngineByName("nashorn");
 
-        Module module = ModuleLoader.getInstance().getModule("Wiki");
+        Module module = ModuleLoader.getInstance().getCoreModule();
         Path path = Path.parse("scripts/").append("markdown-it.js");
         Resource r = module.getModuleResource(path);
         if (r != null && r.isFile() && r.exists())

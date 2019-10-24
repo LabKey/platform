@@ -140,6 +140,7 @@ public class ContainerManager
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
+    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
 
     private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
@@ -2220,10 +2221,15 @@ public class ContainerManager
     {
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.
-        return bootstrapContainer(Container.DEFAULT_SUPPORT_PROJECT_PATH,
+        return bootstrapContainer(DEFAULT_SUPPORT_PROJECT_PATH,
                 RoleManager.getRole(AuthorRole.class),
                 RoleManager.getRole(ReaderRole.class),
                 null);
+    }
+
+    public static Container getDefaultSupportContainer()
+    {
+        return getForPath(DEFAULT_SUPPORT_PROJECT_PATH);
     }
 
     public static String[] getAliasesForContainer(Container c)
