@@ -94,6 +94,8 @@ public interface ExpProtocolApplication extends ExpObject
 
     void setRecordCount(Integer recordCount);
 
+    void setComments(String comments);
+
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
