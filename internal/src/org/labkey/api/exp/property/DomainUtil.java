@@ -244,6 +244,7 @@ public class DomainUtil
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
         d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
+        d.setDefaultValueOptions(domainKind.getDefaultValueOptions(domain), domainKind.getDefaultDefaultType(domain));
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
         d.setQueryName(domainKind.getMetaDataTableName());
