@@ -24,6 +24,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
@@ -135,10 +136,9 @@ public class AssayTest extends AbstractAssayTest
         assertElementNotPresent(Locator.button("Delete"));
 
         // Edit the design to make them editable
-        _assayHelper.clickEditAssayDesign(true);
-        waitForElement(Locator.xpath("//span[@id='id_editable_results_properties']"), WAIT_FOR_JAVASCRIPT);
-        checkCheckbox(Locator.xpath("//span[@id='id_editable_results_properties']/input"));
-        clickButton("Save & Close");
+        ReactAssayDesignerPage assayDesignerPage = _assayHelper.clickEditAssayDesign(true);
+        assayDesignerPage.setEditableResults(true);
+        assayDesignerPage.clickFinish();
 
         // Try an edit
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
@@ -707,17 +707,16 @@ public class AssayTest extends AbstractAssayTest
     private void editAssay()
     {
         log("Testing edit and delete and assay definition");
-
         clickProject(getProjectName());
-
         waitAndClickAndWait(Locator.linkWithText(TEST_ASSAY));
-        ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
 
-//        PropertiesEditor dataFields = designerPage.dataFields();
-//        dataFields.selectField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
-//        dataFields.selectField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
-//        dataFields.selectField(4).markForDeletion();
-//        designerPage.save();
+        // change a field name and label and remove a field
+        ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
+        DomainFormPanel domainFormPanel = designerPage.goToResultFields();
+        domainFormPanel.getField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
+        domainFormPanel.getField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
+        domainFormPanel.removeField(domainFormPanel.getField(4).getName());
+        designerPage.clickFinish();
 
         //ensure that label has changed in run data in Lab 1 folder
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
