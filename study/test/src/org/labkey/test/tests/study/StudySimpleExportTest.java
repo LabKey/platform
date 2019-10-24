@@ -922,8 +922,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         // add custom fields to all the extensible tables
         addCustomField("Treatment", "cust_treatment", FieldDefinition.ColumnType.String);
         addCustomField("TreatmentProductMap", "cust_map", FieldDefinition.ColumnType.Integer);
-        addCustomField("Product", "cust_product", FieldDefinition.ColumnType.DateTime);
-        addCustomField("ProductAntigen", "cust_antigen", FieldDefinition.ColumnType.Double);
+        addCustomField("Product", "cust_product", FieldDefinition.ColumnType.DateAndTime);
+        addCustomField("ProductAntigen", "cust_antigen", FieldDefinition.ColumnType.Decimal);
         addCustomField("Personnel", "cust_personnel", FieldDefinition.ColumnType.MultiLine);
 
         // add data and export
@@ -989,16 +989,15 @@ public class StudySimpleExportTest extends StudyBaseTest
 
     private void addCustomField(String tableName, String fieldName, FieldDefinition.ColumnType type)
     {
+        enableUxDomainDesigner();
         goToSchemaBrowser();
         selectQuery("study", tableName);
-        waitForText("edit definition");
-        clickAndWait(Locator.linkWithText("Edit Definition"));
-        waitForText("No fields have been defined.");
+        waitAndClickAndWait(Locator.linkWithText("Edit Definition"));
+        disableUxDomainDesigner();
 
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Field Properties").find();
-        editor.addField(new FieldDefinition(fieldName)
-            .setType(type));
-        clickButton("Save", WAIT_FOR_JAVASCRIPT);
+        DomainFormPanel domainFormPanel = new DomainFormPanel.DomainFormPanelFinder(getDriver()).withTitle(tableName).find();;
+        domainFormPanel.addField(new FieldDefinition(fieldName, type));
+        clickButton("Save");
 
         // update the default view to contain the custom column
         _customizeViewsHelper.openCustomizeViewPanel();
