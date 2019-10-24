@@ -26,6 +26,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -42,10 +44,12 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -68,6 +72,7 @@ import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
@@ -217,6 +222,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpMaterial, String> outputMaterials = new HashMap<>();
         Map<ExpData, String> outputDatas = new HashMap<>();
         Map<ExpData, String> transformedDatas = new HashMap<>();
+        Set<String> outputLSIDs = new HashSet<>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
         Map<DomainProperty, String> batchProperties = context.getBatchProperties();
@@ -341,14 +347,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     }
                     ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
 
-                    transaction.addCommitTask( new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            replacedRun.archiveDataFiles(context.getUser());
-                        }
-                    }, DbScope.CommitTaskOption.POSTCOMMIT);
+                    transaction.addCommitTask(() -> replacedRun.archiveDataFiles(context.getUser()), DbScope.CommitTaskOption.POSTCOMMIT);
                 }
                 else
                 {
@@ -360,9 +359,21 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
 
-            ExperimentService.get().queueSyncRunEdges(run);
 
             transaction.commit();
+
+            //list of starting ouput LSIDs
+            TableInfo dataTable = _provider.createProtocolSchema(context.getUser(), context.getContainer(), context.getProtocol(), null).getTable("Data", null);
+            List<String> lsidList = new TableSelector(dataTable, PageFlowUtil.set("LSID"), null, null).getArrayList(String.class);
+            outputLSIDs.addAll(lsidList);
+
+            ExpProtocolApplication outputProtocolApp = run.getOutputProtocolApplication();
+
+            //call to ProvenanceService.addProvenanceOutputs
+            ProvenanceService.get().addProvenanceOutputs(outputProtocolApp, outputLSIDs);
+
+            ExperimentService.get().queueSyncRunEdges(run);
+
             return batch;
         }
         catch (BatchValidationException e)

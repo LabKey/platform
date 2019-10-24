@@ -771,9 +771,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException;
 
     // see org.labkey.experiment.LSIDRelativizer
-    public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
-    public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
-    public static final String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
+    String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
+    String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
+    String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
 
     /**
      * Get the set of runs that can be deleted based on the materials supplied.
@@ -785,7 +785,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useUXDomainDesigner();
 
-    public static class XarExportOptions
+    class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
         String _xarXmlFileName = "experiment.xar";
@@ -862,7 +862,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         }
     }
 
-    public static class XarImportOptions
+    class XarImportOptions
     {
         boolean _replaceExistingRuns = false;
         boolean _useOriginalDataFileUrl = false;
