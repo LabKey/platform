@@ -84,6 +84,7 @@ public class StudyDefinitionController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
+            // since the study additional properties domain is scoped to the project, use the domain.getContainer() here instead of getContainer()
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(_domain.getContainer(), _domain, _domain.getDomainKind().allowAttachmentProperties(), _domain.getDomainKind().allowFileLinkProperties(), false);
             form.propagateReturnURL(url);
             return url;
