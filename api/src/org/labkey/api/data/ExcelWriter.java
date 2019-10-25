@@ -318,7 +318,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
     @Deprecated // Use setResults()
     public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
-        setResultSet(new ResultsImpl(rs, fieldMap));
+        setResults(new ResultsImpl(rs, fieldMap));
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
