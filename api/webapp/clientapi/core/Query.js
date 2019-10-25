@@ -1401,36 +1401,36 @@ LABKEY.Query = new function()
                 var dependantsMap = {};
                 var dependeesMap  = {};
 
-                // compute mappings
                 for (var edge = 0; edge < json.graph.length; edge++)
                 {
                     fromKey = json.graph[edge][0];
                     toKey = json.graph[edge][1];
 
-                    dependantsMap[fromKey] = dependantsMap[fromKey] || [];
-                    dependantsMap[fromKey].push(objects[toKey]);
+                    // objects I am dependant on are my dependees
+                    dependeesMap[fromKey] = dependeesMap[fromKey] || [];
+                    dependeesMap[fromKey].push(objects[toKey]);
 
-                    dependeesMap[toKey] = dependeesMap[toKey] || [];
-                    dependeesMap[toKey].push(objects[fromKey]);
+                    // objects are dependant on me are my dependants
+                    dependantsMap[toKey] = dependantsMap[toKey] || [];
+                    dependantsMap[toKey].push(objects[fromKey]);
                 }
 
-                // dependants - map keys to objects
-                var dependants = [];
-                for (key in dependantsMap)
-                {
-                    if (dependantsMap.hasOwnProperty(key))
-                        dependants.push({from:objects[key], to:dependantsMap[key]});
-                }
-
-                var dependees = [];
+                var dependeesList = [];
                 for (key in dependeesMap)
                 {
                     if (dependeesMap.hasOwnProperty(key))
-                        dependees.push({to:objects[key], from:dependeesMap[key]});
+                        dependeesList.push({from:objects[key], to:dependeesMap[key]});
+                }
+
+                var dependantsList = [];
+                for (key in dependantsMap)
+                {
+                    if (dependantsMap.hasOwnProperty(key))
+                        dependantsList.push({to:objects[key], from:dependantsMap[key]});
                 }
 
                 if (callback)
-                    callback.call(this, {success:json.success, dependants:dependants, dependees:dependees}, response, options);
+                    callback.call(this, {success:json.success, dependants:dependantsList, dependees:dependeesList}, response, options);
             }
 
             return LABKEY.Ajax.request({
