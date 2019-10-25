@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -6472,6 +6473,78 @@ public class QueryController extends SpringActionController
             return root;
         }
     }
+
+
+    /*@RequiresPermission(ReadPermission.class)
+    @Marshal(Marshaller.Jackson)
+    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+            var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
+            QueryService.get().analyzeFolder(start, deps);
+
+            JSONObject ret = new JSONObject();
+            ret.put("success", true);
+            JSONArray array = new JSONArray();
+            ret.put("dependencies", array);
+            for (var from : deps.keySet())
+            {
+                JSONObject elem = new JSONObject();
+                array.put(elem);
+                elem.put("from", from.toJSON());
+                JSONArray tolist = new JSONArray();
+                elem.put("to", tolist);
+                for (var to : deps.get(from))
+                    tolist.put(to.toJSON());
+            }
+            return ret;
+        }
+    }*/
+
+
+    @RequiresPermission(ReadPermission.class)
+    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+            var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
+            QueryService.get().analyzeFolder(start, deps);
+
+            JSONObject ret = new JSONObject();
+            ret.put("success", true);
+
+            JSONObject objects = new JSONObject();
+            for (var from : deps.keySet())
+            {
+                objects.put(from.getKey(), from.toJSON());
+                for (var to : deps.get(from))
+                    objects.put(to.getKey(), to.toJSON());
+            }
+            ret.put("objects", objects);
+
+            JSONArray dependants = new JSONArray();
+            for (var from : deps.keySet())
+            {
+                JSONArray toList = new JSONArray();
+                for (var to : deps.get(from))
+                    dependants.put(new String[] {from.getKey(), to.getKey()});
+            }
+            ret.put("graph", dependants);
+
+//            JSONArray dependees = new JSONArray();
+//            for (var to : reverse.keySet())
+//                dependees.put(new JSONObject().put("to", to).put("from", reverse.get(to).toArray()));
+//            ret.put("dependees", dependees);
+
+            return ret;
+        }
+    }
+
 
     public static class TestCase extends AbstractActionPermissionTest
     {

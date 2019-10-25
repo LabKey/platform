@@ -1382,6 +1382,65 @@ LABKEY.Query = new function()
             });
         },
 
+        analyzeQueries : function(config)
+        {
+            function fixupJsonResponse(json, response, options)
+            {
+                var callback = LABKEY.Utils.getOnSuccess(config);
+
+                if (!json || !json.success)
+                {
+                    if (callback)
+                        callback.call(this, json, response, options);
+                    return;
+                }
+
+                var key,toKey,fromKey;
+                var objects = json.objects;
+
+                var dependantsMap = {};
+                var dependeesMap  = {};
+
+                // compute mappings
+                for (var edge = 0; edge < json.graph.length; edge++)
+                {
+                    fromKey = json.graph[edge][0];
+                    toKey = json.graph[edge][1];
+
+                    dependantsMap[fromKey] = dependantsMap[fromKey] || [];
+                    dependantsMap[fromKey].push(objects[toKey]);
+
+                    dependeesMap[toKey] = dependeesMap[toKey] || [];
+                    dependeesMap[toKey].push(objects[fromKey]);
+                }
+
+                // dependants - map keys to objects
+                var dependants = [];
+                for (key in dependantsMap)
+                {
+                    if (dependantsMap.hasOwnProperty(key))
+                        dependants.push({from:objects[key], to:dependantsMap[key]});
+                }
+
+                var dependees = [];
+                for (key in dependeesMap)
+                {
+                    if (dependeesMap.hasOwnProperty(key))
+                        dependees.push({to:objects[key], from:dependeesMap[key]});
+                }
+
+                if (callback)
+                    callback.call(this, {success:json.success, dependants:dependants, dependees:dependees}, response, options);
+            }
+
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', config.containerPath),
+                method : 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+        },
+
         /**
          * Returns the current date/time on the LabKey server.
          * @param config An object that contains the following configuration parameters
