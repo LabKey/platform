@@ -110,6 +110,9 @@
     var uploadFileDiv = Ext4.get(<%=q(uploadFileDivId)%>);
     var errorDiv = Ext4.get(<%=q(errorDivId)%>);
     var tsvTextarea ;
+    var type = <%=q(bean.typeName)%>;
+    var helpTopic = <%=q(bean.importHelpTopic)%>;
+    var helpDisplayText = <%=q(bean.importHelpDisplayText)%>;
     var endpoint = <%=q(bean.urlEndpoint)%>;
     var cancelUrl = <%=q(bean.urlCancel)%>;
     var returnUrl = <%=q(bean.urlReturn)%>;
@@ -312,7 +315,8 @@
                 name: 'insertOption',
                 inputValue: <%=q(QueryUpdateService.InsertOption.MERGE.name())%>,
                 fieldLabel: 'Import Options',
-                boxLabel: 'Update data for existing rows during import',
+                boxLabel: 'Update data for existing ' + type + ' during import. ' +
+                        ((!helpTopic||!helpDisplayText) ? "" : <%=q(new HelpTopic(bean.importHelpTopic).getLinkHtml(bean.importHelpDisplayText))%>),
                 preventMark: true,
                 helpPopup: LABKEY.Utils.encodeHtml(
                     '<p>By default, import will insert new rows based on the data/file provided. The operation will fail ' +
@@ -323,7 +327,7 @@
                 columns: 1,
                 defaults: {
                     xtype: 'radio',
-                    name: 'insertOption',
+                    name: 'insertOption'
                 },
                 items: [
                     {
@@ -333,7 +337,7 @@
                     },
                     {
                         boxLabel: 'Insert and Replace',
-                        inputValue: 'MERGE',
+                        inputValue: 'MERGE'
                     }
                 ]
             }];
