@@ -27,8 +27,8 @@
     }
   },
   "dependencies": {
-    "@glass/base": "0.20.0",
-    "@glass/domainproperties": "0.0.44-fb-uxddPolish.1"
+    "@glass/base": "0.20.1",
+    "@glass/domainproperties": "0.0.44"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
