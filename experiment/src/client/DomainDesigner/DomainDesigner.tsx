@@ -114,17 +114,17 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }));
 
                 this.showMessage("Save Successful", 'success', 0);
-                window.scrollTo(0, 0);
 
                 if (navigate) {
                     this.navigate();
                 }
             })
             .catch((badDomain) => {
-
+                // get error messages, fall back on the top level exception
                 let bannerMsgs = getBannerMessages(badDomain);
-
-                window.scrollTo(0, 0);
+                if (bannerMsgs && bannerMsgs.size === 0 && badDomain.domainException.exception) {
+                    bannerMsgs = List<IBannerMessage>([{message: badDomain.domainException.exception, messageType: 'danger'}]);
+                }
 
                 this.setState(() => ({
                     domain: badDomain,
@@ -139,13 +139,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
-
-        let bannerMsgs = getBannerMessages(newDomain);
-
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: bannerMsgs
+            messages: getBannerMessages(newDomain)
         }));
     };
 
@@ -234,9 +231,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <>
                 { showConfirm && this.renderNavigateConfirm() }
-                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
-                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
-                }
                 { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm
@@ -245,6 +239,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         onChange={this.onChangeHandler}
                         showHeaderFieldCount={false}
                     />
+                }
+                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
+                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
                 }
                 { domain && this.renderButtons() }
             </>
