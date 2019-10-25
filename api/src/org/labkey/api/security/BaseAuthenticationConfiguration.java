@@ -1,34 +1,66 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentType;
+import org.labkey.api.data.ContainerManager;
 
 import java.util.Map;
 
 public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationProvider> implements AuthenticationConfiguration<AP>
 {
     private final AP _provider;
-    private final String _name;
+    private final String _description;
     private final boolean _enabled;
-    private final String _key;
+    private final Integer _rowId;
+    private final String _entityId;
 
     protected BaseAuthenticationConfiguration(String key, AP provider, Map<String, String> props)
     {
-        _key = key;
+        _rowId = 0;
+        _entityId = null;
         _provider = provider;
-        _name = props.get("Name");
+        _description = props.get("Description");
         _enabled = Boolean.valueOf(props.get("Enabled"));
     }
 
-    @Override
-    public @NotNull String getKey()
+    public BaseAuthenticationConfiguration(AP provider, Map<String, Object> props)
     {
-        return _key;
+        _rowId = (Integer)props.get("RowId");
+        _entityId = (String)props.get("EntityId");
+        _provider = provider;
+        _description = (String)props.get("Description");
+        _enabled = (Boolean)props.get("Enabled");
     }
 
     @Override
-    public @NotNull String getName()
+    @NotNull
+    public Integer getRowId()
     {
-        return _name;
+        return _rowId;
+    }
+
+    @Override
+    public String getEntityId()
+    {
+        return _entityId;
+    }
+
+    @Override
+    public String getContainerId()
+    {
+        return ContainerManager.getRoot().getId();
+    }
+
+    @Override
+    public @NotNull AttachmentType getAttachmentType()
+    {
+        return AuthenticationLogoType.get();
+    }
+
+    @Override
+    public @NotNull String getDescription()
+    {
+        return _description;
     }
 
     @NotNull
@@ -39,7 +71,7 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     }
 
     @Override
-    public boolean enabled()
+    public boolean isEnabled()
     {
         return _enabled;
     }

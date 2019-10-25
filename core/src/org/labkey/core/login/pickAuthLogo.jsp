@@ -22,19 +22,17 @@
 <%
     HttpView<AuthLogoBean> me = (HttpView<AuthLogoBean>) HttpView.currentView();
     AuthLogoBean bean = me.getModelBean();
-    String logoName = bean.configuration.getAuthenticationProvider().getName();
 %>
-<input type="hidden" name="name" value="<%=h(logoName)%>"></td>
 <div class="form-group"><label class="control-label col-sm-3 col-lg-2">Page header logo</label><div class="col-sm-9 col-lg-10"><%=text(bean.headerLogo)%></div></div>
 <div class="form-group"><label class="control-label col-sm-3 col-lg-2">Login page logo</label><div class="col-sm-9 col-lg-10"><%=text(bean.loginPageLogo)%></div></div>
 <script type="text/javascript">
-    function deleteLogo(prefix)
+    function deleteLogo(name)
     {
-        var d1 = document.getElementById(prefix + 'd1');
-        var d2 = document.getElementById(prefix + 'd2');
+        var d1 = document.getElementById(name + 'd1');
+        var d2 = document.getElementById(name + 'd2');
         d1.innerHTML = "";
         d2.innerHTML = "";
-        // var tr = document.getElementById(prefix + 'row');
+        // var tr = document.getElementById(name + 'row');
         // tr.removeChild(td1);
         // tr.removeChild(td2);
 
@@ -42,14 +40,14 @@
         // newTd.setAttribute('colspan', '2');
 
         var fb = document.createElement('input');
-        fb.setAttribute('name', prefix + 'file');
+        fb.setAttribute('name', name);
         fb.setAttribute('type', 'file');
         fb.setAttribute('size', '60');
 
         var hidden = document.createElement('input');
         hidden.setAttribute('type', 'hidden');
         hidden.setAttribute("name", "deletedLogos");
-        hidden.setAttribute("value", prefix + '<%=logoName%>');
+        hidden.setAttribute("value", name);
 
         d1.appendChild(fb);
         d1.appendChild(hidden);

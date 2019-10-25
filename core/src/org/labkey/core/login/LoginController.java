@@ -40,16 +40,34 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.TokenAuthenticationManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -291,7 +309,7 @@ public class LoginController extends SpringActionController
         public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
-            url.addParameter("configuration", configuration.getKey());
+            url.addParameter("configuration", configuration.getRowId());
             if (skipProfile)
             {
                 url.addParameter("skipProfile", 1);
@@ -1017,7 +1035,7 @@ public class LoginController extends SpringActionController
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }
-        else if (request.getParameter("_skipAutoRedirect") == null && AuthenticationManager.hasSSOAuthenticationProvider())
+        else if (request.getParameter("_skipAutoRedirect") == null)
         {
             // see if any of the SSO auth providers are set to autoRedirect from the login action
             SSOAuthenticationConfiguration ssoAuthenticationConfiguration = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
@@ -1401,7 +1419,7 @@ public class LoginController extends SpringActionController
     public static class SsoRedirectForm extends AbstractLoginForm
     {
         private String _provider;
-        private String _configuration;
+        private int _configuration;
 
         public String getProvider()
         {
@@ -1414,13 +1432,13 @@ public class LoginController extends SpringActionController
             _provider = provider;
         }
 
-        public String getConfiguration()
+        public int getConfiguration()
         {
             return _configuration;
         }
 
         @SuppressWarnings("unused")
-        public void setConfiguration(String configuration)
+        public void setConfiguration(int configuration)
         {
             _configuration = configuration;
         }
@@ -1449,12 +1467,9 @@ public class LoginController extends SpringActionController
             String csrf = CSRFUtil.getExpectedToken(getViewContext());
 
             final URLHelper url;
-            String configurationName = form.getConfiguration();
+            int rowId = form.getConfiguration();
 
-            if (null == configurationName)
-                throw new NotFoundException("Configuration parameter was not provided");
-
-            SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(configurationName);
+            SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
 
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
@@ -2269,11 +2284,13 @@ public class LoginController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
+        @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
@@ -2384,6 +2401,42 @@ public class LoginController extends SpringActionController
         }
     }
 
+    public static class DeleteConfigurationForm
+    {
+        private int _configuration;
+
+        public int getConfiguration()
+        {
+            return _configuration;
+        }
+
+        public void setConfiguration(int configuration)
+        {
+            _configuration = configuration;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class DeleteConfigurationAction extends FormHandlerAction<DeleteConfigurationForm>
+    {
+        @Override
+        public void validateCommand(DeleteConfigurationForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(DeleteConfigurationForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.deleteConfiguration(form.getConfiguration());
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(DeleteConfigurationForm form)
+        {
+            return getUrls().getConfigureURL();
+        }
+    }
 
     public static ActionURL getConfigureDbLoginURL(boolean reshow)
     {
@@ -2501,35 +2554,35 @@ public class LoginController extends SpringActionController
         {
             this.configuration = configuration;
             this.reshow = reshow;
-            headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
-            loginPageLogo = getAuthLogoHtml(AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
+            headerLogo = getAuthLogoHtml(AuthLogoType.HEADER);
+            loginPageLogo = getAuthLogoHtml(AuthLogoType.LOGIN_PAGE);
         }
 
-        public String getAuthLogoHtml(String prefix)
+        public String getAuthLogoHtml(AuthLogoType logoType)
         {
-            LinkFactory factory = configuration.getLinkFactory();
-            String logo = factory.getImg(prefix);
-
-            if (null == logo)
+            if (null != configuration)
             {
-                return "<input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
-//                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
+                LinkFactory factory = configuration.getLinkFactory();
+                String logo = factory.getImg(logoType);
+
+                if (null != logo)
+                {
+                    StringBuilder html = new StringBuilder();
+
+                    String id1 = logoType.getFileName() + "d1";
+                    String id2 = logoType.getFileName() + "d2";
+
+                    html.append("<div id=\"").append(id1).append("\">");
+                    html.append(logo);
+                    html.append("</div>\n<div id=\"").append(id2).append("\">");
+                    html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + logoType.getFileName() + "');").toString()); // RE_CHECK
+                    html.append("</div>\n");
+
+                    return html.toString();
+                }
             }
-            else
-            {
-                StringBuilder html = new StringBuilder();
 
-                String id1 = prefix + "d1";
-                String id2 = prefix + "d2";
-
-                html.append("<div id=\"").append(id1).append("\">");
-                html.append(logo);
-                html.append("</div>\n<div id=\"").append(id2).append("\">");
-                html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + prefix + "');").toString()); // RE_CHECK
-                html.append("</div>\n");
-
-                return html.toString();
-            }
+            return "<input name=\"" + logoType.getFileName() + "\" type=\"file\" size=\"60\">";
         }
     }
 

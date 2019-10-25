@@ -17,12 +17,10 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.view.ActionURL;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -34,23 +32,35 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
-    public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
+    public AuthenticationConfiguration getAuthenticationConfiguration(Map<String, Object> map)
     {
-        String key = SET_KEY; // TODO: TestSSOConfigurationProperties?
-        Map<String, String> m = PropertyManager.getProperties(key);
-        Map<String, String> map = new HashMap<>(m);
-        map.put("Provider", NAME);
-        map.put("Enabled", Boolean.toString(active));
-        map.put("Name", NAME);
-
-        return new TestSsoConfiguration(key, this, map);
+        return new TestSsoConfiguration(this, map);
     }
+
+    //    @Override
+//    public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
+//    {
+//        String key = SET_KEY; // TODO: TestSSOConfigurationProperties?
+//        Map<String, String> m = PropertyManager.getProperties(key);
+//        Map<String, String> map = new HashMap<>(m);
+//        map.put("Provider", NAME);
+//        map.put("Enabled", Boolean.toString(active));
+//        map.put("Name", NAME);
+//
+//        return new TestSsoConfiguration(key, this, map);
+//    }
 
     @Nullable
     @Override
     public ActionURL getConfigurationLink()
     {
-        return TestSsoController.getConfigureURL(SET_KEY);
+        return getConfigurationLink(null);
+    }
+
+    @Override
+    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    {
+        return TestSsoController.getConfigureURL(rowId);
     }
 
     @NotNull

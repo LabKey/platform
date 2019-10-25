@@ -1,5 +1,6 @@
 package org.labkey.core.login;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.BaseAuthenticationConfiguration;
 import org.labkey.api.security.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.PasswordExpiration;
@@ -16,6 +17,12 @@ public class DbLoginConfiguration extends BaseAuthenticationConfiguration<DbLogi
         super(key, provider, props);
         _passwordRule = PasswordRule.valueOf(props.getOrDefault(DbLoginManager.Key.Strength.toString(), PasswordRule.Weak.toString()));
         _expiration = PasswordExpiration.valueOf(props.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
+    }
+
+    @Override
+    public @NotNull String getDescription()
+    {
+        return "Standard database authentication";
     }
 
     public PasswordRule getPasswordRule()

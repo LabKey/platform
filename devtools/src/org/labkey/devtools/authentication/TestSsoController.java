@@ -16,6 +16,7 @@
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
@@ -24,16 +25,17 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.PickAuthLogoAction;
-import org.labkey.api.security.PickAuthLogoAction.AuthLogoForm;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.SSOConfigurationAction;
+import org.labkey.api.security.SSOConfigurationAction.SSOConfigurationForm;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -100,17 +102,28 @@ public class TestSsoController extends SpringActionController
         }
     }
 
-    public static class TestSsoConfigureForm extends AuthLogoForm
+    public static class TestSsoConfigureForm extends SSOConfigurationForm<TestSsoConfiguration>
     {
+        @Override
+        public String getProvider()
+        {
+            return TestSsoProvider.NAME;
+        }
     }
 
     @AdminConsoleAction
-    public class ConfigureAction extends PickAuthLogoAction<TestSsoConfigureForm>
+    public class ConfigureAction extends SSOConfigurationAction<TestSsoConfigureForm, TestSsoConfiguration>
     {
+        // TODO: move this to SSOConfigurationAction and make it final
         @Override
         public ModelAndView getView(TestSsoConfigureForm form, boolean reshow, BindException errors)
         {
             validateCommand(form, errors);
+
+            // On first show, replace the form defaults with the saved configuration values
+            if (!reshow && null != _configuration)
+                form.setAuthenticationConfiguration(_configuration);
+
             return new JspView<>("/org/labkey/devtools/authentication/testSsoConfigure.jsp", form, errors);
         }
 
@@ -118,25 +131,24 @@ public class TestSsoController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("authenticationModule");
+            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure " + TestSsoProvider.NAME + " Authentication");
             return root;
-        }
-
-        @Override
-        public boolean handlePost(TestSsoConfigureForm form, BindException errors)
-        {
-            super.handlePost(form, errors);
-            return true;
         }
 
         @Override
         public ActionURL getSuccessURL(TestSsoConfigureForm form)
         {
-            return getConfigureURL(form.getConfiguration());  // Redirect to same action -- reload props from database
+            return getConfigureURL(form.getRowId());  // Redirect to same action -- reload props from database
         }
     }
 
-    public static ActionURL getConfigureURL(String configuration)
+    public static ActionURL getConfigureURL(@Nullable Integer configuration)
     {
-        return new ActionURL(ConfigureAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration);
+        ActionURL url = new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+
+        if (null != configuration)
+            url.addParameter("configuration", configuration);
+
+        return url;
     }
 }

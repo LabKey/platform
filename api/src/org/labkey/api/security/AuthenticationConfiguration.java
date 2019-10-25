@@ -1,6 +1,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.util.URLHelper;
@@ -8,7 +9,7 @@ import org.labkey.api.util.URLHelper;
 import java.util.Arrays;
 import java.util.List;
 
-public interface AuthenticationConfiguration<AP extends AuthenticationProvider>
+public interface AuthenticationConfiguration<AP extends AuthenticationProvider> extends AttachmentParent
 {
     // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
     List<Class<? extends AuthenticationConfiguration>> ALL_CONFIGURATION_INTERFACES = Arrays.asList(
@@ -19,10 +20,10 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider>
             // TODO: More to come...
     );
 
-    @NotNull String getKey();
-    @NotNull String getName();
+    @NotNull Integer getRowId();
+    @NotNull String getDescription();
     @NotNull AP getAuthenticationProvider();
-    boolean enabled();
+    boolean isEnabled();
 
     interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends AuthenticationConfiguration<AP>
     {

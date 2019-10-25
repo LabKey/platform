@@ -54,5 +54,5 @@ public interface LoginUrls extends UrlProvider
     ActionURL getDisableConfigParameterURL(String name);
 
     NavTree appendAuthenticationNavTrail(NavTree root);
-    ModelAndView getPickLogosView(SSOAuthenticationConfiguration configuration, boolean reshow, BindException errors);
+    ModelAndView getPickLogosView(@Nullable SSOAuthenticationConfiguration configuration, boolean reshow, BindException errors);
 }

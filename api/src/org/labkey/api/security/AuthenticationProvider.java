@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -51,6 +52,10 @@ public interface AuthenticationProvider
     );
 
     @Nullable ActionURL getConfigurationLink();
+    default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    {
+        return getConfigurationLink();
+    }
     @NotNull String getName();
     @NotNull String getDescription();
 
@@ -100,9 +105,7 @@ public interface AuthenticationProvider
 
     interface PrimaryAuthenticationProvider extends AuthenticationProvider
     {
-        // For now, provider is responsible for loading properties (using hard-coded configuration key) and passing them to the
-        // new AuthenticationConfiguration. TODO: Authentication properties will have the configuration so it will be passed in
-        default AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
+        default AuthenticationConfiguration getAuthenticationConfiguration(Map<String, Object> map)
         {
             return null;
         }

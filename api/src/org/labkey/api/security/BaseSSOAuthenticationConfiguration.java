@@ -7,8 +7,8 @@ import java.util.Map;
 
 public abstract class BaseSSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends BaseAuthenticationConfiguration<AP> implements SSOAuthenticationConfiguration<AP>
 {
-    protected BaseSSOAuthenticationConfiguration(String key, AP provider, Map<String, String> props)
+    protected BaseSSOAuthenticationConfiguration(AP provider, Map<String, Object> props)
     {
-        super(key, provider, props);
+        super(provider, props);
     }
 }

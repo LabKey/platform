@@ -42,17 +42,17 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
 {
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
 
-    @Override
-    public LdapConfiguration getAuthenticationConfiguration(boolean active)
-    {
-        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
-        Map<String, String> map = new HashMap<>(props);
-        map.put("Provider", getName());
-        map.put("Enabled", Boolean.toString(active));
-        map.put("Name", getName());
-
-        return new LdapConfiguration(LDAP_AUTHENTICATION_CATEGORY_KEY, this, map);
-    }
+//    @Override
+//    public LdapConfiguration getAuthenticationConfiguration(boolean active)
+//    {
+//        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
+//        Map<String, String> map = new HashMap<>(props);
+//        map.put("Provider", getName());
+//        map.put("Enabled", Boolean.toString(active));
+//        map.put("Name", getName());
+//
+//        return new LdapConfiguration(LDAP_AUTHENTICATION_CATEGORY_KEY, this, map);
+//    }
 
     @Override
     public void activate()

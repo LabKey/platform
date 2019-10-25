@@ -5,33 +5,30 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
+<%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm" %>
-<%@ page import="org.labkey.devtools.authentication.TestSsoProvider" %>
 <%@ page import="org.springframework.web.servlet.ModelAndView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<TestSsoConfigureForm> me = (JspView<TestSsoConfigureForm>)HttpView.currentView();
     TestSsoConfigureForm form = me.getModelBean();
-
-    boolean enabled = true;
-    String name = TestSsoProvider.NAME;
+    boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <%=formatMissedErrorsInTable("form", 2)%>
 <labkey:form enctype="multipart/form-data" action="configure.post" method="post" layout="horizontal">
     <input type="hidden" name="configuration" value="<%=h(form.getConfiguration())%>">
-    <labkey:input type="text" name="name" size="50" value="<%=h(name)%>" label="Name" />
-    <labkey:input type="checkbox" name="enabled" label="Enabled" checked="<%=enabled%>" />
+    <labkey:input type="text" name="description" size="50" value="<%=h(form.getDescription())%>" label="Description" />
+    <labkey:input type="checkbox" name="enabled" label="Enabled" checked="<%=form.isEnabled()%>" />
+    <input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>enabled">
     <%
-        SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(form.getConfiguration());
-        ModelAndView view = urlProvider(LoginUrls.class).getPickLogosView(configuration, false, null);
+        ModelAndView view = urlProvider(LoginUrls.class).getPickLogosView(form.getAuthenticationConfiguration(), false, null);
         include(view, out);
     %>
     <br/>
-    <%= button("Save").submit(true) %>
-    <%= button("Cancel").href(form.getReturnActionURL(urlProvider(LoginUrls.class).getConfigureURL()))%>
+    <%=canEdit ? button("Save").submit(true) : ""%>
+    <%=button(canEdit ? "Cancel" : "Done").href(form.getReturnActionURL(urlProvider(LoginUrls.class).getConfigureURL()))%>
 </labkey:form>

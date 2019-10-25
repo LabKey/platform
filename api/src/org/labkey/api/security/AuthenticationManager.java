@@ -35,11 +35,13 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
@@ -115,8 +117,33 @@ public class AuthenticationManager
     // Map of user id to login provider. This is needed to handle clean up on logout.
     private static final Map<Integer, PrimaryAuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
-    public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
-    public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
+    public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";  // TODO: Remove this old const
+    public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_"; // TODO: Remove this old const
+
+    public enum AuthLogoType
+    {
+        HEADER("auth_header_logo", "16"),
+        LOGIN_PAGE("auth_login_page_logo", "32");
+
+        private final String _fileName;
+        private final String _height;
+
+        AuthLogoType(String fileName, String height)
+        {
+            _fileName = fileName;
+            _height = height;
+        }
+
+        public String getFileName()
+        {
+            return _fileName;
+        }
+
+        public String getHeight()
+        {
+            return _height;
+        }
+    }
 
     public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
     {
@@ -217,7 +244,7 @@ public class AuthenticationManager
 
     public static boolean isAutoCreateAccountsEnabled()
     {
-        return isExternalProviderEnabled() && getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
+        return isExternalConfigurationEnabled() && getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
     }
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthConfigProperty(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
@@ -241,12 +268,12 @@ public class AuthenticationManager
 
     public static @Nullable HtmlString getHeaderLogoHtml(URLHelper currentURL)
     {
-        return getAuthLogoHtml(currentURL, HEADER_LOGO_PREFIX);
+        return getAuthLogoHtml(currentURL, AuthLogoType.HEADER);
     }
 
     public static @Nullable HtmlString getLoginPageLogoHtml(URLHelper currentURL)
     {
-        return getAuthLogoHtml(currentURL, LOGIN_PAGE_LOGO_PREFIX);
+        return getAuthLogoHtml(currentURL, AuthLogoType.LOGIN_PAGE);
     }
 
     public static Map<String, Object> getLoginPageConfiguration(Project project)
@@ -254,7 +281,7 @@ public class AuthenticationManager
         Map<String, Object> config = new HashMap<>();
         config.put("registrationEnabled", isRegistrationEnabled());
         config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseRequired(project));
-        config.put("hasOtherLoginMechanisms", hasSSOAuthenticationProvider());
+        config.put("hasOtherLoginMechanisms", hasSSOAuthenticationConfiguration());
         return config;
     }
 
@@ -272,12 +299,12 @@ public class AuthenticationManager
             .collect(Collectors.toList());
     }
 
-    public static boolean hasSSOAuthenticationProvider()
+    public static boolean hasSSOAuthenticationConfiguration()
     {
-        return !AuthenticationProviderCache.getActiveProviders(SSOAuthenticationProvider.class).isEmpty();
+        return !AuthenticationConfigurationCache.getActive(SSOAuthenticationConfiguration.class).isEmpty();
     }
 
-    private static @Nullable HtmlString getAuthLogoHtml(URLHelper currentURL, String prefix)
+    private static @Nullable HtmlString getAuthLogoHtml(URLHelper currentURL, AuthLogoType logoType)
     {
         Collection<SSOAuthenticationConfiguration> ssoConfigurations = AuthenticationConfigurationCache.getActive(SSOAuthenticationConfiguration.class);
 
@@ -292,7 +319,7 @@ public class AuthenticationManager
             {
                 LinkFactory factory = configuration.getLinkFactory();
                 html.append(HtmlString.unsafe("<li>"));
-                html.append(factory.getLink(currentURL, prefix));
+                html.append(factory.getLink(currentURL, logoType));
                 html.append(HtmlString.unsafe("</li>"));
             }
         }
@@ -307,7 +334,7 @@ public class AuthenticationManager
         public ModelAndView getView(FORM form, BindException errors) throws Exception
         {
             // Must specify an active SSO provider
-            SSOAuthenticationProvider provider = getActiveSSOProvider(getProviderName());
+            SSOAuthenticationProvider provider = getSSOProvider(getProviderName());
 
             // Not valid, not SSO, or not active... bail out
             if (null == provider)
@@ -436,6 +463,17 @@ public class AuthenticationManager
         }
     }
 
+    public static void deleteConfiguration(int rowId)
+    {
+        // Delete any logos attached to the configuration
+        AuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+        AttachmentService.get().deleteAttachments(configuration);
+
+        // Delete configuration
+        Table.delete(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), rowId);
+        AuthenticationConfigurationCache.clear();
+    }
+
     private static void addConfigurationAuditEvent(User user, String name, String action)
     {
         AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
@@ -466,15 +504,14 @@ public class AuthenticationManager
             throw new NotFoundException("No such AuthenticationProvider available: " + name);
     }
 
-
-    public static @Nullable SSOAuthenticationProvider getActiveSSOProvider(String name)
+    public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
     {
-        return AuthenticationProviderCache.getActiveProvider(SSOAuthenticationProvider.class, name);
+        return AuthenticationProviderCache.getProvider(SSOAuthenticationProvider.class, name);
     }
 
-    public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(String key)
+    public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(@Nullable Integer key)
     {
-        return AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key);
+        return null != key ? AuthenticationConfigurationCache.getActiveConfiguration(SSOAuthenticationConfiguration.class, key) : null;
     }
 
     public static @NotNull <AC extends AuthenticationConfiguration> Collection<AC> getActiveConfigurations(Class<AC> clazz)
@@ -482,9 +519,9 @@ public class AuthenticationManager
         return AuthenticationConfigurationCache.getActive(clazz);
     }
 
-    public static @Nullable SSOAuthenticationConfiguration getSSOConfiguration(String key)
+    public static @Nullable SSOAuthenticationConfiguration getSSOConfiguration(int rowId)
     {
-        return AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, key);
+        return AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, rowId);
     }
 
     public static @Nullable ResetPasswordProvider getResetPasswordProvider(String name)
@@ -1136,9 +1173,9 @@ public class AuthenticationManager
         return StringUtils.isNotBlank(id) && StringUtils.isNotBlank(password);
     }
 
-    public static boolean isExternalProviderEnabled()
+    public static boolean isExternalConfigurationEnabled()
     {
-        return getActiveProviders().size() > 1;
+        return getActiveConfigurations(AuthenticationConfiguration.class).size() > 1;
     }
 
     public static boolean isActive(String providerName)
@@ -1424,18 +1461,16 @@ public class AuthenticationManager
 
     public static class LinkFactory
     {
-        private final String _providerName;
         private final SSOAuthenticationConfiguration _configuration;
 
         public LinkFactory(SSOAuthenticationConfiguration<? extends SSOAuthenticationProvider> configuration)
         {
             _configuration = configuration;
-            _providerName = configuration.getAuthenticationProvider().getName();
         }
 
-        private @NotNull HtmlString getLink(URLHelper returnURL, String prefix)
+        private @NotNull HtmlString getLink(URLHelper returnURL, AuthLogoType prefix)
         {
-            String content = _providerName;
+            String content = _configuration.getDescription();
             String img = getImg(prefix);
 
             if (null != img)
@@ -1450,25 +1485,17 @@ public class AuthenticationManager
             return PageFlowUtil.urlProvider(LoginUrls.class).getSSORedirectURL(_configuration, returnURL, skipProfile);
         }
 
-        public String getImg(String prefix)
+        public String getImg(AuthLogoType logoType)
         {
             try
             {
-                Attachment logo = AttachmentService.get().getAttachment(AuthenticationLogoAttachmentParent.get(), prefix + _providerName);
+                Attachment logo = AttachmentService.get().getAttachment(_configuration, logoType.getFileName());
 
                 if (null != logo)
                 {
-                    String img = "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + prefix + _providerName + ".image?revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\" alt=\"Sign in using " + _providerName + "\"";
-
-                    if (HEADER_LOGO_PREFIX.equals(prefix))
-                        img += " height=\"16px\"";
-
-                    else if (LOGIN_PAGE_LOGO_PREFIX.equals(prefix))
-                        img += " height=\"32px\"";
-
-                    img += ">";
-
-                    return img;
+                    return "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image" +
+                            "?configuration=" + _configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\"" +
+                            " alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
                 }
             }
             catch (RuntimeSQLException e)

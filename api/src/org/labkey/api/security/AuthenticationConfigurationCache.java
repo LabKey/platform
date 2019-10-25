@@ -7,6 +7,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 
 import java.util.Collection;
@@ -15,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class AuthenticationConfigurationCache
 {
@@ -52,64 +54,33 @@ public class AuthenticationConfigurationCache
 
         private AuthenticationConfigurationCollections()
         {
-            // TODO: Push FICAM filtering into getProviders()
-            Map<String, PrimaryAuthenticationProvider> providerMap = AuthenticationProviderCache.getProviders(PrimaryAuthenticationProvider.class).stream()
-                .filter(p->!AuthenticationManager.isAcceptOnlyFicamProviders() || p.isFicamApproved())
-                .collect(Collectors.toMap(AuthenticationProvider::getName, p->p));
+            boolean acceptOnlyFicamProviders = AuthenticationManager.isAcceptOnlyFicamProviders();
 
-            // TODO: For now, query the existing properties (one set per provider) and transform the maps into what
-            //  AuthenticationConfiguration, etc. now expects
+            // Add all the configurations listed in the core.AuthenticationConfigurations table
+            new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("SortOrder"))
+                .forEachMap(m -> {
+                    String providerName = (String) m.get("Provider");
+                    PrimaryAuthenticationProvider provider = AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, providerName);
+                    addConfiguration(provider, m, acceptOnlyFicamProviders);
+                });
 
-            Set<String> activeProviders = AuthenticationManager.getActiveProviderNamesFromProperties();
+            // Add all the "permanent" configurations -- this should be just a single configuration for Database authentication
+            AuthenticationManager.getAllPrimaryProviders().stream()
+                .filter(AuthenticationProvider::isPermanent)
+                .forEach(p->addConfiguration(p, null, acceptOnlyFicamProviders));
+        }
 
-            providerMap.values().stream()
-                .filter(AuthenticationProvider::isConfigurationAware)
-                .forEach(p->{
-                    AuthenticationConfiguration configuration = p.getAuthenticationConfiguration(activeProviders.contains(p.getName()));
+        private void addConfiguration(PrimaryAuthenticationProvider provider, Map<String, Object> map, boolean acceptOnlyFicamProviders)
+        {
+            if (null != provider && (!acceptOnlyFicamProviders || provider.isFicamApproved()))
+            {
+                AuthenticationConfiguration configuration = provider.getAuthenticationConfiguration(map);
 
-                    if (null != configuration)
-                    {
-                        addToMap(_allMap, configuration);
+                addToMap(_allMap, configuration);
 
-                        if (configuration.enabled())
-                            addToMap(_activeMap, configuration);
-
-                        if ("CAS".equals(configuration.getName()))
-                        {
-                            // TODO: Just for testing -- hard-code a second CAS configuration
-                            configuration = p.getAuthenticationConfiguration(false);
-                            addToMap(_allMap, configuration);
-
-                            if (configuration.enabled())
-                                addToMap(_activeMap, configuration);
-                        }
-                    }
-                }
-            );
-
-//            TODO: Code will soon look something like this, once we've migrated settings
-//            Set<String> keys = AuthenticationManager.getConfigurationKeysFromProperties();
-//
-//            for (String key : keys)
-//            {
-//                Map<String, String> map = PropertyManager.getProperties(key);
-//
-//                String providerName = map.get("Provider");
-//
-//                if (null != providerName)
-//                {
-//                    PrimaryAuthenticationProvider provider = providerMap.get(providerName);
-//
-//                    if (null != provider)
-//                    {
-//                        AuthenticationConfiguration configuration = provider.getAuthenticationConfiguration(key, map);
-//                        addToMap(_allMap, configuration);
-//
-//                        if (configuration.enabled())
-//                            addToMap(_activeMap, configuration);
-//                    }
-//                }
-//            }
+                if (configuration.isEnabled())
+                    addToMap(_activeMap, configuration);
+            }
         }
 
         private void addToMap(SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> map, AuthenticationConfiguration configuration)
@@ -142,7 +113,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    static @NotNull <T extends AuthenticationConfiguration> Collection<T> getConfigurations(Class<T> clazz)
+    public static @NotNull <T extends AuthenticationConfiguration> Collection<T> getConfigurations(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getAll(clazz);
     }
@@ -164,11 +135,11 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return The requested configuration or null if not found
      */
-    public static @Nullable <T extends AuthenticationConfiguration> T getActiveConfiguration(Class<T> clazz, String key)
+    public static @Nullable <T extends AuthenticationConfiguration> T getActiveConfiguration(Class<T> clazz, int rowId)
     {
-        for (T provider : getActive(clazz))
-            if (provider.getKey().equals(key))
-                return provider;
+        for (T configuration : getActive(clazz))
+            if (configuration.getRowId().equals(rowId))
+                return configuration;
 
         return null;
     }
@@ -179,11 +150,11 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return The requested configuration or null if not found
      */
-    public static @Nullable <T extends AuthenticationConfiguration> T getConfiguration(Class<T> clazz, String key)
+    public static @Nullable <T extends AuthenticationConfiguration> T getConfiguration(Class<T> clazz, int rowId)
     {
-        for (T provider : getConfigurations(clazz))
-            if (provider.getKey().equals(key))
-                return provider;
+        for (T configuration : getConfigurations(clazz))
+            if (configuration.getRowId().equals(rowId))
+                return configuration;
 
         return null;
     }

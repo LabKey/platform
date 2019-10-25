@@ -12,16 +12,16 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
 {
     private final LinkFactory _linkFactory = new LinkFactory(this);
 
-    protected TestSsoConfiguration(String key, TestSsoProvider provider, Map<String, String> props)
+    protected TestSsoConfiguration(TestSsoProvider provider, Map<String, Object> props)
     {
-        super(key, provider, props);
+        super(provider, props);
     }
 
     @Override
     public URLHelper getUrl(String secret)
     {
         ActionURL url = new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
-        url.addParameter("configuration", getKey());
+        url.addParameter("configuration", getRowId());
 
         return url;
     }
