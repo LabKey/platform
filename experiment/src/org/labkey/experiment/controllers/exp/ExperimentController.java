@@ -5119,11 +5119,10 @@ public class ExperimentController extends SpringActionController
 
             ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
 
-            Map<ExpMaterial, String> outputMaterials = new HashMap<>();
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
-            Map<String, Map<DomainProperty, String>> allProperties;
+            Map<Lsid, Map<DomainProperty, String>> allProperties;
             try
             {
                 boolean valid = true;
@@ -5132,7 +5131,7 @@ public class ExperimentController extends SpringActionController
                 if (!valid)
                     return false;
 
-                allProperties = helper.getSampleProperties(getViewContext().getRequest());
+                allProperties = helper.getSampleProperties(getViewContext().getRequest(), inputMaterials.keySet());
             }
             catch (DuplicateMaterialException e)
             {
@@ -5144,35 +5143,45 @@ public class ExperimentController extends SpringActionController
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                 return false;
             }
-            int i = 0;
-            for (Map.Entry<String, Map<DomainProperty, String>> entry : allProperties.entrySet())
+
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
-                Map<DomainProperty, String> props = entry.getValue();
-                String name = helper.determineMaterialName(props);
-                ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial(getContainer(), entry.getKey(), name);
-                if (sampleSet != null)
+                Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+                int i = 0;
+                for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    outputMaterial.setCpasType(sampleSet.getLSID());
-                }
-                outputMaterial.save(getUser());
+                    Map<DomainProperty, String> props = entry.getValue();
+                    Lsid lsid = entry.getKey();
+                    String name = lsid.getObjectId();
+                    assert name != null;
 
-                if (sampleSet != null)
-                {
-                    Map<String, Object> pvs = new HashMap<>();
-                    for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
-                        pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                    ((ExpMaterialImpl) outputMaterial).setProperties(getUser(), pvs);
+                    ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
+                    if (sampleSet != null)
+                    {
+                        outputMaterial.setCpasType(sampleSet.getLSID());
+                    }
+                    outputMaterial.save(getUser());
+
+                    if (sampleSet != null)
+                    {
+                        Map<String, Object> pvs = new HashMap<>();
+                        for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
+                            pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
+                        ((ExpMaterialImpl) outputMaterial).setProperties(getUser(), pvs);
+                    }
+
+                    outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
                 }
 
-                outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
+                ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
+
+                tx.commit();
+
+                _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
+
+                if (form.getDataRegionSelectionKey() != null)
+                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             }
-
-            ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
-
-            _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
-
-            if (form.getDataRegionSelectionKey() != null)
-                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
 
             return true;
         }
