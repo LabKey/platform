@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -164,7 +165,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getUnsubstitutedReportAProblemPath()
     {
-        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + Container.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
+        return lookupStringValue(REPORT_A_PROBLEM_PATH_PROP, "${contextPath}/project" + ContainerManager.DEFAULT_SUPPORT_PROJECT_PATH + "/begin.view");
     }
 
     public String getSupportEmail()

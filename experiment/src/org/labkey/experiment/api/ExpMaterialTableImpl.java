@@ -70,7 +70,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
@@ -112,24 +111,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             if ("Property".equalsIgnoreCase(name))
                 return createPropertyColumn("Property");
-
-            // Attempt to resolve the column name as a property URI if it looks like a URI
-            if (URIUtil.hasURICharacters(name))
-            {
-                ColumnInfo lsidCol = getColumn("LSID", false);
-                // mark vocab propURI col as Voc column
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
-                if (pd != null)
-                {
-                    List<Domain> domainsForPD = OntologyManager.getDomainsForPropertyDescriptor(getContainer(), pd);
-                    PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
-                    pc.setVocabulary(domainsForPD.stream().anyMatch(d-> d.getDomainKind() instanceof VocabularyDomainKind));
-                    // use the property URI as the column's FieldKey name
-                    pc.setFieldKey(FieldKey.fromParts(name));
-                    pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
-                    return pc;
-                }
-            }
         }
         return result;
     }
@@ -282,6 +263,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             case Outputs:
                 return createLineageColumn(this, alias, false);
+
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -499,11 +483,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setGridURL(new DetailsURL(gridUrl));
         }
 
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+
 
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));

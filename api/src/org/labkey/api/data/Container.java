@@ -110,8 +110,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private transient WeakReference<Container> _parent;
 
-    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
-
     private ContainerType _containerType;
 
     // include in results from searches outside this container?
