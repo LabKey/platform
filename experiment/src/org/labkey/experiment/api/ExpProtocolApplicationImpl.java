@@ -234,6 +234,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         _object.setRecordCount(recordCount);
     }
 
+    public void setComments(String comments)
+    {
+        ensureUnlocked();
+        _object.setComments(comments);
+    }
+
     public int getActionSequence()
     {
         return _object.getActionSequence();

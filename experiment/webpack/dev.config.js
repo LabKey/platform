@@ -60,7 +60,10 @@ module.exports = {
     },
 
     resolve: {
-        extensions: constants.extensions.TYPESCRIPT
+        extensions: constants.extensions.TYPESCRIPT,
+        alias: {
+            'react-dom': '@hot-loader/react-dom'
+        }
     },
 
     module: {
