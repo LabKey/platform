@@ -16,7 +16,7 @@
 
 import {List} from "immutable";
 import * as React from 'react'
-import {Button} from "react-bootstrap";
+import { Button, Panel } from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
@@ -136,7 +136,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     submitAndNavigate = () => {
         this.submitHandler(true);
-    }
+    };
 
     onChangeHandler = (newDomain, dirty) => {
 
@@ -176,13 +176,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            // TODO if we don't have a returnUrl, should we just do a goBack()?
             window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
         });
-    };
-
-    hideConfirm = () => {
-        this.setState(() => ({showConfirm: false}));
     };
 
     renderNavigateConfirm() {
@@ -219,6 +214,15 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         )
     }
 
+    renderInstructionsPanel() {
+        return (
+            <Panel>
+                <Panel.Heading>Instructions</Panel.Heading>
+                <Panel.Body>{this.state.domain.instructions}</Panel.Body>
+            </Panel>
+        )
+    }
+
     render() {
         const { domain, messages, showConfirm } = this.state;
         const isLoading = domain === undefined && messages === undefined;
@@ -233,8 +237,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
                     return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
                 }
+                { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm
+                        headerTitle={'Field Properties'}
                         domain={domain}
                         onChange={this.onChangeHandler}
                         showHeaderFieldCount={false}

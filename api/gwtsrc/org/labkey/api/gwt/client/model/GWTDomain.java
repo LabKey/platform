@@ -61,7 +61,9 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     // NOTE queryName is not necessarily == name
     private String schemaName=null;
     private String queryName=null;
+
     private String templateDescription=null; // null if no template
+    private String instructions = null;
 
     public GWTDomain()
     {
@@ -113,6 +115,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.schemaName = src.schemaName;
         this.queryName = src.queryName;
         this.templateDescription = src.templateDescription;
+        this.instructions = src.instructions;
 
         if (src.getPhiNotAllowedFieldNames() != null)
         {
@@ -178,6 +181,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setTemplateDescription(String templateDescription)
     {
         this.templateDescription = templateDescription;
+    }
+
+    public String getInstructions()
+    {
+        return instructions;
+    }
+
+    public void setInstructions(String instructions)
+    {
+        this.instructions = instructions;
     }
 
     public String getDomainURI()
