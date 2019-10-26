@@ -27,8 +27,8 @@ import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.SSOConfigurationAction;
-import org.labkey.api.security.SSOConfigurationAction.SSOConfigurationForm;
+import org.labkey.api.security.SSOConfigureAction;
+import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -36,6 +36,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
@@ -102,7 +103,7 @@ public class TestSsoController extends SpringActionController
         }
     }
 
-    public static class TestSsoConfigureForm extends SSOConfigurationForm<TestSsoConfiguration>
+    public static class TestSsoConfigureForm extends SSOConfigureForm<TestSsoConfiguration>
     {
         @Override
         public String getProvider()
@@ -112,18 +113,11 @@ public class TestSsoController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public class ConfigureAction extends SSOConfigurationAction<TestSsoConfigureForm, TestSsoConfiguration>
+    public class ConfigureAction extends SSOConfigureAction<TestSsoConfigureForm, TestSsoConfiguration>
     {
-        // TODO: move this to SSOConfigurationAction and make it final
         @Override
-        public ModelAndView getView(TestSsoConfigureForm form, boolean reshow, BindException errors)
+        public ModelAndView getConfigureView(TestSsoConfigureForm form, boolean reshow, BindException errors)
         {
-            validateCommand(form, errors);
-
-            // On first show, replace the form defaults with the saved configuration values
-            if (!reshow && null != _configuration)
-                form.setAuthenticationConfiguration(_configuration);
-
             return new JspView<>("/org/labkey/devtools/authentication/testSsoConfigure.jsp", form, errors);
         }
 
@@ -133,6 +127,11 @@ public class TestSsoController extends SpringActionController
             setHelpTopic("authenticationModule");
             PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure " + TestSsoProvider.NAME + " Authentication");
             return root;
+        }
+
+        @Override
+        protected void validateForm(TestSsoConfigureForm form, Errors errors)
+        {
         }
 
         @Override

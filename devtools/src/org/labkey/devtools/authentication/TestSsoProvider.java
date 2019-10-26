@@ -19,9 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
 
-import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by adam on 6/5/2016.
@@ -32,9 +34,11 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
-    public AuthenticationConfiguration getAuthenticationConfiguration(Map<String, Object> map)
+    public List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
     {
-        return new TestSsoConfiguration(this, map);
+        return configurations.stream()
+            .map(cs->new TestSsoConfiguration(this, cs.getStandardSettings()))
+            .collect(Collectors.toList());
     }
 
     //    @Override

@@ -48,14 +48,14 @@ public class LdapAuthenticationManager
 {
     private static final Logger _log = Logger.getLogger(LdapAuthenticationManager.class);
 
-    private static volatile LdapAuthenticator _authenticator = (url, email, password, principalTemplate, saslAuthentication) -> connect(url, substituteEmailTemplate(principalTemplate, email), password, saslAuthentication);
+    private static volatile LdapAuthenticator _authenticator = (url, email, password, principalTemplate, saslAuthentication, allowLdapSearch) -> connect(url, substituteEmailTemplate(principalTemplate, email), password, saslAuthentication);
 
     //
     // Attempt LDAP authentication on a single server
     //
-    public static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, String principalTemplate, boolean saslAuthentication) throws NamingException
+    public static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, String principalTemplate, boolean saslAuthentication, boolean allowLdapSearch) throws NamingException
     {
-        return _authenticator.authenticate(url, email, password, principalTemplate, saslAuthentication);
+        return _authenticator.authenticate(url, email, password, principalTemplate, saslAuthentication, allowLdapSearch);
     }
 
 
@@ -123,30 +123,20 @@ public class LdapAuthenticationManager
 
     public static final String LDAP_AUTHENTICATION_CATEGORY_KEY = "LDAPAuthentication";
 
-    public static void activate()
-    {
-        AuthenticationManager.setLdapDomain(LdapAuthenticationManager.getDomain());
-    }
-
-    public static void deactivate()
-    {
-        AuthenticationManager.setLdapDomain("");
-    }
-
     // TODO: Move to LdapConfiguration?
     public enum Key {Servers, Domain, PrincipalTemplate, SASL}
 
-    public static void saveProperties(Config config)
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(LDAP_AUTHENTICATION_CATEGORY_KEY, true);
-        map.clear();
-        map.put(Key.Servers.toString(), config.getServers());
-        map.put(Key.Domain.toString(), config.getDomain());
-        map.put(Key.PrincipalTemplate.toString(), config.getPrincipalTemplate());
-        map.put(Key.SASL.toString(), config.getSASL() ? "TRUE" : "FALSE");
-        map.save();
-        activate();
-    }
+//    public static void saveProperties(LdapConfigureForm config)
+//    {
+//        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(LDAP_AUTHENTICATION_CATEGORY_KEY, true);
+//        map.clear();
+//        map.put(Key.Servers.toString(), config.getServers());
+//        map.put(Key.Domain.toString(), config.getDomain());
+//        map.put(Key.PrincipalTemplate.toString(), config.getPrincipalTemplate());
+//        map.put(Key.SASL.toString(), config.getSASL() ? "TRUE" : "FALSE");
+//        map.save();
+//        activate();
+//    }
 
     private static Map<String, String> getProperties()
     {

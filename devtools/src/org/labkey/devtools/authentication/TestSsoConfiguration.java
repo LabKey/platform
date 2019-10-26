@@ -12,9 +12,9 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
 {
     private final LinkFactory _linkFactory = new LinkFactory(this);
 
-    protected TestSsoConfiguration(TestSsoProvider provider, Map<String, Object> props)
+    protected TestSsoConfiguration(TestSsoProvider provider, Map<String, Object> standardSettings)
     {
-        super(provider, props);
+        super(provider, standardSettings);
     }
 
     @Override

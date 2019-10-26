@@ -14,10 +14,13 @@ import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvi
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class AuthenticationConfigurationCache
 {
@@ -56,31 +59,63 @@ public class AuthenticationConfigurationCache
         {
             boolean acceptOnlyFicamProviders = AuthenticationManager.isAcceptOnlyFicamProviders();
 
-            // Add all the configurations listed in the core.AuthenticationConfigurations table
-            new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("SortOrder"))
-                .forEachMap(m -> {
-                    String providerName = (String) m.get("Provider");
-                    PrimaryAuthenticationProvider provider = AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, providerName);
-                    addConfiguration(provider, m, acceptOnlyFicamProviders);
-                });
+            // Select all the configurations listed in the core.AuthenticationConfigurations table and group by provider.
+            // We group them so we can make a single call to each AuthenticationProvider to convert all of its maps into
+            // AuthenticationConfigurations in a single operation. This allows the provider to definitively record current
+            // state, for example, the LDAP provider can stash all the email domains tied to LDAP authentication, to tailor
+            // messages on administration pages.
+            Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap =
+                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("RowId"))
+                    .mapStream()
+                    .filter(m->null != getProvider(m))  // Filter out providers that no longer exist - null keys throw
+                    .collect(Collectors.groupingBy(this::getProvider));
 
-            // Add all the "permanent" configurations -- this should be just a single configuration for Database authentication
-            AuthenticationManager.getAllPrimaryProviders().stream()
+            // Bit of a hack: LdapProvider sets "ldapDomain" to the first configuration's domain. We should add getDomain()
+            // to AuthenticationConfiguration and collect all email domains, caching them with the collections. This is only
+            // used for administrative messages, so we'll continue to tolerate this approach for a little while longer.
+            AuthenticationManager.setLdapDomain(null);
+
+            // Add each group of configurations
+            addConfigurations(configurationMap, acceptOnlyFicamProviders);
+
+            // Gather and add all the "permanent" configurations -- this should be just a single configuration for Database authentication
+            Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> permanentMap = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(AuthenticationProvider::isPermanent)
-                .forEach(p->addConfiguration(p, null, acceptOnlyFicamProviders));
+                .collect(Collectors.toMap(p->p, p->Collections.emptyList()));
+
+            addConfigurations(permanentMap, acceptOnlyFicamProviders);
         }
 
-        private void addConfiguration(PrimaryAuthenticationProvider provider, Map<String, Object> map, boolean acceptOnlyFicamProviders)
+        private @Nullable PrimaryAuthenticationProvider getProvider(Map<String, Object> map)
         {
-            if (null != provider && (!acceptOnlyFicamProviders || provider.isFicamApproved()))
-            {
-                AuthenticationConfiguration configuration = provider.getAuthenticationConfiguration(map);
+            return AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, (String)map.get("Provider"));
+        }
 
-                addToMap(_allMap, configuration);
+        private void addConfigurations(Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap, boolean acceptOnlyFicamProviders)
+        {
+            configurationMap.entrySet().stream()
+                .filter(e->(!acceptOnlyFicamProviders || e.getKey().isFicamApproved()))
+                .map(e->getConfigurations(e.getKey(), e.getValue()))
+                .flatMap(Collection::stream)
+                .sorted(Comparator.comparing(AuthenticationConfiguration::getRowId))  // For now: just order by rowId
+                .forEach(this::addConfiguration);
+        }
 
-                if (configuration.isEnabled())
-                    addToMap(_activeMap, configuration);
-            }
+        private List<AuthenticationConfiguration> getConfigurations(PrimaryAuthenticationProvider provider, List<Map<String, Object>> list)
+        {
+            List<ConfigurationSettings> settings = list.stream()
+                .map(ConfigurationSettings::new)
+                    .collect(Collectors.toList());
+
+            return provider.getAuthenticationConfigurations(settings);
+        }
+
+        private void addConfiguration(AuthenticationConfiguration configuration)
+        {
+            addToMap(_allMap, configuration);
+
+            if (configuration.isEnabled())
+                addToMap(_activeMap, configuration);
         }
 
         private void addToMap(SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> map, AuthenticationConfiguration configuration)

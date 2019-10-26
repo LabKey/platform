@@ -1,21 +1,15 @@
 package org.labkey.api.security;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Table;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
@@ -23,43 +17,12 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class SSOConfigurationAction<F extends SSOConfigurationAction.SSOConfigurationForm<AC>, AC extends SSOAuthenticationConfiguration> extends FormViewAction<F>
+public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigureForm<AC>, AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureAction<F, AC>
 {
-    protected @Nullable AC _configuration = null;
-
-    @Override
-    protected String getCommandClassMethodName()
-    {
-        return "getView";
-    }
-
-    @Override
-    public void validateCommand(F form, Errors errors)
-    {
-        Integer rowId = form.getConfiguration();
-
-        if (null != rowId)
-        {
-            _configuration = (AC)AuthenticationManager.getSSOConfiguration(rowId);
-
-            if (null == _configuration)
-                throw new NotFoundException("Configuration not found");
-        }
-    }
-
     @Override
     public boolean handlePost(F form, BindException errors)
     {
-        if (null == form.getRowId())
-        {
-            Table.insert(getUser(), CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
-        }
-        else
-        {
-            Table.update(getUser(), CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
-        }
-
-        AuthenticationConfigurationCache.clear();
+        super.handlePost(form, errors);
 
         SSOAuthenticationConfiguration configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
         Map<String, MultipartFile> fileMap = getFileMap();
@@ -122,72 +85,20 @@ public abstract class SSOConfigurationAction<F extends SSOConfigurationAction.SS
         return true;
     }
 
-    public static abstract class SSOConfigurationForm<AC extends SSOAuthenticationConfiguration> extends ReturnUrlForm
+    public static abstract class SSOConfigureForm<AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureForm<AC>
     {
-        private Integer _configuration;
-        private AC _authenticationConfiguration;
-        protected String _description;
-        private boolean _enabled = true;
         private boolean _autoRedirect = false;
         private String[] _deletedLogos;
 
-        public Integer getRowId()
-        {
-            return _configuration;
-        }
-
-        public void setRowId(Integer rowId)
-        {
-            _configuration = rowId;
-        }
-
-        public @Nullable Integer getConfiguration()
-        {
-            return _configuration;
-        }
-
-        public void setConfiguration(Integer configuration)
-        {
-            _configuration = configuration;
-        }
-
-        public @Nullable AC getAuthenticationConfiguration()
-        {
-            return _authenticationConfiguration;
-        }
-
+        @Override
         public void setAuthenticationConfiguration(AC authenticationConfiguration)
         {
-            _authenticationConfiguration = authenticationConfiguration;
+            super.setAuthenticationConfiguration(authenticationConfiguration);
 
-            if (null != _authenticationConfiguration)
+            if (null != authenticationConfiguration)
             {
-                _description = _authenticationConfiguration.getDescription();
-                _enabled = _authenticationConfiguration.isEnabled();
-                _autoRedirect = _authenticationConfiguration.isAutoRedirect();
+                _autoRedirect = authenticationConfiguration.isAutoRedirect();
             }
-        }
-
-        public abstract String getProvider();
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public void setDescription(String description)
-        {
-            _description = description;
-        }
-
-        public boolean isEnabled()
-        {
-            return _enabled;
-        }
-
-        public void setEnabled(boolean enabled)
-        {
-            _enabled = enabled;
         }
 
         public boolean isAutoRedirect()

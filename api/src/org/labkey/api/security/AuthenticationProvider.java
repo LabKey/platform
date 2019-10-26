@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: adam
@@ -58,15 +57,6 @@ public interface AuthenticationProvider
     }
     @NotNull String getName();
     @NotNull String getDescription();
-
-    default void activate()
-    {
-        // TODO: block activation if provider hasn't been configured... add isConfigured()?
-    }
-
-    default void deactivate()
-    {
-    }
 
     default boolean isPermanent()
     {
@@ -98,16 +88,11 @@ public interface AuthenticationProvider
         return Collections.emptyList();
     }
 
-    default boolean isConfigurationAware()
-    {
-        return false;
-    }
-
     interface PrimaryAuthenticationProvider extends AuthenticationProvider
     {
-        default AuthenticationConfiguration getAuthenticationConfiguration(Map<String, Object> map)
+        default List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
         {
-            return null;
+            return Collections.emptyList();
         }
 
         default void logout(HttpServletRequest request)
@@ -119,21 +104,10 @@ public interface AuthenticationProvider
     {
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
-
-        @Override
-        default boolean isConfigurationAware()
-        {
-            return true;
-        }
     }
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
     {
-        @Override
-        default boolean isConfigurationAware()
-        {
-            return true; // All SSO providers are configuration-aware
-        }
     }
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider

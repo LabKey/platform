@@ -22,6 +22,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
@@ -41,6 +42,7 @@ import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -54,15 +56,14 @@ import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEG
 public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
     @Override
-    public AuthenticationConfiguration getAuthenticationConfiguration(Map<String, Object> ignore)
+    public List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> ignored)
     {
         Map<String, String> props = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
         Map<String, String> map = new HashMap<>(props);
-        map.put("Provider", getName());
         map.put("Enabled", "true");
         map.put("Name", getName());
 
-        return new DbLoginConfiguration(DATABASE_AUTHENTICATION_CATEGORY_KEY, this, map);
+        return Collections.singletonList(new DbLoginConfiguration(DATABASE_AUTHENTICATION_CATEGORY_KEY, this, map));
     }
 
     @Override

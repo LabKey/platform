@@ -231,12 +231,6 @@ public class AuthenticationManager
         _ldapDomain = StringUtils.trimToNull(ldapDomain);
     }
 
-    public static void initialize()
-    {
-        // Activate all the currently enabled providers
-        AuthenticationProviderCache.getActiveProviders(AuthenticationProvider.class).forEach(AuthenticationProvider::activate);
-    }
-
     public static boolean isRegistrationEnabled()
     {
         return getAuthConfigProperty(SELF_REGISTRATION_KEY, false);
@@ -435,7 +429,6 @@ public class AuthenticationManager
         {
             try
             {
-                provider.activate();
                 activeNames.add(name);
                 saveActiveProviders(activeNames);
                 addProviderAuditEvent(user, name, "enabled");
@@ -456,7 +449,6 @@ public class AuthenticationManager
 
         if (activeNames.contains(name))
         {
-            provider.deactivate();
             activeNames.remove(name);
             saveActiveProviders(activeNames);
             addProviderAuditEvent(user, name, "disabled");

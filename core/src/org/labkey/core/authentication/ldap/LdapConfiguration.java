@@ -17,6 +17,18 @@ public class LdapConfiguration extends BaseAuthenticationConfiguration<LdapAuthe
     private final String _principalTemplate;
     private final boolean _sasl;
 
+    private boolean _allowLdapSearch = false;
+
+    protected LdapConfiguration(LdapAuthenticationProvider provider, Map<String, Object> standardSettings, Map<String, Object> properties)
+    {
+        super(provider, standardSettings);
+
+        _domain = (String)properties.get("domain");
+        _servers = Arrays.asList(((String)properties.getOrDefault("servers", "")).split(";"));
+        _principalTemplate = (String)properties.getOrDefault("principalTemplate", "${email}");
+        _sasl = (boolean)properties.get("sasl");
+    }
+
     protected LdapConfiguration(String key, LdapAuthenticationProvider provider, Map<String, String> props)
     {
         super(key, provider, props);
@@ -49,5 +61,16 @@ public class LdapConfiguration extends BaseAuthenticationConfiguration<LdapAuthe
     public boolean isLdapEmail(ValidEmail email)
     {
         return AuthenticationManager.ALL_DOMAINS.equals(_domain) || _domain != null && email.getEmailAddress().endsWith("@" + _domain.toLowerCase());
+    }
+
+    // TODO: Remove when we move LDAP search settings into configuration UI
+    public void setAllowLdapSearch(boolean allow)
+    {
+        _allowLdapSearch = allow;
+    }
+
+    public boolean isAllowLdapSearch()
+    {
+        return _allowLdapSearch;
     }
 }

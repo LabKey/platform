@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.MenuButton" %>
 <%@ page import="org.labkey.api.data.RenderContext" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfiguration" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfigurationCache" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
@@ -32,7 +33,11 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.function.Function" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -52,15 +57,24 @@
 
 <labkey:panel title="Primary authentication configurations">
     <%
+        // Hack -- for now, allow a single LDAP configuration in community
+        PremiumService svc = PremiumService.get();
+        Set<AuthenticationProvider> inUse = svc.isFileWatcherSupported() ? Collections.emptySet() :
+            AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class).stream()
+                .map((Function<AuthenticationConfiguration, AuthenticationProvider>) AuthenticationConfiguration::getAuthenticationProvider)
+                .collect(Collectors.toSet());
+
         if (canEdit)
         {
             MenuButton btn = new MenuButton("Add...");
             primary.stream()
                 .filter(ap->null != ap.getConfigurationLink())
-                .filter(ap->!ap.isPermanent())
+                .filter(ap->!ap.isPermanent() && !inUse.contains(ap))
                 .sorted(Comparator.comparing(AuthenticationProvider::getName))
                 .forEach(ap->btn.addMenuItem(ap.getName() + " - " + ap.getDescription(), ap.getConfigurationLink()));
-            btn.render(new RenderContext(getViewContext()), out);
+
+            if (btn.getNavTree().hasChildren())
+                btn.render(new RenderContext(getViewContext()), out);
         }
         appendConfigurations(out, canEdit);
     %>
@@ -298,11 +312,11 @@
             out.print(h(configuration.getAuthenticationProvider().getName()));
             out.print("</td>");
 
-            ActionURL url = configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId());
-
             out.print("<td style=\"text-align:center;\">");
             out.print("<span class=\"" + (configuration.isEnabled() ? "fa fa-check-square" : "fa fa-square-o") + "\"></span>");
             out.print("</td>");
+
+            ActionURL url = configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId());
 
             out.print("<td>");
             if (null == url)

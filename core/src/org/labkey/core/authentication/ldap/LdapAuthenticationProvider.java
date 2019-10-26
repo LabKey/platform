@@ -18,9 +18,12 @@ package org.labkey.core.authentication.ldap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.PropertyManager;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.ldap.LdapAuthenticationManager;
+import org.labkey.api.security.AuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -28,8 +31,8 @@ import org.labkey.api.view.ActionURL;
 import javax.naming.NamingException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.labkey.api.ldap.LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY;
 
@@ -42,6 +45,28 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
 {
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
 
+    @Override
+    public List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+    {
+        List<AuthenticationConfiguration> list = new LinkedList<>();
+
+        for (ConfigurationSettings cs : configurations)
+        {
+            LdapConfiguration lc = new LdapConfiguration(this, cs.getStandardSettings(), cs.getProperties());
+
+            // Hack for now -- special case the first LDAP configuration
+            if (list.isEmpty())
+            {
+                lc.setAllowLdapSearch(true);  // TODO: move LDAP search settings into normal configuration
+                AuthenticationManager.setLdapDomain(lc.getDomain()); // TODO: AuthenticationConfigurationCollections should collect all mapped domains
+            }
+
+            list.add(lc);
+        }
+
+        return list;
+    }
+
 //    @Override
 //    public LdapConfiguration getAuthenticationConfiguration(boolean active)
 //    {
@@ -53,18 +78,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
 //
 //        return new LdapConfiguration(LDAP_AUTHENTICATION_CATEGORY_KEY, this, map);
 //    }
-
-    @Override
-    public void activate()
-    {
-        LdapAuthenticationManager.activate();
-    }
-
-    @Override
-    public void deactivate()
-    {
-        LdapAuthenticationManager.deactivate();
-    }
 
     @Override
     @NotNull
@@ -83,7 +96,13 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     @Override
     public ActionURL getConfigurationLink()
     {
-        return LdapController.getConfigureURL(false);
+        return getConfigurationLink(null);
+    }
+
+    @Override
+    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    {
+        return LdapController.getConfigureURL(rowId, false);
     }
 
     @Override
@@ -99,9 +118,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         //
         // Attempt to authenticate by iterating through all the LDAP servers.
         //
-        boolean saslAuthentication = configuration.isSasl();
-        String principalTemplate = configuration.getPrincipalTemplate();
-
         for (String server : configuration.getServers())
         {
             if (server.isEmpty())
@@ -109,7 +125,7 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
 
             try
             {
-                if (LdapAuthenticationManager.authenticate(server, email, password, principalTemplate, saslAuthentication))
+                if (LdapAuthenticationManager.authenticate(server, email, password, configuration.getPrincipalTemplate(), configuration.isSasl(), configuration.isAllowLdapSearch()))
                     return AuthenticationResponse.createSuccessResponse(this, email);
                 else
                     return AuthenticationResponse.createFailureResponse(this, FailureReason.badCredentials);
