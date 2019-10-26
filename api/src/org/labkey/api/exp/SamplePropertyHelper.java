@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
@@ -46,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.emptySet;
+
 /**
  * Helper for mapping user-specified property values to the desired {@link DomainProperty} collection.
  * User: jeckels
@@ -70,16 +73,16 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public abstract List<String> getSampleNames();
 
-    protected abstract ObjectType getObject(int index, Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException;
+    protected abstract ObjectType getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException;
 
     protected abstract boolean isCopyable(DomainProperty pd);
 
     public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
-        return getSampleProperties(request, null);
+        return getSampleProperties(request, emptySet());
     }
 
-    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request, Set<ExpMaterial> parentMaterials) throws ExperimentException
+    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
         Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>();
         List<String> names = getSampleNames();

@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.exp.SamplePropertyHelper;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -84,7 +85,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
     }
 
     @Override
-    protected String getObject(int index, Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentMaterials)
+    protected String getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials)
     {
         List<WellGroupTemplate> samples = getSampleWellGroups();
         if (index >= samples.size())

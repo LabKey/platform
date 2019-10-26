@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -54,7 +55,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
     private final Map<Integer, Lsid> _lsids = new HashMap<>();
-    private final ExpSampleSet _sampleSet;
+    private final ExpSampleSetImpl _sampleSet;
     private final Container _container;
     private final User _user;
 
@@ -62,13 +63,13 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
     private final NameGenerator _nameGenerator;
     private NameGenerator.State _state;
 
-    public DerivedSamplePropertyHelper(ExpSampleSet sampleSet, int sampleCount, Container c, User user)
+    public DerivedSamplePropertyHelper(ExpSampleSetImpl sampleSet, int sampleCount, Container c, User user)
     {
         super(Collections.emptyList());
 
         _sampleSet = sampleSet;
         if (_sampleSet != null)
-            _nameGenerator = ((ExpSampleSetImpl)_sampleSet).getNameGenerator();
+            _nameGenerator = _sampleSet.getNameGenerator();
         else
             _nameGenerator = null;
 
@@ -110,7 +111,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         return _names;
     }
 
-    protected Lsid getObject(int index, Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
+    protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
         Lsid lsid = _lsids.get(index);
         if (lsid == null)

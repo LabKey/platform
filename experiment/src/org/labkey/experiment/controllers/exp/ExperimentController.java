@@ -581,7 +581,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _source = (ExpSampleSetImpl) ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getRowId());
+            _source = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getRowId());
             if (_source == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -590,7 +590,7 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
                 }
                 // Check if the URL specifies the LSID, and stick the bean back into the form
-                _source = (ExpSampleSetImpl) ExperimentService.get().getSampleSet(form.getLsid());
+                _source = SampleSetServiceImpl.get().getSampleSet(form.getLsid());
             }
 
             if (_source == null)
@@ -3579,7 +3579,7 @@ public class ExperimentController extends SpringActionController
             if (form.getRowId() == null)
                 return;
 
-            ExpSampleSetImpl source = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(form.getRowId());
+            ExpSampleSetImpl source = SampleSetServiceImpl.get().getSampleSet(form.getRowId());
             if (source == null)
                 return;
 
@@ -3757,9 +3757,9 @@ public class ExperimentController extends SpringActionController
 
         public ExpSampleSetImpl getSampleSet(Container container) throws NotFoundException
         {
-            ExpSampleSetImpl sampleSet = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(getLSID());
+            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getLSID());
             if (sampleSet == null)
-                sampleSet = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(getRowId());
+                sampleSet = SampleSetServiceImpl.get().getSampleSet(getRowId());
 
             if (sampleSet == null)
             {
@@ -5033,7 +5033,7 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
+            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
             if (form.getTargetSampleSetId() != 0 && sampleSet == null)
             {
                 throw new NotFoundException("Could not find sample set with rowId " + form.getTargetSampleSetId());
@@ -5117,8 +5117,7 @@ public class ExperimentController extends SpringActionController
                 inputMaterials.put(materials.get(i), inputRole);
             }
 
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
-
+            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
@@ -5155,7 +5154,7 @@ public class ExperimentController extends SpringActionController
                     String name = lsid.getObjectId();
                     assert name != null;
 
-                    ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
+                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
                     if (sampleSet != null)
                     {
                         outputMaterial.setCpasType(sampleSet.getLSID());
@@ -5167,7 +5166,7 @@ public class ExperimentController extends SpringActionController
                         Map<String, Object> pvs = new HashMap<>();
                         for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
                             pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                        ((ExpMaterialImpl) outputMaterial).setProperties(getUser(), pvs);
+                        outputMaterial.setProperties(getUser(), pvs);
                     }
 
                     outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
