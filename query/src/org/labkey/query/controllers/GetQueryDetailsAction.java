@@ -363,8 +363,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                     if (kind.canEditDefinition(user, domain))
                     {
                         ActionURL editUrl = kind.urlEditDefinition(domain, getViewContext());
-                        if (editUrl != null)
-                            editUrl.addReturnURL(domain.urlShowData(getViewContext())); // send user to executeQuery action after save
+                        ActionURL showDataUrl = domain.urlShowData(getViewContext());
+                        if (editUrl != null && showDataUrl != null)
+                            editUrl.addReturnURL(showDataUrl); // send user to executeQuery action after save
                         resp.put("editDefinitionUrl", editUrl);
                     }
                 }
