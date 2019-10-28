@@ -257,6 +257,12 @@ public class NameGenerator
         return state.nextName(rowMap, null, null);
     }
 
+    public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap,
+                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples) throws NameGenerationException
+    {
+        return state.nextName(rowMap, parentDatas, parentSamples);
+    }
+
 
     public class State implements AutoCloseable
     {
