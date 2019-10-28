@@ -352,6 +352,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             queryToDb.put(entry.getValue(), entry.getKey());
         }
 
+        setSpecialColumns(container, row, user, UpdatePermission.class);
+
         //resolve passed in row including columns in the table and other properties (vocabulary properties) not in the Domain/table
         for (Map.Entry<String, Object> entry: row.entrySet())
         {
@@ -394,7 +396,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         }
 
         convertTypes(container, rowStripped);
-        setSpecialColumns(container, row, user, UpdatePermission.class);
         validateUpdateRow(rowStripped);
 
         if (row.get("container") != null)
