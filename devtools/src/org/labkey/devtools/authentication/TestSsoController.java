@@ -105,6 +105,11 @@ public class TestSsoController extends SpringActionController
 
     public static class TestSsoConfigureForm extends SSOConfigureForm<TestSsoConfiguration>
     {
+        public TestSsoConfigureForm()
+        {
+            setDescription("TestSSO Configuration");
+        }
+
         @Override
         public String getProvider()
         {

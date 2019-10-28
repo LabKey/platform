@@ -85,7 +85,7 @@
     {
 %>
         <labkey:panel title="Installed secondary authentication providers">
-            <% appendProviders(out, secondary, urls, canEdit); %>
+            <% appendSecondaryProviders(out, secondary, urls, canEdit); %>
         </labkey:panel>
 <%
     }
@@ -214,7 +214,7 @@
 <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
 
 <%!
-    private void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, boolean canEdit) throws IOException
+    private void appendSecondaryProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, boolean canEdit) throws IOException
     {
         out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 

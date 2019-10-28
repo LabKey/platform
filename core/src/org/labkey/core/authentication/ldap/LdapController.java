@@ -205,7 +205,7 @@ public class LdapController extends SpringActionController
 
     public static class TestLdapForm
     {
-        private String server = LdapAuthenticationManager.getServers()[0];
+        private String server;
         private String principal;
         private String password;
         private HtmlString message;

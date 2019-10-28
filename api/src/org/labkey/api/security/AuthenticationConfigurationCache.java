@@ -86,26 +86,34 @@ public class AuthenticationConfigurationCache
             addConfigurations(permanentMap, acceptOnlyFicamProviders);
         }
 
+        // Little helper method simplifies the stream handling above
         private @Nullable PrimaryAuthenticationProvider getProvider(Map<String, Object> map)
         {
             return AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, (String)map.get("Provider"));
         }
 
+        // Add all the configurations, one provider group at a time
         private void addConfigurations(Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap, boolean acceptOnlyFicamProviders)
         {
             configurationMap.entrySet().stream()
                 .filter(e->(!acceptOnlyFicamProviders || e.getKey().isFicamApproved()))
                 .map(e->getConfigurations(e.getKey(), e.getValue()))
                 .flatMap(Collection::stream)
-                .sorted(Comparator.comparing(AuthenticationConfiguration::getRowId))  // For now: just order by rowId
+                .sorted(AUTHENTICATION_CONFIGURATION_COMPARATOR)
                 .forEach(this::addConfiguration);
         }
 
+        // For now, group by provider type (SSO vs. LDAP) and order by rowId within those groupings
+        private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR =
+            ((Comparator<AuthenticationConfiguration>) (o1, o2) -> Boolean.compare(o1 instanceof LoginFormAuthenticationConfiguration, o2 instanceof LoginFormAuthenticationConfiguration))
+            .thenComparing(AuthenticationConfiguration::getRowId);
+
+        // Translate a provider's maps into ConfigurationSettings and then ask the provider to convert these into AuthenticationConfigurations
         private List<AuthenticationConfiguration> getConfigurations(PrimaryAuthenticationProvider provider, List<Map<String, Object>> list)
         {
             List<ConfigurationSettings> settings = list.stream()
                 .map(ConfigurationSettings::new)
-                    .collect(Collectors.toList());
+                .collect(Collectors.toList());
 
             return provider.getAuthenticationConfigurations(settings);
         }
