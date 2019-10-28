@@ -2546,8 +2546,6 @@ experiment/src/org/labkey/experiment/api/ExpDataTableImpl.java -text
 experiment/src/org/labkey/experiment/api/Experiment.java -text
 experiment/src/org/labkey/experiment/api/ExperimentProtocolGraph.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentRun.java -text
-experiment/src/org/labkey/experiment/api/ExperimentRunGraph2.sql -text
-experiment/src/org/labkey/experiment/api/ExperimentRunGraphForLookup2.sql -text
 experiment/src/org/labkey/experiment/api/ExperimentServiceImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpExperimentTableImpl.java -text
