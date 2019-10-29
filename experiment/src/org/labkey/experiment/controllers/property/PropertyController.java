@@ -152,7 +152,7 @@ public class PropertyController extends SpringActionController
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
-    @RequiresNoPermission
+    @RequiresNoPermission //Real permissions will be enforced by the DomainKind
     public class EditDomainAction extends SimpleViewAction<DomainForm>
     {
         private Domain _domain;
@@ -225,28 +225,7 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            // TODO support for showDefaultValueSettings in new domain designer
-            // TODO check on domain kind settings for allowFileLinkProperties and allowAttachmentProperties
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
-
-//            Map<String, String> props = new HashMap<>();
-//            ActionURL defaultReturnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
-//            ActionURL returnURL = form.getReturnActionURL(defaultReturnURL);
-//            props.put("typeURI", _domain.getTypeURI());
-//            if (returnURL != null)
-//            {
-//                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-//            }
-//            props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
-//            props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
-//            props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
-//            props.put("instructions", _domain.getDomainKind().getDomainEditorInstructions());
-//            if (null != form.getSchemaName())
-//                props.put("schemaName", form.getSchemaName());
-//            if (null != form.getQueryName())
-//                props.put("queryName", form.getQueryName());
-//
-//            return new GWTView("org.labkey.experiment.property.Designer", props);
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -46,7 +46,6 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     public static class DesignerForm extends ProtocolIdForm
     {
         private boolean _copy;
-        private String _returnURL;
 
         public boolean isCopy()
         {
@@ -75,10 +74,6 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             /* User is probably creating a new assay design */
         }
 
-        AssayProvider provider = AssayService.get().getProvider(form.getProviderName());
-        if (provider == null)
-            provider = form.getProvider();
-
         // hack for 4404 : Lookup picker performance is terrible when there are many containers
         ContainerManager.getAllChildren(ContainerManager.getRoot());
 
@@ -90,27 +85,6 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
 
         result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
         return result;
-
-//        Map<String, String> properties = new HashMap<>();
-//        if (_protocol != null)
-//        {
-//            properties.put("protocolId", "" + _protocol.getRowId());
-//            properties.put("copy", Boolean.toString(form.isCopy()));
-//        }
-//
-//        properties.put("providerName", provider.getName());
-//        properties.put("osName", System.getProperty("os.name").toLowerCase());
-//        properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
-//        properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
-//
-//        // if the provider supports QC and if there is a valid QC service registered
-//        if (AssayQCService.getProvider().supportsQC())
-//            properties.put("supportsQC", Boolean.toString(provider.supportsQC()));
-//
-//        if (form.getReturnURLHelper() != null)
-//            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
-//
-//        result.addView(createGWTView(properties));
     }
 
     @Override
