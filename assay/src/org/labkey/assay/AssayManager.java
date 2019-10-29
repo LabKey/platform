@@ -417,12 +417,6 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public ModelAndView createAssayDesignerView(Map<String, String> properties)
-    {
-        return new AssayGWTView(new AssayApplication.AssayDesigner(), properties);
-    }
-
-    @Override
     public ModelAndView createAssayImportView(Map<String, String> properties)
     {
         return new AssayGWTView(new AssayApplication.AssayImporter(), properties);

@@ -37,7 +37,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -46,21 +45,17 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -80,7 +75,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -91,7 +85,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -238,16 +231,6 @@ public class PropertyController extends SpringActionController
             _domain.getDomainKind().appendNavTrail(root, getContainer(), getUser());
             root.addChild("Edit Fields in " + _domain.getLabel());
             return root;
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public class PropertyServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new PropertyServiceImpl(getViewContext());
         }
     }
 
@@ -1057,68 +1040,6 @@ public class PropertyController extends SpringActionController
 
         public String getSchemaName() {return schemaName;}
         public void setSchemaName(String schemaName) {this.schemaName = schemaName;}
-    }
-
-    class PropertyServiceImpl extends DomainEditorServiceBase implements org.labkey.experiment.property.client.PropertyService
-    {
-        public PropertyServiceImpl(ViewContext context)
-        {
-            super(context);
-        }
-
-        public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update, boolean create)
-        {
-            try
-            {
-                if (create)
-                {
-                    String domainURI = update.getDomainURI();
-                    if (domainURI == null)
-                        throw new IllegalArgumentException("domainURI required to create domain");
-
-                    DomainKind kind = PropertyService.get().getDomainKind(domainURI);
-                    if (kind == null)
-                        throw new IllegalArgumentException("domain kind not found for domainURI");
-
-                    Domain d = PropertyService.get().createDomain(getContainer(), domainURI, update.getName());
-                    d.save(getUser());
-
-                    // this _create_ code path is a bit odd, why don't we create the domain before we start editing it?
-                    // refetch the domain to get the new timestamp can remove reselect if/when Table.insert reselects timestamp columns
-                    d = PropertyService.get().getDomain(getContainer(), domainURI);
-                    if (null != d)
-                        orig.set_Ts(JdbcUtil.rowVersionToString(d.get_Ts()));
-                }
-
-                return super.updateDomainDescriptor(orig, update);
-            }
-            catch (ChangePropertyDescriptorException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
-        }
-
-        @Override
-        public GWTDomain getDomainDescriptor(String typeURI)
-        {
-            GWTDomain domain = super.getDomainDescriptor(typeURI);
-            if (domain == null)
-                return null;
-
-            Domain dom = PropertyService.get().getDomain(getContainer(), typeURI);
-            if (dom != null)
-            {
-                DomainKind kind = dom.getDomainKind();
-                domain.setDefaultValueOptions(kind.getDefaultValueOptions(dom), kind.getDefaultDefaultType(dom));
-            }
-            else
-            {
-                domain.setDefaultValueOptions(new DefaultValueType[]
-                        { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
-            }
-
-            return domain;
-        }
     }
 
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
