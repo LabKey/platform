@@ -45,18 +45,20 @@
     }
 %>
 
-<table>
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <td valign="bottom" class="labkey-form-label"><strong>Sample Name</strong></td>
-        <td valign="bottom" class="labkey-form-label"><strong>Role</strong><%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
+        <td class="labkey-column-header">Sample Name</td>
+        <td class="labkey-column-header">Role<%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
         <% if (!sameTypeInputs.isEmpty()) { %>
-            <td valign="bottom" class="labkey-form-label"><strong>Copy properties to...</strong></td>
+            <td class="labkey-column-header">Copy properties to...</td>
         <% } %>
     </tr>
 <%
+    int rowCount = 0;
     for (Map.Entry<ExpMaterial, String> entry : bean.getSourceMaterials().entrySet())
-    { %>
-        <tr>
+    {
+%>
+        <tr class="<%=h(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><%= h(entry.getKey().getName())%></td>
             <td><%= h(entry.getValue()) %></td>
             <% if (sameTypeInputs.contains(entry.getKey())) { %>
@@ -86,6 +88,8 @@
                 </td>
             <% } %>
         </tr>
-    <%
-    } %>
+<%
+        rowCount++;
+    }
+%>
 </table>
