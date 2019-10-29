@@ -32,8 +32,11 @@ import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
@@ -54,12 +57,14 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -375,11 +380,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
+            // Map for the assay result input LSID
+            Map<Integer, Set<String>> inputLSIDMap = new HashMap<>();
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, inputLSIDMap);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
             insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
+
+            // Attach run's final protocol application with output LSIDs for Assay Result rows
+            addAssayResultRowsProvenance(user, container, protocol, run, provider, inputLSIDMap);
 
             if (shouldAddInputMaterials())
             {
@@ -395,6 +405,41 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         catch (IOException e)
         {
             throw new ExperimentException(e);
+        }
+    }
+
+
+    private void addAssayResultRowsProvenance(User user, Container container, ExpProtocol protocol, ExpRun run, AssayProvider provider, Map<Integer, Set<String>> inputLSIDMap)
+    {
+        TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).getTable("Data", null);
+        SimpleFilter runFilter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
+        Sort sort = new Sort(FieldKey.fromParts("rowId"));
+        List<String> lsidList = new TableSelector(dataTable, PageFlowUtil.set("LSID"), runFilter, sort).getArrayList(String.class);
+
+        Map<String, Set<String>> provMap = new HashMap<>();
+        Set<String> outputLSIDs = new HashSet<>();
+
+        for (int row = 0; row < lsidList.size(); row++)
+        {
+            if (inputLSIDMap.get(row+1) != null && !inputLSIDMap.get(row+1).isEmpty())
+            {
+                provMap.put(lsidList.get(row), inputLSIDMap.get(row+1));
+            }
+            else
+            {
+                outputLSIDs.add(lsidList.get(row));
+            }
+        }
+
+        ExpProtocolApplication outputProtocolApp = run.getOutputProtocolApplication();
+
+        if (!provMap.isEmpty())
+        {
+            ProvenanceService.get().addProvenance(container, outputProtocolApp, provMap);
+        }
+        if (!outputLSIDs.isEmpty())
+        {
+            ProvenanceService.get().addProvenanceOutputs(container, outputProtocolApp, outputLSIDs);
         }
     }
 
@@ -501,7 +546,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver, Map<Integer, Set<String>> inputLSIDs)
             throws ValidationException, ExperimentException
     {
         List<String> missing = new ArrayList<>();
@@ -547,6 +592,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty visitPD = null;
         DomainProperty datePD = null;
         DomainProperty targetStudyPD = null;
+        DomainProperty provObjectInputsPD = null;
 
         Map<DomainProperty, ExpSampleSet> sampleNameSampleSets = new HashMap<>();
         Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet = new LinkedHashMap<>();
@@ -590,6 +636,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
                 targetStudyPD = pd;
+            }
+            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY))
+            {
+                provObjectInputsPD = pd;
             }
             else
             {
@@ -645,6 +695,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             rowNum++;
             Collection<ValidationError> errors = new ArrayList<>();
+            Set<String> rowInputLSIDs = new HashSet<>();
 
             Map<String, Object> originalMap = iter.next();
             Map<String, Object> map = new CaseInsensitiveHashMap<>(caseMapping);
@@ -799,13 +850,40 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 // Collect sample names or ids for each of the SampleSet lookup columns
+                // Add any sample inputs to the rowInputLSIDs
                 ExpSampleSet byNameSS = sampleNameSampleSets.get(pd);
-                if (byNameSS != null && o instanceof String)
-                    sampleNamesBySampleSet.get(byNameSS).add((String)o);
+                if (byNameSS != null)
+                {
+                    if (o instanceof String)
+                        sampleNamesBySampleSet.get(byNameSS).add((String) o);
+                    if (o != null)
+                    {
+                        List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName((String) o, container, user);
+
+                        // Should be only 1 matching lookup
+                        if (materials.size() == 1)
+                        {
+                            rowInputLSIDs.add(materials.get(0).getLSID());
+                        }
+                    }
+                }
 
                 ExpSampleSet byIdSS = sampleIdSampleSets.get(pd);
-                if (byIdSS != null && o instanceof Integer)
-                    sampleIdsBySampleSet.get(byIdSS).add((Integer)o);
+                if (byIdSS != null)
+                {
+                    if (o instanceof Integer)
+                        sampleIdsBySampleSet.get(byIdSS).add((Integer) o);
+                    if (o != null)
+                    {
+                        ExpMaterial material = ExperimentService.get().getExpMaterial((int) o);
+
+                        if (material != null)
+                        {
+                            rowInputLSIDs.add(material.getLSID());
+                        }
+                    }
+
+                }
 
                 if (DefaultAssayRunCreator.isLookupToMaterials(pd))
                 {
@@ -846,6 +924,20 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (resolveMaterials)
             {
                 materialInputs.put(participantVisit.getMaterial(), null);
+            }
+
+            // Add any “prov:objectInputs” to the rowInputLSIDs
+            if (provObjectInputsPD != null && map.get(provObjectInputsPD.getName()) != null)
+            {
+                if (map.get(provObjectInputsPD.getName()) instanceof String)
+                {
+                    rowInputLSIDs.add((String) map.get(provObjectInputsPD.getName()));
+                }
+            }
+
+            if (!rowInputLSIDs.isEmpty())
+            {
+                inputLSIDs.put(rowNum, rowInputLSIDs);
             }
         }
 

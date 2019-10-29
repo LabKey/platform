@@ -35,6 +35,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
@@ -217,6 +218,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     @Override
     public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
+        final Container container = context.getContainer();
+
         Map<ExpMaterial, String> inputMaterials = new HashMap<>();
         Map<ExpData, String> inputDatas = new HashMap<>();
         Map<ExpMaterial, String> outputMaterials = new HashMap<>();
@@ -310,10 +313,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     List<ValidationError> errors = validateProperties(context, props);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
-                    savePropertyObject(batch, context.getContainer(), props, context.getUser());
+                    savePropertyObject(batch, container, props, context.getUser());
                 }
                 else
-                    savePropertyObject(batch, context.getContainer(), batchProperties, context.getUser());
+                    savePropertyObject(batch, container, batchProperties, context.getUser());
             }
 
             if (null != transformResult.getAssayId())
@@ -326,10 +329,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 List<ValidationError> errors = validateProperties(context, props);
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
-                savePropertyObject(run, context.getContainer(), props, context.getUser());
+                savePropertyObject(run, container, props, context.getUser());
             }
             else
-                savePropertyObject(run, context.getContainer(), runProperties, context.getUser());
+                savePropertyObject(run, container, runProperties, context.getUser());
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
@@ -357,31 +360,25 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
-            ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
+            ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
 
             transaction.commit();
 
-            //list of starting ouput LSIDs
-            TableInfo dataTable = _provider.createProtocolSchema(context.getUser(), context.getContainer(), context.getProtocol(), null).getTable("Data", null);
-            List<String> lsidList = new TableSelector(dataTable, PageFlowUtil.set("LSID"), null, null).getArrayList(String.class);
-            outputLSIDs.addAll(lsidList);
-
-            ExpProtocolApplication outputProtocolApp = run.getOutputProtocolApplication();
-
-            //call to ProvenanceService.addProvenanceOutputs
-
+            //  Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
+            // Attach run's starting protocol application with starting input LSIDs.
+            Set<String> runInputLSIDs = new HashSet<>();
             for (Map.Entry<DomainProperty, String> runProperty : runProperties.entrySet())
             {
-                String propertyName = runProperty.getKey().getPropertyDescriptor().getName();
+                PropertyDescriptor runPropertyPD = runProperty.getKey().getPropertyDescriptor();
+                String propertyName = runPropertyPD.getName();
                 if (propertyName.equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY))
                 {
-                    ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
-                    ProvenanceService.get().addProvenanceInputs(inputProtocolApp, Set.of(runProperty.getValue()));
+                    runInputLSIDs.add(runProperty.getValue());
                 }
             }
-
-            ProvenanceService.get().addProvenanceOutputs(outputProtocolApp, outputLSIDs);
+            ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
+            ProvenanceService.get().addProvenanceInputs(inputProtocolApp, runInputLSIDs);
 
             ExperimentService.get().queueSyncRunEdges(run);
 

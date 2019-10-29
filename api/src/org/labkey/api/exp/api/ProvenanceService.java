@@ -1,5 +1,6 @@
 package org.labkey.api.exp.api;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.services.ServiceRegistry;
@@ -27,11 +28,11 @@ public interface ProvenanceService
 
     Map<Integer, Set<String>> addProvenanceInputs(ExpProtocolApplication app, Set<String> inputLSIDs);
 
-    Map<Integer, Set<String>> addProvenanceOutputs(ExpProtocolApplication app, Set<String> outputLSIDs);
+    Map<Integer, Set<String>> addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs);
 
     void addProvenanceMapping(ExpProtocolApplication app, List<String> inputLSIDs, List<String> outputLSIDs);
 
-    void addProvenance(ExpRun run, List<String> runInputLSIDs, List<Pair<List<String>, List<String>>> outputMap);
+    void addProvenance(Container container, ExpProtocolApplication app, Map<String, Set<String>> outputMap);
 
     Pair<List<String>, List<String>> getProvenance(ExpProtocolApplication app);
 

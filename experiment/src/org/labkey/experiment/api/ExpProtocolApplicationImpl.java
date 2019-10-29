@@ -49,7 +49,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     private List<ExpDataImpl> _inputDatas;
     private List<ExpMaterialImpl> _outputMaterials;
     private List<ExpDataImpl> _outputDatas;
-    private Map<Collection<String>, Collection<String>> _lsidMap;
+    private Map<String, String> _lsidMap;
 
     // For serialization
     protected ExpProtocolApplicationImpl() {}
