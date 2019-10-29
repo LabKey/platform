@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import com.sencha.gxt.widget.core.client.info.Info;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
@@ -25,6 +26,8 @@ import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -70,6 +73,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.vcs.Vcs;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
@@ -2143,5 +2148,29 @@ public class ModuleLoader implements Filter
         {
             return _type;
         }
+    }
+
+    public Vcs getVcs(@NotNull Module module)
+    {
+        VcsService service = ServiceRegistry.get().getService(VcsService.class);
+        if (!AppProps.getInstance().isDevMode() || null == service)
+            return null;
+        // use cache to enable clear/reset of info
+        var cache = CacheManager.getSharedCache();
+        var key = VcsService.class.getName() + ":" + module.getName();
+        return (Vcs)cache.get(key, module, (k, argument) ->
+        {
+            Module m = (Module)argument;
+            File source = null;
+            if (null == m)
+                return null;
+            if (null != m.getSourcePath())
+                source = new File(m.getSourcePath());
+            else if (null != m.getExplodedPath())
+                source = m.getExplodedPath();
+            if (null == source || !source.isDirectory())
+                return null;
+            return service.getVcs(source);
+        });
     }
 }

@@ -35,6 +35,10 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.vcs.VcsService" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.vcs.Vcs" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -146,6 +150,7 @@
                 for (Module module : bean.modules)
                 {
                     String guid = GUID.makeGUID();
+                    Vcs vcs = ModuleLoader.getInstance().getVcs(module);
             %>
                 <tr class="labkey-header">
                     <td valign="middle" width="15">
@@ -219,6 +224,20 @@
                                 count++;
                             } %>
                         </table>
+                        <%
+                        if (null != vcs)
+                        {
+                            %><br><b>local VCS enlistment detected:</b>
+                            <table class="labkey-data-region-legacy labkey-show-borders">
+                                <tr class="<%=getShadeRowClass(1)%>"><td>type</td><td>GIT</td></tr>
+                                <tr class="<%=getShadeRowClass(0)%>"><td>repository path</td><td><%=h(vcs.getRepositoryRoot().getPath())%></td></tr>
+                                <tr class="<%=getShadeRowClass(1)%>"><td>remote url</td><td><%=h(vcs.getRemoteUrl())%></td></tr>
+                                <tr class="<%=getShadeRowClass(0)%>"><td>branch</td><td><%=h(vcs.getBranch())%></td></tr>
+                                <%-- if (getUser().isPlatformDeveloper()) { %>
+                                    <tr class="<%=getShadeRowClass(0)%>"><td colspan="2"><%=button("vcs status").href(new ActionURL(AdminController.VcsStatusAction.class,getContainer()).addParameter("name",module.getName()))%></td></tr>
+                                <% } --%>
+                            </table><%
+                        }%>
                     </td>
                 </tr><%
                     }%>

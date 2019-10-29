@@ -2,5 +2,6 @@ apply plugin: 'org.labkey.coreScripts'
 
 dependencies {
    external 'radeox:radeox:1.0-b2'
+   external "org.eclipse.jgit:org.eclipse.jgit:5.5.1.201910021850-r"
 }
 

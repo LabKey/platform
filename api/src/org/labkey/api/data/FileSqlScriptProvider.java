@@ -254,7 +254,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
             if (null != vcs)
             {
-                vcs.addFile(description);
+                vcs.addFile(file);
             }
         }
     }
