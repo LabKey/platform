@@ -16,11 +16,9 @@
 
 package org.labkey.api.assay.actions;
 
-import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
@@ -28,7 +26,6 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.security.DesignAssayPermission;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -37,8 +34,6 @@ import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: brittp
@@ -93,47 +88,36 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
         }
 
-        // use new UX Assay Designer view if experimental flag is turned on
-        if (ExperimentService.get().useUXDomainDesigner())
-        {
-            result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
-        }
-        else
-        {
-            Map<String, String> properties = new HashMap<>();
-            if (_protocol != null)
-            {
-                properties.put("protocolId", "" + _protocol.getRowId());
-                properties.put("copy", Boolean.toString(form.isCopy()));
-            }
-
-            properties.put("providerName", provider.getName());
-            properties.put("osName", System.getProperty("os.name").toLowerCase());
-            properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
-            properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
-
-            // if the provider supports QC and if there is a valid QC service registered
-            if (AssayQCService.getProvider().supportsQC())
-                properties.put("supportsQC", Boolean.toString(provider.supportsQC()));
-
-            if (form.getReturnURLHelper() != null)
-                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
-
-            result.addView(createGWTView(properties));
-        }
-
-        setHelpTopic(new HelpTopic("defineAssaySchema"));
+        result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));
         return result;
-    }
 
-    protected ModelAndView createGWTView(Map<String, String> properties)
-    {
-        return AssayService.get().createAssayDesignerView(properties);
+//        Map<String, String> properties = new HashMap<>();
+//        if (_protocol != null)
+//        {
+//            properties.put("protocolId", "" + _protocol.getRowId());
+//            properties.put("copy", Boolean.toString(form.isCopy()));
+//        }
+//
+//        properties.put("providerName", provider.getName());
+//        properties.put("osName", System.getProperty("os.name").toLowerCase());
+//        properties.put("supportsEditableResults", Boolean.toString(provider.supportsEditableResults()));
+//        properties.put("supportsBackgroundUpload", Boolean.toString(provider.supportsBackgroundUpload()));
+//
+//        // if the provider supports QC and if there is a valid QC service registered
+//        if (AssayQCService.getProvider().supportsQC())
+//            properties.put("supportsQC", Boolean.toString(provider.supportsQC()));
+//
+//        if (form.getReturnURLHelper() != null)
+//            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnURLHelper().getLocalURIString());
+//
+//        result.addView(createGWTView(properties));
     }
 
     @Override
     public NavTree appendNavTrail(NavTree root)
     {
+        setHelpTopic("defineAssaySchema");
+
         NavTree result = super.appendNavTrail(root);
         if (!_form.isCopy() && _protocol != null)
         {
