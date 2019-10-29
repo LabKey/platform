@@ -49,6 +49,7 @@ import org.labkey.api.data.ContainerService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
@@ -62,6 +63,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -209,24 +211,35 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            Map<String, String> props = new HashMap<>();
-            ActionURL defaultReturnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
-            ActionURL returnURL = form.getReturnActionURL(defaultReturnURL);
-            props.put("typeURI", _domain.getTypeURI());
-            if (returnURL != null)
+            // use new UX Assay Designer view if experimental flag is turned on
+            if (ExperimentService.get().useUXDomainDesigner())
             {
-                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+                // TODO support for instructions in new domain designer
+                // TODO support for showDefaultValueSettings in new domain designer
+                // TODO check on domain kind settings for allowFileLinkProperties and allowAttachmentProperties
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
             }
-            props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
-            props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
-            props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
-            props.put("instructions", _domain.getDomainKind().getDomainEditorInstructions());
-            if (null != form.getSchemaName())
-                props.put("schemaName", form.getSchemaName());
-            if (null != form.getQueryName())
-                props.put("queryName", form.getQueryName());
+            else
+            {
+                Map<String, String> props = new HashMap<>();
+                ActionURL defaultReturnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
+                ActionURL returnURL = form.getReturnActionURL(defaultReturnURL);
+                props.put("typeURI", _domain.getTypeURI());
+                if (returnURL != null)
+                {
+                    props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+                }
+                props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
+                props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
+                props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
+                props.put("instructions", _domain.getDomainKind().getDomainEditorInstructions());
+                if (null != form.getSchemaName())
+                    props.put("schemaName", form.getSchemaName());
+                if (null != form.getQueryName())
+                    props.put("queryName", form.getQueryName());
 
-            return new GWTView("org.labkey.experiment.property.Designer", props);
+                return new GWTView("org.labkey.experiment.property.Designer", props);
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)

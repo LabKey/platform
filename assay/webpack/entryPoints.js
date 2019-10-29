@@ -7,7 +7,7 @@ module.exports = {
     apps: [{
         name: 'assayDesigner',
         title: 'Assay Designer',
-        permission: 'read', // the component will check for DesignAssayPermission and show edit vs read only mode accordingly
+        permission: 'read', // the component will check for DesignAssayPermission and show edit vs read only mode accordingly, see assay/action/DesignerAction.java for main usage
         path: './src/client/AssayDesigner'
     },{
         name: 'assayDataImport',
