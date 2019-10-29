@@ -80,8 +80,6 @@ public interface AssayService
 
     WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
 
-    ModelAndView createAssayDesignerView(Map<String, String> properties);
-
     ModelAndView createAssayImportView(Map<String, String> properties);
 
     ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf);
