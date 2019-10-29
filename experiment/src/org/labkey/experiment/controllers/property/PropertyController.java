@@ -45,8 +45,10 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainTemplate;
@@ -77,13 +79,17 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
@@ -192,6 +198,24 @@ public class PropertyController extends SpringActionController
                 }
                 Lsid domainLSID = new Lsid(domainURI);
                 _domain = PropertyService.get().createDomain(getContainer(), domainURI, form.getQueryName() != null ? form.getQueryName() : domainLSID.getObjectId());
+
+                // save the domain so that we ensure it exists before we try to edit it
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    _domain.save(getUser());
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+
+                // re-fetch the domain so that we can redirect using the saved domainId
+                _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                ActionURL redirectURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain, form.getAllowAttachmentProperties(), form.getAllowFileLinkProperties(), form.isShowDefaultValueSettings());
+                URLHelper returnURL = getViewContext().getActionURL().getReturnURL();
+                if (returnURL != null)
+                    redirectURL.addReturnURL(returnURL);
+                throw new RedirectException(redirectURL);
             }
             else
             {
