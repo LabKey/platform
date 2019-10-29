@@ -2488,6 +2488,12 @@ public class OntologyManager
         domainDescByContainerCache.clear();
     }
 
+    public static void clearDomainDescriptorCaches()
+    {
+        domainDescByURICache.clear();
+        domainDescByIDCache.clear();
+        domainDescByContainerCache.clear();
+    }
 
     public static void clearPropertyCache(String parentObjectURI)
     {
