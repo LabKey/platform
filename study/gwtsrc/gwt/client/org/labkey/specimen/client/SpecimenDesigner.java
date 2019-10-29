@@ -19,7 +19,6 @@ package gwt.client.org.labkey.specimen.client;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.user.client.ui.RootPanel;
 import gwt.client.org.labkey.study.StudyApplication;
-import org.labkey.api.gwt.client.assay.AssayDesignerMainPanel;
 
 /**
  * User: brittp

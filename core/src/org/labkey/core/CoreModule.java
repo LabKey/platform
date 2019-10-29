@@ -214,6 +214,7 @@ import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
+import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
@@ -705,7 +706,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         if (moduleContext.isNewInstall())
         {
-            bootstrap();
+            bootstrap(moduleContext.getUpgradeUser());
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -735,7 +736,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    private void bootstrap()
+    private void bootstrap(User upgradeUser)
     {
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
@@ -756,11 +757,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
         SecurityPolicyManager.savePolicy(policy, false);
 
+        // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
+        FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
+
         // Users & guests can read from /home
-        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        home.setFolderType(collaborationType, upgradeUser);
+        addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
+
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, upgradeUser);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, upgradeUser);
 
         try
         {
@@ -811,6 +819,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
+        FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
         {
@@ -1009,7 +1018,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (Exception e)
         {
-            LOG.error(e);
+            LOG.error("Exception registering MarkdownServiceImpl", e);
         }
     }
 

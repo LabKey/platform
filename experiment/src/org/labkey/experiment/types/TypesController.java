@@ -336,6 +336,8 @@ public class TypesController extends SpringActionController
     {
         public String typeName;
         public DomainDescriptor dd;
+        public Domain d;
+        public DomainKind kind;
         public List<PropertyDescriptor> properties = Collections.emptyList();
 
         public ModelAndView getView(TypeForm form, BindException errors)
@@ -347,6 +349,9 @@ public class TypesController extends SpringActionController
             {
                 dd = OntologyManager.getDomainDescriptor(typeName, getContainer());
                 properties = OntologyManager.getPropertiesForType(typeName, getContainer());
+
+                d = dd != null ? d = PropertyService.get().getDomain(dd.getDomainId()) : null;
+                kind = d != null ? d.getDomainKind() : null;
             }
 
             return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);

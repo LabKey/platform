@@ -16,20 +16,38 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnGroup;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableViewForm;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.SpecimenService;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.actions.UploadWizardAction;
-import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static java.util.Collections.emptySet;
 
 /**
  * Helper for mapping user-specified property values to the desired {@link DomainProperty} collection.
@@ -55,11 +73,16 @@ public abstract class SamplePropertyHelper<ObjectType>
 
     public abstract List<String> getSampleNames();
 
-    protected abstract ObjectType getObject(int index, Map<DomainProperty, String> sampleProperties) throws DuplicateMaterialException;
+    protected abstract ObjectType getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException;
 
     protected abstract boolean isCopyable(DomainProperty pd);
 
     public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
+    {
+        return getSampleProperties(request, emptySet());
+    }
+
+    public Map<ObjectType, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request, @NotNull Set<ExpMaterial> parentMaterials) throws ExperimentException
     {
         Map<ObjectType, Map<DomainProperty, String>> result = new LinkedHashMap<>();
         List<String> names = getSampleNames();
@@ -71,7 +94,7 @@ public abstract class SamplePropertyHelper<ObjectType>
                 String inputName = UploadWizardAction.getInputName(property, names.get(i));
                 sampleProperties.put(property, request.getParameter(inputName));
             }
-            result.put(getObject(i, sampleProperties), sampleProperties);
+            result.put(getObject(i, sampleProperties, parentMaterials), sampleProperties);
         }
         return result;
     }
