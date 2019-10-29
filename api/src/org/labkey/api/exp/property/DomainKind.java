@@ -261,6 +261,7 @@ abstract public class DomainKind implements Handler<String>
     public boolean allowFileLinkProperties() { return true; }
     public boolean allowAttachmentProperties() { return true; }
     public boolean allowFlagProperties() { return true; }
+    public boolean showDefaultValueSettings() { return false; }
 
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {

@@ -188,7 +188,7 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         // since the study design domains are scoped to the project, we use the domain.getContainer() instead of containerUser.getContainer()
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain);
     }
 
     @Override

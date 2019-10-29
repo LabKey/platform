@@ -121,7 +121,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(ContainerManager.getSharedContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(ContainerManager.getSharedContainer(), domain);
     }
 
     @Override

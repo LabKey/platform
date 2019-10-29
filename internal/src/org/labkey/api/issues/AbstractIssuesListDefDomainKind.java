@@ -150,7 +150,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), true);
+        return null;
     }
 
     @Override
@@ -163,6 +163,12 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public boolean allowFileLinkProperties()
     {
         return false;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
     }
 
     @Nullable
