@@ -77,6 +77,7 @@ import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.LsidType;
@@ -2136,29 +2137,49 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @NotNull
-    public ExpLineage getLineage(Container c, User user, @NotNull Set<ExpLineageItem> seeds, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
         // validate seeds
-        List<String> lsids = new ArrayList<>(seeds.size());
-        for (ExpLineageItem seed : seeds)
+        Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
+        Set<String> seedLsids = new HashSet<>(seeds.size());
+        for (Identifiable seed : seeds)
         {
-            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem)seed))
+            if (seed.getLSID() == null)
+                throw new RuntimeException("Lineage not available for unknown object");
+
+            // CONSIDER: add objectId to Identifiable?
+            int objectId = -1;
+            if (seed instanceof ExpObject)
+                objectId = ((ExpObject)seed).getObjectId();
+            else if (seed instanceof IdentifiableBase)
+                objectId = ((IdentifiableBase)seed).getObjectId();
+
+            if (objectId == -1)
+                throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
+
+            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem) seed))
                 throw new RuntimeException("Lineage not available for unknown material: " + seed.getLSID());
 
             // ensure that the protocol output lineage is in the same container as the request
             if (c != null && !c.equals(seed.getContainer()))
                 throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + c.getPath() + "', got: " + seed.getContainer().getPath());
 
-            lsids.add(seed.getLSID());
+            if (!seedLsids.add(seed.getLSID()))
+                throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());
+
+            if (!seedObjectIds.add(objectId))
+                throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
         }
 
-        SQLFragment sqlf = generateExperimentTreeSQL(lsids, options);
+        options.setUseObjectIds(true);
+        SQLFragment sqlf = generateExperimentTreeSQLObjectIdsSeeds(seedObjectIds, options);
         Set<Integer> dataIds = new HashSet<>();
         Set<Integer> materialIds = new HashSet<>();
         Set<Integer> runIds = new HashSet<>();
+        Set<String> objectLsids = new HashSet<>();
         Set<ExpLineage.Edge> edges = new HashSet<>();
 
-        for (ExpLineageItem seed : seeds)
+        for (Identifiable seed : seeds)
         {
             // create additional edges from the run for each ExpMaterial or ExpData seed
             if (seed instanceof ExpRunItem)
@@ -2191,14 +2212,14 @@ public class ExperimentServiceImpl implements ExperimentService
             if (parentRowId == null || childRowId == null)
             {
                 LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(lsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+                        StringUtils.join(seedLsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
             }
             else
             {
                 edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
 
                 // Don't include the seed in the lineage collections
-                if (!lsids.contains(parentLSID))
+                if (!seedLsids.contains(parentLSID))
                 {
                     // process parents
                     if ("Data".equals(parentExpType))
@@ -2207,10 +2228,12 @@ public class ExperimentServiceImpl implements ExperimentService
                         materialIds.add(parentRowId);
                     else if ("ExperimentRun".equals(parentExpType))
                         runIds.add(parentRowId);
+                    else if ("Object".equals(parentExpType))
+                        objectLsids.add(parentLSID);
                 }
 
                 // Don't include the seed in the lineage collections
-                if (!lsids.contains(childLSID))
+                if (!seedLsids.contains(childLSID))
                 {
                     // process children
                     if ("Data".equals(childExpType))
@@ -2219,6 +2242,8 @@ public class ExperimentServiceImpl implements ExperimentService
                         materialIds.add(childRowId);
                     else if ("ExperimentRun".equals(childExpType))
                         runIds.add(childRowId);
+                    else if ("Object".equals(childExpType))
+                        objectLsids.add(childLSID);
                 }
             }
         });
@@ -2244,17 +2269,42 @@ public class ExperimentServiceImpl implements ExperimentService
         else
             runs = new HashSet<>(expRuns);
 
-        return new ExpLineage(seeds, datas, materials, runs, edges);
+        Set<Identifiable> otherObjects = new HashSet<>(objectLsids.size());
+        for (String lsid : objectLsids)
+        {
+            Identifiable obj = LsidManager.get().getObject(lsid);
+            if (obj != null)
+            {
+                if (user == null || obj.getContainer().hasPermission(user, ReadPermission.class))
+                    otherObjects.add(obj);
+            }
+        }
+
+        return new ExpLineage(seeds, datas, materials, runs, otherObjects, edges);
     }
 
 
-    public SQLFragment generateExperimentTreeSQL(List<String> lsids, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
+        assert options.isUseObjectIds() == false;
         String comma="";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
         {
             sqlf.append(comma).append("?").add(lsid);
+            comma = ",";
+        }
+        return generateExperimentTreeSQL(sqlf, options);
+    }
+
+    public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
+    {
+        assert options.isUseObjectIds() == true;
+        String comma="";
+        SQLFragment sqlf = new SQLFragment("VALUES ");
+        for (Integer objectId : objectIds)
+        {
+            sqlf.append(comma).append("(").append(objectId).append(")");
             comma = ",";
         }
         return generateExperimentTreeSQL(sqlf, options);

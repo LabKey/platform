@@ -1,5 +1,7 @@
 package org.labkey.experiment.api;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,14 +14,21 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
@@ -28,6 +37,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -39,6 +50,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
@@ -51,9 +63,11 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class LineageTest extends ExpProvisionedTableTestHelper
@@ -292,4 +306,85 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals("bob", dcMySampleParent.getDisplayValue(ctx));
     }
 
+    @Test
+    public void testObjectInputOutput() throws Exception
+    {
+        Lsid.LsidBuilder lsidBuilder = new Lsid.LsidBuilder("JUnitTest", null);
+
+        // register a silly LsidHandler for our test namespace
+        LsidManager.get().registerHandler("JUnitTest", new LsidManager.OntologyObjectLsidHandler());
+
+        // create some exp.object rows for use as input and outputs
+        Lsid a1Lsid = lsidBuilder.setObjectId("A1").build();
+        int a1ObjectId = OntologyManager.ensureObject(c, a1Lsid.toString());
+        Identifiable a1 = LsidManager.get().getObject(a1Lsid);
+        assertNotNull(a1);
+
+        Lsid a2Lsid = lsidBuilder.setObjectId("A2").build();
+        int a2ObjectId = OntologyManager.ensureObject(c, a2Lsid.toString());
+        Identifiable a2 = LsidManager.get().getObject(a2Lsid);
+        assertNotNull(a2);
+
+        Lsid b1Lsid = lsidBuilder.setObjectId("B1").build();
+        int b1ObjectId = OntologyManager.ensureObject(c, b1Lsid.toString());
+        Identifiable b1 = LsidManager.get().getObject(b1Lsid);
+        assertNotNull(b1);
+
+        Lsid b2Lsid = lsidBuilder.setObjectId("B2").build();
+        int b2ObjectId = OntologyManager.ensureObject(c, b2Lsid.toString());
+        Identifiable b2 = LsidManager.get().getObject(b2Lsid);
+        assertNotNull(b2);
+
+
+        // create empty run
+        ExpRun run = ExperimentService.get().createExperimentRun(c, "testing");
+        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+        run.setFilePathRoot(pipeRoot.getRootPath());
+
+        ExpProtocol protocol = ExperimentService.get().ensureSampleDerivationProtocol(user);
+        run.setProtocol(protocol);
+
+        // add A objects as inputs, B objects as outputs
+        ViewBackgroundInfo info = new ViewBackgroundInfo(c, user, null);
+        run = ExperimentServiceImpl.get().saveSimpleExperimentRun(run, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(), info, null, false);
+        int runObjectId = run.getObjectId();
+
+        // HACK: Until we have the ability to add provenance information to the run, just insert directly into exp.edge
+        TableInfo edgeTable = ExperimentServiceImpl.get().getTinfoEdge();
+        Table.insert(null, edgeTable, Map.of(
+                "runId", run.getRowId(), "fromObjectId", a1ObjectId, "toObjectId", runObjectId));
+        Table.insert(null, edgeTable, Map.of(
+                "runId", run.getRowId(), "fromObjectId", a2ObjectId, "toObjectId", runObjectId));
+
+        Table.insert(null, edgeTable, Map.of(
+                "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b1ObjectId));
+        Table.insert(null, edgeTable, Map.of(
+                "runId", run.getRowId(), "fromObjectId", runObjectId, "toObjectId", b2ObjectId));
+
+        // query the lineage
+        ExpLineageOptions options = new ExpLineageOptions();
+        ExpLineage lineage = ExperimentServiceImpl.get().getLineage(info, Set.of(a1), options);
+
+        assertTrue(lineage.getRuns().contains(run));
+        assertEquals(Set.of(a1), lineage.getSeeds());
+        assertEquals(Set.of(b1, b2), lineage.getObjects());
+
+        JSONObject json = lineage.toJSON(true);
+        assertEquals(a1Lsid.toString(), json.getString("seed"));
+
+        JSONObject nodes = json.getJSONObject("nodes");
+        assertEquals(4, nodes.size());
+        JSONObject a1json = nodes.getJSONObject(a1Lsid.toString());
+        assertEquals("A1", a1json.getString("name"));
+        assertEquals(a1Lsid.toString(), a1json.getString("lsid"));
+        assertEquals("JUnitTest", a1json.getString("type"));
+
+        JSONArray a1parents = a1json.getJSONArray("parents");
+        assertEquals(0, a1parents.length());
+
+        JSONArray a1children = a1json.getJSONArray("children");
+        assertEquals(1, a1children.length());
+        assertEquals(run.getLSID(), a1children.getJSONObject(0).getString("lsid"));
+
+    }
 }

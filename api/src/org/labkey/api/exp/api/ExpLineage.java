@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.Pair;
@@ -39,30 +40,32 @@ import static java.util.stream.Collectors.toList;
  */
 public class ExpLineage
 {
-    private Set<ExpLineageItem> _seeds;
+    private Set<Identifiable> _seeds;
     private Set<ExpData> _datas;
     private Set<ExpMaterial> _materials;
     private Set<ExpRun> _runs;
+    private Set<Identifiable> _objects;
     private Set<Edge> _edges;
 
     // constructed in processNodes
-    private Map<String, ExpLineageItem> _nodes;
+    private Map<String, Identifiable> _nodes;
     // constructed in processNodeEdges
     private Map<String, Pair<Set<Edge>, Set<Edge>>> _nodesAndEdges;
 
-    public ExpLineage(Set<ExpLineageItem> seeds, Set<ExpData> data, Set<ExpMaterial> materials, Set<ExpRun> runs, Set<Edge> edges)
+    public ExpLineage(Set<Identifiable> seeds, Set<ExpData> data, Set<ExpMaterial> materials, Set<ExpRun> runs, Set<Identifiable> objects, Set<Edge> edges)
     {
         _seeds = seeds;
         _datas = data;
         _materials = materials;
         _runs = runs;
+        _objects = objects;
         _edges = edges;
     }
 
     /**
      * Get the starting seeds for the lineage.
      */
-    public Set<ExpLineageItem> getSeeds()
+    public Set<Identifiable> getSeeds()
     {
         return _seeds;
     }
@@ -92,15 +95,24 @@ public class ExpLineage
     }
 
     /**
+     * Get the non-Material and non-Data parent or children encountered when traversing the lineage from one of the seeds.
+     * @return
+     */
+    public Set<Identifiable> getObjects()
+    {
+        return _objects;
+    }
+
+    /**
      * Create map from node LSID to ExpObject.
      */
-    private Map<String, ExpLineageItem> processNodes()
+    private Map<String, Identifiable> processNodes()
     {
         if (_nodes == null)
         {
             _nodes = new HashMap<>();
 
-            for (ExpLineageItem seed : _seeds)
+            for (Identifiable seed : _seeds)
                 _nodes.put(seed.getLSID(), seed);
 
             for (ExpData node : _datas)
@@ -110,6 +122,9 @@ public class ExpLineage
                 _nodes.put(node.getLSID(), node);
 
             for (ExpRun node : _runs)
+                _nodes.put(node.getLSID(), node);
+
+            for (Identifiable node : _objects)
                 _nodes.put(node.getLSID(), node);
         }
 
@@ -148,32 +163,32 @@ public class ExpLineage
 
     /**
      * Find all child and grandchild samples that are direct descendants of the input seed,
-     * ignoring any sample children derived from ExpData children.
+     * ignoring any sample children derived from ExpData or other Identifiable children.
      */
     public Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed)
     {
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
 
-        Map<String, ExpLineageItem> nodes = processNodes();
+        Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
         return findRelatedChildSamples(seed, nodes, edges);
     }
 
-    private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, ExpLineageItem> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private Set<ExpMaterial> findRelatedChildSamples(ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
 
         // walk from start through edges looking for all sample children, ignoring data children
         Set<ExpMaterial> materials = new HashSet<>();
-        Queue<ExpLineageItem> stack = new LinkedList<>();
-        Set<ExpLineageItem> seen = new HashSet<>();
+        Queue<Identifiable> stack = new LinkedList<>();
+        Set<Identifiable> seen = new HashSet<>();
         stack.add(seed);
         seen.add(seed);
         while (!stack.isEmpty())
         {
-            ExpLineageItem curr = stack.poll();
+            Identifiable curr = stack.poll();
             String lsid = curr.getLSID();
 
             // Gather sample children
@@ -181,7 +196,7 @@ public class ExpLineage
             for (ExpLineage.Edge edge : childEdges)
             {
                 String childLsid = edge.child;
-                ExpLineageItem child = nodes.get(childLsid);
+                Identifiable child = nodes.get(childLsid);
                 if (child instanceof ExpRun)
                 {
                     if (!seen.contains(child))
@@ -213,25 +228,25 @@ public class ExpLineage
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
 
-        Map<String, ExpLineageItem> nodes = processNodes();
+        Map<String, Identifiable> nodes = processNodes();
         Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
         return findNearestParentDatas(seed, nodes, edges);
     }
 
-    private Set<ExpData> findNearestParentDatas(ExpRunItem seed, Map<String, ExpLineageItem> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
+    private Set<ExpData> findNearestParentDatas(ExpRunItem seed, Map<String, Identifiable> nodes, Map<String, Pair<Set<Edge>, Set<Edge>>> edges)
     {
         if (edges.size() == 0)
             return Collections.emptySet();
 
         // walk from start through edges looking for all sample children, stopping at first datas found
         Set<ExpData> datas = new HashSet<>();
-        Queue<ExpLineageItem> stack = new LinkedList<>();
-        Set<ExpLineageItem> seen = new HashSet<>();
+        Queue<Identifiable> stack = new LinkedList<>();
+        Set<Identifiable> seen = new HashSet<>();
         stack.add(seed);
         seen.add(seed);
         while (!stack.isEmpty())
         {
-            ExpLineageItem curr = stack.poll();
+            Identifiable curr = stack.poll();
             String lsid = curr.getLSID();
 
             // Gather sample parents
@@ -239,16 +254,8 @@ public class ExpLineage
             for (ExpLineage.Edge edge : parentEdges)
             {
                 String parentLsid = edge.parent;
-                ExpLineageItem parent = nodes.get(parentLsid);
+                Identifiable parent = nodes.get(parentLsid);
                 if (parent instanceof ExpRun)
-                {
-                    if (!seen.contains(parent))
-                    {
-                        stack.add(parent);
-                        seen.add(parent);
-                    }
-                }
-                else if (parent instanceof ExpMaterial)
                 {
                     if (!seen.contains(parent))
                     {
@@ -260,6 +267,14 @@ public class ExpLineage
                 {
                     datas.add((ExpData)parent);
                 }
+                else // ExpMaterial or generic Identifiable
+                {
+                    if (!seen.contains(parent))
+                    {
+                        stack.add(parent);
+                        seen.add(parent);
+                    }
+                }
             }
         }
 
@@ -268,13 +283,13 @@ public class ExpLineage
 
     public JSONObject toJSON(boolean requestedWithSingleSeed)
     {
-        Map<String, ExpLineageItem> nodeMeta = processNodes();
+        Map<String, Identifiable> nodeMeta = processNodes();
         Map<String, Object> values = new HashMap<>();
         JSONObject nodes = new JSONObject();
 
         if (_edges.isEmpty())
         {
-            for (ExpLineageItem seed : _seeds)
+            for (Identifiable seed : _seeds)
             {
                 nodes.put(seed.getLSID(), nodeToJSON(seed, new JSONArray(), new JSONArray()));
             }
@@ -292,8 +307,8 @@ public class ExpLineage
                 for (Edge edge : node.getValue().second)
                     children.put(edge.toChildJSON());
 
-                ExpLineageItem expObject = nodeMeta.get(node.getKey());
-                nodes.put(node.getKey(), nodeToJSON(expObject, parents, children));
+                Identifiable obj = nodeMeta.get(node.getKey());
+                nodes.put(node.getKey(), nodeToJSON(obj, parents, children));
             }
         }
 
@@ -306,14 +321,14 @@ public class ExpLineage
         }
         else
         {
-            values.put("seeds", _seeds.stream().map(ExpLineageItem::getLSID).collect(toList()));
+            values.put("seeds", _seeds.stream().map(Identifiable::getLSID).collect(toList()));
         }
         values.put("nodes", nodes);
 
         return new JSONObject(values);
     }
 
-    private JSONObject nodeToJSON(ExpLineageItem node, JSONArray parents, JSONArray children)
+    private JSONObject nodeToJSON(Identifiable node, JSONArray parents, JSONArray children)
     {
         JSONObject json = new JSONObject();
         json.put("parents", parents);
@@ -323,12 +338,14 @@ public class ExpLineage
         {
             json.put("name", node.getName());
             json.put("lsid", node.getLSID());
+            json.put("type", node.getLSIDNamespacePrefix());
+
+            // TODO: get rowId and maybe cpasType and schemaName/queryName for assay result row type
 
             if (node instanceof ExpObject)
             {
                 json.put("rowId", ((ExpObject)node).getRowId());
                 json.put("url", ((ExpObject)node).detailsURL());
-                json.put("type", ((ExpObject)node).getLSIDNamespacePrefix());
             }
 
             if (node instanceof ExpMaterial)
