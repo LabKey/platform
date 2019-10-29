@@ -17,6 +17,7 @@ package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -26,7 +27,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -110,6 +110,44 @@ public class LsidManager
         protected ActionURL getDisplayURL(Container c, ExpProtocol protocol, ExpRun run)
         {
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, protocol, run.getRowId());
+        }
+    }
+
+    // This is different from ExpObjectLsidHandler in that it supports generic
+    // OntologyObjects that don't fit into the ExpObject class hierarchy.
+    public static class OntologyObjectLsidHandler implements LsidHandler
+    {
+        @Override
+        public Identifiable getObject(Lsid lsid)
+        {
+            OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+            if (oo == null)
+                return null;
+
+            return new IdentifiableBase(oo);
+        }
+
+        @Override
+        public @Nullable ActionURL getDisplayURL(Lsid lsid)
+        {
+            return null;
+        }
+
+        @Override
+        public Container getContainer(Lsid lsid)
+        {
+            OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+            if (oo == null)
+                return null;
+
+            return oo.getContainer();
+        }
+
+        @Override
+        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
+        {
+            Container c = getContainer(lsid);
+            return c != null && c.hasPermission(user, perm);
         }
     }
 

@@ -1,6 +1,5 @@
 package org.labkey.api.exp.api;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
 
 /**
@@ -9,5 +8,4 @@ import org.labkey.api.exp.Identifiable;
  */
 public interface ExpLineageItem extends Identifiable
 {
-    Container getContainer();
 }
