@@ -6475,36 +6475,6 @@ public class QueryController extends SpringActionController
     }
 
 
-    /*@RequiresPermission(ReadPermission.class)
-    @Marshal(Marshaller.Jackson)
-    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
-    {
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
-            var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
-            QueryService.get().analyzeFolder(start, deps);
-
-            JSONObject ret = new JSONObject();
-            ret.put("success", true);
-            JSONArray array = new JSONArray();
-            ret.put("dependencies", array);
-            for (var from : deps.keySet())
-            {
-                JSONObject elem = new JSONObject();
-                array.put(elem);
-                elem.put("from", from.toJSON());
-                JSONArray tolist = new JSONArray();
-                elem.put("to", tolist);
-                for (var to : deps.get(from))
-                    tolist.put(to.toJSON());
-            }
-            return ret;
-        }
-    }*/
-
-
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction
     {
@@ -6535,12 +6505,6 @@ public class QueryController extends SpringActionController
                     dependants.put(new String[] {from.getKey(), to.getKey()});
             }
             ret.put("graph", dependants);
-
-//            JSONArray dependees = new JSONArray();
-//            for (var to : reverse.keySet())
-//                dependees.put(new JSONObject().put("to", to).put("from", reverse.get(to).toArray()));
-//            ret.put("dependees", dependees);
-
             return ret;
         }
     }
