@@ -27,8 +27,31 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExpObject;
@@ -78,6 +101,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
@@ -98,6 +124,7 @@ public class OntologyManager
     private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
     private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
     private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
+    private static final StringKeyCache<Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -618,7 +645,7 @@ public class OntologyManager
             m.put(value.getPropertyURI(), value);
         }
 
-        m = Collections.unmodifiableMap(m);
+        m = unmodifiableMap(m);
         mapCache.put(objectLSID, m);
         return m;
     }
@@ -1138,6 +1165,7 @@ public class OntologyManager
                     {
                         domainDescByURICache.remove(getURICacheKey(dd));
                         domainDescByIDCache.remove(getIDCacheKey(dd));
+                        domainDescByContainerCache.remove(c.getId());
                         domainPropertiesCache.clear();
                         dd = dd.edit()
                                 .setContainer(project)
@@ -2104,37 +2132,54 @@ public class OntologyManager
         if (includeProjectAndShared && user == null)
             throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
 
-        Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
-        {
-            ret.put(dd.getDomainURI(), dd);
-        }
+        Map<String, DomainDescriptor> dds = getCachedDomainDescriptors(container, user);
 
         if (includeProjectAndShared)
         {
+            dds = new LinkedHashMap<>(dds);
             Container project = container.getProject();
-            if (project != null && project.hasPermission(user, ReadPermission.class))
+            if (project != null)
             {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, project).getArrayList(DomainDescriptor.class))
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(project, user).entrySet())
                 {
-                    if (!ret.containsKey(dd.getDomainURI()))
-                        ret.put(dd.getDomainURI(), dd);
+                    dds.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
 
             if (_sharedContainer.hasPermission(user, ReadPermission.class))
             {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, _sharedContainer).getArrayList(DomainDescriptor.class))
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(_sharedContainer, user).entrySet())
                 {
-                    if (!ret.containsKey(dd.getDomainURI()))
-                        ret.put(dd.getDomainURI(), dd);
+                    dds.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
         }
 
-        return Collections.unmodifiableCollection(ret.values());
+        return unmodifiableCollection(dds.values());
+    }
+
+    @NotNull
+    private static Map<String, DomainDescriptor> getCachedDomainDescriptors(@NotNull Container c, @Nullable User user)
+    {
+        if (user != null && !c.hasPermission(user, ReadPermission.class))
+            return Collections.emptyMap();
+
+        String key = c.getId();
+        Map<String, DomainDescriptor> dds = domainDescByContainerCache.get(key);
+        if (dds != null)
+            return dds;
+
+        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+
+        dds = new LinkedHashMap<>();
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        {
+            dds.putIfAbsent(dd.getDomainURI(), dd);
+        }
+
+        dds = unmodifiableMap(dds);
+        domainDescByContainerCache.put(key, dds);
+        return dds;
     }
 
     public static String getURICacheKey(DomainDescriptor dd)
@@ -2189,7 +2234,7 @@ public class OntologyManager
                 c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
                 _sharedContainer.getProject().getId()
         );
-        result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
+        result = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
         //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
         //Descriptors returned from this method come direct from DB and have correct values.
         List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(result.size());
@@ -2224,7 +2269,7 @@ public class OntologyManager
                 pd.setRequired(propertyURI.getValue().booleanValue());
                 result.add(pd);
             }
-            return Collections.unmodifiableList(result);
+            return unmodifiableList(result);
         }
         return null;
     }
@@ -2401,6 +2446,7 @@ public class OntologyManager
         domainDescByURICache.remove(getURICacheKey(dd));
         domainDescByIDCache.remove(getIDCacheKey(dd));
         domainPropertiesCache.remove(getURICacheKey(dd));
+        domainDescByContainerCache.clear();
         return dd;
     }
 
@@ -2439,6 +2485,7 @@ public class OntologyManager
         propDescCache.clear();
         mapCache.clear();
         objectIdCache.clear();
+        domainDescByContainerCache.clear();
     }
 
 

@@ -152,7 +152,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         sampleHelper.createSampleSet(sampleSetName, null,
                 Map.of("IntCol", FieldDefinition.ColumnType.Integer,
                         "StringCol", FieldDefinition.ColumnType.String,
-                        "DateCol", FieldDefinition.ColumnType.DateTime,
+                        "DateCol", FieldDefinition.ColumnType.DateAndTime,
                         "BoolCol", FieldDefinition.ColumnType.Boolean),
                 TestFileUtils.getSampleData("sampleSet.xlsx"));
     }

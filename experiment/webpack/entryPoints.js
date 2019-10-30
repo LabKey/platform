@@ -7,7 +7,7 @@ module.exports = {
     apps: [{
         name: 'domainDesigner',
         title: 'Domain Designer',
-        permission: 'admin', // TODO this should likely be read and then it is up to the DomainKind permissions check
+        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see PropertyController.EditDomainAction for main usage
         path: './src/client/DomainDesigner'
     }]
 };

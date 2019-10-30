@@ -2,26 +2,18 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.IMultiValuedDisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -33,11 +25,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -282,71 +272,4 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
         }
     }
 
-    /*
-     * This is an attemp at making a DataRegion that can be reused/reexecuted where ONLY the query parameters change
-     */
-    public static class ReexecutableDataregion extends DataRegion
-    {
-        Map<String,Object> parameters = new CaseInsensitiveHashMap<>();
-
-        // close current result set and update query parameters
-        // usually followed immediately by call to getResultSet()
-        void reset(ReexecutableRenderContext ctx, Map<String,Object> currentParameters)
-        {
-            ctx.setRow(Collections.emptyMap());
-            ResultSet rs = ctx.getResults();
-            if (null != rs)
-            {
-                try {if (!rs.isClosed()) rs.close();}catch(SQLException x){/*pass*/}
-                ctx.setResults(null);
-            }
-            parameters.clear();
-            parameters.putAll(super.getQueryParameters());
-            parameters.putAll(currentParameters);
-        }
-
-        @Override
-        public @NotNull Map<String, Object> getQueryParameters()
-        {
-            return parameters;
-        }
-
-        @Override
-        protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
-        {
-            return super.getResultSet(ctx, async);
-        }
-    }
-    public static class ReexecutableRenderContext extends RenderContext
-    {
-        SQLFragment sqlf  = null;
-        ArrayList<ColumnInfo> selectedColumns;
-
-        ReexecutableRenderContext(RenderContext ctx)
-        {
-            super(ctx.getViewContext(), ctx.getErrors());
-        }
-
-        @Override
-        protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
-        {
-            if (null == sqlf)
-            {
-                TableSelector selector = new TableSelector(table, columns, filter, sort)
-                        .setNamedParameters(null)       // leave named parameters in SQLFragment
-                        .setMaxRows(maxRows)
-                        .setOffset(offset)
-                        .setForDisplay(true);
-                var sqlfWithCTE = selector.getSql();
-                // flatten out CTEs
-                sqlf = new SQLFragment(sqlfWithCTE.getSQL(), sqlfWithCTE.getParams());
-                selectedColumns = new ArrayList<>(selector.getSelectedColumns());
-            }
-
-            SQLFragment copy = new SQLFragment(sqlf, true);
-            QueryService.get().bindNamedParameters(copy, parameters);
-            QueryService.get().validateNamedParameters(copy);
-            return new ResultsImpl(new SqlSelector(table.getSchema(), copy).getResultSet(), selectedColumns);
-        }
-    }
 }

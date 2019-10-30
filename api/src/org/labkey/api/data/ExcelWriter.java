@@ -221,18 +221,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _workbook = workbook == null ? docType.createWorkbook() : workbook;
     }
 
-    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelWriter parentWriter)
-    {
-        this(parentWriter._docType, parentWriter._workbook);
-        _wrappingTextFormat = parentWriter.getWrappingTextFormat();
-        _nonWrappingTextFormat = parentWriter.getNonWrappingTextFormat();
-        _boldFormat = parentWriter.getBoldFormat();
-        _formatters = parentWriter._formatters;
-
-        setResults(rs);
-        addDisplayColumns(displayColumns);
-    }
-
     public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
     {
         this(docType);
@@ -251,15 +239,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         this(docType);
         setResultSet(rs, fieldMap);
         addDisplayColumns(displayColumns);
-    }
-
-
-    public ExcelWriter(DbSchema schema, String query) throws SQLException
-    {
-        this(ExcelDocumentType.xls);
-        ResultSet rs = new SqlSelector(schema, query).setMaxRows(_docType.getMaxRows()).getResultSet();
-        setResultSet(rs);
-        createColumns(rs.getMetaData());
     }
 
 
@@ -317,19 +296,29 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setResults(Results rs)
     {
+        // CDSExportQueryView and ExportExcelReport build up multi-sheet workbooks by repeatedly setting Results and rendering
+        // sheets. Need close any previously used ResultSet before overwriting.
+        if (_rs != null)
+        {
+            try
+            {
+                _rs.close();
+            }
+            catch (SQLException ignored) {}
+        }
         _rs = rs;
     }
 
     @Deprecated // Use setResults()
     public void setResultSet(ResultSet rs)
     {
-        _rs = new ResultsImpl(rs);
+        setResults(new ResultsImpl(rs));
     }
 
     @Deprecated // Use setResults()
     public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
-        _rs = new ResultsImpl(rs, fieldMap);
+        setResults(new ResultsImpl(rs, fieldMap));
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *

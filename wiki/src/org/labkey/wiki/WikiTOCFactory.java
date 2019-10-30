@@ -43,6 +43,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
         addLegacyNames("Wiki TOC");
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView v = new WikiTOC(portalCtx, webPart);
