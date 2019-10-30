@@ -148,9 +148,9 @@ public class SampleSetDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowAttachmentProperties()
+    public boolean allowFileLinkProperties()
     {
-        return false;
+        return true;
     }
 
     @Override

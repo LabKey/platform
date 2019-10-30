@@ -188,6 +188,18 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public boolean allowAttachmentProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowFileLinkProperties()
+    {
+        return true;
+    }
+
+    @Override
     public boolean showDefaultValueSettings()
     {
         return true;

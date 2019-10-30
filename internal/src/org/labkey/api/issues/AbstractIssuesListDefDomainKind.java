@@ -154,18 +154,6 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowAttachmentProperties()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean allowFileLinkProperties()
-    {
-        return false;
-    }
-
-    @Override
     public boolean showDefaultValueSettings()
     {
         return true;

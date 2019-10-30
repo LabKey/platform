@@ -131,9 +131,9 @@ public class DataClassDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowFileLinkProperties()
+    public boolean allowAttachmentProperties()
     {
-        return false;
+        return true;
     }
 
     @Nullable
