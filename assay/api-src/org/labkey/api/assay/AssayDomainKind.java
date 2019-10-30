@@ -193,4 +193,10 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         result.add("Modified");
         return result;
     }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
 }
