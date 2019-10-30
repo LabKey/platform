@@ -327,9 +327,10 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getPickLogosView(SSOAuthenticationConfiguration configuration, boolean reshow, BindException errors)
+        public ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(configuration, reshow), errors);
+            SSOAuthenticationConfiguration configuration = null != rowId ? AuthenticationManager.getSSOConfiguration(rowId) : null;
+            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(configuration, reshow, formatInTable), errors);
         }
     }
 
@@ -2545,15 +2546,17 @@ public class LoginController extends SpringActionController
 
     public static class AuthLogoBean
     {
-        public final SSOAuthenticationConfiguration configuration;
+        public final @Nullable SSOAuthenticationConfiguration configuration;
         public final String headerLogo;
         public final String loginPageLogo;
         public final boolean reshow;
+        public final boolean formatInTable;
 
-        private AuthLogoBean(SSOAuthenticationConfiguration configuration, boolean reshow)
+        private AuthLogoBean(@Nullable SSOAuthenticationConfiguration configuration, boolean reshow, boolean formatInTable)
         {
             this.configuration = configuration;
             this.reshow = reshow;
+            this.formatInTable = formatInTable;
             headerLogo = getAuthLogoHtml(AuthLogoType.HEADER);
             loginPageLogo = getAuthLogoHtml(AuthLogoType.LOGIN_PAGE);
         }

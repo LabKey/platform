@@ -7,7 +7,6 @@ import org.labkey.api.action.ReturnUrlForm;
 public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfiguration> extends ReturnUrlForm
 {
     private Integer _configuration;
-    private AC _authenticationConfiguration;
     private String _description;
     private boolean _enabled = true;
 
@@ -31,19 +30,11 @@ public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfi
         _configuration = configuration;
     }
 
-    public @Nullable AC getAuthenticationConfiguration()
-    {
-        return _authenticationConfiguration;
-    }
-
     public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
     {
-        _authenticationConfiguration = authenticationConfiguration;
-        _description = _authenticationConfiguration.getDescription();
-        _enabled = _authenticationConfiguration.isEnabled();
+        _description = authenticationConfiguration.getDescription();
+        _enabled = authenticationConfiguration.isEnabled();
     }
-
-    public abstract String getProvider();
 
     public String getDescription()
     {

@@ -25,7 +25,7 @@
     <labkey:input type="checkbox" name="enabled" label="Enabled" checked="<%=form.isEnabled()%>" />
     <input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>enabled">
     <%
-        ModelAndView view = urlProvider(LoginUrls.class).getPickLogosView(form.getAuthenticationConfiguration(), false, null);
+        ModelAndView view = urlProvider(LoginUrls.class).getPickLogosView(form.getRowId(), false, false, null);
         include(view, out);
     %>
     <br/>

@@ -35,12 +35,6 @@ public class LdapConfigureForm extends AuthenticationConfigureForm<LdapConfigura
         setDescription("LDAP Configuration");
     }
 
-    @Override
-    public String getProvider()
-    {
-        return "LDAP";
-    }
-
     public String getServers()
     {
         return servers;

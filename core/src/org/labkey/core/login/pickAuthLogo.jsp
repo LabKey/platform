@@ -22,9 +22,22 @@
 <%
     HttpView<AuthLogoBean> me = (HttpView<AuthLogoBean>) HttpView.currentView();
     AuthLogoBean bean = me.getModelBean();
+
+    if (bean.formatInTable)
+    {
+%>
+<tr><td class="labkey-form-label-nowrap">Page header logo</td><td><%=text(bean.headerLogo)%></td></tr>
+<tr><td class="labkey-form-label-nowrap">Login page logo</td><td><%=text(bean.loginPageLogo)%></td></tr>
+<%
+    }
+    else
+    {
 %>
 <div class="form-group"><label class="control-label col-sm-3 col-lg-2">Page header logo</label><div class="col-sm-9 col-lg-10"><%=text(bean.headerLogo)%></div></div>
 <div class="form-group"><label class="control-label col-sm-3 col-lg-2">Login page logo</label><div class="col-sm-9 col-lg-10"><%=text(bean.loginPageLogo)%></div></div>
+<%
+    }
+%>
 <script type="text/javascript">
     function deleteLogo(name)
     {
@@ -32,12 +45,6 @@
         var d2 = document.getElementById(name + 'd2');
         d1.innerHTML = "";
         d2.innerHTML = "";
-        // var tr = document.getElementById(name + 'row');
-        // tr.removeChild(td1);
-        // tr.removeChild(td2);
-
-        // var newTd = document.createElement('td');
-        // newTd.setAttribute('colspan', '2');
 
         var fb = document.createElement('input');
         fb.setAttribute('name', name);
@@ -51,7 +58,5 @@
 
         d1.appendChild(fb);
         d1.appendChild(hidden);
-
-//        tr.appendChild(newTd);
     }
 </script>
