@@ -248,6 +248,7 @@ public class DbScope
 
     public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
     {
+        @Override
         @NotNull
         public String getKind()
         {
@@ -598,7 +599,21 @@ public class DbScope
                         transactions.add(result);
                         stackDepth = transactions.size();
                     }
-                    serverLocks.forEach(Lock::lock);
+                    boolean serverLockSuccess = false;
+                    try
+                    {
+                        serverLocks.forEach(Lock::lock);
+                        serverLockSuccess = true;
+                    }
+                    finally
+                    {
+                        if (!serverLockSuccess)
+                        {
+                            // We're throwing an exception so the caller will never get the transaction object to
+                            // be able to close it, so do it now
+                            result.close();
+                        }
+                    }
                     if (stackDepth > 2)
                         LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
@@ -2612,6 +2627,86 @@ public class DbScope
 
             assertTrue( bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException );
         }
+
+
+        @Test
+        public void testLockException()
+        {
+            Lock failServerLock = new ServerLock()
+            {
+                @Override public void lock() { throw new DeadlockLoserDataAccessException("test",null); }
+            };
+            Lock failLock = new Lock()
+            {
+                @Override public void lock() { throw new NullPointerException(); }
+                @Override public void lockInterruptibly() throws InterruptedException { }
+                @Override public boolean tryLock() { return false; }
+                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { return false; }
+                @Override public void unlock() { }
+                @NotNull @Override public Condition newCondition() { return null; }
+            };
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
+            {
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof DeadlockLoserDataAccessException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
+                {
+                    fail("shouldn't get here");
+                    txFg.commit();
+                }
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof DeadlockLoserDataAccessException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            // test _non_ ServerLock failures
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+            {
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof NullPointerException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+                {
+                    fail("shouldn't get here");
+                    txFg.commit();
+                }
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof NullPointerException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+        }
+
 
         @Test
         public void testTryWithResources() throws SQLException

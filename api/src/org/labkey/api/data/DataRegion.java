@@ -2188,7 +2188,7 @@ public class DataRegion extends DisplayElement
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
-            String msg = "This will edit " + StringUtilsLabKey.pluralize(ctx.getForm().getSelectedRows().length, "row");
+            String msg = "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row");
             out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
 

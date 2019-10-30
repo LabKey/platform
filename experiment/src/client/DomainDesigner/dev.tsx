@@ -15,8 +15,6 @@
  */
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import $ from 'jquery'
-
 import { AppContainer } from 'react-hot-loader'
 
 import { App } from './DomainDesigner'
@@ -32,9 +30,8 @@ const render = () => {
 
 declare const module: any;
 
-$(() => {
-    render();
-    if (module.hot) {
-        module.hot.accept();
-    }
-});
+if (module.hot) {
+    module.hot.accept();
+}
+
+render();

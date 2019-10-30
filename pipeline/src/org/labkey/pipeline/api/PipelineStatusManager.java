@@ -73,6 +73,7 @@ public class PipelineStatusManager
 {
     public static class PipelineStatusTransactionKind implements DbScope.TransactionKind
     {
+        @Override
         @NotNull
         public String getKind()
         {

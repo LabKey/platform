@@ -136,6 +136,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         addColumn(Column.LastIndexed);
 
         addFileColumns(false);
+
         setDefaultColumns();
         setTitleColumn("Name");
 
@@ -149,12 +150,14 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         ActionURL deleteUrl = ExperimentController.ExperimentUrlsImpl.get().getDeleteDatasURL(getContainer(), null);
         setDeleteURL(new DetailsURL(deleteUrl));
 
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
-
     }
 
     public List<String> addFileColumns(boolean isFilesTable)
@@ -544,6 +547,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
             case Outputs:
                 return createLineageColumn(this, alias, true);
+
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);

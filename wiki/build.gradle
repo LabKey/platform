@@ -1,3 +1,10 @@
+import org.labkey.gradle.util.BuildUtils
+
+// Announcements module manages the "comm" schema, which holds the wiki tables
+dependencies {
+   BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "announcements"), depProjectConfig: "published", depExtenstion: "module")
+}
+
 // TODO move resources files into resources directory to avoid this overlap
 sourceSets {
    main {
