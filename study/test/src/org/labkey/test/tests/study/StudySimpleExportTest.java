@@ -995,7 +995,7 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         DomainFormPanel domainFormPanel = new DomainFormPanel.DomainFormPanelFinder(getDriver()).waitFor();
         domainFormPanel.addField(new FieldDefinition(fieldName, type));
-        clickButton("Save");
+        clickButton("Finish");
 
         // update the default view to contain the custom column
         _customizeViewsHelper.openCustomizeViewPanel();
@@ -1154,7 +1154,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         domainFormPanel.addField("cust_dateTime").setType(FieldDefinition.ColumnType.DateAndTime).setLabel("cust_dateTime");
         domainFormPanel.addField("cust_double").setType(FieldDefinition.ColumnType.Decimal).setLabel("cust_double");
         domainFormPanel.addField("cust_multiline").setType(FieldDefinition.ColumnType.MultiLine).setLabel("cust_multiline");
-        clickButton("Save");
+        clickButton("Finish");
 
         // add data and export
         Map studyProperties = toMap(new Object[][]{

@@ -205,7 +205,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     onClick={() => this.submitHandler(true)}
                     disabled={submitting}
                 >
-                    Save
+                    Finish
                 </Button>
             </WizardNavButtons>
         )
