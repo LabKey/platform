@@ -41,7 +41,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private String container;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
-    private boolean allowFlagProperties = false;
+    private boolean allowFlagProperties;
+    private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
@@ -81,6 +82,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
         this.allowFlagProperties = src.allowFlagProperties;
+        this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
@@ -376,6 +378,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         {
             this.phiNotAllowedFieldNames.add(fieldName.toLowerCase());
         }
+    }
+
+    public boolean isShowDefaultValueSettings()
+    {
+        return showDefaultValueSettings;
+    }
+
+    public void setShowDefaultValueSettings(boolean showDefaultValueSettings)
+    {
+        this.showDefaultValueSettings = showDefaultValueSettings;
     }
 
     public DefaultValueType getDefaultDefaultValueType()
