@@ -989,13 +989,11 @@ public class StudySimpleExportTest extends StudyBaseTest
 
     private void addCustomField(String tableName, String fieldName, FieldDefinition.ColumnType type)
     {
-        enableUxDomainDesigner();
         goToSchemaBrowser();
         selectQuery("study", tableName);
         waitAndClickAndWait(Locator.linkWithText("Edit Definition"));
-        disableUxDomainDesigner();
 
-        DomainFormPanel domainFormPanel = new DomainFormPanel.DomainFormPanelFinder(getDriver()).withTitle(tableName).find();;
+        DomainFormPanel domainFormPanel = new DomainFormPanel.DomainFormPanelFinder(getDriver()).waitFor();
         domainFormPanel.addField(new FieldDefinition(fieldName, type));
         clickButton("Save");
 
@@ -1150,9 +1148,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
 
         log("Study Properties: adding custom fields");
-        enableUxDomainDesigner();
         DomainFormPanel domainFormPanel = goToManageStudy().clickEditAdditionalProperties();
-        disableUxDomainDesigner();
         domainFormPanel.addField("cust_string").setType(FieldDefinition.ColumnType.String).setLabel("cust_string");
         domainFormPanel.addField("cust_integer").setType(FieldDefinition.ColumnType.Integer).setLabel("cust_integer");
         domainFormPanel.addField("cust_dateTime").setType(FieldDefinition.ColumnType.DateAndTime).setLabel("cust_dateTime");

@@ -6371,6 +6371,10 @@ public class ExperimentController extends SpringActionController
         @Override
         public ActionURL getDomainEditorURL(Container container, String domainURI, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings)
         {
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (domain != null)
+                return getDomainEditorURL(container, domain, allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings);
+
             ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
             url.addParameter("domainURI", domainURI);
             applyDomainEditorUrlParams(allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings, url);
@@ -6382,10 +6386,7 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDomainEditorURL(Container container, Domain domain, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings)
         {
             ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
-            if (ExperimentService.get().useUXDomainDesigner())
-                url.addParameter("domainId", domain.getTypeId());
-            else
-                url.addParameter("domainURI", domain.getTypeURI());
+            url.addParameter("domainId", domain.getTypeId());
             applyDomainEditorUrlParams(allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings, url);
             return url;
         }

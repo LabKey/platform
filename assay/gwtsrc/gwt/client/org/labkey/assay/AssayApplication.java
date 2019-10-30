@@ -44,7 +44,6 @@ public class AssayApplication implements EntryPoint
 
         static
         {
-            MODULES.add(new AssayDesigner());
             MODULES.add(new AssayImporter());
             MODULES.add(new TemplateDesigner());
         }
@@ -68,26 +67,6 @@ public class AssayApplication implements EntryPoint
         public static Set<GWTModule> values()
         {
             return MODULES;
-        }
-    }
-
-    public static class AssayDesigner extends GWTModule
-    {
-        public AssayDesigner()
-        {
-            super("gwt.client.org.labkey.assay.designer.client.AssayDesigner");
-        }
-
-        @Override
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.assay.designer.client.AssayDesigner().onModuleLoad();
-        }
-
-        @Override
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.assay.designer.client.AssayDesigner();
         }
     }
     
@@ -152,11 +131,7 @@ public class AssayApplication implements EntryPoint
         
         final String moduleName = PropertyUtil.getServerProperty("GWTModule");
 
-        if ("AssayDesigner".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new AssayDesigner());
-        }
-        else if ("AssayImporter".equalsIgnoreCase(moduleName))
+        if ("AssayImporter".equalsIgnoreCase(moduleName))
         {
             GWT.runAsync(new AssayImporter());
         }
