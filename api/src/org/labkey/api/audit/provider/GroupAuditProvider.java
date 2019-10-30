@@ -163,6 +163,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         List<FieldKey> columns = new ArrayList<>();
 
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_PROJECT_ID));
@@ -180,6 +181,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         List<FieldKey> columns = new ArrayList<>();
 
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
@@ -199,6 +201,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             settings.setBaseFilter(filter);
             settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
             settings.setFieldKeys(columns);
+            settings.setAllowCustomizeView(false);
 
             if (filterType != null)
                 settings.setContainerFilterName(filterType.name());
@@ -326,6 +329,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             _userSchema = userSchema;
         }
 
+        @Override
         public TableInfo getLookupTableInfo()
         {
             TableInfo tinfoUsers = CoreSchema.getInstance().getTableInfoPrincipals();
@@ -347,11 +351,13 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             _groupId = groupId;
         }
 
+        @Override
         public String getName()
         {
             return "group";
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Integer id = (Integer)getBoundColumn().getValue(ctx);
@@ -388,6 +394,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             out.write("&nbsp;");
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             set.add(_groupId);
