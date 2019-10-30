@@ -285,14 +285,6 @@ public class AuthenticationManager
         return _allProviders;
     }
 
-    /** Return all valid, registered providers */
-    static List<AuthenticationProvider> getValidProviders()
-    {
-        return _allProviders.stream()
-            .filter(p->!AuthenticationManager.isAcceptOnlyFicamProviders() || p.isFicamApproved())
-            .collect(Collectors.toList());
-    }
-
     public static boolean hasSSOAuthenticationConfiguration()
     {
         return !AuthenticationConfigurationCache.getActive(SSOAuthenticationConfiguration.class).isEmpty();
@@ -321,20 +313,28 @@ public class AuthenticationManager
         return html.getHtmlString();
     }
 
+    public static class AuthenticationConfigurationForm
+    {
+        private int _configuration;
 
-    public static abstract class BaseSsoValidateAction <FORM> extends SimpleViewAction<FORM>
+        public int getConfiguration()
+        {
+            return _configuration;
+        }
+
+        @SuppressWarnings("unused")
+        public void setConfiguration(int configuration)
+        {
+            _configuration = configuration;
+        }
+    }
+
+    public static abstract class BaseSsoValidateAction<FORM extends AuthenticationConfigurationForm> extends SimpleViewAction<FORM>
     {
         @Override
         public ModelAndView getView(FORM form, BindException errors) throws Exception
         {
-            // Must specify an active SSO provider
-            SSOAuthenticationProvider provider = getSSOProvider(getProviderName());
-
-            // Not valid, not SSO, or not active... bail out
-            if (null == provider)
-                throw new NotFoundException("Authentication provider is not valid");
-
-            AuthenticationResponse response = validateAuthentication(form, provider, errors);
+            AuthenticationResponse response = validateAuthentication(form, errors);
 
             // Show validation error(s), if any
             if (errors.hasErrors() || !response.isAuthenticated())
@@ -377,8 +377,7 @@ public class AuthenticationManager
             return "validateAuthentication";
         }
 
-        public abstract @NotNull String getProviderName();
-        public abstract @NotNull AuthenticationResponse validateAuthentication(FORM form, SSOAuthenticationProvider provider, BindException errors) throws Exception;
+        public abstract @NotNull AuthenticationResponse validateAuthentication(FORM form, BindException errors) throws Exception;
 
         @Override
         public final NavTree appendNavTrail(NavTree root)

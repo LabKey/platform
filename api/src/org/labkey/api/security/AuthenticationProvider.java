@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -88,11 +89,20 @@ public interface AuthenticationProvider
         return Collections.emptyList();
     }
 
-    interface PrimaryAuthenticationProvider extends AuthenticationProvider
+    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration> extends AuthenticationProvider
     {
-        default List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+        // Providers that need to do special batch-wide processing can override this method
+        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
         {
-            return Collections.emptyList();
+            return configurations.stream()
+                .map(this::getAuthenticationConfiguration)
+                .collect(Collectors.toList());
+        }
+
+        // Most providers need to override this method to translate a single ConfigurationSettings into an AuthenticationConfiguration
+        default AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+        {
+            throw new IllegalStateException("Shouldn't invoke this method for " + getName());
         }
 
         default void logout(HttpServletRequest request)
@@ -100,8 +110,15 @@ public interface AuthenticationProvider
         }
     }
 
-    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider<AC>
     {
+        // This override allows LdapAuthenticationProvider to invoke the default implementation in PrimaryAuthenticationProvider
+        @Override
+        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+        {
+            return PrimaryAuthenticationProvider.super.getAuthenticationConfigurations(configurations);
+        }
+
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
     }

@@ -1,6 +1,8 @@
 package org.labkey.api.security;
 
+import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
+import org.labkey.api.data.AES;
 
 import java.util.Map;
 
@@ -16,7 +18,7 @@ public class ConfigurationSettings
         String propertiesJson = (String)settings.get("Properties");
         _properties = null != propertiesJson ? new JSONObject(propertiesJson) : new JSONObject();
         String encryptedPropertiesJson = (String)settings.get("EncryptedProperties");
-        _encryptedProperties = null != encryptedPropertiesJson ? new JSONObject(encryptedPropertiesJson) : new JSONObject();
+        _encryptedProperties = null != encryptedPropertiesJson ? new JSONObject(AES.get().decrypt(Base64.decodeBase64(encryptedPropertiesJson))) : new JSONObject();
     }
 
     public Map<String, Object> getStandardSettings()

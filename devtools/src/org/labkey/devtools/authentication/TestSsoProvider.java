@@ -34,14 +34,12 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
-    public List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+    public AuthenticationConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
-        return configurations.stream()
-            .map(cs->new TestSsoConfiguration(this, cs.getStandardSettings()))
-            .collect(Collectors.toList());
+        return new TestSsoConfiguration(this, cs.getStandardSettings());
     }
 
-    //    @Override
+//    @Override
 //    public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
 //    {
 //        String key = SET_KEY; // TODO: TestSSOConfigurationProperties?

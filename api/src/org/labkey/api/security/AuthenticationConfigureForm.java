@@ -1,5 +1,6 @@
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ReturnUrlForm;
 
@@ -35,15 +36,11 @@ public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfi
         return _authenticationConfiguration;
     }
 
-    public void setAuthenticationConfiguration(AC authenticationConfiguration)
+    public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
     {
         _authenticationConfiguration = authenticationConfiguration;
-
-        if (null != _authenticationConfiguration)
-        {
-            _description = _authenticationConfiguration.getDescription();
-            _enabled = _authenticationConfiguration.isEnabled();
-        }
+        _description = _authenticationConfiguration.getDescription();
+        _enabled = _authenticationConfiguration.isEnabled();
     }
 
     public abstract String getProvider();

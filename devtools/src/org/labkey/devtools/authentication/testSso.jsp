@@ -15,11 +15,18 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.security.AuthenticationManager.AuthenticationConfigurationForm" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.devtools.authentication.TestSsoController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
+<%
+    JspView<AuthenticationConfigurationForm> me = (JspView<AuthenticationConfigurationForm>) HttpView.currentView();
+    AuthenticationConfigurationForm form = me.getModelBean();
+%>
 <labkey:form action="<%=h(buildURL(TestSsoController.ValidateAction.class))%>" method="post" layout="horizontal">
+    <input type="hidden" name="configuration" value="<%=h(form.getConfiguration())%>">
     <labkey:input type="text" name="email" value="" size="50"
                   label="SSO Test Authentication"
                   contextContent="Type an email address below to \"authenticate\" as that user."

@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.ldap.LdapAuthenticationManager;
-import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -31,7 +30,6 @@ import org.labkey.api.view.ActionURL;
 import javax.naming.NamingException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import static org.labkey.api.ldap.LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY;
@@ -46,25 +44,22 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
 
     @Override
-    public List<AuthenticationConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+    public List<LdapConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
     {
-        List<AuthenticationConfiguration> list = new LinkedList<>();
+        List<LdapConfiguration> list = LoginFormAuthenticationProvider.super.getAuthenticationConfigurations(configurations);
 
-        for (ConfigurationSettings cs : configurations)
-        {
-            LdapConfiguration lc = new LdapConfiguration(this, cs.getStandardSettings(), cs.getProperties());
-
-            // Hack for now -- special case the first LDAP configuration
-            if (list.isEmpty())
-            {
-                lc.setAllowLdapSearch(true);  // TODO: move LDAP search settings into normal configuration
-                AuthenticationManager.setLdapDomain(lc.getDomain()); // TODO: AuthenticationConfigurationCollections should collect all mapped domains
-            }
-
-            list.add(lc);
-        }
+        list.stream().findFirst().ifPresent(lc->{
+            lc.setAllowLdapSearch(true);  // TODO: move LDAP search settings into normal configuration
+            AuthenticationManager.setLdapDomain(lc.getDomain()); // TODO: AuthenticationConfigurationCollections should collect all mapped domains
+        });
 
         return list;
+    }
+
+    @Override
+    public LdapConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+    {
+        return new LdapConfiguration(this, cs.getStandardSettings(), cs.getProperties());
     }
 
 //    @Override

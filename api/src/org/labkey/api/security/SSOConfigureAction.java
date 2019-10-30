@@ -1,5 +1,6 @@
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -23,7 +24,11 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
     public boolean handlePost(F form, BindException errors)
     {
         super.handlePost(form, errors);
+        return handleLogos(form, errors);  // Always reshow the page so user can view updates. After post, second button will change to "Done".
+    }
 
+    protected boolean handleLogos(F form, BindException errors)
+    {
         SSOAuthenticationConfiguration configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
         Map<String, MultipartFile> fileMap = getFileMap();
         boolean changedLogos = deleteLogos(form, configuration);
@@ -48,7 +53,7 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
 
-        return true;  // Always reshow the page so user can view updates. After post, second button will change to "Done".
+        return true;
     }
 
     // Returns true if a new logo is saved
@@ -91,14 +96,11 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
         private String[] _deletedLogos;
 
         @Override
-        public void setAuthenticationConfiguration(AC authenticationConfiguration)
+        public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
         {
             super.setAuthenticationConfiguration(authenticationConfiguration);
 
-            if (null != authenticationConfiguration)
-            {
-                _autoRedirect = authenticationConfiguration.isAutoRedirect();
-            }
+            _autoRedirect = authenticationConfiguration.isAutoRedirect();
         }
 
         public boolean isAutoRedirect()

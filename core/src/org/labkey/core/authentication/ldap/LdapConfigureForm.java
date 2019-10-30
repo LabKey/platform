@@ -15,6 +15,7 @@
  */
 package org.labkey.core.authentication.ldap;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.security.AuthenticationConfigureForm;
 
@@ -95,7 +96,7 @@ public class LdapConfigureForm extends AuthenticationConfigureForm<LdapConfigura
     }
 
     @Override
-    public void setAuthenticationConfiguration(LdapConfiguration authenticationConfiguration)
+    public void setAuthenticationConfiguration(@NotNull LdapConfiguration authenticationConfiguration)
     {
         super.setAuthenticationConfiguration(authenticationConfiguration);
         servers = String.join(";", authenticationConfiguration.getServers());

@@ -22,9 +22,10 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationConfigurationCache;
+import org.labkey.api.security.AuthenticationManager.AuthenticationConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.SSOConfigureAction;
@@ -34,6 +35,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -53,13 +55,13 @@ public class TestSsoController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class TestSsoAction extends SimpleViewAction
+    public class TestSsoAction extends SimpleViewAction<AuthenticationConfigurationForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors)
+        public ModelAndView getView(AuthenticationConfigurationForm form, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JspView<>("/org/labkey/devtools/authentication/testSso.jsp", null, errors);
+            return new JspView<>("/org/labkey/devtools/authentication/testSso.jsp", form, errors);
         }
 
         @Override
@@ -69,7 +71,7 @@ public class TestSsoController extends SpringActionController
         }
     }
 
-    public static class TestSsoForm
+    public static class TestSsoForm extends AuthenticationConfigurationForm
     {
         private String _email;
 
@@ -88,18 +90,15 @@ public class TestSsoController extends SpringActionController
     @RequiresNoPermission
     public class ValidateAction extends BaseSsoValidateAction<TestSsoForm>
     {
-        @NotNull
         @Override
-        public String getProviderName()
+        public @NotNull AuthenticationResponse validateAuthentication(TestSsoForm form, BindException errors) throws Exception
         {
-            return TestSsoProvider.NAME;
-        }
+            TestSsoConfiguration configuration = AuthenticationConfigurationCache.getActiveConfiguration(TestSsoConfiguration.class, form.getConfiguration());
 
-        @NotNull
-        @Override
-        public AuthenticationResponse validateAuthentication(TestSsoForm form, SSOAuthenticationProvider provider, BindException errors) throws Exception
-        {
-            return AuthenticationResponse.createSuccessResponse(provider, new ValidEmail(form.getEmail()));
+            if (null == configuration)
+                throw new NotFoundException("Invalid TestSso configuration");
+
+            return AuthenticationResponse.createSuccessResponse(configuration.getAuthenticationProvider(), new ValidEmail(form.getEmail()));
         }
     }
 
