@@ -234,7 +234,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm
-                        headerTitle={'Field Properties'}
+                        headerTitle={'Fields'}
                         domain={domain}
                         onChange={this.onChangeHandler}
                         showHeaderFieldCount={false}
