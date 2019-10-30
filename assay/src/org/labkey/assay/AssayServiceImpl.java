@@ -145,10 +145,10 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
-            gwtDomains.add(gwtDomain);
             gwtDomain.setProvisioned(domain.isProvisioned());
-            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
+            gwtDomains.add(gwtDomain);
 
+            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
             List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
             Set<String> mandatoryPropertyDescriptors = new HashSet<>();
