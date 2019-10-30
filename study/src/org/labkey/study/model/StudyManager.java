@@ -3668,7 +3668,7 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared, @Nullable Activity activity)
+    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared, boolean allowDomainUpdates, @Nullable Activity activity)
     {
         if (errors.hasErrors())
             return false;
@@ -3748,19 +3748,22 @@ public class StudyManager
                 ReportPropsManager.get().importProperties(def.getEntityId(), def.getDefinitionContainer(), user, d.tags);
         }
 
-        // now that we actually have datasets, create/update the domains
-        Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
-        Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
+        // optional param to control whether field additions or deletions are permitted
+        if (allowDomainUpdates)
+        {
+            // now that we actually have datasets, create/update the domains
+            Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
+            Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
 
-        buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
+            buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
 
-        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+            dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
 
-        if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap))
-            return false;
+            if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap))
+                return false;
 
-        addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
-
+            addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+        }
         return true;
     }
 
@@ -4901,6 +4904,7 @@ public class StudyManager
         {
             NORMAL
             {
+                @Override
                 public void configureDataset(DatasetDefinition dd)
                {
                    dd.setKeyPropertyName("Measure");
@@ -4908,6 +4912,7 @@ public class StudyManager
             },
             DEMOGRAPHIC
             {
+                @Override
                 public void configureDataset(DatasetDefinition dd)
                {
                    dd.setDemographicData(true);
@@ -4915,6 +4920,7 @@ public class StudyManager
             },
             OPTIONAL_GUID
             {
+                @Override
                 public void configureDataset(DatasetDefinition dd)
                 {
                     dd.setKeyPropertyName("GUID");
