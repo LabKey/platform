@@ -359,7 +359,21 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         {
             if (!rowStripped.containsKey(entry.getKey()))
             {
-               ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+                ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+
+               if (null == col)
+               {
+                   for (ColumnInfo columnInfo: getQueryTable().getColumns())
+                   {
+                       ColumnInfo displayColumn = columnInfo.getDisplayField();
+
+                       if (displayColumn != null && displayColumn.getLabel().equalsIgnoreCase(entry.getKey()))
+                       {
+                           col = columnInfo;
+                       }
+                   }
+               }
+
                if (null != col)
                {
                    final String name = col.getName();

@@ -499,7 +499,6 @@ public class DomainImpl implements Domain
             {
                 // consider: optimistic concurrency check here?
                 Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
-                OntologyManager.clearDomainDescriptorCaches();
                 _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
                 // CONSIDER put back if we want automatic provisioning for several DomainKinds
                 // StorageProvisioner.create(this);
@@ -735,6 +734,7 @@ public class DomainImpl implements Domain
             {
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
+            transaction.addCommitTask(OntologyManager::clearDomainDescriptorCaches, DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
             transaction.commit();
         }
     }
