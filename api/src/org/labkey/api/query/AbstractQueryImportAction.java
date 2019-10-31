@@ -91,6 +91,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String importHelpTopic = "dataPrep";
         public String importHelpDisplayText = "help";
         public String typeName = "rows";    // e.g. rows, samples, mice
+        public boolean acceptZeroResults;   // 0 changes will show the update message/redirect, instead of an error
     }
 
     protected ImportViewBean _importViewBean = new ImportViewBean();
@@ -167,6 +168,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _importViewBean.typeName = name;
     }
 
+    public void setAcceptZeroResults(boolean acceptZeroResults)
+    {
+        _importViewBean.acceptZeroResults = acceptZeroResults;
+    }
 
     @Deprecated
     public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)

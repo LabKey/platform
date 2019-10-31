@@ -200,7 +200,20 @@
                 }
                 else if("rowCount" in action.result && action.result.rowCount <= 0)
                 {
+                    <%
+                    if (bean.acceptZeroResults) {%>
+                    if (rowCount == 0)
+                        showSuccessMessage("Upload successful, but 0 updates occurred");
+                    else {
+                        showError();
+                    }
+                    <%
+                    } else {
+                    %>
                     showError();
+                    <%
+                    }
+                    %>
                 }
                 else
                     window.location = returnUrl;
