@@ -129,7 +129,7 @@ public class DataIteratorUtil
         return targetAliasesMap;
     }
 
-    enum MatchType {propertyuri, name, alias, jdbcname, tsvQueryColumnName}
+    enum MatchType {propertyuri, name, alias, jdbcname, tsvColumn}
 
     protected static Map<String,Pair<ColumnInfo,MatchType>> _createTableMap(TableInfo target, boolean useImportAliases)
     {
@@ -179,7 +179,7 @@ public class DataIteratorUtil
             // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
             String tsvQueryColumnName = FieldKey.fromString(name).toDisplayString();
             if (!targetAliasesMap.containsKey(tsvQueryColumnName))
-                targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvQueryColumnName));
+                targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
         }
         return targetAliasesMap;
     }

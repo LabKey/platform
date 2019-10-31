@@ -394,7 +394,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                    }
                    else
                    {
-                       if (colFrequency.get(col).second == entry.getValue())
+                       if (!colFrequency.get(col).second.equals(entry.getValue()))
                        {
                            throw new ValidationException("Property key - " + colFrequency.get(col).first + " and " + entry.getKey() + " matched for the same column.");
                        }
