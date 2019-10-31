@@ -65,7 +65,7 @@ public class VocabularyDomainKind extends AbstractDomainKind
         if (!containerUser.getContainer().isContainerFor(ContainerType.DataType.domainDefinitions))
             return null;
 
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override

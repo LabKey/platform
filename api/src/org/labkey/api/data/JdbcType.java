@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.util.DateUtil;
 
 import java.math.BigDecimal;
@@ -456,6 +457,12 @@ public enum JdbcType
 
     public Object convert(Object o) throws ConversionException
     {
+        // Unwrap first
+        if (o instanceof MvFieldWrapper)
+        {
+            o = ((MvFieldWrapper) o).getValue();
+        }
+
         if (null == o)
             return null;
 
