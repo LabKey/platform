@@ -21,9 +21,7 @@ import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm;
 
 /**
  * Created by adam on 6/5/2016.
@@ -38,19 +36,6 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     {
         return new TestSsoConfiguration(this, cs.getStandardSettings());
     }
-
-//    @Override
-//    public AuthenticationConfiguration getAuthenticationConfiguration(boolean active)
-//    {
-//        String key = SET_KEY; // TODO: TestSSOConfigurationProperties?
-//        Map<String, String> m = PropertyManager.getProperties(key);
-//        Map<String, String> map = new HashMap<>(m);
-//        map.put("Provider", NAME);
-//        map.put("Enabled", Boolean.toString(active));
-//        map.put("Name", NAME);
-//
-//        return new TestSsoConfiguration(key, this, map);
-//    }
 
     @Nullable
     @Override
@@ -77,5 +62,11 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     public String getDescription()
     {
         return "A trivial, insecure SSO authentication provider (for test purposes only)";
+    }
+
+    @Override
+    public @Nullable TestSsoConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
+    {
+        return active || hasLogos ? new TestSsoConfigureForm() : null;
     }
 }

@@ -65,17 +65,22 @@ public abstract class AuthenticationConfigureAction<F extends AuthenticationConf
     @Override
     public boolean handlePost(F form, BindException errors)
     {
+        saveForm(form, getUser());
+        return true;
+    }
+
+    // TODO: Fold this back into handlePost() once we delete CoreUpgradeCode.migrateAuthenticationConfigurations()
+    public static void saveForm(AuthenticationConfigureForm form, @Nullable User user)
+    {
         if (null == form.getRowId())
         {
-            Table.insert(getUser(), CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
+            Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
         }
         else
         {
-            Table.update(getUser(), CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
+            Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
         }
 
         AuthenticationConfigurationCache.clear();
-
-        return true;
     }
 }

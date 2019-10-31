@@ -18,9 +18,18 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
+import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -28,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -108,6 +118,8 @@ public interface AuthenticationProvider
         default void logout(HttpServletRequest request)
         {
         }
+
+        void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
     interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider<AC>
@@ -121,10 +133,71 @@ public interface AuthenticationProvider
 
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+
+        @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active);
+
+        @Override
+        default void migrateOldConfiguration(boolean active, User user) throws Throwable
+        {
+            AuthenticationConfigureForm form = getFormFromOldConfiguration(active);
+
+            if (null != form)
+            {
+                form.setEnabled(active);
+                AuthenticationConfigureAction.saveForm(form, user);
+            }
+        }
     }
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
     {
+        // TODO: remove this default impl
+        default @Nullable SSOConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
+        {
+            return null;
+        }
+
+        @Override
+        default void migrateOldConfiguration(boolean active, User user) throws Throwable
+        {
+            AttachmentService svc = AttachmentService.get();
+            AttachmentParent oldParent = AuthenticationLogoAttachmentParent.get();
+
+            List<Attachment> logos = new LinkedList<>();
+
+            for (AuthLogoType alt : AuthLogoType.values())
+            {
+                Attachment a = svc.getAttachment(oldParent, alt.getOldPrefix() + getName());
+
+                if (null != a)
+                {
+//                    a.setName(alt.getFileName());
+                    logos.add(a);
+
+                }
+            }
+
+            SSOConfigureForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
+
+            if (null != form)
+            {
+                form.setEnabled(active);
+                AuthenticationConfigureAction.saveForm(form, user);
+
+                if (!logos.isEmpty())
+                {
+                    SSOAuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
+
+                    // TODO: Logo copying needs to be fixed
+                    List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
+                    svc.addAttachments(configuration, attachmentFiles, user);
+                    //svc.renameAttachment();
+
+                    AttachmentCache.clearAuthLogoCache();
+                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+                }
+            }
+        }
     }
 
     interface RequestAuthenticationProvider extends PrimaryAuthenticationProvider

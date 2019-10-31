@@ -143,6 +143,11 @@ public class AuthenticationManager
         {
             return _height;
         }
+
+        public String getOldPrefix()
+        {
+            return _fileName + "_";
+        }
     }
 
     public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
@@ -600,7 +605,7 @@ public class AuthenticationManager
     }
 
     // Provider names stored in properties; they're not necessarily all valid providers
-    static Set<String> getActiveProviderNamesFromProperties()
+    public static Set<String> getActiveProviderNamesFromProperties()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String activeProviderProp = props.get(PROVIDERS_KEY);

@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.ldap.LdapAuthenticationManager;
+import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -139,5 +140,11 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     public @NotNull Collection<String> getPropertyCategories()
     {
         return Collections.singleton(LDAP_AUTHENTICATION_CATEGORY_KEY);
+    }
+
+    @Override
+    public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
+    {
+        return null;  // TODO: Implement!!
     }
 }

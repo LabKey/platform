@@ -18,9 +18,11 @@ package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -71,6 +73,7 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -99,6 +102,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.core.CoreUpgradeCode;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -449,7 +453,6 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
-
         @Override
         public void validateForm(RegisterForm form, Errors errors)
         {
@@ -2589,6 +2592,34 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ApplicationAdminPermission.class)
+    public class MigrateAuthenticationConfigurations extends ConfirmAction
+    {
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors)
+        {
+            return new HtmlView(HtmlString.of("Are you sure you want to re-run the authentication configuration migration? This may cause duplicate configurations (which can be deleted)."));
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            new CoreUpgradeCode().migrateAuthenticationConfigurations(getUser());
+
+            return true;
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL();
+        }
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {
@@ -2603,7 +2634,8 @@ public class LoginController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new SetAuthenticationParameterAction(),
-                controller.new SetProviderEnabledAction()
+                controller.new SetProviderEnabledAction(),
+                controller.new MigrateAuthenticationConfigurations()
             );
 
             // @AdminConsoleAction

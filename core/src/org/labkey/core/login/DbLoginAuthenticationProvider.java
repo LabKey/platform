@@ -17,9 +17,11 @@ package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.AuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -126,6 +128,12 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         }
 
         return AuthenticationResponse.createSuccessResponse(this, email);
+    }
+
+    @Override
+    public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
+    {
+        return null;  // We don't migrate the database login configuration
     }
 
     // A simple test validator that expires every authentication after 100 requests
