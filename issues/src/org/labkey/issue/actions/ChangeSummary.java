@@ -40,6 +40,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -222,8 +223,8 @@ public class ChangeSummary
                             }
                         }
 
-                        String from = oldValue != null ? oldValue instanceof Date ? new SimpleDateFormat("y-M-d").format(oldValue) : String.valueOf(oldValue) : "";
-                        String to = newValue != null ? newValue instanceof Date ? new SimpleDateFormat("y-M-d").format(newValue) : String.valueOf(newValue) : "";
+                        String from = oldValue != null ? oldValue instanceof Date ? new SimpleDateFormat(DateUtil.getDateFormatString(container)).format(oldValue) : String.valueOf(oldValue) : "";
+                        String to = newValue != null ? newValue instanceof Date ? new SimpleDateFormat(DateUtil.getDateFormatString(container)).format(newValue) : String.valueOf(newValue) : "";
                         _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), from, to, ccc, newIssue);
                     }
                 }
