@@ -712,7 +712,7 @@ public class AssayTest extends AbstractAssayTest
 
         // change a field name and label and remove a field
         ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
-        DomainFormPanel domainFormPanel = designerPage.expandFieldProperties("Results");
+        DomainFormPanel domainFormPanel = designerPage.expandFieldsPanel("Results");
         domainFormPanel.getField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
         domainFormPanel.getField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
         domainFormPanel.removeField(domainFormPanel.getField(4).getName());

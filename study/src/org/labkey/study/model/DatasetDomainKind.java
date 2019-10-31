@@ -180,12 +180,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         return sql;
     }
 
-    @Override
-    public boolean allowAttachmentProperties()
-    {
-        return false;
-    }
-
     // Issue 16526:  nobody should call this overload of generateDomainURI for DatasetDomainKind.  Instead
     // use the overload below with a unique id (the dataset's entityId).  Assert is here to track down
     // any callers.
@@ -236,6 +230,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         return createURL;
     }
 
+    @Override
+    public boolean allowFileLinkProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
 
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
