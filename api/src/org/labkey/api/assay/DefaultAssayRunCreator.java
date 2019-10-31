@@ -378,7 +378,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
             }
             ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
-            ProvenanceService.get().addProvenanceInputs(inputProtocolApp, runInputLSIDs);
+            ProvenanceService.get().addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
 
             ExperimentService.get().queueSyncRunEdges(run);
 
