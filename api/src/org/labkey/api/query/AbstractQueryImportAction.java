@@ -167,6 +167,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _importViewBean.typeName = name;
     }
 
+
+    @Deprecated
+    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
+    {
+        return getDefaultImportView(form, errors);
+    }
+
     public ModelAndView getDefaultImportView(FORM form, BindException errors)
     {
         ActionURL url = getViewContext().getActionURL();
