@@ -61,7 +61,9 @@ import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -220,10 +222,9 @@ public class ChangeSummary
                             }
                         }
 
-                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(),
-                                oldValue != null ? String.valueOf(oldValue) : "",
-                                newValue != null ? String.valueOf(newValue) : "",
-                                ccc, newIssue);
+                        String from = oldValue != null ? oldValue instanceof Date ? new SimpleDateFormat("y-M-d").format(oldValue) : String.valueOf(oldValue) : "";
+                        String to = newValue != null ? newValue instanceof Date ? new SimpleDateFormat("y-M-d").format(newValue) : String.valueOf(newValue) : "";
+                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), from, to, ccc, newIssue);
                     }
                 }
             }
