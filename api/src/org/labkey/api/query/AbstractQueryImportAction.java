@@ -68,8 +68,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.rometools.utils.Strings.isBlank;
-
 
 /**
  * User: matthewb
@@ -177,10 +175,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         validatePermission(user, errors);
 
-        if (isBlank(_importViewBean.urlReturn))
+        if (StringUtils.isBlank(_importViewBean.urlReturn))
         {
             _importViewBean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
-            if (isBlank(_importViewBean.urlReturn))
+            if (StringUtils.isBlank(_importViewBean.urlReturn))
             {
                 ActionURL success = getSuccessURL(form);
                 if (null != success)
@@ -192,14 +190,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
         }
 
-        if (isBlank(_importViewBean.urlCancel))
+        if (StringUtils.isBlank(_importViewBean.urlCancel))
         {
             _importViewBean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
-            if (isBlank(_importViewBean.urlCancel))
+            if (StringUtils.isBlank(_importViewBean.urlCancel))
                 _importViewBean.urlCancel = _importViewBean.urlReturn;
         }
 
-        if (isBlank(_importViewBean.urlEndpoint))
+        if (StringUtils.isBlank(_importViewBean.urlEndpoint))
             _importViewBean.urlEndpoint = url.getLocalURIString();
 
         if (_target != null)
