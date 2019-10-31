@@ -100,7 +100,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new WikiContainerListener());
-        WebdavService.get().addProvider(new WikiWebdavProvider());
+//        WebdavService.get().addProvider(new WikiWebdavProvider());
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
         // wiki module, so no dice.

@@ -2783,7 +2783,9 @@ public class QueryController extends SpringActionController
             // requested minimal columns, as we now do for ExtJS stores
             if (form.isMinimalColumns())
             {
-                response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+                // Be sure to use the settings from the view, as it may have swapped it out with a customized version.
+                // See issue 38747.
+                response.setColumnFilter(view.getSettings().getFieldKeys());
             }
 
             return response;
