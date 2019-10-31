@@ -366,7 +366,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         {
             if (!rowStripped.containsKey(entry.getKey()))
             {
-                ColumnInfo col = tableAliasesMap.get(entry.getKey());
+                ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+
+                if (null == col)
+                {
+                    col = tableAliasesMap.get(entry.getKey());
+                }
 
                if (null != col)
                {
