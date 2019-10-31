@@ -2805,11 +2805,15 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
+            ExpRun run = ExperimentService.get().getExpRun(runId);
+            Map<Integer, Pair<String,String>> inputProvenanceMap = ProvenanceService.get().getProvenance(run.getInputProtocolApplication());
+            Map<Integer, Pair<String,String>> outputProvenanceMap = ProvenanceService.get().getProvenance(run.getOutputProtocolApplication());
+
             // delete all existing edges for this run
             if (deleteFirst)
                 removeEdgesForRun(runId);
 
-            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size();
+            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + inputProvenanceMap.size() + outputProvenanceMap.size();
             LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
@@ -2878,6 +2882,21 @@ public class ExperimentServiceImpl implements ExperimentService
                     int objectid = (Integer)toMaterialLsid.get("objectid");
                     if (seen.add(objectid))
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
+                }
+
+                seen = new HashSet<>();
+                for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
+                {
+                    int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
+                    if (seen.add(objectId))
+                        prepEdgeForInsert(params, runObjectId, objectId, runId);
+                }
+
+                for (Map.Entry<Integer, Pair<String, String>> provInputLsid : outputProvenanceMap.entrySet())
+                {
+                    int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().second).getObjectId();
+                    if (seen.add(objectId))
+                        prepEdgeForInsert(params, objectId, runObjectId, runId);
                 }
 
                 insertEdges(params);

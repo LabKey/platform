@@ -26,7 +26,7 @@ public interface ProvenanceService
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
     }
 
-    Map<Integer, Set<String>> addProvenanceInputs(ExpProtocolApplication app, Set<String> inputLSIDs);
+    Map<Integer, Set<String>> addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
 
     Map<Integer, Set<String>> addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs);
 
@@ -34,7 +34,7 @@ public interface ProvenanceService
 
     void addProvenance(Container container, ExpProtocolApplication app, Map<String, Set<String>> outputMap);
 
-    Pair<List<String>, List<String>> getProvenance(ExpProtocolApplication app);
+    Map<Integer, Pair<String,String>> getProvenance(ExpProtocolApplication app);
 
     DbSchema getDbSchema();
 
