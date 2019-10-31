@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -163,19 +164,10 @@ public interface AuthenticationProvider
             AttachmentService svc = AttachmentService.get();
             AttachmentParent oldParent = AuthenticationLogoAttachmentParent.get();
 
-            List<Attachment> logos = new LinkedList<>();
-
-            for (AuthLogoType alt : AuthLogoType.values())
-            {
-                Attachment a = svc.getAttachment(oldParent, alt.getOldPrefix() + getName());
-
-                if (null != a)
-                {
-//                    a.setName(alt.getFileName());
-                    logos.add(a);
-
-                }
-            }
+            List<Attachment> logos = Arrays.stream(AuthLogoType.values())
+                .map(alt->svc.getAttachment(oldParent, alt.getOldPrefix() + getName()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
             SSOConfigureForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
 
@@ -188,10 +180,10 @@ public interface AuthenticationProvider
                 {
                     SSOAuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
 
-                    // TODO: Logo copying needs to be fixed
                     List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
                     svc.addAttachments(configuration, attachmentFiles, user);
-                    //svc.renameAttachment();
+                    for (AuthLogoType alt : AuthLogoType.values())
+                        svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
 
                     AttachmentCache.clearAuthLogoCache();
                     WriteableAppProps.incrementLookAndFeelRevisionAndSave();
