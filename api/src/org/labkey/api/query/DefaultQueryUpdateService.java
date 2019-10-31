@@ -60,7 +60,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.dataiterator.DataIteratorUtil.createTableMap;
@@ -394,7 +394,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                    }
                    else
                    {
-                       if (!colFrequency.get(col).second.equals(entry.getValue()))
+                       if (!Objects.equals(colFrequency.get(col).second, entry.getValue()))
                        {
                            throw new ValidationException("Property key - " + colFrequency.get(col).first + " and " + entry.getKey() + " matched for the same column.");
                        }
