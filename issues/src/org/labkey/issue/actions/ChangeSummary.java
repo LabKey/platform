@@ -223,8 +223,8 @@ public class ChangeSummary
                             }
                         }
 
-                        String from = oldValue != null ? oldValue instanceof Date ? new SimpleDateFormat(DateUtil.getDateFormatString(container)).format(oldValue) : String.valueOf(oldValue) : "";
-                        String to = newValue != null ? newValue instanceof Date ? new SimpleDateFormat(DateUtil.getDateFormatString(container)).format(newValue) : String.valueOf(newValue) : "";
+                        String from = oldValue != null ? oldValue instanceof Date ? DateUtil.formatDate(container, (Date) oldValue) : String.valueOf(oldValue) : "";
+                        String to = newValue != null ? newValue instanceof Date ? DateUtil.formatDate(container, (Date) newValue) : String.valueOf(newValue) : "";
                         _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), from, to, ccc, newIssue);
                     }
                 }
