@@ -108,6 +108,12 @@ public class TestSsoController extends SpringActionController
         {
             setDescription("TestSSO Configuration");
         }
+
+        @Override
+        public String getProvider()
+        {
+            return TestSsoProvider.NAME;
+        }
     }
 
     @AdminConsoleAction

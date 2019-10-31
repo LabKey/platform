@@ -36,6 +36,8 @@ public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfi
         _enabled = authenticationConfiguration.isEnabled();
     }
 
+    public abstract String getProvider();
+
     public String getDescription()
     {
         return _description;
