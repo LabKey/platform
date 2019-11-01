@@ -179,6 +179,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2797,9 +2798,8 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
-            ExpRun run = ExperimentService.get().getExpRun(runId);
-            Map<Integer, Pair<String,String>> inputProvenanceMap = ProvenanceService.get().getProvenance(run.getInputProtocolApplication());
-            Map<Integer, Pair<String,String>> outputProvenanceMap = ProvenanceService.get().getProvenance(run.getOutputProtocolApplication());
+            Map<Integer, Pair<String,String>> inputProvenanceMap = ProvenanceService.get().getProvenance(getStartingProtocolApplication(runId).getRowId());
+            Map<Integer, Pair<String,String>> outputProvenanceMap = ProvenanceService.get().getProvenance(getFinalProtocolApplication(runId).getRowId());
 
             // delete all existing edges for this run
             if (deleteFirst)
@@ -2856,6 +2856,15 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
+                for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
+                {
+                    if (null != provInputLsid.getValue().first)
+                    {
+                        int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
+                        if (seen.add(objectId))
+                            prepEdgeForInsert(params, objectId, runObjectId, runId);
+                    }
+                }
 
                 //
                 // run lsid -> to lsid
@@ -2876,19 +2885,14 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
-                seen = new HashSet<>();
-                for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
+                for (Map.Entry<Integer, Pair<String, String>> provOutputLsid : outputProvenanceMap.entrySet())
                 {
-                    int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
-                    if (seen.add(objectId))
-                        prepEdgeForInsert(params, runObjectId, objectId, runId);
-                }
-
-                for (Map.Entry<Integer, Pair<String, String>> provInputLsid : outputProvenanceMap.entrySet())
-                {
-                    int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().second).getObjectId();
-                    if (seen.add(objectId))
-                        prepEdgeForInsert(params, objectId, runObjectId, runId);
+                    if (null != provOutputLsid.getValue().second)
+                    {
+                        int objectId = OntologyManager.getOntologyObject(runContainer, provOutputLsid.getValue().second).getObjectId();
+                        if (seen.add(objectId))
+                            prepEdgeForInsert(params, runObjectId, objectId, runId);
+                    }
                 }
 
                 insertEdges(params);
@@ -2937,7 +2941,38 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    public List<ProtocolApplication> getProtocolApplicationsForRun(int runId)
+    {
+        return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getArrayList(ProtocolApplication.class);
+    }
 
+    public ProtocolApplication getStartingProtocolApplication(int runId)
+    {
+        List<ProtocolApplication> protocolApplications = getProtocolApplicationsForRun(runId);
+        ProtocolApplication protocolApplication = null;
+
+        if (!protocolApplications.isEmpty())
+        {
+            protocolApplications.sort(Comparator.comparing(org.labkey.experiment.api.ProtocolApplication::getActionSequence));
+            protocolApplication = protocolApplications.get(0);
+        }
+        return protocolApplication;
+    }
+
+    public ProtocolApplication getFinalProtocolApplication(int runId)
+    {
+        List<ProtocolApplication> protocolApplications = getProtocolApplicationsForRun(runId);
+        ProtocolApplication protocolApplication = null;
+
+        if (!protocolApplications.isEmpty())
+        {
+            int size = protocolApplications.size();
+            protocolApplications.sort(Comparator.comparing(org.labkey.experiment.api.ProtocolApplication::getActionSequence).reversed());
+            protocolApplication = protocolApplications.get(size-1);
+        }
+
+        return protocolApplication;
+    }
 
     public boolean isUnknownMaterial(@NotNull ExpRunItem output)
     {
