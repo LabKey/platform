@@ -2806,8 +2806,21 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
-            Map<Integer, Pair<String,String>> inputProvenanceMap = ProvenanceService.get().getProvenance(getStartingProtocolApplication(runId).getRowId());
-            Map<Integer, Pair<String,String>> outputProvenanceMap = ProvenanceService.get().getProvenance(getFinalProtocolApplication(runId).getRowId());
+            ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
+            ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
+
+            Map<Integer, Pair<String, String>> inputProvenanceMap = new HashMap<>();
+            Map<Integer, Pair<String,String>> outputProvenanceMap = new HashMap<>();
+
+            if (null != startProtocolApp)
+            {
+                inputProvenanceMap = ProvenanceService.get().getProvenance(startProtocolApp.getRowId());
+            }
+
+            if (null != finalProtocolApp)
+            {
+                outputProvenanceMap = ProvenanceService.get().getProvenance(finalProtocolApp.getRowId());
+            }
 
             // delete all existing edges for this run
             if (deleteFirst)
@@ -2864,13 +2877,16 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
-                for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
+                if (!inputProvenanceMap.isEmpty())
                 {
-                    if (null != provInputLsid.getValue().first)
+                    for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
                     {
-                        int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
-                        if (seen.add(objectId))
-                            prepEdgeForInsert(params, objectId, runObjectId, runId);
+                        if (null != provInputLsid.getValue().first)
+                        {
+                            int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
+                            if (seen.add(objectId))
+                                prepEdgeForInsert(params, objectId, runObjectId, runId);
+                        }
                     }
                 }
 
@@ -2893,13 +2909,16 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
-                for (Map.Entry<Integer, Pair<String, String>> provOutputLsid : outputProvenanceMap.entrySet())
+                if (!outputProvenanceMap.isEmpty())
                 {
-                    if (null != provOutputLsid.getValue().second)
+                    for (Map.Entry<Integer, Pair<String, String>> provOutputLsid : outputProvenanceMap.entrySet())
                     {
-                        int objectId = OntologyManager.getOntologyObject(runContainer, provOutputLsid.getValue().second).getObjectId();
-                        if (seen.add(objectId))
-                            prepEdgeForInsert(params, runObjectId, objectId, runId);
+                        if (null != provOutputLsid.getValue().second)
+                        {
+                            int objectId = OntologyManager.getOntologyObject(runContainer, provOutputLsid.getValue().second).getObjectId();
+                            if (seen.add(objectId))
+                                prepEdgeForInsert(params, runObjectId, objectId, runId);
+                        }
                     }
                 }
 
