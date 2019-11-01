@@ -84,6 +84,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -365,20 +366,25 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             transaction.commit();
 
-            //  Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
+            // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
             // Attach run's starting protocol application with starting input LSIDs.
             Set<String> runInputLSIDs = new HashSet<>();
             for (Map.Entry<DomainProperty, String> runProperty : runProperties.entrySet())
             {
                 PropertyDescriptor runPropertyPD = runProperty.getKey().getPropertyDescriptor();
                 String propertyName = runPropertyPD.getName();
-                if (propertyName.equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY))
+                if (propertyName.equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY) && null != runProperty.getValue())
                 {
-                    runInputLSIDs.add(runProperty.getValue());
+                    String[] runLSIDArr = runProperty.getValue().split(",");
+                    runInputLSIDs.addAll(Arrays.asList(runLSIDArr));
                 }
             }
-            ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
-            ProvenanceService.get().addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
+
+            if (!runInputLSIDs.isEmpty())
+            {
+                ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
+                ProvenanceService.get().addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
+            }
 
             ExperimentService.get().queueSyncRunEdges(run);
 

@@ -85,6 +85,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -931,7 +932,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (map.get(provObjectInputsPD.getName()) instanceof String)
                 {
-                    rowInputLSIDs.add((String) map.get(provObjectInputsPD.getName()));
+                    String lsids = (String) map.get(provObjectInputsPD.getName());
+                    String[] lsidArr = lsids.split(",");
+                    Arrays.stream(lsidArr).forEach(sid -> rowInputLSIDs.add(sid));
                 }
             }
 

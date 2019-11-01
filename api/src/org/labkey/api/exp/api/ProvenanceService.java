@@ -30,14 +30,7 @@ public interface ProvenanceService
 
     Map<Integer, Set<String>> addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs);
 
-    void addProvenanceMapping(ExpProtocolApplication app, List<String> inputLSIDs, List<String> outputLSIDs);
-
     void addProvenance(Container container, ExpProtocolApplication app, Map<String, Set<String>> outputMap);
 
-    Map<Integer, Pair<String,String>> getProvenance(ExpProtocolApplication app);
-
-    DbSchema getDbSchema();
-
-    TableInfo getTinfoProtocolApplicationObjectMap();
-
+    Map<Integer, Pair<String,String>> getProvenance(int protocolAppId);
 }
