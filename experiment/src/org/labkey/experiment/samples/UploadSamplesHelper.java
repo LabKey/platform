@@ -566,7 +566,7 @@ public abstract class UploadSamplesHelper
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator source = builder.getDataIterator(context);
+            DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
             // drop columns
             var drop = new CaseInsensitiveHashSet();
@@ -595,8 +595,7 @@ public abstract class UploadSamplesHelper
 
 //            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-            CoerceDataIterator c = new CoerceDataIterator(source, context, sampleset.getTinfo());
-
+            DataIterator c = LoggingDataIterator.wrap(new CoerceDataIterator(source, context, sampleset.getTinfo(), false));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);

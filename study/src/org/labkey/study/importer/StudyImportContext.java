@@ -48,6 +48,8 @@ import java.util.Set;
  */
 public class StudyImportContext extends AbstractContext
 {
+    public static final String ALLOW_DOMAIN_UPDATES = "allowDomainUpdates";
+
     private File _studyXml;
     private HashMap<String, String> _props = new HashMap<>();
 

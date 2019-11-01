@@ -446,9 +446,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
      */
     public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
-        Query query = new Query(schema, parent);
+        Query query = new Query(schema, getName(), parent);
 
-        query.setName(getSchemaName() + "." + getName());
+        query.setDebugName(getSchemaName() + "." + getName());
         query.setContainerFilter(getContainerFilter());
         query.setMetadataTableMap(_metadataTableMap);
         query.setAllowDuplicateColumns(allowDuplicateColumns);

@@ -50,7 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * For performance a DefaultSchema caches resolved UserSchema objects. The DefaultSchema itself should not
  * be cached.  It should only be held onto for a short time (e.g. request or query scope).
  */
-final public class DefaultSchema extends AbstractSchema
+final public class DefaultSchema extends AbstractSchema implements QuerySchema.ContainerSchema
 {
     static public abstract class SchemaProvider
     {
