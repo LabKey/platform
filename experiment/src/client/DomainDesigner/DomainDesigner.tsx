@@ -16,7 +16,7 @@
 
 import {List} from "immutable";
 import * as React from 'react'
-import {Button} from "react-bootstrap";
+import { Button, Panel } from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
@@ -114,17 +114,17 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }));
 
                 this.showMessage("Save Successful", 'success', 0);
-                window.scrollTo(0, 0);
 
                 if (navigate) {
                     this.navigate();
                 }
             })
             .catch((badDomain) => {
-
+                // get error messages, fall back on the top level exception
                 let bannerMsgs = getBannerMessages(badDomain);
-
-                window.scrollTo(0, 0);
+                if (bannerMsgs && bannerMsgs.size === 0 && badDomain.domainException.exception) {
+                    bannerMsgs = List<IBannerMessage>([{message: badDomain.domainException.exception, messageType: 'danger'}]);
+                }
 
                 this.setState(() => ({
                     domain: badDomain,
@@ -136,16 +136,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     submitAndNavigate = () => {
         this.submitHandler(true);
-    }
+    };
 
     onChangeHandler = (newDomain, dirty) => {
-
-        let bannerMsgs = getBannerMessages(newDomain);
-
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: bannerMsgs
+            messages: getBannerMessages(newDomain)
         }));
     };
 
@@ -176,13 +173,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            // TODO if we don't have a returnUrl, should we just do a goBack()?
             window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
         });
-    };
-
-    hideConfirm = () => {
-        this.setState(() => ({showConfirm: false}));
     };
 
     renderNavigateConfirm() {
@@ -213,9 +205,18 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     onClick={() => this.submitHandler(true)}
                     disabled={submitting}
                 >
-                    Save
+                    Finish
                 </Button>
             </WizardNavButtons>
+        )
+    }
+
+    renderInstructionsPanel() {
+        return (
+            <Panel>
+                <Panel.Heading>Instructions</Panel.Heading>
+                <Panel.Body>{this.state.domain.instructions}</Panel.Body>
+            </Panel>
         )
     }
 
@@ -230,15 +231,17 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <>
                 { showConfirm && this.renderNavigateConfirm() }
-                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
-                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
-                }
+                { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm
+                        headerTitle={'Fields'}
                         domain={domain}
                         onChange={this.onChangeHandler}
                         showHeaderFieldCount={false}
                     />
+                }
+                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
+                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
                 }
                 { domain && this.renderButtons() }
             </>

@@ -138,21 +138,20 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (provider.allowDefaultValues(domain) && (gwtDomain.getDefaultValueOptions() == null || gwtDomain.getDefaultValueOptions().length == 0))
                 gwtDomain.setDefaultValueOptions(provider.getDefaultValueOptions(domain), provider.getDefaultValueDefault(domain));
 
-            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
             if (copy)
-            {
                 gwtDomain.setDomainId(0);
-            }
+
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
-            gwtDomains.add(gwtDomain);
             gwtDomain.setProvisioned(domain.isProvisioned());
-            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
+            gwtDomains.add(gwtDomain);
 
+            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
             List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
+            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
 
             for (DomainProperty prop : properties)
             {
