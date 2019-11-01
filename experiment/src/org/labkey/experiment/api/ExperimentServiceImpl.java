@@ -2943,7 +2943,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public List<ProtocolApplication> getProtocolApplicationsForRun(int runId)
     {
-        return new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getArrayList(ProtocolApplication.class);
+        List<ProtocolApplication> protocolApplications = new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getArrayList(ProtocolApplication.class);
+        protocolApplications.sort(Comparator.comparing(org.labkey.experiment.api.ProtocolApplication::getActionSequence));
+        return protocolApplications;
     }
 
     public ProtocolApplication getStartingProtocolApplication(int runId)
@@ -2953,7 +2955,6 @@ public class ExperimentServiceImpl implements ExperimentService
 
         if (!protocolApplications.isEmpty())
         {
-            protocolApplications.sort(Comparator.comparing(org.labkey.experiment.api.ProtocolApplication::getActionSequence));
             protocolApplication = protocolApplications.get(0);
         }
         return protocolApplication;
@@ -2967,7 +2968,6 @@ public class ExperimentServiceImpl implements ExperimentService
         if (!protocolApplications.isEmpty())
         {
             int size = protocolApplications.size();
-            protocolApplications.sort(Comparator.comparing(org.labkey.experiment.api.ProtocolApplication::getActionSequence).reversed());
             protocolApplication = protocolApplications.get(size-1);
         }
 
