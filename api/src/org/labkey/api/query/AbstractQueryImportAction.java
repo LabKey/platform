@@ -83,13 +83,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String urlEndpoint = null;
         public List<Pair<String, String>> urlExcelTemplates = null;
         public String importMessage = null;
-        public String successMessageSuffix = null;
+        public String successMessageSuffix = "inserted";
         public boolean showImportOptions = false;
         public boolean hideTsvCsvCombo = false;
         // extra EXT config to inject into the form
         public JSONArray extraFields = null;
-        public boolean acceptZeroResults;  //0 changes will show the update message/redirect, instead of an error
+        public String importHelpTopic = "dataPrep";
+        public String importHelpDisplayText = "help";
+        public String typeName = "rows";    // e.g. rows, samples, mice
+        public boolean acceptZeroResults;   // 0 changes will show the update message/redirect, instead of an error
     }
+
+    protected ImportViewBean _importViewBean = new ImportViewBean();
 
     // Caller can import into table, using TableInfo or into simpler List of Objects, using ColumnDescriptors
     protected TableInfo _target;
@@ -98,12 +103,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _noTableInfo = false;         // No table info; expect importData to be overridden; DERIVED MUST OVERRIDE validatePermissions
     protected boolean _hasColumnHeaders = true;
     protected String _importMessage = null;
-    protected String _successMessageSuffix = "inserted";
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
-    protected boolean _hideTsvCsvCombo = false;
     protected boolean _importIdentity = false;
     protected boolean _importLookupByAlternateKey = false;
-    protected boolean _acceptZeroResults = false;     //0 returned results are OK
     protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
 
     protected void setTarget(TableInfo t) throws ServletException
@@ -137,94 +139,107 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void setHideTsvCsvCombo(boolean hideTsvCsvCombo)
     {
-        _hideTsvCsvCombo = hideTsvCsvCombo;
-    }
-
-    protected String getSuccessMessageSuffix()
-    {
-        return _successMessageSuffix;
+        _importViewBean.hideTsvCsvCombo = hideTsvCsvCombo;
     }
 
     protected void setSuccessMessageSuffix(String successMessageSuffix)
     {
-        _successMessageSuffix = successMessageSuffix;
+        _importViewBean.successMessageSuffix = successMessageSuffix;
     }
 
-    public ModelAndView getDefaultImportView(FORM form, BindException errors)
+    protected void setImportHelpTopic(String helpTopic)
     {
-        return getDefaultImportView(form, null, errors);
+        _importViewBean.importHelpTopic = helpTopic;
+    }
+
+    protected void setImportHelpTopic(String helpTopic, String displayText)
+    {
+        _importViewBean.importHelpTopic = helpTopic;
+        _importViewBean.importHelpDisplayText = displayText;
+    }
+
+    protected void setShowImportOptions(boolean b)
+    {
+        _importViewBean.showImportOptions = b;
+    }
+
+    protected void setTypeName(String name)
+    {
+        _importViewBean.typeName = name;
     }
 
     public void setAcceptZeroResults(boolean acceptZeroResults)
     {
-        _acceptZeroResults = acceptZeroResults;
-    }
-    
-    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
-    {
-       return getDefaultImportView(form, false, extraFields, errors);
+        _importViewBean.acceptZeroResults = acceptZeroResults;
     }
 
-    public ModelAndView getDefaultImportView(FORM form, boolean showImportOptions, JSONArray extraFields, BindException errors)
+    @Deprecated
+    public ModelAndView getDefaultImportView(FORM form, JSONArray extraFields, BindException errors)
+    {
+        return getDefaultImportView(form, errors);
+    }
+
+    public ModelAndView getDefaultImportView(FORM form, BindException errors)
     {
         ActionURL url = getViewContext().getActionURL();
         User user = getUser();
         Container c = getContainer();
 
         validatePermission(user, errors);
-        ImportViewBean bean = new ImportViewBean();
 
-        bean.showImportOptions = showImportOptions;
-        bean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
-        bean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
-        bean.hideTsvCsvCombo = _hideTsvCsvCombo;
-        bean.successMessageSuffix = _successMessageSuffix;
-        bean.extraFields = extraFields;
-        bean.acceptZeroResults = _acceptZeroResults;
-
-        if (null == bean.urlReturn)
+        if (StringUtils.isBlank(_importViewBean.urlReturn))
         {
-            ActionURL success = getSuccessURL(form);
-            if (null != success)
-                bean.urlReturn = success.getLocalURIString(false);
-            else if (null != _target && null != _target.getGridURL(c))
-                bean.urlReturn = _target.getGridURL(c).getLocalURIString(false);
-            else
-                bean.urlReturn = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(url).getLocalURIString(false);
+            _importViewBean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
+            if (StringUtils.isBlank(_importViewBean.urlReturn))
+            {
+                ActionURL success = getSuccessURL(form);
+                if (null != success)
+                    _importViewBean.urlReturn = success.getLocalURIString(false);
+                else if (null != _target && null != _target.getGridURL(c))
+                    _importViewBean.urlReturn = _target.getGridURL(c).getLocalURIString(false);
+                else
+                    _importViewBean.urlReturn = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(url).getLocalURIString(false);
+            }
         }
-        if (null == bean.urlCancel)
-            bean.urlCancel = bean.urlReturn;
 
-        bean.urlEndpoint = url.getLocalURIString();
+        if (StringUtils.isBlank(_importViewBean.urlCancel))
+        {
+            _importViewBean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
+            if (StringUtils.isBlank(_importViewBean.urlCancel))
+                _importViewBean.urlCancel = _importViewBean.urlReturn;
+        }
+
+        if (StringUtils.isBlank(_importViewBean.urlEndpoint))
+            _importViewBean.urlEndpoint = url.getLocalURIString();
 
         if (_target != null)
         {
             if(_target.getImportMessage() != null)
-                bean.importMessage = _target.getImportMessage();    // Get message from TableInfo if available
+                _importViewBean.importMessage = _target.getImportMessage();    // Get message from TableInfo if available
             else
-                bean.importMessage = _importMessage;                //Otherwise, get the passed in message
+                _importViewBean.importMessage = _importMessage;                //Otherwise, get the passed in message
 
-            bean.urlExcelTemplates = new ArrayList<>();
+            _importViewBean.urlExcelTemplates = new ArrayList<>();
 
             List<Pair<String, String>> it = _target.getImportTemplates(getViewContext());
             if (it != null)
             {
                 for (Pair<String, String> pair : it)
                 {
-                    bean.urlExcelTemplates.add(Pair.of(pair.first, pair.second));
+                    _importViewBean.urlExcelTemplates.add(Pair.of(pair.first, pair.second));
                 }
             }
         }
         else if (_noTableInfo)
         {
-            bean.importMessage = _importMessage;     // Use passed in message if no TableInfo
+            _importViewBean.importMessage = _importMessage;     // Use passed in message if no TableInfo
         }
         else
         {
             errors.reject(SpringActionController.ERROR_MSG, "No table has been set to receive imported data");
         }
 
-        return new JspView<>("/org/labkey/api/query/import.jsp", bean, errors);
+        return new JspView<>("/org/labkey/api/query/import.jsp", _importViewBean, errors);
     }
 
 
