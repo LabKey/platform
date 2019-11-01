@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -44,28 +45,10 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewChangeListener;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidNamedSetException;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -86,6 +69,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
@@ -104,6 +88,7 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
+import org.labkey.query.reports.ReportsController;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QDot;
 import org.labkey.query.sql.QExpr;
@@ -140,6 +125,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -151,9 +137,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 
@@ -238,7 +226,7 @@ public class QueryServiceImpl implements QueryService
             String expression = (String)getParamVals()[0];
             List<QueryParseException> errors = new ArrayList<>();
             QExpr parseResult;
-            if (StringUtils.isBlank(value))
+            if (isBlank(value))
                 parseResult = null;
             else
                 parseResult = new SqlParser(null, null).parseExpr(expression, errors);
@@ -300,7 +288,7 @@ public class QueryServiceImpl implements QueryService
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             String expression = (String)getParamVals()[0];
-            if (StringUtils.isBlank(expression))
+            if (isBlank(expression))
                 return new SQLFragment("1=1");
             // reparse because we have a dialect now
             List<QueryParseException> errors = new ArrayList<>();
@@ -3049,6 +3037,172 @@ public class QueryServiceImpl implements QueryService
         Set<ColumnInfo> lookups = walk.visitTop(schemas, null);
     }
     */
+
+    public static QuerySchema resolveSchema(QuerySchema start, SchemaKey k)
+    {
+        QuerySchema schema = start;
+        for (var part : k.getParts())
+        {
+            schema = schema.getSchema(part);
+            if (null == schema)
+                return null;
+        }
+        return schema;
+    }
+
+
+    public TableInfo analyzeQuery(
+        QuerySchema schema, String queryName,
+        HashSetValuedHashMap<DependencyObject,DependencyObject> dependencyGraph,
+        @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings)
+    {
+        Object qort;
+        if (schema instanceof UserSchema)
+            qort = ((UserSchema)schema)._getTableOrQuery(queryName, null, true, false, errors);
+        else
+            qort = schema.getTable(queryName, null);
+        TableInfo t = (qort instanceof TableInfo) ? (TableInfo)qort : null;
+        QueryDefinitionImpl qdef = (qort instanceof QueryDefinitionImpl) ? (QueryDefinitionImpl)qort : null;
+
+        if (null != t)
+            return t;
+
+        if (null == qdef)
+        {
+            if (errors.isEmpty())
+                throw new QueryException("Query not found: " + queryName);
+            return null;
+        }
+
+        Query query = qdef.getQuery(schema, errors, null, true);
+
+        warnings.addAll(query.getParseWarnings());
+        errors.addAll(query.getParseErrors());
+        dependencyGraph.putAll(query.getDependencies());
+
+        return query.getTableInfo();
+    }
+
+
+    @Override
+    public void analyzeFolder(DefaultSchema startSchema, HashSetValuedHashMap<DependencyObject, DependencyObject> deps)
+    {
+        new QueryAnalyzer(startSchema, deps).run();
+        new ReportAnalyzer(startSchema, deps).run();
+
+    }
+
+
+    static class QueryAnalyzer implements Runnable, Supplier<HashSetValuedHashMap<DependencyObject, DependencyObject>>
+    {
+        final QueryServiceImpl queryService;
+        final DefaultSchema defaultSchema;
+        final HashSetValuedHashMap<DependencyObject, DependencyObject> deps;
+
+        Set<SchemaKey> schemaKeys = new HashSet<>();
+        LinkedList<QuerySchema> schemasToProcess = new LinkedList<>();
+
+        QueryAnalyzer(DefaultSchema defaultSchema, HashSetValuedHashMap<DependencyObject, DependencyObject> deps)
+        {
+            this.defaultSchema = defaultSchema;
+            this.queryService = (QueryServiceImpl)QueryService.get();
+            this.deps = deps;
+            schemasToProcess.add(defaultSchema);
+        }
+
+        void add(@Nullable QuerySchema s)
+        {
+            if (null == s)
+                return;
+            if (!defaultSchema.getContainer().equals(s.getContainer()))
+                return;
+            if (s instanceof QuerySchema.ContainerSchema)
+                return;
+            if (schemaKeys.add(((UserSchema)s).getSchemaPath()))
+                schemasToProcess.add(s);
+        }
+
+        @Override
+        public void run()
+        {
+            while (!schemasToProcess.isEmpty())
+            {
+                QuerySchema s = schemasToProcess.removeFirst();
+                LOG.debug("Analyze schema: " + s.getName());
+                if (s instanceof UserSchema)
+                {
+                    for (var entry : ((UserSchema) s).getQueryDefs().entrySet())
+                    {
+                        String queryName = entry.getKey();
+                        LOG.debug("Analyze query : " + s.getName() + "." + queryName);
+                        var errors = new ArrayList<QueryException>();
+                        var warnings = new ArrayList<QueryParseException>();
+                        queryService.analyzeQuery(s, queryName, deps, errors, warnings);
+                    }
+                }
+
+                for (String schemaName : s.getSchemaNames())
+                {
+                    add(s.getSchema(schemaName));
+                }
+            }
+        }
+
+        @Override
+        public HashSetValuedHashMap<DependencyObject, DependencyObject> get()
+        {
+            return deps;
+        }
+    }
+
+
+    static class ReportAnalyzer implements Runnable
+    {
+        final DefaultSchema defaultSchema;
+        final HashSetValuedHashMap<DependencyObject,DependencyObject> deps;
+
+        ReportAnalyzer(DefaultSchema defaultSchema, HashSetValuedHashMap<DependencyObject,DependencyObject> deps)
+        {
+            this.defaultSchema = defaultSchema;
+            this.deps = deps;
+        }
+
+        @Override
+        public void run()
+        {
+            ViewContext vc = new ViewContext(new ViewBackgroundInfo(defaultSchema.getContainer(), defaultSchema.getUser(), defaultSchema.getContainer().getStartURL(defaultSchema.getUser())));
+
+            for (var report : ReportService.get().getReports(defaultSchema.getUser(), defaultSchema.getContainer()))
+            {
+                if (isBlank(report.getDescriptor().getReportKey()))
+                    continue;
+
+                // report
+                ActionURL reportURL = report.getEditReportURL(vc);
+                if (null == reportURL)
+                    reportURL = report.getRunReportURL(vc);
+                if (null == reportURL)
+                    new ReportsController.ReportUrlsImpl().urlManageViews(vc.getContainer());
+                DependencyObject r = new DependencyObject(DependencyType.Report,defaultSchema.getContainer(),new SchemaKey(null,"~reports~"), report.getDescriptor().getReportName(), reportURL);
+
+                // bound query
+                var parts = ReportUtil.splitReportKey(report.getDescriptor().getReportKey());
+                SchemaKey schemaPath = SchemaKey.fromString(parts[0]);
+                String queryName = parts[1];
+                QuerySchema targetSchema = resolveSchema(defaultSchema, schemaPath);
+                if (null == targetSchema)
+                    continue;
+                var type = DependencyType.Table;
+                if (null != ((UserSchema)targetSchema).getQueryDef(queryName))
+                    type = DependencyType.Query;
+                ActionURL queryURL = new QueryController.QueryUrlsImpl().urlSchemaBrowser(defaultSchema.getContainer(), targetSchema.getName(), queryName);
+                DependencyObject q = new DependencyObject(type, defaultSchema.getContainer(), schemaPath, queryName, queryURL);
+
+                deps.put(r,q);
+            }
+        }
+    }
+
 
     public static class TestCase extends Assert
     {

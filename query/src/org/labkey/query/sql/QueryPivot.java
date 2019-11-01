@@ -859,7 +859,7 @@ public class QueryPivot extends QueryRelation
                 {
                     if (!getParseErrors().isEmpty())
                         throw getParseErrors().get(0);
-                    QueryParseException qpe = new QueryParseException("Error compiling query" + (null != _query._name ? ": " + _query._name : ""), null, 0, 0);
+                    QueryParseException qpe = new QueryParseException("Error compiling query" + (null != _query._debugName ? ": " + _query._debugName : ""), null, 0, 0);
                     _query.decorateException(qpe);
                     throw qpe;
                 }

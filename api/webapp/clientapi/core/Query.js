@@ -1382,6 +1382,65 @@ LABKEY.Query = new function()
             });
         },
 
+        analyzeQueries : function(config)
+        {
+            function fixupJsonResponse(json, response, options)
+            {
+                var callback = LABKEY.Utils.getOnSuccess(config);
+
+                if (!json || !json.success)
+                {
+                    if (callback)
+                        callback.call(this, json, response, options);
+                    return;
+                }
+
+                var key,toKey,fromKey;
+                var objects = json.objects;
+
+                var dependantsMap = {};
+                var dependeesMap  = {};
+
+                for (var edge = 0; edge < json.graph.length; edge++)
+                {
+                    fromKey = json.graph[edge][0];
+                    toKey = json.graph[edge][1];
+
+                    // objects I am dependant on are my dependees
+                    dependeesMap[fromKey] = dependeesMap[fromKey] || [];
+                    dependeesMap[fromKey].push(objects[toKey]);
+
+                    // objects are dependant on me are my dependants
+                    dependantsMap[toKey] = dependantsMap[toKey] || [];
+                    dependantsMap[toKey].push(objects[fromKey]);
+                }
+
+                var dependeesList = [];
+                for (key in dependeesMap)
+                {
+                    if (dependeesMap.hasOwnProperty(key))
+                        dependeesList.push({from:objects[key], to:dependeesMap[key]});
+                }
+
+                var dependantsList = [];
+                for (key in dependantsMap)
+                {
+                    if (dependantsMap.hasOwnProperty(key))
+                        dependantsList.push({to:objects[key], from:dependantsMap[key]});
+                }
+
+                if (callback)
+                    callback.call(this, {success:json.success, dependants:dependantsList, dependees:dependeesList}, response, options);
+            }
+
+            return LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', config.containerPath),
+                method : 'GET',
+                success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+        },
+
         /**
          * Returns the current date/time on the LabKey server.
          * @param config An object that contains the following configuration parameters
