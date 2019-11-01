@@ -445,13 +445,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
-    /**
-     * @deprecated : use the variant which takes a ContainerUser parameter
-     */
-    @NotNull
-    @Deprecated
-    ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
-
     @NotNull
     ExpLineage getLineage(Container c, User user, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
 
