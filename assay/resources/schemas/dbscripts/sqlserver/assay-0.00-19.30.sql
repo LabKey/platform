@@ -87,3 +87,7 @@ IF NOT EXISTS(SELECT * FROM sys.Schemas WHERE name = 'assayresult')
         EXEC ('CREATE SCHEMA assayresult');
     END
 GO
+
+-- Repackage AssayDesignerRole from study to assay
+UPDATE core.RoleAssignments SET Role = 'org.labkey.assay.security.AssayDesignerRole' WHERE Role = 'org.labkey.study.security.roles.AssayDesignerRole';
+GO
