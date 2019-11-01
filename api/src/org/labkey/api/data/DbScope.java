@@ -2687,7 +2687,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                assert(x instanceof NullPointerException);
+                assertTrue(x instanceof NullPointerException);
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
 
@@ -2704,7 +2704,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                assert(x instanceof NullPointerException);
+                assertTrue(x instanceof NullPointerException);
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
         }
