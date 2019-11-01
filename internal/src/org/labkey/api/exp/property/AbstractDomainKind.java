@@ -89,9 +89,7 @@ public abstract class AbstractDomainKind extends DomainKind
         if (domainURI == null)
             return null;
 
-        ActionURL ret = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI, allowAttachmentProperties(), allowFileLinkProperties(), false);
-        ret.addParameter("createOrEdit", true);
-        return ret;
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI, true);
     }
 
     // Override to customize the nav trail on shared pages like edit domain

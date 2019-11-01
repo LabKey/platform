@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -2783,7 +2784,9 @@ public class QueryController extends SpringActionController
             // requested minimal columns, as we now do for ExtJS stores
             if (form.isMinimalColumns())
             {
-                response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+                // Be sure to use the settings from the view, as it may have swapped it out with a customized version.
+                // See issue 38747.
+                response.setColumnFilter(view.getSettings().getFieldKeys());
             }
 
             return response;
@@ -6472,6 +6475,42 @@ public class QueryController extends SpringActionController
             return root;
         }
     }
+
+
+    @RequiresPermission(ReadPermission.class)
+    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+            var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
+            QueryService.get().analyzeFolder(start, deps);
+
+            JSONObject ret = new JSONObject();
+            ret.put("success", true);
+
+            JSONObject objects = new JSONObject();
+            for (var from : deps.keySet())
+            {
+                objects.put(from.getKey(), from.toJSON());
+                for (var to : deps.get(from))
+                    objects.put(to.getKey(), to.toJSON());
+            }
+            ret.put("objects", objects);
+
+            JSONArray dependants = new JSONArray();
+            for (var from : deps.keySet())
+            {
+                JSONArray toList = new JSONArray();
+                for (var to : deps.get(from))
+                    dependants.put(new String[] {from.getKey(), to.getKey()});
+            }
+            ret.put("graph", dependants);
+            return ret;
+        }
+    }
+
 
     public static class TestCase extends AbstractActionPermissionTest
     {

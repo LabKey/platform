@@ -121,4 +121,10 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
     {
         _assayDelegate.appendNavTrail(root, c, user);
     }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
 }

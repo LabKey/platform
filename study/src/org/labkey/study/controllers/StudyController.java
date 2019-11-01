@@ -363,6 +363,7 @@ public class StudyController extends BaseStudyController
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             _study = getStudy();
@@ -372,6 +373,7 @@ public class StudyController extends BaseStudyController
 			return new VBox(overview, views);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
@@ -403,11 +405,13 @@ public class StudyController extends BaseStudyController
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
         private Dataset _def;
+        @Override
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
         }
 
+        @Override
         public void validateCommand(ImportTypeForm form, Errors errors)
         {
             if (null == form.getDatasetId() && !form.isAutoDatasetId())
@@ -434,6 +438,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public boolean handlePost(ImportTypeForm form, BindException derrors)
         {
             Integer datasetId = form.getDatasetId();
@@ -452,6 +457,7 @@ public class StudyController extends BaseStudyController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(ImportTypeForm form)
         {
             if (_def == null)
@@ -470,6 +476,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("importDatasetFromFile");
@@ -484,6 +491,7 @@ public class StudyController extends BaseStudyController
     {
         private Dataset _def;
 
+        @Override
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -525,6 +533,7 @@ public class StudyController extends BaseStudyController
             return new VBox(text, view);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
@@ -538,6 +547,7 @@ public class StudyController extends BaseStudyController
     {
         private DatasetDefinition _def;
 
+        @Override
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
@@ -549,6 +559,7 @@ public class StudyController extends BaseStudyController
                     "datasetDetails.jsp", _def, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("datasetProperties");
@@ -571,11 +582,13 @@ public class StudyController extends BaseStudyController
             _qcState = qcState;
         }
 
+        @Override
         public void setViewContext(ViewContext context)
         {
             _viewContext = context;
         }
 
+        @Override
         public ViewContext getViewContext()
         {
             return _viewContext;
@@ -618,6 +631,7 @@ public class StudyController extends BaseStudyController
     {
         private StudyImpl _study;
 
+        @Override
         public ModelAndView getView(OverviewForm form, BindException errors) throws Exception
         {
             _study = getStudyRedirectIfNull();
@@ -642,6 +656,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(_study, "overview.jsp", bean, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("studyDashboard#navigator");
@@ -772,6 +787,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteDatasetReportAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             String viewName = (String) getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
@@ -787,6 +803,7 @@ public class StudyController extends BaseStudyController
                         addParameter(DatasetDefinition.DATASETKEY, datasetId));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -876,6 +893,7 @@ public class StudyController extends BaseStudyController
             return super.getView(form, errors);
         }
 
+        @Override
         protected ModelAndView getHtmlView(DatasetFilterForm form, BindException errors) throws Exception
         {
             // the full resultset is a join of all datasets for each participant
@@ -1018,6 +1036,7 @@ public class StudyController extends BaseStudyController
             return view;
         }
 
+        @Override
         protected QueryView createQueryView(DatasetFilterForm datasetFilterForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             QuerySettings qs = new QuerySettings(getViewContext(), DATASET_DATAREGION_NAME);
@@ -1029,6 +1048,7 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
@@ -1040,6 +1060,7 @@ public class StudyController extends BaseStudyController
     @RequiresNoPermission
     public class ExpandStateNotifyAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             final ActionURL url = getViewContext().getActionURL();
@@ -1059,6 +1080,7 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -1091,6 +1113,7 @@ public class StudyController extends BaseStudyController
         private ParticipantForm _bean;
         private CohortFilter _cohortFilter;
 
+        @Override
         public ModelAndView getView(ParticipantForm form, BindException errors)
         {
             Study study = getStudyRedirectIfNull();
@@ -1172,6 +1195,7 @@ public class StudyController extends BaseStudyController
             return vbox;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
@@ -1290,6 +1314,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ImportVisitMapAction extends FormViewAction<ImportVisitMapForm>
     {
+        @Override
         public ModelAndView getView(ImportVisitMapForm form, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyThrowIfNull();
@@ -1297,10 +1322,12 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(getStudyRedirectIfNull(), "importVisitMap.jsp", null, errors);
         }
 
+        @Override
         public void validateCommand(ImportVisitMapForm form, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ImportVisitMapForm form, BindException errors) throws Exception
         {
             VisitMapImporter importer = new VisitMapImporter();
@@ -1314,11 +1341,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ImportVisitMapForm form)
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("importVisitMap");
@@ -1330,6 +1359,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class CreateStudyAction extends FormViewAction<StudyPropertiesForm>
     {
+        @Override
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
         {
             if (null != getStudy())
@@ -1362,6 +1392,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(null, "createStudy.jsp", form, errors);
         }
 
+        @Override
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
             if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
@@ -1382,6 +1413,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "\"" + target.getSubjectNounPlural() + "\" is not a valid plural subject noun.");
         }
 
+        @Override
         public boolean handlePost(StudyPropertiesForm form, BindException errors)
         {
             createStudy(getStudy(), getContainer(), getUser(), form);
@@ -1389,11 +1421,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(StudyPropertiesForm form)
         {
             return form.getSuccessActionURL(new ActionURL(ManageStudyAction.class, getContainer()));
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Study");
@@ -1450,6 +1484,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ManageStudyPermission.class)
     public class ManageStudyAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             StudyPropertiesQueryView propView = new StudyPropertiesQueryView(getUser(), getStudyRedirectIfNull(), HttpView.currentContext(), true);
@@ -1457,6 +1492,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(getStudy(), "manageStudy.jsp", propView, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageStudy");
@@ -1467,28 +1503,33 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteStudyAction extends FormViewAction<DeleteStudyForm>
     {
+        @Override
         public void validateCommand(DeleteStudyForm form, Errors errors)
         {
             if (!form.isConfirm())
                 errors.reject("deleteStudy", "Need to confirm Study deletion");
         }
 
+        @Override
         public ModelAndView getView(DeleteStudyForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "confirmDeleteStudy.jsp", null, errors);
         }
 
+        @Override
         public boolean handlePost(DeleteStudyForm form, BindException errors)
         {
             StudyManager.getInstance().deleteAllStudyData(getContainer(), getUser());
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteStudyForm deleteStudyForm)
         {
             return getContainer().getFolderType().getStartURL(getContainer(), getUser());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Confirm Delete Study");
@@ -1620,6 +1661,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageVisitsAction extends FormViewAction<StudyPropertiesForm>
     {
+        @Override
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
             if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
@@ -1628,6 +1670,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Default timepoint duration must be a positive number.");
         }
 
+        @Override
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
         {
             StudyImpl study = getStudy();
@@ -1645,6 +1688,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(study, _jspName(study), form, errors);
         }
 
+        @Override
         public boolean handlePost(StudyPropertiesForm form, BindException errors)
         {
             StudyImpl study = getStudyThrowIfNull().createMutable();
@@ -1657,11 +1701,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(StudyPropertiesForm studyPropertiesForm)
         {
             return new ActionURL(ManageStudyAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageVisits");
@@ -1685,6 +1731,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(getStudyRedirectIfNull(), "manageTypes.jsp", this, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageDatasets");
@@ -1714,10 +1761,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageLocationsAction extends FormViewAction<LocationEditForm>
     {
+        @Override
         public void validateCommand(LocationEditForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors)
         {
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
@@ -1726,6 +1775,7 @@ public class StudyController extends BaseStudyController
             return queryView;
         }
 
+        @Override
         public boolean handlePost(LocationEditForm form, BindException errors)
         {
             int[] ids = form.getIds();
@@ -1791,11 +1841,13 @@ public class StudyController extends BaseStudyController
             return errors.getErrorCount() == 0;
         }
 
+        @Override
         public ActionURL getSuccessURL(LocationEditForm form)
         {
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageLocations");
@@ -1944,6 +1996,7 @@ public class StudyController extends BaseStudyController
     {
         private VisitImpl _v;
 
+        @Override
         public void validateCommand(VisitForm target, Errors errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -1969,6 +2022,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -1989,6 +2043,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(study, "editVisit.jsp", visitSummary, errors);
         }
 
+        @Override
         public boolean handlePost(VisitForm form, BindException errors)
         {
             VisitImpl postedVisit = form.getBean();
@@ -2048,11 +2103,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(VisitForm form)
         {
             return new ActionURL(ManageVisitsAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
@@ -2079,11 +2136,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ManageStudyPermission.class)
     public class StudyScheduleAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return StudyModule.studyScheduleWebPartFactory.getWebPartView(getViewContext(), StudyModule.studyScheduleWebPartFactory.createWebPart());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("studySchedule");
@@ -2095,6 +2154,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DeleteVisitAction extends FormHandlerAction<IdForm>
     {
+        @Override
         public void validateCommand(IdForm target, Errors errors)
         {
             StudyImpl study = getStudyThrowIfNull();
@@ -2107,6 +2167,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(null, "Can't edit visits in a study with shared visits");
         }
 
+        @Override
         public boolean handlePost(IdForm form, BindException errors)
         {
             int visitId = form.getId();
@@ -2123,6 +2184,7 @@ public class StudyController extends BaseStudyController
             throw new NotFoundException();
         }
 
+        @Override
         public ActionURL getSuccessURL(IdForm idForm)
         {
             return new ActionURL(ManageVisitsAction.class, getContainer());
@@ -2227,6 +2289,7 @@ public class StudyController extends BaseStudyController
         private TimepointType _timepointType;
         private List<VisitImpl> _visitsToDelete;
 
+        @Override
         public ModelAndView getView(DeleteVisitsForm form, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -2242,12 +2305,14 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(getStudyRedirectIfNull(), "bulkVisitDelete.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
             return root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
         }
 
+        @Override
         public void validateCommand(DeleteVisitsForm form, Errors errors)
         {
             StudyImpl study = getStudyThrowIfNull();
@@ -2277,6 +2342,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public boolean handlePost(DeleteVisitsForm form, BindException errors)
         {
             long start = System.currentTimeMillis();
@@ -2286,6 +2352,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteVisitsForm form)
         {
             return new ActionURL(ManageVisitsAction.class, getContainer());
@@ -2313,6 +2380,7 @@ public class StudyController extends BaseStudyController
         private VisitImpl _visit;
         private TimepointType _timepointType;
 
+        @Override
         public ModelAndView getView(IdForm form, BindException errors)
         {
             int visitId = form.getId();
@@ -2331,6 +2399,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(study, "confirmDeleteVisit.jsp", _visit, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             String noun = _timepointType == TimepointType.DATE ? "Timepoint" : "Visit";
@@ -2341,6 +2410,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class CreateVisitAction extends FormViewAction<VisitForm>
     {
+        @Override
         public void validateCommand(VisitForm target, Errors errors)
         {
             StudyImpl study = getStudyThrowIfNull();
@@ -2364,6 +2434,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public ModelAndView getView(VisitForm form, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -2377,6 +2448,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(study, "createVisit.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(VisitForm form, BindException errors)
         {
             VisitImpl visit = form.getBean();
@@ -2385,11 +2457,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(VisitForm visitForm)
         {
             return visitForm.getReturnActionURL();
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
@@ -2402,12 +2476,14 @@ public class StudyController extends BaseStudyController
     {
         DatasetDefinition _def;
 
+        @Override
         public void validateCommand(DatasetForm form, Errors errors)
         {
             if (form.getDatasetId() < 1)
                 errors.reject(SpringActionController.ERROR_MSG, "DatasetId must be greater than zero.");
         }
 
+        @Override
         public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
             _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
@@ -2421,6 +2497,7 @@ public class StudyController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/updateDatasetVisitMapping.jsp", _def, errors);
         }
 
+        @Override
         public boolean handlePost(DatasetForm form, BindException errors)
         {
             DatasetDefinition original = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
@@ -2441,11 +2518,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DatasetForm datasetForm)
         {
             return new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", datasetForm.getDatasetId());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
@@ -2502,6 +2581,7 @@ public class StudyController extends BaseStudyController
             throw new UnauthorizedException("Can't update dataset: " + _def.getName());
         }
 
+        @Override
         public ModelAndView getView(ImportDatasetForm form, BindException errors) throws Exception
         {
             initRequest(form);
@@ -2570,15 +2650,18 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class BulkImportDataTypesAction extends FormViewAction<BulkImportTypesForm>
     {
+        @Override
         public void validateCommand(BulkImportTypesForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(BulkImportTypesForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "bulkImportDataTypes.jsp", form, errors);
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         public boolean handlePost(BulkImportTypesForm form, BindException errors)
         {
@@ -2598,15 +2681,17 @@ public class StudyController extends BaseStudyController
             SchemaReader reader = new SchemaTsvReader(getStudyThrowIfNull(), form.tsv, form.getLabelColumn(), form.getTypeNameColumn(), form.getTypeIdColumn(), errors);
 
             ComplianceService complianceService = ComplianceService.get();
-            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false,
+            return StudyManager.getInstance().importDatasetSchemas(getStudyThrowIfNull(), getUser(), reader, errors, false, true,
                                                                    null != complianceService ? complianceService.getCurrentActivity(getViewContext()) : null);
         }
 
+        @Override
         public ActionURL getSuccessURL(BulkImportTypesForm bulkImportTypesForm)
         {
             return new ActionURL(ManageTypesAction.class, getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
@@ -2668,6 +2753,7 @@ public class StudyController extends BaseStudyController
     {
         String _datasetLabel;
 
+        @Override
         public ModelAndView getView(IdForm form, BindException errors)
         {
             TableInfo tInfo = StudySchema.getInstance().getTableInfoUploadLog();
@@ -2696,6 +2782,7 @@ public class StudyController extends BaseStudyController
             return gv;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
@@ -2705,6 +2792,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(UpdatePermission.class)
     public class DownloadTsvAction extends SimpleViewAction<IdForm>
     {
+        @Override
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             UploadLog ul = AssayPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
@@ -2713,6 +2801,7 @@ public class StudyController extends BaseStudyController
             return null;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -2722,6 +2811,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetItemDetailsAction extends SimpleViewAction<SourceLsidForm>
     {
+        @Override
         public ModelAndView getView(SourceLsidForm form, BindException errors)
         {
             ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
@@ -2732,6 +2822,7 @@ public class StudyController extends BaseStudyController
             return HttpView.redirect(url);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -2741,6 +2832,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class PublishHistoryDetailsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             final StudyImpl study = getStudyRedirectIfNull();
@@ -2794,6 +2886,7 @@ public class StudyController extends BaseStudyController
             return view;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Copy-to-Study History Details");
@@ -2803,10 +2896,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(DeletePermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
+        @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
         {
             final DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
@@ -2881,6 +2976,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteDatasetRowsForm form)
         {
             return new ActionURL(DatasetAction.class, getContainer()).
@@ -2917,10 +3013,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(DeletePermission.class)
     public class DeleteDatasetRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
+        @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
             int datasetId = form.getDatasetId();
@@ -2959,6 +3057,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteDatasetRowsForm form)
         {
             return new ActionURL(DatasetAction.class, getContainer()).
@@ -3498,6 +3597,7 @@ public class StudyController extends BaseStudyController
             return _qcStateHandler;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteQCStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
@@ -3582,6 +3682,7 @@ public class StudyController extends BaseStudyController
     {
         private int _datasetId;
 
+        @Override
         public void validateCommand(UpdateQCStateForm updateQCForm, Errors errors)
         {
             if (updateQCForm.isUpdate())
@@ -3591,6 +3692,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public ModelAndView getView(UpdateQCStateForm updateQCForm, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -3619,6 +3721,7 @@ public class StudyController extends BaseStudyController
 
             DatasetQueryView queryView = new DatasetQueryView(querySchema, qs, errors)
             {
+                @Override
                 public DataView createDataView()
                 {
                     DataView view = super.createDataView();
@@ -3642,6 +3745,7 @@ public class StudyController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/updateQCState.jsp", updateQCForm, errors);
         }
 
+        @Override
         public boolean handlePost(UpdateQCStateForm updateQCForm, BindException errors)
         {
             if (!updateQCForm.isUpdate())
@@ -3666,6 +3770,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(UpdateQCStateForm updateQCForm)
         {
             ActionURL url = new ActionURL(DatasetAction.class, getContainer());
@@ -3675,6 +3780,7 @@ public class StudyController extends BaseStudyController
             return url;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             root = _appendNavTrail(root, _datasetId, -1);
@@ -4171,6 +4277,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class VisitOrderAction extends FormViewAction<VisitReorderForm>
     {
+        @Override
         public ModelAndView getView(VisitReorderForm reorderForm, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -4179,12 +4286,14 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<Object>(study, "visitOrder.jsp", reorderForm, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
             return root.addChild("Visit Order");
         }
 
+        @Override
         public void validateCommand(VisitReorderForm target, Errors errors) {}
 
         private Map<Integer, Integer> getVisitIdToOrderIndex(String orderedIds)
@@ -4213,6 +4322,7 @@ public class StudyController extends BaseStudyController
             return order;
         }
 
+        @Override
         public boolean handlePost(VisitReorderForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -4258,6 +4368,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(VisitReorderForm reorderForm)
         {
             return reorderForm.getReturnActionURL();
@@ -4267,6 +4378,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class VisitVisibilityAction extends FormViewAction<VisitPropertyForm>
     {
+        @Override
         public ModelAndView getView(VisitPropertyForm visitPropertyForm, boolean reshow, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -4275,14 +4387,17 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<Object>(study, "visitVisibility.jsp", visitPropertyForm, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
             return root.addChild("Properties");
         }
 
+        @Override
         public void validateCommand(VisitPropertyForm target, Errors errors) {}
 
+        @Override
         public boolean handlePost(VisitPropertyForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
@@ -4322,6 +4437,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(VisitPropertyForm visitPropertyForm)
         {
             return new ActionURL(ManageVisitsAction.class, getContainer());
@@ -4331,6 +4447,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DatasetVisibilityAction extends FormViewAction<DatasetPropertyForm>
     {
+        @Override
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors)
         {
             _study = getStudyRedirectIfNull();
@@ -4376,6 +4493,7 @@ public class StudyController extends BaseStudyController
                     getStudyRedirectIfNull(), "datasetVisibility.jsp", bean, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
@@ -4384,6 +4502,7 @@ public class StudyController extends BaseStudyController
             return root;
         }
 
+        @Override
         public void validateCommand(DatasetPropertyForm form, Errors errors)
         {
             // Check for bad labels
@@ -4403,6 +4522,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public boolean handlePost(DatasetPropertyForm form, BindException errors) throws Exception
         {
             for (Map.Entry<Integer,DatasetVisibilityData> entry : form.getDataset().entrySet())
@@ -4445,6 +4565,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DatasetPropertyForm form)
         {
             return new ActionURL(ManageTypesAction.class, getContainer());
@@ -4533,11 +4654,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DatasetDisplayOrderAction extends FormViewAction<DatasetReorderForm>
     {
+        @Override
         public ModelAndView getView(DatasetReorderForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<Object>(getStudyRedirectIfNull(), "datasetDisplayOrder.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
@@ -4546,8 +4669,10 @@ public class StudyController extends BaseStudyController
             return root;
         }
 
+        @Override
         public void validateCommand(DatasetReorderForm target, Errors errors) {}
 
+        @Override
         public boolean handlePost(DatasetReorderForm form, BindException errors)
         {
             String order = form.getOrder();
@@ -4572,6 +4697,7 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DatasetReorderForm visitPropertyForm)
         {
             return new ActionURL(ManageTypesAction.class, getContainer());
@@ -4726,10 +4852,12 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeParticipantViewAction extends FormViewAction<CustomizeParticipantViewForm>
     {
+        @Override
         public void validateCommand(CustomizeParticipantViewForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(CustomizeParticipantViewForm form, boolean reshow, BindException errors)
         {
             // We know that the user is at least a folder admin - they must also be either a developer
@@ -4750,6 +4878,7 @@ public class StudyController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/customizeParticipantView.jsp", form);
         }
 
+        @Override
         public boolean handlePost(CustomizeParticipantViewForm form, BindException errors)
         {
             Study study = getStudyThrowIfNull();
@@ -4762,6 +4891,7 @@ public class StudyController extends BaseStudyController
             return view != null;
         }
 
+        @Override
         public ActionURL getSuccessURL(CustomizeParticipantViewForm form)
         {
             if (form.isReshow())
@@ -4779,6 +4909,7 @@ public class StudyController extends BaseStudyController
                 return PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
@@ -4790,6 +4921,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class QuickCreateStudyAction extends MutatingApiAction<SimpleApiJsonForm>
     {
+        @Override
         public ApiResponse execute(SimpleApiJsonForm simpleApiJsonForm, BindException errors) throws Exception
         {
             JSONObject json = simpleApiJsonForm.getJsonObject();
@@ -4972,6 +5104,7 @@ public class StudyController extends BaseStudyController
     {
         ActionURL _successURL;
 
+        @Override
         public void validateCommand(StudySnapshotForm form, Errors errors)
         {
             if (StudySnapshotForm.CANCEL.equals(form.getAction()))
@@ -5004,6 +5137,7 @@ public class StudyController extends BaseStudyController
                 errors.reject("snapshotQuery.error", "The Query Snapshot name cannot be blank");
         }
 
+        @Override
         public ModelAndView getView(StudySnapshotForm form, boolean reshow, BindException errors)
         {
             if (!reshow || errors.hasErrors())
@@ -5139,6 +5273,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
+        @Override
         public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
@@ -5170,11 +5305,13 @@ public class StudyController extends BaseStudyController
             return !errors.hasErrors();
         }
 
+        @Override
         public ActionURL getSuccessURL(StudySnapshotForm queryForm)
         {
             return _successURL;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("querySnapshot");
@@ -5191,10 +5328,12 @@ public class StudyController extends BaseStudyController
     {
         ActionURL _successURL;
 
+        @Override
         public void validateCommand(StudySnapshotForm form, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(StudySnapshotForm form, boolean reshow, BindException errors) throws Exception
         {
             form.setEdit(true);
@@ -5252,6 +5391,7 @@ public class StudyController extends BaseStudyController
             return box;
         }
 
+        @Override
         public boolean handlePost(StudySnapshotForm form, BindException errors) throws Exception
         {
             if (StudySnapshotForm.CANCEL.equals(form.getAction()))
@@ -5264,8 +5404,7 @@ public class StudyController extends BaseStudyController
             {
                 _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshot(form, errors);
 
-                if (errors.hasErrors())
-                    return false;
+                return !errors.hasErrors();
             }
             else
             {
@@ -5274,8 +5413,7 @@ public class StudyController extends BaseStudyController
                 {
                     def.setUpdateDelay(form.getUpdateDelay());
                     _successURL = QuerySnapshotService.get(form.getSchemaName()).updateSnapshotDefinition(getViewContext(), def, errors);
-                    if (errors.hasErrors())
-                        return false;
+                    return !errors.hasErrors();
                 }
                 else
                 {
@@ -5286,11 +5424,13 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(StudySnapshotForm form)
         {
             return _successURL;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Edit Query Snapshot");
@@ -5546,6 +5686,7 @@ public class StudyController extends BaseStudyController
         private String _redirectUrl;
         private Map<String, String> aliases;
 
+        @Override
         public String getParticipantId(){return participantId;}
 
         public void setParticipantId(String participantId)
@@ -5554,11 +5695,13 @@ public class StudyController extends BaseStudyController
             aliases = StudyManager.getInstance().getAliasMap(StudyManager.getInstance().getStudy(getContainer()), getUser(), participantId);
         }
 
+        @Override
         public Map<String, String> getAliases()
         {
             return aliases;
         }
 
+        @Override
         public int getDatasetId(){return datasetId;}
         public void setDatasetId(int datasetId){this.datasetId = datasetId;}
 
@@ -5571,8 +5714,10 @@ public class StudyController extends BaseStudyController
         public int getReportId(){return reportId;}
         public void setReportId(int reportId){this.reportId = reportId;}
 
+        @Override
         public String getRedirectUrl() { return _redirectUrl; }
 
+        @Override
         public QCStateSet getQCStateSet()
         {
             if (_qcState != null && QCStateManager.getInstance().showQCStates(getContainer()))
@@ -6217,11 +6362,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetsAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return StudyModule.datasetsPartFactory.getWebPartView(getViewContext(), StudyModule.datasetsPartFactory.createWebPart());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrail(root);
@@ -6233,11 +6380,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class SamplesAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return StudyModule.samplesPartFactory.getWebPartView(getViewContext(), StudyModule.samplesPartFactory.createWebPart());
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             Study study = getStudy();
@@ -6251,6 +6400,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class ViewDataAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new VBox(
@@ -6259,6 +6409,7 @@ public class StudyController extends BaseStudyController
             );
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
@@ -6326,6 +6477,7 @@ public class StudyController extends BaseStudyController
             return new StudyJspView<>(getStudyRedirectIfNull(), "manageExternalReload.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
@@ -6336,6 +6488,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
+        @Override
         public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
@@ -6652,6 +6805,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(ReadPermission.class) @RequiresLogin
     public class ManageParticipantCategoriesAction extends SimpleViewAction<SentGroupForm>
     {
+        @Override
         public ModelAndView getView(SentGroupForm form, BindException errors)
         {
             // if the user is viewing a sent participant group, remove any notifications related to it
@@ -6664,6 +6818,7 @@ public class StudyController extends BaseStudyController
             return new JspView("/org/labkey/study/view/manageParticipantCategories.jsp");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("participantGroups");
@@ -6837,12 +6992,14 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageAlternateIdsAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object form, BindException errors)
         {
             ChangeAlternateIdsForm changeAlternateIdsForm = getChangeAlternateIdForm(getStudyRedirectIfNull());
             return new JspView<>("/org/labkey/study/view/manageAlternateIds.jsp", changeAlternateIdsForm);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("alternateIDs");
@@ -6857,11 +7014,13 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class MergeParticipantsAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object form, BindException errors)
         {
            return new JspView<>("/org/labkey/study/view/mergeParticipants.jsp");
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
@@ -7403,6 +7562,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ExportParticipantTransformsAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
@@ -7477,6 +7637,7 @@ public class StudyController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageLocationTypesAction extends SimpleViewAction<ManageLocationTypesForm>
     {
+        @Override
         public ModelAndView getView(ManageLocationTypesForm form, BindException errors)
         {
             Study study = getStudyRedirectIfNull();
@@ -7487,6 +7648,7 @@ public class StudyController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/manageLocationTypes.jsp", form);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("manageLocations");

@@ -727,17 +727,18 @@ public class DomainImpl implements Domain
                 if (isDomainNew)
                     addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
 
-                if (propChanged)
-                {
-                    final Integer domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
-                    propertyAuditInfo.forEach(auditInfo -> {
-                        addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails());
-                    });
-                }
-                else if (!isDomainNew)
-                {
-                    addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
-                }
+            if (propChanged)
+            {
+                final Integer domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
+                propertyAuditInfo.forEach(auditInfo -> {
+                    addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails());
+                });
+            }
+            else if (!isDomainNew)
+            {
+                addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
+            }
+            transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
             transaction.commit();
             }
         }

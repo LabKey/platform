@@ -846,6 +846,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (name.startsWith(defaultPrefix))
                 name = name.substring(defaultPrefix.length());
             Domain domainCopy = PropertyService.get().createDomain(targetContainer, getPresubstitutionLsid(domainLsid.getNamespacePrefix()), name);
+            domainCopy.setDescription(domain.getDescription());
             for (DomainProperty propSrc : domain.getProperties())
             {
                 DomainProperty propCopy = domainCopy.addProperty();

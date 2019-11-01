@@ -121,43 +121,15 @@ public class DataIteratorUtil
 
     public static Map<String,ColumnInfo> createTableMap(TableInfo target, boolean useImportAliases)
     {
-        List<ColumnInfo> cols = target.getColumns();
-        Map<String, ColumnInfo> targetAliasesMap = new CaseInsensitiveHashMap<>(cols.size()*4);
-        for (ColumnInfo col : cols)
-        {
-            if (col.isMvIndicatorColumn() || col.isRawValueColumn())
-                continue;
-            String name = col.getName();
-            targetAliasesMap.put(name, col);
-            String uri = col.getPropertyURI();
-            if (null != uri)
-            {
-                if (!targetAliasesMap.containsKey(uri))
-                    targetAliasesMap.put(uri, col);
-                String propName = uri.substring(uri.lastIndexOf('#')+1);
-                if (!targetAliasesMap.containsKey(propName))
-                    targetAliasesMap.put(propName,col);
-            }
-            String label = col.getLabel();
-            if (null != label && !targetAliasesMap.containsKey(label))
-                targetAliasesMap.put(label, col);
-            if (useImportAliases)
-            {
-                for (String alias : col.getImportAliasSet())
-                    if (!targetAliasesMap.containsKey(alias))
-                        targetAliasesMap.put(alias, col);
-            }
+        Map<String,Pair<ColumnInfo,MatchType>> targetAliasesMapWithMatchType = _createTableMap(target,useImportAliases);
+        Map<String, ColumnInfo> targetAliasesMap = new CaseInsensitiveHashMap<>();
 
-            // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
-            // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
-            String tsvQueryColumnName = FieldKey.fromString(name).toDisplayString();
-            if (!targetAliasesMap.containsKey(tsvQueryColumnName))
-                targetAliasesMap.put(tsvQueryColumnName, col);
-        }
+        targetAliasesMapWithMatchType.forEach((tableIdentifier, tablePair) -> targetAliasesMap.put(tableIdentifier, tablePair.first));
+
         return targetAliasesMap;
     }
 
-    enum MatchType {propertyuri, name, alias, jdbcname}
+    enum MatchType {propertyuri, name, alias, jdbcname, tsvColumn}
 
     protected static Map<String,Pair<ColumnInfo,MatchType>> _createTableMap(TableInfo target, boolean useImportAliases)
     {
@@ -167,7 +139,7 @@ public class DataIteratorUtil
         {
             if (col.isMvIndicatorColumn() || col.isRawValueColumn())
                 continue;
-            String name = col.getName();
+            final String name = col.getName();
             targetAliasesMap.put(name, new Pair<>(col,MatchType.name));
             String uri = col.getPropertyURI();
             if (null != uri)
@@ -182,13 +154,15 @@ public class DataIteratorUtil
             if (null != label && !targetAliasesMap.containsKey(label))
                 targetAliasesMap.put(label, new Pair<>(col, MatchType.alias));
             String translatedFieldKey;
-            if (useImportAliases || "folder".equalsIgnoreCase(col.getName()))
+            if (useImportAliases || "folder".equalsIgnoreCase(name))
             {
                 for (String alias : col.getImportAliasSet())
+                {
                     if (!targetAliasesMap.containsKey(alias))
                         targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
+                }
                 // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
-                translatedFieldKey = FieldKey.fromString(col.getName()).toDisplayString();
+                translatedFieldKey = FieldKey.fromString(name).toDisplayString();
                 if (!targetAliasesMap.containsKey(translatedFieldKey))
                 {
                     targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
@@ -200,6 +174,12 @@ public class DataIteratorUtil
             {
                 targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.jdbcname));
             }
+
+            // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
+            // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
+            String tsvQueryColumnName = FieldKey.fromString(name).toDisplayString();
+            if (!targetAliasesMap.containsKey(tsvQueryColumnName))
+                targetAliasesMap.put(tsvQueryColumnName, new Pair<>(col, MatchType.tsvColumn));
         }
         return targetAliasesMap;
     }
@@ -228,7 +208,7 @@ public class DataIteratorUtil
                 to = targetMap.get(from.getName());
             if (null == to)
             {
-                // 1. here if (from.name - propURI ) and no match then ask targetTableInfo to getCol and if it returns then there is a match
+                // Check to see if the column i.e. propURI has a property descriptor and vocabulary domain is present
                 if (URIUtil.hasURICharacters(from.getColumnName()) && null != container)
                 {
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(from.getColumnName(), container);
@@ -245,7 +225,7 @@ public class DataIteratorUtil
             }
             if(null != to && null == to.first)
             {
-                LOG.info("Column Info null here: - " +  from.getColumnName() + " in " + target.getName());
+                LOG.info("Column Info is null here: - " +  from.getColumnName() + " in " + target.getName());
             }
             matches.add(to);
         }
