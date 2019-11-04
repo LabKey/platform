@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@glass/base": "0.21.0-fb-jobCreation.17",
-    "@glass/domainproperties": "0.0.46-fb-jobCreation.21"
+    "@glass/domainproperties": "0.0.46-fb-jobCreation.22"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
