@@ -372,7 +372,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Set<String> runInputLSIDs = new HashSet<>();
             for (Map.Entry<String, Object> runProperty : unresolvedRunProperties.entrySet())
             {
-                if (null != runProperty.getValue())
+                if (AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY.equalsIgnoreCase(runProperty.getKey())
+                        && null != runProperty.getValue())
                 {
                     String[] runLSIDArr = Objects.toString(runProperty.getValue()).split(",");
                     runInputLSIDs.addAll(Arrays.asList(runLSIDArr));
