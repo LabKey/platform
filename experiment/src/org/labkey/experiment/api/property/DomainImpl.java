@@ -734,6 +734,7 @@ public class DomainImpl implements Domain
             {
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
+            transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
             transaction.commit();
         }
     }

@@ -71,12 +71,6 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowAttachmentProperties()
-    {
-        return false;
-    }
-
-    @Override
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
         ExpProtocol protocol = findProtocol(domain);
@@ -192,5 +186,11 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         result.add("ModifiedBy");
         result.add("Modified");
         return result;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -110,6 +111,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.LabkeySQL;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QueryName;
 import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
@@ -127,13 +129,16 @@ import static org.labkey.api.util.ExceptionUtil.ExceptionInfo.QuerySchema;
 public class Query
 {
     private final QuerySchema _schema;
+    private final String _queryName;
     private final IdentityHashMap<QuerySchema, HashMap<FieldKey, Pair<QuerySchema, TableInfo>>> _resolveCache = new IdentityHashMap<>();
     private final Set<QueryTable.TableColumn> _involvedTableColumns = new HashSet<>();
 
     // TableInfos handed to Query that will be used if a table isn't found.
     private Map<String, TableInfo> _tableMap;
+
     private ArrayList<QueryException> _parseErrors = new ArrayList<>();
     private ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
+
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
     private QueryRelation _queryRoot;
@@ -141,10 +146,13 @@ public class Query
     private int _aliasCounter = 0;
 
     boolean _strictColumnList = false;
-    String _name = null;
+    String _debugName = null;
 	String _querySource;
     ArrayList<QParameter> _parameters;
     private Set<SchemaKey> _resolvedTables = new HashSet<>();
+
+    // for displaying dependency graph in UI
+    private HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
 
     final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
@@ -158,21 +166,24 @@ public class Query
     public Query(@NotNull QuerySchema schema)
     {
         _schema = schema;
+        _queryName = null;
         MemTracker.getInstance().put(this);
     }
 
-    public Query(@NotNull QuerySchema schema, Query parent)
+    public Query(@NotNull QuerySchema schema, String queryName, Query parent)
     {
         _schema = schema;
+        _queryName = queryName;
         _parent = parent;
         if (null != _parent)
             _depth = _parent._depth + 1;
         MemTracker.getInstance().put(this);
     }
 
-    public Query(@NotNull QuerySchema schema, String sql)
+    public Query(@NotNull QuerySchema schema, String queryName, String sql)
     {
         _schema = schema;
+        _queryName = queryName;
         _querySource = sql;
         MemTracker.getInstance().put(this);
     }
@@ -188,11 +199,11 @@ public class Query
     }
 
     /* for debugging */
-    public void setName(String name)
+    public void setDebugName(String debugName)
     {
-        _name = name;
+        _debugName = debugName;
         if (null != _queryRoot)
-            _queryRoot.setSavedName(name);
+            _queryRoot.setSavedName(debugName);
     }
 
 	QuerySchema getSchema()
@@ -219,7 +230,7 @@ public class Query
 
     public void setContainerFilter(ContainerFilter containerFilter)
     {
-        ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), StringUtils.defaultString(_name, "anonymous"));
+        ContainerFilter.logSetContainerFilter(containerFilter, getClass().getSimpleName(), StringUtils.defaultString(_debugName, "anonymous"));
         if (_queryRoot != null)
         {
             throw new IllegalStateException("query is already parsed");
@@ -252,8 +263,8 @@ public class Query
         ExceptionUtil.decorateException(e, LabkeySQL, _querySource, false);
         if (null != getSchema())
             ExceptionUtil.decorateException(e, QuerySchema, getSchema().getName(), false);
-        if (null != _name)
-            ExceptionUtil.decorateException(e, QueryName, _name, false);
+        if (null != _debugName)
+            ExceptionUtil.decorateException(e, QueryName, _debugName, false);
     }
 
     public void parse(String queryText)
@@ -293,8 +304,8 @@ public class Query
 
             _queryRoot = relation;
 
-            if (_queryRoot._savedName == null && _name != null)
-                _queryRoot.setSavedName(_name);
+            if (_queryRoot._savedName == null && _debugName != null)
+                _queryRoot.setSavedName(_debugName);
 
             if (_parseErrors.isEmpty() && null != _queryRoot)
                 _queryRoot.declareFields();
@@ -730,6 +741,11 @@ public class Query
 
         try
         {
+            // find the nearest ContainerSchema
+            QuerySchema.ContainerSchema containerSchema = currentSchema.getDefaultSchema();
+            // UNDONE: currentSchema.get
+            SchemaKey containerRelativeSchemaKey = new SchemaKey(null, currentSchema.getName());
+
             ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
             if ((ret != null) && (queryDefOUT[0] == null))
             {
@@ -783,17 +799,42 @@ public class Query
         return ret;
     }
 
+
+    void addDependency(QueryService.DependencyType type, Container container, SchemaKey containerRelativeSchemaKey, String name, ActionURL url)
+    {
+        ActionURL fromUrl = new QueryController.QueryUrlsImpl().urlSchemaBrowser(_schema.getContainer(), _schema.getName(), _queryName);
+        QueryService.DependencyObject from = new QueryService.DependencyObject(QueryService.DependencyType.Query,
+                _schema.getContainer(), ((UserSchema)_schema).getSchemaPath(), requireNonNullElse(_queryName, "~"), fromUrl);
+
+        QueryService.DependencyObject dep = new QueryService.DependencyObject(type,
+                container, containerRelativeSchemaKey, name, url);
+
+        _dependencies.put(from, dep);
+    }
+
+
+    public @NotNull HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> getDependencies()
+    {
+        return _dependencies;
+    }
+
+
+    /* TODO use _dependencies to implement this instead of _resolvedTables */
     public Set<SchemaKey> getResolvedTables()
     {
         return _resolvedTables;
     }
 
-    private QueryRelation _resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias,
+
+    private QueryRelation _resolveTable(
+            QuerySchema currentSchema, QNode node, FieldKey key, String alias,
             // OUT parameters
             List<QueryException> resolveExceptions,
             QueryDefinition[] queryDefOUT)
         throws QueryNotFoundException
 	{
+        boolean trackDependency = true;
+
         ++_countResolvedTables;
         if (getTotalCountResolved() > 200 || _depth > 20)
         {
@@ -823,9 +864,12 @@ public class Query
 			String name = names.get(i);
             resolvedSchema = resolvedSchema.getSchema(name);
             if (resolvedSchema == null && DbSchema.TEMP_SCHEMA_NAME.equalsIgnoreCase(name))
+            {
                 resolvedSchema = new QuerySchemaWrapper(DbSchema.getTemp());
+                trackDependency = false;
+            }
 
-			if (resolvedSchema == null)
+			if (null == resolvedSchema)
 			{
                 throw new QueryNotFoundException(StringUtils.join(names, "."), null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
 			}
@@ -859,6 +903,7 @@ public class Query
         if (t == null && _tableMap != null)
         {
             t = _tableMap.get(key.getName());
+            trackDependency = false;
         }
 
 		if (t == null)
@@ -874,6 +919,15 @@ public class Query
             if (null != tableType && tableInfo.isMetadataOverrideable() && resolvedSchema instanceof UserSchema)
                 tableInfo.overlayMetadata(Collections.singletonList(tableType), (UserSchema)resolvedSchema, _parseErrors);
             _resolveCache.get(currentSchema).put(key, new Pair<>(resolvedSchema, tableInfo));
+
+            String name = ((TableInfo) t).getName();
+
+            if (trackDependency)
+            {
+                ActionURL url = new QueryController.QueryUrlsImpl().urlSchemaBrowser(resolvedSchema.getContainer(), resolvedSchema.getName(), name);
+                addDependency(QueryService.DependencyType.Table, resolvedSchema.getContainer(), ((UserSchema)resolvedSchema).getSchemaPath(), name, url);
+            }
+
             return new QueryTable(this, resolvedSchema, tableInfo, alias);
         }
 
@@ -891,6 +945,17 @@ public class Query
 
             // merge parameter lists
             mergeParameters(query);
+
+            // merge dependencies
+            _dependencies.putAll(query._dependencies);
+
+            // and add this dependency
+            if (trackDependency)
+            {
+                String name = def.getName();
+                ActionURL url = new QueryController.QueryUrlsImpl().urlSchemaBrowser(resolvedSchema.getContainer(), resolvedSchema.getName(), name);
+                addDependency(QueryService.DependencyType.Query, resolvedSchema.getContainer(), ((UserSchema)resolvedSchema).getSchemaPath(), name, url);
+            }
 
             // check for cases where we don't want to merge
             QuerySelect s = query.getQuerySelect();

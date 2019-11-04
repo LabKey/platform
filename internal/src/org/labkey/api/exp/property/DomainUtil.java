@@ -273,6 +273,8 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+            gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
         return gwtDomain;
     }

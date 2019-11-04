@@ -191,6 +191,7 @@ public class DOM
         autoplay,
         bgcolor,
         border,
+        cellpadding,
         charset,
         checked
         {
@@ -369,6 +370,7 @@ public class DOM
         translate,
         type,
         usemap,
+        valign,
         value,
         width,
         wrap;

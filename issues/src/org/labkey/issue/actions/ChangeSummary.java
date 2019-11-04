@@ -40,6 +40,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -61,7 +62,9 @@ import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -220,10 +223,9 @@ public class ChangeSummary
                             }
                         }
 
-                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(),
-                                oldValue != null ? String.valueOf(oldValue) : "",
-                                newValue != null ? String.valueOf(newValue) : "",
-                                ccc, newIssue);
+                        String from = oldValue != null ? oldValue instanceof Date ? DateUtil.formatDate(container, (Date) oldValue) : String.valueOf(oldValue) : "";
+                        String to = newValue != null ? newValue instanceof Date ? DateUtil.formatDate(container, (Date) newValue) : String.valueOf(newValue) : "";
+                        _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, entry.getKey(), from, to, ccc, newIssue);
                     }
                 }
             }

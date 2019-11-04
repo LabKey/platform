@@ -195,7 +195,7 @@
 
                 <br/>
                 <%= button("Next").primary(true).href("#configuration") %>
-                <%= button("Cancel").href(bean.getReturnUrl()) %>
+                <%= button("Cancel").id("cancel-btn-1")%>
             </div>
 
             <div id="configuration" class="lk-trigger-section">
@@ -279,7 +279,7 @@
 
                 <br/>
                 <%= button("Save").primary(true).id("btnSubmit") %>
-                <%= button("Cancel").href(bean.getReturnUrl()) %>
+                <%= button("Cancel").id("cancel-btn-2") %>
                 <%= button("Back").href("#details") %>
             </div>
         </div>
@@ -304,6 +304,15 @@
         }
 
         window.onbeforeunload = checkChanged;
+
+        // bypass the dirty check
+        function handleCancel() {
+            window.onbeforeunload = function(){};
+            window.location = <%=q(bean.getReturnUrl())%>;
+        }
+
+        $("#cancel-btn-1").click(function(){handleCancel();});
+        $("#cancel-btn-2").click(function(){handleCancel();});
 
         var taskPipelineVariables = {};
         <%

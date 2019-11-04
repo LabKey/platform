@@ -52,7 +52,7 @@ public class AuditModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 19.20;
+        return 19.30;
     }
 
     @Override

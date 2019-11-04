@@ -41,12 +41,17 @@ public class CoerceDataIterator extends SimpleTranslator
 {
     public CoerceDataIterator(DataIterator source, DataIteratorContext context, TableInfo target)
     {
-        super(source, context);
-        setDebugName("Coerce before trigger script");
-        init(target, context.getInsertOption().useImportAliases);
+        this(source, context, target, true);
     }
 
-    void init(TableInfo target, boolean useImportAliases)
+    public CoerceDataIterator(DataIterator source, DataIteratorContext context, TableInfo target, boolean outputAllColumns)
+    {
+        super(source, context);
+        setDebugName("Coerce before trigger script");
+        init(target, context.getInsertOption().useImportAliases, outputAllColumns);
+    }
+
+    void init(TableInfo target, boolean useImportAliases, boolean outputAllColumns)
     {
         Map<String,ColumnInfo> targetMap = DataIteratorUtil.createTableMap(target, useImportAliases);
         Set<String> seen = new CaseInsensitiveHashSet();
@@ -72,14 +77,17 @@ public class CoerceDataIterator extends SimpleTranslator
                 addColumn(i);
             }
         }
-        // add null column for all insertable not seen columns
-        for (ColumnInfo to : target.getColumns())
+        if (outputAllColumns)
         {
-            if (seen.contains(to.getName()))
-                continue;
-            if (!to.isUserEditable() || to.isAutoIncrement())
-                continue;
-            addNullColumn(to.getName(), to.getJdbcType());
+            // add null column for all insertable not seen columns
+            for (ColumnInfo to : target.getColumns())
+            {
+                if (seen.contains(to.getName()))
+                    continue;
+                if (!to.isUserEditable() || to.isAutoIncrement())
+                    continue;
+                addNullColumn(to.getName(), to.getJdbcType());
+            }
         }
     }
 
