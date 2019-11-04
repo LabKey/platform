@@ -271,7 +271,7 @@ LABKEY.Experiment.loadBatch({
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
-         * <li><b>batches</b> The list of {@link LABKEY.Exp.RunGroup} objects.
+         * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
          * <li><b>response</b> The original response
          * </ul>
          * @param {function} [config.failure] The function to call if this function encounters an error.
