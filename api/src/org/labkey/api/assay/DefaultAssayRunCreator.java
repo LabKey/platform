@@ -90,6 +90,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -229,6 +230,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Set<String> outputLSIDs = new HashSet<>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
+        Map<String, Object> unresolvedRunProperties = context.getUnresolvedRunProperties();
         Map<DomainProperty, String> batchProperties = context.getBatchProperties();
 
         Map<DomainProperty, String> allProperties = new HashMap<>();
@@ -363,19 +365,16 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
 
-
             transaction.commit();
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
             // Attach run's starting protocol application with starting input LSIDs.
             Set<String> runInputLSIDs = new HashSet<>();
-            for (Map.Entry<DomainProperty, String> runProperty : runProperties.entrySet())
+            for (Map.Entry<String, Object> runProperty : unresolvedRunProperties.entrySet())
             {
-                PropertyDescriptor runPropertyPD = runProperty.getKey().getPropertyDescriptor();
-                String propertyName = runPropertyPD.getName();
-                if (propertyName.equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY) && null != runProperty.getValue())
+                if (null != runProperty.getValue())
                 {
-                    String[] runLSIDArr = runProperty.getValue().split(",");
+                    String[] runLSIDArr = Objects.toString(runProperty.getValue()).split(",");
                     runInputLSIDs.addAll(Arrays.asList(runLSIDArr));
                 }
             }
