@@ -16,6 +16,8 @@ import java.util.Set;
  * */
 public interface ProvenanceService
 {
+    String PROVENANCE_INPUT_PROPERTY = "prov:objectInputs";
+
     static ProvenanceService get()
     {
         return ServiceRegistry.get().getService(ProvenanceService.class);

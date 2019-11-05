@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -434,13 +435,18 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         ExpProtocolApplication outputProtocolApp = run.getOutputProtocolApplication();
 
-        if (!provMap.isEmpty())
+        ProvenanceService pvs = ProvenanceService.get();
+
+        if (null != pvs)
         {
-            ProvenanceService.get().addProvenance(container, outputProtocolApp, provMap);
-        }
-        if (!outputLSIDs.isEmpty())
-        {
-            ProvenanceService.get().addProvenanceOutputs(container, outputProtocolApp, outputLSIDs);
+            if (!provMap.isEmpty())
+            {
+                pvs.addProvenance(container, outputProtocolApp, provMap);
+            }
+            if (!outputLSIDs.isEmpty())
+            {
+                pvs.addProvenanceOutputs(container, outputProtocolApp, outputLSIDs);
+            }
         }
     }
 
@@ -527,6 +533,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     expectedKey2ActualKey.put(aliased.getValue().getName(), actualKey);
                 }
+
+                if (actualKey.equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
+                {
+                    expectedKey2ActualKey.put(actualKey, actualKey);
+                }
             }
         }
         ListIterator<Map<String, Object>> iter = rawData.listIterator();
@@ -593,7 +604,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty visitPD = null;
         DomainProperty datePD = null;
         DomainProperty targetStudyPD = null;
-        DomainProperty provObjectInputsPD = null;
 
         Map<DomainProperty, ExpSampleSet> sampleNameSampleSets = new HashMap<>();
         Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet = new LinkedHashMap<>();
@@ -637,10 +647,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     pd.getPropertyDescriptor().getPropertyType() == PropertyType.STRING)
             {
                 targetStudyPD = pd;
-            }
-            else if (pd.getName().equalsIgnoreCase(AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY))
-            {
-                provObjectInputsPD = pd;
             }
             else
             {
@@ -707,6 +713,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (prop != null)
                 {
                     map.put(prop.getName(), entry.getValue());
+                }
+                if (entry.getKey().equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
+                {
+                    map.put(entry.getKey(), entry.getValue());
                 }
             }
 
@@ -928,13 +938,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             }
 
             // Add any “prov:objectInputs” to the rowInputLSIDs
-            if (provObjectInputsPD != null && map.get(provObjectInputsPD.getName()) != null)
+            var provenanceInputs = map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
+            if (null != provenanceInputs)
             {
-                if (map.get(provObjectInputsPD.getName()) instanceof String)
+                if (provenanceInputs instanceof JSONArray)
                 {
-                    String lsids = (String) map.get(provObjectInputsPD.getName());
+                    JSONArray inputJSONArr = (JSONArray) provenanceInputs;
+                    Object[] inputArr = inputJSONArr.toArray();
+                    for (Object lsid: inputArr)
+                    {
+                        rowInputLSIDs.add(lsid.toString());
+                    }
+                }
+                else
+                {
+                    String lsids = (String) map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
                     String[] lsidArr = lsids.split(",");
-                    Arrays.stream(lsidArr).forEach(sid -> rowInputLSIDs.add(sid));
+                    rowInputLSIDs.addAll(Arrays.asList(lsidArr));
                 }
             }
 

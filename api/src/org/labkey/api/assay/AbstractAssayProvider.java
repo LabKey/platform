@@ -170,8 +170,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected final String _resultRowLSIDPrefix;
     protected final Set<Module> _requiredModules = new HashSet<>();
 
-    public static final String PROVENANCE_INPUT_PROPERTY = "prov:objectInputs";
-
     private final Module _declaringModule;
     @Nullable protected AssayDataType _dataType;
 
