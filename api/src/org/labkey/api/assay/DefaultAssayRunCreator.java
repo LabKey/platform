@@ -372,7 +372,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Set<String> runInputLSIDs = new HashSet<>();
             for (Map.Entry<String, Object> runProperty : unresolvedRunProperties.entrySet())
             {
-                if (AbstractAssayProvider.PROVENANCE_INPUT_PROPERTY.equalsIgnoreCase(runProperty.getKey())
+                if (ProvenanceService.PROVENANCE_INPUT_PROPERTY.equalsIgnoreCase(runProperty.getKey())
                         && null != runProperty.getValue())
                 {
                     String[] runLSIDArr = Objects.toString(runProperty.getValue()).split(",");
@@ -380,10 +380,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
             }
 
-            if (!runInputLSIDs.isEmpty())
+            ProvenanceService pvs = ProvenanceService.get();
+
+            if (null != pvs && !runInputLSIDs.isEmpty())
             {
                 ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
-                ProvenanceService.get().addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
+                pvs.addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
             }
 
             ExperimentService.get().queueSyncRunEdges(run);

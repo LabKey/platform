@@ -2804,14 +2804,16 @@ public class ExperimentServiceImpl implements ExperimentService
             Map<Integer, Pair<String, String>> inputProvenanceMap = new HashMap<>();
             Map<Integer, Pair<String,String>> outputProvenanceMap = new HashMap<>();
 
-            if (null != startProtocolApp)
+            ProvenanceService pvs = ProvenanceService.get();
+
+            if (null != startProtocolApp && null != pvs)
             {
-                inputProvenanceMap = ProvenanceService.get().getProvenance(startProtocolApp.getRowId());
+                inputProvenanceMap = pvs.getProvenance(startProtocolApp.getRowId());
             }
 
-            if (null != finalProtocolApp)
+            if (null != finalProtocolApp && null != pvs)
             {
-                outputProvenanceMap = ProvenanceService.get().getProvenance(finalProtocolApp.getRowId());
+                outputProvenanceMap = pvs.getProvenance(finalProtocolApp.getRowId());
             }
 
             // delete all existing edges for this run
