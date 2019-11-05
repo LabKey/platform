@@ -93,7 +93,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -204,6 +203,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _useQueryViewActionExportURLs = false;
     private boolean _printView = false;
     private boolean _exportView = false;
+    private boolean _apiResponseView = false;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
     private boolean _showReports = true;
@@ -496,21 +496,25 @@ public class QueryView extends WebPartView<Object>
         if (expr == null)
             return null;
 
-        switch (action)
+        // Don't append the returnURL parameter in API responses
+        if (!isApiResponseView())
         {
-            case detailsQueryRow:
-            case updateQueryRow:
-            case insertQueryRow:
-            case importData:
-            case updateQueryRows:
-            case deleteQueryRows:
+            switch (action)
             {
-                // ICK
-                URLHelper returnURL = getReturnURL();
-                if (returnURL != null)
+                case detailsQueryRow:
+                case updateQueryRow:
+                case insertQueryRow:
+                case importData:
+                case updateQueryRows:
+                case deleteQueryRows:
                 {
-                    String encodedReturnURL = PageFlowUtil.encode(returnURL.getLocalURIString());
-                    expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(ActionURL.Param.returnUrl.name(), encodedReturnURL);
+                    // ICK
+                    URLHelper returnURL = getReturnURL();
+                    if (returnURL != null)
+                    {
+                        String encodedReturnURL = PageFlowUtil.encode(returnURL.getLocalURIString());
+                        expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(ActionURL.Param.returnUrl.name(), encodedReturnURL);
+                    }
                 }
             }
         }
@@ -2187,7 +2191,7 @@ public class QueryView extends WebPartView<Object>
         ret.setFrame(WebPartView.FrameType.NONE);
         rgn.setAllowAsync(true);
         ButtonBar bb = new ButtonBar();
-        if (!isPrintView() && !isExportView())
+        if (!(isApiResponseView() || isPrintView() || isExportView()))
         {
             populateButtonBar(ret, bb);
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
@@ -2196,7 +2200,7 @@ public class QueryView extends WebPartView<Object>
         }
         rgn.setButtonBar(bb);
 
-        rgn.setButtonBarPosition(isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
+        rgn.setButtonBarPosition(isApiResponseView() || isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
 
         if (getSettings() != null && getSettings().getShowRows() == ShowRows.ALL)
         {
@@ -2664,7 +2668,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            _exportView = true;
+            _apiResponseView = true;
             setShowDetailsColumn(response.isIncludeDetailsColumn());
             setShowUpdateColumn(response.isIncludeUpdateColumn());
             DataView view = createDataView();
@@ -2682,7 +2686,12 @@ public class QueryView extends WebPartView<Object>
             RenderContext ctx = view.getRenderContext();
             rgn.setAllowAsync(false);
             rgn.prepareDisplayColumns(ctx.getContainer());
-            response.initialize(ctx, rgn, table, response.isIncludeDetailsColumn() ? rgn.getDisplayColumns() : getExportColumns(rgn.getDisplayColumns()));
+            List<DisplayColumn> displayColumns;
+            if (response.isIncludeDetailsColumn() || response.isIncludeUpdateColumn())
+                displayColumns = rgn.getDisplayColumns();
+            else
+                displayColumns = getExportColumns(rgn.getDisplayColumns());
+            response.initialize(ctx, rgn, table, displayColumns);
         }
         else
         {
@@ -2869,6 +2878,8 @@ public class QueryView extends WebPartView<Object>
 
     protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
     {
+        // Print view and export view don't need details and update columns,
+        // but the selectRows API can turn them on to include the URLs in the response format.
         if (isPrintView() || isExportView())
             return;
 
@@ -2996,6 +3007,11 @@ public class QueryView extends WebPartView<Object>
     public boolean isExportView()
     {
         return _exportView;
+    }
+
+    public boolean isApiResponseView()
+    {
+        return _apiResponseView;
     }
 
     public boolean isUseQueryViewActionExportURLs()
