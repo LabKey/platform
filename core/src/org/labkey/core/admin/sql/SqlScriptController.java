@@ -907,7 +907,14 @@ public class SqlScriptController extends SpringActionController
         {
             ScriptConsolidator consolidator = getConsolidator(form);
             consolidator.saveScript();
-            obsoleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
+
+            // Consider automatic obsoleting when consolidating bootstrap scripts, #38810
+            if (0.0 == form.getFromVersion())
+            {
+                // ...but only if there are no incremental scripts involved
+                if (consolidator.getScripts().stream().noneMatch(SqlScript::isIncremental))
+                    obsoleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
+            }
 
             return true;
         }
