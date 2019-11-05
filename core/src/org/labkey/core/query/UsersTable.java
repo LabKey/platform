@@ -15,9 +15,11 @@
  */
 package org.labkey.core.query;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -36,6 +38,7 @@ import org.labkey.api.query.CacheClearingQueryUpdateService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -44,6 +47,8 @@ import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -52,16 +57,26 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
+import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.user.UserController;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -336,8 +351,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     return UsersDomainKind.getDomainContainer();
                 }
             };
-            QueryUpdateService updateService = new SimpleQueryUpdateService(this, table, helper);
-            return new CacheClearingQueryUpdateService(updateService)
+
+            return new CacheClearingQueryUpdateService(new UsersTableQueryUpdateService(this, table, helper))
             {
                 @Override
                 protected void clearCache()
@@ -418,5 +433,156 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Map<String, Pair<IndexType, List<ColumnInfo>>> unique = new HashMap<>(super.getUniqueIndices());
         unique.put("uq_users_email", Pair.of(IndexType.Unique, getColumns("Email")));
         return unique;
+    }
+
+    private static class UsersTableQueryUpdateService extends SimpleQueryUpdateService
+    {
+        public UsersTableQueryUpdateService(SimpleUserSchema.SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
+        {
+            super(queryTable, dbTable, helper);
+        }
+
+        @Override
+        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        {
+            throw new UnsupportedOperationException("Insert not supported.");
+        }
+
+        @Override
+        protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
+        {
+            throw new UnsupportedOperationException("Delete not supported.");
+        }
+
+        @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            User userToUpdate = validateUpdatedUser(row, keys);
+            validatePermissions(user, userToUpdate);
+            validateExpirationDate(userToUpdate, user, c, row);
+
+            SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
+            validateAvatarFile(avatarFile);
+
+            Map<String, Object> ret = super._update(user, c, row, oldRow, keys);
+            updateAvatarFile(userToUpdate, avatarFile, row);
+
+            return ret;
+        }
+
+        private void validateExpirationDate(User userToUpdate, User editingUser, Container container, Map<String, Object> row) throws ValidationException
+        {
+            String expirationDateKey = "ExpirationDate";
+
+            if (row.containsKey(expirationDateKey))
+            {
+                if (!AuthenticationManager.canSetUserExpirationDate(editingUser, container))
+                    throw new UnauthorizedException("User does not have permission to edit the Expiration Date field.");
+
+                Timestamp expirationDate = (Timestamp)row.get(expirationDateKey);
+                if (expirationDate != null)
+                {
+                    if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
+                        throw new ValidationException("Expiration Date cannot be in the past.");
+
+                    boolean isOwnRecord = editingUser.equals(userToUpdate);
+                    if (isOwnRecord)
+                        throw new ValidationException("Cannot set your own Expiration Date.");
+                }
+            }
+        }
+
+        private void validatePermissions(User editingUser, User userToUpdate)
+        {
+            // only allow update to your own record or if you are a site level user manager
+            boolean isOwnRecord = editingUser.equals(userToUpdate);
+            if (!editingUser.hasRootPermission(UserManagementPermission.class) && !isOwnRecord)
+                throw new UnauthorizedException();
+
+            // don't let non-site admin edit details of site admin account
+            if (userToUpdate.hasSiteAdminPermission() && !editingUser.hasSiteAdminPermission())
+                throw new UnauthorizedException("Can not edit details for a Site Admin user.");
+        }
+
+        private User validateUpdatedUser(Map<String, Object> row, Object[] keys) throws ValidationException
+        {
+            Integer pkVal = keys.length == 1 ? NumberUtils.toInt(keys[0].toString()) : null;
+            User userToUpdate = pkVal != null ? UserManager.getUser(pkVal) : null;
+            if (userToUpdate == null)
+                throw new NotFoundException("Unable to find user for " + pkVal + ".");
+            if (userToUpdate.isGuest())
+                throw new ValidationException("Action not valid for Guest user.");
+
+            String userEmailAddress = userToUpdate.getEmail();
+            String displayName = (String)row.get("DisplayName");
+
+            if (displayName != null)
+            {
+                if (displayName.contains("@") && !displayName.equalsIgnoreCase(userEmailAddress))
+                    throw new ValidationException("User display name should not contain '@'. Please enter a different value.");
+
+                //ensure that display name is unique
+                //error if there's a user with this display name and it's not the user currently being edited
+                User existingUser = UserManager.getUserByDisplayName(displayName);
+                if (existingUser != null && !existingUser.equals(userToUpdate))
+                    throw new ValidationException("The specified display name is already in use. Please enter a different value.");
+            }
+
+            return userToUpdate;
+        }
+
+        private void validateAvatarFile(SpringAttachmentFile file) throws ValidationException
+        {
+            // validate the original size of the avatar image
+            if (file != null)
+            {
+                try (InputStream is = file.openInputStream())
+                {
+                    BufferedImage image = ImageIO.read(is);
+                    float desiredSize = ThumbnailService.ImageType.Large.getHeight();
+
+                    if (image == null)
+                    {
+                        throw new ValidationException("Avatar file must be an image file.");
+                    }
+                    else if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
+                    {
+                        throw new ValidationException("Avatar file must have a height and width of at least " + desiredSize + "px.");
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new ValidationException("Unable to open avatar file.");
+                }
+            }
+        }
+
+        private void updateAvatarFile(User user, SpringAttachmentFile file, Map<String, Object> row) throws ValidationException
+        {
+            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
+            ThumbnailService svc = ThumbnailService.get();
+
+            if (svc != null)
+            {
+                // add any new avatars, or replace existing, by using the ThumbnailService to generate and attach to the User's entityid
+                if (file != null)
+                {
+                    try (InputStream is = file.openInputStream())
+                    {
+                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(new AvatarThumbnailProvider(user), is, file.getContentType(), imageType, true);
+                        svc.replaceThumbnail(wrapper, imageType, null, null);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new ValidationException("Unable to open avatar file.");
+                    }
+                }
+                // call delete thumbnail in case there was an existing one which is being removed
+                else if (row.containsKey(UserAvatarDisplayColumnFactory.FIELD_KEY))
+                {
+                    svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
+                }
+            }
+        }
     }
 }

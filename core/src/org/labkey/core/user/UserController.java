@@ -33,7 +33,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.BaseDownloadAction;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.data.AbstractTableInfo;
@@ -97,8 +96,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
-import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
@@ -130,24 +127,17 @@ import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
-import org.labkey.core.query.UserAvatarDisplayColumnFactory;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.view.template.bootstrap.PrintTemplate;
-import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.imageio.ImageIO;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -902,7 +892,6 @@ public class UserController extends SpringActionController
     {
         Integer _userId;
         Integer _pkVal;
-        PropertyValue _deletedAttachments;
 
         @Override
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors)
@@ -932,10 +921,6 @@ public class UserController extends SpringActionController
                 TableInfo table = ((UpdateView) view).getTable();
                 if (table instanceof UsersTable)
                     ((UsersTable)table).setMustCheckPermissions(false);
-/*
-                view.getViewContext().addContextualRole(ReadPermission.class);
-                view.getViewContext().addContextualRole(UpdatePermission.class);
-*/
             }
             else
             {
@@ -954,7 +939,6 @@ public class UserController extends SpringActionController
             QueryForm form = new UserQueryForm();
             form.setViewContext(context);
             PropertyValues propertyValues = context.getBindPropertyValues();
-            _deletedAttachments = propertyValues.getPropertyValue("deletedAttachments");
             form.bindParameters(propertyValues);
             return form;
         }
@@ -963,93 +947,33 @@ public class UserController extends SpringActionController
         public void validateCommand(QueryUpdateForm form, Errors errors)
         {
             TableInfo table = form.getTable();
-
-            if (table instanceof UsersTable)
+            if (!(table instanceof UsersTable))
             {
-                for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
-                {
-                    if (entry.getKey().equals("ExpirationDate") && !AuthenticationManager.canSetUserExpirationDate(getUser(), getContainer()))
-                        errors.reject(ERROR_MSG, "User does not have permission to edit the ExpirationDate field.");
-
-                    if (entry.getValue() != null)
-                    {
-                        ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
-                        try
-                        {
-                            ColumnValidators.validate(col, null, 1, entry.getValue());
-                        }
-                        catch (ValidationException e)
-                        {
-                            errors.reject(ERROR_MSG, e.getMessage());
-                        }
-                    }
-                }
+                errors.reject(ERROR_MSG, "Unexpected table parameter " + form.getTable() + ".");
+                return;
             }
 
             String userId = form.getPkVal().toString();
             if (userId == null)
             {
-                errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
+                errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null.");
                 return;
             }
 
-            User user = getModifiableUser(NumberUtils.toInt(userId));
-
-            // don't let non-site admin edit details of site admin account
-            if (user.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not edit details for a Site Admin user");
-
-            String userEmailAddress = user.getEmail();
-            String displayName = (String)form.getTypedColumns().get("DisplayName");
-
-            if (displayName != null)
+            // TODO is this needed anymore? or is this handled by UsersTableQueryUpdateService when doInsertUpdate() is called?
+            for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
             {
-                if (displayName.contains("@"))
+                if (entry.getValue() != null)
                 {
-                    if (!displayName.equalsIgnoreCase(userEmailAddress))
-                        errors.reject(SpringActionController.ERROR_MSG, "User display name should not contain '@'. Please enter a different value");
-                }
-
-                //ensure that display name is unique
-                User existingUser = UserManager.getUserByDisplayName(displayName);
-                //if there's a user with this display name and it's not the user currently being edited
-                if (existingUser != null && !existingUser.equals(user))
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "The specified display name is already in use. Please enter a different value");
-                }
-            }
-
-            Timestamp expirationDate = (Timestamp) form.getTypedColumns().get("ExpirationDate");
-            if (expirationDate != null)
-            {
-                if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
-                    errors.reject(SpringActionController.ERROR_MSG, "Expiration Date cannot be in the past.");
-
-                if (isOwnRecord(form))
-                    errors.reject(SpringActionController.ERROR_MSG, "Cannot set your own expiration date.");
-            }
-
-            // validate the original size of the avatar image
-            SpringAttachmentFile file = getAvatarFileFromFileMap();
-            if (file != null)
-            {
-                try (InputStream is = file.openInputStream())
-                {
-                    BufferedImage image = ImageIO.read(is);
-                    float desiredSize = ThumbnailService.ImageType.Large.getHeight();
-
-                    if (image == null)
+                    ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
+                    try
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, "Avatar file must be an image file.");
+                        ColumnValidators.validate(col, null, 1, entry.getValue());
                     }
-                    else if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
+                    catch (ValidationException e)
                     {
-                        errors.reject(SpringActionController.ERROR_MSG, "Avatar file must have a height and width of at least " + desiredSize + "px.");
+                        errors.reject(ERROR_MSG, e.getMessage());
                     }
-                }
-                catch (IOException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Unable to open avatar file.");
                 }
             }
         }
@@ -1078,15 +1002,13 @@ public class UserController extends SpringActionController
                 TableInfo table = form.getTable();
                 if (table instanceof UsersTable)
                     ((UsersTable)table).setMustCheckPermissions(false);
+
                 doInsertUpdate(form, errors, false);
 
                 if (0 == errors.getErrorCount())
-                {
                     auditExpirationDateChange(oldExpirationDate, form);
-                }
-
-                updateAvatarThumbnail();
             }
+
             return 0 == errors.getErrorCount();
         }
 
@@ -1125,44 +1047,6 @@ public class UserController extends SpringActionController
 
             UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(getContainer().getId(), message, targetUser);
             AuditLogService.get().addEvent(getUser(), event);
-        }
-
-        private SpringAttachmentFile getAvatarFileFromFileMap()
-        {
-            String avatarFieldKey = "quf_" + UserAvatarDisplayColumnFactory.FIELD_KEY;
-            if (getFileMap().containsKey(avatarFieldKey) && !getFileMap().get(avatarFieldKey).isEmpty())
-            {
-                return new SpringAttachmentFile(getFileMap().get(avatarFieldKey));
-            }
-
-            return null;
-        }
-
-        private void updateAvatarThumbnail() throws IOException
-        {
-            User user = UserManager.getUser(_pkVal);
-            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
-            ThumbnailService svc = ThumbnailService.get();
-
-            if (svc != null)
-            {
-                // check if there is a request to delete the existing avatar
-                if (_deletedAttachments != null && UserAvatarDisplayColumnFactory.FIELD_KEY.equalsIgnoreCase(_deletedAttachments.getValue().toString()))
-                {
-                    svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
-                }
-
-                // add any new avatars by using the ThumbnailService to generate and attach to the User's entityid
-                SpringAttachmentFile file = getAvatarFileFromFileMap();
-                if (file != null)
-                {
-                    try (InputStream is = file.openInputStream())
-                    {
-                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(new AvatarThumbnailProvider(user), is, file.getContentType(), imageType, true);
-                        svc.replaceThumbnail(wrapper, imageType, null, getViewContext());
-                    }
-                }
-            }
         }
 
         @Override
