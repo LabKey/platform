@@ -499,12 +499,12 @@ public class LineagePerfTest extends Assert
 
             LOG.info("  lineage graph 1");
             lineageGraph.start();
-            ExperimentService.get().getLineage(context, sample, opt);
+            ExperimentService.get().getLineage(_container, _user, sample, opt);
             lineageGraph.stop();
 
             LOG.info("  lineage graph 2");
             lineageGraph.start();
-            ExperimentService.get().getLineage(context, sample, opt);
+            ExperimentService.get().getLineage(_container, _user, sample, opt);
             lineageGraph.stop();
         }
     }
