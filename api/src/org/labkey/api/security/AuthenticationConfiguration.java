@@ -5,6 +5,7 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +21,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
             // TODO: More to come...
     );
 
-    @NotNull Integer getRowId();
+    int getRowId();
     @NotNull String getDescription();
     @NotNull AP getAuthenticationProvider();
     boolean isEnabled();
@@ -28,7 +29,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends AuthenticationConfiguration<AP>
     {
         LinkFactory getLinkFactory();
-        URLHelper getUrl(String secret);
+        URLHelper getUrl(String secret, ViewContext ctx);
 
         /**
          * Allows an SSO auth configuration to specify that it should be used automatically instead of showing the standard

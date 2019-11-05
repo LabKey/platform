@@ -11,7 +11,7 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     private final AP _provider;
     private final String _description;
     private final boolean _enabled;
-    private final Integer _rowId;
+    private final int _rowId;
     private final String _entityId;
 
     protected BaseAuthenticationConfiguration(String key, AP provider, Map<String, String> props)
@@ -33,8 +33,7 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     }
 
     @Override
-    @NotNull
-    public Integer getRowId()
+    public int getRowId()
     {
         return _rowId;
     }

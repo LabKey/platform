@@ -5,6 +5,7 @@ import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
-    public URLHelper getUrl(String secret)
+    public URLHelper getUrl(String secret, ViewContext ctx)
     {
         ActionURL url = new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
         url.addParameter("configuration", getRowId());

@@ -117,9 +117,6 @@ public class AuthenticationManager
     // Map of user id to login provider. This is needed to handle clean up on logout.
     private static final Map<Integer, PrimaryAuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
-    public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";  // TODO: Remove this old const
-    public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_"; // TODO: Remove this old const
-
     public enum AuthLogoType
     {
         HEADER("auth_header_logo", "16"),
@@ -1301,6 +1298,22 @@ public class AuthenticationManager
         SessionHelper.clearAttributesWithPrefix(request, AUTHENTICATION_PROCESS_PREFIX);
     }
 
+    // This key and the associated setter & getter give SSO providers the ability to stash an AuthenticationConfiguration
+    // in session before redirect and retrieve it at validation time. Some protocols (SAML) reject URLs with parameters
+    // that change, but we need some way to tell the validate action which configuration to use.
+    private static final String CONFIGURATION_ID_KEY = AUTHENTICATION_PROCESS_PREFIX + "AuthenticationConfiguration";
+
+    public static void setAuthenticationConfigurationId(HttpServletRequest request, int rowId)
+    {
+        HttpSession session = request.getSession(true);
+        session.setAttribute(CONFIGURATION_ID_KEY, rowId);
+    }
+
+    public static @Nullable Integer getAuthenticationConfigurationId(HttpServletRequest request)
+    {
+        HttpSession session = request.getSession(true);
+        return (Integer)session.getAttribute(CONFIGURATION_ID_KEY);
+    }
 
     public static class AuthenticationResult
     {

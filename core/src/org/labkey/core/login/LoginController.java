@@ -1478,7 +1478,7 @@ public class LoginController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
 
-            url = configuration.getUrl(csrf);
+            url = configuration.getUrl(csrf, getViewContext());
 
             return HttpView.redirect(url.getURIString());
         }

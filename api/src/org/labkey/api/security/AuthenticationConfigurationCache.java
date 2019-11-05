@@ -181,7 +181,7 @@ public class AuthenticationConfigurationCache
     public static @Nullable <T extends AuthenticationConfiguration> T getActiveConfiguration(Class<T> clazz, int rowId)
     {
         for (T configuration : getActive(clazz))
-            if (configuration.getRowId().equals(rowId))
+            if (configuration.getRowId() == rowId)
                 return configuration;
 
         return null;
@@ -196,7 +196,7 @@ public class AuthenticationConfigurationCache
     public static @Nullable <T extends AuthenticationConfiguration> T getConfiguration(Class<T> clazz, int rowId)
     {
         for (T configuration : getConfigurations(clazz))
-            if (configuration.getRowId().equals(rowId))
+            if (configuration.getRowId() == rowId)
                 return configuration;
 
         return null;
