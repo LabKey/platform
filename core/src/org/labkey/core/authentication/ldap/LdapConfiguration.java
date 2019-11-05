@@ -1,6 +1,5 @@
 package org.labkey.core.authentication.ldap;
 
-import org.labkey.api.ldap.LdapAuthenticationManager.Key;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.BaseAuthenticationConfiguration;
 import org.labkey.api.security.LoginFormAuthenticationConfiguration;
@@ -27,15 +26,6 @@ public class LdapConfiguration extends BaseAuthenticationConfiguration<LdapAuthe
         _servers = Arrays.asList(((String)properties.getOrDefault("servers", "")).split(";"));
         _principalTemplate = (String)properties.getOrDefault("principalTemplate", "${email}");
         _sasl = (boolean)properties.get("sasl");
-    }
-
-    protected LdapConfiguration(String key, LdapAuthenticationProvider provider, Map<String, String> props)
-    {
-        super(key, provider, props);
-        _domain = props.get(Key.Domain.toString());
-        _servers = Arrays.asList(props.getOrDefault(Key.Servers.toString(), "").split(";"));
-        _principalTemplate = props.getOrDefault(Key.PrincipalTemplate.toString(), "${email}");
-        _sasl = Boolean.getBoolean(props.get(Key.SASL.toString()));
     }
 
     public String getDomain()

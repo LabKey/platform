@@ -105,6 +105,7 @@ public class LdapConfigureForm extends AuthenticationConfigureForm<LdapConfigura
         sasl = authenticationConfiguration.isSasl();
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public String getProperties()
     {
         return new JSONObject(Map.of(

@@ -19,6 +19,7 @@ package org.labkey.core.authentication.ldap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationManager;
@@ -32,8 +33,7 @@ import javax.naming.NamingException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import static org.labkey.api.ldap.LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY;
+import java.util.Map;
 
 /**
  * User: adam
@@ -62,18 +62,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     {
         return new LdapConfiguration(this, cs.getStandardSettings(), cs.getProperties());
     }
-
-//    @Override
-//    public LdapConfiguration getAuthenticationConfiguration(boolean active)
-//    {
-//        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
-//        Map<String, String> map = new HashMap<>(props);
-//        map.put("Provider", getName());
-//        map.put("Enabled", Boolean.toString(active));
-//        map.put("Name", getName());
-//
-//        return new LdapConfiguration(LDAP_AUTHENTICATION_CATEGORY_KEY, this, map);
-//    }
 
     @Override
     @NotNull
@@ -136,6 +124,9 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         return AuthenticationResponse.createFailureResponse(this, FailureReason.configurationError);
     }
 
+    private static final String LDAP_AUTHENTICATION_CATEGORY_KEY = "LDAPAuthentication";
+    private enum Key {Servers, Domain, PrincipalTemplate, SASL}
+
     @Override
     public @NotNull Collection<String> getPropertyCategories()
     {
@@ -145,6 +136,24 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     @Override
     public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
     {
-        return null;  // TODO: Implement!!
+        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);;
+        LdapConfigureForm form = new LdapConfigureForm();
+
+        form.setServers(getProperty(props, Key.Servers, ""));
+        form.setDomain(getProperty(props, Key.Domain, ""));
+        form.setPrincipalTemplate(getProperty(props, Key.PrincipalTemplate, "${email}"));
+        form.setSASL("TRUE".equalsIgnoreCase(getProperty(props, Key.SASL, "FALSE")));
+
+        return form;
+    }
+
+    private static String getProperty(Map<String, String> props, Key key, String defaultValue)
+    {
+        String value = props.get(key.toString());
+
+        if (null != value)
+            return value;
+        else
+            return defaultValue;
     }
 }
