@@ -24,6 +24,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -479,7 +480,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             updateAvatarFile(userToUpdate, avatarFile, row);
 
             if (row.containsKey(EXPIRATION_DATE_KEY))
-                auditExpirationDateChange(userToUpdate, user, container, userToUpdate.getExpirationDate(), (Date)ret.get(EXPIRATION_DATE_KEY));
+                auditExpirationDateChange(userToUpdate, user, ContainerManager.getRoot(), userToUpdate.getExpirationDate(), (Date)ret.get(EXPIRATION_DATE_KEY));
 
             return ret;
         }
