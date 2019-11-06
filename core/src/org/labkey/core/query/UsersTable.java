@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -60,6 +61,7 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -93,6 +95,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private Set<String> _illegalColumns;
     private boolean _mustCheckPermissions = true;
     private boolean _canSeeDetails;
+    private static final String EXPIRATION_DATE_KEY = "ExpirationDate";
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
 
     static
@@ -475,27 +478,35 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             Map<String, Object> ret = super.updateRow(user, container, row, oldRow);
             updateAvatarFile(userToUpdate, avatarFile, row);
 
+            if (row.containsKey(EXPIRATION_DATE_KEY))
+                auditExpirationDateChange(userToUpdate, user, container, userToUpdate.getExpirationDate(), (Date)ret.get(EXPIRATION_DATE_KEY));
+
             return ret;
         }
 
         private void validateExpirationDate(User userToUpdate, User editingUser, Container container, Map<String, Object> row) throws ValidationException
         {
-            String expirationDateKey = "ExpirationDate";
-
-            if (row.containsKey(expirationDateKey))
+            if (row.containsKey(EXPIRATION_DATE_KEY))
             {
                 if (!AuthenticationManager.canSetUserExpirationDate(editingUser, container))
                     throw new UnauthorizedException("User does not have permission to edit the Expiration Date field.");
 
-                Timestamp expirationDate = (Timestamp)row.get(expirationDateKey);
-                if (expirationDate != null)
+                try
                 {
-                    if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
-                        throw new ValidationException("Expiration Date cannot be in the past.");
+                    Timestamp expirationDate = (Timestamp)row.get(EXPIRATION_DATE_KEY);
+                    if (expirationDate != null)
+                    {
+                        if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
+                            throw new ValidationException("Expiration Date cannot be in the past.");
 
-                    boolean isOwnRecord = editingUser.equals(userToUpdate);
-                    if (isOwnRecord)
-                        throw new ValidationException("Cannot set your own Expiration Date.");
+                        boolean isOwnRecord = editingUser.equals(userToUpdate);
+                        if (isOwnRecord)
+                            throw new ValidationException("Cannot set your own Expiration Date.");
+                    }
+                }
+                catch (ClassCastException e)
+                {
+                    throw new ValidationException("Invalid value for Expiration Date.");
                 }
             }
         }
@@ -582,6 +593,36 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
                 }
             }
+        }
+
+        private void auditExpirationDateChange(User userToUpdate, User editingUser, Container c, Date oldExpirationDate, Date newExpirationDate)
+        {
+            String targetUserEmail = userToUpdate.getEmail();
+            String currentUserEmail = editingUser.getEmail();
+            String message;
+
+            if (oldExpirationDate == null && newExpirationDate == null)
+                return;
+            else if (oldExpirationDate == null)
+            {
+                message = String.format("%1$s set expiration date for %2$s to %3$s.",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, newExpirationDate));
+            }
+            else if (newExpirationDate == null)
+            {
+                message = String.format("%1$s removed expiration date for %2$s. Previous value was %3$s",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate));
+            }
+            else if (oldExpirationDate.compareTo(newExpirationDate) != 0)
+            {
+                message = String.format("%1$s changed expiration date for %2$s from %3$s to %4$s.",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate), DateUtil.formatDateTime(c, newExpirationDate));
+            }
+            else
+                return;
+
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(c.getId(), message, userToUpdate);
+            AuditLogService.get().addEvent(editingUser, event);
         }
     }
 }

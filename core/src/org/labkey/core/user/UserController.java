@@ -50,7 +50,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UrlColumn;
-import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
@@ -63,7 +62,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
@@ -96,7 +94,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -142,7 +139,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -959,23 +955,6 @@ public class UserController extends SpringActionController
                 errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null.");
                 return;
             }
-
-            // TODO is this needed anymore? or is this handled by UsersTableQueryUpdateService when doInsertUpdate() is called?
-            for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
-            {
-                if (entry.getValue() != null)
-                {
-                    ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
-                    try
-                    {
-                        ColumnValidators.validate(col, null, 1, entry.getValue());
-                    }
-                    catch (ValidationException e)
-                    {
-                        errors.reject(ERROR_MSG, e.getMessage());
-                    }
-                }
-            }
         }
 
         private boolean isOwnRecord(QueryUpdateForm form)
@@ -992,11 +971,6 @@ public class UserController extends SpringActionController
             User postingUser = getUser();
             boolean isOwnRecord = isOwnRecord(form);
 
-            Date oldExpirationDate = null;
-            User targetUser = UserManager.getUser(_pkVal);
-            if (targetUser != null)
-                oldExpirationDate = targetUser.getExpirationDate();
-
             if (postingUser.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
                 TableInfo table = form.getTable();
@@ -1004,49 +978,9 @@ public class UserController extends SpringActionController
                     ((UsersTable)table).setMustCheckPermissions(false);
 
                 doInsertUpdate(form, errors, false);
-
-                if (0 == errors.getErrorCount())
-                    auditExpirationDateChange(oldExpirationDate, form);
             }
 
             return 0 == errors.getErrorCount();
-        }
-
-        private void auditExpirationDateChange(Date oldExpirationDate, QueryUpdateForm form)
-        {
-            User targetUser = UserManager.getUser(_pkVal);
-            if (targetUser == null)
-                return;
-
-            Date newExpirationDate = targetUser.getExpirationDate();
-            String currentUserEmail = getUser().getEmail();
-            String targetUserEmail = targetUser.getEmail();
-            Container c = getContainer();
-
-            String message;
-
-            if (oldExpirationDate == null && newExpirationDate == null)
-                return;
-            else if (oldExpirationDate == null)
-            {
-                message = String.format("%1$s set expiration date for %2$s to %3$s.",
-                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, newExpirationDate));
-            }
-            else if (newExpirationDate == null)
-            {
-                message = String.format("%1$s removed expiration date for %2$s. Previous value was %3$s",
-                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate));
-            }
-            else if (oldExpirationDate.compareTo(newExpirationDate) != 0)
-            {
-                message = String.format("%1$s changed expiration date for %2$s from %3$s to %4$s.",
-                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate), DateUtil.formatDateTime(c, newExpirationDate));
-            }
-            else
-                return;
-
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(getContainer().getId(), message, targetUser);
-            AuditLogService.get().addEvent(getUser(), event);
         }
 
         @Override
