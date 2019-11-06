@@ -906,6 +906,16 @@ public class DomainUtil
         }
     }
 
+    private static String getDomainErrorMessage(@Nullable GWTDomain domain, String message)
+    {
+        if (domain != null && domain.getName() != null)
+        {
+            return domain.getName() + ": " + message;
+        }
+
+        return message;
+    }
+
     /**
      * Validate domain property descriptors for things like duplicate names, missing names, and check against required fields.
      * @param domain The updated domain to validate
@@ -926,7 +936,7 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Please provide a name for each field."));
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;
             }
 
@@ -936,14 +946,14 @@ public class DomainUtil
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
-                    exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
+                    exception.addFieldError(name, getDomainErrorMessage(updates,("'" + name + "' is a reserved field name in '" + domain.getName() + "'.")));
                 }
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
+                String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;
