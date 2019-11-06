@@ -30,6 +30,7 @@ import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -634,6 +635,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             new BaseWebPartFactory("ProjectNav")
             {
                 @Override
+                @RemoveIn20_1
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);

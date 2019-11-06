@@ -2488,7 +2488,6 @@ public class OntologyManager
         domainDescByContainerCache.clear();
     }
 
-
     public static void clearPropertyCache(String parentObjectURI)
     {
         mapCache.remove(parentObjectURI);
