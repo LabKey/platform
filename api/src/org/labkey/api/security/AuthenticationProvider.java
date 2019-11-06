@@ -151,11 +151,7 @@ public interface AuthenticationProvider
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
     {
-        // TODO: remove this default impl
-        default @Nullable SSOConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
-        {
-            return null;
-        }
+        @Nullable SSOConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user) throws Throwable

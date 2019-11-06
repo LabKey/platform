@@ -136,13 +136,17 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     @Override
     public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
     {
-        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);;
-        LdapConfigureForm form = new LdapConfigureForm();
+        LdapConfigureForm form = null;
+        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
 
-        form.setServers(getProperty(props, Key.Servers, ""));
-        form.setDomain(getProperty(props, Key.Domain, ""));
-        form.setPrincipalTemplate(getProperty(props, Key.PrincipalTemplate, "${email}"));
-        form.setSASL("TRUE".equalsIgnoreCase(getProperty(props, Key.SASL, "FALSE")));
+        if (active || !props.isEmpty())
+        {
+            form = new LdapConfigureForm();
+            form.setServers(getProperty(props, Key.Servers, ""));
+            form.setDomain(getProperty(props, Key.Domain, ""));
+            form.setPrincipalTemplate(getProperty(props, Key.PrincipalTemplate, "${email}"));
+            form.setSASL("TRUE".equalsIgnoreCase(getProperty(props, Key.SASL, "FALSE")));
+        }
 
         return form;
     }
