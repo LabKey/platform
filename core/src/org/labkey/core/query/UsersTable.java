@@ -15,7 +15,6 @@
  */
 package org.labkey.core.query;
 
-import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,11 +36,13 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.CacheClearingQueryUpdateService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
@@ -443,28 +444,35 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
-        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             throw new UnsupportedOperationException("Insert not supported.");
         }
 
         @Override
-        protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             throw new UnsupportedOperationException("Delete not supported.");
         }
 
         @Override
-        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            User userToUpdate = validateUpdatedUser(row, keys);
+            Integer pkVal = (Integer)oldRow.get("UserId");
+            User userToUpdate = pkVal != null ? UserManager.getUser(pkVal) : null;
+            if (userToUpdate == null)
+                throw new NotFoundException("Unable to find user for " + pkVal + ".");
+            if (userToUpdate.isGuest())
+                throw new ValidationException("Action not valid for Guest user.");
+
             validatePermissions(user, userToUpdate);
-            validateExpirationDate(userToUpdate, user, c, row);
+            validateUpdatedUser(userToUpdate, row);
+            validateExpirationDate(userToUpdate, user, container, row);
 
             SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
             validateAvatarFile(avatarFile);
 
-            Map<String, Object> ret = super._update(user, c, row, oldRow, keys);
+            Map<String, Object> ret = super.updateRow(user, container, row, oldRow);
             updateAvatarFile(userToUpdate, avatarFile, row);
 
             return ret;
@@ -504,15 +512,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 throw new UnauthorizedException("Can not edit details for a Site Admin user.");
         }
 
-        private User validateUpdatedUser(Map<String, Object> row, Object[] keys) throws ValidationException
+        private void validateUpdatedUser(User userToUpdate, Map<String, Object> row) throws ValidationException
         {
-            Integer pkVal = keys.length == 1 ? NumberUtils.toInt(keys[0].toString()) : null;
-            User userToUpdate = pkVal != null ? UserManager.getUser(pkVal) : null;
-            if (userToUpdate == null)
-                throw new NotFoundException("Unable to find user for " + pkVal + ".");
-            if (userToUpdate.isGuest())
-                throw new ValidationException("Action not valid for Guest user.");
-
             String userEmailAddress = userToUpdate.getEmail();
             String displayName = (String)row.get("DisplayName");
 
@@ -527,8 +528,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 if (existingUser != null && !existingUser.equals(userToUpdate))
                     throw new ValidationException("The specified display name is already in use. Please enter a different value.");
             }
-
-            return userToUpdate;
         }
 
         private void validateAvatarFile(SpringAttachmentFile file) throws ValidationException
