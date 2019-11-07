@@ -5372,7 +5372,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
-                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles, @Nullable Set<String> runInputLsids, @Nullable Map<String, Set<String>> finalOutputMap) throws ExperimentException
+                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles, @Nullable Set<String> runInputLsids, @Nullable List<Map<String, Set<String>>> finalOutputMapList) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 
@@ -5508,9 +5508,12 @@ public class ExperimentServiceImpl implements ExperimentService
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
 
-            if (null != finalOutputMap && !finalOutputMap.isEmpty())
+            if (null != finalOutputMapList && !finalOutputMapList.isEmpty())
             {
-                protApp3.addFinalProvenance(context.getContainer(), finalOutputMap);
+                for (Map<String, Set<String>> finalOutputMap : finalOutputMapList)
+                {
+                    protApp3.addFinalProvenance(context.getContainer(), finalOutputMap);
+                }
             }
 
             addDataInputs(outputDatas, protApp3._object, user);
