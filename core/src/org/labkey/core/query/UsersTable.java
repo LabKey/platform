@@ -213,10 +213,14 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             // display a column with blank results
             var nullColumn = addColumn(new NullColumnInfo(this, col.getName(), col.getJdbcType()));
-            nullColumn.setReadOnly(true);
             nullColumn.setHidden(col.isHidden());
             nullColumn.setNullable(col.isNullable());
             nullColumn.setRequired(col.isRequired());
+
+            // add these for the app ProfilePage usage
+            nullColumn.setUserEditable(col.isUserEditable());
+            nullColumn.setInputType(col.getInputType());
+            nullColumn.setRangeURI(col.getRangeURI());
         }
     }
 
