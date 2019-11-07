@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -42,6 +43,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
@@ -444,5 +446,16 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
                 "Name: " + getName() +
                 ", Sequence: " + getActionSequence() +
                 ", LSID: " + getLSID() + (getRun() == null ? null : ( ", run: " + getRun().getLSID()));
+    }
+
+    @Override
+    public void addProvenance(Container container, Set<String> lsids)
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+
+        if (null != pvs && !lsids.isEmpty())
+        {
+            pvs.addProvenanceInputs(container, this, lsids);
+        }
     }
 }

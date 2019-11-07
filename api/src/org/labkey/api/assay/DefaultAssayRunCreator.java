@@ -227,7 +227,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpMaterial, String> outputMaterials = new HashMap<>();
         Map<ExpData, String> outputDatas = new HashMap<>();
         Map<ExpData, String> transformedDatas = new HashMap<>();
-        Set<String> outputLSIDs = new HashSet<>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
         Map<String, Object> unresolvedRunProperties = context.getUnresolvedRunProperties();
