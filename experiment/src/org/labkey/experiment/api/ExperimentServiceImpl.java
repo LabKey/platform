@@ -2801,26 +2801,26 @@ public class ExperimentServiceImpl implements ExperimentService
             ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
             ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
 
-            Map<Integer, Pair<String, String>> inputProvenanceMap = new HashMap<>();
-            Map<Integer, Pair<String,String>> outputProvenanceMap = new HashMap<>();
+            List<Map<Integer, Pair<String, String>>> inputProvenanceMapList = new ArrayList<>();
+            List<Map<Integer, Pair<String,String>>> outputProvenanceMapList = new ArrayList<>();
 
             ProvenanceService pvs = ProvenanceService.get();
 
             if (null != startProtocolApp && null != pvs)
             {
-                inputProvenanceMap = pvs.getProvenance(startProtocolApp.getRowId());
+                inputProvenanceMapList = pvs.getProvenance(startProtocolApp.getRowId());
             }
 
             if (null != finalProtocolApp && null != pvs)
             {
-                outputProvenanceMap = pvs.getProvenance(finalProtocolApp.getRowId());
+                outputProvenanceMapList = pvs.getProvenance(finalProtocolApp.getRowId());
             }
 
             // delete all existing edges for this run
             if (deleteFirst)
                 removeEdgesForRun(runId);
 
-            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + inputProvenanceMap.size() + outputProvenanceMap.size();
+            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + inputProvenanceMapList.size() + outputProvenanceMapList.size();
             LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
@@ -2871,15 +2871,18 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
-                if (!inputProvenanceMap.isEmpty())
+                if (!inputProvenanceMapList.isEmpty())
                 {
-                    for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
+                    for (Map<Integer, Pair<String, String>> inputProvenanceMap : inputProvenanceMapList)
                     {
-                        if (null != provInputLsid.getValue().first)
+                        for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
                         {
-                            int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
-                            if (seen.add(objectId))
-                                prepEdgeForInsert(params, objectId, runObjectId, runId);
+                            if (null != provInputLsid.getValue().first)
+                            {
+                                int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
+                                if (seen.add(objectId))
+                                    prepEdgeForInsert(params, objectId, runObjectId, runId);
+                            }
                         }
                     }
                 }
@@ -2903,15 +2906,18 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
-                if (!outputProvenanceMap.isEmpty())
+                if (!outputProvenanceMapList.isEmpty())
                 {
-                    for (Map.Entry<Integer, Pair<String, String>> provOutputLsid : outputProvenanceMap.entrySet())
+                    for (Map<Integer, Pair<String, String>> outputProvenanceMap : outputProvenanceMapList)
                     {
-                        if (null != provOutputLsid.getValue().second)
+                        for (Map.Entry<Integer, Pair<String, String>> provOutputLsid : outputProvenanceMap.entrySet())
                         {
-                            int objectId = OntologyManager.getOntologyObject(runContainer, provOutputLsid.getValue().second).getObjectId();
-                            if (seen.add(objectId))
-                                prepEdgeForInsert(params, runObjectId, objectId, runId);
+                            if (null != provOutputLsid.getValue().second)
+                            {
+                                int objectId = OntologyManager.getOntologyObject(runContainer, provOutputLsid.getValue().second).getObjectId();
+                                if (seen.add(objectId))
+                                    prepEdgeForInsert(params, runObjectId, objectId, runId);
+                            }
                         }
                     }
                 }
@@ -5382,6 +5388,21 @@ public class ExperimentServiceImpl implements ExperimentService
             run.save(user);
             insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
 
+            Set<String> runInputLSIDs = new HashSet<>();
+            if (!run.getProperties().isEmpty())
+            {
+                for (Map.Entry<String, Object> property : run.getProperties().entrySet())
+                {
+                    String propName = OntologyManager.getPropertyDescriptor(property.getKey(), context.getContainer()).getName();
+
+                    if (propName.equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
+                    {
+                        String[] runLSIDArr = Objects.toString(property.getValue()).split(",");
+                        runInputLSIDs.addAll(Arrays.asList(runLSIDArr));
+                    }
+                }
+            }
+
             // add any transformed data to the outputDatas collection
             for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
                 outputDatas.put(entry.getKey(), entry.getValue());
@@ -5447,6 +5468,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             initializeProtocolApplication(protApp1, date, action1, run, parentProtocol, context);
             protApp1.save(user);
+            protApp1.addProvenance(context.getContainer(), runInputLSIDs);
             addDataInputs(inputDatas, protApp1._object, user);
             addMaterialInputs(inputMaterials, protApp1._object, user);
 

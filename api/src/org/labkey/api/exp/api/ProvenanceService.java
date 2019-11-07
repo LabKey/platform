@@ -34,5 +34,5 @@ public interface ProvenanceService
 
     void addProvenance(Container container, ExpProtocolApplication app, Map<String, Set<String>> outputMap);
 
-    Map<Integer, Pair<String,String>> getProvenance(int protocolAppId);
+    List<Map<Integer, Pair<String,String>>> getProvenance(int protocolAppId);
 }
