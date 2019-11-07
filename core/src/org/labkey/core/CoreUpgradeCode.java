@@ -337,7 +337,7 @@ public class CoreUpgradeCode implements UpgradeCode
     {
         if (!context.isNewInstall())
         {
-            migrateAuthenticationConfigurations(context.getUpgradeUser());
+            migrateAuthenticationConfigurations(User.getSearchUser());
         }
     }
 
