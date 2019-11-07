@@ -1361,7 +1361,10 @@ public class QueryView extends WebPartView<Object>
             return;
         if (null == getExportScriptFactory("r"))
             return;
-        ActionURL exportUrl = urlFor(QueryAction.exportScript).replaceParameter("scriptType","r");
+        ActionURL exportUrl = urlFor(QueryAction.exportScript);
+        if (null == exportUrl)
+            return;
+        exportUrl.replaceParameter("scriptType","r");
         TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey,
                                                                    getColumnHeaderType(), exportUrl, null, null);
         HttpView exportView = rss.getExportToRStudioView(textBean);
