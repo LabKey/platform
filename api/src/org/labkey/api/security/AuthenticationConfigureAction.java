@@ -69,7 +69,6 @@ public abstract class AuthenticationConfigureAction<F extends AuthenticationConf
         return true;
     }
 
-    // TODO: Fold this back into handlePost() once we delete CoreUpgradeCode.migrateAuthenticationConfigurations()
     public static void saveForm(AuthenticationConfigureForm form, @Nullable User user)
     {
         if (null == form.getRowId())

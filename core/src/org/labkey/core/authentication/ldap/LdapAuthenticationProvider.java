@@ -128,12 +128,6 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
     private enum Key {Servers, Domain, PrincipalTemplate, SASL}
 
     @Override
-    public @NotNull Collection<String> getPropertyCategories()
-    {
-        return Collections.singleton(LDAP_AUTHENTICATION_CATEGORY_KEY);
-    }
-
-    @Override
     public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
     {
         LdapConfigureForm form = null;

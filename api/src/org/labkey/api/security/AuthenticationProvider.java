@@ -24,11 +24,14 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -36,8 +39,8 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -80,23 +83,24 @@ public interface AuthenticationProvider
     }
 
     /**
-     * Override this to advertise the normal PropertyManager categories that this provider uses. This is used to
-     * read and populate provider configurations via bootstrap/startup properties.
-     * @return A collection of property categories used by this provider
+     * Override to retrieve and save startup properties intended for this provider. Invoked after new install only.
      */
-    default @NotNull Collection<String> getPropertyCategories()
+    default void handleStartupProperties()
     {
-        return Collections.emptyList();
     }
 
-    /**
-     * Override this to advertise the encrypted PropertyManager categories that this provider uses. This is used to
-     * read and populate provider configurations via bootstrap/startup properties.
-     * @return A collection of property categories used by this provider
-     */
-    default @NotNull Collection<String> getEncryptedPropertyCategories()
+    default <FORM extends AuthenticationConfigureForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
     {
-        return Collections.emptyList();
+        Map<String, Object> map = categories.stream()
+            .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
+            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
+
+        if (!map.isEmpty())
+        {
+            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(clazz);
+            FORM form = factory.fromMap(map);
+            AuthenticationConfigureAction.saveForm(form, null);
+        }
     }
 
     interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration> extends AuthenticationProvider

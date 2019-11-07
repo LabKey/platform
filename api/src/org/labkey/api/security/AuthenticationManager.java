@@ -82,7 +82,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -167,34 +166,14 @@ public class AuthenticationManager
     // TODO: SSO logos. Auditing of configuration property changes.
     public static void populateSettingsWithStartupProps()
     {
-        // Configure each authentication provider with startup properties
-        populateProviderProperties(PropertyManager.getNormalStore(), AuthenticationProvider::getPropertyCategories);
-        populateProviderProperties(PropertyManager.getEncryptedStore(), AuthenticationProvider::getEncryptedPropertyCategories);
+        // Handle each provider's startup properties, only for new installs
+        if (ModuleLoader.getInstance().isNewInstall())
+            getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
-        // Handle the general authentication properties: enable all the providers listed and populate the other general
-        // authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
-        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY)
-            .forEach(cp -> {
-                if (cp.getName().equals(PROVIDERS_KEY))
-                {
-                    Arrays.stream(cp.getValue().split(":"))
-                        .forEach(name ->
-                        {
-                            try
-                            {
-                                enableProvider(name, null);
-                            }
-                            catch (NotFoundException e)
-                            {
-                                _log.warn("Authentication startup properties attempted to enable an authentication provider (\"" + name + "\") that is not present on this server");
-                            }
-                        });
-                }
-                else
-                {
-                    setAuthConfigProperty(null, cp.getName(), Boolean.parseBoolean(cp.getValue()));
-                }
-            });
+        // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
+        ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
+            .filter(cp->!cp.getName().equals(PROVIDERS_KEY)) // Ignore "Authentication" -- we don't use this property anymore
+            .forEach(cp->setAuthConfigProperty(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
     }
 
     private static void populateProviderProperties(PropertyStore store, Function<AuthenticationProvider, Collection<String>> function)

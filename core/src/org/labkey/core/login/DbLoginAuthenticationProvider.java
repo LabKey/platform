@@ -192,10 +192,4 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     {
         return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
     }
-
-    @Override
-    public @NotNull Collection<String> getPropertyCategories()
-    {
-        return Collections.singleton(DATABASE_AUTHENTICATION_CATEGORY_KEY);
-    }
 }
