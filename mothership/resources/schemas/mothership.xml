@@ -169,7 +169,6 @@
             <column columnName="JsonMetrics"/>
             <column columnName="UsageReportingLevel"/>
             <column columnName="ExceptionReportingLevel"/>
-            <column columnName="BuildTime"/>
         </columns>
     </table>
 
@@ -177,15 +176,22 @@
         <titleColumn>Description</titleColumn>
         <columns>
             <column columnName="SoftwareReleaseId" />
-            <column columnName="SVNRevision">
+            <column columnName="BuildTime" />
+            <column columnName="VcsBranch">
+                <columnTitle>Branch</columnTitle>
+            </column>
+            <column columnName="VcsTag">
+                <columnTitle>Tag</columnTitle>
+            </column>
+            <column columnName="VcsRevision">
                 <columnTitle>Revision</columnTitle>
                 <isReadOnly>true</isReadOnly>
             </column>
-            <column columnName="SVNURL">
-                <columnTitle>SVN URL</columnTitle>
+            <column columnName="VcsUrl">
+                <columnTitle>VCS URL</columnTitle>
                 <isReadOnly>true</isReadOnly>
             </column>
-            <column columnName="Description" />
+            <column columnName="BuildNumber" />
             <column columnName="Container" />
         </columns>
     </table>
