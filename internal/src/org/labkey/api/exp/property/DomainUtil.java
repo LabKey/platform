@@ -910,7 +910,7 @@ public class DomainUtil
     {
         if (domain != null && domain.getName() != null)
         {
-            return domain.getName() + ": " + message;
+            return domain.getName() + " -- " + message;
         }
 
         return message;
