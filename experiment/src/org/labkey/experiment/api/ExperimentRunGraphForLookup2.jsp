@@ -1,10 +1,11 @@
-<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
-<%@ page import="org.labkey.api.data.CoreSchema" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
-<%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
+<%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%--
  * Copyright (c) 2018-2019 LabKey Corporation
  *
@@ -29,6 +30,8 @@
     String expType = StringUtils.defaultString(bean.getExpType(), "ALL");
     int depth = bean.getDepth() == 0 ? 1000 : bean.getDepth();
     var CONCAT = unsafe(dialect.isPostgreSQL() ? "||" : "+");
+
+    String varcharType = dialect.getSqlTypeName(JdbcType.VARCHAR);
 
     assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType);
 %>
@@ -99,7 +102,7 @@
           THEN 'ExperimentRun'
         END                                    AS expType,
 <% } else { %>
-        CAST('<%=unsafe(expType)%>' AS VARCHAR) AS expType,
+        CAST('<%=unsafe(expType)%>' AS <%=unsafe(varcharType)%>(100)) AS expType,
 <% } %>
         <%=COALESCE(expType,"container")%>     AS container,
         <%=COALESCE(expType,"cpasType")%>      AS cpasType,
@@ -183,7 +186,7 @@
           THEN 'ExperimentRun'
         END                                    AS expType,
 <% } else { %>
-        CAST('<%=unsafe(expType)%>' AS VARCHAR) AS expType,
+        CAST('<%=unsafe(expType)%>' AS <%=unsafe(varcharType)%>(100)) AS expType,
 <% } %>
         <%=COALESCE(expType,"container")%>     AS container,
         <%=COALESCE(expType,"cpasType")%>      AS cpasType,
