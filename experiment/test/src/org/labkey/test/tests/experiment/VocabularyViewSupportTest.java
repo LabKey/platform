@@ -76,11 +76,12 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         };
 
         String listName = "Locations";
+        String cityName = "Torrance";
 
         _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
         clickButton("Done");
         clickAndWait(Locator.linkWithText(listName));
-        _listHelper.insertNewRow(Map.of("name", "Torrance"));
+        _listHelper.insertNewRow(Map.of("name", cityName));
 
         int listRow1RowId = 1;
 
@@ -166,6 +167,22 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         log("Verify property column is present");
         Assert.assertTrue("Properties is not present.", sampleSetCustomizeGrid.isColumnPresent("Properties"));
+
+        sampleSetCustomizeGrid.addColumn(domainProperty + "/" + prop1Name);
+        sampleSetCustomizeGrid.addColumn(domainProperty + "/" + prop2Name);
+        sampleSetCustomizeGrid.addColumn(domainProperty + "/" + prop3Name);
+        sampleSetCustomizeGrid.addColumn("Properties");
+
+        sampleSetCustomizeGrid.applyCustomView();
+
+        String propertiesValue = prop1Name + " " + prop2Name + " " + prop3Name + "\n" +
+                                 prop1Value + " " + prop2Value + " " + cityName;
+
+        List<String> rowData = drt.getRowDataAsText(0);
+        Assert.assertTrue("Row data does not contain color property value.", rowData.contains(prop1Value));
+        Assert.assertTrue("Row data does not contain year property value.", rowData.contains(String.valueOf(prop2Value)));
+        Assert.assertTrue("Row data does not contain list property value.", rowData.contains(cityName));
+        Assert.assertTrue("Row data does not contain properties property value.", rowData.contains(propertiesValue));
     }
 
 }
