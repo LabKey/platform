@@ -122,6 +122,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     },
 
     loadQueryDependencies : function(){
+        this.parent.mask('loading dependencies');
         this.queriesCache.load(function(){this.setQueryDetails(this.queryDetails)}, this.onLoadError, this);
     },
 
@@ -431,8 +432,9 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                         else {
                             let html = "<span class='labkey-link'";
 
-                            html += " " + cmp.me.domProps.schemaName + "=" + Ext4.htmlEncode(row.schemaName);
-                            html += " " + cmp.me.domProps.queryName + "=" + Ext4.htmlEncode(row.name) + ">";
+                            html += " " + cmp.me.domProps.schemaName + "='" + Ext4.htmlEncode(row.schemaName) + "'";
+                            html += " " + cmp.me.domProps.containerPath + "='" + Ext4.htmlEncode(row.containerPath) + "'";
+                            html += " " + cmp.me.domProps.queryName + "='" + Ext4.htmlEncode(row.name) + "'>";
                             html += Ext4.htmlEncode(row.name);
                             html += "</span>";
                             return html;
@@ -689,6 +691,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     setQueryDetails : function(queryDetails) {
         this.queryDetails = queryDetails;
         this.renderQueryDetails();
+        this.parent.unmask();
     },
 
     toggleLookupRow : function(expando) {

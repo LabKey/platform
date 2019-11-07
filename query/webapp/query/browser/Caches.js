@@ -219,7 +219,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
 
             query.dependees.push(...d.to);
         }, this);
-        console.log(this.queries);
+        //console.log(this.queries);
     },
 
     createQuery(cacheKey, q) {

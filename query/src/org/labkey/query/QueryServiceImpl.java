@@ -3133,6 +3133,10 @@ public class QueryServiceImpl implements QueryService
                 {
                     for (var entry : ((UserSchema) s).getQueryDefs().entrySet())
                     {
+                        // ignore session based queries
+                        if (entry.getValue().isTemporary())
+                            continue;
+
                         String queryName = entry.getKey();
                         LOG.debug("Analyze query : " + s.getName() + "." + queryName);
                         var errors = new ArrayList<QueryException>();
@@ -3187,6 +3191,9 @@ public class QueryServiceImpl implements QueryService
 
                 // bound query
                 var parts = ReportUtil.splitReportKey(report.getDescriptor().getReportKey());
+                // malformed key
+                if (parts.length != 2)
+                    continue;
                 SchemaKey schemaPath = SchemaKey.fromString(parts[0]);
                 String queryName = parts[1];
                 QuerySchema targetSchema = resolveSchema(defaultSchema, schemaPath);
