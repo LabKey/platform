@@ -44,12 +44,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
-        let messages = List<IBannerMessage>().asMutable();
+        let messages = List<IBannerMessage>();
         if ((!schemaName || !queryName) && !domainId) {
             let msg =  'Missing required parameter: domainId or schemaName and queryName.';
             let msgType = 'danger';
             let bannerMsg ={message : msg, messageType : msgType};
-            messages.push(bannerMsg);
+            messages = messages.push(bannerMsg);
         }
 
         this.state = {
@@ -58,7 +58,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             domainId,
             returnUrl,
             submitting: false,
-            messages: messages.asImmutable(),
+            messages,
             showConfirm: false,
             dirty: false
         };
@@ -131,7 +131,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     submitting: false,
                     messages: bannerMsgs
                 }));
-            })
+            });
     };
 
     submitAndNavigate = () => {
@@ -140,12 +140,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     onChangeHandler = (newDomain, dirty) => {
         // Only show bottom banner if not on domain
-        const message = (newDomain.hasException() && !newDomain.hasErrors()) ? getBannerMessages(newDomain) : undefined;
+        const messages = (newDomain.hasException() && !newDomain.hasErrors()) ? getBannerMessages(newDomain) : this.state.messages;
 
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: message
+            messages: messages
         }));
     };
 
