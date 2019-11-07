@@ -23,6 +23,7 @@ import org.labkey.api.security.User;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -102,5 +103,7 @@ public interface ExpProtocolApplication extends ExpObject
     @Override
     void save(User user);
 
-    default void addProvenance(Container container, Set<String> lsids) {}
+    default void addInputProvenance(Container container, Set<String> lsids) {}
+
+    default void addFinalProvenance(Container container, Map<String, Set<String>> outputMap) {}
 }

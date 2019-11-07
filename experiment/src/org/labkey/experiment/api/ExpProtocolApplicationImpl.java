@@ -449,13 +449,24 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public void addProvenance(Container container, Set<String> lsids)
+    public void addInputProvenance(Container container, Set<String> lsids)
     {
         ProvenanceService pvs = ProvenanceService.get();
 
         if (null != pvs && !lsids.isEmpty())
         {
             pvs.addProvenanceInputs(container, this, lsids);
+        }
+    }
+
+    @Override
+    public void addFinalProvenance(Container container, Map<String, Set<String>> outputMap)
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+
+        if (null != pvs && !outputMap.isEmpty())
+        {
+            pvs.addProvenance(container, this, outputMap);
         }
     }
 }

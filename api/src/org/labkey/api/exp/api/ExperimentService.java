@@ -677,6 +677,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
 
+    ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles, @Nullable Set<String> runInputLsids, @Nullable Map<String, Set<String>> finalOutputMap) throws ExperimentException;
+
     /**
      * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
      * workflows.

@@ -5371,8 +5371,14 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    public ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+    {
+        return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas, transformedDatas, info, log, loadDataFiles, null, null);
+    }
+
+    @Override
     public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
-                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles, @Nullable Set<String> runInputLsids, @Nullable Map<String, Set<String>> finalOutputMap) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 
@@ -5393,21 +5399,6 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             run.save(user);
             insertedDatas = ensureSimpleExperimentRunParameters(inputMaterials.keySet(), inputDatas.keySet(), outputMaterials.keySet(), outputDatas.keySet(), transformedDatas.keySet(), user);
-
-            Set<String> runInputLSIDs = new HashSet<>();
-            if (!run.getProperties().isEmpty())
-            {
-                for (Map.Entry<String, Object> property : run.getProperties().entrySet())
-                {
-                    String propName = OntologyManager.getPropertyDescriptor(property.getKey(), context.getContainer()).getName();
-
-                    if (propName.equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
-                    {
-                        String[] runLSIDArr = Objects.toString(property.getValue()).split(",");
-                        runInputLSIDs.addAll(Arrays.asList(runLSIDArr));
-                    }
-                }
-            }
 
             // add any transformed data to the outputDatas collection
             for (Map.Entry<ExpData, String> entry : transformedDatas.entrySet())
@@ -5474,7 +5465,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             initializeProtocolApplication(protApp1, date, action1, run, parentProtocol, context);
             protApp1.save(user);
-            protApp1.addProvenance(context.getContainer(), runInputLSIDs);
+
+            if (null != runInputLsids)
+            {
+                protApp1.addInputProvenance(context.getContainer(), runInputLsids);
+            }
+
             addDataInputs(inputDatas, protApp1._object, user);
             addMaterialInputs(inputMaterials, protApp1._object, user);
 
@@ -5517,6 +5513,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
+
+            if (null != finalOutputMap && !finalOutputMap.isEmpty())
+            {
+                protApp3.addFinalProvenance(context.getContainer(), finalOutputMap);
+            }
+
             addDataInputs(outputDatas, protApp3._object, user);
             addMaterialInputs(outputMaterials, protApp3._object, user);
 
