@@ -99,7 +99,7 @@
           THEN 'ExperimentRun'
         END                                    AS expType,
 <% } else { %>
-        '<%=unsafe(expType)%>'                 AS expType,
+        CAST('<%=unsafe(expType)%>' AS VARCHAR) AS expType,
 <% } %>
         <%=COALESCE(expType,"container")%>     AS container,
         <%=COALESCE(expType,"cpasType")%>      AS cpasType,
@@ -183,7 +183,7 @@
           THEN 'ExperimentRun'
         END                                    AS expType,
 <% } else { %>
-        '<%=unsafe(expType)%>'                 AS expType,
+        CAST('<%=unsafe(expType)%>' AS VARCHAR) AS expType,
 <% } %>
         <%=COALESCE(expType,"container")%>     AS container,
         <%=COALESCE(expType,"cpasType")%>      AS cpasType,
