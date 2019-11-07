@@ -94,7 +94,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
 
     initComponent : function() {
         this.cache = LABKEY.query.browser.cache.QueryDetails;
-
+        this.queriesCache = LABKEY.query.browser.cache.QueryDependencies;
         this.items = [{
             xtype: 'box',
             itemId: 'loader',
@@ -107,25 +107,28 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         }];
 
         this.callParent();
+        this.on('afterrender', this.loadQueryDetails, this, {single: true});
+    },
 
-        var loader = function(queryDetails) {
-            if (queryDetails) {
-                this.queryDetails = queryDetails;
-            }
-            if (this.rendered && this.queryDetails) {
-                this.setQueryDetails(this.queryDetails);
-            }
-        };
+    loadQueryDetails : function(){
+        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk,
+                function(queryDetails) {
+                    this.queryDetails = queryDetails;
+                    this.loadQueryDependencies();
+                },
+                this.onLoadError,
+                this);
 
-        this.on('afterrender', function() { loader.call(this); }, this, {single: true});
-        // Callback function scope will be the cache, so stash for future use
-        this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk, function(queryDetails) {
-            loader.call(this, queryDetails);
-        }, function(errorInfo) {
-            if (Ext4.getCmp('loaderTag')) {
-                Ext4.getCmp('loaderTag').update('<div class="lk-qd-error">Error in query: ' + Ext4.htmlEncode(errorInfo.exception) + '</div>');
-            }
-        }, this);
+    },
+
+    loadQueryDependencies : function(){
+        this.queriesCache.load(function(){this.setQueryDetails(this.queryDetails)}, this.onLoadError, this);
+    },
+
+    onLoadError : function(errorInfo){
+        if (Ext4.getCmp('loaderTag')) {
+            Ext4.getCmp('loaderTag').update('<div class="lk-qd-error">Error in query: ' + Ext4.htmlEncode(errorInfo.exception) + '</div>');
+        }
     },
 
     displayError : function(msg) {
@@ -361,6 +364,129 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         };
     },
 
+    formatDependencies : function () {
+
+        const dependencies = this.queriesCache.getDependencies(this.schemaName, this.queryName);
+        if (dependencies){
+            let tpl = new Ext4.XTemplate(
+                '<h3 style="padding-top: 1.0em">Dependency Report</h3>',
+                '<span>The queries or tables that this query or table depends on and the queries or tables that depend on it.</span>',
+                '<table class="lk-qd-coltable" style="margin-top: 1em;">',
+                    '<tr>',
+                        '<td>',
+                            '<table class="lk-qd-coltable">',
+                                '<thead>',
+                                '<tr><td colspan="4" class="lk-qd-collist-title" data-qtip="{[this.getDependeesTip(this)]}">Dependees</td></tr>',
+                                '<tr>',
+                                    '<td class="lk-qd-colheader">Folder</td>',
+                                    '<td class="lk-qd-colheader">Type</td>',
+                                    '<td class="lk-qd-colheader">Schema</td>',
+                                    '<td class="lk-qd-colheader">Query</td>',
+                                '</tr>',
+                                '</thead>',
+                                '<tpl for="dependees">',
+                                    '<tr>',
+                                        '<td>{[this.renderFolder(this, values)]}</td>',
+                                        '<td>{[this.renderType(this, values)]}</td>',
+                                        '<td>{schemaDisplayName:htmlEncode}</td>',
+                                        '<td>{[this.renderName(this, values)]}</td>',
+                                    '</tr>',
+                                '</tpl>',
+                            '</table>',
+                        '</td>',
+                        '<td>',
+                            '<table class="lk-qd-coltable">',
+                                '<thead>',
+                                    '<tr><td colspan="4" class="lk-qd-collist-title" data-qtip="{[this.getDependentsTip(this)]}">Dependents</td></tr>',
+                                    '<tr>',
+                                        '<td class="lk-qd-colheader">Folder</td>',
+                                        '<td class="lk-qd-colheader">Type</td>',
+                                        '<td class="lk-qd-colheader">Schema</td>',
+                                        '<td class="lk-qd-colheader">Query</td>',
+                                    '</tr>',
+                                '</thead>',
+                                '<tpl for="dependents">',
+                                    '<tr>',
+                                        '<td>{[this.renderFolder(this, values)]}</td>',
+                                        '<td>{[this.renderType(this, values)]}</td>',
+                                        '<td>{schemaDisplayName:htmlEncode}</td>',
+                                        '<td>{[this.renderName(this, values)]}</td>',
+                                    '</tr>',
+                                '</tpl>',
+                            '</table>',
+                        '</td>',
+                    '</tr>',
+                '</table>',
+                {
+                    renderName : function(cmp, row) {
+                        // for reports we just want to link out to URL provided, for tables and
+                        // queries we will just navigate within the schema browser
+                        if (row.type === 'Report') {
+                            let html = "<a class='labkey-link'";
+
+                            html += " href='" + row.url + "'>";
+                            html += Ext4.htmlEncode(row.name) + "</a>";
+                            return html;
+                        }
+                        else {
+                            let html = "<span class='labkey-link'";
+
+                            html += " " + cmp.me.domProps.schemaName + "=" + Ext4.htmlEncode(row.schemaName);
+                            html += " " + cmp.me.domProps.queryName + "=" + Ext4.htmlEncode(row.name) + ">";
+                            html += Ext4.htmlEncode(row.name);
+                            html += "</span>";
+                            return html;
+                        }
+                    },
+                    renderFolder : function(cmp, row) {
+                        // don't render is this is current folder
+                        if (LABKEY.container.path === row.containerPath)
+                            return "";
+
+                        let folder = row.containerPath;
+                        if (folder.startsWith('/'))
+                            folder = folder.substr(1);
+
+                        return Ext4.htmlEncode(folder);
+                    },
+                    renderType : function(cmp, row) {
+                        let cls = 'fa fa-database';
+                        let tip = 'Type : table';
+
+                        if (row.type === 'Report') {
+                            cls = 'fa fa-area-chart';
+                            tip = 'Type : report';
+                        }
+                        else if (row.type === 'Query') {
+                            cls = 'fa fa-table';
+                            tip = 'Type : query';
+                        }
+                        return '<span class="' + cls + '" data-qtip="' + tip + '"></span>';
+                    },
+                    getDependeesTip : function(cmp) {
+                        if (cmp.me.queryDetails.isUserDefined)
+                            return 'The queries or tables that this query depends on';
+                        else
+                            return 'The queries or tables that this table depends on';
+                    },
+                    getDependentsTip : function(cmp) {
+                        if (cmp.me.queryDetails.isUserDefined)
+                            return 'The queries or tables that depend on this query';
+                        else
+                            return 'The queries or tables that depend on this table';
+                    },
+                    me : this
+                }
+            );
+
+            return {
+                tag: 'div',
+                cls: 'lk-qd-dependencies',
+                html: tpl.apply(dependencies)
+            };
+        }
+    },
+
     hasProperties: function (o) {
         for (var name in o) {
             if (o.hasOwnProperty(name))
@@ -385,6 +511,10 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             var indices = this.formatIndices(queryDetails);
             if (indices)
                 children.push(indices);
+
+            const dependencies = this.formatDependencies();
+            if (dependencies)
+                children.push(dependencies);
         }
 
         return Ext4.create('Ext.Component', {

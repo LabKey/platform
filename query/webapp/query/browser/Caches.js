@@ -159,3 +159,71 @@ Ext4.define('LABKEY.query.browser.cache.QueryDetails', {
         }
     }
 });
+
+Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
+    singleton: true,
+
+    constructor : function(config) {
+        this.callParent([config]);
+
+        this.queries = undefined;
+    },
+
+    clear : function() {
+        this.queries = undefined;
+    },
+
+    getCacheKey : function(schemaName, queryName) {
+        return schemaName + '.' + queryName;
+    },
+
+    getDependencies : function(schemaName, queryName) {
+        return this.queries[this.getCacheKey(schemaName, queryName)];
+    },
+
+    load : function(success, failure, scope) {
+
+        if (!this.queries) {
+            LABKEY.Query.analyzeQueries({
+                success : function(resp){
+
+                    this.processDependencies(resp);
+                    if (Ext4.isFunction(success)){
+                        success.call(scope || this, )
+                    }
+                },
+                failure : failure,
+                scope : this
+            });
+        }
+        else {
+            if (Ext4.isFunction(success)){
+                success.call(scope || this, )
+            }
+        }
+    },
+
+    processDependencies : function(o){
+
+        this.queries = {};
+        Ext4.each(o.dependants, function(d){
+            const key = this.getCacheKey(d.to.schemaName, d.to.name);
+            let query = this.queries[key] || this.createQuery(key, d.to);
+
+            query.dependents.push(...d.from);
+        }, this);
+
+        Ext4.each(o.dependees, function(d){
+            const key = this.getCacheKey(d.from.schemaName, d.from.name);
+            let query = this.queries[key] || this.createQuery(key, d.from);
+
+            query.dependees.push(...d.to);
+        }, this);
+        console.log(this.queries);
+    },
+
+    createQuery(cacheKey, q) {
+        this.queries[cacheKey] = {q : Ext4.clone(q), dependents : [], dependees : []};
+        return this.queries[cacheKey];
+    }
+});
