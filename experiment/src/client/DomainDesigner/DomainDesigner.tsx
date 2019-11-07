@@ -139,10 +139,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
+        // Only show bottom banner if not on domain
+        const message = (newDomain.hasException() && !newDomain.hasErrors()) ? getBannerMessages(newDomain) : undefined;
+
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: getBannerMessages(newDomain)
+            messages: message
         }));
     };
 
@@ -195,19 +198,21 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         const { submitting } = this.state;
 
         return (
-            <WizardNavButtons
-                cancel={this.onCancelBtnHandler}
-                containerClassName=""
-                includeNext={false}>
-                <Button
-                    type='submit'
-                    bsClass='btn btn-success'
-                    onClick={() => this.submitHandler(true)}
-                    disabled={submitting}
-                >
-                    Finish
-                </Button>
-            </WizardNavButtons>
+            <div className='domain-designer-bottom-btns'>
+                <WizardNavButtons
+                    cancel={this.onCancelBtnHandler}
+                    containerClassName=""
+                    includeNext={false}>
+                    <Button
+                        type='submit'
+                        bsClass='btn btn-success'
+                        onClick={() => this.submitHandler(true)}
+                        disabled={submitting}
+                    >
+                        Save
+                    </Button>
+                </WizardNavButtons>
+            </div>
         )
     }
 
