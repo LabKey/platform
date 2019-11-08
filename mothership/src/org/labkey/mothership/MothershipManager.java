@@ -27,7 +27,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -39,6 +38,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MothershipReport;
 
 import java.io.IOException;
@@ -160,63 +160,71 @@ public class MothershipManager
 
     private static final Object ENSURE_SOFTWARE_RELEASE_LOCK = new Object();
 
-    public SoftwareRelease ensureSoftwareRelease(Container container, Integer svnRevision, String svnURL, String description)
+    private void addFilter(SimpleFilter filter, String fieldKey, Object value)
+    {
+        if (value == null)
+        {
+            filter.addCondition(FieldKey.fromString(fieldKey), null, CompareType.ISBLANK);
+        }
+        else
+        {
+            filter.addCondition(FieldKey.fromString(fieldKey), value);
+        }
+
+    }
+
+    public SoftwareRelease ensureSoftwareRelease(Container container, String revision, String url, String branch, String tag, Date buildTime, String buildNumber)
     {
         synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            if (svnRevision == null)
-            {
-                filter.addCondition(FieldKey.fromString("SVNRevision"), null, CompareType.ISBLANK);
-            }
-            else
-            {
-                filter.addCondition(FieldKey.fromString("SVNRevision"), svnRevision);
-            }
+            addFilter(filter,"VcsRevision", revision);
+            addFilter(filter,"VcsUrl", url);
+            addFilter(filter,"VcsBranch", branch);
+            addFilter(filter,"VcsTag", tag);
+            addFilter(filter,"BuildTime", buildTime);
 
-            if (svnURL == null)
+            if (buildNumber == null)
             {
-                filter.addCondition(FieldKey.fromString("SVNURL"), null, CompareType.ISBLANK);
+                buildNumber = fabricateDescription(container, revision, url, branch, tag, buildTime);
             }
-            else
-            {
-                filter.addCondition(FieldKey.fromString("SVNURL"), svnURL);
-            }
-
-            if (description == null)
-            {
-                description = fabricateDescription(svnURL, svnRevision);
-            }
-            filter.addCondition(FieldKey.fromString("Description"), description);
+            filter.addCondition(FieldKey.fromString("BuildNumber"), buildNumber);
 
             SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
             if (result == null)
             {
                 result = new SoftwareRelease();
-                result.setSVNRevision(svnRevision);
-                result.setSVNURL(svnURL);
+                result.setVcsUrl(url);
+                result.setVcsRevision(revision);
+                result.setVcsBranch(branch);
+                result.setVcsTag(tag);
+                result.setBuildTime(buildTime);
+                result.setBuildNumber(buildNumber);
                 result.setContainer(container.getId());
-                result.setDescription(description);
                 result = Table.insert(null, getTableInfoSoftwareRelease(), result);
             }
             return result;
         }
     }
 
-    private String fabricateDescription(String svnURL, Integer svnRevision)
+    private String fabricateDescription(Container container, String revision, String url, String branch, String tag, Date buildTime)
     {
-        String description = null;
         // TODO we can possibly remove the hedgehog reference after some amount of time has lapsed.
-        List<String> hostPrefixes = Arrays.asList(
+        List<String> svnHostPrefixes = Arrays.asList(
                 "https://hedgehog.fhcrc.org/tor/stedi/",
                 "https://svn.mgt.labkey.host/stedi/");
 
-        if (svnURL != null)
+        if (url != null)
         {
-            Optional<String> hostPrefixOption = hostPrefixes.stream().filter(svnURL::startsWith).findFirst();
-            if (hostPrefixOption.isPresent())
+            Optional<String> hostPrefixOption = svnHostPrefixes.stream().filter(url::startsWith).findFirst();
+
+            if (url.startsWith("https://github.com/LabKey/platform.git"))
             {
-                description = svnURL.substring(hostPrefixOption.get().length());
+                return StringUtils.join(branch, tag, buildTime == null ? null : DateUtil.formatDate(container, buildTime));
+            }
+            else if (hostPrefixOption.isPresent())
+            {
+                String description = url.substring(hostPrefixOption.get().length());
                 if (description.endsWith("/server"))
                 {
                     description = description.substring(0, description.length() - "/server".length());
@@ -225,22 +233,19 @@ public class MothershipManager
                 {
                     description = description.substring("branches/".length());
                 }
-                if (svnRevision != null)
+                if (revision != null)
                 {
-                    description = description + " - " + svnRevision;
+                    description = description + " - " + revision;
                 }
+                return description;
             }
             else
             {
-                description = "UnknownSVN";
+                return "Unknown VCS";
             }
         }
-        else
-        {
-            description = "NotSVN";
-        }
 
-        return description;
+        return "No VCS URL";
     }
 
     public ServerInstallation getServerInstallation(String serverGUID, Container c)
@@ -539,22 +544,10 @@ public class MothershipManager
         saveProperty(c, ISSUES_CONTAINER_PROP, container);
     }
 
-    public void insertSoftwareRelease(Container container, User user, SoftwareRelease bean)
+    public void updateSoftwareRelease(Container container, User user, SoftwareRelease bean)
     {
         bean.setContainer(container.getId());
-        Table.insert(user, getTableInfoSoftwareRelease(), bean);
-    }
-
-    public void deleteSoftwareRelease(Container container, int i)
-    {
-        Filter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromParts("ReleaseId"), i);
-        Table.delete(getTableInfoSoftwareRelease(), filter);
-    }
-
-    public SoftwareRelease updateSoftwareRelease(Container container, User user, SoftwareRelease bean)
-    {
-        bean.setContainer(container.getId());
-        return Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
+        Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
     }
 
     public Collection<ServerInstallation> getServerInstallationsActiveOn(Calendar cal)
