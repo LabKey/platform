@@ -15,10 +15,11 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.io.IOException;
 
 /**
  * <code>JoinedBooleanToSwitch</code>
@@ -39,12 +40,12 @@ public class JoinedBooleanToSwitch extends TaskToCommandArgs
             converter.setParent(this);
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         StringBuilder switches = new StringBuilder();
         for (BooleanToSwitch converter : getConverters())
         {
-            if (converter.toArgs(task, visited).size() > 0)
+            if (converter.toArgs(task, params, visited).size() > 0)
                 switches.append(converter.getSwitchName());
         }
         if (switches.length() > 0)

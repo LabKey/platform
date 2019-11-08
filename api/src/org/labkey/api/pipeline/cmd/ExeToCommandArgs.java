@@ -73,7 +73,7 @@ public class ExeToCommandArgs extends ListToCommandArgs
         return (jobParams == null ? null : jobParams.get(_versionParamName));
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (_exePath == null || _exePath.length() == 0)
             return Collections.emptyList();
@@ -83,7 +83,7 @@ public class ExeToCommandArgs extends ListToCommandArgs
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setValue(PipelineJobService.get().getExecutablePath(_exePath,
                 task.getInstallPath(), _softwarePackage, getVersion(task), task.getJob().getLogger()));
-        args.addAll(converterInline.toArgs(task, visited));
+        args.addAll(converterInline.toArgs(task, params, visited));
 
         return args;
     }

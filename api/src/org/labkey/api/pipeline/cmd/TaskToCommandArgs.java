@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.cmd;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,7 +51,7 @@ abstract public class TaskToCommandArgs
         _switchFormat = switchFormat;
     }
 
-    public final List<String> toArgs(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public final List<String> toArgs(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (visited.contains(this))
             throw new IllegalStateException("Circular logic in job to command args logic.");
@@ -59,7 +60,7 @@ abstract public class TaskToCommandArgs
         {
             visited.add(this);
 
-            return toArgsInner(task, visited);
+            return toArgsInner(task, params, visited);
         }
         finally
         {
@@ -67,5 +68,5 @@ abstract public class TaskToCommandArgs
         }
     }
 
-    abstract public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException;
+    abstract public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException;
 }
