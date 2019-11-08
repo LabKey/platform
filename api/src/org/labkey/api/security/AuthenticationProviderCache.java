@@ -142,21 +142,6 @@ public class AuthenticationProviderCache
         return CACHE.get(CACHE_KEY).getActive(clazz);
     }
 
-    /**
-     * Get the active provider with the specified name that implements the specified interface
-     * @param clazz The interface to use as a filter
-     * @param <T> The interface type
-     * @return The requested provider or null if not found
-     */
-    static @Nullable <T extends AuthenticationProvider> T getActiveProvider(Class<T> clazz, String name)
-    {
-        for (T provider : getActiveProviders(clazz))
-            if (provider.getName().equals(name))
-                return provider;
-
-        return null;
-    }
-
     static void clear()
     {
         CACHE.remove(CACHE_KEY);
