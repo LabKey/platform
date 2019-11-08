@@ -227,7 +227,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         domain={domain}
                         onChange={this.onChangeHandler}
                         showHeaderFieldCount={false}
-                        useTheme={false}
+                        useTheme={true}
                     />
                 }
                 { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {

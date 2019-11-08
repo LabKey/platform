@@ -385,10 +385,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             domain.setName(assay.getName() + " " + domain.getName());
                             Container domainContainer = ContainerManager.getForId(domain.getContainer());
                             GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), domainContainer);
-                            Domain newDomain;
                             if (gwtDomain == null)
                             {
-                                newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, domainContainer, getUser(), domain.getName(), null);
+                                Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, domainContainer, getUser(), domain.getName(), null);
                                 domainURIs.add(newDomain.getTypeURI());
                             }
                             else
