@@ -2276,7 +2276,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Identifiable obj = LsidManager.get().getObject(lsid);
             if (obj != null)
             {
-                if (context == null || obj.getContainer().hasPermission(context.getUser(), ReadPermission.class))
+                if (c == null || obj.getContainer().hasPermission(user, ReadPermission.class))
                     otherObjects.add(obj);
             }
         }

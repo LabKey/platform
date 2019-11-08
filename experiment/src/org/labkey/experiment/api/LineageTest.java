@@ -157,14 +157,14 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         ContainerUser context = new DefaultContainerUser(c, user);
         final ExpData bob = ExperimentService.get().getExpData(firstDataClass, "bob");
-        ExpLineage lineage = ExperimentService.get().getLineage(context, bob, options);
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, bob, options);
         Assert.assertTrue(lineage.getDatas().isEmpty());
         assertEquals(1, lineage.getMaterials().size());
         Assert.assertTrue(lineage.getMaterials().contains(s1));
 
         final ExpData jimbo = ExperimentService.get().getExpData(secondDataClass, "jimbo");
         final ExpData sally = ExperimentService.get().getExpData(firstDataClass, "sally");
-        lineage = ExperimentService.get().getLineage(context, sally, options);
+        lineage = ExperimentService.get().getLineage(c, user, sally, options);
         assertEquals(2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
         Assert.assertTrue(lineage.getDatas().contains(jimbo));
@@ -172,7 +172,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         Assert.assertTrue(lineage.getMaterials().contains(s2));
 
         final ExpData mike = ExperimentService.get().getExpData(firstDataClass, "mike");
-        lineage = ExperimentService.get().getLineage(context, mike, options);
+        lineage = ExperimentService.get().getLineage(c, user, mike, options);
         assertEquals("Expected 2 data, found: " + lineage.getDatas().stream().map(ExpData::getName).collect(joining(", ")),
                 2, lineage.getDatas().size());
         Assert.assertTrue(lineage.getDatas().contains(bob));
@@ -363,7 +363,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         // query the lineage
         ExpLineageOptions options = new ExpLineageOptions();
-        ExpLineage lineage = ExperimentServiceImpl.get().getLineage(info, Set.of(a1), options);
+        ExpLineage lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(a1), options);
 
         assertTrue(lineage.getRuns().contains(run));
         assertEquals(Set.of(a1), lineage.getSeeds());
