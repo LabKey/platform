@@ -455,7 +455,8 @@ public class MothershipReport implements Runnable
 
     private String getVCSRevisionToReport(String buildNumber, String vcsRevision)
     {
-        if (vcsRevision != null)
+        // Prefer the VCS revision when we have it, which now comes from Git
+        if (vcsRevision != null && !vcsRevision.toLowerCase().startsWith("unknown"))
         {
             return vcsRevision;
         }
@@ -464,7 +465,7 @@ public class MothershipReport implements Runnable
         {
             return buildNumber.split("\\.")[0];
         }
-        return null;
+        return vcsRevision;
     }
 
     public void setMetrics(Map<String, Object> metrics)
@@ -497,8 +498,8 @@ public class MothershipReport implements Runnable
             assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", "Unknown"));
             assertEquals("Unknown", r.getVCSRevisionToReport(null, "Unknown"));
             assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", null));
-            assertEquals("100", r.getVCSRevisionToReport("100.5", "99"));
-            assertEquals("99", r.getVCSRevisionToReport("Unknown", "99"));
+            assertEquals("038369af527920955e166ceb206c3ea92619e690", r.getVCSRevisionToReport("100.5", "038369af527920955e166ceb206c3ea92619e690"));
+            assertEquals("038369af527920955e166ceb206c3ea92619e690", r.getVCSRevisionToReport("Unknown", "038369af527920955e166ceb206c3ea92619e690"));
             assertEquals("100", r.getVCSRevisionToReport("100.5", "Unknown"));
         }
     }
