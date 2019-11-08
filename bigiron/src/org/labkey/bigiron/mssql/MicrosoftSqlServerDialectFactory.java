@@ -70,7 +70,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         }
     }
 
-    static final String RECOMMENDED = PRODUCT_NAME + " 2017 is the recommended version.";
+    static final String RECOMMENDED = PRODUCT_NAME + " 2019 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
@@ -104,14 +104,15 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
         if (version >= 100)
         {
-            if (version >= 150)
+            if (version >= 160)
             {
-                // Warn for SQL Server 2019, for now. TODO: remove after further testing and SS 2019 release.
+                // Warn for > SQL Server 2019, for now.
                 if (logWarnings)
                     LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new MicrosoftSqlServer2019Dialect(_tableResolver);
             }
+
+            if (version >= 150)
+                return new MicrosoftSqlServer2019Dialect(_tableResolver);
 
             if (version >= 140)
                 return new MicrosoftSqlServer2017Dialect(_tableResolver);
