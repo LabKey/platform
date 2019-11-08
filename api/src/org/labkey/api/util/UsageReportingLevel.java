@@ -268,7 +268,10 @@ public enum UsageReportingLevel
     {
         for (Module module : ModuleLoader.getInstance().getModules())
         {
+            // Make sure this module has an object in the parent object
             Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module.getName(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+
+            // Build up info about the build of the module
             Map<String, Object> moduleBuildInfo = new HashMap<>();
             moduleBuildInfo.put("buildTime", module.getBuildTime());
             moduleBuildInfo.put("buildNumber", module.getBuildNumber());
@@ -277,6 +280,8 @@ public enum UsageReportingLevel
             moduleBuildInfo.put("vcsRevision", module.getVcsRevision());
             moduleBuildInfo.put("vcsTag", module.getVcsTag());
             moduleBuildInfo.put("version", module.getFormattedVersion());
+
+            // Add to the module's info to be included in the submission
             moduleStats.put("buildInfo", moduleBuildInfo);
         }
     }
