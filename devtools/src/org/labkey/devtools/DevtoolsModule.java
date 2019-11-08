@@ -22,8 +22,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.util.JspTestCase;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.devtools.authentication.TestSecondaryController;
+import org.labkey.devtools.authentication.TestSecondaryProvider;
+import org.labkey.devtools.authentication.TestSsoController;
+import org.labkey.devtools.authentication.TestSsoProvider;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +56,11 @@ public class DevtoolsModule extends CodeOnlyModule
     {
         addController(TestController.NAME, TestController.class);
         addController(ToolsController.NAME, ToolsController.class);
+
+        addController("testsecondary", TestSecondaryController.class);
+        AuthenticationManager.registerProvider(new TestSecondaryProvider());
+        addController("testsso", TestSsoController.class);
+        AuthenticationManager.registerProvider(new TestSsoProvider());
     }
 
     @Override

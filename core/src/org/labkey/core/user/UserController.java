@@ -126,7 +126,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.DbLoginConfiguration;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -1566,8 +1566,8 @@ public class UserController extends SpringActionController
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            // see if any of the SSO auth providers are set to autoRedirect from the login action
-            boolean isLoginAutoRedirect = AuthenticationManager.getSSOAuthProviderAutoRedirect() != null;
+            // see if any of the SSO auth configurations are set to autoRedirect from the login action
+            boolean isLoginAutoRedirect = AuthenticationManager.getAutoRedirectSSOAuthConfiguration() != null;
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
@@ -2020,8 +2020,12 @@ public class UserController extends SpringActionController
         {
             try
             {
-                DbLoginAuthenticationProvider loginProvider = (DbLoginAuthenticationProvider) AuthenticationManager.getProvider("Database");
-                return loginProvider.authenticate(email, password, returnUrlHelper).isAuthenticated();
+                Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
+                if (configurations.size() != 1)
+                    throw new IllegalStateException("Expected exactly one DbAuthenticationConfiguration, but was: " + configurations.size());
+
+                DbLoginConfiguration configuration = configurations.iterator().next();
+                return configuration.getAuthenticationProvider().authenticate(configuration, email, password, returnUrlHelper).isAuthenticated();
             }
             catch (ValidEmail.InvalidEmailException e)
             {

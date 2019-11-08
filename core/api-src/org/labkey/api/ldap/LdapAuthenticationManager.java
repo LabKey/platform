@@ -18,7 +18,6 @@ package org.labkey.api.ldap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.ValidEmail;
@@ -48,14 +47,14 @@ public class LdapAuthenticationManager
 {
     private static final Logger _log = Logger.getLogger(LdapAuthenticationManager.class);
 
-    private static volatile LdapAuthenticator _authenticator = (url, email, password, saslAuthentication) -> connect(url, substituteEmailTemplate(getPrincipalTemplate(), email), password, saslAuthentication);
+    private static volatile LdapAuthenticator _authenticator = (url, email, password, principalTemplate, saslAuthentication, allowLdapSearch) -> connect(url, substituteEmailTemplate(principalTemplate, email), password, saslAuthentication);
 
     //
     // Attempt LDAP authentication on a single server
     //
-    public static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication) throws NamingException
+    public static boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, String principalTemplate, boolean saslAuthentication, boolean allowLdapSearch) throws NamingException
     {
-        return _authenticator.authenticate(url, email, password, saslAuthentication);
+        return _authenticator.authenticate(url, email, password, principalTemplate, saslAuthentication, allowLdapSearch);
     }
 
 
@@ -119,70 +118,6 @@ public class LdapAuthenticationManager
         env.put(Context.SECURITY_CREDENTIALS, password);
 
         return new InitialDirContext(env);
-    }
-
-    public static final String LDAP_AUTHENTICATION_CATEGORY_KEY = "LDAPAuthentication";
-
-    public static void activate()
-    {
-        AuthenticationManager.setLdapDomain(LdapAuthenticationManager.getDomain());
-    }
-
-    public static void deactivate()
-    {
-        AuthenticationManager.setLdapDomain("");
-    }
-    
-    private enum Key {Servers, Domain, PrincipalTemplate, SASL}
-
-    public static void saveProperties(Config config)
-    {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(LDAP_AUTHENTICATION_CATEGORY_KEY, true);
-        map.clear();
-        map.put(Key.Servers.toString(), config.getServers());
-        map.put(Key.Domain.toString(), config.getDomain());
-        map.put(Key.PrincipalTemplate.toString(), config.getPrincipalTemplate());
-        map.put(Key.SASL.toString(), config.getSASL() ? "TRUE" : "FALSE");
-        map.save();
-        activate();
-    }
-
-    private static Map<String, String> getProperties()
-    {
-        return PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
-    }
-
-    private static String getProperty(Key key, String defaultValue)
-    {
-        Map<String, String> props = getProperties();
-
-        String value = props.get(key.toString());
-
-        if (null != value)
-            return value;
-        else
-            return defaultValue;
-    }
-
-    @NotNull
-    public static String[] getServers()
-    {
-        return getProperty(Key.Servers, "").split(";");
-    }
-
-    public static String getDomain()
-    {
-        return getProperty(Key.Domain, "");
-    }
-
-    public static String getPrincipalTemplate()
-    {
-        return getProperty(Key.PrincipalTemplate, "${email}");
-    }
-
-    public static boolean useSASL()
-    {
-        return "TRUE".equalsIgnoreCase(getProperty(Key.SASL, "FALSE"));
     }
 
     public static void registerMetricsProvider()

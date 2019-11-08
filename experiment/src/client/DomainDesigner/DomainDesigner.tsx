@@ -166,7 +166,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', LABKEY.container.path);
         });
     };
 

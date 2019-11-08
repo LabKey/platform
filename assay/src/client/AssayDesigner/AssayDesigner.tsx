@@ -63,6 +63,7 @@ export class App extends React.Component<any, State> {
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
+            containerPath: LABKEY.container.path,
             success: (data) => {
                 this.setState(() => ({
                     hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1
@@ -121,11 +122,11 @@ export class App extends React.Component<any, State> {
     }
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('project', 'begin'));
+        this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
     };
 
     onComplete = (model: AssayProtocolModel) => {
-        this.navigate(ActionURL.buildURL('assay', 'assayBegin', null, {rowId: model.protocolId}));
+        this.navigate(ActionURL.buildURL('assay', 'assayBegin', LABKEY.container.path, {rowId: model.protocolId}));
     };
 
     onChange = (model: AssayProtocolModel) => {

@@ -35,6 +35,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -46,12 +47,14 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.core.reports.ScriptEngineManagerImpl.SCRIPT_ENGINE_MAP;
@@ -323,5 +326,33 @@ public class CoreUpgradeCode implements UpgradeCode
                 LOG.error("unable to encrypt saved remote R engine password for configuration: " + def.getName(), e);
             }
         }
+    }
+
+    /**
+     * Invoked from 19.20-19.30 to move existing authentication property configurations to core.AuthenticationConfigurations table
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateAuthenticationConfigurations(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            migrateAuthenticationConfigurations(User.getSearchUser());
+        }
+    }
+
+    public void migrateAuthenticationConfigurations(User user)
+    {
+        Set<String> active = AuthenticationManager.getActiveProviderNamesFromProperties();
+        AuthenticationManager.getAllPrimaryProviders().forEach(provider->{
+            try
+            {
+                provider.migrateOldConfiguration(active.contains(provider.getName()), user);
+            }
+            catch (Throwable t)
+            {
+                ExceptionUtil.logExceptionToMothership(null, t);
+            }
+        });
     }
 }

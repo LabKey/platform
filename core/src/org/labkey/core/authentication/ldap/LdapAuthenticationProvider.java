@@ -18,9 +18,13 @@ package org.labkey.core.authentication.ldap;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.ldap.LdapAuthenticationManager;
+import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -28,67 +32,84 @@ import org.labkey.api.view.ActionURL;
 import javax.naming.NamingException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
  * Date: Oct 12, 2007
  * Time: 1:31:18 PM
  */
-public class LdapAuthenticationProvider implements LoginFormAuthenticationProvider
+public class LdapAuthenticationProvider implements LoginFormAuthenticationProvider<LdapConfiguration>
 {
     private static final Logger LOG = Logger.getLogger(LdapAuthenticationProvider.class);
 
-    public void activate()
+    @Override
+    public List<LdapConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
     {
-        LdapAuthenticationManager.activate();
+        List<LdapConfiguration> list = LoginFormAuthenticationProvider.super.getAuthenticationConfigurations(configurations);
+
+        list.stream().findFirst().ifPresent(lc->{
+            lc.setAllowLdapSearch(true);  // TODO: move LDAP search settings into normal configuration
+            AuthenticationManager.setLdapDomain(lc.getDomain()); // TODO: AuthenticationConfigurationCollections should collect all mapped domains
+        });
+
+        return list;
     }
 
-    public void deactivate()
+    @Override
+    public LdapConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
-        LdapAuthenticationManager.deactivate();
+        return new LdapConfiguration(this, cs.getStandardSettings(), cs.getProperties());
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return "LDAP";
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
         return "Uses the LDAP protocol to authenticate against an institution's directory server";
     }
 
+    @Override
     public ActionURL getConfigurationLink()
     {
-        return LdapController.getConfigureURL(false);
+        return getConfigurationLink(null);
     }
 
+    @Override
+    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    {
+        return LdapController.getConfigureURL(rowId, false);
+    }
+
+    @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(LdapConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         // Consider: allow user ids other than email
         ValidEmail email = new ValidEmail(id);
 
-        if (!SecurityManager.isLdapEmail(email))
+        if (!configuration.isLdapEmail(email))
             return AuthenticationResponse.createFailureResponse(this, FailureReason.notApplicable);
 
         //
         // Attempt to authenticate by iterating through all the LDAP servers.
-        // List of servers is stored as a site property in the database
         //
-        String[] ldapServers = LdapAuthenticationManager.getServers();
-        boolean saslAuthentication = LdapAuthenticationManager.useSASL();
-
-        for (String server : ldapServers)
+        for (String server : configuration.getServers())
         {
-            if (null == server || 0 == server.length())
+            if (server.isEmpty())
                 continue;
 
             try
             {
-                if (LdapAuthenticationManager.authenticate(server, email, password, saslAuthentication))
+                if (LdapAuthenticationManager.authenticate(server, email, password, configuration.getPrincipalTemplate(), configuration.isSasl(), configuration.isAllowLdapSearch()))
                     return AuthenticationResponse.createSuccessResponse(this, email);
                 else
                     return AuthenticationResponse.createFailureResponse(this, FailureReason.badCredentials);
@@ -103,9 +124,40 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         return AuthenticationResponse.createFailureResponse(this, FailureReason.configurationError);
     }
 
+    private static final String LDAP_AUTHENTICATION_CATEGORY_KEY = "LDAPAuthentication";
+    private enum Key {Servers, Domain, PrincipalTemplate, SASL}
+
     @Override
-    public @NotNull Collection<String> getPropertyCategories()
+    public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
     {
-        return Collections.singleton(LdapAuthenticationManager.LDAP_AUTHENTICATION_CATEGORY_KEY);
+        LdapConfigureForm form = null;
+        Map<String, String> props = PropertyManager.getProperties(LDAP_AUTHENTICATION_CATEGORY_KEY);
+
+        if (active || !props.isEmpty())
+        {
+            form = new LdapConfigureForm();
+            form.setServers(getProperty(props, Key.Servers, ""));
+            form.setDomain(getProperty(props, Key.Domain, ""));
+            form.setPrincipalTemplate(getProperty(props, Key.PrincipalTemplate, "${email}"));
+            form.setSASL("TRUE".equalsIgnoreCase(getProperty(props, Key.SASL, "FALSE")));
+        }
+
+        return form;
+    }
+
+    private static String getProperty(Map<String, String> props, Key key, String defaultValue)
+    {
+        String value = props.get(key.toString());
+
+        if (null != value)
+            return value;
+        else
+            return defaultValue;
+    }
+
+    @Override
+    public void handleStartupProperties()
+    {
+        saveStartupProperties(Collections.singleton(LDAP_AUTHENTICATION_CATEGORY_KEY), LdapConfigureForm.class);
     }
 }

@@ -41,13 +41,14 @@ public class AuthenticationProviderCache
 
     static
     {
-        // Cache AuthenticationProviderCollection forever
+        // Cache AuthenticationProviderCollections forever
         CACHE.setCacheTimeChooser((key, argument) -> CacheManager.YEAR);
     }
 
     private static class AuthenticationProviderCollections
     {
-        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new AbstractSetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
+        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        {
             @Override
             protected Set<AuthenticationProvider> createCollection()
             {
@@ -55,7 +56,8 @@ public class AuthenticationProviderCache
             }
         };
 
-        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _activeMap = new AbstractSetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
+        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _activeMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        {
             @Override
             protected Set<AuthenticationProvider> createCollection()
             {
