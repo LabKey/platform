@@ -17,13 +17,10 @@ package org.labkey.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.assay.AssayDomainKind;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
@@ -137,10 +134,6 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
     @Override
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), container);
-        dd = dd.edit().setDescription(domain.getDescription()).build();
-        OntologyManager.updateDomainDescriptor(dd);
-
-        return PropertyService.get().getDomain(container, dd.getDomainURI());
+        return _assayDelegate.createDomain(domain, arguments, container, user, templateInfo);
     }
 }
