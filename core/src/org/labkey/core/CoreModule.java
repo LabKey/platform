@@ -64,7 +64,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -1002,8 +1001,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("javaRuntime", javaInfo);
             return results;
         });
-
-        LdapAuthenticationManager.registerMetricsProvider();
 
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

@@ -18,25 +18,18 @@ package org.labkey.api.ldap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.UsageReportingLevel;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import java.util.Collections;
 import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * User: adam
@@ -118,15 +111,5 @@ public class LdapAuthenticationManager
         env.put(Context.SECURITY_CREDENTIALS, password);
 
         return new InitialDirContext(env);
-    }
-
-    public static void registerMetricsProvider()
-    {
-        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.MEDIUM, ModuleLoader.getInstance().getCoreModule().getName(), () -> {
-            Map<String, Object> results = new LinkedHashMap<>();
-            results.put("enabled", AuthenticationManager.getActiveProviders().stream().anyMatch(p->"LDAP".equals(p.getName())));
-            _authenticator.addMetrics(results);
-            return Collections.singletonMap("ldap", results);
-        });
     }
 }
