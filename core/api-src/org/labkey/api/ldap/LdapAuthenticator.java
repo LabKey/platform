@@ -23,6 +23,6 @@ import java.util.Map;
 
 public interface LdapAuthenticator
 {
-    boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication) throws NamingException;
+    boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, @NotNull String principalTemplate, boolean saslAuthentication, boolean allowLdapSearch) throws NamingException;
     default void addMetrics(Map<String, Object> map){}
 }

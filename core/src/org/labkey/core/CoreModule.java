@@ -208,10 +208,6 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.core.authentication.ldap.LdapController;
-import org.labkey.core.authentication.test.TestSecondaryController;
-import org.labkey.core.authentication.test.TestSecondaryProvider;
-import org.labkey.core.authentication.test.TestSsoController;
-import org.labkey.core.authentication.test.TestSsoProvider;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
@@ -408,14 +404,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
                         "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
 
-        // test authentication provider implementations... dev mode only
-        if (AppProps.getInstance().isDevMode())
-        {
-            addController("testsecondary", TestSecondaryController.class);
-            AuthenticationManager.registerProvider(new TestSecondaryProvider());
-            addController("testsso", TestSsoController.class);
-            AuthenticationManager.registerProvider(new TestSsoProvider());
-        }
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
 
         SiteValidationService svc = SiteValidationService.get();
@@ -517,6 +505,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return new ArrayList<>(Arrays.asList(
             new AlwaysAvailableWebPartFactory("Contacts")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), CoreQuerySchema.NAME);
@@ -534,6 +523,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("FolderNav")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     FolderNavigationForm form = getForm(portalCtx);
@@ -561,6 +551,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbooks")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
@@ -579,6 +570,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbook Description")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
@@ -595,6 +587,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Projects")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -613,6 +606,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Subfolders")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -640,6 +634,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             // TODO: Delete this? I see no usages
             new BaseWebPartFactory("ProjectNav")
             {
+                @Override
                 @RemoveIn20_1
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
@@ -657,6 +652,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -677,6 +673,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
 
+                @Override
                 public HttpView getEditView(WebPart webPart, ViewContext context)
                 {
                     CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);

@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.LoginUrls" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController.AuthLogoBean" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -24,57 +22,41 @@
 <%
     HttpView<AuthLogoBean> me = (HttpView<AuthLogoBean>) HttpView.currentView();
     AuthLogoBean bean = me.getModelBean();
-    boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
-%><labkey:form enctype="multipart/form-data" method="post">
-<table class="lk-fields-table">
-<%=formatMissedErrorsInTable("form", 3)%>
-<tr>
-    <td colspan="3"><input type="hidden" name="name" value="<%=h(bean.provider.getName())%>"></td>
-</tr>
-<tr id="auth_header_logo_row">
-    <td class="labkey-form-label" nowrap>Page header logo</td>
-    <%=text(bean.headerLogo)%>
-</tr>
-<tr id="auth_login_page_logo_row">
-    <td class="labkey-form-label" nowrap>Login page logo</td>
-    <%=text(bean.loginPageLogo)%>
-</tr>
-<tr>
-    <td colspan="3">&nbsp;</td>
-</tr>
-<tr>
-    <td colspan="3">
-        <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
-        <%= button(!hasAdminOpsPerms || bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
-    </td>
-</tr>
-</table>
-</labkey:form>
-<script type="text/javascript">
-    function deleteLogo(prefix)
-    {
-        var td1 = document.getElementById(prefix + 'td1');
-        var td2 = document.getElementById(prefix + 'td2');
-        var tr = document.getElementById(prefix + 'row');
-        tr.removeChild(td1);
-        tr.removeChild(td2);
 
-        var newTd = document.createElement('td');
-        newTd.setAttribute('colspan', '2');
+    if (bean.formatInTable)
+    {
+%>
+<tr><td class="labkey-form-label-nowrap">Page header logo</td><td><%=text(bean.headerLogo)%></td></tr>
+<tr><td class="labkey-form-label-nowrap">Login page logo</td><td><%=text(bean.loginPageLogo)%></td></tr>
+<%
+    }
+    else
+    {
+%>
+<div class="form-group"><label class="control-label col-sm-3 col-lg-2">Page header logo</label><div class="col-sm-9 col-lg-10"><%=text(bean.headerLogo)%></div></div>
+<div class="form-group"><label class="control-label col-sm-3 col-lg-2">Login page logo</label><div class="col-sm-9 col-lg-10"><%=text(bean.loginPageLogo)%></div></div>
+<%
+    }
+%>
+<script type="text/javascript">
+    function deleteLogo(name)
+    {
+        var d1 = document.getElementById(name + 'd1');
+        var d2 = document.getElementById(name + 'd2');
+        d1.innerHTML = "";
+        d2.innerHTML = "";
 
         var fb = document.createElement('input');
-        fb.setAttribute('name', prefix + 'file');
+        fb.setAttribute('name', name);
         fb.setAttribute('type', 'file');
         fb.setAttribute('size', '60');
 
         var hidden = document.createElement('input');
         hidden.setAttribute('type', 'hidden');
         hidden.setAttribute("name", "deletedLogos");
-        hidden.setAttribute("value", prefix + '<%=bean.provider.getName()%>');
+        hidden.setAttribute("value", name);
 
-        newTd.appendChild(fb);
-        newTd.appendChild(hidden);
-
-        tr.appendChild(newTd);        
+        d1.appendChild(fb);
+        d1.appendChild(hidden);
     }
 </script>

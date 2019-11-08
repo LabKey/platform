@@ -25,7 +25,7 @@ import org.labkey.api.security.Encryption;
  * User: adam
  * Date: 10/25/13
  */
-class AES
+public class AES
 {
     private static class AESHolder
     {
@@ -44,7 +44,7 @@ class AES
         return _aes;
     }
 
-    static Encryption.Algorithm get()
+    public static Encryption.Algorithm get()
     {
         return AESHolder.INSTANCE.getAES();
     }
