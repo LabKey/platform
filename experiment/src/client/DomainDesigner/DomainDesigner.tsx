@@ -194,7 +194,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     </Col>
                     <Col xs={10} />
                     <Col xs={1}>
-                        <Button className='pull-right domain-designer-save-btn' bsStyle='success' disabled={submitting || domain.hasErrors()} onClick={this.submitAndNavigate}>Save</Button>
+                        <Button className='pull-right domain-designer-save-btn' bsStyle='success' disabled={submitting || (domain.hasErrors() && domain.domainException.severity === SEVERITY_LEVEL_ERROR)} onClick={this.submitAndNavigate}>Save</Button>
                     </Col>
                 </Row>
         )
