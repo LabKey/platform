@@ -176,27 +176,6 @@ public class AuthenticationManager
             .forEach(cp->setAuthConfigProperty(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
     }
 
-    private static void populateProviderProperties(PropertyStore store, Function<AuthenticationProvider, Collection<String>> function)
-    {
-        // For each provider, use function to collect the desired property categories
-        List<String> categories = getAllProviders().stream()
-            .map(function)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
-
-        // For each category that matches a ConfigProperty scope, write all the properties to the provided PropertyStore
-        categories.forEach(category -> {
-            Collection<ConfigProperty> configProperties = ModuleLoader.getInstance().getConfigProperties(category);
-
-            if (!configProperties.isEmpty())
-            {
-                PropertyMap map = store.getWritableProperties(category, true);
-                configProperties.forEach(cp -> map.put(cp.getName(), cp.getValue()));
-                map.save();
-            }
-        });
-    }
-
     public enum Priority { High, Low }
 
     // TODO: Replace this with a generic domain-claiming mechanism

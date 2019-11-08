@@ -25,6 +25,8 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
@@ -39,6 +41,7 @@ import org.labkey.api.view.ActionURL;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -89,11 +92,10 @@ public interface AuthenticationProvider
     {
     }
 
+    // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
     default <FORM extends AuthenticationConfigureForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
     {
-        Map<String, Object> map = categories.stream()
-            .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
-            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
+        Map<String, String> map = getPropertyMap(categories);
 
         if (!map.isEmpty())
         {
@@ -101,6 +103,27 @@ public interface AuthenticationProvider
             FORM form = factory.fromMap(map);
             AuthenticationConfigureAction.saveForm(form, null);
         }
+    }
+
+    // Helper that retrieves all the configuration properties in the specified category and saves them into a property map with the same name
+    default void saveStartupProperties(String category)
+    {
+        Map<String, String> map = getPropertyMap(Collections.singleton(category));
+
+        if (!map.isEmpty())
+        {
+            PropertyMap propertyMap = PropertyManager.getWritableProperties(category, true);
+            propertyMap.clear();
+            propertyMap.putAll(map);
+            propertyMap.save();
+        }
+    }
+
+    private Map<String, String> getPropertyMap(Collection<String> categories)
+    {
+        return categories.stream()
+            .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
+            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
     }
 
     interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration> extends AuthenticationProvider

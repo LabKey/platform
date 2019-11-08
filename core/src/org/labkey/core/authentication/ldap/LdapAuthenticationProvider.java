@@ -154,4 +154,10 @@ public class LdapAuthenticationProvider implements LoginFormAuthenticationProvid
         else
             return defaultValue;
     }
+
+    @Override
+    public void handleStartupProperties()
+    {
+        saveStartupProperties(Collections.singleton(LDAP_AUTHENTICATION_CATEGORY_KEY), LdapConfigureForm.class);
+    }
 }

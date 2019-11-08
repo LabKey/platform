@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
@@ -134,6 +133,12 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
     {
         return null;  // We don't migrate the database login configuration
+    }
+
+    @Override
+    public void handleStartupProperties()
+    {
+        saveStartupProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
     }
 
     // A simple test validator that expires every authentication after 100 requests
