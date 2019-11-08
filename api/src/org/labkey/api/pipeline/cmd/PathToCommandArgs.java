@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.cmd;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Set;
 */
 public abstract class PathToCommandArgs extends TaskPathToCommandArgs
 {
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         return toArgs(getPaths(task));
     }
