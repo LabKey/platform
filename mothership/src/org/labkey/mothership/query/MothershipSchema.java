@@ -351,7 +351,7 @@ public class MothershipSchema extends UserSchema
 
         ExprColumn minRevisionColumn = new ExprColumn(result, "MinRevision", getSoftwareReleaseSQL("ASC"), JdbcType.INTEGER);
         minRevisionColumn.setFk(softwareReleaseFK);
-        minRevisionColumn.setDescription("Most oldest release with a report");
+        minRevisionColumn.setDescription("Oldest release with a report");
         result.addColumn(minRevisionColumn);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
