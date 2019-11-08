@@ -16,7 +16,7 @@
 
 import {List} from "immutable";
 import * as React from 'react'
-import { Button, Panel } from "react-bootstrap";
+import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
 import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
@@ -120,16 +120,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }
             })
             .catch((badDomain) => {
-                // get error messages, fall back on the top level exception
-                let bannerMsgs = getBannerMessages(badDomain);
-                if (bannerMsgs && bannerMsgs.size === 0 && badDomain.domainException.exception) {
-                    bannerMsgs = List<IBannerMessage>([{message: badDomain.domainException.exception, messageType: 'danger'}]);
-                }
-
                 this.setState(() => ({
                     domain: badDomain,
-                    submitting: false,
-                    messages: bannerMsgs
+                    submitting: false
                 }));
             });
     };
@@ -139,13 +132,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
-        // Only show bottom banner if not on domain
-        const messages = (newDomain.hasException() && !newDomain.hasErrors()) ? getBannerMessages(newDomain) : this.state.messages;
 
         this.setState((state) => ({
             domain: newDomain,
-            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: messages
+            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
     };
 
@@ -195,24 +185,18 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     renderButtons() {
-        const { submitting } = this.state;
+        const { submitting, domain } = this.state;
 
         return (
-            <div className='domain-designer-bottom-btns'>
-                <WizardNavButtons
-                    cancel={this.onCancelBtnHandler}
-                    containerClassName=""
-                    includeNext={false}>
-                    <Button
-                        type='submit'
-                        bsClass='btn btn-success'
-                        onClick={() => this.submitHandler(true)}
-                        disabled={submitting}
-                    >
-                        Save
-                    </Button>
-                </WizardNavButtons>
-            </div>
+                <Row>
+                    <Col xs={1}>
+                        <Button className='domain-designer-save-btn' onClick={this.onCancelBtnHandler}>Cancel</Button>
+                    </Col>
+                    <Col xs={10} />
+                    <Col xs={1}>
+                        <Button className='pull-right domain-designer-save-btn' bsStyle='success' disabled={submitting || domain.hasErrors()} onClick={this.submitAndNavigate}>Save</Button>
+                    </Col>
+                </Row>
         )
     }
 
