@@ -6510,7 +6510,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
         {
-            ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getViewContext(), _seeds, options);
+            ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
             return new ApiSimpleResponse(lineage.toJSON(options.isSingleSeedRequested()));
         }
     }

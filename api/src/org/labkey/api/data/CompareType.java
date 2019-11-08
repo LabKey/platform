@@ -770,9 +770,22 @@ public abstract class CompareType
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            final String escapedValue = escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */);
+            final Object param = getParamVals()[0];
+            final String escapedValue = escapeLabKeySqlValue(param, JdbcType.VARCHAR, true);
             if (_selectColumns == null || _selectColumns.isEmpty() || escapedValue.isEmpty())
                 return new SQLFragment("1=1");
+
+            Integer paramNum = null;
+            try
+            {
+                String paramString = Objects.toString(param, null);
+                if (paramString != null)
+                    paramNum = Integer.parseInt(paramString);
+            }
+            catch (NumberFormatException ex)
+            {
+                // ok
+            }
 
             boolean hasResult = false;
             SQLFragment sql = new SQLFragment();
@@ -782,6 +795,18 @@ public abstract class CompareType
             {
                 if (column == null)
                     continue;
+
+                // If the search term parsed as a number, include a test for the primary key column
+                if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
+                {
+                    hasResult = true;
+                    sql.append(sep);
+                    sep = " OR ";
+                    sql.append(dialect.getColumnSelectName(column.getAlias()));
+                    sql.append(" = ");
+                    sql.append(paramNum);
+                    continue;
+                }
 
                 // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
                 if (column.isHidden())

@@ -408,7 +408,6 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
     }
 
 
-
     @Test
     public void testDataClassFromTemplate() throws Exception
     {

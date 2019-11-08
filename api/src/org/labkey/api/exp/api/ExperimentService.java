@@ -67,7 +67,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -430,31 +429,24 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterialRunInput getMaterialInput(Lsid lsid);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpRunItem start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start);
 
     /**
      * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
      * ignoring any sample children derived from ExpData children.
      */
-    Set<ExpMaterial> getRelatedChildSamples(ExpData start);
+    Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
 
     /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
      * stopping at the first parent generation (no grandparents.)
      */
-    Set<ExpData> getNearestParentDatas(ExpMaterial start);
-
-    /**
-     * @deprecated : use the variant which takes a ContainerUser parameter
-     */
-    @NotNull
-    @Deprecated
-    ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
+    Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
     @NotNull
-    ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
+    ExpLineage getLineage(Container c, User user, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.

@@ -616,33 +616,33 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
         ExpMaterial A = ss.getSample(c, "A");
         assertNotNull(A);
-        ExpLineage lineage = ExperimentService.get().getLineage(A, opts);
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, A, opts);
         assertTrue(lineage.getMaterials().isEmpty());
         assertNull(A.getRunId());
 
         ExpMaterial B = ss.getSample(c, "B");
         assertNotNull(B);
-        lineage = ExperimentService.get().getLineage(B, opts);
+        lineage = ExperimentService.get().getLineage(c, user, B, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
         assertNotNull(B.getRunId());
 
         ExpMaterial C = ss.getSample(c, "C");
         assertNotNull(C);
-        lineage = ExperimentService.get().getLineage(C, opts);
+        lineage = ExperimentService.get().getLineage(c, user, C, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
 
         ExpMaterial D = ss.getSample(c, "D");
         assertNotNull(D);
-        lineage = ExperimentService.get().getLineage(D, opts);
+        lineage = ExperimentService.get().getLineage(c, user, D, opts);
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
 
         ExpMaterial E = ss.getSample(c, "E");
         assertNotNull(E);
-        lineage = ExperimentService.get().getLineage(E, opts);
+        lineage = ExperimentService.get().getLineage(c, user, E, opts);
         assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
@@ -663,7 +663,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
 
         // verify lineage using the derivation run as a seed
-        lineage = ExperimentServiceImpl.get().getLineage(new ViewBackgroundInfo(c, user, null), Set.of(derivationRun), new ExpLineageOptions(true, false, 1));
+        lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(derivationRun), new ExpLineageOptions(true, false, 1));
         assertTrue("Expected derivationRun to be the seed", lineage.getSeeds().contains(derivationRun));
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'B' to be input into derivationRun", lineage.getMaterials().contains(B));
@@ -679,7 +679,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
         assertEquals(1, updated.size());
 
         ExpMaterial D2 = ss.getSample(c, "D");
-        lineage = ExperimentService.get().getLineage(D2, opts);
+        lineage = ExperimentService.get().getLineage(c, user, D2, opts);
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'D' to be derived from 'E'", lineage.getMaterials().contains(E));

@@ -124,8 +124,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             if (version == 11)
                 return new PostgreSql_11_Dialect();
 
-            // 12.x+ gets a warning.
-            if (logWarnings)
+            // 13.x+ gets a warning.
+            if (logWarnings && version > 12)
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
 
             return new PostgreSql_12_Dialect();

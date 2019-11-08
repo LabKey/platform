@@ -151,7 +151,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
@@ -1811,14 +1810,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
 
     @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start)
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start)
     {
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
         {
             return getParentsOldAndBusted(start);
         }
 
-        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getParentsVeryNewHotness(start);
+        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getParentsVeryNewHotness(c, user, start);
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getParentsOldAndBusted(start));
@@ -1921,14 +1920,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
 
     @Override
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpRunItem start)
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start)
     {
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LEGACY_LINEAGE))
         {
             return getChildrenOldAndBusted(start);
         }
 
-        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getChildrenVeryNewHotness(start);
+        Pair<Set<ExpData>, Set<ExpMaterial>> veryNewHotness = getChildrenVeryNewHotness(c, user, start);
 
         Pair<Set<ExpData>, Set<ExpMaterial>> oldAndBusted = null;
         assert null != (oldAndBusted = getChildrenOldAndBusted(start));
@@ -1999,12 +1998,12 @@ public class ExperimentServiceImpl implements ExperimentService
      * each row in the result represents one 'edge' or 'leaf/root' in the experiment graph, that is to say
      * nodes (material,data,protocolapplication) may appear more than once, but edges shouldn't
      **/
-    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(ExpRunItem start)
+    private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsVeryNewHotness(Container c, User user, ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
 
-        ExpLineage lineage = getLineage(start, options);
+        ExpLineage lineage = getLineage(c, user, start, options);
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
@@ -2012,32 +2011,32 @@ public class ExperimentServiceImpl implements ExperimentService
     /**
      * walk experiment graph with one tricky recursive query
      **/
-    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(ExpRunItem start)
+    public Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenVeryNewHotness(Container c, User user, ExpRunItem start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setParents(false);
 
-        ExpLineage lineage = getLineage(start, options);
+        ExpLineage lineage = getLineage(c, user, start, options);
         return Pair.of(lineage.getDatas(), lineage.getMaterials());
     }
 
     @Override
-    public Set<ExpMaterial> getRelatedChildSamples(ExpData start)
+    public Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setParents(false);
 
-        ExpLineage lineage = getLineage(start, options);
+        ExpLineage lineage = getLineage(c, user, start, options);
         return lineage.findRelatedChildSamples(start);
     }
 
     @Override
-    public Set<ExpData> getNearestParentDatas(ExpMaterial start)
+    public Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setChildren(false);
 
-        ExpLineage lineage = getLineage(start, options);
+        ExpLineage lineage = getLineage(c, user, start, options);
         return lineage.findNearestParentDatas(start);
     }
 
@@ -2133,20 +2132,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(Container c, User user, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
     {
-        return getLineage(null, start, options);
-    }
-
-    @Override
-    @NotNull
-    public ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
-    {
-        return getLineage(context, Set.of(start), options);
+        return getLineage(c, user, Set.of(start), options);
     }
 
     @NotNull
-    public ExpLineage getLineage(@Nullable ContainerUser context, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
         // validate seeds
         Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
@@ -2170,8 +2162,8 @@ public class ExperimentServiceImpl implements ExperimentService
                 throw new RuntimeException("Lineage not available for unknown material: " + seed.getLSID());
 
             // ensure that the protocol output lineage is in the same container as the request
-            if (context != null && !context.getContainer().equals(seed.getContainer()))
-                throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + context.getContainer().getPath() + "', got: " + seed.getContainer().getPath());
+            if (c != null && !c.equals(seed.getContainer()))
+                throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + c.getPath() + "', got: " + seed.getContainer().getPath());
 
             if (!seedLsids.add(seed.getLSID()))
                 throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());
@@ -2259,22 +2251,22 @@ public class ExperimentServiceImpl implements ExperimentService
 
         Set<ExpData> datas;
         List<ExpDataImpl> expDatas = getExpDatas(dataIds);
-        if (context != null)
-            datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(toSet());
+        if (user != null)
+            datas = expDatas.stream().filter(data -> data.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
         else
             datas = new HashSet<>(expDatas);
 
         Set<ExpMaterial> materials;
         List<ExpMaterialImpl> expMaterials = getExpMaterials(materialIds);
-        if (context != null)
-            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(toSet());
+        if (user != null)
+            materials = expMaterials.stream().filter(material -> material.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
         else
             materials = new HashSet<>(expMaterials);
 
         Set<ExpRun> runs;
         List<ExpRunImpl> expRuns = getExpRuns(runIds);
-        if (context != null)
-            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(context.getUser(), ReadPermission.class)).collect(toSet());
+        if (user != null)
+            runs = expRuns.stream().filter(run -> run.getContainer().hasPermission(user, ReadPermission.class)).collect(toSet());
         else
             runs = new HashSet<>(expRuns);
 
