@@ -1254,7 +1254,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ConvertHelper.TestCase.class,
                 RReport.TestCase.class,
                 CopyFileRootPipelineJob.TestCase.class,
-                MothershipReport.TestCase.class
+                MothershipReport.TestCase.class,
+                CommandLineTokenizer.TestCase.class
         ));
     }
 
