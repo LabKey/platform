@@ -73,7 +73,6 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -2592,8 +2591,8 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ApplicationAdminPermission.class)
-    public class MigrateAuthenticationConfigurations extends ConfirmAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class MigrateAuthenticationConfigurationsAction extends ConfirmAction
     {
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
@@ -2635,7 +2634,7 @@ public class LoginController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new SetAuthenticationParameterAction(),
                 controller.new SetProviderEnabledAction(),
-                controller.new MigrateAuthenticationConfigurations()
+                controller.new MigrateAuthenticationConfigurationsAction()
             );
 
             // @AdminConsoleAction

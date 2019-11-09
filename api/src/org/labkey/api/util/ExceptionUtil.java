@@ -75,6 +75,7 @@ import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -474,6 +475,10 @@ public class ExceptionUtil
             report.addParam("stackTrace", stackTrace);
             report.addParam("sqlState", sqlState);
             report.addParam("browser", browser);
+
+            Map<String, Map<String, Object>> modulesMap = new HashMap<>();
+            UsageReportingLevel.putModulesBuildInfo(modulesMap);
+            report.setMetrics(Collections.singletonMap("modules", modulesMap));
 
             if (requestURL != null)
             {

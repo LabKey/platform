@@ -39,7 +39,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
-import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.module.ModuleLoader;
@@ -58,7 +57,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HeartBeat;
@@ -69,6 +68,7 @@ import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -93,7 +93,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -453,11 +452,6 @@ public class AuthenticationManager
             return provider;
         else
             throw new NotFoundException("No such AuthenticationProvider available: " + name);
-    }
-
-    public static @Nullable SSOAuthenticationProvider getSSOProvider(String name)
-    {
-        return AuthenticationProviderCache.getProvider(SSOAuthenticationProvider.class, name);
     }
 
     public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(@Nullable Integer key)
@@ -1412,6 +1406,15 @@ public class AuthenticationManager
         return returnURL;
     }
 
+    public static void registerMetricsProvider()
+    {
+        UsageMetricsService.get().registerUsageMetrics(UsageReportingLevel.MEDIUM, ModuleLoader.getInstance().getCoreModule().getName(), () -> {
+            Map<String, Long> map = AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class).stream()
+                .collect(Collectors.groupingBy(config->config.getAuthenticationProvider().getName(), Collectors.counting()));
+
+            return Collections.singletonMap("authenticationConfigurations", map);
+        });
+    }
 
     public static URLHelper getWelcomeURL()
     {
