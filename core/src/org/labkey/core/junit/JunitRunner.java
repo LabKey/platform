@@ -88,14 +88,14 @@ public class JunitRunner
                 @Override
                 public void testStarted(Description description) throws Exception
                 {
-                    LOG.info("Starting test: " + description);
+                    LOG.debug("Starting test: " + description);
                     TestContext.get().clearPerfResults();
                 }
 
                 @Override
                 public void testFinished(Description description) throws Exception
                 {
-                    LOG.info("Finished test: " + description);
+                    LOG.debug("Finished test: " + description);
                     ArrayList<CPUTimer> timers = TestContext.get().getPerfResults();
                     testTimers.put(description, timers);
                     allTimers.addAll(timers);
