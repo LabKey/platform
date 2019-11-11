@@ -32,6 +32,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheListener;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.MultiValuedMapCollectors;
@@ -121,6 +122,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -136,6 +138,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -168,6 +171,8 @@ public class QueryServiceImpl implements QueryService
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
+
+    private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -364,6 +369,31 @@ public class QueryServiceImpl implements QueryService
     {
         return (QueryServiceImpl)QueryService.get();
     }
+
+    static class CacheListener implements org.labkey.api.cache.CacheListener
+    {
+        @Override
+        public void clearCaches()
+        {
+            QueryServiceImpl.get().updateLastModified();
+        }
+    }
+
+    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
+    @Override
+    public long metadataLastModified()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
+            _metadataLastModified.get() : Long.MIN_VALUE;
+    }
+
+    /** Invalidate the value used for the "Last-Modified" time stamp. */
+    @Override
+    public void updateLastModified()
+    {
+        _metadataLastModified.set(new Date().getTime());
+    }
+
 
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {

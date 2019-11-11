@@ -432,7 +432,7 @@ public class DavController extends SpringActionController
     }
 
 
-    private class WebdavResponse
+    private class WebdavResponse implements ResponseHelper.HttpServletResp
     {
         private HttpServletResponse _response;
         private WebdavStatus _status = null;
@@ -442,6 +442,30 @@ public class DavController extends SpringActionController
         WebdavResponse(HttpServletResponse response)
         {
             _response = response;
+        }
+
+        // Used by ResponseHelper.checkIfHeaders
+        public void sendError(int code)
+        {
+            sendError(WebdavStatus.fromCode(code));
+        }
+
+        // Used by ResponseHelper.checkIfHeaders
+        public void setStatus(int code)
+        {
+            setStatus(WebdavStatus.fromCode(code));
+        }
+
+        // Used by ResponseHelper.checkIfHeaders
+        public void addHeader(String name, String value)
+        {
+            _response.addHeader(name, value);
+        }
+
+        // Used by ResponseHelper.checkIfHeaders
+        public void setHeader(String name, String value)
+        {
+            _response.setHeader(name, value);
         }
 
         WebdavStatus sendError(WebdavStatus status)
@@ -4963,7 +4987,8 @@ public class DavController extends SpringActionController
 
         // ETag header
         // NOTE it is better to use an older etag and newer content, than vice-versa
-        getResponse().setEntityTag(resource.getETag(true));
+        String eTag = resource.getETag(true);
+        getResponse().setEntityTag(eTag);
 
         // Last-Modified header
         long modified = resource.getLastModified();
@@ -4992,7 +5017,7 @@ public class DavController extends SpringActionController
         }
 
         // Check if the conditions specified in the optional If headers are satisfied.
-        if (!checkIfHeaders(resource))
+        if (!ResponseHelper.checkIfHeaders(getRequest(), getResponse(), eTag, modified))
             return null;
 
         String contentDisposition = getRequest().getParameter("contentDisposition");
@@ -5556,180 +5581,6 @@ public class DavController extends SpringActionController
         return result;
     }
 
-
-    /**
-     * Check if the conditions specified in the optional If headers are
-     * satisfied.
-     *
-     * @param resource
-     * @return boolean true if the resource meets all the specified conditions,
-     *         and false if any of the conditions is not satisfied, in which case
-     *         request processing is stopped
-     */
-    private boolean checkIfHeaders(WebdavResource resource)
-            throws DavException
-    {
-        return checkIfMatch(resource)
-                && checkIfModifiedSince(resource)
-                && checkIfNoneMatch(resource)
-                && checkIfUnmodifiedSince(resource);
-    }
-
-    /**
-     * Check if the if-match condition is satisfied.
-     *
-     * @param resource
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfMatch(WebdavResource resource)
-    {
-        String headerValue = getRequest().getHeader("If-Match");
-        if (headerValue != null)
-        {
-            String eTag = resource.getETag();
-            if (headerValue.indexOf('*') == -1)
-            {
-                StringTokenizer commaTokenizer = new StringTokenizer
-                        (headerValue, ",");
-                boolean conditionSatisfied = false;
-
-                while (!conditionSatisfied && commaTokenizer.hasMoreTokens())
-                {
-                    String currentToken = commaTokenizer.nextToken();
-                    if (currentToken.trim().equals(eTag))
-                        conditionSatisfied = true;
-                }
-
-                // If none of the given ETags match, 412 Precondition failed is
-                // sent back
-                if (!conditionSatisfied)
-                {
-                    getResponse().sendError(WebdavStatus.SC_PRECONDITION_FAILED);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-
-    /**
-     * Check if the if-modified-since condition is satisfied.
-     *
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfModifiedSince(WebdavResource resource)
-    {
-        try
-        {
-            long headerValue = getRequest().getDateHeader("If-Modified-Since");
-            if (headerValue != -1)
-            {
-                // If an If-None-Match header has been specified, if modified since
-                // is ignored.
-                if ((getRequest().getHeader("If-None-Match") == null))
-                {
-                    long lastModified = resource.getLastModified();
-                    if (lastModified < headerValue + 1000)
-                    {
-                    // The entity has not been modified since the date
-                    // specified by the client. This is not an error case.
-                    getResponse().setEntityTag(resource.getETag());
-                    getResponse().setStatus(WebdavStatus.SC_NOT_MODIFIED);
-                    return false;
-                    }
-                }
-            }
-        }
-        catch (IllegalArgumentException illegalArgument)
-        {
-            return true;
-        }
-        return true;
-    }
-
-
-    /**
-     * Check if the if-none-match condition is satisfied.
-     *
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfNoneMatch(WebdavResource resource) throws DavException
-    {
-        String headerValue = getRequest().getHeader("If-None-Match");
-        if (headerValue != null)
-        {
-            boolean conditionSatisfied = false;
-
-            if (!headerValue.equals("*"))
-            {
-                String eTag = resource.getETag();
-                StringTokenizer commaTokenizer = new StringTokenizer(headerValue, ",");
-                while (!conditionSatisfied && commaTokenizer.hasMoreTokens())
-                {
-                    String currentToken = commaTokenizer.nextToken();
-                    if (currentToken.trim().equals(eTag))
-                        conditionSatisfied = true;
-                }
-            }
-            else
-            {
-                conditionSatisfied = true;
-            }
-
-            if (conditionSatisfied)
-            {
-                // For GET and HEAD, we should respond with
-                // 304 Not Modified.
-                // For every other method, 412 Precondition Failed is sent
-                // back.
-                if (("GET".equals(getRequest().getMethod())) || ("HEAD".equals(getRequest().getMethod())))
-                {
-                    getResponse().setStatus(WebdavStatus.SC_NOT_MODIFIED);
-                    getResponse().setEntityTag(resource.getETag());
-                    return false;
-                }
-                else
-                {
-                    throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
-                }
-            }
-        }
-        return true;
-    }
-
-
-    /**
-     * Check if the if-unmodified-since condition is satisfied.
-     *
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfUnmodifiedSince(WebdavResource resource) throws DavException
-    {
-        try
-        {
-            long headerValue = getRequest().getDateHeader("If-Unmodified-Since");
-            if (headerValue != -1)
-            {
-                long lastModified = resource.getLastModified();
-                if (lastModified >= (headerValue + 1000))   // UNDONE: why the +1000???
-                    throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
-            }
-        }
-        catch (IllegalArgumentException illegalArgument)
-        {
-            return true;
-        }
-        return true;
-    }
 
 
     boolean getOverwriteParameter(boolean defaultOverwrite)
