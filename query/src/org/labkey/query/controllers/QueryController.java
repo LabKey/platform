@@ -6476,41 +6476,48 @@ public class QueryController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
-            var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
-            QueryService.get().analyzeFolder(start, deps);
-
             JSONObject ret = new JSONObject();
-            ret.put("success", true);
 
-            JSONObject objects = new JSONObject();
-            for (var from : deps.keySet())
+            QueryService.QueryAnalysisService analysisService = QueryService.get().getQueryAnalysisService();
+            if (analysisService != null)
             {
-                objects.put(from.getKey(), from.toJSON());
-                for (var to : deps.get(from))
-                    objects.put(to.getKey(), to.toJSON());
-            }
-            ret.put("objects", objects);
+                DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+                var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
 
-            JSONArray dependants = new JSONArray();
-            for (var from : deps.keySet())
-            {
-                JSONArray toList = new JSONArray();
-                for (var to : deps.get(from))
-                    dependants.put(new String[] {from.getKey(), to.getKey()});
+                analysisService.analyzeFolder(start, deps);
+                ret.put("success", true);
+
+                JSONObject objects = new JSONObject();
+                for (var from : deps.keySet())
+                {
+                    objects.put(from.getKey(), from.toJSON());
+                    for (var to : deps.get(from))
+                        objects.put(to.getKey(), to.toJSON());
+                }
+                ret.put("objects", objects);
+
+                JSONArray dependants = new JSONArray();
+                for (var from : deps.keySet())
+                {
+                    JSONArray toList = new JSONArray();
+                    for (var to : deps.get(from))
+                        dependants.put(new String[] {from.getKey(), to.getKey()});
+                }
+                ret.put("graph", dependants);
             }
-            ret.put("graph", dependants);
+            else
+            {
+                ret.put("success", false);
+            }
             return ret;
         }
     }
-
 
     public static class TestCase extends AbstractActionPermissionTest
     {

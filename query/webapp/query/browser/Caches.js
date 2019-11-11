@@ -184,9 +184,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     load : function(success, failure, scope) {
 
         if (!this.queries) {
-            LABKEY.Query.analyzeQueries({
+            this.analyzeQueries({
                 success : function(resp){
-
                     this.processDependencies(resp);
                     if (Ext4.isFunction(success)){
                         success.call(scope || this, )
@@ -222,8 +221,67 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         //console.log(this.queries);
     },
 
-    createQuery(cacheKey, q) {
+    createQuery : function(cacheKey, q) {
         this.queries[cacheKey] = {q : Ext4.clone(q), dependents : [], dependees : []};
         return this.queries[cacheKey];
+    },
+
+    // hit's the server enpoint (premium only) to create the dependency graph
+    analyzeQueries : function(config) {
+        function fixupJsonResponse(json, response, options)
+        {
+            var callback = LABKEY.Utils.getOnSuccess(config);
+
+            if (!json || !json.success)
+            {
+                if (callback)
+                    callback.call(this, json, response, options);
+                return;
+            }
+
+            var key,toKey,fromKey;
+            var objects = json.objects;
+
+            var dependantsMap = {};
+            var dependeesMap  = {};
+
+            for (var edge = 0; edge < json.graph.length; edge++)
+            {
+                fromKey = json.graph[edge][0];
+                toKey = json.graph[edge][1];
+
+                // objects I am dependant on are my dependees
+                dependeesMap[fromKey] = dependeesMap[fromKey] || [];
+                dependeesMap[fromKey].push(objects[toKey]);
+
+                // objects are dependant on me are my dependants
+                dependantsMap[toKey] = dependantsMap[toKey] || [];
+                dependantsMap[toKey].push(objects[fromKey]);
+            }
+
+            var dependeesList = [];
+            for (key in dependeesMap)
+            {
+                if (dependeesMap.hasOwnProperty(key))
+                    dependeesList.push({from:objects[key], to:dependeesMap[key]});
+            }
+
+            var dependantsList = [];
+            for (key in dependantsMap)
+            {
+                if (dependantsMap.hasOwnProperty(key))
+                    dependantsList.push({to:objects[key], from:dependantsMap[key]});
+            }
+
+            if (callback)
+                callback.call(this, {success:json.success, dependants:dependantsList, dependees:dependeesList}, response, options);
+        }
+
+        return LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', config.containerPath),
+            method : 'GET',
+            success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+        });
     }
 });
