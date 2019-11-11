@@ -19,6 +19,7 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.PathNotFoundException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -40,7 +41,7 @@ public class MetricJSONDisplayColumn extends DataColumn
         super(col);
         if(props.size() > 1)
         {
-            _log.warn("Multiple properties specified for a column, only the last one will be used.");
+            _log.warn("Multiple properties specified for column " + col.getFieldKey() + " on table " + col.getParentTable().getName() + ", only the last one will be used.");
         }
         for(String pr: props)
         {
@@ -48,17 +49,21 @@ public class MetricJSONDisplayColumn extends DataColumn
         }
     }
 
+    @Override
     public String getOutput(RenderContext ctx)
     {
         String json = (String) getColumnInfo().getValue(ctx);
 
-        DocumentContext dc = JsonPath.parse(json);
+        if (StringUtils.isBlank(json))
+        {
+            return null;
+        }
 
-        StringBuilder path = new StringBuilder();
-
+        final String path = "$." + _jsonProp;
         try
         {
-            Object val = dc.read(path.append("$.").append(_jsonProp).toString());
+            DocumentContext dc = JsonPath.parse(json);
+            Object val = dc.read(path);
             return val == null ? "" : val.toString();
         }
         catch (PathNotFoundException ex)
@@ -68,7 +73,8 @@ public class MetricJSONDisplayColumn extends DataColumn
         }
         catch (JsonPathException ex)
         {
-            return "Invalid Json Path Exception - " + path.toString();
+            _log.debug("Unable to handle path: " + path, ex);
+            return "Invalid Json Path Exception - " + path;
         }
 
     }

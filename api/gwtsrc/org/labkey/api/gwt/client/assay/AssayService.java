@@ -22,6 +22,7 @@ import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.LookupService;
+import org.labkey.api.query.ValidationException;
 
 import java.util.List;
 
@@ -36,7 +37,7 @@ public interface AssayService extends LookupService
 
     GWTProtocol getAssayTemplate(String providerName) throws SerializableException;
 
-    GWTProtocol saveChanges(GWTProtocol plate, boolean replaceIfExisting) throws AssayException;
+    GWTProtocol saveChanges(GWTProtocol plate, boolean replaceIfExisting) throws AssayException, ValidationException;
 
     /**
      * @param orig Unchanged domain
