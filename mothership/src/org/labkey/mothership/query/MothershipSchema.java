@@ -155,7 +155,7 @@ public class MothershipSchema extends UserSchema
                 append(result.getSqlDialect().concatenate(
                         ExprColumn.STR_TABLE_ALIAS + ".VcsBranch",
                         "', '",
-                        ExprColumn.STR_TABLE_ALIAS + ".BuildTime",
+                        "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".BuildTime AS VARCHAR)",
                         "', '",
                         ExprColumn.STR_TABLE_ALIAS + ".BuildNumber")).append(" END");
         result.addColumn(new ExprColumn(result, "Description", descriptionSQL, JdbcType.VARCHAR));
