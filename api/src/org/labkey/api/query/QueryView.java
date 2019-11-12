@@ -2160,11 +2160,13 @@ public class QueryView extends WebPartView<Object>
                 List<FieldKey> keys = getSettings().getFieldKeys();
                 FieldKey starKey = FieldKey.fromParts("*");
 
+                // include details and update columns if they've been requested
+                addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
+
                 //special-case: if one of the keys is *, add all columns from the
                 //TableInfo and remove the * so that Query doesn't choke on it
                 if (keys.contains(starKey))
                 {
-                    addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
                     rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
                     // Since the client requested all columns, don't filter which ones get sent back
