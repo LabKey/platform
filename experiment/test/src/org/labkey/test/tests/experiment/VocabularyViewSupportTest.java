@@ -126,7 +126,6 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         goToProjectHome();
         SampleSetHelper sampleHelper = new SampleSetHelper(this);
         sampleHelper.createSampleSet(sampleSetName, null);
-        clickButton("Finish");
 
         log("call to insertRows with a voc property");
         int sampleSetRowCount = 0;
