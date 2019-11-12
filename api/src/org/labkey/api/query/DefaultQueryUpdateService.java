@@ -378,7 +378,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                    final String name = col.getName();
 
                    // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
-                   if (col.isReadOnly() || col.isCalculated())
+                   if (shouldSkipColumnUpdate(col))
                        continue;
 
                    //when updating a row, we should strip the following fields, as they are
@@ -437,6 +437,11 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         //from Table.update(). Instead, we need to copy values from updatedRow into row and return that.
         row.putAll(updatedRow);
         return row;
+    }
+
+    protected boolean shouldSkipColumnUpdate(ColumnInfo col)
+    {
+        return col.isReadOnly() || col.isCalculated();
     }
 
     protected void validateValue(ColumnInfo column, Object value) throws ValidationException

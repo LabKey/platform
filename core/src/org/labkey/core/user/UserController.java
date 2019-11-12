@@ -45,7 +45,6 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -138,7 +137,6 @@ import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1000,47 +998,6 @@ public class UserController extends SpringActionController
         }
     }
 
-    @RequiresLogin // permission check will happen with form.mustCheckPermissions
-    public class UpdateUserDetailsAction extends MutatingApiAction<UserQueryForm>
-    {
-        @Override
-        public void validateForm(UserQueryForm form, Errors errors)
-        {
-            if (form.getUserId() <= 0)
-            {
-                errors.reject(ERROR_MSG, "UserId parameter must be provided.");
-            }
-            else if (UserManager.getUser(form.getUserId()) == null || form.mustCheckPermissions(getUser(), form.getUserId()))
-            {
-                errors.reject(ERROR_MSG, "You do not have permissions to update user details.");
-            }
-        }
-
-        @Override
-        public Object execute(UserQueryForm form, BindException errors) throws Exception
-        {
-            Container root = ContainerManager.getRoot();
-            UserSchema schema = form.getSchema();
-            UsersTable table = (UsersTable)schema.getTable(CoreQuerySchema.USERS_TABLE_NAME, false);
-            table.setMustCheckPermissions(form.mustCheckPermissions(getUser(), form.getUserId()));
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
-            {
-                QueryUpdateForm queryUpdateForm = new QueryUpdateForm(table, getViewContext(), true);
-                queryUpdateForm.bindParameters(form.getInitParameters());
-                List<Map<String, Object>> rows = new ArrayList<>(Arrays.asList(queryUpdateForm.getTypedColumns()));
-                List<Map<String, Object>> keys = new ArrayList<>(Arrays.asList(Map.of("UserId", form.getUserId())));
-
-                response.put("updatedRows", table.getUpdateService().updateRows(getUser(), root, rows, keys, null, null));
-                response.put("success", true);
-
-                transaction.commit();
-            }
-            return response;
-        }
-    }
-
     private static class UserQueryForm extends QueryForm
     {
         private int _userId;
@@ -1064,7 +1021,7 @@ public class UserController extends SpringActionController
             return new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer(), checkPermission);
         }
 
-        public boolean mustCheckPermissions(User user, int userRecordId)
+        private boolean mustCheckPermissions(User user, int userRecordId)
         {
             if (user.hasRootPermission(UserManagementPermission.class))
                 return false;

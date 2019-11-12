@@ -58,6 +58,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
@@ -129,6 +130,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             setDeleteURL(LINK_DISABLER);
             setInsertURL(LINK_DISABLER);
+            setUpdateURL(LINK_DISABLER);
         }
 
         _canSeeDetails = SecurityManager.canSeeUserDetails(getContainer(), getUser()) || getUser().isSearchUser();
@@ -359,6 +361,18 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 {
                     return UsersDomainKind.getDomainContainer();
                 }
+
+                @Override
+                public Iterable<PropertyColumn> getPropertyColumns()
+                {
+                    // this is needed for the user details update case since the UsersTable will set these as NullColumnInfo in addUserDetailColumn
+                    List<PropertyColumn> cols = new ArrayList<>();
+                    for (DomainProperty property : getDomain().getProperties())
+                    {
+                        cols.add(new PropertyColumn(property.getPropertyDescriptor(), getObjectUriColumn(), getContainer(), getUserSchema().getUser(), false));
+                    }
+                    return cols;
+                }
             };
 
             return new CacheClearingQueryUpdateService(new UsersTableQueryUpdateService(this, table, helper))
@@ -386,6 +400,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
+        if (perm == UpdatePermission.class)
+            return true; // UsersTableQueryUpdateService will handle if this user is allowed to update user details or not
+
         return !getMustCheckPermissions() || super.hasPermission(user, perm);
     }
 
@@ -487,6 +504,12 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 auditExpirationDateChange(userToUpdate, user, ContainerManager.getRoot(), userToUpdate.getExpirationDate(), (Date)ret.get(EXPIRATION_DATE_KEY));
 
             return ret;
+        }
+
+        @Override
+        protected boolean shouldSkipColumnUpdate(ColumnInfo col)
+        {
+            return col.isKeyField() || !col.isUserEditable() || col.isCalculated();
         }
 
         private void validateExpirationDate(User userToUpdate, User editingUser, Container container, Map<String, Object> row) throws ValidationException
