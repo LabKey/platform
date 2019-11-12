@@ -32,10 +32,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.TableType;
+import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.sql.Query;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +53,7 @@ import java.util.Map;
 public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 {
     private LinkedSchema _schema;
+    private String _extraMetadata;
 
     public LinkedSchemaQueryDefinition(LinkedSchema schema, QueryDefinition query)
     {
@@ -103,6 +107,19 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
 
         // Fifth, lookup any XML metadata that has been stored in the database (in linked schema container)
         ret.overlayMetadata(getName(), schema, errors);
+
+        // Finally, apply any custom XML that might have been passed in from the client. See issue 38903
+        if (_extraMetadata != null)
+        {
+            QueryDef.ParsedMetadata parsedMetadata = new QueryDef.ParsedMetadata(_extraMetadata);
+            TablesDocument tablesDocument = parsedMetadata.getTablesDocument(errors);
+            if (tablesDocument != null)
+            {
+                TablesType tables = tablesDocument.getTables();
+                if (tables != null && tables.sizeOfTableArray() > 0)
+                    ret.overlayMetadata(Collections.singleton(tables.getTableArray()[0]), _schema, errors);
+            }
+        }
 
         return ret;
     }
@@ -170,7 +187,7 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
     @Override
     public void setMetadataXml(String xml)
     {
-        throw new UnsupportedOperationException();
+        _extraMetadata = xml;
     }
 
     public void setContainer(Container container)
