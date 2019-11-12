@@ -2010,7 +2010,7 @@ public class Query
                 test.validate(this, null);
             }
 
-			if (dialect.allowSortOnSubqueryWithoutLimit())
+			if (dialect.isPostgreSQL() /* dialect.allowSortOnSubqueryWithoutLimit() is the preferred check, but SQL Server still has problems with these queries */)
 			{
 				for (SqlTest test : postgres)
                 {
