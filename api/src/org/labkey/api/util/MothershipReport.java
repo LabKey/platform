@@ -16,18 +16,17 @@
 
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
@@ -388,21 +387,6 @@ public class MothershipReport implements Runnable
 
     public void addServerSessionParams()
     {
-        Module coreModule = ModuleLoader.getInstance().getCoreModule();
-        String svnRevision = getVCSRevisionToReport(coreModule.getBuildNumber(), coreModule.getVcsRevision());
-        if (svnRevision != null)
-        {
-            addParam("svnRevision", svnRevision);
-        }
-        if (svnRevision != null && !NumberUtils.isDigits(svnRevision))
-        {
-            addParam("description", "Core v" + coreModule.getFormattedVersion());
-        }
-        String svnURL = coreModule.getVcsUrl();
-        if (svnURL != null)
-        {
-            addParam("svnURL", svnURL);
-        }
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
         addParam("enterprisePipelineEnabled", PipelineService.get() != null && PipelineService.get().isEnterprisePipeline());
@@ -428,9 +412,6 @@ public class MothershipReport implements Runnable
         addParam("distribution", getDistributionStamp());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
-
-        DefaultModule coreDefaultModule = (DefaultModule) coreModule;
-        addParam("buildTime", coreDefaultModule.getBuildTime());
     }
 
     public String getContent()
@@ -474,21 +455,38 @@ public class MothershipReport implements Runnable
 
     private String getVCSRevisionToReport(String buildNumber, String vcsRevision)
     {
-        String result = null;
-        // Issue 36116 - prefer first part of build number (which is the latest across all SVN modules) to SVN
-        // revision (which is scoped more narrowly to just the core module) when possible
+        // Prefer the VCS revision when we have it, which now comes from Git
+        if (vcsRevision != null && !vcsRevision.toLowerCase().startsWith("unknown"))
+        {
+            return vcsRevision;
+        }
+        // Issue 36116 - use first part of build number (which is the latest across all SVN modules)
         if (buildNumber != null)
         {
-            result = buildNumber.split("\\.")[0];
+            return buildNumber.split("\\.")[0];
         }
-
-        if (!NumberUtils.isDigits(result) && vcsRevision != null)
-        {
-            // Fall back to just the SVN revision of the core module
-            result = vcsRevision;
-        }
-        return result;
+        return vcsRevision;
     }
+
+    public void setMetrics(Map<String, Object> metrics)
+    {
+        if (metrics.size() > 0)
+        {
+            String serializedMetrics;
+            ObjectMapper mapper = new ObjectMapper();
+            try
+            {
+                serializedMetrics = mapper.writeValueAsString(metrics);
+            }
+            catch (JsonProcessingException e)
+            {
+                // TODO: Where to report, what to do?
+                serializedMetrics = "Exception serializing json metrics. " + e.getMessage();
+            }
+            addParam("jsonMetrics", serializedMetrics);
+        }
+    }
+
 
     public static class TestCase extends Assert
     {
@@ -500,8 +498,8 @@ public class MothershipReport implements Runnable
             assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", "Unknown"));
             assertEquals("Unknown", r.getVCSRevisionToReport(null, "Unknown"));
             assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", null));
-            assertEquals("100", r.getVCSRevisionToReport("100.5", "99"));
-            assertEquals("99", r.getVCSRevisionToReport("Unknown", "99"));
+            assertEquals("038369af527920955e166ceb206c3ea92619e690", r.getVCSRevisionToReport("100.5", "038369af527920955e166ceb206c3ea92619e690"));
+            assertEquals("038369af527920955e166ceb206c3ea92619e690", r.getVCSRevisionToReport("Unknown", "038369af527920955e166ceb206c3ea92619e690"));
             assertEquals("100", r.getVCSRevisionToReport("100.5", "Unknown"));
         }
     }

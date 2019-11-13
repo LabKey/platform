@@ -50,6 +50,7 @@ public interface UsageMetricsService
         ServiceRegistry.get().registerService(UsageMetricsService.class, impl);
     }
 
+    /** @return map of module name to a map of metric names/values */
     @Nullable Map<String, Map<String, Object>> getModuleUsageMetrics(UsageReportingLevel level);
 
     /**

@@ -17,16 +17,24 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -171,6 +179,22 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignAssayPermission.class);
+    }
+
+    @Override
+    public boolean canCreateDefinition(User user, Container container)
+    {
+        return container.hasPermission(user, DesignAssayPermission.class);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), container);
+        dd = dd.edit().setDescription(domain.getDescription()).build();
+        OntologyManager.updateDomainDescriptor(dd);
+
+        return PropertyService.get().getDomain(container, dd.getDomainURI());
     }
 
     protected Set<String> getAssayReservedPropertyNames()

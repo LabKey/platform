@@ -720,4 +720,21 @@
       <column columnName="Created"/>
     </columns>
   </table>
+  <table tableName="AuthenticationConfigurations" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="EntityId"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="Created"/>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Modified"/>
+      <column columnName="Provider"/>
+      <column columnName="Description"/>
+      <column columnName="Enabled"/>
+      <column columnName="AutoRedirect"/>
+      <column columnName="SortOrder"/>
+      <column columnName="Properties"/>
+      <column columnName="EncryptedProperties"/>
+    </columns>
+  </table>
 </tables>

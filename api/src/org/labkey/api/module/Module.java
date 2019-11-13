@@ -293,6 +293,12 @@ public interface Module extends Comparable<Module>
     String getVcsBranch();
     String getVcsTag();
     String getBuildNumber();
+
+    default String getBuildTime()
+    {
+        return null;
+    }
+
     Map<String, String> getProperties();
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore
