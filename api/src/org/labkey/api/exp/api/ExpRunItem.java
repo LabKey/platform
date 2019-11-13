@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.Identifiable;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.List;
  * User: jeckels
  * Date: Jul 28, 2008
  */
-public interface ExpRunItem extends ExpObject, ExpLineageItem
+public interface ExpRunItem extends ExpObject, Identifiable
 {
     @Nullable
     String getDescription();
