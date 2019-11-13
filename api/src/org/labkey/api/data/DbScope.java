@@ -1296,6 +1296,11 @@ public class DbScope
         return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
     }
 
+    public boolean isRds()
+    {
+        return getSqlDialect().isRds(this);
+    }
+
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
     // then attempt to create the database. Return true if the database existed, false if it was just created. Throw if some
     // other exception occurs (e.g., connection fails repeatedly with something other than "database doesn't exist" or database

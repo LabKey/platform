@@ -186,7 +186,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         return script;
     }
 
-    private String getContents(DbSchema schema, String filename) throws SqlScriptException
+    protected String getContents(DbSchema schema, String filename) throws SqlScriptException
     {
         try
         {

@@ -1148,6 +1148,7 @@ public class SqlScriptController extends SpringActionController
             if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
             {
                 // TODO: Since some of these come from other modules, create a registration mechanism.
+                unclaimedFiles.remove("enable_clr.sql");
                 unclaimedFiles.remove("group_concat_install.sql");
                 unclaimedFiles.remove("group_concat_install_1.00.23696.sql");
                 unclaimedFiles.remove("group_concat_uninstall.sql");
