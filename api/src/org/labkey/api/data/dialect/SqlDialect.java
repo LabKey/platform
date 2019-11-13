@@ -1457,7 +1457,7 @@ public abstract class SqlDialect
     // Simple check. Subclasses can override to provide better checks.
     public boolean isRds(DbScope scope)
     {
-        return scope.getURL().contains("rds.amazonaws.com");
+        return StringUtils.containsIgnoreCase(scope.getURL(), "rds.amazonaws.com");
     }
 
     public static final class MetadataParameterInfo
