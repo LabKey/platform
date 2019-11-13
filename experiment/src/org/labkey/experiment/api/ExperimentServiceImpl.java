@@ -2132,7 +2132,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public ExpLineage getLineage(Container c, User user, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options)
     {
         return getLineage(c, user, Set.of(start), options);
     }

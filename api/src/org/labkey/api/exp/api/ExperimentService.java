@@ -445,8 +445,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
+    /**
+     * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
+     * a ExpData (in a DataClass), or an ExpRun.
+     */
     @NotNull
-    ExpLineage getLineage(Container c, User user, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
+    ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
