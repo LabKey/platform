@@ -149,7 +149,19 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     // Returns all script file names listed in required_scripts.txt
     public @NotNull Collection<String> getRequiredScripts(SqlDialect dialect) throws IOException
     {
-        Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append("required_scripts.txt");
+        return getScriptsFromFile(dialect, "required_scripts.txt");
+    }
+
+    // Returns all script file names listed in ignored_scripts.txt
+    public @NotNull Collection<String> getIgnoredScripts(SqlDialect dialect) throws IOException
+    {
+        return getScriptsFromFile(dialect, "ignored_scripts.txt");
+    }
+
+    // Returns all script file names listed in the specified file
+    private @NotNull Collection<String> getScriptsFromFile(SqlDialect dialect, String filename) throws IOException
+    {
+        Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append(filename);
         Resource r = _module.getModuleResource(path);
 
         return null != r ? PageFlowUtil.getStreamContentsAsList(r.getInputStream(), true) : Collections.emptyList();

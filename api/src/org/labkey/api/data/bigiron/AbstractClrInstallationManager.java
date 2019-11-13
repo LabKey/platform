@@ -16,6 +16,7 @@
 package org.labkey.api.data.bigiron;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
@@ -54,6 +55,8 @@ import java.sql.Connection;
  */
 public abstract class AbstractClrInstallationManager
 {
+    private static final Logger LOG = Logger.getLogger(AbstractClrInstallationManager.class);
+
     @Nullable
     private String _installedVersion = null;
 
@@ -126,6 +129,7 @@ public abstract class AbstractClrInstallationManager
 
         try (Connection conn = getSchema().getScope().getUnpooledConnection())
         {
+            LOG.info("Executing " + script.getDescription() + " against " + (rds ? "an RDS" : "a non-RDS") + " database");
             SqlScriptManager.get(script.getProvider(), script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
         }
         catch (Throwable t)
