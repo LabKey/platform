@@ -63,8 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.dataiterator.DataIteratorUtil.createTableMap;
-
 /**
  * QueryUpdateService implementation that supports Query TableInfos that are backed by both a hard table and a Domain.
  * To update the Domain, a DomainUpdateHelper is required, otherwise the DefaultQueryUpdateService will only update the
@@ -378,7 +376,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                    final String name = col.getName();
 
                    // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
-                   if (shouldSkipColumnUpdate(col))
+                   if (col.isReadOnly() || col.isCalculated())
                        continue;
 
                    //when updating a row, we should strip the following fields, as they are
@@ -437,11 +435,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         //from Table.update(). Instead, we need to copy values from updatedRow into row and return that.
         row.putAll(updatedRow);
         return row;
-    }
-
-    protected boolean shouldSkipColumnUpdate(ColumnInfo col)
-    {
-        return col.isReadOnly() || col.isCalculated();
     }
 
     protected void validateValue(ColumnInfo column, Object value) throws ValidationException
