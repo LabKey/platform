@@ -2,13 +2,20 @@
   "name": "labkey-core",
   "version": "0.0.0",
   "scripts": {
-    "clean": "bnr clean",
+    "setup": "npm install",
     "build": "npm run clean && bnr build:dev",
+    "start": "better-npm-run build:watch",
     "build-prod": "npm run clean && bnr build:prod",
     "prebuild": "npm run clean",
-    "setup": "npm install"
+    "clean": "bnr clean"
   },
   "betterScripts": {
+    "build:watch": {
+      "command": "webpack-dev-server --config webpack/dev.config.js",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
     "clean": {
       "command": "rimraf resources/web/core/css && rimraf resources/web/clientapi"
     },
@@ -25,10 +32,19 @@
       }
     }
   },
-  "dependencies": {},
+  "dependencies": {
+    "babel-loader": "^8.0.6",
+    "react": "^16.11.0",
+    "react-bootstrap": "^1.0.0-beta.14",
+    "react-dom": "^16.11.0",
+    "react-hot-loader": "^4.12.17",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.2",
+    "webpack-dev-server": "^3.9.0"
+  },
   "devDependencies": {
     "@labkey/api": "0.0.22",
-    "better-npm-run": "0.1.1",
+    "better-npm-run": "^0.1.1",
     "bootstrap-sass": "3.4.1",
     "css-loader": "3.2.0",
     "file-loader": "4.2.0",
@@ -43,7 +59,7 @@
     "sass-loader": "8.0.0",
     "uglifyjs-webpack-plugin": "2.2.0",
     "url-loader": "2.2.0",
-    "webpack": "4.41.2",
-    "webpack-cli": "3.3.9"
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.9"
   }
 }
