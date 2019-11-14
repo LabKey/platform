@@ -703,6 +703,61 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class GetPasswordRulesInfoAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("full", DbLoginManager.getPasswordRule().getFullRuleHTML());
+            response.put("summary", DbLoginManager.getPasswordRule().getSummaryRuleHTML());
+            return response;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class ChangePasswordApiAction extends MutatingApiAction<SetPasswordForm>
+    {
+        protected ValidEmail _email = null;
+
+        @Override
+        public void validateForm(SetPasswordForm form, Errors errors)
+        {
+            ValidEmail email = form.getValidEmail(getViewContext(), errors);
+            if (!errors.hasErrors())
+            {
+                validateChangePassword(email, errors);
+                _email = email;
+            }
+        }
+
+        @Override
+        public Object execute(SetPasswordForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            HttpServletRequest request = getViewContext().getRequest();
+            String oldPassword = request.getParameter("oldPassword");
+
+            if (isOldPasswordMatch(oldPassword, form, errors))
+            {
+                AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), "Changed password.", false, errors);
+                if (result != null)
+                    response.put("returnUrl", result.getRedirectURL());
+            }
+
+            response.put("success", !errors.hasErrors());
+            if (errors.hasErrors())
+                response.put("message", errors.getMessage());
+            return response;
+        }
+    }
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
@@ -1567,7 +1622,7 @@ public class LoginController extends SpringActionController
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
-    public AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
+    private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
         String password = request.getParameter("password");
@@ -1898,22 +1953,10 @@ public class LoginController extends SpringActionController
         @Override
         protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
         {
-            if (!SecurityManager.loginExists(email))
-            {
-                errors.reject("setPassword", "This email address is not associated with an account.");
-                _unrecoverableError = true;
-            }
-            else
-            {
-                _email = email;
-            }
+            _unrecoverableError = validateChangePassword(email, errors);
 
-            // Issue 33321: this action does make sense if the server is set to auto redirect from the login page
-            if (AuthenticationManager.getSSOAuthProviderAutoRedirect() != null)
-            {
-                errors.reject("setPassword", "This action is invalid for a server set to use SSO auto redirect.");
-                _unrecoverableError = true;
-            }
+            if (!_unrecoverableError)
+                _email = email;
         }
 
         @Override
@@ -1952,20 +1995,42 @@ public class LoginController extends SpringActionController
             // Verify the old password on post
             HttpServletRequest request = getViewContext().getRequest();
             String oldPassword = request.getParameter("oldPassword");
-
-            String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
-
-            if (!SecurityManager.matchPassword(oldPassword, hash))
-            {
-                errors.reject("password", "Incorrect old password.");
+            if (isOldPasswordMatch(oldPassword, form, errors))
+                return super.handlePost(form, errors);
+            else
                 return false;
-            }
-
-            return super.handlePost(form, errors);
         }
-
     }
 
+    private boolean isOldPasswordMatch(String oldPassword, SetPasswordForm form, BindException errors) throws InvalidEmailException
+    {
+        String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
+        if (!SecurityManager.matchPassword(oldPassword, hash))
+        {
+            errors.reject("password", "Incorrect old password.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateChangePassword(ValidEmail email, Errors errors)
+    {
+        if (!SecurityManager.loginExists(email))
+        {
+            errors.reject("setPassword", "This email address is not associated with an account.");
+            return true;
+        }
+
+        // Issue 33321: this action does make sense if the server is set to auto redirect from the login page
+        if (AuthenticationManager.getSSOAuthProviderAutoRedirect() != null)
+        {
+            errors.reject("setPassword", "This action is invalid for a server set to use SSO auto redirect.");
+            return true;
+        }
+
+        return false;
+    }
 
     public static class SetPasswordBean
     {
