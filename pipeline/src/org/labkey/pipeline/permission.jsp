@@ -31,13 +31,16 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.pipeline.PipeRoot" %>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <div width="240px" id="pipelineFilesPermissions">
 <%
     PipelineController.PermissionView me = (PipelineController.PermissionView)HttpView.currentView();
-    SecurityPolicy policy = me.getModelBean();
+    PipeRoot pipeRoot = me.getModelBean();
+    SecurityPolicy policy = SecurityPolicyManager.getPolicy(pipeRoot);
     Container c = getContainer();
 
     boolean enableFTP = !policy.isEmpty();
@@ -77,7 +80,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         else
             name = h(g.getName());
         %><tr><td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
-        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole))%>
+        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot))%>
         </select></td></tr><%
         i++;
     }
@@ -93,7 +96,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         List<Role> assignedRoles = policy.getAssignedRoles(g);
         Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : RoleManager.getRole(NoPermissionsRole.class);
         %><tr><td><%=h(g.getName())%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
-        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole))%>
+        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot))%>
         </select></td></tr><%
         i++;
     }
@@ -120,7 +123,7 @@ function toggleEnableFTP(checkbox)
 
 
 <%!
-    String writeOptions(Pair[] options, Role role)
+    String writeOptions(Pair[] options, Role role, SecurityPolicy policy, PipeRoot pipeRoot)
     {
         StringBuilder out = new StringBuilder();
         boolean selected = false;
@@ -138,7 +141,7 @@ function toggleEnableFTP(checkbox)
             out.append(h(option.getKey()));
             out.append("</option>");
         }
-        if (!selected && null != role)
+        if (!selected && null != role && role.isApplicable(policy, pipeRoot))
         {
             out.append("<option value=\"");
             out.append(h(role.getUniqueName()));
