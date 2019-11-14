@@ -8,6 +8,6 @@ module.exports = {
         name: 'authenticationConfiguration',
         title: 'Auth Config',
         permission: 'admin', // May be changed
-        path: './src/client/AuthenticationConfiguration'
+        path: '../src/client/AuthenticationConfiguration'
     }]
 };

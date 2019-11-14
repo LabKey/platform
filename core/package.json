@@ -2,64 +2,85 @@
   "name": "labkey-core",
   "version": "0.0.0",
   "scripts": {
+    "prebuild": "bnr clean",
+    "build": "bnr build-theme:dev",
+    "prebuild-prod": "bnr clean",
+    "build-prod": "bnr build-theme:prod",
+    "clean": "bnr clean",
     "setup": "npm install",
-    "build": "npm run clean && bnr build:dev",
-    "start": "better-npm-run build:watch",
-    "build-prod": "npm run clean && bnr build:prod",
-    "prebuild": "npm run clean",
-    "clean": "bnr clean"
+    "start": "bnr build-auth:watch",
+    "auth": "bnr build-auth",
+    "auth:prod": "bnr build-auth:prod"
   },
   "betterScripts": {
-    "build:watch": {
-      "command": "webpack-dev-server --config webpack/dev.config.js",
-      "env": {
-        "NODE_ENV": "development"
-      }
-    },
     "clean": {
       "command": "rimraf resources/web/core/css && rimraf resources/web/clientapi"
     },
-    "build:dev": {
-      "command": "node build.js && node webpack/buildThemes.js",
+    "build-theme:dev": {
+      "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "development"
       }
     },
-    "build:prod": {
-      "command": "node build.js && node webpack/buildThemes.js",
+    "build-theme:prod": {
+      "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "production"
+      }
+    },
+    "build-auth": {
+      "command": "webpack --config webpack/auth/dev.config.js --progress --profile --colors",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "build-auth:prod": {
+      "command": "webpack --config webpack/auth/prod.config.js --progress --profile --colors",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "build-auth:watch": {
+      "command": "webpack-dev-server --config webpack/auth/dev.config.js",
+      "env": {
+        "NODE_ENV": "development"
       }
     }
   },
   "dependencies": {
-    "babel-loader": "^8.0.6",
+    "@labkey/api": "0.0.22",
     "react": "^16.11.0",
     "react-bootstrap": "^1.0.0-beta.14",
-    "react-dom": "^16.11.0",
-    "react-hot-loader": "^4.12.17",
-    "ts-loader": "^6.2.1",
-    "typescript": "^3.7.2",
-    "webpack-dev-server": "^3.9.0"
+    "react-dom": "^16.11.0"
   },
   "devDependencies": {
-    "@labkey/api": "0.0.22",
+    "@babel/core": "7.4.5",
+    "@babel/polyfill": "7.4.4",
+    "@babel/preset-env": "7.4.5",
+    "@babel/preset-react": "7.0.0",
+    "@hot-loader/react-dom": "16.9.0",
+    "babel-loader": "^8.0.6",
     "better-npm-run": "^0.1.1",
     "bootstrap-sass": "3.4.1",
     "css-loader": "3.2.0",
     "file-loader": "4.2.0",
     "font-awesome": "4.7.0",
     "fs-extra": "8.1.0",
+    "html-webpack-plugin": "3.2.0",
     "mini-css-extract-plugin": "0.8.0",
     "mixin-deep": "2.0.1",
     "node-sass": "4.12.0",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "postcss-loader": "3.0.0",
+    "react-hot-loader": "^4.12.17",
     "rimraf": "3.0.0",
     "sass-loader": "8.0.0",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.2",
     "uglifyjs-webpack-plugin": "2.2.0",
     "url-loader": "2.2.0",
     "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9"
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.9.0"
   }
 }

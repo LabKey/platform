@@ -22,12 +22,12 @@ for (let i = 0; i < entryPoints.apps.length; i++) {
             title: entryPoint.title,
             permission: entryPoint.permission,
             filename: '../../../views/' + entryPoint.name + '.view.xml',
-            template: 'webpack/app.view.template.xml'
+            template: 'auth/app.view.template.xml'
         }),
         new HtmlWebpackPlugin({
             inject: false,
             filename: '../../../views/' + entryPoint.name + '.html',
-            template: 'webpack/app.template.html'
+            template: 'auth/app.template.html'
         }),
         new HtmlWebpackPlugin({
             inject: false,
@@ -36,14 +36,14 @@ for (let i = 0; i < entryPoints.apps.length; i++) {
             title: entryPoint.title,
             permission: entryPoint.permission,
             filename: '../../../views/' + entryPoint.name + 'Dev.view.xml',
-            template: 'webpack/app.view.template.xml'
+            template: 'auth/app.view.template.xml'
         }),
         new HtmlWebpackPlugin({
             inject: false,
             mode: 'dev',
             name: entryPoint.name,
             filename: '../../../views/' + entryPoint.name + 'Dev.html',
-            template: 'webpack/app.template.html'
+            template: 'auth/app.template.html'
         })
     ]);
 }
@@ -72,14 +72,6 @@ module.exports = {
     resolve: {
         extensions: constants.extensions.TYPESCRIPT
     },
-
-    // TODO: re-enable this once we understand the interactions of the chunks and splitting better
-    //       NOTE: that this will require changes to the app.view.template.xml
-    // optimization: {
-    //     splitChunks: {
-    //         chunks: 'all'
-    //     }
-    // },
 
     plugins: plugins
 };
