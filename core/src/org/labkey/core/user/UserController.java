@@ -1042,7 +1042,8 @@ public class UserController extends SpringActionController
                     if (!file.isEmpty())
                         row.put(UserAvatarDisplayColumnFactory.FIELD_KEY, file);
                 }
-                else
+                // handle deletion of the current avatar file for a user
+                else if ("null".equals(row.get(UserAvatarDisplayColumnFactory.FIELD_KEY)))
                     row.put(UserAvatarDisplayColumnFactory.FIELD_KEY, null);
 
                 List<Map<String, Object>> rows = new ArrayList<>(Arrays.asList(row));
