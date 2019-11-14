@@ -3,45 +3,42 @@
   "version": "0.0.0",
   "scripts": {
     "prebuild": "bnr clean",
-    "build": "bnr build-theme:dev",
+    "build": "bnr build-themes:dev && bnr build-pages:prod",
     "prebuild-prod": "bnr clean",
-    "build-prod": "bnr build-theme:prod",
+    "build-prod": "bnr build-themes:prod && bnr build-pages:prod",
     "clean": "bnr clean",
     "setup": "npm install",
-    "start": "bnr build-auth:watch",
-    "auth": "bnr build-auth",
-    "auth:prod": "bnr build-auth:prod"
+    "start": "bnr build-pages:watch",
+    "build-pages": "bnr build-pages:prod",
+    "prebuild-themes": "bnr clean",
+    "build-themes": "bnr build-themes:dev",
+    "prebuild-themes-prod": "bnr clean",
+    "build-themes-prod": "bnr build-themes:prod"
   },
   "betterScripts": {
     "clean": {
       "command": "rimraf resources/web/core/css && rimraf resources/web/clientapi"
     },
-    "build-theme:dev": {
+    "build-themes:dev": {
       "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "development"
       }
     },
-    "build-theme:prod": {
+    "build-themes:prod": {
       "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "production"
       }
     },
-    "build-auth": {
-      "command": "webpack --config webpack/auth/dev.config.js --progress --profile --colors",
-      "env": {
-        "NODE_ENV": "development"
-      }
-    },
-    "build-auth:prod": {
-      "command": "webpack --config webpack/auth/prod.config.js --progress --profile --colors",
+    "build-pages:prod": {
+      "command": "webpack --config webpack/pages/prod.config.js --progress --profile --colors",
       "env": {
         "NODE_ENV": "production"
       }
     },
-    "build-auth:watch": {
-      "command": "webpack-dev-server --config webpack/auth/dev.config.js",
+    "build-pages:watch": {
+      "command": "webpack-dev-server --config webpack/pages/dev.config.js",
       "env": {
         "NODE_ENV": "development"
       }

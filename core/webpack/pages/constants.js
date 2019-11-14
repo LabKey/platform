@@ -105,6 +105,6 @@ module.exports = {
         ]
     },
     outputPath: function(dir) {
-        return path.resolve(dir, '../resources/web/core/css');
+        return path.resolve(dir, '../../resources/web/core/gen');
     }
 };
