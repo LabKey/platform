@@ -22,8 +22,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -282,6 +280,7 @@ public class MothershipReport implements Runnable
             addParam("serverHostName", hostName);
     }
 
+    @Override
     public void run()
     {
         try
@@ -335,7 +334,7 @@ public class MothershipReport implements Runnable
                 if (location != null)
                 {
                     URL target = new URL(url, location);
-                    if ((target.getProtocol().equals("http") || target.getProtocol().equals("https")) && redirectCount < 5)
+                    if (target.getProtocol().equals("http") || target.getProtocol().equals("https"))
                     {
                         redirect = true;
                         redirectCount++;
@@ -484,23 +483,6 @@ public class MothershipReport implements Runnable
                 serializedMetrics = "Exception serializing json metrics. " + e.getMessage();
             }
             addParam("jsonMetrics", serializedMetrics);
-        }
-    }
-
-
-    public static class TestCase extends Assert
-    {
-        @Test
-        public void testRevisionReporting() throws MalformedURLException, URISyntaxException
-        {
-            MothershipReport r = new MothershipReport(Type.CheckForUpdates, Target.local, null);
-            assertNull(r.getVCSRevisionToReport(null, null));
-            assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", "Unknown"));
-            assertEquals("Unknown", r.getVCSRevisionToReport(null, "Unknown"));
-            assertEquals("Unknown", r.getVCSRevisionToReport("Unknown", null));
-            assertEquals("038369af527920955e166ceb206c3ea92619e690", r.getVCSRevisionToReport("100.5", "038369af527920955e166ceb206c3ea92619e690"));
-            assertEquals("038369af527920955e166ceb206c3ea92619e690", r.getVCSRevisionToReport("Unknown", "038369af527920955e166ceb206c3ea92619e690"));
-            assertEquals("100", r.getVCSRevisionToReport("100.5", "Unknown"));
         }
     }
 }
