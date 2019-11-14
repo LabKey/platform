@@ -18,10 +18,23 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentCache;
+import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.AuthenticationManager.LinkFactory;
+import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.settings.ConfigProperty;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
@@ -30,6 +43,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -52,17 +68,12 @@ public interface AuthenticationProvider
     );
 
     @Nullable ActionURL getConfigurationLink();
+    default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    {
+        return getConfigurationLink();
+    }
     @NotNull String getName();
     @NotNull String getDescription();
-
-    default void activate()
-    {
-        // TODO: block activation if provider hasn't been configured... add isConfigured()?
-    }
-
-    default void deactivate()
-    {
-    }
 
     default boolean isPermanent()
     {
@@ -75,57 +86,131 @@ public interface AuthenticationProvider
     }
 
     /**
-     * Override this to advertise the normal PropertyManager categories that this provider uses. This is used to
-     * read and populate provider configurations via bootstrap/startup properties.
-     * @return A collection of property categories used by this provider
+     * Override to retrieve and save startup properties intended for this provider. Invoked after new install only.
      */
-    default @NotNull Collection<String> getPropertyCategories()
+    default void handleStartupProperties()
     {
-        return Collections.emptyList();
     }
 
-    /**
-     * Override this to advertise the encrypted PropertyManager categories that this provider uses. This is used to
-     * read and populate provider configurations via bootstrap/startup properties.
-     * @return A collection of property categories used by this provider
-     */
-    default @NotNull Collection<String> getEncryptedPropertyCategories()
+    // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
+    default <FORM extends AuthenticationConfigureForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
     {
-        return Collections.emptyList();
-    }
+        Map<String, String> map = getPropertyMap(categories);
 
-    interface PrimaryAuthenticationProvider extends AuthenticationProvider
-    {
-        default void logout(HttpServletRequest request)
+        if (!map.isEmpty())
         {
+            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(clazz);
+            FORM form = factory.fromMap(map);
+            AuthenticationConfigureAction.saveForm(form, null);
         }
     }
 
-    interface LoginFormAuthenticationProvider extends PrimaryAuthenticationProvider
+    // Helper that retrieves all the configuration properties in the specified category and saves them into a property map with the same name
+    default void saveStartupProperties(String category)
     {
+        Map<String, String> map = getPropertyMap(Collections.singleton(category));
+
+        if (!map.isEmpty())
+        {
+            PropertyMap propertyMap = PropertyManager.getWritableProperties(category, true);
+            propertyMap.clear();
+            propertyMap.putAll(map);
+            propertyMap.save();
+        }
+    }
+
+    private Map<String, String> getPropertyMap(Collection<String> categories)
+    {
+        return categories.stream()
+            .flatMap(category-> ModuleLoader.getInstance().getConfigProperties(category).stream())
+            .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
+    }
+
+    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration> extends AuthenticationProvider
+    {
+        // Providers that need to do special batch-wide processing can override this method
+        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+        {
+            return configurations.stream()
+                .map(this::getAuthenticationConfiguration)
+                .collect(Collectors.toList());
+        }
+
+        // Most providers need to override this method to translate a single ConfigurationSettings into an AuthenticationConfiguration
+        default AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+        {
+            throw new IllegalStateException("Shouldn't invoke this method for " + getName());
+        }
+
+        default void logout(HttpServletRequest request)
+        {
+        }
+
+        void migrateOldConfiguration(boolean active, User user) throws Throwable;
+    }
+
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider<AC>
+    {
+        // This override allows LdapAuthenticationProvider to invoke the default implementation in PrimaryAuthenticationProvider
+        @Override
+        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+        {
+            return PrimaryAuthenticationProvider.super.getAuthenticationConfigurations(configurations);
+        }
+
         // id and password will not be blank (not null, not empty, not whitespace only)
-        @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+        @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
+
+        @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active);
+
+        @Override
+        default void migrateOldConfiguration(boolean active, User user) throws Throwable
+        {
+            AuthenticationConfigureForm form = getFormFromOldConfiguration(active);
+
+            if (null != form)
+            {
+                form.setEnabled(active);
+                AuthenticationConfigureAction.saveForm(form, user);
+            }
+        }
     }
 
     interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
     {
-        /**
-         * Return the external service's URL.
-         * @return The redirect URL
-         */
-        URLHelper getURL(String secret);
+        @Nullable SSOConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
-        LinkFactory getLinkFactory();
-
-        /**
-         * Allows an SSO auth provider to define that it should be used automatically instead of showing the standard
-         * login form with an SSO link. Ex. if CAS auth is the only option, allow autoRedirect to that provider URL from
-         * the login action.
-         * @return boolean indicating if this provider is set to autoRedirect
-         */
-        default boolean isAutoRedirect()
+        @Override
+        default void migrateOldConfiguration(boolean active, User user) throws Throwable
         {
-            return false;
+            AttachmentService svc = AttachmentService.get();
+            AttachmentParent oldParent = AuthenticationLogoAttachmentParent.get();
+
+            List<Attachment> logos = Arrays.stream(AuthLogoType.values())
+                .map(alt->svc.getAttachment(oldParent, alt.getOldPrefix() + getName()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+            SSOConfigureForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
+
+            if (null != form)
+            {
+                form.setEnabled(active);
+                AuthenticationConfigureAction.saveForm(form, user);
+
+                if (!logos.isEmpty())
+                {
+                    SSOAuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
+
+                    List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
+                    svc.addAttachments(configuration, attachmentFiles, user);
+                    for (AuthLogoType alt : AuthLogoType.values())
+                        svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
+
+                    AttachmentCache.clearAuthLogoCache();
+                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+                }
+            }
         }
     }
 

@@ -1627,6 +1627,8 @@ groupByLoop:
                     sql.nextPrefix(",");
                 }
                 sql.popPrefix();
+                if (null == _limit)
+                    getSqlDialect().appendSortOnSubqueryWithoutLimitQualifier(sql);
             }
         }
         if (_limit != null)
