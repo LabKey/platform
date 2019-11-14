@@ -452,21 +452,6 @@ public class MothershipReport implements Runnable
         return distributionStamp;
     }
 
-    private String getVCSRevisionToReport(String buildNumber, String vcsRevision)
-    {
-        // Prefer the VCS revision when we have it, which now comes from Git
-        if (vcsRevision != null && !vcsRevision.toLowerCase().startsWith("unknown"))
-        {
-            return vcsRevision;
-        }
-        // Issue 36116 - use first part of build number (which is the latest across all SVN modules)
-        if (buildNumber != null)
-        {
-            return buildNumber.split("\\.")[0];
-        }
-        return vcsRevision;
-    }
-
     public void setMetrics(Map<String, Object> metrics)
     {
         if (metrics.size() > 0)
