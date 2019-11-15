@@ -20,6 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.labkey.remoteapi.CommandException;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -45,9 +46,10 @@ import java.util.List;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
+@BaseWebDriverTest.ClassTimeout(minutes = 20)
 public abstract class SearchTest extends StudyBaseTest
 {
-    private final SearchHelper _searchHelper = new SearchHelper(this);
+    private final SearchHelper _searchHelper = new SearchHelper(this, 5);
     
     private static final String FOLDER_A = "Folder Apple";
     private static final String FOLDER_B = "Folder Banana"; // Folder move destination
@@ -155,6 +157,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem("Garfield");
     }
 
+    @LogMethod
     protected void doVerifySteps()
     {
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
@@ -163,6 +166,7 @@ public abstract class SearchTest extends StudyBaseTest
         deleteFolderAndVerifyNoResults();
     }
 
+    @LogMethod
     private void renameFolderAndReSearch()
     {
         _containerHelper.renameFolder(getProjectName(), getFolderName(), FOLDER_C, true);
@@ -170,6 +174,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
     }
 
+    @LogMethod
     private void moveFolderAlterListsAndReSearch()
     {
         try
@@ -207,6 +212,7 @@ public abstract class SearchTest extends StudyBaseTest
 
     }
 
+    @LogMethod
     private void deleteFolderAndVerifyNoResults()
     {
         _containerHelper.deleteProject(getProjectName());
