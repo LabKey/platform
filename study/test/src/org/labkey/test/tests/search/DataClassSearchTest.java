@@ -130,9 +130,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _containerHelper.deleteProject(getProjectName(), afterTest);
         if (afterTest)
         {
-            _searchHelper.enqueueSearchItem(DATA_CLASS_2_NAME);
-            _searchHelper.verifyNoSearchResults();
-            _searchHelper.clearSearchQueue();
+            _searchHelper.assertNoSearchResult(DATA_CLASS_2_NAME);
         }
     }
 

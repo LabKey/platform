@@ -49,7 +49,7 @@ import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 @BaseWebDriverTest.ClassTimeout(minutes = 20)
 public abstract class SearchTest extends StudyBaseTest
 {
-    private final SearchHelper _searchHelper = new SearchHelper(this, 5);
+    private final SearchHelper _searchHelper = new SearchHelper(this, 6);
     
     private static final String FOLDER_A = "Folder Apple";
     private static final String FOLDER_B = "Folder Banana"; // Folder move destination
