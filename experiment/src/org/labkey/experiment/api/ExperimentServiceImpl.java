@@ -5101,7 +5101,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
-                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT);
+                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT, POSTROLLBACK);
             }
             else
             {

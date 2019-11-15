@@ -16,6 +16,7 @@
 package org.labkey.api.ldap;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.security.ValidEmail;
 
 import javax.naming.NamingException;
@@ -23,6 +24,7 @@ import java.util.Map;
 
 public interface LdapAuthenticator
 {
-    boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication) throws NamingException;
+    boolean authenticate(String url, @NotNull ValidEmail email, @NotNull String password, @NotNull String principalTemplate, boolean saslAuthentication, boolean allowLdapSearch) throws NamingException;
+    @RemoveIn20_1
     default void addMetrics(Map<String, Object> map){}
 }

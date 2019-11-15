@@ -1074,10 +1074,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
      */
     private List<String> getResizeColumnStatement(TableChange change)
     {
-        List<String> statements = new ArrayList<>();
-
         change.updateResizeIndices();
-        statements.addAll(getDropIndexStatements(change));
+        List<String> statements = new ArrayList<>(getDropIndexStatements(change));
 
         //Generate the alter table portion of statement
         String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
@@ -1484,6 +1482,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return change.getSchemaName() + "." + change.getTableName();
     }
 
+    @Override
     public String nameIndex(String tableName, String[] indexedColumns)
     {
         return nameIndex(tableName, indexedColumns, false);
@@ -2317,5 +2316,40 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public boolean isLabKeyWithSupported()
     {
         return true;
+    }
+
+    @Override
+    public boolean isRds(DbScope scope)
+    {
+        // See https://stackoverflow.com/questions/35915024/amazon-rds-sql-server-how-to-detect-if-it-is-rds
+
+        boolean rds = false;
+
+        LOG.debug("Attempting to detect if " + scope.getDatabaseName() + " is an RDS SQL Server database");
+        LOG.debug("Checking for a database named \"rdsadmin\"");
+        Integer id = new SqlSelector(scope, "SELECT DB_ID('rdsadmin')").getObject(Integer.class);
+
+        if (null == id)
+        {
+            LOG.debug("\"rdsadmin\" database is not present - this database is not RDS");
+        }
+        else
+        {
+            LOG.debug("\"rdsadmin\" database is present - this database may be RDS");
+            LOG.debug("Now attempting to access model.sys.database_files, which should be disallowed on RDS");
+
+            try
+            {
+                new SqlSelector(scope, "SELECT COUNT(*) FROM model.sys.database_files").getObject(Integer.class);
+                LOG.debug("Successfully accessed model.sys.database_files - this database is not RDS");
+            }
+            catch (Exception e)
+            {
+                LOG.debug("Failed to access model.sys.database_files (\"" + e.toString() + "\") - determined that this database is RDS");
+                rds = true;
+            }
+        }
+
+        return rds;
     }
 }

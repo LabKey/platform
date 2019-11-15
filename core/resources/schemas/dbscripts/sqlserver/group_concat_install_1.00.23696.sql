@@ -60,18 +60,7 @@
 SET NOCOUNT ON ;
 GO
 
--------------------------------------------------------------------------------------------------------------------------------
--- Turn advanced options on
-EXEC sys.sp_configure @configname = 'show advanced options', @configvalue = 1 ;
-GO
-RECONFIGURE WITH OVERRIDE ;
-GO
--- Enable CLR
-EXEC sys.sp_configure @configname = 'clr enabled', @configvalue = 1 ;
-GO
-RECONFIGURE WITH OVERRIDE ;
-GO
-
+@@ENABLE_CLR_STATEMENTS@@
 -- Add trusted assembly if we are running on SQLServer 2017
 IF OBJECT_ID(N'sys.trusted_assemblies', N'V') IS NOT NULL
 BEGIN

@@ -33,6 +33,7 @@ import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -82,6 +83,7 @@ public class ApiModule extends CodeOnlyModule
     protected void doStartup(ModuleContext moduleContext)
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
+        AuthenticationManager.registerMetricsProvider();
     }
 
     @Override

@@ -41,6 +41,6 @@ public class ExpProtocolAttachmentType implements AttachmentType
     @Override
     public void addWhereSql(SQLFragment sql, String parentColumn, String documentNameColumn)
     {
-        sql.append(parentColumn).append(" IN (SELECT lsid FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(")");
+        sql.append(parentColumn).append(" IN (SELECT EntityId FROM ").append(ExperimentService.get().getTinfoProtocol(), "ep").append(")");
     }
 }

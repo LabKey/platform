@@ -41,13 +41,14 @@ public class AuthenticationProviderCache
 
     static
     {
-        // Cache AuthenticationProviderCollection forever
+        // Cache AuthenticationProviderCollections forever
         CACHE.setCacheTimeChooser((key, argument) -> CacheManager.YEAR);
     }
 
     private static class AuthenticationProviderCollections
     {
-        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new AbstractSetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
+        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _allMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        {
             @Override
             protected Set<AuthenticationProvider> createCollection()
             {
@@ -55,7 +56,8 @@ public class AuthenticationProviderCache
             }
         };
 
-        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _activeMap = new AbstractSetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider>(new LinkedHashMap<>()) {
+        private final SetValuedMap<Class<? extends AuthenticationProvider>, AuthenticationProvider> _activeMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        {
             @Override
             protected Set<AuthenticationProvider> createCollection()
             {
@@ -138,21 +140,6 @@ public class AuthenticationProviderCache
     static <T extends AuthenticationProvider> Collection<T> getActiveProviders(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getActive(clazz);
-    }
-
-    /**
-     * Get the active provider with the specified name that implements the specified interface
-     * @param clazz The interface to use as a filter
-     * @param <T> The interface type
-     * @return The requested provider or null if not found
-     */
-    static @Nullable <T extends AuthenticationProvider> T getActiveProvider(Class<T> clazz, String name)
-    {
-        for (T provider : getActiveProviders(clazz))
-            if (provider.getName().equals(name))
-                return provider;
-
-        return null;
     }
 
     static void clear()

@@ -56,5 +56,6 @@ public class ResourceURL extends URLHelper
 
         setContextPath(request.getContextPath());
         _path = Path.parse(request.getServletPath());
+        _parseQuery(request.getQueryString(), request.getCharacterEncoding());
     }
 }

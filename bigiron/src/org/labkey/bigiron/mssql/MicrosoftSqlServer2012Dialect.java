@@ -50,4 +50,15 @@ public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Diale
         return "percentile_cont";
     }
 
+    @Override
+    public boolean allowSortOnSubqueryWithoutLimit()
+    {
+        return true; // But only if the form is "ORDER BY xxx OFFSET 0 ROWS". See below and #38495.
+    }
+
+    @Override
+    public void appendSortOnSubqueryWithoutLimitQualifier(SQLFragment builder)
+    {
+        builder.append(" OFFSET 0 ROWS"); // Trick SQL Server 2012+ into allowing an ORDER BY inside a subquery. See #38495.
+    }
 }
