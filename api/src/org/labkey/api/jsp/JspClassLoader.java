@@ -16,7 +16,9 @@
 package org.labkey.api.jsp;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.FileResource;
 import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletContext;
@@ -25,8 +27,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Production JSP loader -- loads pre-compiled classes from JSP JAR files.  No reloading or auto-recompiling.
@@ -39,36 +45,82 @@ public class JspClassLoader
     private static final Logger _log = Logger.getLogger(JspClassLoader.class);
     protected static final String JSP_PACKAGE = "org.labkey.jsp.compiled";
 
-    private transient ClassLoader _loader;
+    private transient AtomicReference<ClassLoader> _loader = new AtomicReference<>();
+    private final Set<File> jspJars = Collections.synchronizedSet(new LinkedHashSet<>());
 
     public JspClassLoader()
     {
-        ServletContext context = ModuleLoader.getServletContext();
-        Set<String> paths = context.getResourcePaths("/WEB-INF/jsp/");
-        if (paths == null)
+        scanForJspJars();
+    }
+
+    private boolean scanForJspJars()
+    {
+        ServletContext context = Objects.requireNonNull(ModuleLoader.getServletContext());
+        boolean added = false;
+
+        // look in "old" location in labkey webapp
+        Set<String> webinfPaths = context.getResourcePaths("/WEB-INF/jsp/");
+        if (null != webinfPaths)
         {
-            throw new IllegalStateException("Could not find any resources in /WEB-INF/jsp. Module extraction likely failed earlier.");
+            for (var s : webinfPaths)
+                added |= jspJars.add(new File(context.getRealPath(s)));
         }
-        List<URL> urls = new ArrayList<>();
-        for (String path : paths)
+
+        // look for jsp jars in the {module}/lib
+        for (var m : ModuleLoader.getInstance().getModules())
         {
-            File file = new File(context.getRealPath(path));
-            try
+            var libDir = m.getModuleResource("/lib/");
+            if (null == libDir || !libDir.exists())
+                continue;
+            for (var f : libDir.list())
             {
-                urls.add(file.toURI().toURL());
-            }
-            catch (MalformedURLException mURLe)
-            {
-                _log.error("initLoader exception", mURLe);
+                if (f.isFile() && f instanceof FileResource)
+                {
+                    var file = ((FileResource) f).getFile();
+                    if (file.getName().contains("_jsp") && file.getName().endsWith(".jar"))
+                        added |= jspJars.add(file);
+                }
             }
         }
-        _loader = new URLClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader());
+        return added;
+    }
+
+    private @NotNull ClassLoader getClassLoader()
+    {
+        ClassLoader cl = _loader.get();
+        if (null != cl)
+            return cl;
+        synchronized (this)
+        {
+            List<URL> urls = new ArrayList<>();
+            for (File file : jspJars)
+            {
+                try
+                {
+                    urls.add(file.toURI().toURL());
+                }
+                catch (MalformedURLException mURLe)
+                {
+                    _log.error("initLoader exception", mURLe);
+                }
+            }
+            cl = new URLClassLoader(urls.toArray(new URL[urls.size()]), Thread.currentThread().getContextClassLoader());
+            _loader.set(cl);
+        }
+        return cl;
+    }
+
+    public void resetClassLoader()
+    {
+        if (scanForJspJars())
+            _loader.set(null);
     }
 
     public Class loadClass(ServletContext context, String packageName, String jspFile) throws ClassNotFoundException
     {
         String className = getJspClassName(packageName, jspFile);
-        Class c = _loader.loadClass(className);
+        ClassLoader loader = getClassLoader();
+        Class c = loader.loadClass(className);
         if (c == null)
             throw new ConfigurationException("Failed to load jsp class '" + className + "'; server classpath is misconfigured.");
         return c;
