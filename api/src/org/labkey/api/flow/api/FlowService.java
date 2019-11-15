@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.webdav.WebdavResourceExpDataProvider;
 
 import java.util.List;
 
@@ -28,7 +29,7 @@ import java.util.List;
  * Date: Oct 25, 2010
  * Time: 10:18:04 AM
  */
-public interface FlowService
+public interface FlowService extends WebdavResourceExpDataProvider
 {
     static @Nullable FlowService get()
     {
@@ -39,14 +40,6 @@ public interface FlowService
     {
         ServiceRegistry.get().registerService(FlowService.class, impl);
     }
-
-    /**
-     * Flow data files are usually imported via temp files so ExperimentService.get().getExpDataByURL() doesn't work
-     * @param canonicalURL
-     * @param container
-     * @return
-     */
-    List<ExpData> getExpDataByURL(String canonicalURL, @Nullable Container container);
 
     int getTempTableCount();
 }
