@@ -150,6 +150,7 @@ import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -157,7 +158,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class UserController extends SpringActionController
 {
@@ -2403,10 +2406,11 @@ public class UserController extends SpringActionController
     {
         private String _group;
         private Integer _groupId;
-        private String _name;
-        private boolean _allMembers;
-        private boolean _active;
-        private Permission[] _permissions;
+        private String _name; // prefix of a name to match against
+        private boolean _allMembers; // when getting members of a group, should we get the direct members of the group (allMembers=false) or also members of subgroups (allMembers=true)
+        private boolean _active; // should we get only active members (relevant only if permissions is empty)
+        private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
+        private Set<Class<? extends Permission>> _permissionClasses; // the set of permission classes corresponding to the permissions arary
 
         public String getGroup()
         {
@@ -2453,9 +2457,18 @@ public class UserController extends SpringActionController
             return _permissions;
         }
 
+        public Set<Class<? extends Permission>> getPermissionClasses()
+        {
+           return _permissionClasses;
+        }
+
         public void setPermissions(Permission[] permission)
         {
             _permissions = permission;
+            if (_permissions == null)
+                _permissionClasses = Collections.emptySet();
+            else
+                _permissionClasses = Arrays.stream(_permissions).filter(Objects::nonNull).map(Permission::getClass).collect(Collectors.toSet());
         }
 
         public boolean getActive()
@@ -2467,8 +2480,54 @@ public class UserController extends SpringActionController
         {
             _active = active;
         }
+
+        private Collection<User> getGroupUsers(Container container, ApiSimpleResponse response)
+        {
+            Container project = container.getProject();
+
+            //get users in given group/role name
+            Integer groupId = getGroupId();
+
+            if (null == groupId)
+                groupId = SecurityManager.getGroupId(project, getGroup(), false);
+
+            if (null == groupId)
+                throw new IllegalArgumentException("The group '" + getGroup() + "' does not exist in the project '"
+                        + (project != null ? project.getPath() : "" )+ "'");
+
+            Group group = SecurityManager.getGroup(groupId);
+
+            if (null == group)
+                throw new NotFoundException("Cannot find group with id " + groupId);
+
+            response.put("groupId", group.getUserId());
+            response.put("groupName", group.getName());
+            response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
+
+            MemberType<User> userMemberType;
+            if (getActive())
+                userMemberType = MemberType.ACTIVE_USERS;
+            else
+                userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
+
+            // if the allMembers flag is set, then recurse and if group is site users group then return all site users
+            Collection<User> users;
+            if (isAllMembers())
+                users = SecurityManager.getAllGroupMembers(group, userMemberType, group.isUsers());
+            else
+                users = SecurityManager.getGroupMembers(group, userMemberType);
+
+            return users;
+        }
     }
 
+
+    /**
+     * Collects a set of users either from a particular group or from any of the project groups of the current container.
+     * Optionally filters for those users who have a given set of permissions. Can also include deactivated users (though if
+     * checking for permissions, no deactivated users will be included).  BEWARE: Users that have permissions within
+     * the current project but are not part of any project group WILL NOT be returned.
+     */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     public class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
@@ -2494,7 +2553,7 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = getGroupUsers(form, container, currentUser, response);
+                users = form.getGroupUsers(container, response);
             }
             else
             {
@@ -2559,44 +2618,100 @@ public class UserController extends SpringActionController
             response.put("users", userResponseList);
             return response;
         }
+    }
 
-        private Collection<User> getGroupUsers(GetUsersForm form, Container container, User currentUser, ApiSimpleResponse response)
+    /**
+     * Retrieves the set of users that have all of a specified set of permissions.  A group
+     * may be provided and only users within that group will be returned.  A name (prefix) may be
+     * provided an only users whose email or display name starts with the prefix will be returned.
+     * This will not return any deactivated users (since they do not have permissions of any sort).
+     */
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public class GetUsersWithPermissionsAction extends ReadOnlyApiAction<GetUsersForm>
+    {
+        protected static final String PROP_USER_ID = "userId";
+        protected static final String PROP_USER_NAME = "displayName";
+
+        @Override
+        public void validateForm(GetUsersForm form, Errors errors)
         {
-            Container project = container.getProject();
+            if (form.getPermissions() == null || form.getPermissions().length == 0)
+            {
+                errors.reject(ERROR_REQUIRED, "Permissions are required");
+            }
+            else if (form.getPermissionClasses().size() == 0)
+            {
+                errors.reject(ERROR_GENERIC, "No valid permission classes provided.");
+            }
+        }
 
-            //get users in given group/role name
-            Integer groupId = form.getGroupId();
+        @Override
+        public ApiResponse execute(GetUsersForm form, BindException errors)
+        {
+            Container container = getContainer();
+            User currentUser = getUser();
 
-            if (null == groupId)
-                groupId = SecurityManager.getGroupId(project, form.getGroup(), false);
+            if (container.isRoot() && !currentUser.hasRootPermission(UserManagementPermission.class))
+                throw new UnauthorizedException("Only site/application administrators may see users in the root container!");
 
-            if (null == groupId)
-                throw new IllegalArgumentException("The group '" + form.getGroup() + "' does not exist in the project '"
-                        + (project != null ? project.getPath() : "" )+ "'");
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("container", container.getPath());
 
-            Group group = SecurityManager.getGroup(groupId);
-
-            if (null == group)
-                throw new NotFoundException("Cannot find group with id " + groupId);
-
-            response.put("groupId", group.getUserId());
-            response.put("groupName", group.getName());
-            response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
-
-            MemberType<User> userMemberType;
-            if (form.getActive())
-                userMemberType = MemberType.ACTIVE_USERS;
-            else
-                userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
-
-            // if the allMembers flag is set, then recurse and if group is site users group then return all site users
             Collection<User> users;
-            if (form.isAllMembers())
-                users = SecurityManager.getAllGroupMembers(group, userMemberType, group.isUsers());
-            else
-                users = SecurityManager.getGroupMembers(group, userMemberType);
+            List<Map<String,Object>> userResponseList = new ArrayList<>();
 
-            return users;
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = form.getGroupUsers(container, response).stream().filter(user -> {
+                    boolean userHasPermission = true;
+                    for (Class<? extends Permission> permClass : form.getPermissionClasses())
+                    {
+                        if (!container.hasPermission(user, permClass))
+                        {
+                            userHasPermission = false;
+                            break;
+                        }
+                    }
+                    return userHasPermission;
+                }).collect(Collectors.toSet());
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(container, form.getPermissionClasses());
+            }
+
+            //trim name filter to empty so we are guaranteed a non-null string
+            //and convert to lower-case for the compare below
+            String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
+
+            if (nameFilter.length() > 0)
+                response.put("name", nameFilter);
+
+            boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
+
+            for (User user : users)
+            {
+                //according to the docs, startsWith will return true even if nameFilter is empty string
+                if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
+                {
+                    Map<String,Object> userInfo = new HashMap<>();
+                    userInfo.put(PROP_USER_ID, user.getUserId());
+
+                    //force sanitize of the display name, even for logged-in users
+                    userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
+
+                    //include email address, if user is allowed to see them
+                    if (includeEmail)
+                        userInfo.put("email", user.getEmail());
+
+                    userResponseList.add(userInfo);
+                }
+            }
+
+            response.put("users", userResponseList);
+            return response;
         }
     }
 
@@ -2895,7 +3010,8 @@ public class UserController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
                 controller.new BeginAction(),
-                controller.new GetUsersAction()
+                controller.new GetUsersAction(),
+                controller.new GetUsersWithPermissionsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
