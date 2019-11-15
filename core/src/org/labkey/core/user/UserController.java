@@ -2406,7 +2406,7 @@ public class UserController extends SpringActionController
     {
         private String _group;
         private Integer _groupId;
-        private String _name; // prefix of a name to match against
+        private String _name; // prefix to match against displayName and email address
         private boolean _allMembers; // when getting members of a group, should we get the direct members of the group (allMembers=false) or also members of subgroups (allMembers=true)
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
