@@ -90,4 +90,12 @@ public class ErrorIterator extends AbstractDataIterator
     {
         _it.close();
     }
+
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        super.debugLogInfo(sb);
+        if (null != _it)
+            _it.debugLogInfo(sb);
+    }
 }

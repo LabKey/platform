@@ -579,7 +579,7 @@ public class StatementDataIterator extends AbstractDataIterator
     @Override
     public void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName()).append("\n");
+        super.debugLogInfo(sb);
         if (null != _data)
             _data.debugLogInfo(sb);
     }
