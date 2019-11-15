@@ -33,6 +33,7 @@ import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -53,7 +54,6 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -77,6 +77,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -196,6 +197,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+
+        WebdavService.get().addExpDataProvider((path, container) -> {
+            ExpData expData = ExperimentService.get().getExpDataByURL(path, container);
+            return expData == null ? Collections.emptyList() : Collections.singletonList(expData);
+        });
     }
 
     @Override
