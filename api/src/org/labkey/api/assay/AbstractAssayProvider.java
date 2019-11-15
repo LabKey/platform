@@ -323,6 +323,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public void registerLsidHandler()
     {
         LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.ExpRunLsidHandler());
+        String resultRowLSIDPrefix = getResultRowLSIDPrefix();
+        if (resultRowLSIDPrefix != null)
+        {
+            LsidManager.get().registerHandler(resultRowLSIDPrefix, new LsidManager.AssayResultLsidHandler(this));
+        }
     }
 
     public Priority getPriority(ExpProtocol protocol)
@@ -1483,15 +1488,23 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return _runLSIDPrefix;
     }
 
-    public String getResultRowLSIDPrefix()
+    public @Nullable String getResultRowLSIDPrefix()
     {
         return _resultRowLSIDPrefix;
     }
 
     @Override
-    public String getResultRowLSIDExpression()
+    public @Nullable String getResultRowLSIDExpression()
     {
-        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + (getResultRowLSIDPrefix() != null ? getResultRowLSIDPrefix() : "") + ".Protocol-";
+        if (getResultRowLSIDPrefix() == null)
+            return null;
+        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + getResultRowLSIDPrefix();
+    }
+
+    @Override
+    public @Nullable ActionURL getResultRowURL(Container container, Lsid lsid)
+    {
+        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(this, container, lsid);
     }
 
     @Override

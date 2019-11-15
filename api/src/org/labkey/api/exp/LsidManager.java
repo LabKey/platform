@@ -17,6 +17,7 @@ package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpObject;
@@ -148,6 +149,34 @@ public class LsidManager
         {
             Container c = getContainer(lsid);
             return c != null && c.hasPermission(user, perm);
+        }
+    }
+
+    public static class AssayResultLsidHandler extends OntologyObjectLsidHandler
+    {
+        private final AssayProvider _provider;
+
+        public AssayResultLsidHandler(AssayProvider provider)
+        {
+            _provider = provider;
+            assert _provider.getResultRowLSIDPrefix() != null;
+        }
+
+        @Override
+        public Identifiable getObject(Lsid lsid)
+        {
+            assert _provider.getResultRowLSIDPrefix().equals(lsid.getNamespacePrefix());
+            return super.getObject(lsid);
+        }
+
+        @Override
+        public @Nullable ActionURL getDisplayURL(Lsid lsid)
+        {
+            Container c = getContainer(lsid);
+            if (c == null)
+                return null;
+
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(_provider, c, lsid);
         }
     }
 

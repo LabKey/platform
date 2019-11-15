@@ -111,4 +111,10 @@ public class IdentifiableBase implements Identifiable, Serializable
     {
         return Objects.hash(_lsid);
     }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + ": " + getLSID();
+    }
 }

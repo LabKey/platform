@@ -33,6 +33,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
@@ -266,18 +267,36 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             ContainerForeignKey.initColumn(folderCol, _userSchema);
         }
 
-        SQLFragment sql = new SQLFragment(getSqlDialect().concatenate(
-                "'" + schema.getProvider().getResultRowLSIDExpression() +
-                schema.getProtocol().getRowId()+ ":'",
-                "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
-
-        var lsidCol = new ExprColumn(this, "LSID", sql, JdbcType.VARCHAR);
-        lsidCol.setCalculated(true);
-        lsidCol.setUserEditable(false);
-        lsidCol.setReadOnly(true);
+        var lsidCol = createRowExpressionLsidColumn(this);
         addColumn(lsidCol);
 
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    public static BaseColumnInfo createRowExpressionLsidColumn(FilteredTable<? extends AssayProtocolSchema> table)
+    {
+        AssayProtocolSchema schema = table.getUserSchema();
+        SqlDialect dialect = schema.getDbSchema().getSqlDialect();
+
+        SQLFragment sql;
+        String resultRowLsidExpression = schema.getProvider().getResultRowLSIDExpression();
+        if (resultRowLsidExpression != null)
+        {
+            sql = new SQLFragment(dialect.concatenate(
+                    "'" + resultRowLsidExpression +
+                            ".Protocol-" + schema.getProtocol().getRowId() + ":'",
+                    "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
+        }
+        else
+        {
+            sql = new SQLFragment("CAST(NULL AS VARCHAR)");
+        }
+
+        var lsidCol = new ExprColumn(table, "LSID", sql, JdbcType.VARCHAR);
+        lsidCol.setCalculated(true);
+        lsidCol.setUserEditable(false);
+        lsidCol.setReadOnly(true);
+        return lsidCol;
     }
 
     private void configureSpecimensLookup(BaseColumnInfo specimenIdCol, boolean foundTargetStudyCol)
