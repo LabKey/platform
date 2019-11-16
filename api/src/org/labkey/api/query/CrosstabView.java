@@ -256,12 +256,12 @@ public class CrosstabView extends QueryView
 
         try
         {
-            Results rs = rgn.getResultSet(view.getRenderContext());
+            Results results = rgn.getResults(view.getRenderContext());
 
             CrosstabTableInfo table = (CrosstabTableInfo)getTable();
             List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
 
-            return new CrosstabExcelWriter(table, rs, getExportColumns(displayColumns), _numRowAxisCols, docType);
+            return new CrosstabExcelWriter(table, results, getExportColumns(displayColumns), _numRowAxisCols, docType);
         }
         catch (SQLException e)
         {

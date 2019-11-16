@@ -72,7 +72,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private List<AnalyticsProviderItem> _analyticsProviders;
     private Map<FieldKey, List<String>> _analyticsProviderNamesByFieldKey;
 
-    private Results _rs;
+    private Results _results;
 
     public RenderContext(ViewContext context)
     {
@@ -212,12 +212,12 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public Results getResults()
     {
-        return _rs;
+        return _results;
     }
 
     public void setResults(Results rs)
     {
-        _rs = rs;
+        _results = rs;
     }
 
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
@@ -281,11 +281,11 @@ public class RenderContext implements Map<String, Object>, Serializable
     }
 
     /**
-     * valid after call to getResultSet()
+     * valid after call to getResults()
      */
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return null == _rs ? null : _rs.getFieldMap();
+        return null == _results ? null : _results.getFieldMap();
     }
 
     private List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
@@ -295,14 +295,14 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != displayColumns && !displayColumns.isEmpty())
         {
             displayColumns
-                    .stream()
-                    .filter(dc -> dc.getColumnInfo() != null)
-                    .forEach(dc -> columnInfos.add(dc.getColumnInfo()));
+                .stream()
+                .filter(dc -> dc.getColumnInfo() != null)
+                .forEach(dc -> columnInfos.add(dc.getColumnInfo()));
         }
         return columnInfos;
     }
 
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResults(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url;
         if (null != settings)
@@ -317,8 +317,8 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        _rs = selectForDisplay(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
-        return _rs;
+        _results = selectForDisplay(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
+        return _results;
     }
 
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async) throws IOException
@@ -554,9 +554,9 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         if (key instanceof FieldKey)
         {
-            if (null != _rs)
+            if (null != _results)
             {
-                if (_rs.hasColumn((FieldKey) key))
+                if (_results.hasColumn((FieldKey) key))
                     return true;
             }
             // <UNDONE>
@@ -640,11 +640,11 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (key instanceof FieldKey)
         {
-            if (null != _rs && _rs.hasColumn((FieldKey) key))
+            if (null != _results && _results.hasColumn((FieldKey) key))
             {
                 try
                 {
-                    ColumnInfo col = _rs.findColumnInfo((FieldKey) key);
+                    ColumnInfo col = _results.findColumnInfo((FieldKey) key);
 
                     if (null == col)
                         return null;

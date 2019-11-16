@@ -11,6 +11,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NestedPropertyDisplayColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -30,7 +31,6 @@ import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -137,13 +137,13 @@ public class PropertiesDisplayColumn extends DataColumn implements NestedPropert
             }
 
             // finally, execute the query
-            try (ResultSet rs = requireNonNull(innerDataRegion.getResultSet(innerCtx)))
+            try (Results results = requireNonNull(innerDataRegion.getResults(innerCtx)))
             {
-                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-                if (rs.next())
+                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+                if (results.next())
                 {
-                    innerCtx.setRow(factory.getRowMap(rs));
-                    boolean hasNext = rs.next();
+                    innerCtx.setRow(factory.getRowMap(results));
+                    boolean hasNext = results.next();
                     assert !hasNext;
                 }
             }

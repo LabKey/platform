@@ -17,10 +17,12 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -53,6 +55,8 @@ import java.util.Arrays;
  * Date: Jun 14, 2006
  * Time: 12:49:42 PM
  */
+@RemoveIn20_1  // I don't see how this is used...
+@Deprecated
 public class ExportExcelReport extends RedirectReport
 {
     public static final String TYPE = "Study.exportExcelReport";
@@ -200,7 +204,7 @@ public class ExportExcelReport extends RedirectReport
                 writer.createColumns(rs.getMetaData());
 
                 String label = StudyService.get().getSubjectNounPlural(study.getContainer());
-                writer.setResultSet(rs);
+                writer.setResults(new ResultsImpl(rs));  // This probably won't work right
                 writer.setAutoSize(true);
                 writer.setCaptionRowVisible(true);
 

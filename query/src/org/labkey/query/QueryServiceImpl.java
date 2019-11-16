@@ -3318,37 +3318,37 @@ public class QueryServiceImpl implements QueryService
             assertEquals(JdbcType.TINYINT, t.getColumn("ti").getJdbcType());
             assertEquals(JdbcType.VARCHAR, t.getColumn("s").getJdbcType());
 
-            try (Results rs = new TableSelector(t).getResults())
+            try (Results results = new TableSelector(t).getResults())
             {
-                assertEquals(JdbcType.BIGINT, rs.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
-                assertEquals(JdbcType.BOOLEAN, rs.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
-                assertEquals(JdbcType.CHAR, rs.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
-                assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
-                assertEquals(JdbcType.DOUBLE, rs.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
-                assertEquals(JdbcType.INTEGER, rs.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
-                assertEquals(JdbcType.LONGVARCHAR, rs.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
-                assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
-                assertEquals(JdbcType.REAL, rs.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
-                assertEquals(JdbcType.SMALLINT, rs.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
-                assertEquals(JdbcType.TIMESTAMP, rs.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
-                assertEquals(JdbcType.TINYINT, rs.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
-                assertEquals(JdbcType.VARCHAR, rs.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
+                assertEquals(JdbcType.BIGINT, results.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
+                assertEquals(JdbcType.BOOLEAN, results.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
+                assertEquals(JdbcType.CHAR, results.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
+                assertEquals(JdbcType.DECIMAL, results.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
+                assertEquals(JdbcType.DOUBLE, results.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
+                assertEquals(JdbcType.INTEGER, results.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
+                assertEquals(JdbcType.LONGVARCHAR, results.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
+                assertEquals(JdbcType.DECIMAL, results.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
+                assertEquals(JdbcType.REAL, results.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
+                assertEquals(JdbcType.SMALLINT, results.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
+                assertEquals(JdbcType.TIMESTAMP, results.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
+                assertEquals(JdbcType.TINYINT, results.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
+                assertEquals(JdbcType.VARCHAR, results.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
 
-                ResultSetMetaData rsmd = rs.getMetaData();
-                assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(rs.findColumn("bint")));
-                assertTrue(Types.BIT==rsmd.getColumnType(rs.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(rs.findColumn("bit")));
-                assertTrue(Types.CHAR==rsmd.getColumnType(rs.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(rs.findColumn("char")));
-                assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("dec")));
-                assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(rs.findColumn("d")));
-                assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(rs.findColumn("i")));
-                int columntype = rsmd.getColumnType(rs.findColumn("text"));
+                ResultSetMetaData rsmd = results.getMetaData();
+                assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(results.findColumn("bint")));
+                assertTrue(Types.BIT==rsmd.getColumnType(results.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(results.findColumn("bit")));
+                assertTrue(Types.CHAR==rsmd.getColumnType(results.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(results.findColumn("char")));
+                assertTrue(Types.DECIMAL==rsmd.getColumnType(results.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(results.findColumn("dec")));
+                assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(results.findColumn("d")));
+                assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(results.findColumn("i")));
+                int columntype = rsmd.getColumnType(results.findColumn("text"));
                 assertTrue(Types.LONGVARCHAR == columntype || Types.CLOB == columntype || Types.VARCHAR == columntype || Types.LONGNVARCHAR == columntype);
-                assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("num")));
-                assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(rs.findColumn("real")));
-                assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(rs.findColumn("sint")));
-                assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
-                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
-                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(rs.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(rs.findColumn("s")));
+                assertTrue(Types.DECIMAL==rsmd.getColumnType(results.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(results.findColumn("num")));
+                assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(results.findColumn("real")));
+                assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(results.findColumn("sint")));
+                assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(results.findColumn("ts")));
+                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(results.findColumn("ti")));
+                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(results.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(results.findColumn("s")));
             }
         }
 

@@ -147,6 +147,7 @@ public class ResultsImpl implements Results, DataIterator
     }
 
 
+    @Deprecated
     public ResultsImpl(RenderContext ctx)
     {
         this(ctx.getResults(), ctx.getFieldMap());

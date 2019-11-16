@@ -43,14 +43,12 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -209,7 +207,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
@@ -3384,8 +3381,6 @@ public class StudyController extends BaseStudyController
 
         if (table != null)
         {
-            ResultSet rs = null;
-
             try
             {
                 // Do a single-column query to get the list of participants that match the filter criteria for this
@@ -3402,25 +3397,24 @@ public class StudyController extends BaseStudyController
                     RenderContext ctx = dataView.getRenderContext();
                     DataRegion dataRegion = dataView.getDataRegion();
                     queryView.getSettings().setShowRows(ShowRows.ALL);
-                    rs = ctx.getResultSet(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
-                    int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
-
-                    Set<String> participantSet = new LinkedHashSet<>();
-                    while (rs.next() && ptidIndex > 0)
+                    try (Results results = ctx.getResults(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false))
                     {
-                        String ptid = rs.getString(ptidIndex);
-                        participantSet.add(ptid);
+                        int ptidIndex = results.findColumn(ptidColumnInfo.getAlias());
+
+                        Set<String> participantSet = new LinkedHashSet<>();
+                        while (results.next() && ptidIndex > 0)
+                        {
+                            String ptid = results.getString(ptidIndex);
+                            participantSet.add(ptid);
+                        }
+
+                        return new ArrayList<>(participantSet);
                     }
-                    return new ArrayList<>(participantSet);
                 }
             }
             catch (Exception x)
             {
                 throw new RuntimeException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
         return Collections.emptyList();
