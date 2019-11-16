@@ -17,7 +17,8 @@
 package org.labkey.api.attachments;
 
 import org.labkey.api.data.CacheableWriter;
-import org.labkey.api.security.AuthenticationLogoAttachmentParent;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.util.ExceptionUtil;
@@ -28,7 +29,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -45,6 +45,7 @@ public class ImageServlet extends HttpServlet
         return cal;
     }
 
+    @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
     {
         try
@@ -80,7 +81,17 @@ public class ImageServlet extends HttpServlet
             }
             else if (imageName.startsWith("auth_"))
             {
-                sendAuthLogo(imageName, response);
+                String configuration = url.getParameter("configuration");
+                if (null == configuration)
+                    throw new NotFoundException("Auth logo request is missing configuration parameter - " + url);
+
+                int rowId = Integer.valueOf(configuration);
+                SSOAuthenticationConfiguration ssoConfiguration = AuthenticationManager.getSSOConfiguration(rowId);
+
+                if (null == ssoConfiguration)
+                    throw new NotFoundException("Auth logo request specifies an unknown configuration - " + url);
+
+                sendAuthLogo(imageName, ssoConfiguration, response);
             }
             else
             {
@@ -94,25 +105,25 @@ public class ImageServlet extends HttpServlet
     }
 
 
-    protected void sendAuthLogo(String name, HttpServletResponse response) throws IOException, ServletException
+    protected void sendAuthLogo(String name, SSOAuthenticationConfiguration configuration, HttpServletResponse response) throws IOException, ServletException
     {
-        CacheableWriter writer = AttachmentCache.getAuthLogo(name);
+        String cacheKey = name + "_" + configuration;
+        CacheableWriter writer = AttachmentCache.getAuthLogo(cacheKey);
 
         if (writer == null)
         {
             writer = CacheableWriter.noDocument;
 
-            // rootContainer will be null if the database isn't bootstrapped yet
-            AuthenticationLogoAttachmentParent rootContainer = AuthenticationLogoAttachmentParent.get();
-            if (rootContainer != null)
+            // rootContainer will be null if the database isn't bootstrapped yet (??)
+            if (configuration.getContainerId() != null)
             {
-                Attachment attachment = AttachmentCache.lookupAttachment(rootContainer, name);
+                Attachment attachment = AttachmentCache.lookupAttachment(configuration, name);
                 if (attachment != null)
                 {
                     writer = new CacheableWriter();
-                    AttachmentService.get().writeDocument(writer, rootContainer, attachment.getName(), false);
+                    AttachmentService.get().writeDocument(writer, configuration, attachment.getName(), false);
                 }
-                AttachmentCache.cacheAuthLogo(name, writer);
+                AttachmentCache.cacheAuthLogo(cacheKey, writer);
             }
         }
 
