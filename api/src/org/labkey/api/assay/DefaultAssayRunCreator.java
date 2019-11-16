@@ -94,6 +94,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Collections.unmodifiableCollection;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * User: jeckels
@@ -147,6 +148,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             run.setComments(context.getComments());
 
             exp = saveExperimentRun(context, exp, run, false);
+
+            // re-fetch the run after is has been fully constructed
+            run = ExperimentService.get().getExpRun(run.getRowId());
+
             context.uploadComplete(run);
         }
         else
@@ -368,23 +373,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
             // Attach run's starting protocol application with starting input LSIDs.
-            Set<String> runInputLSIDs = new HashSet<>();
-            for (Map.Entry<String, Object> runProperty : unresolvedRunProperties.entrySet())
+            String provInputsProperty = Objects.toString(unresolvedRunProperties.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY), null);
+            if (provInputsProperty != null)
             {
-                if (ProvenanceService.PROVENANCE_INPUT_PROPERTY.equalsIgnoreCase(runProperty.getKey())
-                        && null != runProperty.getValue())
+                ProvenanceService pvs = ProvenanceService.get();
+                if (pvs == null)
+                    throw new ExperimentException("Provenance service not available");
+
+                String[] runLSIDArr = provInputsProperty.split(",");
+                if (runLSIDArr.length > 0)
                 {
-                    String[] runLSIDArr = Objects.toString(runProperty.getValue()).split(",");
-                    runInputLSIDs.addAll(Arrays.asList(runLSIDArr));
+                    Set<String> runInputLSIDs = Arrays.asList(runLSIDArr).stream().map(String::trim).collect(toSet());
+                    ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
+                    pvs.addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
                 }
-            }
-
-            ProvenanceService pvs = ProvenanceService.get();
-
-            if (null != pvs && !runInputLSIDs.isEmpty())
-            {
-                ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
-                pvs.addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
             }
 
             ExperimentService.get().queueSyncRunEdges(run);

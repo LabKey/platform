@@ -32,7 +32,26 @@ public interface ProvenanceService
 
     void addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs);
 
-    void addProvenance(Container container, ExpProtocolApplication app, Map<String, Set<String>> outputMap);
+    void addProvenance(Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs);
 
-    List<Map<Integer, Pair<String,String>>> getProvenance(int protocolAppId);
+    /**
+     * Get list of provenance input LSIDs and output LSIDs for a protocol application.
+     */
+    Set<Pair<String,String>> getProvenanceObjectUris(int protocolAppId);
+
+    /**
+     * Get list of provenance input object IDs and output object IDs for a protocol application.
+     */
+    Set<Pair<Integer, Integer>> getProvenanceObjectIds(int protocolAppId);
+
+    /**
+     * Delete provenance for a single protocol application.
+     */
+    void deleteProvenance(int protocolAppId);
+
+    /**
+     * Delete provenance for all protocol applications within the run.
+     */
+    void deleteRunProvenance(int runId);
+
 }

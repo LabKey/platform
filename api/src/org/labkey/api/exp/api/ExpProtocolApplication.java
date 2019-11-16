@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 
 import java.util.Date;
 import java.util.List;
@@ -69,6 +70,10 @@ public interface ExpProtocolApplication extends ExpObject
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
     void removeMaterialInput(User user, ExpMaterial material);
 
+    void addProvenanceInput(Set<String> lsids);
+    void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
+    Set<Pair<String, String>> getProvenanceMapping();
+
     ExpRun getRun();
     int getActionSequence();
     ExpProtocol.ApplicationType getApplicationType();
@@ -103,7 +108,4 @@ public interface ExpProtocolApplication extends ExpObject
     @Override
     void save(User user);
 
-    default void addInputProvenance(Container container, Set<String> lsids) {}
-
-    default void addFinalProvenance(Container container, Map<String, Set<String>> outputMap) {}
 }

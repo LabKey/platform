@@ -2873,29 +2873,30 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
-            ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
-            ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
-
-            List<Map<Integer, Pair<String, String>>> inputProvenanceMapList = new ArrayList<>();
-            List<Map<Integer, Pair<String,String>>> outputProvenanceMapList = new ArrayList<>();
+            Set<Pair<Integer, Integer>> provenanceStartingInputs = Collections.emptySet();
+            Set<Pair<Integer, Integer>> provenanceFinalOutputs = Collections.emptySet();
 
             ProvenanceService pvs = ProvenanceService.get();
-
-            if (null != startProtocolApp && null != pvs)
+            if (pvs != null)
             {
-                inputProvenanceMapList = pvs.getProvenance(startProtocolApp.getRowId());
-            }
+                ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
+                if (null != startProtocolApp)
+                {
+                    provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
+                }
 
-            if (null != finalProtocolApp && null != pvs)
-            {
-                outputProvenanceMapList = pvs.getProvenance(finalProtocolApp.getRowId());
+                ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
+                if (null != finalProtocolApp)
+                {
+                    provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
+                }
             }
 
             // delete all existing edges for this run
             if (deleteFirst)
                 removeEdgesForRun(runId);
 
-            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + inputProvenanceMapList.size() + outputProvenanceMapList.size();
+            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
             LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
@@ -2946,18 +2947,15 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
-                if (!inputProvenanceMapList.isEmpty())
+                if (!provenanceStartingInputs.isEmpty())
                 {
-                    for (Map<Integer, Pair<String, String>> inputProvenanceMap : inputProvenanceMapList)
+                    for (Pair<Integer, Integer> pair : provenanceStartingInputs)
                     {
-                        for (Map.Entry<Integer, Pair<String, String>> provInputLsid : inputProvenanceMap.entrySet())
+                        Integer fromId = pair.first;
+                        if (null != fromId)
                         {
-                            if (null != provInputLsid.getValue().first)
-                            {
-                                int objectId = OntologyManager.getOntologyObject(runContainer, provInputLsid.getValue().first).getObjectId();
-                                if (seen.add(objectId))
-                                    prepEdgeForInsert(params, objectId, runObjectId, runId);
-                            }
+                            if (seen.add(fromId))
+                                prepEdgeForInsert(params, fromId, runObjectId, runId);
                         }
                     }
                 }
@@ -2981,18 +2979,15 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
-                if (!outputProvenanceMapList.isEmpty())
+                if (!provenanceFinalOutputs.isEmpty())
                 {
-                    for (Map<Integer, Pair<String, String>> outputProvenanceMap : outputProvenanceMapList)
+                    for (Pair<Integer, Integer> pair : provenanceFinalOutputs)
                     {
-                        for (Map.Entry<Integer, Pair<String, String>> provOutputLsid : outputProvenanceMap.entrySet())
+                        Integer toObjectId = pair.second;
+                        if (null != toObjectId)
                         {
-                            if (null != provOutputLsid.getValue().second)
-                            {
-                                int objectId = OntologyManager.getOntologyObject(runContainer, provOutputLsid.getValue().second).getObjectId();
-                                if (seen.add(objectId))
-                                    prepEdgeForInsert(params, runObjectId, objectId, runId);
-                            }
+                            if (seen.add(toObjectId))
+                                prepEdgeForInsert(params, runObjectId, toObjectId, runId);
                         }
                     }
                 }
@@ -5446,8 +5441,18 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
-                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles, @Nullable Set<String> runInputLsids, @Nullable List<Map<String, Set<String>>> finalOutputMapList) throws ExperimentException
+    public ExpRun saveSimpleExperimentRun(ExpRun baseRun,
+                                          Map<ExpMaterial, String> inputMaterials,
+                                          Map<ExpData, String> inputDatas,
+                                          Map<ExpMaterial, String> outputMaterials,
+                                          Map<ExpData, String> outputDatas,
+                                          Map<ExpData, String> transformedDatas,
+                                          ViewBackgroundInfo info,
+                                          Logger log,
+                                          boolean loadDataFiles,
+                                          @Nullable Set<String> runInputLsids,
+                                          @Nullable Set<Pair<String, String>> finalOutputLsids)
+            throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 
@@ -5537,7 +5542,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
             if (null != runInputLsids)
             {
-                protApp1.addInputProvenance(context.getContainer(), runInputLsids);
+                protApp1.addProvenanceInput(runInputLsids);
             }
 
             addDataInputs(inputDatas, protApp1._object, user);
@@ -5583,12 +5588,9 @@ public class ExperimentServiceImpl implements ExperimentService
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
 
-            if (null != finalOutputMapList && !finalOutputMapList.isEmpty())
+            if (null != finalOutputLsids && !finalOutputLsids.isEmpty())
             {
-                for (Map<String, Set<String>> finalOutputMap : finalOutputMapList)
-                {
-                    protApp3.addFinalProvenance(context.getContainer(), finalOutputMap);
-                }
+                protApp3.addProvenanceMapping(finalOutputLsids);
             }
 
             addDataInputs(outputDatas, protApp3._object, user);

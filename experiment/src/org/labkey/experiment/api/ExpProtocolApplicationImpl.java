@@ -35,10 +35,10 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -320,6 +320,10 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             dataSQL.append(commonSQL);
             new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
 
+            ProvenanceService pvs = ProvenanceService.get();
+            if (pvs != null)
+                pvs.deleteProvenance(getRowId());
+
             Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
         }
     }
@@ -449,24 +453,32 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     }
 
     @Override
-    public void addInputProvenance(Container container, Set<String> lsids)
+    public void addProvenanceInput(Set<String> lsids)
     {
         ProvenanceService pvs = ProvenanceService.get();
-
         if (null != pvs && !lsids.isEmpty())
         {
-            pvs.addProvenanceInputs(container, this, lsids);
+            pvs.addProvenanceInputs(this.getContainer(), this, lsids);
         }
     }
 
     @Override
-    public void addFinalProvenance(Container container, Map<String, Set<String>> outputMap)
+    public void addProvenanceMapping(Set<Pair<String, String>> lsidPairs)
     {
         ProvenanceService pvs = ProvenanceService.get();
-
-        if (null != pvs && !outputMap.isEmpty())
+        if (null != pvs && !lsidPairs.isEmpty())
         {
-            pvs.addProvenance(container, this, outputMap);
+            pvs.addProvenance(this.getContainer(), this, lsidPairs);
         }
+    }
+
+    @Override
+    public Set<Pair<String, String>> getProvenanceMapping()
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs == null)
+            return Collections.emptySet();
+
+        return pvs.getProvenanceObjectUris(getRowId());
     }
 }

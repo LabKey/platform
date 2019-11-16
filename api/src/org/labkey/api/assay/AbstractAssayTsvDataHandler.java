@@ -16,7 +16,6 @@
 
 package org.labkey.api.assay;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -25,12 +24,15 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -42,7 +44,6 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
-import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -62,7 +63,6 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.FieldKey;
@@ -78,6 +78,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -98,6 +99,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -382,9 +384,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
 
-            // Map for the assay result input LSID
-            Map<Integer, Set<String>> inputLSIDMap = new HashMap<>();
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver, inputLSIDMap);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -393,7 +393,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
 
             // Attach run's final protocol application with output LSIDs for Assay Result rows
-            addAssayResultRowsProvenance(user, container, protocol, run, provider, inputLSIDMap);
+            addAssayResultRowsProvenance(user, container, protocol, run, provider, inserted);
 
             if (shouldAddInputMaterials())
             {
@@ -413,42 +413,64 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
 
-    private void addAssayResultRowsProvenance(User user, Container container, ExpProtocol protocol, ExpRun run, AssayProvider provider, Map<Integer, Set<String>> inputLSIDMap)
+    private void addAssayResultRowsProvenance(
+            User user, Container container,
+            ExpProtocol protocol, ExpRun run,
+            AssayProvider provider,
+            List<Map<String, Object>> insertedData)
     {
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs == null)
+            return;
+
+        // get the LSID for the newly inserted assay result data rows
         TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).getTable("Data", null);
-        SimpleFilter runFilter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
+        ColumnInfo lsidCol = dataTable.getColumn("LSID");
+        if (lsidCol == null)
+            throw new IllegalStateException("Assay results table LSID column required to attach provenance");
+
+        ColumnInfo rowIdCol = dataTable.getColumn("RowId");
+        if (rowIdCol == null)
+            throw new IllegalStateException("Assay results table RowId column required to attach provenance");
+
+        List<Integer> rowIds = insertedData.stream().map(row -> (Integer)row.get("rowId")).collect(Collectors.toList());
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
+        filter.addCondition(rowIdCol, rowIds, CompareType.IN);
         Sort sort = new Sort(FieldKey.fromParts("rowId"));
-        List<String> lsidList = new TableSelector(dataTable, PageFlowUtil.set("LSID"), runFilter, sort).getArrayList(String.class);
+        Map<Integer, String> rowIdToLsid = new TableSelector(dataTable, List.of(rowIdCol, lsidCol), filter, sort).getValueMap();
+        assert rowIds.size() == rowIds.size();
 
-        Map<String, Set<String>> provMap = new HashMap<>();
-        Set<String> outputLSIDs = new HashSet<>();
-
-        for (int row = 0; row < lsidList.size(); row++)
+        Set<Pair<String, String>> provPairs = new HashSet<>(insertedData.size());
+        for (Map<String, Object> insertedRow : insertedData)
         {
-            if (inputLSIDMap.get(row+1) != null && !inputLSIDMap.get(row+1).isEmpty())
+            Integer rowId = (Integer)insertedRow.get("rowId");
+            if (rowId == null)
+                throw new IllegalStateException("Assay results rowId required to attach provenance: " + insertedRow);
+
+            String rowOutputLsid = rowIdToLsid.get(rowId);
+            if (rowOutputLsid == null)
+                throw new IllegalStateException("Assay results LSID required to attach provenance: " + insertedRow);
+
+            Set<String> rowInputLsids = (Set<String>)insertedRow.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
+            if (rowInputLsids != null && !rowInputLsids.isEmpty())
             {
-                provMap.put(lsidList.get(row), inputLSIDMap.get(row+1));
+                for (String rowInputLsid : rowInputLsids)
+                {
+                    provPairs.add(Pair.of(rowInputLsid, rowOutputLsid));
+                }
             }
             else
             {
-                outputLSIDs.add(lsidList.get(row));
+                provPairs.add(Pair.of(null, rowOutputLsid));
             }
         }
 
         ExpProtocolApplication outputProtocolApp = run.getOutputProtocolApplication();
 
-        ProvenanceService pvs = ProvenanceService.get();
-
-        if (null != pvs)
+        if (!provPairs.isEmpty())
         {
-            if (!provMap.isEmpty())
-            {
-                pvs.addProvenance(container, outputProtocolApp, provMap);
-            }
-            if (!outputLSIDs.isEmpty())
-            {
-                pvs.addProvenanceOutputs(container, outputProtocolApp, outputLSIDs);
-            }
+            pvs.addProvenance(container, outputProtocolApp, provPairs);
         }
     }
 
@@ -562,9 +584,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver, Map<Integer, Set<String>> inputLSIDs)
+    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
             throws ValidationException, ExperimentException
     {
+        final ExperimentService exp = ExperimentService.get();
+        final ProvenanceService pvs = ProvenanceService.get();
+
         List<String> missing = new ArrayList<>();
         List<String> unexpected = new ArrayList<>();
 
@@ -609,18 +634,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DomainProperty datePD = null;
         DomainProperty targetStudyPD = null;
 
-        Map<DomainProperty, ExpSampleSet> sampleNameSampleSets = new HashMap<>();
-        Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet = new LinkedHashMap<>();
+        RemapCache cache = new RemapCache();
+        Map<DomainProperty, TableInfo> remappableLookup = new HashMap<>();
+        Map<Integer, ExpMaterial> materialCache = new HashMap<>();
 
-        Map<DomainProperty, ExpSampleSet> sampleIdSampleSets = new HashMap<>();
-        Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet = new LinkedHashMap<>();
-
-        Map<DomainProperty, Set<String>> sampleNames = new HashMap<>();
-        Map<DomainProperty, Set<Integer>> sampleIds = new HashMap<>();
+        Map<DomainProperty, ExpSampleSet> lookupToSampleSetByName = new HashMap<>();
+        Map<DomainProperty, ExpSampleSet> lookupToSampleSetById = new HashMap<>();
+        Set<DomainProperty> lookupToAllSamplesByName = new HashSet<>();
+        Set<DomainProperty> lookupToAllSamplesById = new HashSet<>();
 
         List<? extends DomainProperty> columns = dataDomain.getProperties();
         Map<DomainProperty, List<ColumnValidator>> validatorMap = new HashMap<>();
-        Map<DomainProperty, SimpleTranslator.RemapPostConvert> remapMap = new HashMap<>();
 
         for (DomainProperty pd : columns)
         {
@@ -659,21 +683,19 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
                     {
-                        sampleNameSampleSets.put(pd, ss);
-                        sampleNamesBySampleSet.put(ss, new HashSet<>());
+                        lookupToSampleSetByName.put(pd, ss);
                     }
                     else
                     {
-                        sampleIdSampleSets.put(pd, ss);
-                        sampleIdsBySampleSet.put(ss, new HashSet<>());
+                        lookupToSampleSetById.put(pd, ss);
                     }
                 }
                 else if (DefaultAssayRunCreator.isLookupToMaterials(pd))
                 {
                     if (pd.getPropertyType().getJdbcType().isText())
-                        sampleNames.put(pd, new HashSet<>());
+                        lookupToAllSamplesByName.add(pd);
                     else
-                        sampleIds.put(pd, new HashSet<>());
+                        lookupToAllSamplesById.add(pd);
                 }
             }
 
@@ -683,7 +705,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ForeignKey fk = column != null ? column.getFk() : null;
                 if (fk != null && fk.allowImportByAlternateKey())
                 {
-                    remapMap.put(pd, new SimpleTranslator.RemapPostConvert(fk.getLookupTableInfo(), true, SimpleTranslator.RemapMissingBehavior.Error));
+                    remappableLookup.put(pd, fk.getLookupTableInfo());
                 }
             }
         }
@@ -718,7 +740,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     map.put(prop.getName(), entry.getValue());
                 }
-                if (entry.getKey().equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
+                else if (entry.getKey().equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
                 {
                     map.put(entry.getKey(), entry.getValue());
                 }
@@ -837,20 +859,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // If we have a String value for a lookup column, attempt to use the table's unique indices or display value to convert the String into the lookup value
                 // See similar conversion performed in SimpleTranslator.RemapPostConvertColumn
-                if (o instanceof String && remapMap.containsKey(pd))
+                if (o instanceof String && remappableLookup.containsKey(pd))
                 {
-                    SimpleTranslator.RemapPostConvert remap = remapMap.get(pd);
-                    Object remapped = null;
-                    try
+                    TableInfo lookupTable = remappableLookup.get(pd);
+                    Object remapped = cache.remap(lookupTable, user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, (String)o);
+                    if (remapped == null)
                     {
-                        remapped = remap.mappedValue(o);
+                        errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': " + o, pd.getName()));
                     }
-                    catch (ConversionException ex)
-                    {
-                        errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': " + ex.getMessage(), pd.getName()));
-                    }
-
-                    if (o != remapped)
+                    else if (o != remapped)
                     {
                         o = remapped;
                         map.put(pd.getName(), remapped);
@@ -866,46 +883,26 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                 // Collect sample names or ids for each of the SampleSet lookup columns
                 // Add any sample inputs to the rowInputLSIDs
-                ExpSampleSet byNameSS = sampleNameSampleSets.get(pd);
-                if (byNameSS != null)
+                ExpSampleSet byNameSS = lookupToSampleSetByName.get(pd);
+                if (o instanceof String && (byNameSS != null || lookupToAllSamplesByName.contains(pd)))
                 {
-                    if (o instanceof String)
-                        sampleNamesBySampleSet.get(byNameSS).add((String) o);
-                    if (o != null)
+                    String ssName = byNameSS != null ? byNameSS.getName() : null;
+                    ExpMaterial material = exp.findExpMaterial(container, user, ssName, (String)o, cache, materialCache);
+                    if (material != null)
                     {
-                        List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName((String) o, container, user);
-
-                        // Should be only 1 matching lookup
-                        if (materials.size() == 1)
-                        {
-                            rowInputLSIDs.add(materials.get(0).getLSID());
-                        }
+                        materialInputs.putIfAbsent(material, pd.getName());
+                        rowInputLSIDs.add(material.getLSID());
                     }
                 }
 
-                ExpSampleSet byIdSS = sampleIdSampleSets.get(pd);
-                if (byIdSS != null)
+                if (o instanceof Integer && (lookupToSampleSetById.containsKey(pd) || lookupToAllSamplesById.contains(pd)))
                 {
-                    if (o instanceof Integer)
-                        sampleIdsBySampleSet.get(byIdSS).add((Integer) o);
-                    if (o != null)
+                    ExpMaterial material = materialCache.computeIfAbsent((Integer)o, exp::getExpMaterial);
+                    if (material != null)
                     {
-                        ExpMaterial material = ExperimentService.get().getExpMaterial((int) o);
-
-                        if (material != null)
-                        {
-                            rowInputLSIDs.add(material.getLSID());
-                        }
+                        materialInputs.putIfAbsent(material, pd.getName());
+                        rowInputLSIDs.add(material.getLSID());
                     }
-
-                }
-
-                if (DefaultAssayRunCreator.isLookupToMaterials(pd))
-                {
-                    if (sampleNames.containsKey(pd) && o instanceof String)
-                        sampleNames.get(pd).add((String)o);
-                    else if (sampleIds.containsKey(pd) && o instanceof Integer)
-                        sampleIds.get(pd).add((Integer)o);
                 }
             }
 
@@ -938,13 +935,21 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (resolveMaterials)
             {
-                materialInputs.put(participantVisit.getMaterial(), null);
+                ExpMaterial material = participantVisit.getMaterial();
+                if (material != null)
+                {
+                    materialInputs.putIfAbsent(material, null);
+                    rowInputLSIDs.add(material.getLSID());
+                }
             }
 
             // Add any “prov:objectInputs” to the rowInputLSIDs
             var provenanceInputs = map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
             if (null != provenanceInputs)
             {
+                if (pvs == null)
+                    throw new ExperimentException("Provenance service not available");
+
                 if (provenanceInputs instanceof JSONArray)
                 {
                     JSONArray inputJSONArr = (JSONArray) provenanceInputs;
@@ -964,111 +969,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             if (!rowInputLSIDs.isEmpty())
             {
-                inputLSIDs.put(rowNum, rowInputLSIDs);
+                map.put(ProvenanceService.PROVENANCE_INPUT_PROPERTY, rowInputLSIDs);
+                iter.set(map);
             }
-        }
-
-        // Resolve sample lookups for each SampleSet
-        resolveSampleNames(container, user, sampleNameSampleSets, sampleNamesBySampleSet, materialInputs);
-        resolveSampleIds(sampleIdSampleSets, sampleIdsBySampleSet, materialInputs);
-
-        // Resolve sample lookups to exp.Material
-        for (Map.Entry<DomainProperty, Set<String>> entry : sampleNames.entrySet())
-        {
-            resolveSampleNames(container, user, null, entry.getKey(), entry.getValue(), materialInputs);
-        }
-        for (Map.Entry<DomainProperty, Set<Integer>> entry : sampleIds.entrySet())
-        {
-            resolveSampleIds(null, entry.getKey(), entry.getValue(), materialInputs);
         }
 
         return materialInputs;
     }
 
-    private void resolveSampleNames(Container container, User user, Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<String>> sampleNamesBySampleSet, Map<ExpMaterial, String> materialInputs) throws ExperimentException
-    {
-        for (Map.Entry<ExpSampleSet, Set<String>> entry : sampleNamesBySampleSet.entrySet())
-        {
-            // Default to looking in the current container
-            ExpSampleSet ss = entry.getKey();
-            Set<String> sampleNames = entry.getValue();
-
-            // Find the DomainProperty and use its name as the role
-            DomainProperty dp = null;
-            for (Map.Entry<DomainProperty, ExpSampleSet> pair : sampleSets.entrySet())
-            {
-                if (pair.getValue().equals(ss))
-                {
-                    dp = pair.getKey();
-                    break;
-                }
-            }
-
-            resolveSampleNames(container, user, ss, dp, sampleNames, materialInputs);
-        }
-    }
-
-    private void resolveSampleNames(Container container, User user, @Nullable ExpSampleSet ss, @Nullable DomainProperty dp, Set<String> sampleNames, Map<ExpMaterial, String> materialInputs) throws ExperimentException
-    {
-        // use DomainProperty name as the role
-        String role = dp == null ? null : dp.getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
-
-        Set<Container> searchContainers = ExpSchema.getSearchContainers(container, ss, dp, user);
-
-        for (Container searchContainer : searchContainers)
-        {
-            List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(searchContainer, user, sampleNames, ss, false, false);
-
-            for (ExpMaterial material : materials)
-                if (!materialInputs.containsKey(material))
-                    materialInputs.put(material, role);
-        }
-    }
-
-
-    private void resolveSampleIds(Map<DomainProperty, ExpSampleSet> sampleSets, Map<ExpSampleSet, Set<Integer>> sampleIdsBySampleSet, Map<ExpMaterial, String> materialInputs)
-    {
-        for (Map.Entry<ExpSampleSet, Set<Integer>> entry : sampleIdsBySampleSet.entrySet())
-        {
-            ExpSampleSet ss = entry.getKey();
-            Set<Integer> sampleIds = entry.getValue();
-
-            // Find the DomainProperty and use its name as the role
-            DomainProperty dp = null;
-            for (Map.Entry<DomainProperty, ExpSampleSet> pair : sampleSets.entrySet())
-            {
-                if (pair.getValue().equals(ss))
-                {
-                    dp = pair.getKey();
-                    break;
-                }
-            }
-
-            resolveSampleIds(ss, dp, sampleIds, materialInputs);
-        }
-    }
-
-    private void resolveSampleIds(@Nullable ExpSampleSet ss, DomainProperty dp, Set<Integer> sampleIds, Map<ExpMaterial, String> materialInputs)
-    {
-        // use DomainProperty name as the role
-        String role = null;
-        if (dp != null)
-        {
-            role = dp.getName(); // TODO: More than one DomainProperty could be a lookup to the SampleSet
-        }
-
-        List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterials(sampleIds);
-
-        for (ExpMaterial material : materials)
-        {
-            // Ignore materials that aren't in the lookup sample set
-            if (ss != null && !ss.getLSID().equals(material.getCpasType()))
-                continue;
-
-            if (!materialInputs.containsKey(material))
-                materialInputs.put(material, role);
-        }
-    }
 
     /** Wraps each map in a version that can be queried based on on any of the aliases (name, property URI, import
      * aliases, etc for a given property */
