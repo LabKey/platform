@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -159,6 +160,42 @@ public class ExpLineage
         }
 
         return _nodesAndEdges;
+    }
+
+    private Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>> nodeEdges(Identifiable node)
+    {
+        Map<String, Identifiable> nodes = processNodes();
+        String nodeLsid = node.getLSID();
+        if (!nodes.containsKey(nodeLsid))
+            throw new IllegalArgumentException("node not in lineage");
+
+        Map<String, Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>>> edges = processNodeEdges();
+        Pair<Set<ExpLineage.Edge>, Set<ExpLineage.Edge>> nodeEdges = edges.get(nodeLsid);
+        return nodeEdges;
+    }
+
+    /** Get the set of directly connected parents for the node. */
+    public Set<Identifiable> getNodeParents(Identifiable node)
+    {
+        var nodeEdges = nodeEdges(node);
+        if (nodeEdges == null)
+            return Collections.emptySet();
+
+        Map<String, Identifiable> nodes = processNodes();
+        Set<ExpLineage.Edge> inputEdges = nodeEdges.getKey();
+        return inputEdges.stream().map(e -> nodes.get(e.parent)).collect(Collectors.toSet());
+    }
+
+    /** Get the set of directly connected children for the node. */
+    public Set<Identifiable> getNodeChildren(Identifiable node)
+    {
+        var nodeEdges = nodeEdges(node);
+        if (nodeEdges == null)
+            return Collections.emptySet();
+
+        Map<String, Identifiable> nodes = processNodes();
+        Set<ExpLineage.Edge> outputEdges = nodeEdges.getValue();
+        return outputEdges.stream().map(e -> nodes.get(e.child)).collect(Collectors.toSet());
     }
 
     /**
