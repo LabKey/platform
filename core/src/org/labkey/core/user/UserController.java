@@ -2410,7 +2410,7 @@ public class UserController extends SpringActionController
         private boolean _allMembers; // when getting members of a group, should we get the direct members of the group (allMembers=false) or also members of subgroups (allMembers=true)
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
-        private Set<Class<? extends Permission>> _permissionClasses; // the set of permission classes corresponding to the permissions arary
+        private Set<Class<? extends Permission>> _permissionClasses; // the set of permission classes corresponding to the permissions array
 
         public String getGroup()
         {
@@ -2480,9 +2480,6 @@ public class UserController extends SpringActionController
         {
             _active = active;
         }
-
-
-
     }
 
 
@@ -2634,7 +2631,7 @@ public class UserController extends SpringActionController
     /**
      * Retrieves the set of users that have all of a specified set of permissions.  A group
      * may be provided and only users within that group will be returned.  A name (prefix) may be
-     * provided an only users whose email or display name starts with the prefix will be returned.
+     * provided and only users whose email or display name starts with the prefix will be returned.
      * This will not return any deactivated users (since they do not have permissions of any sort).
      */
     @RequiresLogin
@@ -2667,7 +2664,6 @@ public class UserController extends SpringActionController
             response.put("container", container.getPath());
 
             Collection<User> users;
-            List<Map<String,Object>> userResponseList = new ArrayList<>();
 
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
