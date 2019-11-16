@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Iterables;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
@@ -50,6 +51,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -58,6 +60,7 @@ import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -109,6 +112,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -1353,6 +1357,73 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
+    public ExpData findExpData(Container c, User user,
+                            @NotNull String dataClassName, String dataName,
+                            RemapCache cache, Map<Integer, ExpData> dataCache)
+            throws ValidationException
+    {
+        Integer rowId;
+        try
+        {
+            rowId = ConvertHelper.convert(dataName, Integer.class);
+        }
+        catch (ConversionException e1)
+        {
+            try
+            {
+                rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+                if (rowId == null)
+                    return null;
+            }
+            catch (ConversionException e2)
+            {
+                throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
+            }
+        }
+
+        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        return dataCache.computeIfAbsent(rowId, svc::getExpData);
+    }
+
+    @Override
+    public @Nullable ExpMaterial findExpMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException
+    {
+        Integer rowId;
+        try
+        {
+            rowId = ConvertHelper.convert(sampleName, Integer.class);
+        }
+        catch (ConversionException e1)
+        {
+            try
+            {
+                if (sampleSetName == null)
+                    rowId = cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+                else
+                    rowId = cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+
+                if (rowId == null)
+                    return null;
+            }
+            catch (ConversionException e2)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+                if (sampleSetName == null)
+                {
+                    sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
+                }
+                sb.append(" " + e2.getMessage());
+                throw new ValidationException(sb.toString());
+            }
+        }
+
+        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
+    }
+
+    @Override
     public ExpExperiment createHiddenRunGroup(Container container, User user, ExpRun... runs)
     {
         if (runs.length == 0)
@@ -2278,6 +2349,10 @@ public class ExperimentServiceImpl implements ExperimentService
             {
                 if (user == null || obj.getContainer().hasPermission(user, ReadPermission.class))
                     otherObjects.add(obj);
+            }
+            else
+            {
+                LOG.warn("Failed to get object for LSID '" + lsid + "' referenced in lineage for seed: " +  StringUtils.join(seedLsids, ", "));
             }
         }
 

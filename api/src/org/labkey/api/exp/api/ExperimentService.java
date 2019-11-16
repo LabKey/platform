@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -238,6 +239,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Looks in all the sample sets visible from the given container for a single match with the specified name
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+
+    @Nullable ExpData findExpData(Container c, User user,
+                                  @NotNull String dataClassName, String dataName,
+                                  RemapCache cache, Map<Integer, ExpData> dataCache)
+            throws ValidationException;
+
+    @Nullable ExpMaterial findExpMaterial(Container c, User user,
+                                          String sampleSetName, String sampleName,
+                                          RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException;
 
     /**
      * Use {@link SampleSetService} instead.
@@ -668,12 +679,25 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param inputDatas      map from input role name to input data
      * @param outputMaterials map from output role name to output material
      * @param outputDatas     map from output role name to output data
+     * @param transformedDatas map of output rolw name to transformed output data
      * @param info            context information, including the user
      * @param log             output log target
+     * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
      */
     ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
 
-    ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles, @Nullable Set<String> runInputLsids, @Nullable List<Map<String, Set<String>>> finalOutputMapList) throws ExperimentException;
+    ExpRun saveSimpleExperimentRun(ExpRun run,
+                                   Map<ExpMaterial, String> inputMaterials,
+                                   Map<ExpData, String> inputDatas,
+                                   Map<ExpMaterial, String> outputMaterials,
+                                   Map<ExpData, String> outputDatas,
+                                   Map<ExpData, String> transformedDatas,
+                                   ViewBackgroundInfo info,
+                                   Logger log,
+                                   boolean loadDataFiles,
+                                   @Nullable Set<String> runInputLsids,
+                                   @Nullable Set<Pair<String, String>> finalOutputLsids)
+            throws ExperimentException;
 
     /**
      * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
