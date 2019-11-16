@@ -388,7 +388,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
-            insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
+            // Insert the data into the assay's data table.
+            // On insert, the raw data will have the provisioned table's rowId added to the list of maps
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
 
             // Attach run's final protocol application with output LSIDs for Assay Result rows
             addAssayResultRowsProvenance(user, container, protocol, run, provider, inputLSIDMap);
@@ -457,18 +459,20 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     /** Insert the data into the database.  Transaction is active. */
-    protected void insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
+    protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
             throws SQLException, ValidationException
     {
         if (tableInfo instanceof UpdateableTableInfo)
         {
-            OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, LOG);
+            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, LOG);
         }
         else
         {
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
-            OntologyManager.insertTabDelimited(container, user, id,
+            List<String> lsids = OntologyManager.insertTabDelimited(container, user, id,
                     new SimpleAssayDataImportHelper(data), dataDomain, fileData, false);
+            // TODO: Add LSID values into return value rows
+            return fileData;
         }
     }
 
