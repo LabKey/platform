@@ -65,7 +65,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 
     /**
      * Create a TSVGridWriter for a Results (ResultSet/fieldMap) and a set of DisplayColumns.
-     * You can use use {@link QueryService#getColumns(TableInfo, Collection<FieldKey>, Collection<ColumnInfo>)}
+     * You can use use {@link QueryService#getColumns(TableInfo, Collection, Collection)}
      * to obtain a fieldMap which will include any extra ColumnInfo required by the selected DisplayColumns.
      *
      * @param results Results (ResultSet/Map<FieldKey,ColumnInfo>).
@@ -120,27 +120,18 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     @Override
     protected void writeBody()
     {
-         writeResultSet(_results);
-    }
+        Results results = _results; // TODO: This should be factory.getResults()
+        RenderContext ctx = getRenderContext();
+        ctx.setResults(results);
 
-    public void writeResultSet(Results results)
-    {
-        RenderContext context = getRenderContext();
-        context.setResults(results);
-        writeResultSet(context, results);
-    }
-
-
-    public void writeResultSet(RenderContext ctx, Results rs)
-    {
         try
         {
             // Output all the data cells
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
 
-            while (rs.next())
+            while (results.next())
             {
-                ctx.setRow(factory.getRowMap(rs));
+                ctx.setRow(factory.getRowMap(results));
                 writeRow(ctx, _displayColumns);
             }
         }
