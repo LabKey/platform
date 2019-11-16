@@ -135,6 +135,7 @@ import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
 import org.labkey.assay.actions.GetAssayBatchesAction;
 import org.labkey.assay.actions.GetAssayRunAction;
+import org.labkey.assay.actions.GetAssayRunsAction;
 import org.labkey.assay.actions.GetProtocolAction;
 import org.labkey.assay.actions.ImportAction;
 import org.labkey.assay.actions.ImportRunApiAction;

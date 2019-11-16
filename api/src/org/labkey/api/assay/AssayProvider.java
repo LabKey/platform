@@ -283,13 +283,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     String getRunLSIDPrefix();
 
-    String getResultRowLSIDPrefix();
-
-    /**
-     * @return Provider specific sql expression
-     */
-    String getResultRowLSIDExpression();
-
     /**
      * @return LSID Namespace prefix for assay result rows
      */
