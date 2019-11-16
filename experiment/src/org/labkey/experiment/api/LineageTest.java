@@ -369,6 +369,13 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(Set.of(a1), lineage.getSeeds());
         assertEquals(Set.of(b1, b2), lineage.getObjects());
 
+        // verify lineage parent and children
+        assertTrue(lineage.getNodeParents(a1).isEmpty());
+        assertEquals(Set.of(run), lineage.getNodeChildren(a1));
+        assertEquals(Set.of(a1), lineage.getNodeParents(run));
+        assertEquals(Set.of(b1, b2), lineage.getNodeChildren(run));
+
+        // verify json structure
         JSONObject json = lineage.toJSON(true);
         assertEquals(a1Lsid.toString(), json.getString("seed"));
 
@@ -379,12 +386,12 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(a1Lsid.toString(), a1json.getString("lsid"));
         assertEquals("JUnitTest", a1json.getString("type"));
 
-        JSONArray a1parents = a1json.getJSONArray("parents");
-        assertEquals(0, a1parents.length());
+        JSONArray a1parentsJson = a1json.getJSONArray("parents");
+        assertEquals(0, a1parentsJson.length());
 
-        JSONArray a1children = a1json.getJSONArray("children");
-        assertEquals(1, a1children.length());
-        assertEquals(run.getLSID(), a1children.getJSONObject(0).getString("lsid"));
+        JSONArray a1childrenJson = a1json.getJSONArray("children");
+        assertEquals(1, a1childrenJson.length());
+        assertEquals(run.getLSID(), a1childrenJson.getJSONObject(0).getString("lsid"));
 
     }
 }
