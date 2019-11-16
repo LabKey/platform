@@ -92,7 +92,6 @@ announcements/src/org/labkey/announcements/update.jsp -text
 announcements/src/org/labkey/announcements/view/editTour.jsp -text
 announcements/webapp/announcements/EditTour.css -text
 announcements/webapp/announcements/EditTour.js -text
-api/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayServiceAsync.java -text
@@ -258,7 +257,6 @@ api/src/org/labkey/api/action/PermissionCheckable.java -text
 api/src/org/labkey/api/action/PermissionCheckableAction.java -text
 api/src/org/labkey/api/action/QueryViewAction.java -text
 api/src/org/labkey/api/action/ReadOnlyApiAction.java -text
-api/src/org/labkey/api/action/RedirectAction.java -text
 api/src/org/labkey/api/action/ReportingApiQueryResponse.java -text
 api/src/org/labkey/api/action/ReturnUrlForm.java -text
 api/src/org/labkey/api/action/SimpleErrorView.java -text
@@ -730,7 +728,6 @@ api/src/org/labkey/api/defaults/DefaultableDisplayColumn.java -text
 api/src/org/labkey/api/defaults/DefaultValueService.java -text
 api/src/org/labkey/api/defaults/DomainIdForm.java -text
 api/src/org/labkey/api/defaults/SetDefaultValuesAction.java -text
-api/src/org/labkey/api/defaults/SetDefaultValuesDatasetAction.java -text
 api/src/org/labkey/api/exceptions/OptimisticConflictException.java -text
 api/src/org/labkey/api/exceptions/TableNotFoundException.java -text
 api/src/org/labkey/api/exp/AbstractParameter.java -text
@@ -1842,7 +1839,6 @@ assay/api-src/org/labkey/api/assay/plate/WellData.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroup.java -text
 assay/api-src/org/labkey/api/assay/plate/WellGroupTemplate.java -text
 assay/api-src/org/labkey/api/assay/query/RunListDetailsQueryView.java -text
-assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text
 assay/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterServiceAsync.java -text
@@ -4756,7 +4752,6 @@ wiki/src/org/labkey/wiki/export/WikiImporterFactory.java -text
 wiki/src/org/labkey/wiki/export/WikiWriterFactory.java -text
 wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
 wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
-wiki/src/org/labkey/wiki/model/CollaborationFolderType.java -text
 wiki/src/org/labkey/wiki/model/Wiki.java -text
 wiki/src/org/labkey/wiki/model/WikiAttachmentParent.java -text
 wiki/src/org/labkey/wiki/model/WikiEditModel.java -text
