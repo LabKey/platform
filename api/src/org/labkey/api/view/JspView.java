@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -95,6 +96,37 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     public JspView(@NotNull String page, @Nullable ModelClass model, @Nullable BindException errors)
     {
         this(page, model);
+        _errors = errors;
+    }
+
+    /**
+     * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
+     * @param jspName the file name of the JSP, without any path information
+     */
+    @Deprecated // Do not use. Use the string constructors instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
+    public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model)
+    {
+        super(model);
+        setFrame(FrameType.DIV);
+        MemTracker.getInstance().put(this);
+        _path = jspName;
+        _page = JspLoader.createPage(packageClass, jspName);
+
+        if (_page instanceof JspBase)
+            addClientDependencies(((JspBase)_page).getClientDependencies());
+    }
+
+
+    /**
+     * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
+     * @param jspName the file name of the JSP, without any path information
+     */
+    @Deprecated // Do not use. Use the string constructors instead -- they work much better with IntelliJ navigation & refactors, and with our tools
+    @RemoveIn20_1
+    public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model, @Nullable Errors errors)
+    {
+        this(packageClass, jspName, model);
         _errors = errors;
     }
 

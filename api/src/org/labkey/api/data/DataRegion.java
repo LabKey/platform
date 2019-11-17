@@ -775,7 +775,7 @@ public class DataRegion extends DisplayElement
      */
     final public Results getResults(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission("DataRegion.getResultSet()", ReadPermission.class))
+        if (!ctx.getViewContext().hasPermission("DataRegion.getResults()", ReadPermission.class))
             return null;
 
         DataRegion oldRegion = ctx.getCurrentRegion();
