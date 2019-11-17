@@ -846,7 +846,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 {
                     int ordinal = Integer.parseInt(value.toString());
                     Object[] values = type.getEnumConstants();
-                    if (ordinal >= 0 && ordinal <= values.length)
+                    if (ordinal >= 0 && ordinal < values.length)
                     {
                         return values[ordinal];
                     }
