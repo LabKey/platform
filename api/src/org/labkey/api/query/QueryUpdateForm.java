@@ -35,7 +35,7 @@ public class QueryUpdateForm extends TableViewForm
      * Prefix prepended to all form elements
      */
     public static final String PREFIX = "quf_";
-    private boolean _ignorePrefix;
+    private boolean _ignorePrefix; // for usages that want to use the QueryUpdateForm and QUS.updateRows directly
 
     public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx)
     {

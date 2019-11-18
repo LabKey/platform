@@ -525,7 +525,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             // don't let non-site admin edit details of site admin account
             if (userToUpdate.hasSiteAdminPermission() && !editingUser.hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not edit details for a Site Admin user.");
+                throw new UnauthorizedException("Cannot edit details for a Site Admin user.");
         }
 
         private void validateUpdatedUser(User userToUpdate, Map<String, Object> row) throws ValidationException
@@ -598,6 +598,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
                 }
             }
+            else
+                throw new ValidationException("Unable to update avatar file.");
         }
 
         private void auditExpirationDateChange(User userToUpdate, User editingUser, Container c, Date oldExpirationDate, Date newExpirationDate)
