@@ -19,6 +19,8 @@ package org.labkey.api.jsp;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
 
 import javax.servlet.ServletConfig;
@@ -41,6 +43,22 @@ public class JspLoader
         {
             _jspClassLoader = new JspClassLoader();
         }
+
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "JspLoader";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                // tell jspClassLoader to rescan modules
+                _jspClassLoader.resetClassLoader();
+            }
+        });
     }
 
 
