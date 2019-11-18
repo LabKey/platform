@@ -18,6 +18,7 @@ package org.labkey.study.dataset;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.views.DataViewInfo;
@@ -78,9 +79,12 @@ public class DatasetViewProvider implements DataViewProvider
         Container c = context.getContainer();
         User user = context.getUser();
 
-        ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
-        ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
-        ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        {
+            ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
+            ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
+            ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
+        }
     }
 
 
