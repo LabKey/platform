@@ -253,7 +253,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             {
                 _illegalColumns.add("Active");
                 _illegalColumns.add("HasPassword");
-                _illegalColumns.add("LastLogin");
             }
         }
         return !_illegalColumns.contains(col.getName());
