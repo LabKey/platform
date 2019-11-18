@@ -3308,7 +3308,16 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), url);
+        List<String> urls = new ArrayList<>();
+        urls.add(url);
+        // Issue 17202 - for directories, check if the path was stored in the database without a trailing slash, but do
+        // it in a single query instead of two separate DB calls
+        if (url.endsWith("/"))
+        {
+            urls.add(url.substring(0, url.length() - 1));
+        }
+
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("DataFileUrl"), urls));
         if (c != null)
         {
             filter.addCondition(FieldKey.fromParts("Container"), c);
@@ -3318,11 +3327,6 @@ public class ExperimentServiceImpl implements ExperimentService
         if (data.length > 0)
         {
             return new ExpDataImpl(data[0]);
-        }
-        // Issue 17202 - for directories, check if the path was stored in the database without a trailing slash
-        if (url.endsWith("/"))
-        {
-            return getExpDataByURL(url.substring(0, url.length() - 1), c);
         }
         return null;
     }
@@ -3620,8 +3624,6 @@ public class ExperimentServiceImpl implements ExperimentService
      * Finds the subset of materialIds that are used as inputs to runs.
      *
      * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
-     * @param materialIds
-     * @return
      */
     public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
     {
@@ -5562,7 +5564,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Map<String, ExperimentRun> runLsidToRowId = saveExpRunsBatch(_container, _runParams);
 
             // insert into the protocolapplication table
-            createProtocolAppParams(_container, _protAppRecords, _protAppParams, _context, runLsidToRowId);
+            createProtocolAppParams(_protAppRecords, _protAppParams, _context, runLsidToRowId);
             saveExpProtocolApplicationBatch(_protAppParams);
 
             // insert into the materialinput table
@@ -5616,7 +5618,7 @@ public class ExperimentServiceImpl implements ExperimentService
         /**
          * Replace the placeholder run id with the actual run id
          */
-        private void createProtocolAppParams(Container c, List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context, Map<String, ExperimentRun> runLsidToRowId) throws XarFormatException
+        private void createProtocolAppParams(List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context, Map<String, ExperimentRun> runLsidToRowId) throws XarFormatException
         {
             for (ProtocolAppRecord rec : protAppRecords)
             {
@@ -6004,7 +6006,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     public ExpDataClassImpl createDataClass(
-            Container c, User u, String name, String description,
+            @NotNull Container c, @NotNull User u, @NotNull String name, String description,
             List<GWTPropertyDescriptor> properties,
             List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
             @Nullable TemplateInfo templateInfo)
