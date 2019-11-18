@@ -320,7 +320,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     public DataIterator getDataIterator(DataIteratorContext context)
     {
         assert _context == context;
-        return LoggingDataIterator.wrap(this);
+        return LoggingDataIterator.wrap((DataIterator)this);
     }
 
 

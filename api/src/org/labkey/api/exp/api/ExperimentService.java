@@ -172,7 +172,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Create a new DataClass with the provided properties.
      */
-    ExpDataClass createDataClass(Container c, User u, String name, String description,
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
                                  List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
                                  @Nullable TemplateInfo templateInfo)
             throws ExperimentException, SQLException;
