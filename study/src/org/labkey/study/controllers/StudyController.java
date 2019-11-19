@@ -36,7 +36,6 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -44,14 +43,12 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -210,7 +207,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
@@ -3385,8 +3381,6 @@ public class StudyController extends BaseStudyController
 
         if (table != null)
         {
-            ResultSet rs = null;
-
             try
             {
                 // Do a single-column query to get the list of participants that match the filter criteria for this
@@ -3403,25 +3397,24 @@ public class StudyController extends BaseStudyController
                     RenderContext ctx = dataView.getRenderContext();
                     DataRegion dataRegion = dataView.getDataRegion();
                     queryView.getSettings().setShowRows(ShowRows.ALL);
-                    rs = ctx.getResultSet(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
-                    int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
-
-                    Set<String> participantSet = new LinkedHashSet<>();
-                    while (rs.next() && ptidIndex > 0)
+                    try (Results results = ctx.getResults(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false))
                     {
-                        String ptid = rs.getString(ptidIndex);
-                        participantSet.add(ptid);
+                        int ptidIndex = results.findColumn(ptidColumnInfo.getAlias());
+
+                        Set<String> participantSet = new LinkedHashSet<>();
+                        while (results.next() && ptidIndex > 0)
+                        {
+                            String ptid = results.getString(ptidIndex);
+                            participantSet.add(ptid);
+                        }
+
+                        return new ArrayList<>(participantSet);
                     }
-                    return new ArrayList<>(participantSet);
                 }
             }
             catch (Exception x)
             {
                 throw new RuntimeException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
         return Collections.emptyList();
@@ -3906,93 +3899,6 @@ public class StudyController extends BaseStudyController
             return root.addChild("Define Dataset Schemas");
         }
     }
-
-    // TODO: Delete? Doesn't seem to be used. Dataset import "Download Template" button invokes query-exportExcelTemplate.
-    @RequiresPermission(ReadPermission.class)
-    @DeprecatedAction
-    @RemoveIn20_1
-    public class TemplateAction extends ExportAction
-    {
-        @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
-        {
-            Study study = getStudyThrowIfNull();
-            ViewContext context = getViewContext();
-
-            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
-            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-            if (null == def)
-            {
-                redirectTypeNotFound(datasetId);
-                return;
-            }
-            String typeURI = def.getTypeURI();
-            if (null == typeURI)
-                redirectTypeNotFound(datasetId);
-
-            TableInfo tinfo = def.getTableInfo(getUser(), true);
-
-            DataRegion dr = new DataRegion();
-            dr.setTable(tinfo);
-
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("createdby", "modifiedby", "lsid", "_key", "participantsequencenum", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
-            if (study.getTimepointType() != TimepointType.VISIT)
-                ignoreColumns.add("SequenceNum");
-
-            // If this is demographic data, user doesn't need to enter visit info -- we have defaults.
-            if (def.isDemographicData())
-            {
-                if (study.getTimepointType() == TimepointType.VISIT)
-                    ignoreColumns.add("SequenceNum");
-                else // DATE or NONE
-                    ignoreColumns.add("Date");
-            }
-            if (def.getKeyManagementType() == KeyManagementType.None)
-            {
-                // Do not include a server-managed key field
-                ignoreColumns.add(def.getKeyPropertyName());
-            }
-
-            // Need to ignore field-level qc columns that are generated
-            for (ColumnInfo col : tinfo.getColumns())
-            {
-                if (col.isMvEnabled())
-                {
-                    ignoreColumns.add(col.getMvColumnName().getName());
-                    ignoreColumns.add(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX);
-                }
-            }
-
-            for (ColumnInfo col : tinfo.getColumns())
-            {
-                if (ignoreColumns.contains(col.getName()))
-                    continue;
-
-                DataColumn dc = new DataColumn(col);
-                //DO NOT use friendly names. We will import this later.
-                dc.setCaption(col.getAlias());
-                dr.addDisplayColumn(dc);
-            }
-            DisplayColumn replaceColumn = new SimpleDisplayColumn();
-            replaceColumn.setCaption("replace");
-            dr.addDisplayColumn(replaceColumn);
-
-            SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause("0 = 1", new Object[]{});
-
-            RenderContext ctx = new RenderContext(getViewContext());
-            ctx.setContainer(getContainer());
-            ctx.setBaseFilter(filter);
-
-            Results rs = dr.getResultSet(ctx);
-            List<DisplayColumn> cols = dr.getDisplayColumns();
-            try (ExcelWriter xl = new ExcelWriter(rs, cols))
-            {
-                xl.write(response);
-            }
-        }
-    }
-
 
     public static ActionURL getViewPreferencesURL(Container c, int id, String viewName)
     {

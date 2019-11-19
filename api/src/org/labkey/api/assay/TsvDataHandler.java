@@ -152,8 +152,8 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                         TableSelector ts = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId"));
                         // Be sure to request lookup values and other renderer-required info, see issue 36746
                         ts.setForDisplay(true);
-                        Results rs = ts.getResults();
-                        if (rs.getSize() == 0)
+                        Results results = ts.getResults();
+                        if (results.getSize() == 0)
                             return;
 
                         try
@@ -171,7 +171,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                                 }
                             }
 
-                            try (TSVGridWriter writer = new TSVGridWriter(rs, displayColumns))
+                            try (TSVGridWriter writer = new TSVGridWriter(results, displayColumns))
                             {
                                 writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
                                 writer.write(tempFile);

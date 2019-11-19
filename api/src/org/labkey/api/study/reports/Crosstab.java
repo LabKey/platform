@@ -362,6 +362,7 @@ public class Crosstab
             setHeaders(headers);
         }
 
+        @Override
         protected CellStyle getWrappingTextFormat()
         {
             CellStyle format = _workbook.createCellStyle();

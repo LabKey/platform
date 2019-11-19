@@ -2308,8 +2308,8 @@ public class QueryView extends WebPartView<Object>
         rc.setCache(false);
         try
         {
-            Results rs = rgn.getResultSet(rc);
-            TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+            Results results = rgn.getResults(rc);
+            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()));
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
             // don't step on default
             if (null != headerType)
@@ -2345,7 +2345,7 @@ public class QueryView extends WebPartView<Object>
             rgn.setAllowAsync(async);
             view.getRenderContext().setCache(cache);
             RenderContext ctx = view.getRenderContext();
-            if (null == rgn.getResultSet(ctx))
+            if (null == rgn.getResults(ctx))
                 return null;
             return new ResultsImpl(ctx);
         }
@@ -2383,9 +2383,8 @@ public class QueryView extends WebPartView<Object>
 
         try
         {
-            ResultSet rs = rgn.getResultSet(rc);
-            Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
-            ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
+            Results results = rgn.getResults(rc);
+            ExcelWriter ew = new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType);
             ew.setFilenamePrefix(getSettings().getQueryName());
             ew.setAutoSize(true);
             return ew;
@@ -2726,7 +2725,7 @@ public class QueryView extends WebPartView<Object>
         // Assume that it can, and rely on the fact that Excel throws out rows if there are more than it can handle
         RenderContext ctx = configureForExcelExport(ExcelWriter.ExcelDocumentType.xlsx, view, rgn);
 
-        ResultSet rs = rgn.getResultSet(ctx);
+        Results results = rgn.getResults(ctx);
 
         // Bug 5610 & 6179. Excel web queries don't work over SSL if caching is disabled,
         // so we need to allow caching so that Excel can read from IE on Windows.
@@ -2734,7 +2733,7 @@ public class QueryView extends WebPartView<Object>
         ResponseHelper.setPrivate(response);
 
         HtmlWriter writer = new HtmlWriter();
-        writer.write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
+        writer.write(results, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
         logAuditEvent("Exported to Excel Web Query data", writer.getDataRowCount());
     }

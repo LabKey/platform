@@ -95,7 +95,6 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -1635,11 +1634,8 @@ public class VisualizationController extends SpringActionController
             writer.startResponse();
 
             writer.startMap("counts");
-            ResultSet rs = null;
-            try
+            try (ResultSet rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName)))
             {
-                rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName));
-
                 Map<String, Integer> values = new HashMap<>();
                 while (rs.next())
                 {
@@ -1647,7 +1643,7 @@ public class VisualizationController extends SpringActionController
                 }
 
                 String key;
-                for (int i=0; i < sources.length(); i++)
+                for (int i = 0; i < sources.length(); i++)
                 {
                     key = sources.getString(i);
                     if (values.containsKey(key))
@@ -1659,10 +1655,6 @@ public class VisualizationController extends SpringActionController
             catch (SQLException x)
             {
                 throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
             writer.endMap();
             writer.endResponse();
@@ -1686,10 +1678,6 @@ public class VisualizationController extends SpringActionController
             return (JSONObject) _props;
         }
     }
-
-
-
-
 
 
     public static class TestCase extends Assert
@@ -1782,5 +1770,4 @@ public class VisualizationController extends SpringActionController
             assertEquals(1,vs.getGroupBys().size());
         }
     } /* TestCase */
-
 }
