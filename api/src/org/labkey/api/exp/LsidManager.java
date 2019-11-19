@@ -15,11 +15,15 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -34,6 +38,7 @@ import org.labkey.api.view.ActionURL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -44,6 +49,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class LsidManager
 {
+    private static Logger LOG = Logger.getLogger(LsidManager.class);
     private static final LsidManager INSTANCE = new LsidManager();
 
     private final Map<String, Map<String, LsidHandler>> _authorityMap = new ConcurrentHashMap<>();
@@ -304,5 +310,42 @@ public class LsidManager
             return null;
 
         return type.getDisplayURL(lsid);
+    }
+
+    /**
+     * Attempt to resolve all exp.object.ObjectURI within a Container and
+     * list those that are not resolvable.
+     * @return true if all objects in the container can be resolved
+     */
+    public boolean testResolveAll(Container c)
+    {
+        int success = 0;
+        int failed = 0;
+
+        List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"), SimpleFilter.createContainerFilter(c), new Sort("ObjectId")).getArrayList(String.class);
+        for (String objectURI : objectURIs)
+        {
+            try
+            {
+                Identifiable obj = getObject(objectURI);
+                if (obj == null)
+                {
+                    LOG.warn("Failed to resolve '" + objectURI + "'");
+                    failed++;
+                }
+                else
+                {
+                    success++;
+                }
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Error when resolving '" + objectURI + "'", e);
+                failed++;
+            }
+        }
+
+        LOG.info("Failed to resolve " + failed + " of " + (success+failed) + " LSIDs in container " + c.getPath());
+        return failed == 0;
     }
 }

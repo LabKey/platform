@@ -41,6 +41,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -165,6 +166,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String BACKGROUND_UPLOAD_PROPERTY_SUFFIX = "BackgroundUpload";
     public static final String QC_ENABLED_PROPERTY_SUFFIX = "QCEnabled";
 
+    // The result row LSID namespace prefix <code>_resultRowLSIDPrefix</code> should end with this constant.
+    public static final String RESULT_LSID_PREFIX_PART = "AssayResultRow";
+
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
     protected final String _resultRowLSIDPrefix;
@@ -185,6 +189,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
         _resultRowLSIDPrefix = resultRowLSIDPrefix;
+        if (resultRowLSIDPrefix != null && !resultRowLSIDPrefix.endsWith(RESULT_LSID_PREFIX_PART))
+            throw new IllegalArgumentException("Assay result row LSID prefix should end with '" + RESULT_LSID_PREFIX_PART + "': " + resultRowLSIDPrefix);
+
         _declaringModule = declaringModule;
         _dataType = dataType;
     }

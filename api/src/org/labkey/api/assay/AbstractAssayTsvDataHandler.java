@@ -38,7 +38,9 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableResultSet;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -79,6 +81,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.springframework.jdbc.BadSqlGrammarException;
@@ -300,10 +303,28 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     ExpProtocol protocol = run.getProtocol();
                     AssayProvider provider = AssayService.get().getProvider(protocol);
 
+                    SQLFragment assayResultLsidSql = null;
+
                     Domain domain;
                     if (provider != null)
                     {
                         domain = provider.getResultsDomain(protocol);
+
+                        AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+                        AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(null, protocol.getContainer(), protocol, null);
+                        TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING);
+                        if (assayDataTable != null)
+                        {
+                            ColumnInfo lsidCol = assayDataTable.getColumn("LSID");
+                            ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
+                            if (lsidCol == null || dataIdCol == null)
+                                throw new IllegalStateException("Assay results table expected to have dataId lookup column and LSID column");
+
+                            // select the assay results LSID column for all rows referenced by the data
+                            assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X"))
+                                    .append(" FROM ").append(assayDataTable.getFromSQL("X"))
+                                    .append(" WHERE ").append(dataIdCol.getValueSql("X")).append(" = ").append(d.getRowId());
+                        }
                     }
                     else
                     {
@@ -318,6 +339,33 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             domain = null;
                             // Be tolerant of not finding a domain anymore, if the provider has gone away
                         }
+
+                        // TODO: create assayResultLsidSql when provider no longer exists
+                    }
+
+                    // delete the assay result row exp.objects
+                    if (assayResultLsidSql != null)
+                    {
+                        if (LOG.isDebugEnabled())
+                        {
+                            SQLFragment t = new SQLFragment("SELECT o.*")
+                                    .append(" FROM ").append(OntologyManager.getTinfoObject(), "o")
+                                    .append(" WHERE Container = ?").add(run.getContainer())
+                                    .append(" AND ObjectURI IN (")
+                                    .append(assayResultLsidSql)
+                                    .append(")");
+                            SqlSelector ss = new SqlSelector(ExperimentService.get().getSchema(), t);
+                            try (TableResultSet rs = ss.getResultSet())
+                            {
+                                ResultSetUtil.logData(rs, LOG);
+                            }
+                            catch (SQLException x)
+                            {
+                                throw new RuntimeSQLException(x);
+                            }
+                        }
+
+                        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
                     }
 
                     if (domain != null && domain.getStorageTableName() != null)

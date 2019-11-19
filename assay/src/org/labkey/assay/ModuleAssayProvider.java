@@ -131,7 +131,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {
-        super(name + "Protocol", name + "Run", name + "ResultRow", module);
+        super(name + "Protocol", name + "Run", name + RESULT_LSID_PREFIX_PART, module);
         this.name = name;
         this.basePath = basePath;
 
