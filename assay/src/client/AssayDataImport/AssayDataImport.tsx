@@ -26,10 +26,10 @@ import {
     saveAssayDesign,
     fetchProtocol,
     setDomainFields
-} from '@glass/domainproperties'
+} from '@glass/querygrid'
 
 import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@glass/querygrid/dist/querygrid.css"
 import "./assayDataImport.scss";
 
 import {AssayRunForm} from "./AssayRunForm";

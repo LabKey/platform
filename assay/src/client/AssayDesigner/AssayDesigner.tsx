@@ -16,11 +16,11 @@
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security, Utils} from "@labkey/api";
-import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
 import {Alert, LoadingSpinner, PermissionTypes} from "@glass/base";
+import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/querygrid";
 
 import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@glass/querygrid/dist/querygrid.css"
 
 type State = {
     protocolId: number,
