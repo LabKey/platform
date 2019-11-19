@@ -63,8 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.labkey.api.dataiterator.DataIteratorUtil.createTableMap;
-
 /**
  * QueryUpdateService implementation that supports Query TableInfos that are backed by both a hard table and a Domain.
  * To update the Domain, a DomainUpdateHelper is required, otherwise the DefaultQueryUpdateService will only update the

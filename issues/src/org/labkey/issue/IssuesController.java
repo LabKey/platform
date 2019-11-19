@@ -58,6 +58,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -2027,10 +2028,10 @@ public class IssuesController extends SpringActionController
             List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,CreatedBy,Area,Type,Title,AssignedTo,Priority,Status,Milestone");
             r.addColumns(cols);
 
-            try (ResultSet rs = r.getResultSet(new RenderContext(getViewContext())))
+            try (Results results = r.getResults(new RenderContext(getViewContext())))
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(Issue.class);
-                Issue[] issues = (Issue[]) f.handleArray(rs);
+                Issue[] issues = (Issue[]) f.handleArray(results);
 
                 ActionURL url = getDetailsURL(getContainer(), 1, isPrint());
                 String filteredURLString = PageFlowUtil.filter(url);

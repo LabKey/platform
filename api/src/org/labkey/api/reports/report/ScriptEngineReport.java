@@ -203,7 +203,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 }
             }
 
-            if (null == rgn.getResultSet(ctx))
+            if (null == rgn.getResults(ctx))
                 return null;
 
             return new ResultsImpl(ctx);

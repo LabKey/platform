@@ -2175,7 +2175,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Set<ExpRun> oldRuns = new HashSet<>(oldCollectRunsToInvestigate(start, options));
         if (!runs.equals(oldRuns))
         {
-            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestiate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
+            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestigate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
             return false;
         }
         return true;
@@ -2368,14 +2368,9 @@ public class ExperimentServiceImpl implements ExperimentService
 
 
 
-    public static class ExperimentGraphBean
-    {
-        public String expType = null;
-    }
-
     private String getSourceSql(ExpLineageOptions options, String source)
     {
-        var view = new JspView<>(ExperimentServiceImpl.class, source, options);
+        var view = new JspView<>(source, options);
         view.setFrame(WebPartView.FrameType.NOT_HTML);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -2396,7 +2391,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /* return <ParentsQuery,ChildrenQuery> */
     private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, ExpLineageOptions options)
     {
-        String sourceSQL = getSourceSql(options, options.isForLookup() ? "ExperimentRunGraphForLookup2.jsp" : "ExperimentRunGraph2.jsp");
+        String sourceSQL = getSourceSql(options, options.isForLookup() ? "/org/labkey/experiment/api/ExperimentRunGraphForLookup2.jsp" : "/org/labkey/experiment/api/ExperimentRunGraph2.jsp");
 
         Map<String,String> map = new HashMap<>();
 
