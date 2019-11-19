@@ -16,12 +16,12 @@
 package org.labkey.announcements.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -51,7 +51,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 {
     public ForumSubscriptionTable(AnnouncementSchema schema, ContainerFilter cf)
     {
-        super(CommSchema.getInstance().getTableInfoEmailPrefs(), schema, cf);
+        super(CoreSchema.getInstance().getTableInfoEmailPrefs(), schema, cf);
 
         var folderColumn = wrapColumn("Folder", getRealTable().getColumn("Container"));
         addColumn(folderColumn);
@@ -241,7 +241,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
                 Map<String, Object> insertMap = createDatabaseMap(user, row, targets);
 
-                Table.insert(user, CommSchema.getInstance().getTableInfoEmailPrefs(), insertMap);
+                Table.insert(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), insertMap);
 
                 return getRow(user, container, row);
             }
@@ -284,7 +284,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
                 pks.put("Container", oldTargets.getContainer().getEntityId());
                 pks.put("Type", "messages");
                 pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
-                Table.update(user, CommSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
+                Table.update(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
             }
 
             return getRow(user, container, row);
@@ -294,7 +294,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException
         {
             SubscriptionTarget targets = getTargets(oldRow, user, container);
-            Table.delete(CommSchema.getInstance().getTableInfoEmailPrefs(), targets.createDbSchemaFilter());
+            Table.delete(CoreSchema.getInstance().getTableInfoEmailPrefs(), targets.createDbSchemaFilter());
 
             return oldRow;
         }

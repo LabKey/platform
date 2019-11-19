@@ -75,6 +75,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
@@ -1587,7 +1588,7 @@ public class AnnouncementsController extends SpringActionController
             //save the default settings
             AnnouncementManager.saveDefaultEmailOption(getContainer(), form.getDefaultEmailOption());
 
-            for (MessageConfigService.NotificationOption option : AnnouncementManager.getEmailOptions())
+            for (NotificationOption option : AnnouncementManager.getEmailOptions())
             {
                 if (option.getEmailOptionId() == form.getDefaultEmailOption())
                 {
@@ -1683,7 +1684,7 @@ public class AnnouncementsController extends SpringActionController
                 if (getViewContext().get("isDefault") == null)
                     options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
 
-                for (MessageConfigService.NotificationOption option : provider.getOptions())
+                for (NotificationOption option : provider.getOptions())
                 {
                     options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
                 }

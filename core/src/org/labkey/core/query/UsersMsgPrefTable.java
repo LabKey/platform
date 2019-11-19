@@ -15,9 +15,9 @@
  */
 package org.labkey.core.query;
 
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
@@ -123,8 +123,8 @@ public class UsersMsgPrefTable extends UsersTable
 
             _type = type;
             _container = parent.getContainer();
-            _emailPrefsTable = CommSchema.getInstance().getTableInfoEmailPrefs();
-            _emailOptionsTable = CommSchema.getInstance().getTableInfoEmailOptions();
+            _emailPrefsTable = CoreSchema.getInstance().getTableInfoEmailPrefs();
+            _emailOptionsTable = CoreSchema.getInstance().getTableInfoEmailOptions();
 
             // set up the join aliases
             _emailPrefsJoin = name + "$" + "EmailPrefsJoin$";

@@ -24,6 +24,8 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.util.Collection;
+
 /**
  * User: klum
  * Date: Jan 18, 2011
@@ -52,15 +54,15 @@ public interface MessageConfigService
      * Returns preference settings for all users who have read access to the specified container
      * for the config type requested.
      */
-    UserPreference[] getPreferences(Container c, ConfigTypeProvider provider);
+    Collection<? extends UserPreference> getPreferences(Container c, ConfigTypeProvider provider);
 
     NotificationOption getOption(int optionId);
 
-    NotificationOption[] getOptions(ConfigTypeProvider provider);
+    Collection<? extends NotificationOption> getOptions(ConfigTypeProvider provider);
 
     void registerConfigType(ConfigTypeProvider provider);
 
-    ConfigTypeProvider[] getConfigTypes();
+    Collection<ConfigTypeProvider> getConfigTypes();
 
     /**
      * returns a type provider by its unique type identifier
@@ -80,10 +82,9 @@ public interface MessageConfigService
         /**
          * Returns preference settings for all users who have read access to the specified container.
          */
-        UserPreference[] getPreferences(Container c);
+        Collection<? extends UserPreference> getPreferences(Container c);
 
-        NotificationOption getOption(int optionId);
-        NotificationOption[] getOptions();
+        Collection<? extends NotificationOption> getOptions();
 
         /**
          * Uniquely identifies the provider type
@@ -99,13 +100,6 @@ public interface MessageConfigService
 
         void validateCommand(ViewContext context, Errors errors);
 
-        /**
-         *
-         * @param context
-         * @param errors
-         * @return
-         * @throws Exception
-         */
         boolean handlePost(ViewContext context, BindException errors) throws Exception;
     }
 
@@ -140,8 +134,6 @@ public interface MessageConfigService
 
         String getReturnUrl();
     }
-
-
 
     /**
      * Defines a preference setting for a user

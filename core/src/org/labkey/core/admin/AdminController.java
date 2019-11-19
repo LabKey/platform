@@ -87,6 +87,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
@@ -2686,7 +2687,7 @@ public class AdminController extends SpringActionController
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            try (QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter())
+            try (QueryStatTsvWriter writer = new QueryStatTsvWriter())
             {
                 writer.setFilenamePrefix("SQL_Queries");
                 writer.write(response);
@@ -5654,9 +5655,9 @@ public class AdminController extends SpringActionController
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
             VBox defaultsView = new VBox(
-                    new HtmlView(
-                            "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
-                                    "You can change this folder's default settings for email notifications here.")
+                new HtmlView(
+                    "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
+                        "You can change this folder's default settings for email notifications here.")
             );
 
             PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
@@ -5666,17 +5667,17 @@ public class AdminController extends SpringActionController
             }
 
             return new VBox(
-                    new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, errors),
-                    defaultsView,
-                    new VBox(
-                            new HtmlView(
-                                    "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
-                                            "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
-                                            "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
-                                            "visible in the appropriately named column.<br/><br/>" +
-                                            "To bulk edit individual settings: select one or more users, click the 'Update user settings' menu, and select the notification type."),
-                            queryView
-                    )
+                new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, errors),
+                defaultsView,
+                new VBox(
+                    new HtmlView(
+                        "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
+                            "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
+                            "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
+                            "visible in the appropriately named column.<br/><br/>" +
+                            "To bulk edit individual settings: select one or more users, click the 'Update user settings' menu, and select the notification type."),
+                    queryView
+                )
             );
         }
 

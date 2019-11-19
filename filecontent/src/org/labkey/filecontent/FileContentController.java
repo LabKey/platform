@@ -162,16 +162,19 @@ public class FileContentController extends SpringActionController
 
     public static class FileUrlsImpl implements FileUrls
     {
+        @Override
         public ActionURL urlBegin(Container container)
         {
             return new ActionURL(BeginAction.class, container);
         }
 
+        @Override
         public ActionURL urlShowAdmin(Container container)
         {
             return new ActionURL(ShowAdminAction.class, container);
         }
 
+        @Override
         public ActionURL urlFileEmailPreference(Container container)
         {
             return new ActionURL(FileEmailPreferenceAction.class, container);
@@ -181,8 +184,9 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
-        WebdavResource _resource;
+        private WebdavResource _resource;
 
+        @Override
         public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
         {
             if (null == form.getFileName())
@@ -394,6 +398,7 @@ public class FileContentController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();

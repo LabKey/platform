@@ -49,6 +49,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
@@ -431,6 +432,7 @@ public class AnnouncementManager
                     }
                 }
 
+                //noinspection CallToThreadRun
                 emailer.run();  // We're already in a background thread... no need to start another one
             }
         });
@@ -562,7 +564,7 @@ public class AnnouncementManager
         return new TableSelector( _comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
-    public static MessageConfigService.NotificationOption[] getEmailOptions()
+    public static Collection<? extends NotificationOption> getEmailOptions()
     {
         return getAnnouncementConfigProvider().getOptions();
     }
@@ -963,6 +965,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.Plain)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     if (notificationBean == null)
@@ -974,6 +977,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("createdOrResponded", String.class, "Created or Responded to a message", ContentType.HTML)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     if (notificationBean == null)
@@ -984,6 +988,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("messageDatetime", Date.class, "Date and time the message is created", ContentType.HTML)
             {
+                @Override
                 public Date getValue(Container c)
                 {
                     if (notificationBean == null)
@@ -994,6 +999,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("messageUrl", String.class, "Link to the original message", ContentType.Plain)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     return messageUrl;
@@ -1002,6 +1008,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("messageBody", String.class, "Message content, formatted as HTML", ContentType.HTML)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     if (notificationBean == null)
@@ -1012,6 +1019,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("messageBodyText", String.class, "Message content plain text", ContentType.Plain)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     if (notificationBean == null)
@@ -1022,6 +1030,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("messageSubject", String.class, "Message subject", ContentType.Plain)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     if (notificationBean == null)
@@ -1032,6 +1041,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("attachments", String.class, "Attachments for this message", ContentType.HTML)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     return attachments;
@@ -1040,6 +1050,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("reasonFooter", String.class, "Footer information explaining why user is receiving this message", ContentType.HTML)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     return reasonForEmail;
@@ -1048,6 +1059,7 @@ public class AnnouncementManager
 
             _replacements.add(new ReplacementParam<>("emailPreferencesURL", String.class, "Link to allow users to configure their notification preferences", ContentType.Plain)
             {
+                @Override
                 public String getValue(Container c)
                 {
                     return emailPreferencesURL;
@@ -1073,6 +1085,7 @@ public class AnnouncementManager
             return super.renderTextBody(c);
         }
 
+        @Override
         public List<ReplacementParam> getValidReplacements()
         {
             return _replacements;

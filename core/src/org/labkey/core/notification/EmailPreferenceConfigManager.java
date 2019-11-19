@@ -17,7 +17,6 @@ package org.labkey.core.notification;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
@@ -33,6 +32,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class EmailPreferenceConfigManager
 {
-    private static final CommSchema _comm = CommSchema.getInstance();
+    private static final CoreSchema _core = CoreSchema.getInstance();
     private static final int EMAIL_PREFERENCE_DEFAULT = -1;
     private static final int EMAIL_FORMAT_HTML = 1;
     private static final int PAGE_TYPE_MESSAGE = 0;
@@ -62,13 +62,13 @@ public class EmailPreferenceConfigManager
             filter.addCondition(FieldKey.fromParts("Type"), type);
 
         //return records only for those users who have explicitly set a preference for this container.
-        return new TableSelector(_comm.getTableInfoEmailPrefs(), filter, null).getObject(EmailPref.class);
+        return new TableSelector(_core.getTableInfoEmailPrefs(), filter, null).getObject(EmailPref.class);
     }
 
     // Returns email preferences for all active users with read permissions to this container. A user could have multiple
     // preferences (one for each srcIdentifier). If a user hasn't expressed any preferences they'll still get one preference
     // representing the container default.
-    public static EmailPref[] getUserEmailPrefs(Container c, String type)
+    public static Collection<EmailPref> getUserEmailPrefs(Container c, String type)
     {
         SQLFragment sql = new SQLFragment();
         List<EmailPref> prefs = new ArrayList<>();
@@ -76,7 +76,7 @@ public class EmailPreferenceConfigManager
         // This query returns one row for every site user, left joined to that user's folder preference (null if no preference has been selected, in which case the caller will fill in the default)
         sql.append("SELECT u.UserId, EmailOptionId, ? AS SrcIdentifier FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
-        sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
+        sql.append(_core.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
         sql.append("AND Type = ? AND Container = ? AND Container = SrcIdentifier");
         sql.add(c);
         sql.add(type);
@@ -87,20 +87,20 @@ public class EmailPreferenceConfigManager
         // This query returns one row for every thread preference
         sql.append("SELECT u.UserId, EmailOptionId, SrcIdentifier FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" INNER JOIN ");
-        sql.append(_comm.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
+        sql.append(_core.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
         sql.append("AND Type = ? AND Container = ? AND Container <> SrcIdentifier");
         sql.add(type);
         sql.add(c);
 
         // Only return preferences for active users with read permissions in this folder
-        for (EmailPref ep : new SqlSelector(_comm.getSchema(), sql).getCollection(EmailPref.class))
+        for (EmailPref ep : new SqlSelector(_core.getSchema(), sql).getCollection(EmailPref.class))
         {
             User user = ep.getUser();
             if (c.hasPermission(user, ReadPermission.class) && user.isActive() && !user.isFirstLogin())
                 prefs.add(ep);
         }
 
-        return prefs.toArray(new EmailPref[prefs.size()]);
+        return prefs;
     }
 
     public static void saveEmailPreference(User currentUser, Container c, User projectUser, String type, int emailPreference, String srcIdentifier)
@@ -123,7 +123,7 @@ public class EmailPreferenceConfigManager
             emailPref.setLastModifiedBy(currentUser.getUserId());
             emailPref.setType(type);
             emailPref.setSrcIdentifier(srcIdentifier);
-            Table.insert(currentUser, _comm.getTableInfoEmailPrefs(), emailPref);
+            Table.insert(currentUser, _core.getTableInfoEmailPrefs(), emailPref);
         }
         else
         {
@@ -135,14 +135,14 @@ public class EmailPreferenceConfigManager
                 filter.addCondition(FieldKey.fromParts("UserId"), projectUser.getUserId());
                 filter.addCondition(FieldKey.fromParts("Type"), type);
                 filter.addCondition(FieldKey.fromParts("SrcIdentifier"), srcIdentifier);
-                Table.delete(_comm.getTableInfoEmailPrefs(), filter);
+                Table.delete(_core.getTableInfoEmailPrefs(), filter);
             }
             else if (!matches(containerEmailPref, emailPreference))
             {
                 //otherwise update if it already exists
                 emailPref.setEmailOptionId(emailPreference);
                 emailPref.setLastModifiedBy(currentUser.getUserId());
-                Table.update(currentUser, _comm.getTableInfoEmailPrefs(), emailPref,
+                Table.update(currentUser, _core.getTableInfoEmailPrefs(), emailPref,
                         new Object[]{c.getId(), projectUser.getUserId(), type, srcIdentifier});
             }
         }
@@ -165,8 +165,7 @@ public class EmailPreferenceConfigManager
     {
         if (containerList == null)
         {
-            Table.delete(_comm.getTableInfoEmailPrefs(),
-                    new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
+            Table.delete(_core.getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
         }
         else
         {
@@ -185,32 +184,32 @@ public class EmailPreferenceConfigManager
             whereClause.append(")");
             filter.addWhereClause(whereClause.toString(), null);
 
-            Table.delete(_comm.getTableInfoEmailPrefs(), filter);
+            Table.delete(_core.getTableInfoEmailPrefs(), filter);
         }
     }
 
-    public static EmailOption[] getEmailOptions(@NotNull String type)
+    public static Collection<EmailOption> getEmailOptions(@NotNull String type)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Type"), type);
-        return new TableSelector(_comm.getTableInfoEmailOptions(), filter, new Sort("EmailOptionId")).getArray(EmailOption.class);
+        return new TableSelector(_core.getTableInfoEmailOptions(), filter, new Sort("EmailOptionId")).getCollection(EmailOption.class);
     }
 
     public static EmailOption getEmailOption(int optionId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EmailOptionId"), optionId);
-        return new TableSelector(_comm.getTableInfoEmailOptions(), filter, null).getObject(EmailOption.class);
+        return new TableSelector(_core.getTableInfoEmailOptions(), filter, null).getObject(EmailOption.class);
     }
 
     public static class EmailPref implements MessageConfigService.UserPreference
     {
-        String _container;
-        int _userId;
-        Integer _emailOptionId;
-        Integer _emailFormatId;
-        Integer _lastModifiedBy;
-        String _srcIdentifier;
-        String _type;
-        int _pageTypeId;
+        private String _container;
+        private int _userId;
+        private Integer _emailOptionId;
+        private Integer _emailFormatId;
+        private Integer _lastModifiedBy;
+        private String _srcIdentifier;
+        private String _type;
+        private int _pageTypeId;
 
         public Integer getLastModifiedBy()
         {
@@ -313,10 +312,11 @@ public class EmailPreferenceConfigManager
 
     public static class EmailOption implements MessageConfigService.NotificationOption
     {
-        int _emailOptionId;
-        String _emailOption;
-        String _type;
+        private int _emailOptionId;
+        private String _emailOption;
+        private String _type;
 
+        @Override
         public String getEmailOption()
         {
             return _emailOption;
@@ -327,6 +327,7 @@ public class EmailPreferenceConfigManager
             _emailOption = emailOption;
         }
 
+        @Override
         public int getEmailOptionId()
         {
             return _emailOptionId;
@@ -337,6 +338,7 @@ public class EmailPreferenceConfigManager
             _emailOptionId = emailOptionId;
         }
 
+        @Override
         public String getType()
         {
             return _type;

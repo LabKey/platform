@@ -21,6 +21,7 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
@@ -146,7 +147,7 @@ public class AnnouncementSchema extends UserSchema
 
     public TableInfo createEmailFormatTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailFormats(), this, cf);
+        FilteredTable result = new FilteredTable<>(CoreSchema.getInstance().getTableInfoEmailFormats(), this, cf);
         result.setName(EMAIL_FORMAT_TABLE_NAME);
         result.wrapAllColumns(true);
         result.setPublicSchemaName(getName());
@@ -155,7 +156,7 @@ public class AnnouncementSchema extends UserSchema
 
     public TableInfo createEmailOptionTable(ContainerFilter cf)
     {
-        FilteredTable result = new FilteredTable<>(CommSchema.getInstance().getTableInfoEmailOptions(), this, cf);
+        FilteredTable result = new FilteredTable<>(CoreSchema.getInstance().getTableInfoEmailOptions(), this, cf);
         result.setName(EMAIL_OPTION_TABLE_NAME);
         result.addWrapColumn(result.getRealTable().getColumn("EmailOptionId"));
         result.addWrapColumn(result.getRealTable().getColumn("EmailOption"));
