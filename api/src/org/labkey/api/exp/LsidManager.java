@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
@@ -319,10 +320,20 @@ public class LsidManager
      */
     public boolean testResolveAll(Container c)
     {
-        int success = 0;
-        int failed = 0;
+        if (ContainerManager.isDeleting(c))
+            return true;
 
         List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"), SimpleFilter.createContainerFilter(c), new Sort("ObjectId")).getArrayList(String.class);
+        if (objectURIs.isEmpty())
+        {
+            LOG.info("No objects to resolve in container (" + c.getId() + "): " + c.toString());
+            return true;
+        }
+
+        LOG.info("Resolving " + objectURIs.size() + " LSIDs in container (" + c.getId() + "): " + c.getPath());
+
+        int success = 0;
+        int failed = 0;
         for (String objectURI : objectURIs)
         {
             try
@@ -335,17 +346,18 @@ public class LsidManager
                 }
                 else
                 {
+                    LOG.info("Resolved '" + objectURI + "' to object (" + obj.getClass().getSimpleName() + "): " + obj.getName());
                     success++;
                 }
             }
             catch (Exception e)
             {
-                LOG.warn("Error when resolving '" + objectURI + "'", e);
+                LOG.error("Error when resolving '" + objectURI + "'", e);
                 failed++;
             }
         }
 
-        LOG.info("Failed to resolve " + failed + " of " + (success+failed) + " LSIDs in container " + c.getPath());
+        LOG.info("Resolved " + success + " of " + objectURIs.size() + " LSIDs in container (" + c.getId() + "): " + c.getPath());
         return failed == 0;
     }
 }

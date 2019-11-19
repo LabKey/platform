@@ -1257,7 +1257,8 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
-    public ExpDataClassImpl getDataClass(String lsid)
+    @Override
+    public ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
         DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
@@ -3312,7 +3313,9 @@ public class ExperimentServiceImpl implements ExperimentService
             if (null != type)
                 return type;
         }
-
+        // AssayRunMaterial, AssayRunTSVData, GeneralAssayProtocol, LuminexAssayProtocol
+        // Recipe
+        // AssayDomain-SampleWellGroup
         String typeName = new SqlSelector(getExpSchema(), findTypeSql, lsid.toString()).getObject(String.class);
         return LsidType.get(typeName);
     }
