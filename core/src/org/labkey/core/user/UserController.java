@@ -2410,7 +2410,7 @@ public class UserController extends SpringActionController
         private boolean _allMembers; // when getting members of a group, should we get the direct members of the group (allMembers=false) or also members of subgroups (allMembers=true)
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
-        private Set<Class<? extends Permission>> _permissionClasses; // the set of permission classes corresponding to the permissions array
+        private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
 
         public String getGroup()
         {
