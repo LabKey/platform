@@ -1025,7 +1025,7 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            try (ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
+            try (ExcelWriter ew = new ExcelWriter(rgn.getResults(ctx), rgn.getDisplayColumns())
                 {
                     @Override
                     public void renderGrid (RenderContext ctx, Sheet sheet, List < ExcelColumn > visibleColumns) throws

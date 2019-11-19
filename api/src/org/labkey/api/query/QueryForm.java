@@ -427,4 +427,9 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     {
         _insertOption = insertOption;
     }
+
+    public PropertyValues getInitParameters()
+    {
+        return _initParameters;
+    }
 }

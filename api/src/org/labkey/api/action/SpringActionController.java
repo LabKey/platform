@@ -1195,7 +1195,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         {
             readonly = true;
         }
-        else if (SimpleRedirectAction.class.isAssignableFrom(c) || RedirectAction.class.isAssignableFrom(c) || SimpleViewAction.class.isAssignableFrom(c))
+        else if (SimpleRedirectAction.class.isAssignableFrom(c) || SimpleViewAction.class.isAssignableFrom(c))
         {
             readonly = true;
         }

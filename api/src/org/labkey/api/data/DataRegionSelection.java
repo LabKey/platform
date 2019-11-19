@@ -291,10 +291,9 @@ public class DataRegionSelection
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
 
-        try (Timing t = MiniProfiler.step("getSelected");
-             ResultSet rs = rgn.getResultSet(rc))
+        try (Timing ignored = MiniProfiler.step("getSelected"); Results results = rgn.getResults(rc))
         {
-            return getSelectedItems(context, key, rc, rgn, rs);
+            return getSelectedItems(context, key, rc, rgn, results);
         }
         catch (SQLException e)
         {
@@ -355,8 +354,7 @@ public class DataRegionSelection
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
 
-        try (Timing t = MiniProfiler.step("selectAll");
-             ResultSet rs = rgn.getResultSet(rc))
+        try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
             List<String> selection = createSelectionList(rc, rgn, rs, colNames);
             return setSelected(context, key, selection, checked);
