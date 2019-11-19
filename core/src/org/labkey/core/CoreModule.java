@@ -21,6 +21,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -64,6 +65,7 @@ import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -211,6 +213,9 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.notification.EmailPreferenceContainerListener;
+import org.labkey.core.notification.EmailPreferenceGroupListener;
+import org.labkey.core.notification.EmailPreferenceUserListener;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -999,6 +1004,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             LOG.error("Exception registering MarkdownServiceImpl", e);
         }
+
+        // initialize message config service
+        MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
+        ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
+        UserManager.addUserListener(new EmailPreferenceUserListener());
+        SecurityManager.addGroupListener(new EmailPreferenceGroupListener());
     }
 
     @Override

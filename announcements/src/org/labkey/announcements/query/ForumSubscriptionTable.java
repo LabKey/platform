@@ -95,6 +95,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         return hasPermission(user, perm, getContainer());
     }
 
+    @Override
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm, Container container)
     {
         // Guests can't subscribe to anything, or edit anyone else's subscriptions, but they can read the table
@@ -223,7 +224,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException
         {
-            return new TableSelector(ForumSubscriptionTable.this).getObject(getTargets(keys, user, container).createUserSchemaFilter(), Map.class);
+            return new TableSelector(ForumSubscriptionTable.this).getMap(getTargets(keys, user, container).createUserSchemaFilter());
         }
 
         @Override
@@ -248,7 +249,6 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
             {
                 throw new QueryUpdateServiceException(e);
             }
-
         }
 
         /** Translate to the real database column names */

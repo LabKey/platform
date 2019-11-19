@@ -643,7 +643,6 @@ public class AnnouncementManager
     public static void purgeContainer(Container c)
     {
         // Attachments are handled by AttachmentServiceImpl
-        ContainerUtil.purgeTable(_comm.getTableInfoEmailPrefs(), c, null);
         ContainerUtil.purgeTable(_comm.getTableInfoAnnouncements(), c, null);
     }
 

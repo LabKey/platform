@@ -85,6 +85,7 @@ public class AnnouncementSchema extends UserSchema
                 return !AnnouncementsController.getSettings(schema.getContainer()).isSecure();
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new AnnouncementSchema(schema.getUser(), schema.getContainer());

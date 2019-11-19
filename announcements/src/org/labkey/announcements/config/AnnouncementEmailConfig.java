@@ -39,6 +39,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
         return TYPE;
     }
 
+    @Override
     public String getName()
     {
         // appears in the config tab

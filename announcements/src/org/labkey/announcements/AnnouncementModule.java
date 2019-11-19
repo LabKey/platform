@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.api.TourServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
-import org.labkey.announcements.config.MessageConfigServiceImpl;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementType;
@@ -49,7 +48,6 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.rss.RSSService;
 import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
@@ -155,10 +153,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        AnnouncementListener listener = new AnnouncementListener();
-        ContainerManager.addContainerListener(listener);
-        UserManager.addUserListener(listener);
-        SecurityManager.addGroupListener(listener);
+        ContainerManager.addContainerListener(new AnnouncementContainerListener());
+        UserManager.addUserListener(new AnnouncementUserListener());
         AuditLogService.get().registerAuditType(new MessageAuditProvider());
         EmailService.setInstance(new EmailServiceImpl());
 
@@ -178,8 +174,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         // initialize message digests
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
 
-        // initialize message config service and add a config provider for announcements
-        MessageConfigService.setInstance(new MessageConfigServiceImpl());
+        // add a config provider for announcements
         MessageConfigService.get().registerConfigType(new AnnouncementEmailConfig());
         
         SearchService ss = SearchService.get();
