@@ -214,7 +214,6 @@ import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
-import org.labkey.core.notification.EmailPreferenceGroupListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
@@ -1005,11 +1004,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             LOG.error("Exception registering MarkdownServiceImpl", e);
         }
 
-        // initialize message config service
+        // initialize email preference service and listeners
         MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
         ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
         UserManager.addUserListener(new EmailPreferenceUserListener());
-        SecurityManager.addGroupListener(new EmailPreferenceGroupListener());
     }
 
     @Override

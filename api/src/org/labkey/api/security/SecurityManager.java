@@ -276,7 +276,16 @@ public class SecurityManager
 
     public static void addGroupListener(GroupListener listener)
     {
-        _listeners.add(listener);
+        addGroupListener(listener, false);
+    }
+
+    /** Adds a listener with option to specify that it needs to be executed before the other listeners */
+    public static void addGroupListener(GroupListener listener, boolean meFirst)
+    {
+        if (meFirst)
+            _listeners.add(0, listener);
+        else
+            _listeners.add(listener);
     }
 
     private static List<GroupListener> getListeners()
