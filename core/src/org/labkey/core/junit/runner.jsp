@@ -43,6 +43,29 @@
     details > summary {
         display: list-item;
     }
+
+    .module-details {
+        padding-bottom:1em;
+    }
+
+    .scope-tag {
+        font-size:66%;
+        color:gray;
+        vertical-align:top;
+        margin-left: 3px;
+        margin-right: 3px;
+        padding-left: 3px;
+        padding-right: 3px;
+        border-radius: 2px;
+    }
+
+    .DRT {background-color: #e4f4db;}
+    .BVT {background-color: #dff7ff;}
+    .PERFORMANCE {background-color: #fbddc9;}
+
+    .test-count {
+        color:gray;
+    }
 </style>
 <%
     if (showRunButtons)
@@ -75,7 +98,7 @@
     DIV(testCases.keySet().stream().map(module ->
         DETAILS(at(open, true),
             SUMMARY(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)), module)),
-            DIV(at(style, "padding-bottom:1em;"), testCases.get(module).stream().map(clazz -> {
+            DIV(cl("module-details"), testCases.get(module).stream().map(clazz -> {
                 Runner runner = Request.aClass(clazz).getRunner();
                 Description desc = runner.getDescription();
                 String displayName = clazz.getName();
@@ -85,8 +108,8 @@
                         DETAILS(
                                 SUMMARY(
                                     A(at(href, testCaseURL.getLocalURIString()), displayName),
-                                    showRunButtons ? SPAN(at(style,"font-size:66%; color:gray; vertical-align:top;"), NBSP, JunitController.getScope(clazz).name(), NBSP) : null,
-                                    " (", String.valueOf(desc.testCount()), ")"),
+                                    showRunButtons ? SPAN(cl("scope-tag", JunitController.getScope(clazz).name()), JunitController.getScope(clazz).name()) : null,
+                                        (desc.testCount() > 1 ? SPAN(cl("test-count"), "(" + desc.testCount() + ")") : "")),
                                 UL(desc.getChildren().stream().map(
                                         child -> LI(child.getMethodName() != null
                                                 ? A(at(href, testCaseURL.clone().addParameter("methodName", child.getMethodName())), child.getMethodName())
