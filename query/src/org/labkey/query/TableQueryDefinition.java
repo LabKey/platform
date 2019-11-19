@@ -130,13 +130,13 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                     {
                         filter.addCondition(pk.getKey(), pk.getValue());
                     }
-                    try (Results rs = new TableSelector(table, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResults())
+                    try (Results results = new TableSelector(table, selectCols.values(), filter, null).setForDisplay(true).setMaxRows(1).getResults())
                     {
-                        if (rs.next())
+                        if (results.next())
                         {
                             RenderContext ctx = new RenderContext(ViewContext.getMockViewContext(getUser(), getContainer(), null, false));
-                            ctx.setResults(rs);
-                            ctx.setRow(rs.getRowMap());
+                            ctx.setResults(results);
+                            ctx.setRow(results.getRowMap());
                             return new ActionURL(expr.eval(ctx));
                         }
                         else

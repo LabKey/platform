@@ -18,12 +18,10 @@ package org.labkey.api.reports.report.view;
 
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
 import java.sql.ResultSet;
@@ -52,9 +50,10 @@ public class ReportQueryView extends QueryView
         getSettings().setMaxRows(maxRows);
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
-        return rgn.getResultSet(view.getRenderContext());
+        return rgn.getResults(view.getRenderContext());
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
