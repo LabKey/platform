@@ -174,7 +174,7 @@ export class App extends React.Component<Props, State> {
             }
 
             // get each domain as a variable we can set the results fields from inferredFields and clear the batch domain default fields
-            const batchDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Batch'), List<DomainField>());
+            const batchDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Batch'), List<QueryColumn>());
             const runDomain = protocolModel.getDomainByNameSuffix('Run');
             const resultsDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Data'), inferredFields);
 
@@ -185,7 +185,7 @@ export class App extends React.Component<Props, State> {
             });
 
             // the AssayProtocolModel.create call drops the name, so put it back
-            newProtocol = newProtocol.set('name', protocolModel.name);
+            newProtocol = newProtocol.set('name', protocolModel.name) as AssayProtocolModel;
 
             saveAssayDesign(newProtocol)
                 .then((newAssay) => {
@@ -366,7 +366,6 @@ export class App extends React.Component<Props, State> {
                     <Panel.Body>
                         <AssayPropertiesPanel
                             asPanel={false}
-                            showEditSettings={false}
                             model={protocolModel}
                             basePropertiesOnly={true}
                             onChange={this.onAssayPropertiesChange}
