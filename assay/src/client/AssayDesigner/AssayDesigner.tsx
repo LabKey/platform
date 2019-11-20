@@ -16,10 +16,8 @@
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security, Utils} from "@labkey/api";
-import {Alert, LoadingSpinner, PermissionTypes} from "@glass/base";
-import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/querygrid";
+import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/querygrid";
 
-import "@glass/base/dist/base.css"
 import "@glass/querygrid/dist/querygrid.css"
 
 type State = {

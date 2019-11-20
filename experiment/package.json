@@ -27,8 +27,7 @@
     }
   },
   "dependencies": {
-    "@glass/base": "0.22.2-fb-packageConsolidation.1",
-    "@glass/querygrid": "0.25.0-fb-packageConsolidation.2"
+    "@glass/querygrid": "0.25.0-fb-packageConsolidation.3"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",

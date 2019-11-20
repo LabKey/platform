@@ -18,10 +18,8 @@ import {List} from "immutable";
 import * as React from 'react'
 import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/querygrid"
+import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons, DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/querygrid"
 
-import "@glass/base/dist/base.css"
 import "@glass/querygrid/dist/querygrid.css"
 import "./domainDesigner.scss";
 

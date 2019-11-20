@@ -16,9 +16,7 @@ import {
     fetchAllAssays,
     importGeneralAssayRun,
     naturalSort,
-    hasAllPermissions
-} from "@glass/base";
-import {
+    hasAllPermissions,
     AssayProtocolModel,
     AssayPropertiesPanel,
     DomainField,
@@ -28,7 +26,6 @@ import {
     setDomainFields
 } from '@glass/querygrid'
 
-import "@glass/base/dist/base.css"
 import "@glass/querygrid/dist/querygrid.css"
 import "./assayDataImport.scss";
 
