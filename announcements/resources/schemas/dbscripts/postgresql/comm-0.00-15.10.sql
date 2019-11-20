@@ -88,6 +88,7 @@ CREATE TABLE comm.PageVersions
 ALTER TABLE comm.Pages
     ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId);
 
+/* Managed by the core module, as of 20.1.x
 CREATE TABLE comm.EmailOptions
 (
     EmailOptionId INT4 NOT NULL,
@@ -149,7 +150,7 @@ CREATE TABLE comm.EmailPrefs
     CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
     CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
 );
-
+*/
 -- Discussions can be private, constrained to a certain subset of users (like a Cc: line)
 CREATE TABLE comm.UserList
 (

@@ -185,21 +185,16 @@ public class CoreSchema
 
     public TableInfo getTableInfoEmailPrefs()
     {
-        return getCommSchema().getTable("EmailPrefs");
+        return getSchema().getTable("EmailPrefs");
     }
 
     public TableInfo getTableInfoEmailOptions()
     {
-        return getCommSchema().getTable("EmailOptions");
+        return getSchema().getTable("EmailOptions");
     }
 
     public TableInfo getTableInfoEmailFormats()
     {
-        return getCommSchema().getTable("EmailFormats");
-    }
-
-    private DbSchema getCommSchema()
-    {
-        return DbSchema.get("comm", DbSchemaType.Module);
+        return getSchema().getTable("EmailFormats");
     }
 }
