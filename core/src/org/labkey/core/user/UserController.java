@@ -148,7 +148,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class UserController extends SpringActionController
 {
@@ -2281,10 +2283,11 @@ public class UserController extends SpringActionController
     {
         private String _group;
         private Integer _groupId;
-        private String _name;
-        private boolean _allMembers;
-        private boolean _active;
-        private Permission[] _permissions;
+        private String _name; // prefix to match against displayName and email address
+        private boolean _allMembers; // when getting members of a group, should we get the direct members of the group (allMembers=false) or also members of subgroups (allMembers=true)
+        private boolean _active; // should we get only active members (relevant only if permissions is empty)
+        private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
+        private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
 
         public String getGroup()
         {
@@ -2331,9 +2334,18 @@ public class UserController extends SpringActionController
             return _permissions;
         }
 
+        public Set<Class<? extends Permission>> getPermissionClasses()
+        {
+           return _permissionClasses;
+        }
+
         public void setPermissions(Permission[] permission)
         {
             _permissions = permission;
+            if (_permissions == null)
+                _permissionClasses = Collections.emptySet();
+            else
+                _permissionClasses = Arrays.stream(_permissions).filter(Objects::nonNull).map(Permission::getClass).collect(Collectors.toSet());
         }
 
         public boolean getActive()
@@ -2347,6 +2359,16 @@ public class UserController extends SpringActionController
         }
     }
 
+
+    /**
+     * Collects a set of users either from a particular group or from any of the project groups of the current container.
+     * Optionally filters for those users who have a given set of permissions. Can also include deactivated users (though if
+     * checking for permissions, no deactivated users will be included).
+     *
+     * N.B. Users that have permissions within the current project but are not part of any project group WILL NOT be returned unless
+     * the user is in one of the global groups (such as SiteAdmins) and you set allMembers=true.  In other words, this is probably
+     * not the API you're looking for.  Consider using GetUsersWithPermissions instead.
+     */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     public class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
@@ -2372,7 +2394,7 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = getGroupUsers(form, container, currentUser, response);
+                users = getProjectGroupUsers(form, response);
             }
             else
             {
@@ -2385,62 +2407,33 @@ public class UserController extends SpringActionController
                     users = SecurityManager.getProjectUsers(container, form.isAllMembers(), !form.getActive());
             }
 
-            if (null != users)
-            {
-                //trim name filter to empty so we are guaranteed a non-null string
-                //and convert to lower-case for the compare below
-                String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
-
-                if (nameFilter.length() > 0)
-                    response.put("name", nameFilter);
-
-                boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
-                boolean userHasPermission;
-
-                for (User user : users)
-                {
-                    // TODO: consider performance here
-                    // if permissions passed, then validate the user has all of such permissions
-                    if (form.getPermissions() != null)
-                    {
-                        userHasPermission = true;
-                        for (Permission permission : form.getPermissions())
-                        {
-                            if (permission != null && !container.hasPermission(user, permission.getClass()))
-                            {
-                                userHasPermission = false;
-                                break;
-                            }
-                        }
-                        if (!userHasPermission)
-                            continue;
-                    }
-
-                    //according to the docs, startsWith will return true even if nameFilter is empty string
-                    if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
-                    {
-                        Map<String,Object> userInfo = new HashMap<>();
-                        userInfo.put(PROP_USER_ID, user.getUserId());
-
-                        //force sanitize of the display name, even for logged-in users
-                        userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
-
-                        //include email address, if user is allowed to see them
-                        if (includeEmail)
-                            userInfo.put("email", user.getEmail());
-
-                        userResponseList.add(userInfo);
-                    }
-                }
-            }
-
-            response.put("users", userResponseList);
+            this.setUsersList(form, filterForPermissions(form, users), response);
             return response;
         }
 
-        private Collection<User> getGroupUsers(GetUsersForm form, Container container, User currentUser, ApiSimpleResponse response)
+        // Filter the collection of users to those that have all of the permissions provided in the form.
+        // If no permissions are provided, no filtering will occur.
+        protected Set<User> filterForPermissions(GetUsersForm form, Collection<User> users)
         {
-            Container project = container.getProject();
+            Container container = getContainer();
+            return users.stream().filter(user -> {
+                boolean userHasPermission = true;
+                for (Class<? extends Permission> permClass : form.getPermissionClasses())
+                {
+                    if (!container.hasPermission(user, permClass))
+                    {
+                        userHasPermission = false;
+                        break;
+                    }
+                }
+                return userHasPermission;
+            }).collect(Collectors.toSet());
+        }
+
+        @NotNull
+        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response)
+        {
+            Container project = getContainer().getProject();
 
             //get users in given group/role name
             Integer groupId = form.getGroupId();
@@ -2475,6 +2468,92 @@ public class UserController extends SpringActionController
                 users = SecurityManager.getGroupMembers(group, userMemberType);
 
             return users;
+        }
+
+        protected void setUsersList(GetUsersForm form, Collection<User> users, ApiSimpleResponse response)
+        {
+            User currentUser = getUser();
+            List<Map<String,Object>> userResponseList = new ArrayList<>();
+            //trim name filter to empty so we are guaranteed a non-null string
+            //and convert to lower-case for the compare below
+            String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
+
+            if (nameFilter.length() > 0)
+                response.put("name", nameFilter);
+
+            boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
+
+            for (User user : users)
+            {
+                //according to the docs, startsWith will return true even if nameFilter is empty string
+                if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
+                {
+                    Map<String,Object> userInfo = new HashMap<>();
+                    userInfo.put(PROP_USER_ID, user.getUserId());
+
+                    //force sanitize of the display name, even for logged-in users
+                    userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
+
+                    //include email address, if user is allowed to see them
+                    if (includeEmail)
+                        userInfo.put("email", user.getEmail());
+
+                    userResponseList.add(userInfo);
+                }
+            }
+            response.put("users", userResponseList);
+        }
+    }
+
+    /**
+     * Retrieves the set of users that have all of a specified set of permissions.  A group
+     * may be provided and only users within that group will be returned.  A name (prefix) may be
+     * provided and only users whose email or display name starts with the prefix will be returned.
+     * This will not return any deactivated users (since they do not have permissions of any sort).
+     */
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public class GetUsersWithPermissionsAction extends GetUsersAction
+    {
+        @Override
+        public void validateForm(GetUsersForm form, Errors errors)
+        {
+            if (form.getPermissions() == null || form.getPermissions().length == 0)
+            {
+                errors.reject(ERROR_REQUIRED, "Permissions are required");
+            }
+            else if (form.getPermissionClasses().size() == 0)
+            {
+                errors.reject(ERROR_GENERIC, "No valid permission classes provided.");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(GetUsersForm form, BindException errors)
+        {
+            Container container = getContainer();
+            User currentUser = getUser();
+
+            if (container.isRoot() && !currentUser.hasRootPermission(UserManagementPermission.class))
+                throw new UnauthorizedException("Only site/application administrators may see users in the root container!");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("container", container.getPath());
+
+            Collection<User> users;
+
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response));
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(container, form.getPermissionClasses());
+            }
+
+            this.setUsersList(form, users, response);
+            return response;
         }
     }
 
@@ -2773,7 +2852,8 @@ public class UserController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
                 controller.new BeginAction(),
-                controller.new GetUsersAction()
+                controller.new GetUsersAction(),
+                controller.new GetUsersWithPermissionsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
