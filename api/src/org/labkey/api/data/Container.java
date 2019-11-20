@@ -1012,9 +1012,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getActiveModules(init, true);
     }
 
-    public Set<Module> getActiveModules(boolean init, boolean includeDepencendies)
+    public Set<Module> getActiveModules(boolean init, boolean includeDependencies)
     {
-        return getActiveModules(init, includeDepencendies, null);
+        return getActiveModules(init, includeDependencies, null);
     }
 
     /** @return all modules that are active in the container, ordered based on module dependencies as implemented in {@link ModuleLoader#orderModules(Collection)} */

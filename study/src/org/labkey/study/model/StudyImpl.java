@@ -58,11 +58,11 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
@@ -970,18 +970,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public String getSearchKeywords()
     {
-        Results rs = null;
         StringBuilder sb = new StringBuilder();
 
-        try
+        StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), false);
+        TableInfo sp = sqs.getTable("StudyProperties");
+        if (null != sp)
         {
-            StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), false);
-            TableInfo sp = sqs.getTable("StudyProperties");
-            if (null != sp)
+            List<ColumnInfo> cols = sp.getColumns();
+            try (Results results = QueryService.get().select(sp, cols, null, null))
             {
-                List<ColumnInfo> cols = sp.getColumns();
-                rs = QueryService.get().select(sp, cols, null, null);
-                if (rs.next())
+                if (results.next())
                 {
                     for (ColumnInfo col : cols)
                     {
@@ -989,18 +987,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
                             continue;
                         if (col.getJdbcType() != JdbcType.VARCHAR)
                             continue;
-                        appendKeyword(sb, rs.getString(col.getFieldKey()));
+                        appendKeyword(sb, results.getString(col.getFieldKey()));
                     }
                 }
             }
-        }
-        catch (SQLException x)
-        {
-            //
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
+            catch (SQLException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
         }
 
         appendKeyword(sb, getLabel());

@@ -49,7 +49,7 @@ public enum PasswordRule
         @Override
         public String getSummaryRuleHTML()
         {
-            return "six non-whitespace characters or more, cannot match email address";
+            return getFullRuleHTML();
         }
         
         @Override
@@ -106,7 +106,7 @@ public enum PasswordRule
         @Override
         public String getSummaryRuleHTML()
         {
-            return "must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address";
+            return "Passwords must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address.";
         }
         @Override
         boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)

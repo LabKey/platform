@@ -2151,18 +2151,6 @@ public class DavController extends SpringActionController
 
                     xml.writeProperty(null, "source", "");
 
-//					 String supportedLocks = "<lockentry>"
-//								+ "<lockscope><exclusive/></lockscope>"
-//								+ "<locktype><write/></locktype>"
-//								+ "</lockentry>" + "<lockentry>"
-//								+ "<lockscope><shared/></lockscope>"
-//								+ "<locktype><write/></locktype>"
-//								+ "</lockentry>";
-//					 generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//					 generatedXML.writeText(supportedLocks);
-//					 generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-//					 generateLockDiscovery(resource.getPath(), generatedXML);
-
                     xml.writeElement(null, "prop", XMLWriter.CLOSING);
                     xml.writeElement(null, "status", XMLWriter.OPENING);
                     xml.writeText(status);

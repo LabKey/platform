@@ -44,6 +44,7 @@ public class WebdavService
 
     private final CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
     private final Set<String> _preGzippedExtensions = new CaseInsensitiveHashSet();
+    private final CopyOnWriteArrayList<WebdavResourceExpDataProvider> _expDataProviders = new CopyOnWriteArrayList<>();
 
     private WebdavResolver _resolver = null;
 
@@ -71,7 +72,7 @@ public class WebdavService
 
     public List<WebdavResolver> getRootResolvers()
     {
-        return _rootResolvers;
+        return Collections.unmodifiableList(_rootResolvers);
     }
 
     public List<WebdavResolver> getEnabledRootResolvers()
@@ -163,7 +164,17 @@ public class WebdavService
 
     public List<Provider> getProviders()
     {
-        return _providers;
+        return Collections.unmodifiableList(_providers);
+    }
+
+    public void addExpDataProvider(@NotNull WebdavResourceExpDataProvider provider)
+    {
+        _expDataProviders.add(provider);
+    }
+
+    public List<WebdavResourceExpDataProvider> getExpDataProviders()
+    {
+        return Collections.unmodifiableList(_expDataProviders);
     }
 
     public WebdavResolver getRootResolver()

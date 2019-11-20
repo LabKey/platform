@@ -49,15 +49,16 @@ public class NestableDataRegion extends AbstractNestableDataRegion
         return _allColumns;
     }
 
-    public Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
+    @Override
+    public Results getResults(RenderContext ctx, boolean async) throws SQLException, IOException
     {
         List<DisplayColumn> realColumns = getDisplayColumns();
         setDisplayColumns(_allColumns);
         ctx.setCache(false);
-        ResultSet rs = super.getResultSet(ctx, async);
+        Results results = super.getResults(ctx, async);
         setDisplayColumns(realColumns);
 
-        _groupedRS = new GroupedResultSet(rs, _uniqueColumnName, getMaxRows());
+        _groupedRS = new GroupedResultSet(results, _uniqueColumnName, getMaxRows());
         _nestedFieldMap = ctx.getFieldMap();
         ctx.setResults(new ResultsImpl(_groupedRS, _nestedFieldMap));
         return ctx.getResults();

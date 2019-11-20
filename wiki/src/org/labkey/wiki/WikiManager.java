@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.Attachment;
@@ -68,7 +67,6 @@ import org.labkey.api.wiki.WikiChangeListener;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -848,22 +846,6 @@ public class WikiManager implements WikiService
         WikiVersion version = wiki.getLatestVersion();
         WikiVersionsGrid view = new WikiVersionsGrid(wiki, version, null);
         return view;
-    }
-
-    @Override
-    @Deprecated // Use WikiRenderingService instead
-    @RemoveIn20_1
-    public String getFormattedHtml(WikiRendererType rendererType, String source)
-    {
-        return WikiRenderingService.get().getFormattedHtml(rendererType, source, null, null);
-    }
-
-    @Override
-    @Deprecated // Use WikiRenderingService instead
-    @RemoveIn20_1
-    public String getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String attachPrefix, @Nullable Collection<? extends Attachment> attachments)
-    {
-        return WikiRenderingService.get().getFormattedHtml(rendererType, source, attachPrefix, attachments);
     }
 
     @Override

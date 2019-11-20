@@ -17,7 +17,6 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.HtmlString;
@@ -64,13 +63,6 @@ public class FormTag extends BodyTagSupport
     public Object getAction()
     {
         return action;
-    }
-
-    @Deprecated
-    @RemoveIn20_1  // Remove -- unused and not needed
-    public void setAction(Object action)
-    {
-        setAction(String.valueOf(action));
     }
 
     // Our JSP tag classes expect unencoded parameters (they encode everything at render time), but this method accepts

@@ -48,6 +48,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         _ajaxNestedGridURL = url;
     }
 
+    @Override
     public void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         if (_expanded)
@@ -61,6 +62,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         ResultSetUtil.close(_groupedRS);
     }
 
+    @Override
     protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
     {
         String value = getUniqueColumnValue(ctx);

@@ -17,8 +17,6 @@
 package org.labkey.api.wiki;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.annotations.RemoveIn20_1;
-import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
@@ -26,7 +24,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -52,13 +49,6 @@ public interface WikiService
     String getHtml(Container c, String name);
 
     void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
-
-    @Deprecated
-    @RemoveIn20_1
-    String getFormattedHtml(WikiRendererType rendererType, String source);
-    @Deprecated
-    @RemoveIn20_1
-    String getFormattedHtml(WikiRendererType rendererType, String source, String attachPrefix, Collection<? extends Attachment> attachments);
 
     List<String> getNames(Container c);
 

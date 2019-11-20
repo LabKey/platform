@@ -1232,12 +1232,12 @@ public class Table
 
             maxRows -= 2;
 
-            try (Results rs = new TableSelector(tinfo).setMaxRows(maxRows).getResults())
+            try (Results results = new TableSelector(tinfo).setMaxRows(maxRows).getResults())
             {
-                rs.last();
-                int row = rs.getRow();
+                results.last();
+                int row = results.getRow();
                 assertEquals(row, maxRows);
-                assertFalse(rs.isComplete());
+                assertFalse(results.isComplete());
             }
         }
 
