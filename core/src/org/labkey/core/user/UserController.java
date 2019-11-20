@@ -52,6 +52,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UrlColumn;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
@@ -64,6 +65,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarThumbnailProvider;
@@ -954,6 +956,24 @@ public class UserController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Unexpected table parameter " + form.getTable() + ".");
                 return;
+            }
+            else
+            {
+                for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
+                {
+                    if (entry.getValue() != null)
+                    {
+                        ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
+                        try
+                        {
+                            ColumnValidators.validate(col, null, 1, entry.getValue());
+                        }
+                        catch (ValidationException e)
+                        {
+                            errors.reject(ERROR_MSG, e.getMessage());
+                        }
+                    }
+                }
             }
 
             String userId = form.getPkVal().toString();
