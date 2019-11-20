@@ -24,6 +24,9 @@ Ext4.define('LABKEY.core.notification.NotificationViewAll', {
         {
             this.insert(0, this.getActionsForAllCmp());
         }
+
+        // Issue 39044: call to load the notification panel data so that as we update it here the count in the header will reflect changes
+        LABKEY.Notification.load();
     },
 
     getStore : function()
