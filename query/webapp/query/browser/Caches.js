@@ -188,7 +188,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 success : function(resp){
                     this.processDependencies(resp);
                     if (Ext4.isFunction(success)){
-                        success.call(scope || this, )
+                        success.call(scope || this)
                     }
                 },
                 failure : failure,
@@ -197,7 +197,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         }
         else {
             if (Ext4.isFunction(success)){
-                success.call(scope || this, )
+                success.call(scope || this)
             }
         }
     },
@@ -209,16 +209,19 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             const key = this.getCacheKey(d.to.schemaName, d.to.name);
             let query = this.queries[key] || this.createQuery(key, d.to);
 
-            query.dependents.push(...d.from);
+            Ext4.each(d.from, function(item){
+                query.dependents.push(item);
+            }, this);
         }, this);
 
         Ext4.each(o.dependees, function(d){
             const key = this.getCacheKey(d.from.schemaName, d.from.name);
             let query = this.queries[key] || this.createQuery(key, d.from);
 
-            query.dependees.push(...d.to);
+            Ext4.each(d.to, function(item){
+                query.dependees.push(item);
+            }, this);
         }, this);
-        //console.log(this.queries);
     },
 
     createQuery : function(cacheKey, q) {
@@ -228,12 +231,10 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
 
     // hit's the server enpoint (premium only) to create the dependency graph
     analyzeQueries : function(config) {
-        function fixupJsonResponse(json, response, options)
-        {
+        function fixupJsonResponse(json, response, options) {
             var callback = LABKEY.Utils.getOnSuccess(config);
 
-            if (!json || !json.success)
-            {
+            if (!json || !json.success) {
                 if (callback)
                     callback.call(this, json, response, options);
                 return;
@@ -245,8 +246,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             var dependantsMap = {};
             var dependeesMap  = {};
 
-            for (var edge = 0; edge < json.graph.length; edge++)
-            {
+            for (var edge = 0; edge < json.graph.length; edge++) {
                 fromKey = json.graph[edge][0];
                 toKey = json.graph[edge][1];
 
@@ -260,15 +260,13 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             }
 
             var dependeesList = [];
-            for (key in dependeesMap)
-            {
+            for (key in dependeesMap) {
                 if (dependeesMap.hasOwnProperty(key))
                     dependeesList.push({from:objects[key], to:dependeesMap[key]});
             }
 
             var dependantsList = [];
-            for (key in dependantsMap)
-            {
+            for (key in dependantsMap) {
                 if (dependantsMap.hasOwnProperty(key))
                     dependantsList.push({to:objects[key], from:dependantsMap[key]});
             }
