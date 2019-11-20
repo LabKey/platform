@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* comm-0.00-10.10.sql */
-
 -- Create schema comm: tables for Announcements and Wiki
 
 CREATE SCHEMA comm;
@@ -35,7 +33,6 @@ CREATE TABLE comm.Announcements
     Expires DATETIME,
     Body NTEXT,
     RendererType NVARCHAR(50) NULL,  -- Updates to properties will result in NULL body and NULL render type
-    EmailList VARCHAR(1000) NULL,    -- Place to store history of addresses that were notified
     Status VARCHAR(50) NULL,
     AssignedTo USERID NULL,
     DiscussionSrcIdentifier NVARCHAR(100) NULL,
@@ -64,6 +61,7 @@ CREATE TABLE comm.Pages
     PageVersionId INT NULL,
     ShowAttachments BIT NOT NULL DEFAULT 1,
     LastIndexed DATETIME NULL,
+    ShouldIndex BIT DEFAULT 1,
 
     CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
     CONSTRAINT UQ_Pages UNIQUE CLUSTERED (Container, Name)
@@ -93,6 +91,7 @@ CREATE TABLE comm.EmailOptions
 (
     EmailOptionId INT NOT NULL,
     EmailOption NVARCHAR(50),
+    Type NVARCHAR(60) NOT NULL DEFAULT 'messages',
 
     CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
 );
@@ -100,9 +99,13 @@ CREATE TABLE comm.EmailOptions
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
-INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (3, 'Broadcast only');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
+
+-- new file email notification options
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (512, 'No Email', 'files');
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (513, '15 minute digest', 'files');
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (514, 'Daily digest', 'files');
 
 CREATE TABLE comm.EmailFormats
 (
@@ -134,8 +137,10 @@ CREATE TABLE comm.EmailPrefs
     EmailFormatId INT NOT NULL,
     PageTypeId INT NOT NULL,
     LastModifiedBy USERID,
+    Type NVARCHAR(60) NOT NULL DEFAULT 'messages',
+    SrcIdentifier NVARCHAR(100) NOT NULL,  -- allow subscriptions to multiple forums within a single container
 
-    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
+    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier),
     CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
     CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES comm.EmailOptions (EmailOptionId),
@@ -155,68 +160,6 @@ CREATE TABLE comm.UserList
 -- Improve performance of user list lookups for permission checking
 CREATE INDEX IX_UserList_UserId ON comm.UserList(UserId);
 
-/* comm-10.30-11.10.sql */
-
-INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (259, 'Daily digest of broadcast messages only');
-UPDATE comm.EmailOptions SET EmailOption = 'Broadcast messages only' WHERE EmailOptionID = 3;
-
--- add a new column to contain 'notification type' information for both the
--- email prefs and options
-ALTER TABLE comm.EmailOptions ADD Type NVARCHAR(60) NOT NULL DEFAULT 'messages';
-ALTER TABLE comm.EmailPrefs ADD Type NVARCHAR(60) NOT NULL DEFAULT 'messages';
-GO
-
-ALTER TABLE comm.EmailPrefs DROP CONSTRAINT PK_EmailPrefs;
-ALTER TABLE comm.EmailPrefs ADD CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type);
-
--- new file email notification options
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (512, 'No Email', 'files');
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (513, '15 minute digest', 'files');
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES (514, 'Daily digest', 'files');
-
--- migrate existing file setting from property manager props
-INSERT INTO comm.emailPrefs (Container, UserId, EmailOptionId, EmailFormatId, PageTypeId, Type) SELECT
-	ObjectId,
-	UserId,
-	CAST(Value AS INT) + 512,
-	1, 0, 'files'
-	FROM prop.Properties props JOIN prop.PropertySets ps on props."set" = ps."set" AND Category = 'EmailService.emailPrefs' WHERE Name = 'FileContentEmailPref' AND Value <> '-1';
-
--- update folder default settings
-UPDATE prop.Properties SET value = '512' WHERE Name = 'FileContentDefaultEmailPref' AND Value = '0';
-UPDATE prop.Properties SET value = '513' WHERE Name = 'FileContentDefaultEmailPref' AND Value = '1';
-
--- delete old user property values
-DELETE FROM prop.Properties WHERE Name = 'FileContentEmailPref';
-
-/* comm-11.30-12.10.sql */
-
--- Change all "Broadcast messages only" and "Daily digest of broadcast messages only" preferences
--- to "No Email", then remove the broadcast options.
-UPDATE comm.EmailPrefs SET EmailOptionID = 0 WHERE EmailOptionID IN (3, 259);
-DELETE FROM comm.EmailOptions WHERE EmailOptionID IN (3, 259);
-
--- add a new column to allow subscriptions to multiple forums within a single container
-ALTER TABLE comm.EmailPrefs ADD SrcIdentifier NVARCHAR(100)
-GO
-
-UPDATE comm.EmailPrefs SET SrcIdentifier = Container;
-ALTER TABLE comm.EmailPrefs ALTER COLUMN SrcIdentifier NVARCHAR(100) NOT NULL;
-
-ALTER TABLE comm.EmailPrefs DROP CONSTRAINT pk_emailprefs;
-ALTER TABLE comm.EmailPrefs ADD CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier);
-
-UPDATE comm.Announcements SET DiscussionSrcIdentifier = Container WHERE DiscussionSrcIdentifier IS NULL AND Parent IS NULL;
-
-/* comm-12.10-12.20.sql */
-
-ALTER TABLE comm.Pages ADD ShouldIndex BIT DEFAULT 1
-GO
-
-UPDATE comm.Pages SET ShouldIndex = 1;
-
-/* comm-14.10-14.20.sql */
-
 CREATE TABLE comm.RSSFeeds
 (
     RowId INT IDENTITY(1,1) NOT NULL,
@@ -235,9 +178,6 @@ CREATE TABLE comm.RSSFeeds
     CONSTRAINT UQ_RSSFeeds UNIQUE CLUSTERED (Container, RowId)
 );
 
-ALTER TABLE comm.announcements DROP COLUMN EmailList;
-
-/* comm-14.30-14.31.sql */
 CREATE TABLE comm.Tours
 (
   RowId INT IDENTITY(1,1) NOT NULL,
