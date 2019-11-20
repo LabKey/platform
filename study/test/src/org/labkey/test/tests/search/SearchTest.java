@@ -160,7 +160,7 @@ public abstract class SearchTest extends StudyBaseTest
     @LogMethod
     protected void doVerifySteps()
     {
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName());
         renameFolderAndReSearch();
         moveFolderAlterListsAndReSearch();
         deleteFolderAndVerifyNoResults();
@@ -171,7 +171,7 @@ public abstract class SearchTest extends StudyBaseTest
     {
         _containerHelper.renameFolder(getProjectName(), getFolderName(), FOLDER_C, true);
         FOLDER_NAME = FOLDER_C;
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), "searchAfterFolderRename");
     }
 
     @LogMethod
@@ -195,7 +195,7 @@ public abstract class SearchTest extends StudyBaseTest
         _listHelper.insertNewRow(data);
         _searchHelper.enqueueSearchItem(newAnimal, Locator.linkContainingText(listIndexAsWhole));
         goBack();
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), "searchAfterMoveAndInsert");
 
         // Test case for 20109 Regression after migration to hard tables, updating a row didn't update the index
         log("Verifying list index updated on row update.");
@@ -208,7 +208,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem("Panda"); // Search for Panda should now return no results.
         _searchHelper.enqueueSearchItem(updateAnimal, Locator.linkContainingText(fullySearchableList));
         goBack();
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), "searchAfterListUpdate");
 
     }
 
