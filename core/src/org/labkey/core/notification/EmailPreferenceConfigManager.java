@@ -26,6 +26,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -44,8 +45,6 @@ public class EmailPreferenceConfigManager
 {
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final int EMAIL_PREFERENCE_DEFAULT = -1;
-    private static final int EMAIL_FORMAT_HTML = 1;
-    private static final int PAGE_TYPE_MESSAGE = 0;
 
     public static EmailPref getUserEmailPrefRecord(Container c, User user, String type, String srcIdentifier)
     {
@@ -117,9 +116,7 @@ public class EmailPreferenceConfigManager
             emailPref = new EmailPref();
             emailPref.setContainer(c.getId());
             emailPref.setUserId(projectUser.getUserId());
-            emailPref.setEmailFormatId(EMAIL_FORMAT_HTML);
             emailPref.setEmailOptionId(emailPreference);
-            emailPref.setPageTypeId(PAGE_TYPE_MESSAGE);
             emailPref.setLastModifiedBy(currentUser.getUserId());
             emailPref.setType(type);
             emailPref.setSrcIdentifier(srcIdentifier);
@@ -200,16 +197,14 @@ public class EmailPreferenceConfigManager
         return new TableSelector(_core.getTableInfoEmailOptions(), filter, null).getObject(EmailOption.class);
     }
 
-    public static class EmailPref implements MessageConfigService.UserPreference
+    public static class EmailPref implements UserPreference
     {
         private String _container;
         private int _userId;
         private Integer _emailOptionId;
-        private Integer _emailFormatId;
         private Integer _lastModifiedBy;
         private String _srcIdentifier;
         private String _type;
-        private int _pageTypeId;
 
         public Integer getLastModifiedBy()
         {
@@ -229,17 +224,6 @@ public class EmailPreferenceConfigManager
         public void setContainer(String container)
         {
             _container = container;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public Integer getEmailFormatId()
-        {
-            return _emailFormatId;
-        }
-
-        public void setEmailFormatId(Integer emailFormatId)
-        {
-            _emailFormatId = emailFormatId;
         }
 
         @Override
@@ -263,16 +247,6 @@ public class EmailPreferenceConfigManager
         public void setUserId(int userId)
         {
             _userId = userId;
-        }
-
-        public int getPageTypeId()
-        {
-            return _pageTypeId;
-        }
-
-        public void setPageTypeId(int pageTypeId)
-        {
-            _pageTypeId = pageTypeId;
         }
 
         @Override

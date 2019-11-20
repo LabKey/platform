@@ -73,17 +73,6 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         });
         addColumn(emailOptionColumn);
 
-        var emailFormatColumn = wrapColumn("EmailFormat", getRealTable().getColumn("EmailFormatId"));
-        emailFormatColumn.setFk(new LookupForeignKey(cf, "EmailFormatId", null)
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return _userSchema.createEmailFormatTable(getLookupContainerFilter());
-            }
-        });
-        addColumn(emailFormatColumn);
-
         addCondition(getRealTable().getColumn("Type"), "messages");
 
         addWrapColumn(getRealTable().getColumn("SrcIdentifier"));
@@ -263,11 +252,6 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
             {
                 insertMap.put("EmailOptionId", row.get("EmailOption"));
             }
-            if (row.containsKey("EmailFormat"))
-            {
-                insertMap.put("EmailFormatId", row.get("EmailFormat"));
-            }
-            insertMap.put("PageTypeId", AnnouncementSchema.PAGE_TYPE_ID);
             return insertMap;
         }
 

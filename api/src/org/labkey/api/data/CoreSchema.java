@@ -192,9 +192,4 @@ public class CoreSchema
     {
         return getSchema().getTable("EmailOptions");
     }
-
-    public TableInfo getTableInfoEmailFormats()
-    {
-        return getSchema().getTable("EmailFormats");
-    }
 }

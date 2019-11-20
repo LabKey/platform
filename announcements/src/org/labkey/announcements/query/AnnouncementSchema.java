@@ -51,12 +51,9 @@ public class AnnouncementSchema extends UserSchema
     public static final String FORUM_SUBSCRIPTION_TABLE_NAME = "ForumSubscription";
     public static final String ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME = "AnnouncementSubscription";
     public static final String EMAIL_OPTION_TABLE_NAME = "EmailOption";
-    public static final String EMAIL_FORMAT_TABLE_NAME = "EmailFormat";
     public static final String RSS_FEEDS_TABLE_NAME = "RSSFeeds";
     public static final String TOURS_TABLE_NAME = "Tours";
     public static final String THREADS_TABLE_NAME = "Threads";
-
-    public static final int PAGE_TYPE_ID = 0;
 
     private static final Set<String> TABLE_NAMES;
 
@@ -67,7 +64,6 @@ public class AnnouncementSchema extends UserSchema
         names.add(FORUM_SUBSCRIPTION_TABLE_NAME);
         names.add(ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME);
         names.add(EMAIL_OPTION_TABLE_NAME);
-        names.add(EMAIL_FORMAT_TABLE_NAME);
         names.add(RSS_FEEDS_TABLE_NAME);
         names.add(TOURS_TABLE_NAME);
         names.add(THREADS_TABLE_NAME);
@@ -114,10 +110,6 @@ public class AnnouncementSchema extends UserSchema
         {
             return createSpamTable(cf);
         }
-        if (EMAIL_FORMAT_TABLE_NAME.equalsIgnoreCase(name))
-        {
-            return createEmailFormatTable(cf);
-        }
         if (EMAIL_OPTION_TABLE_NAME.equalsIgnoreCase(name))
         {
             return createEmailOptionTable(cf);
@@ -143,15 +135,6 @@ public class AnnouncementSchema extends UserSchema
             return createThreadsTable(cf);
         }
         return null;
-    }
-
-    public TableInfo createEmailFormatTable(ContainerFilter cf)
-    {
-        FilteredTable result = new FilteredTable<>(CoreSchema.getInstance().getTableInfoEmailFormats(), this, cf);
-        result.setName(EMAIL_FORMAT_TABLE_NAME);
-        result.wrapAllColumns(true);
-        result.setPublicSchemaName(getName());
-        return result;
     }
 
     public TableInfo createEmailOptionTable(ContainerFilter cf)
