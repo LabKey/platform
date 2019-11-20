@@ -45,10 +45,19 @@
     }
   },
   "dependencies": {
+    "@fortawesome/free-regular-svg-icons": "^5.11.2",
+    "@fortawesome/free-solid-svg-icons": "5.11.2",
+    "@fortawesome/react-fontawesome": "0.1.7",
+    "@glass/base": "0.21.2-fb-smUserProfile.2",
+    "@glass/domainproperties": "0.0.51-fb-smUserProfile.2",
     "@labkey/api": "0.0.22",
-    "react": "^16.11.0",
+    "react": "16.11.0",
+    "react-beautiful-dnd": "11.0.5",
     "react-bootstrap": "0.32.4",
-    "react-dom": "^16.11.0"
+    "react-dom": "16.11.0",
+    "react-router": "3.2.5",
+    "react-toggle-button": "^2.2.0",
+    "style-loader": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
