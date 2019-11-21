@@ -215,6 +215,7 @@ import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
+import org.labkey.core.notification.EmailServiceImpl;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -805,6 +806,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
+        EmailService.setInstance(new EmailServiceImpl());
 
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
         {
@@ -1117,6 +1119,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             DbSequenceManager.TestCase.class,
             DomainTemplateGroup.TestCase.class,
             DomTestCase.class,
+            EmailServiceImpl.TestCase.class,
             Encryption.TestCase.class,
             ExceptionUtil.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,

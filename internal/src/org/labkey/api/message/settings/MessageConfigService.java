@@ -96,6 +96,8 @@ public interface MessageConfigService
          */
         String getName();
 
+        String getSettingsColumnName();
+
         EmailConfigForm createConfigForm(ViewContext context, PanelInfo info);
 
         void validateCommand(ViewContext context, Errors errors);

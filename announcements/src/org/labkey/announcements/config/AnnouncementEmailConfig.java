@@ -47,6 +47,12 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
     }
 
     @Override
+    public String getSettingsColumnName()
+    {
+        return "MessageSettings";
+    }
+
+    @Override
     protected ActionURL getSetDefaultPrefURL(Container c)
     {
         return new ActionURL(AnnouncementsController.SetEmailDefaultAction.class, c);

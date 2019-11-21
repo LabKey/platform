@@ -49,6 +49,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.search.SearchService;
@@ -186,8 +187,9 @@ public class AnnouncementManager
         }
     }
 
-    private static MessageConfigService.ConfigTypeProvider _configProvider;
-    public static MessageConfigService.ConfigTypeProvider getAnnouncementConfigProvider()
+    private static ConfigTypeProvider _configProvider;
+
+    public static ConfigTypeProvider getAnnouncementConfigProvider()
     {
         if (_configProvider == null)
         {

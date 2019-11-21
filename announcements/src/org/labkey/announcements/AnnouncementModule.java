@@ -44,7 +44,6 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.notification.EmailService;
 import org.labkey.api.rss.RSSService;
 import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
@@ -64,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -76,7 +74,6 @@ import java.util.Set;
  * NOTE: Wiki handles some of the shared Communications module stuff.
  * e.g. it handles ContainerListener and Attachments
  * <p/>
- * TODO: merge announcementModel & wiki into one module?
  */
 public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
@@ -156,7 +153,6 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         ContainerManager.addContainerListener(new AnnouncementContainerListener());
         UserManager.addUserListener(new AnnouncementUserListener());
         AuditLogService.get().registerAuditType(new MessageAuditProvider());
-        EmailService.setInstance(new EmailServiceImpl());
 
         TourListener tourListener = new TourListener();
         ContainerManager.addContainerListener(tourListener);
@@ -205,10 +201,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                AnnouncementManager.TestCase.class,
-                EmailServiceImpl.TestCase.class
-        ));
+        return Set.of(
+            AnnouncementManager.TestCase.class
+        );
     }
 
     @Override
