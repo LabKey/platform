@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.1.0-fb-packageConsolidation.2"
+    "@labkey/components": "0.1.0-fb-packageConsolidation.5"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
