@@ -1834,8 +1834,12 @@ public class QueryController extends SpringActionController
             Map<String, String> props = new HashMap<>();
             props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
-            props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString() + "#metadata");
-            props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
+            var sourceQuery = _query.urlFor(QueryAction.sourceQuery, getContainer());
+            if (null != sourceQuery)
+                props.put(MetadataEditor.EDIT_SOURCE_URL, sourceQuery.getLocalURIString() + "#metadata");
+            var executeQuery = _query.urlFor(QueryAction.executeQuery, getContainer());
+            if (null != executeQuery)
+                props.put(MetadataEditor.VIEW_DATA_URL, executeQuery.getLocalURIString());
 
             return new GWTView(MetadataEditor.class, props);
         }
@@ -1856,7 +1860,11 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new SchemaAction(_form).appendNavTrail(root);
-            root.addChild("Edit Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
+            var metadataQuery = _query.urlFor(QueryAction.metadataQuery);
+            if (null != metadataQuery)
+                root.addChild("Edit Metadata: " + _form.getQueryName(), metadataQuery);
+            else
+                root.addChild("Edit Metadata: " + _form.getQueryName());
             return root;
         }
     }
