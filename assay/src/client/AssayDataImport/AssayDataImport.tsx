@@ -63,7 +63,7 @@ export class App extends React.Component<Props, State> {
         }
     }
 
-    componentWillMount() {
+    componentDidMount() {
         fetchAllAssays('General')
             .then((assays) => {
                 const sortedAssays = assays.sortBy(assay => assay.name, naturalSort).toList();
@@ -190,8 +190,8 @@ export class App extends React.Component<Props, State> {
                 .then((newAssay) => {
                     this.importFileAsRun(newAssay.protocolId);
                 })
-                .catch((reason) => {
-                    this.setErrorMsg(reason);
+                .catch((errorModel) => {
+                    this.setErrorMsg(errorModel.exception);
                 });
         }
     };
@@ -475,12 +475,12 @@ export class App extends React.Component<Props, State> {
         return (
             <>
                 {this.renderWarning()}
-                {this.renderError()}
                 {this.renderAvailableAssays()}
                 {this.renderRunDataUpload()}
                 {this.renderNewAssayProperties()}
                 {this.renderRunProperties()}
                 {this.renderButtons()}
+                {this.renderError()}
                 {this.renderProgress()}
             </>
         )
