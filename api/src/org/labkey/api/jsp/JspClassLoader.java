@@ -23,6 +23,7 @@ import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletContext;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -69,17 +70,18 @@ public class JspClassLoader
         // look for jsp jars in the {module}/lib
         for (var m : ModuleLoader.getInstance().getModules())
         {
-            var libDir = m.getModuleResource("/lib/");
-            if (null == libDir || !libDir.exists())
+            // use m.getExplodedPath() instead of getModuleResource() otherwise, we will look for the
+            // jars in the source directory on dev machines
+            var libDir = new File(m.getExplodedPath(), "lib");
+            if (!libDir.exists())
                 continue;
-            for (var f : libDir.list())
+            var listing = libDir.listFiles((dir, name) -> name.contains("_jsp") && name.endsWith(".jar"));
+            if (null == listing)
+                continue;
+            for (var file : listing)
             {
-                if (f.isFile() && f instanceof FileResource)
-                {
-                    var file = ((FileResource) f).getFile();
-                    if (file.getName().contains("_jsp") && file.getName().endsWith(".jar"))
-                        added |= jspJars.add(file);
-                }
+                if (file.isFile())
+                    added |= jspJars.add(file);
             }
         }
         return added;
