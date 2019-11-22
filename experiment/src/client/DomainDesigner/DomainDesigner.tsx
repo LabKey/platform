@@ -18,9 +18,9 @@ import {List} from "immutable";
 import * as React from 'react'
 import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@glass/querygrid"
+import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
 
-import "@glass/querygrid/dist/querygrid.css"
+import "@labkey/components/dist/components.css"
 import "./domainDesigner.scss";
 
 interface IAppState {

@@ -19,14 +19,13 @@ import {
     hasAllPermissions,
     AssayProtocolModel,
     AssayPropertiesPanel,
-    DomainField,
     DomainDesign,
     saveAssayDesign,
     fetchProtocol,
     setDomainFields
-} from '@glass/querygrid'
+} from '@labkey/components'
 
-import "@glass/querygrid/dist/querygrid.css"
+import "@labkey/components/dist/components.css"
 import "./assayDataImport.scss";
 
 import {AssayRunForm} from "./AssayRunForm";
@@ -274,7 +273,7 @@ export class App extends React.Component<Props, State> {
     getCardsFromAssays(): List<any> {
         const { assays, protocolModel } = this.state;
         const selectedAssay = this.getSelectedAssay();
-        let cards = List<any>(); // TODO should we be exporting ICardProps from @glass and using here instead of any?
+        let cards = List<any>(); // TODO should we be exporting ICardProps from @labkey/components and using here instead of any?
 
         if (selectedAssay) {
             cards = cards.push({

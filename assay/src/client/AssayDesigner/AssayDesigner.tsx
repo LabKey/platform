@@ -16,9 +16,9 @@
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security, Utils} from "@labkey/api";
-import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/querygrid";
+import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@labkey/components";
 
-import "@glass/querygrid/dist/querygrid.css"
+import "@labkey/components/dist/components.css"
 
 type State = {
     protocolId: number,
