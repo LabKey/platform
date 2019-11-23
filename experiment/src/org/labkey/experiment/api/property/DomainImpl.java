@@ -144,11 +144,13 @@ public class DomainImpl implements Domain
         _properties = new ArrayList<>();
     }
 
+    @Override
     public Object get_Ts()
     {
         return _dd.get_Ts();
     }
 
+    @Override
     public Container getContainer()
     {
         return _dd.getContainer();
@@ -156,6 +158,7 @@ public class DomainImpl implements Domain
 
     private DomainKind _kind = null;
 
+    @Override
     public synchronized DomainKind getDomainKind()
     {
         if (null == _kind)
@@ -163,11 +166,13 @@ public class DomainImpl implements Domain
         return _kind;
     }
 
+    @Override
     public String getName()
     {
         return _dd.getName();
     }
 
+    @Override
     public String getLabel()
     {
         DomainKind kind = getDomainKind();
@@ -181,6 +186,7 @@ public class DomainImpl implements Domain
         }
     }
 
+    @Override
     public String getLabel(Container container)
     {
         String ret = getLabel();
@@ -192,6 +198,7 @@ public class DomainImpl implements Domain
     }
 
 
+    @Override
     @Nullable   // null if not provisioned
     public String getStorageTableName()
     {
@@ -208,6 +215,7 @@ public class DomainImpl implements Domain
      * @return all containers that contain at least one row of this domain's data.
      * Only works for domains that are persisted in exp.object, not those with their own provisioned hard tables
      */
+    @Override
     public Set<Container> getInstanceContainers()
     {
         assert getStorageTableName() == null : "This method only works on domains persisted in exp.object";
@@ -228,6 +236,7 @@ public class DomainImpl implements Domain
      * @return all containers that contain at least one row of this domain's data, and where the user has the specified permission
      * Only works for domains that are persisted in exp.object, not those with their own provisioned hard tables
      */
+    @Override
     public Set<Container> getInstanceContainers(User user, Class<? extends Permission> perm)
     {
         Set<Container> ret = new HashSet<>();
@@ -241,27 +250,32 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public String getDescription()
     {
         return _dd.getDescription();
     }
 
+    @Override
     public int getTypeId()
     {
         return _dd.getDomainId();
     }
 
+    @Override
     public void setDescription(String description)
     {
         _dd = _dd.edit().setDescription(description).build();
     }
 
+    @Override
     @NotNull
     public List<? extends DomainPropertyImpl> getProperties()
     {
         return Collections.unmodifiableList(_properties);
     }
 
+    @Override
     public List<DomainProperty> getNonBaseProperties()
     {
         Set<String> basePropertyNames = new HashSet<>();
@@ -277,6 +291,7 @@ public class DomainImpl implements Domain
         return nonBaseProperties;
     }
 
+    @Override
     public Set<DomainProperty> getBaseProperties()
     {
         Set<String> basePropertyNames = new HashSet<>();
@@ -292,6 +307,7 @@ public class DomainImpl implements Domain
         return baseProperties;
     }
 
+    @Override
     public void setPropertyIndex(DomainProperty prop, int index)
     {
         if (index < 0 || index >= _properties.size())
@@ -306,11 +322,13 @@ public class DomainImpl implements Domain
         _properties.add(index, (DomainPropertyImpl) prop);
     }
 
+    @Override
     public ActionURL urlShowData(ContainerUser context)
     {
         return getDomainKind().urlShowData(this, context);
     }
 
+    @Override
     public void delete(@Nullable User user) throws DomainNotFoundException
     {
         ExperimentService exp = ExperimentService.get();
@@ -330,11 +348,13 @@ public class DomainImpl implements Domain
         return _new;
     }
 
+    @Override
     public void save(User user) throws ChangePropertyDescriptorException
     {
         save(user, false);
     }
 
+    @Override
     public Lock getDatabaseLock()
     {
         return getLock(_dd);
@@ -475,6 +495,7 @@ public class DomainImpl implements Domain
         }
     }
 
+    @Override
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
         ExperimentService exp = ExperimentService.get();
@@ -497,251 +518,250 @@ public class DomainImpl implements Domain
                 new SqlSelector(schema, sql).getArrayList(DomainDescriptor.class);
             }
 
-                List<DomainProperty> checkRequiredStatus = new ArrayList<>();
-                boolean isDomainNew = false;         // #32406 Need to capture because _new changes during the process
-                if (isNew())
-                {
-                    // consider: optimistic concurrency check here?
-                    Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
+            List<DomainProperty> checkRequiredStatus = new ArrayList<>();
+            boolean isDomainNew = false;         // #32406 Need to capture because _new changes during the process
+            if (isNew())
+            {
+                // consider: optimistic concurrency check here?
+                Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
                 _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
-                    // CONSIDER put back if we want automatic provisioning for several DomainKinds
-                    // StorageProvisioner.create(this);
-                    isDomainNew = true;
-                }
-                else
-                {
-                    DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
-                    if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
-                        throw new OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
+                // CONSIDER put back if we want automatic provisioning for several DomainKinds
+                // StorageProvisioner.create(this);
+                isDomainNew = true;
+            }
+            else
+            {
+                DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
+                if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
+                    throw new OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
 
-                    // call OntologyManager.updateDomainDescriptor() to invalidate proper caches
+                // call OntologyManager.updateDomainDescriptor() to invalidate proper caches
                 _dd = OntologyManager.updateDomainDescriptor(_dd);
-                }
-                boolean propChanged = false;
-                int sortOrder = 0;
+            }
+            boolean propChanged = false;
+            int sortOrder = 0;
 
-                List<DomainProperty> propsDropped = new ArrayList<>();
-                List<DomainProperty> propsAdded = new ArrayList<>();
+            List<DomainProperty> propsDropped = new ArrayList<>();
+            List<DomainProperty> propsAdded = new ArrayList<>();
 
-                DomainKind kind = getDomainKind();
-                boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
+            DomainKind kind = getDomainKind();
+            boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
 
-                // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
-                if (hasProvisioner && isShouldDeleteAllData())
-                {
-                    try
-                    {
-                        kind.getTableInfo(user, getContainer(), getName()).getUpdateService().truncateRows(user, getContainer(), null, null);
-                    }
-                    catch (QueryUpdateServiceException | BatchValidationException | SQLException e)
-                    {
-                        throw new ChangePropertyDescriptorException(e);
-                    }
-                }
-
-                Set<String> baseProperties = Sets.newCaseInsensitiveHashSet();
-                if (null != kind)
-                {
-                    for (PropertyStorageSpec s : kind.getBaseProperties(this))
-                        baseProperties.add(s.getName());
-                }
-
-                // Compile audit info for every property change
-                List<PropertyChangeAuditInfo> propertyAuditInfo = new ArrayList<>();
-
-                // Delete first #8978
-                for (DomainPropertyImpl impl : _properties)
-                {
-                    if (impl._deleted || (impl.isRecreateRequired()))
-                    {
-                        impl.delete(user);
-                        propsDropped.add(impl);
-                        propChanged = true;
-                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, false));
-                    }
-                }
-
-                if (hasProvisioner && _enforceStorageProperties)
-                {
-                    if (!propsDropped.isEmpty())
-                    {
-                        StorageProvisioner.dropProperties(this, propsDropped);
-                    }
-                }
-
-                // Keep track of the intended final name for each updated property, and its sort order
-                Map<DomainPropertyImpl, Pair<String, Integer>> finalNames = new HashMap<>();
-                Map<DomainProperty, Object> defaultValueMap = new HashMap<>();
-
-                // Now add and update #8978
-                for (DomainPropertyImpl impl : _properties)
-                {
-                    if (!impl._deleted)
-                    {
-                        // make sure all properties have storageColumnName
-                        if (null == impl._pd.getStorageColumnName())
-                        {
-                            if (!allowAddBaseProperty && baseProperties.contains(impl._pd.getName()))
-                                impl._pd.setStorageColumnName(impl._pd.getName()); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
-                            else
-                                generateStorageColumnName(impl._pd);
-                        }
-
-                        if (impl.isRecreateRequired())
-                        {
-                            impl.markAsNew();
-                        }
-
-                        if (impl.isNew())
-                        {
-                            if (impl._pd.isRequired())
-                                checkRequiredStatus.add(impl);
-                            propsAdded.add(impl);
-                            propChanged = true;
-                        }
-                        else
-                        {
-                            propChanged |= impl.isDirty();
-                            if (impl._pdOld != null)
-                            {
-                                // If this field is newly required, or it's required and we're disabling MV indicators on
-                                // it, make sure that all of the rows have values for it
-                                if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
-                                        (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
-                                {
-                                    checkRequiredStatus.add(impl);
-                                }
-
-                                // check if string size constraints have decreased
-                                if (impl._pdOld.isStringType() && isSmallerSize(impl._pdOld.getScale(), impl._pd.getScale()))
-                                    checkAndThrowSizeConstraints(kind, this, impl);
-                            }
-
-                            if (impl.isDirty())
-                            {
-                                if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
-                                {
-                                    finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
-                                    // Save any fields whose name changed with a temp, guaranteed unique name. This is important in case a single save
-                                    // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
-                                    String tmpName = "~tmp" + new GUID().toStringNoDashes();
-                                    impl.setName(tmpName);
-                                    impl._pd.setStorageColumnName(tmpName);
-                                }
-                            }
-                        }
-
-                        validatePropertyName(impl);
-                        validatePropertyUrl(impl);
-
-                        if (impl.getDefaultValue() != null)
-                        {
-                            validatePropertyDefaultValue(user, impl, impl.getDefaultValue(), true);
-                        }
-
-                        if (impl.getFormat() != null)
-                        {
-                            validatePropertyFormat(impl);
-                        }
-
-                        if (getDomainKind() != null && getDomainKind().ensurePropertyLookup())
-                        {
-                            validatePropertyLookup(user, impl);
-                        }
-
-                        // Auditing:gather validators and conditional formats before save; then build diff using new validators and formats after save
-                        boolean isImplNew = impl.isNew();
-                        PropertyDescriptor pdOld = impl._pdOld;
-                        String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
-                        String oldFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
-                        impl.save(user, _dd, sortOrder++);  // Automatically preserve order
-
-                        String defaultValue = impl.getDefaultValue();
-                        Object converted = null != defaultValue ? ConvertUtils.convert(defaultValue, impl.getPropertyDescriptor().getJavaClass()) : null;
-                        defaultValueMap.put(impl, converted);
-
-                        if (isImplNew)
-                            propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
-                        else if (null != pdOld)
-                            propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
-                    }
-                }
-
-                // Then rename them all to their final name
-                for (Map.Entry<DomainPropertyImpl, Pair<String, Integer>> entry : finalNames.entrySet())
-                {
-                    DomainPropertyImpl domainProperty = entry.getKey();
-                    String name = entry.getValue().getKey();
-                    int order = entry.getValue().getValue().intValue();
-                    domainProperty.setName(name);
-                    generateStorageColumnName(domainProperty._pd);
-                    domainProperty.save(user, _dd, order);
-                }
-
+            // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
+            if (hasProvisioner && isShouldDeleteAllData())
+            {
                 try
                 {
-                    DefaultValueService.get().setDefaultValues(getContainer(), defaultValueMap);
+                    kind.getTableInfo(user, getContainer(), getName()).getUpdateService().truncateRows(user, getContainer(), null, null);
                 }
-                catch (ExperimentException e)
+                catch (QueryUpdateServiceException | BatchValidationException | SQLException e)
                 {
-                    throw new RuntimeException(e);
+                    throw new ChangePropertyDescriptorException(e);
                 }
+            }
 
-                _new = false;
+            Set<String> baseProperties = Sets.newCaseInsensitiveHashSet();
+            if (null != kind)
+            {
+                for (PropertyStorageSpec s : kind.getBaseProperties(this))
+                    baseProperties.add(s.getName());
+            }
 
-                // Do the call to add the new properties last, after deletes and renames of existing properties
-                if (hasProvisioner)
+            // Compile audit info for every property change
+            List<PropertyChangeAuditInfo> propertyAuditInfo = new ArrayList<>();
+
+            // Delete first #8978
+            for (DomainPropertyImpl impl : _properties)
+            {
+                if (impl._deleted || (impl.isRecreateRequired()))
                 {
-                    if (propChanged && _enforceStorageProperties)
+                    impl.delete(user);
+                    propsDropped.add(impl);
+                    propChanged = true;
+                    propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, false));
+                }
+            }
+
+            if (hasProvisioner && _enforceStorageProperties)
+            {
+                if (!propsDropped.isEmpty())
+                {
+                    StorageProvisioner.dropProperties(this, propsDropped);
+                }
+            }
+
+            // Keep track of the intended final name for each updated property, and its sort order
+            Map<DomainPropertyImpl, Pair<String, Integer>> finalNames = new HashMap<>();
+            Map<DomainProperty, Object> defaultValueMap = new HashMap<>();
+
+            // Now add and update #8978
+            for (DomainPropertyImpl impl : _properties)
+            {
+                if (!impl._deleted)
+                {
+                    // make sure all properties have storageColumnName
+                    if (null == impl._pd.getStorageColumnName())
                     {
-                        if (!propsAdded.isEmpty())
+                        if (!allowAddBaseProperty && baseProperties.contains(impl._pd.getName()))
+                            impl._pd.setStorageColumnName(impl._pd.getName()); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
+                        else
+                            generateStorageColumnName(impl._pd);
+                    }
+
+                    if (impl.isRecreateRequired())
+                    {
+                        impl.markAsNew();
+                    }
+
+                    if (impl.isNew())
+                    {
+                        if (impl._pd.isRequired())
+                            checkRequiredStatus.add(impl);
+                        propsAdded.add(impl);
+                        propChanged = true;
+                    }
+                    else
+                    {
+                        propChanged |= impl.isDirty();
+                        if (impl._pdOld != null)
                         {
-                            StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
+                            // If this field is newly required, or it's required and we're disabling MV indicators on
+                            // it, make sure that all of the rows have values for it
+                            if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
+                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
+                            {
+                                checkRequiredStatus.add(impl);
+                            }
+
+                            // check if string size constraints have decreased
+                            if (impl._pdOld.isStringType() && isSmallerSize(impl._pdOld.getScale(), impl._pd.getScale()))
+                                checkAndThrowSizeConstraints(kind, impl);
+                        }
+
+                        if (impl.isDirty())
+                        {
+                            if (null != impl._pdOld && !impl._pdOld.getName().equalsIgnoreCase(impl._pd.getName()))
+                            {
+                                finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
+                                // Save any fields whose name changed with a temp, guaranteed unique name. This is important in case a single save
+                                // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
+                                String tmpName = "~tmp" + new GUID().toStringNoDashes();
+                                impl.setName(tmpName);
+                                impl._pd.setStorageColumnName(tmpName);
+                            }
                         }
                     }
 
-                    // ensure that the provisioned table is created if we have base properties.
-                    // The domain may not have any non-base properties -- e.g. the "Study Specimens" SampleSets
-                    if (!baseProperties.isEmpty())
-                    {
-                        StorageProvisioner.ensureStorageTable(this, kind, exp.getSchema().getScope());
-                    }
-                }
+                    validatePropertyName(impl);
+                    validatePropertyUrl(impl);
 
-                if (!checkRequiredStatus.isEmpty() && null != kind)
+                    if (impl.getDefaultValue() != null)
+                    {
+                        validatePropertyDefaultValue(user, impl, impl.getDefaultValue(), true);
+                    }
+
+                    if (impl.getFormat() != null)
+                    {
+                        validatePropertyFormat(impl);
+                    }
+
+                    if (getDomainKind() != null && getDomainKind().ensurePropertyLookup())
+                    {
+                        validatePropertyLookup(user, impl);
+                    }
+
+                    // Auditing:gather validators and conditional formats before save; then build diff using new validators and formats after save
+                    boolean isImplNew = impl.isNew();
+                    PropertyDescriptor pdOld = impl._pdOld;
+                    String oldValidators = null != pdOld ? PropertyChangeAuditInfo.renderValidators(pdOld) : null;
+                    String oldFormats = null != pdOld ? PropertyChangeAuditInfo.renderConditionalFormats(pdOld) : null;
+                    impl.save(user, _dd, sortOrder++);  // Automatically preserve order
+
+                    String defaultValue = impl.getDefaultValue();
+                    Object converted = null != defaultValue ? ConvertUtils.convert(defaultValue, impl.getPropertyDescriptor().getJavaClass()) : null;
+                    defaultValueMap.put(impl, converted);
+
+                    if (isImplNew)
+                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, true));
+                    else if (null != pdOld)
+                        propertyAuditInfo.add(new PropertyChangeAuditInfo(impl, pdOld, oldValidators, oldFormats));
+                }
+            }
+
+            // Then rename them all to their final name
+            for (Map.Entry<DomainPropertyImpl, Pair<String, Integer>> entry : finalNames.entrySet())
+            {
+                DomainPropertyImpl domainProperty = entry.getKey();
+                String name = entry.getValue().getKey();
+                int order = entry.getValue().getValue().intValue();
+                domainProperty.setName(name);
+                generateStorageColumnName(domainProperty._pd);
+                domainProperty.save(user, _dd, order);
+            }
+
+            try
+            {
+                DefaultValueService.get().setDefaultValues(getContainer(), defaultValueMap);
+            }
+            catch (ExperimentException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            _new = false;
+
+            // Do the call to add the new properties last, after deletes and renames of existing properties
+            if (hasProvisioner)
+            {
+                if (propChanged && _enforceStorageProperties)
                 {
-                    for (DomainProperty prop : checkRequiredStatus)
+                    if (!propsAdded.isEmpty())
                     {
-                        boolean hasRows = kind.hasNullValues(this, prop);
-                        if (hasRows)
-                        {
-                            throw new ChangePropertyDescriptorException("The property \"" + prop.getName() + "\" cannot be required when it contains rows with blank values.");
-                        }
+                        StorageProvisioner.addProperties(this, propsAdded, allowAddBaseProperty);
                     }
                 }
 
-                // Invalidate even if !propChanged, because ordering might have changed (#25296)
-                if (getDomainKind() != null)
-                    getDomainKind().invalidate(this);
+                // ensure that the provisioned table is created if we have base properties.
+                // The domain may not have any non-base properties -- e.g. the "Study Specimens" SampleSets
+                if (!baseProperties.isEmpty())
+                {
+                    StorageProvisioner.ensureStorageTable(this, kind, exp.getSchema().getScope());
+                }
+            }
 
-                if (isDomainNew)
-                    addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
+            if (!checkRequiredStatus.isEmpty() && null != kind)
+            {
+                for (DomainProperty prop : checkRequiredStatus)
+                {
+                    boolean hasRows = kind.hasNullValues(this, prop);
+                    if (hasRows)
+                    {
+                        throw new ChangePropertyDescriptorException("The property \"" + prop.getName() + "\" cannot be required when it contains rows with blank values.");
+                    }
+                }
+            }
+
+            // Invalidate even if !propChanged, because ordering might have changed (#25296)
+            if (getDomainKind() != null)
+                getDomainKind().invalidate(this);
+
+            if (isDomainNew)
+                addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
 
             if (propChanged)
             {
                 final Integer domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
-                propertyAuditInfo.forEach(auditInfo -> {
-                    addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails());
-                });
+                propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
             }
             else if (!isDomainNew)
             {
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
+
             transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
             transaction.commit();
-            }
         }
+    }
 
     // Return true if newSize is smaller than oldSize taking into account -1 is max size
     private boolean isSmallerSize(int oldSize, int newSize)
@@ -755,7 +775,7 @@ public class DomainImpl implements Domain
         return oldSize > newSize;
     }
 
-    private void checkAndThrowSizeConstraints(DomainKind kind, Domain domain, DomainProperty prop)
+    private void checkAndThrowSizeConstraints(DomainKind kind, DomainProperty prop)
     {
         boolean tooLong = kind.exceedsMaxLength(this, prop);
         if (tooLong)
@@ -933,14 +953,14 @@ public class DomainImpl implements Domain
 
         private static String renderValidators(PropertyDescriptor prop)
         {
-             Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
-             if (validators.isEmpty())
-                 return "<none>";
-             List<String> strings = new ArrayList<>();
-             validators.forEach(validator -> strings.add(validator.getName() + " [" +
-                     StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
-             );
-             return StringUtils.join(strings, ", ");
+            Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+            if (validators.isEmpty())
+                return "<none>";
+            List<String> strings = new ArrayList<>();
+            validators.forEach(validator -> strings.add(validator.getName() + " [" +
+                StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
+            );
+            return StringUtils.join(strings, ", ");
         }
 
         private static String renderConditionalFormats(PropertyDescriptor prop)
@@ -1033,12 +1053,14 @@ public class DomainImpl implements Domain
         }
     }
 
+    @Override
     public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)
     {
         List<DomainProperty> properties = new ArrayList<>(_properties);
         return ImportAliasable.Helper.createImportMap(properties, includeMVIndicators);
     }
 
+    @Override
     public DomainProperty addPropertyOfPropertyDescriptor(PropertyDescriptor pd)
     {
         assert pd.getPropertyId() == 0;
@@ -1050,6 +1072,7 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public DomainProperty addProperty()
     {
         PropertyDescriptor pd = new PropertyDescriptor();
@@ -1061,6 +1084,7 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public DomainProperty addProperty(PropertyStorageSpec spec)
     {
         PropertyDescriptor pd = new PropertyDescriptor();
@@ -1079,11 +1103,13 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public String getTypeURI()
     {
         return _dd.getDomainURI();
     }
 
+    @Override
     public DomainPropertyImpl getProperty(int id)
     {
         for (DomainPropertyImpl prop : getProperties())
@@ -1094,6 +1120,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
+    @Override
     public DomainPropertyImpl getPropertyByURI(String uri)
     {
         for (DomainPropertyImpl prop : getProperties())
@@ -1106,6 +1133,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
+    @Override
     public DomainPropertyImpl getPropertyByName(String name)
     {
         for (DomainPropertyImpl prop : getProperties())
@@ -1116,6 +1144,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
+    @Override
     public List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user)
     {
         List<BaseColumnInfo> result = new ArrayList<>();
@@ -1155,11 +1184,13 @@ public class DomainImpl implements Domain
         return getTypeURI();
     }
 
+    @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys()
     {
         return _propertyForeignKeys;
     }
 
+    @Override
     public void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> propertyForeignKeys)
     {
         _propertyForeignKeys = propertyForeignKeys;
@@ -1172,6 +1203,7 @@ public class DomainImpl implements Domain
         return _propertyIndices;
     }
 
+    @Override
     public void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> propertyIndices)
     {
         _propertyIndices = propertyIndices;
@@ -1187,13 +1219,8 @@ public class DomainImpl implements Domain
     public boolean isShouldDeleteAllData()
     {
         // Only certain domain kinds, Lists & Datasets, will return true
-        if (getDomainKind().isDeleteAllDataOnFieldImport() && _shouldDeleteAllData)
-        {
-            return true;
-        }
-        else return false;
+        return getDomainKind().isDeleteAllDataOnFieldImport() && _shouldDeleteAllData;
     }
-
 
     public void generateStorageColumnName(PropertyDescriptor pd)
     {
@@ -1217,7 +1244,7 @@ public class DomainImpl implements Domain
 
         // Keep the names the same if short enough,
         // But always leave room for MV suffix in case it's changed to MV later
-        String storage = null;
+        final String storage;
         if (pd.getName().length() + OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 < 60)
             storage = _aliasManager.decideAlias(pd.getName(), pd.getName());
         else
@@ -1225,6 +1252,7 @@ public class DomainImpl implements Domain
         pd.setStorageColumnName(storage);
     }
 
+    @Override
     public boolean isProvisioned()
     {
         return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;
