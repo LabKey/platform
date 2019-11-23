@@ -146,14 +146,14 @@ public abstract class SearchTest extends StudyBaseTest
         _listHelper.deleteList();
 
         _searchHelper.enqueueSearchItem("BoarQPine");
-        _searchHelper.enqueueSearchItem("Panda", Locator.bodyLinkContainingText("List " + fullySearchableList));
-        _searchHelper.enqueueSearchItem("2003-01-02", Locator.bodyLinkContainingText("List " + fullySearchableList));
-        _searchHelper.enqueueSearchItem("12345", Locator.bodyLinkContainingText("List " + fullySearchableList));  //Issue 15419
-        _searchHelper.enqueueSearchItem("Owlbear", Locator.bodyLinkContainingText("List " + textOnlySearchableList));
+        _searchHelper.enqueueSearchItem("Panda", Locator.linkContainingText("List " + fullySearchableList));
+        _searchHelper.enqueueSearchItem("2003-01-02", Locator.linkContainingText("List " + fullySearchableList));
+        _searchHelper.enqueueSearchItem("12345", Locator.linkContainingText("List " + fullySearchableList));  //Issue 15419
+        _searchHelper.enqueueSearchItem("Owlbear", Locator.linkContainingText("List " + textOnlySearchableList));
         _searchHelper.enqueueSearchItem("54321");
-        _searchHelper.enqueueSearchItem(metaOnlySearchable, Locator.bodyLinkContainingText("List " + metaOnlySearchable));
-        _searchHelper.enqueueSearchItem("Turtleduck", Locator.bodyLinkContainingText("List " + metaOnlySearchable)); //this phrase is present in the metadata-only file
-        _searchHelper.enqueueSearchItem("Cat", Locator.bodyLinkContainingText("List " + customizedIndexingList));
+        _searchHelper.enqueueSearchItem(metaOnlySearchable, Locator.linkContainingText("List " + metaOnlySearchable));
+        _searchHelper.enqueueSearchItem("Turtleduck", Locator.linkContainingText("List " + metaOnlySearchable)); //this phrase is present in the metadata-only file
+        _searchHelper.enqueueSearchItem("Cat", Locator.linkContainingText("List " + customizedIndexingList));
         _searchHelper.enqueueSearchItem("Garfield");
     }
 
