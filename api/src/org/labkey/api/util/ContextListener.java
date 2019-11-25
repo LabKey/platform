@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.bootstrap.PipelineBootstrapConfig;
 import org.springframework.web.context.ContextLoaderListener;
 
 import javax.servlet.ServletContext;
@@ -35,6 +36,27 @@ public class ContextListener implements ServletContextListener
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
     private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
+
+    // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
+
+    // IMPORTANT see also LabKeyBootstrapClassLoader/PipelineBootstrapConfig which duplicates this code, keep them consistent
+    // On startup on some platforms, some modules will die if java.awt.headless is not set to false.
+    // Only set this if the user hasn't overridden it
+    private final static String LOG_HOME_PROPERTY_NAME = "labkey.log.home";
+    static
+    {
+        String headless = "java.awt.headless";
+        if (System.getProperty(headless) == null)
+            System.setProperty(headless, "true");
+        // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
+        // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc directories
+        // Thus, we want to use catalina.base for our place to find log files. http://www.jguru.com/faq/view.jsp?EID=1121565
+        //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
+        if (System.getProperty(LOG_HOME_PROPERTY_NAME) == null)
+            System.setProperty(LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
+    }
+
+
 
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
