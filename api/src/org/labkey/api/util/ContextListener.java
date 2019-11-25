@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.bootstrap.PipelineBootstrapConfig;
 import org.springframework.web.context.ContextLoaderListener;
 
 import javax.servlet.ServletContext;
