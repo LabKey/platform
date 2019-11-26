@@ -517,23 +517,7 @@ public class DomainPropertyImpl implements DomainProperty
 
     public Lookup getLookup()
     {
-        Lookup ret = new Lookup();
-        String containerId = _pd.getLookupContainer();
-        ret.setQueryName(_pd.getLookupQuery());
-        ret.setSchemaName(_pd.getLookupSchema());
-        if (ret.getQueryName() == null || ret.getSchemaName() == null)
-            return null;
-
-        if (containerId != null)
-        {
-            Container container = ContainerManager.getForId(containerId);
-            if (container == null)
-            {
-                return null;
-            }
-            ret.setContainer(container);
-        }
-        return ret;
+        return _pd.getLookup();
     }
 
     public void setLookup(Lookup lookup)
