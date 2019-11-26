@@ -20,14 +20,15 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -35,7 +36,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
@@ -68,12 +68,9 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
@@ -85,13 +82,14 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collectors.toSet;
@@ -373,17 +371,31 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
             // Attach run's starting protocol application with starting input LSIDs.
-            String provInputsProperty = Objects.toString(unresolvedRunProperties.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY), null);
+            Object provInputsProperty = unresolvedRunProperties.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
             if (provInputsProperty != null)
             {
                 ProvenanceService pvs = ProvenanceService.get();
                 if (pvs == null)
                     throw new ExperimentException("Provenance service not available");
 
-                String[] runLSIDArr = provInputsProperty.split(",");
-                if (runLSIDArr.length > 0)
+                Set<String> runInputLSIDs = null;
+                if (provInputsProperty instanceof String)
                 {
-                    Set<String> runInputLSIDs = Arrays.asList(runLSIDArr).stream().map(String::trim).collect(toSet());
+                    // parse as a JSONArray of values or a comma-separated list of values
+                    String provInputs = (String)provInputsProperty;
+                    if (provInputs.startsWith("[") && provInputs.endsWith("]"))
+                        provInputsProperty = new JSONArray(provInputs);
+                    else
+                        runInputLSIDs = Set.of(provInputs.split(","));
+                }
+
+                if (provInputsProperty instanceof JSONArray)
+                {
+                    runInputLSIDs = Arrays.stream(((JSONArray)provInputsProperty).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                }
+
+                if (runInputLSIDs != null && !runInputLSIDs.isEmpty())
+                {
                     ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
                     pvs.addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
                 }
