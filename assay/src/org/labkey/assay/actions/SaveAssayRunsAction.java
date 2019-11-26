@@ -32,7 +32,7 @@ public class SaveAssayRunsAction extends BaseProtocolAPIAction<SimpleApiJsonForm
         if (rootJsonObject.has(AssayJSONConverter.RUNS))
             runsJsonArray = rootJsonObject.getJSONArray(AssayJSONConverter.RUNS);
 
-        if ( runsJsonArray == null)
+        if (runsJsonArray == null)
             throw new IllegalArgumentException("No run array found.");
 
         if (runsJsonArray.length() == 0)
