@@ -1202,7 +1202,7 @@ public class WikiController extends SpringActionController
                 WebPartView v = new WikiView(_wiki, _wikiversion, existing);
 
                 // get discussion view
-                if (existing)
+                if (existing && DiscussionService.get() != null)
                 {
                     ActionURL pageUrl = new PageAction(getViewContext(), _wiki, _wikiversion).getUrl();
                     String discussionTitle = "discuss page - " +  _wikiversion.getTitle();
