@@ -75,6 +75,7 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
         super.init(bean, mode);
     }
 
+    @Override
     public BindException getErrors()
     {
         if (_errors == null)
