@@ -103,42 +103,34 @@ public class JspLoader
     }
 
 
-    /**
-     * Instantiates a JSP class in a particular directory.
-     *
-     * @param clazz   A class which is in the same folder as the JSP folder.
-     * @param jspFile Name of the JSP file, without the path.
-     */
-    public static HttpJspPage createPage(Class clazz, String jspFile)
-    {
-        return createPage(clazz.getPackage().getName(), jspFile);
-    }
-
-
     private static class JspServletConfig implements ServletConfig
     {
-        ServletContext _context;
+        private final ServletContext _context;
 
         public JspServletConfig(ServletContext context)
         {
             _context = context;
         }
 
+        @Override
         public String getServletName()
         {
             return "jsp";
         }
 
+        @Override
         public ServletContext getServletContext()
         {
             return _context;
         }
 
+        @Override
         public String getInitParameter(String name)
         {
             return null;
         }
 
+        @Override
         public Enumeration<String> getInitParameterNames()
         {
             return null;
