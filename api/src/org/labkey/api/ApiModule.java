@@ -45,6 +45,7 @@ import javax.servlet.jsp.JspFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
@@ -107,5 +108,15 @@ public class ApiModule extends CodeOnlyModule
             WorkbookContainerType.TestCase.class,
             ExcelColumn.TestCase.class
         );
+    }
+
+    @Override
+    public @NotNull Collection<String> getJarFilenames()
+    {
+        // Filter out "labkey-client-api-XX.X.jar" -- we don't need credits for our own jar. All of its dependencies will
+        // appear on the credits page, though.
+        return super.getJarFilenames().stream()
+            .filter(fn->!fn.startsWith("labkey-client-api-"))
+            .collect(Collectors.toList());
     }
 }
