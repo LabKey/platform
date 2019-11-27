@@ -130,9 +130,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _containerHelper.deleteProject(getProjectName(), afterTest);
         if (afterTest)
         {
-            _searchHelper.enqueueSearchItem(DATA_CLASS_2_NAME);
-            _searchHelper.verifyNoSearchResults();
-            _searchHelper.clearSearchQueue();
+            _searchHelper.assertNoSearchResult(DATA_CLASS_2_NAME);
         }
     }
 
@@ -229,7 +227,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         //_searchHelper.enqueueSearchItem(DATA_CLASS_1_SINGLE_ALIAS_1, Locator.linkContainingText(DATA_CLASS_1_NAME_1));
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_1, Locator.linkContainingText(DATA_CLASS_1_NAME_1));
         _searchHelper.enqueueSearchItem("ichi \nni \nsan", Locator.linkContainingText(DATA_CLASS_2_NAME));  // spaces needed because search strips newlines
-        _searchHelper.verifySearchResults("/" + getProjectName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName());
         _searchHelper.clearSearchQueue();  // so we don't use these queries again
     }
 
@@ -262,7 +260,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _searchHelper.enqueueSearchItem(DATA_CLASS_1_COMMENT_2, Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         _searchHelper.enqueueSearchItem("speckled", Locator.linkContainingText(DATA_CLASS_1_NAME_2));
         _searchHelper.enqueueSearchItem("ek \ndo \nteen", Locator.linkContainingText(DATA_CLASS_1_NAME_2));
-        _searchHelper.verifySearchResults("/" + getProjectName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName(), "searchAfterModification");
         _searchHelper.clearSearchQueue();
 
         // create data class using second domain above and test domain ID indexing
@@ -278,7 +276,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _searchHelper.enqueueSearchItem("dataclass:" + DATA_CLASS_DOMAIN_1 + " AND " + DATA_CLASS_ICE_CREAM,
                 Locator.linkContainingText(DATA_CLASS_1_NAME_1));
         _searchHelper.enqueueSearchItem("dataclass:" + DATA_CLASS_DOMAIN_2 + " AND " + DATA_CLASS_ICE_CREAM);  // should not return result for this data class
-        _searchHelper.verifySearchResults("/" + getProjectName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName(), "searchDomainId");
         _searchHelper.clearSearchQueue();
 
         // delete data class with second domain (to avoid messing up later tests)
@@ -343,7 +341,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _searchHelper.enqueueSearchItem("ek \ndo \nteen");  // should no longer be found, as domain fields were modified
         _searchHelper.enqueueSearchItem("yellow", Locator.linkContainingText(DATA_CLASS_2_NAME));
         _searchHelper.enqueueSearchItem("ein \nzwei \ndrei", Locator.linkContainingText(DATA_CLASS_2_NAME));
-        _searchHelper.verifySearchResults("/" + getProjectName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName(), "searchAfterDomainModification");
         _searchHelper.clearSearchQueue();
     }
 
@@ -361,7 +359,7 @@ public class DataClassSearchTest extends BaseWebDriverTest
         _searchHelper.enqueueSearchItem(DATA_CLASS_2_NAME);  // this and remaining search items should no longer be found, as data classes were removed
         _searchHelper.enqueueSearchItem("yellow");
         _searchHelper.enqueueSearchItem("ein \nzwei \ndrei");
-        _searchHelper.verifySearchResults("/" + getProjectName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName(), "searchAfterDeletingDataClasses");
         _searchHelper.clearSearchQueue();
     }
 }
