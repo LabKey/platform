@@ -1765,9 +1765,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    protected String getDatabaseMaintenanceSql()
+    protected @Nullable String getDatabaseMaintenanceSql()
     {
-        return "EXEC sp_updatestats;";
+        // RDS doesn't allow executing sp_updatestats, so just skip it for now, part of #35805.
+        // In the future, we may want to integrate with something like SQL Maintenance Solution tool,
+        // https://ola.hallengren.com/sql-server-index-and-statistics-maintenance.html
+        return DbScope.getLabKeyScope().isRds() ? null : "EXEC sp_updatestats;";
     }
 
 
@@ -1791,6 +1794,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
+    @Override
     public boolean hasTriggers(DbSchema schema, String schemaName, String tableName)
     {
         SQLFragment sql = listTriggers(schemaName, tableName);
@@ -1863,6 +1867,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return true;
     }
 
+    @Override
     public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
         CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
@@ -1895,6 +1900,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return parameters;
     }
 
+    @Override
     public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
     {
         StringBuilder sb = new StringBuilder();
