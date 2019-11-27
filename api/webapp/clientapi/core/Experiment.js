@@ -881,7 +881,6 @@ LABKEY.Exp.DataClass = function (config)
 
     LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
-    this.data = config.data;
     this.description = config.description;
     this.sampleSet = config.sampleSet;
 };
