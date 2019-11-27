@@ -17,6 +17,7 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2340,7 +2341,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
             try
             {
-                new SqlSelector(scope, "SELECT COUNT(*) FROM model.sys.database_files").getObject(Integer.class);
+                // Suppress exception logging -- we expect this to fail in the RDS case
+                new SqlSelector(scope, "SELECT COUNT(*) FROM model.sys.database_files").setLogLevel(Level.OFF).getObject(Integer.class);
                 LOG.debug("Successfully accessed model.sys.database_files - this database is not RDS");
             }
             catch (Exception e)
