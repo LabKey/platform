@@ -158,6 +158,8 @@ dependencies {
   jspImplementation apache, jackson, spring
 }
 
+project.evaluationDependsOn(BuildUtils.getRemoteApiProjectPath(gradle))
+
 // Copy remoteapi (i.e., labkey-client-api-XX.X.jar) and its dependencies to api/lib
 project.task("copyRemoteApiJars",
     type: Copy,
