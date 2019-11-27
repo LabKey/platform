@@ -1177,9 +1177,8 @@ public class PropertyController extends SpringActionController
                     ContainerService.get().getForPath(containerDomainForm.getContainerPath());
 
             List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
-            ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            return resp.put("domains", listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
+            return success(listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
     }
 
