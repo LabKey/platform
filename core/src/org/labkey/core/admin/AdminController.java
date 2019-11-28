@@ -884,19 +884,7 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-
-            // DefaultModule and CoreModule compareTo() implementations claim to cooperate to put Core first in the sort order... but it doesn't work
-            modules.sort((m1, m2) ->
-            {
-                if (m1.getName().equalsIgnoreCase(m2.getName()))
-                    return 0;
-                else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m1.getName()))
-                    return -1;
-                else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m2.getName()))
-                    return 1;
-                else
-                    return m1.getName().compareToIgnoreCase(m2.getName());
-            });
+            modules.sort(Comparator.naturalOrder());
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
