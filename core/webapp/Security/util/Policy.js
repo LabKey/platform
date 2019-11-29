@@ -15,21 +15,15 @@ Ext4.define('Security.util.Policy', {
 
         deletePolicy : LABKEY.Security.deletePolicy,
 
-        // mimics LABKEY.Security.getPolicy
         getPolicy : function(config)
         {
-            var params = {resourceId: config.resourceId};
+            // uses LABKEY.Security.getPolicy but returns the policy object for usage with this Ext4 UI
+            config.success = function(policyData, relevantRoles) {
+                var policy = Ext4.create('Security.util.Policy', policyData);
+                config.successCallback.call(config.scope || this, policy, relevantRoles);
+            };
 
-            return Ext4.Ajax.request({
-                url    : LABKEY.ActionURL.buildURL('security', 'getPolicy', config.containerPath),
-                method : 'GET',
-                params : params,
-                success: LABKEY.Utils.getCallbackWrapper(function(data, req){
-                    data.policy.requestedResourceId = config.resourceId;
-                    var policy = Ext4.create('Security.util.Policy', data.policy);
-                    LABKEY.Utils.getOnSuccess(config).call(config.scope || this, policy, data.relevantRoles, req);
-                }, this)
-            });
+            return LABKEY.Security.getPolicy(config);
         },
 
         savePolicy : LABKEY.Security.savePolicy
