@@ -32,7 +32,7 @@ public abstract class ProductMenuProvider
         return "https://www.labkey.org/Documentation/wiki-page.view?name=default";
     }
 
-    public @NotNull List<MenuItem> getUserMenuItems()
+    public @NotNull List<MenuItem> getUserMenuItems(ViewContext context)
     {
         return Collections.emptyList();
     }

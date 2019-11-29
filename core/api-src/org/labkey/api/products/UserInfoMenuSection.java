@@ -54,7 +54,7 @@ public class UserInfoMenuSection extends MenuSection
         {
             items.add(new MenuItem("Documentation", docUrl, 0, DOCS_KEY, null));
         }
-        items.addAll(_provider.getUserMenuItems());
+        items.addAll(_provider.getUserMenuItems(_context));
 
         return items;
     }
