@@ -18,11 +18,9 @@ import {List} from "immutable";
 import * as React from 'react'
 import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
+import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
 
-import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@labkey/components/dist/components.css"
 import "./domainDesigner.scss";
 
 interface IAppState {
@@ -226,7 +224,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         headerTitle={'Fields'}
                         domain={domain}
                         onChange={this.onChangeHandler}
-                        showHeaderFieldCount={false}
                         useTheme={true}
                     />
                 }

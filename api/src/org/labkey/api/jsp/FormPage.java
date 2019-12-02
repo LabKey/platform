@@ -35,7 +35,7 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     @RemoveIn20_1
     public static <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
     {
-        return get((FormPage<F>) JspLoader.createPage((String)null, jspPath), form);
+        return get((FormPage<F>) JspLoader.createPage(null, jspPath), form);
     }
 
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
@@ -53,11 +53,6 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     public JspView<FORM> createView(BindException errors)
     {
         return new JspView<>(this, null, errors);
-    }
-
-    public JspView<FORM> createView()
-    {
-        return new JspView<>(this);
     }
 
     public void setForm(FORM form)

@@ -67,6 +67,15 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     private Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
 
+    // built in but optional properties
+    public enum Prop
+    {
+        area,
+        type,
+        priority,
+        milestone
+    }
+
     public Issue()
     {
         MemTracker.getInstance().put(this);
@@ -202,48 +211,30 @@ public class Issue extends Entity implements Serializable, Cloneable
         return UserManager.getDisplayName(getAssignedTo() == null ? 0 : getAssignedTo(), currentUser);
     }
 
-
-    public String getType()
-    {
-        Object o = _properties.get("type");
-        return o != null ? String.valueOf(o) : "";
-    }
-
-
+    @Deprecated
+    // user setProperty instead
     public void setType(String type)
     {
         _properties.put("type", type);
     }
 
-    public String getArea()
-    {
-        Object o = _properties.get("area");
-        return o != null ? String.valueOf(o) : "";
-    }
-
+    @Deprecated
+    // user setProperty instead
     public void setArea(String area)
     {
         _properties.put("area", area);
     }
 
-    public String getPriority()
-    {
-        Object o = _properties.get("priority");
-        return o != null ? String.valueOf(o) : "";
-    }
-
+    @Deprecated
+    // user setProperty instead
     public void setPriority(String priority)
     {
         if (priority != null)
             _properties.put("priority", priority);
     }
 
-    public String getMilestone()
-    {
-        Object o = _properties.get("milestone");
-        return o != null ? String.valueOf(o) : "";
-    }
-
+    @Deprecated
+    // user setProperty instead
     public void setMilestone(String milestone)
     {
         _properties.put("milestone", milestone);
@@ -553,6 +544,12 @@ public class Issue extends Entity implements Serializable, Cloneable
     {
         _properties.putAll(properties);
         setSpecialFields(properties);
+    }
+
+    public String getProperty(Prop prop)
+    {
+        Object o = _properties.get(prop.name());
+        return o != null ? String.valueOf(o) : "";
     }
 
     private void setSpecialFields(Map<String, Object> properties)
