@@ -51,12 +51,14 @@
     "@glass/base": "0.21.2-fb-smUserProfile.2",
     "@glass/domainproperties": "0.0.51-fb-smUserProfile.2",
     "@labkey/api": "0.0.22",
+    "immutable": "^4.0.0-rc.12",
     "react": "16.11.0",
     "react-beautiful-dnd": "11.0.5",
     "react-bootstrap": "0.32.4",
+    "react-bootstrap-toggle": "2.3.2",
     "react-dom": "16.11.0",
-    "react-router": "3.2.5",
     "react-toggle-button": "^2.2.0",
+    "resolve-url-loader": "^3.1.1",
     "style-loader": "^1.0.0"
   },
   "devDependencies": {
@@ -66,7 +68,7 @@
     "@babel/preset-react": "7.0.0",
     "@hot-loader/react-dom": "16.9.0",
     "babel-loader": "^8.0.6",
-    "better-npm-run": "^0.1.1",
+    "better-npm-run": "0.1.1",
     "bootstrap-sass": "3.4.1",
     "css-loader": "3.2.0",
     "file-loader": "4.2.0",
@@ -78,15 +80,15 @@
     "node-sass": "4.12.0",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "postcss-loader": "3.0.0",
-    "react-hot-loader": "^4.12.17",
+    "react-hot-loader": "4.12.17",
     "rimraf": "3.0.0",
-    "sass-loader": "8.0.0",
-    "ts-loader": "^6.2.1",
-    "typescript": "^3.7.2",
+    "sass-loader": "7.1.0",
+    "ts-loader": "6.2.1",
+    "typescript": "3.7.2",
     "uglifyjs-webpack-plugin": "2.2.0",
     "url-loader": "2.2.0",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.9.0"
+    "webpack": "4.41.2",
+    "webpack-cli": "3.3.9",
+    "webpack-dev-server": "3.9.0"
   }
 }

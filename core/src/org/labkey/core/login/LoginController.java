@@ -2355,9 +2355,11 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-            VBox result = new VBox();
-            result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration"));
-            return result;
+//            VBox result = new VBox();
+//            result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration"));
+//            return result;
+
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration");
 
 //            return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
         }

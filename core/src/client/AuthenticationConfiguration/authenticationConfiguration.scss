@@ -1,0 +1,273 @@
+@import "../../../node_modules/react-bootstrap-toggle/dist/bootstrap2-toggle";
+
+.noHighlight {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+// from platform/experiment/resources/web/experiment/gen/domainDesigner.css
+// todo: import instead
+
+.domain-field-row {
+  border: 1px solid;
+  border-radius: 2px;
+  margin: 0 0 20px 0;
+  background-color: white;
+  outline: none;
+}
+
+.domain-row-border-default {
+  border-color: #CCC;
+  box-shadow: inset 0 1px 3px 2px #F3F3F4;
+}
+
+.domain-row-handle {
+  padding-left: 8px;
+  border-width: 0 1px 1px 0;
+  border-style: solid;
+  border-color: #CCC;
+  display: table-cell;
+  width: 30px;
+  vertical-align: middle;
+  background-color: #F3F3F4;
+}
+
+.domain-row-main {
+  height: 50px;
+}
+
+.domain-row-container {
+  display: table;
+  width: 100%;
+}
+
+.domain-field-row .row {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.domain-row-base-fields {
+  padding: 0;
+  margin: 0;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+// todo: rename
+
+.auth-tab{
+  margin-top: 14px;
+}
+
+.left-margin{
+  margin-left: 10px;
+}
+
+.bottom-margin{
+  margin-bottom: 14px;
+}
+
+.globalAuthConfig-textInput{
+  width: 15em;
+}
+
+.globalAuthConfig-leftMargin{
+  margin-left: 29px;
+}
+
+// fixing row
+.col-v-centered {
+  display: flex;
+  align-items: center;
+}
+
+
+// oh, my god, the toggle
+// grabbed from sampleManagement/resources/web/sampleManagement/gen/sampleManagement-styles.css
+// but minor adjustments were needed...
+
+.btn {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: normal;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  touch-action: manipulation;
+  cursor: pointer;
+  background-image: none;
+  //border: 1px solid transparent;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.42857;
+  border-radius: 4px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.btn:focus,
+.btn.focus,
+.btn:active:focus,
+.btn:active.focus,
+.btn.active:focus,
+.btn.active.focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+.btn:hover,
+.btn:focus,
+.btn.focus {
+  color: #333;
+  text-decoration: none;
+}
+
+.btn:active,
+.btn.active {
+  background-image: none;
+  outline: 0;
+  -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+
+.btn.disabled,
+.btn[disabled],
+fieldset[disabled] .btn {
+  cursor: not-allowed;
+  filter: alpha(opacity=65);
+  opacity: 0.65;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+a.btn.disabled,
+fieldset[disabled] a.btn {
+  pointer-events: none;
+}
+
+.btn-default {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.btn-default:focus,
+.btn-default.focus {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #8c8c8c;
+}
+
+.btn-default:hover {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+
+.btn-default:active,
+.btn-default.active,
+.open > .btn-default.dropdown-toggle {
+  color: #333;
+  background-color: #e6e6e6;
+  background-image: none;
+  border-color: #adadad;
+}
+
+.btn-default:active:hover,
+.btn-default:active:focus,
+.btn-default:active.focus,
+.btn-default.active:hover,
+.btn-default.active:focus,
+.btn-default.active.focus,
+.open > .btn-default.dropdown-toggle:hover,
+.open > .btn-default.dropdown-toggle:focus,
+.open > .btn-default.dropdown-toggle.focus {
+  color: #333;
+  background-color: #d4d4d4;
+  border-color: #8c8c8c;
+}
+
+.btn-default.disabled:hover,
+.btn-default.disabled:focus,
+.btn-default.disabled.focus,
+.btn-default[disabled]:hover,
+.btn-default[disabled]:focus,
+.btn-default[disabled].focus,
+fieldset[disabled] .btn-default:hover,
+fieldset[disabled] .btn-default:focus,
+fieldset[disabled] .btn-default.focus {
+  background-color: #fff;
+  border-color: #ccc;
+}
+
+.btn-default .badge {
+  color: #fff;
+  background-color: #333;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #2980b9;
+  border-color: #2472a4;
+}
+
+.btn-primary:focus,
+.btn-primary.focus {
+  color: #fff;
+  background-color: #20638f;
+  border-color: #0d293c;
+}
+
+.btn-primary:hover {
+  color: #fff;
+  background-color: #20638f;
+  border-color: #194f72;
+}
+
+.btn-primary:active,
+.btn-primary.active,
+.open > .btn-primary.dropdown-toggle {
+  color: #fff;
+  background-color: #20638f;
+  background-image: none;
+  border-color: #194f72;
+}
+
+.btn-primary:active:hover,
+.btn-primary:active:focus,
+.btn-primary:active.focus,
+.btn-primary.active:hover,
+.btn-primary.active:focus,
+.btn-primary.active.focus,
+.open > .btn-primary.dropdown-toggle:hover,
+.open > .btn-primary.dropdown-toggle:focus,
+.open > .btn-primary.dropdown-toggle.focus {
+  color: #fff;
+  background-color: #194f72;
+  border-color: #0d293c;
+}
+
+.btn-primary.disabled:hover,
+.btn-primary.disabled:focus,
+.btn-primary.disabled.focus,
+.btn-primary[disabled]:hover,
+.btn-primary[disabled]:focus,
+.btn-primary[disabled].focus,
+fieldset[disabled] .btn-primary:hover,
+fieldset[disabled] .btn-primary:focus,
+fieldset[disabled] .btn-primary.focus {
+  background-color: #2980b9;
+  border-color: #2472a4;
+}
+
+.btn-primary .badge {
+  color: #2980b9;
+  background-color: #fff;
+}
