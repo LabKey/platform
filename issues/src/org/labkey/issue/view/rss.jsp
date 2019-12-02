@@ -43,15 +43,15 @@
 for (Issue issue : bean.issues)
 { %>
     <item>
-        <title><%=issue.getIssueId()%>: <%=h(issue.getMilestone()) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(user))%> <%=h(issue.getTitle())%></title>
+        <title><%=issue.getIssueId()%>: <%=h(issue.getProperty(Issue.Prop.milestone)) %> <%=h(issue.getStatus())%> <%=h(issue.getAssignedToName(user))%> <%=h(issue.getTitle())%></title>
         <link><%=text(bean.filteredURLString)%><%=issue.getIssueId()%></link>
         <guid><%=text(bean.filteredURLString)%><%=issue.getIssueId()%></guid>
         <pubDate><%=issue.getCreated()%></pubDate>
         <description>
 openedby <%=h(issue.getCreatedByName(user))%>
-priority <%=issue.getPriority()%>
-type <%=h(issue.getType())%>
-area <%=h(issue.getArea())%>
+priority <%=h(issue.getProperty(Issue.Prop.priority))%>
+type <%=h(issue.getProperty(Issue.Prop.type))%>
+area <%=h(issue.getProperty(Issue.Prop.area))%>
         </description>
     </item>
 <% } %>

@@ -71,11 +71,7 @@
             if (NOTIFICATION_PANEL_EL)
             {
                 NOTIFICATION_PANEL_EL.slideDown(250, _addCheckHandlers);
-
-                // if not already loaded, refresh the notifications content
-                if (LABKEY.notifications && !LABKEY.notifications.grouping) {
-                    _refreshFromServer();
-                }
+                load();
             }
         };
 
@@ -483,6 +479,15 @@
             }
         };
 
+        /** Allow for client code to explicitly call the load method for the notifications */
+        var load = function(event, cb)
+        {
+            // if not already loaded, refresh the notifications content
+            if (LABKEY.notifications && !LABKEY.notifications.grouping) {
+                _refreshFromServer();
+            }
+        };
+
         return {
             setElementIds: setElementIds,
             updateUnreadCount: updateUnreadCount,
@@ -495,7 +500,8 @@
             goToActionLink: goToActionLink,
             goToViewAll: goToViewAll,
             onChange: onChange,
-            addServerEventListener: addServerEventListener
+            addServerEventListener: addServerEventListener,
+            load: load
         };
     };
 

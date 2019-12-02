@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.apache.commons.collections4.SetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -521,6 +521,19 @@ public interface QueryService
         }
     }
 
-    /* returns map of query dependencies within on folder (as determined by startSchema). */
-    void analyzeFolder(DefaultSchema startSchema, HashSetValuedHashMap<DependencyObject,DependencyObject> dependencyGraph);
+    /**
+     * Service that can trace dependencies for queries, tables and reports
+     */
+    interface QueryAnalysisService
+    {
+        /* returns map of query dependencies within on folder (as determined by startSchema). */
+        void analyzeFolder(DefaultSchema startSchema, SetValuedMap<DependencyObject, DependencyObject> dependencyGraph);
+    }
+
+    void registerQueryAnalysisProvider(QueryAnalysisService provider);
+
+    @Nullable
+    QueryAnalysisService getQueryAnalysisService();
+
+    TableInfo analyzeQuery(QuerySchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
 }
