@@ -781,8 +781,8 @@ public class SecurityApiActions
             }
 
             //if root container permissions update, check for app admin removal
-            if (container.isRoot() && resource.getResourceName().equals("") && user.hasApplicationAdminPermission()
-                    && !user.hasApplicationAdminPermissionForPolicy(policy) && !form.isConfirm())
+            if (container.isRoot() && resourceId.equals(container.getId()) && user.isApplicationAdmin()
+                    && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
             {
                 Map<String, Object> props = new HashMap<>();
                 props.put("success", false);
