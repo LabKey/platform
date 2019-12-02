@@ -279,7 +279,7 @@ public abstract class AbstractDomainKind extends DomainKind
     @Override
     public boolean exceedsMaxLength(Domain domain, DomainProperty prop)
     {
-        if (prop.getPropertyDescriptor().isStringType())
+        if (!prop.getPropertyDescriptor().isStringType())
             return false;
 
         String schema = getStorageSchemaName();

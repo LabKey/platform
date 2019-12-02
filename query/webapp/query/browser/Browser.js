@@ -515,6 +515,7 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
             var idMap = browser.parseQueryPanelId.call(browser, tabId);
             panel = Ext4.create('LABKEY.query.browser.view.QueryDetails', {
                 itemId: tabId,
+                parent : browser,
                 schemaName: idMap.schemaName,
                 queryName: idMap.queryName,
                 title: Ext4.htmlEncode(idMap.schemaName.toDisplayString()) + '.' + Ext4.htmlEncode(idMap.queryName),

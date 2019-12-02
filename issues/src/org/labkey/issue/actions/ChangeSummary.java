@@ -172,8 +172,8 @@ public class ChangeSummary
             // Keep track of whether this issue is new
             boolean newIssue = previous.getIssueId() == 0;
 
-            String prevPriStringVal = previous.getPriority() == null ? "" : previous.getPriority();
-            String priStringVal = issue.getPriority() == null ? "" : issue.getPriority();
+            String prevPriStringVal = previous.getProperty(Issue.Prop.priority);
+            String priStringVal = issue.getProperty(Issue.Prop.priority);
 
             // issueChanges is not defined yet, but it leaves things flexible
             sbHTMLChanges.append("<table class=issues-Changes>");
@@ -184,10 +184,10 @@ public class ChangeSummary
                     StringUtils.join(previous.getNotifyListDisplayNames(null),";"),
                     StringUtils.join(issue.getNotifyListDisplayNames(null),";"),
                     ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Type", previous.getProperty(Issue.Prop.type), issue.getProperty(Issue.Prop.type), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getProperty(Issue.Prop.area), issue.getProperty(Issue.Prop.area), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Priority", prevPriStringVal, priStringVal, ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getProperty(Issue.Prop.milestone), issue.getProperty(Issue.Prop.milestone), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Related", StringUtils.join(previous.getRelatedIssues(), ", "), StringUtils.join(issue.getRelatedIssues(), ", "), ccc, newIssue);
 
             Map<String, Object> oldProps = previous.getProperties();

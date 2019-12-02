@@ -430,7 +430,7 @@
 %>
 <% if (result != null) { %>
 <div class="<%=text(hasNavResults ? "col-md-9" : "col-md-12")%>">
-    <div class="panel panel-portal">
+    <div class="panel panel-portal labkey-search-results">
         <div class="panel-body">
             <%
                 long hits = result.totalHits;
@@ -540,7 +540,7 @@
 </div>
 <% if (hasNavResults) { %>
 <div class="col-md-3">
-    <div class="panel panel-portal">
+    <div class="panel panel-portal labkey-folders-search-results">
         <div class="panel-body">
             <div class="labkey-search-results-counts">
                 <span>Folders</span>
