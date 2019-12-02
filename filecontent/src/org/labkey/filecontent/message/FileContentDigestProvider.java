@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.audit.provider.FileSystemAuditProvider.FileSystemAuditEvent;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -114,7 +115,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         return new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
     }
 
-    private List<FileSystemAuditProvider.FileSystemAuditEvent> getAuditEvents(Container container, Date start, Date end)
+    private List<FileSystemAuditEvent> getAuditEvents(Container container, Date start, Date end)
     {
         User user = getLimitedUser();
         SimpleFilter filter = new SimpleFilter();
@@ -131,11 +132,11 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
     private void sendDigest(Container c, Date min, Date max)
     {
-        List<FileSystemAuditProvider.FileSystemAuditEvent> events = getAuditEvents(c, min, max);
-        Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> recordMap = new LinkedHashMap<>();
+        List<FileSystemAuditEvent> events = getAuditEvents(c, min, max);
+        Map<Path, List<FileSystemAuditEvent>> recordMap = new LinkedHashMap<>();
 
         // group audit events by webdav resource
-        for (FileSystemAuditProvider.FileSystemAuditEvent event : events)
+        for (FileSystemAuditEvent event : events)
         {
             String resourcePath = event.getResourcePath();
             if (resourcePath != null)
@@ -147,7 +148,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
                 {
                     if (!recordMap.containsKey(path))
                     {
-                        recordMap.put(path, new ArrayList<FileSystemAuditProvider.FileSystemAuditEvent>());
+                        recordMap.put(path, new ArrayList<>());
                     }
                     recordMap.get(path).add(event);
                 }
@@ -220,18 +221,18 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
     public static class FileDigestForm
     {
-        Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> _records;
-        User _user;
-        Container _container;
+        private Map<Path, List<FileSystemAuditEvent>> _records;
+        private User _user;
+        private Container _container;
 
-        public FileDigestForm(User user, Container container, Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> records)
+        public FileDigestForm(User user, Container container, Map<Path, List<FileSystemAuditEvent>> records)
         {
             _user = user;
             _container = container;
             _records = records;
         }
 
-        public Map<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> getRecords()
+        public Map<Path, List<FileSystemAuditEvent>> getRecords()
         {
             return _records;
         }

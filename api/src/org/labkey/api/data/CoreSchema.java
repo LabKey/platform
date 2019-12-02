@@ -118,11 +118,6 @@ public class CoreSchema
         return getSchema().getTable("ActiveUsers");
     }
 
-    public TableInfo getTableInfoContacts()
-    {
-        return getSchema().getTable("Contacts");
-    }
-
     public TableInfo getTableInfoContainerAliases()
     {
         return getSchema().getTable("ContainerAliases");
@@ -186,5 +181,15 @@ public class CoreSchema
     public TableInfo getTableInfoAuthenticationConfigurations()
     {
         return getSchema().getTable("AuthenticationConfigurations");
+    }
+
+    public TableInfo getTableInfoEmailPrefs()
+    {
+        return getSchema().getTable("EmailPrefs");
+    }
+
+    public TableInfo getTableInfoEmailOptions()
+    {
+        return getSchema().getTable("EmailOptions");
     }
 }

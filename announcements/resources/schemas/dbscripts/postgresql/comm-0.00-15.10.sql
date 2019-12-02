@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* comm-0.00-10.10.sql */
-
 -- Create schema comm: tables for Announcements and Wiki
 
 CREATE SCHEMA comm;
@@ -34,7 +32,6 @@ CREATE TABLE comm.Announcements
     Expires TIMESTAMP,
     Body TEXT,
     RendererType VARCHAR(50) NULL,       -- Updates to properties will result in NULL body and NULL render type
-    EmailList VARCHAR(1000) NULL,        -- History of addresses that were notified
     Status VARCHAR(50) NULL,
     AssignedTo USERID NULL,
     DiscussionSrcIdentifier VARCHAR(100) NULL,
@@ -63,10 +60,13 @@ CREATE TABLE comm.Pages
     PageVersionId INT4 NULL,
     ShowAttachments BOOLEAN NOT NULL DEFAULT TRUE,
     LastIndexed TIMESTAMP NULL,
+    ShouldIndex BOOLEAN DEFAULT TRUE,
 
-    CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
-    CONSTRAINT UQ_Pages UNIQUE (Container, Name)
+    CONSTRAINT PK_Pages PRIMARY KEY (EntityId)
 );
+
+-- Need a case-insensitive UNIQUE INDEX on Name
+CREATE UNIQUE INDEX UQ_Pages ON comm.Pages (Container, LOWER(Name));
 
 CREATE TABLE comm.PageVersions
 (
@@ -88,10 +88,12 @@ CREATE TABLE comm.PageVersions
 ALTER TABLE comm.Pages
     ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId);
 
+/* Managed by the core module, as of 20.1.x
 CREATE TABLE comm.EmailOptions
 (
     EmailOptionId INT4 NOT NULL,
     EmailOption VARCHAR(50),
+    Type VARCHAR(60) NOT NULL DEFAULT 'messages',
 
     CONSTRAINT PK_EmailOptions PRIMARY KEY (EmailOptionId)
 );
@@ -99,9 +101,14 @@ CREATE TABLE comm.EmailOptions
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
-INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (3, 'Broadcast only');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
+
+-- new file email notification options
+INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES
+  (512, 'No Email', 'files'),
+  (513, '15 minute digest', 'files'),
+  (514, 'Daily digest', 'files');
 
 CREATE TABLE comm.EmailFormats
 (
@@ -133,15 +140,17 @@ CREATE TABLE comm.EmailPrefs
     EmailFormatId INT4 NOT NULL,
     PageTypeId INT4 NOT NULL,
     LastModifiedBy USERID,
+    Type VARCHAR(60) NOT NULL DEFAULT 'messages',
+    SrcIdentifier VARCHAR(100) NOT NULL, -- allow subscriptions to multiple forums within a single container
 
-    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId),
+    CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier),
     CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
     CONSTRAINT FK_EmailPrefs_EmailOptions FOREIGN KEY (EmailOptionId) REFERENCES comm.EmailOptions (EmailOptionId),
     CONSTRAINT FK_EmailPrefs_EmailFormats FOREIGN KEY (EmailFormatId) REFERENCES comm.EmailFormats (EmailFormatId),
     CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
 );
-
+*/
 -- Discussions can be private, constrained to a certain subset of users (like a Cc: line)
 CREATE TABLE comm.UserList
 (
@@ -153,72 +162,6 @@ CREATE TABLE comm.UserList
 
 -- Improve performance of user list lookups for permission checking
 CREATE INDEX IX_UserList_UserId ON comm.UserList(UserId);
-
-/* comm-10.30-11.10.sql */
-
-INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (259, 'Daily digest of broadcast messages only');
-UPDATE comm.EmailOptions SET EmailOption = 'Broadcast messages only' WHERE EmailOptionID = 3;
-
--- add a new column to contain 'notification type' information for both the
--- email prefs and options
-ALTER TABLE comm.EmailOptions ADD COLUMN Type VARCHAR(60) NOT NULL DEFAULT 'messages';
-ALTER TABLE comm.EmailPrefs ADD COLUMN Type VARCHAR(60) NOT NULL DEFAULT 'messages';
-
-ALTER TABLE comm.EmailPrefs DROP CONSTRAINT PK_EmailPrefs;
-ALTER TABLE comm.EmailPrefs ADD CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type);
-
--- new file email notification options
-INSERT INTO comm.emailOptions (EmailOptionId, EmailOption, Type) VALUES
-  (512, 'No Email', 'files'),
-  (513, '15 minute digest', 'files'),
-  (514, 'Daily digest', 'files');
-
--- migrate existing file setting from property manager props
-INSERT INTO comm.emailPrefs (Container, UserId, EmailOptionId, EmailFormatId, PageTypeId, Type) SELECT
-	ObjectId,
-	UserId,
-	CAST(Value AS INTEGER) + 512,
-	1, 0, 'files'
-	FROM prop.Properties props JOIN prop.PropertySets ps on props.set = ps.set AND category = 'EmailService.emailPrefs' WHERE name = 'FileContentEmailPref' AND value <> '-1';
-
--- update folder default settings
-UPDATE prop.Properties SET Value = '512' WHERE name = 'FileContentDefaultEmailPref' AND Value = '0';
-UPDATE prop.Properties SET Value = '513' WHERE name = 'FileContentDefaultEmailPref' AND Value = '1';
-
--- delete old user property values
-DELETE FROM prop.Properties WHERE name = 'FileContentEmailPref';
-
-/* comm-11.10-11.20.sql */
-
--- Switch case-sensitive UNIQUE CONSTRAINTs to case-insensitive UNIQUE INDEXes
-
-ALTER TABLE comm.Pages DROP CONSTRAINT UQ_Pages;
-
-CREATE UNIQUE INDEX UQ_Pages ON comm.Pages (Container, LOWER(Name));
-
-/* comm-11.30-12.10.sql */
-
--- Change all "Broadcast messages only" and "Daily digest of broadcast messages only" preferences
--- to "No Email", then remove the broadcast options.
-UPDATE comm.EmailPrefs SET EmailOptionID = 0 WHERE EmailOptionID IN (3, 259);
-DELETE FROM comm.EmailOptions WHERE EmailOptionID IN (3, 259);
-
--- add a new column to allow subscriptions to multiple forums within a single container
-ALTER TABLE comm.EmailPrefs ADD COLUMN SrcIdentifier VARCHAR(100);
-UPDATE comm.EmailPrefs SET SrcIdentifier = Container;
-ALTER TABLE comm.EmailPrefs ALTER COLUMN SrcIdentifier SET NOT NULL;
-
-ALTER TABLE comm.EmailPrefs DROP CONSTRAINT pk_emailprefs;
-ALTER TABLE comm.EmailPrefs ADD CONSTRAINT PK_EmailPrefs PRIMARY KEY (Container, UserId, Type, SrcIdentifier);
-
-UPDATE comm.Announcements SET DiscussionSrcIdentifier = Container WHERE DiscussionSrcIdentifier IS NULL AND Parent IS NULL;
-
-/* comm-12.10-12.20.sql */
-
-ALTER TABLE comm.Pages ADD COLUMN ShouldIndex BOOLEAN DEFAULT TRUE;
-UPDATE comm.Pages SET ShouldIndex=TRUE;
-
-/* comm-14.10-14.20.sql */
 
 CREATE TABLE comm.RSSFeeds
 (
@@ -238,9 +181,6 @@ CREATE TABLE comm.RSSFeeds
     CONSTRAINT UQ_RSSFeeds UNIQUE (Container, RowId)
 );
 
-ALTER TABLE comm.announcements DROP COLUMN EmailList;
-
-/* comm-14.30-14.31.sql */
 CREATE TABLE comm.Tours
 (
   RowId SERIAL,
