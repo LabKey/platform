@@ -304,7 +304,7 @@ public abstract class SqlDialect
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
 
-    protected String getDatabaseMaintenanceSql()
+    protected @Nullable String getDatabaseMaintenanceSql()
     {
         return null;
     }
