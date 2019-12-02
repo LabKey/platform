@@ -1191,6 +1191,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(SourceForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Query");
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
 
             if (null == _queryDef)
@@ -4110,6 +4112,8 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getConfirmView(F form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Schema");
             form.refreshFromDb();
             return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
         }

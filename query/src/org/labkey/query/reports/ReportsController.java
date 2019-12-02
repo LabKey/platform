@@ -2556,7 +2556,7 @@ public class ReportsController extends SpringActionController
         {
             if (_reportName != null)
                 return root.addChild(_reportName);
-            return null;
+            return root.addChild("Query Report");
         }
     }
 

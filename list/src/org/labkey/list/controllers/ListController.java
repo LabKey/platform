@@ -341,6 +341,8 @@ public class ListController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete List");
             return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 

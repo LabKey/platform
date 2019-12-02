@@ -332,6 +332,9 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(AnnouncementDeleteForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Message");
+
             Permissions perm = getPermissions();
 
             AnnouncementModel ann = null;
