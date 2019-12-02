@@ -264,6 +264,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public int compareTo(@NotNull Module m)
     {
         //core module always sorts first
+        // TODO: Nice try, but this doesn't work consistently, since no one told DefaultModule.compareTo() that core is special -- fix this or remove the override
         return (m instanceof CoreModule) ? 0 : -1;
     }
 
@@ -1000,36 +1001,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         TempTableTracker.init();
     }
 
-    private static final String LIB_PATH = "/WEB-INF/lib/";
     private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
-
-    @NotNull
-    @Override
-    public Collection<String> getJarFilenames()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
-        //noinspection unchecked
-        Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-
-        // Remove path prefix and copy to a modifiable collection
-        for (String filename : resources)
-        {
-            String name = filename.substring(LIB_PATH.length());
-
-            // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
-            // our JARs that end up in WEB-INF/lib
-            if (DefaultModule.isRuntimeJar(name) && !LABKEY_JAR_PATTERN.matcher(name).matches())
-                filenames.add(name);
-        }
-
-        // For now, add in the /lib jars as well. TODO: Stop putting jars in /WEB-INF/lib -- doesn't seem necessary any more
-        filenames.addAll(super.getJarFilenames());
-
-        return filenames;
-    }
 
     @Override
     public String getTabName(ViewContext context)
