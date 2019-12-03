@@ -1069,7 +1069,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return Set.of(
             CopyFileRootPipelineJob.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class
+            StatsServiceImpl.TestCase.class,
+            CommandLineTokenizer.TestCase.class
         );
     }
 

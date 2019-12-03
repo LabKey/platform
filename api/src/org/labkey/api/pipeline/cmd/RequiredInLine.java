@@ -89,7 +89,8 @@ public class RequiredInLine extends TaskToCommandArgs
         return isAddPipelineToolsDir() ? PipelineJobService.get().getToolPath(getValue(), null,  _softwarePackage, getVersion(task), task.getJob().getLogger()) : getValue();
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    @Override
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         return Collections.singletonList(getFullValue(task));
     }
