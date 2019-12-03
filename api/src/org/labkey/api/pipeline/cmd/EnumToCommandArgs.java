@@ -52,14 +52,15 @@ public class EnumToCommandArgs extends JobParamToCommandArgs
         return _converters.get(value);
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    @Override
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
-        String keyConverter = getValue(task.getJob());
+        String keyConverter = getValue(params);
         if (keyConverter != null)
         {
             TaskToCommandArgs converter = getConverter(keyConverter);
             if (converter != null)
-                return converter.toArgs(task, visited);
+                return converter.toArgs(task, params, visited);
         }
 
         return Collections.emptyList();

@@ -17,6 +17,7 @@ package org.labkey.api.pipeline.cmd;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,7 +37,8 @@ public class RequiredSwitch extends RequiredInLine
         _switchName = switchName;
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    @Override
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         // Ignore the key and job, and just return the switch.
         return getSwitchFormat().format(getSwitchName(), getFullValue(task));

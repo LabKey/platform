@@ -21,16 +21,13 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
-import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
-import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
@@ -39,38 +36,21 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
-import org.labkey.api.collections.CollectionUtils;
-import org.labkey.api.collections.MultiValuedMapCollectors;
-import org.labkey.api.collections.Sampler;
-import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.dataiterator.CachingDataIterator;
-import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
-import org.labkey.api.dataiterator.ResultSetDataIterator;
-import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.StatementDataIterator;
-import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleDependencySorter;
-import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.notification.EmailMessage;
@@ -79,8 +59,6 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
-import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -90,35 +68,27 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
-import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
-import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.RReport;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.NestedGroupsTest;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.security.SecurityPointcutServiceImpl;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
@@ -145,16 +115,13 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.*;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
@@ -211,6 +178,10 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
+import org.labkey.core.notification.EmailPreferenceContainerListener;
+import org.labkey.core.notification.EmailPreferenceUserListener;
+import org.labkey.core.notification.EmailServiceImpl;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -261,7 +232,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -802,6 +772,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
+        EmailService.setInstance(new EmailServiceImpl());
 
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
         {
@@ -1000,6 +971,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             LOG.error("Exception registering MarkdownServiceImpl", e);
         }
+
+        // initialize email preference service and listeners
+        MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
+        ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
+        UserManager.addUserListener(new EmailPreferenceUserListener());
     }
 
     @Override
@@ -1057,79 +1033,28 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Must be mutable since we add the dialect tests below
         Set<Class> testClasses = Sets.newHashSet
         (
-            AbstractQueryUpdateService.TestCase.class,
-            ActionURL.TestCase.class,
             AdminController.ModuleVersionTestCase.class,
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
-            AliasManager.TestCase.class,
-            AtomicDatabaseInteger.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
-            ContainerDisplayColumn.TestCase.class,
-            ContainerFilter.TestCase.class,
-            ContainerManager.TestCase.class,
             CoreController.TestCase.class,
             DavController.TestCase.class,
-            DbSchema.CachingTestCase.class,
-            DbSchema.DDLMethodsTestCase.class,
-            DbSchema.SchemaCasingTestCase.class,
-            DbSchema.TableSelectTestCase.class,
-            DbSchema.TransactionTestCase.class,
-            DbScope.GroupConcatTestCase.class,
-            DbScope.TransactionTestCase.class,
-            DbSequenceManager.TestCase.class,
-            DomainTemplateGroup.TestCase.class,
-            DomTestCase.class,
-            Encryption.TestCase.class,
-            ExceptionUtil.TestCase.class,
+            EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
-            FolderTypeManager.TestCase.class,
-            GroupManager.TestCase.class,
-            JspTemplate.TestCase.class,
             LoggerController.TestCase.class,
             LoginController.TestCase.class,
-            MapLoader.MapLoaderTestCase.class,
-            MarkdownService.TestCase.class,
-            MimeMap.TestCase.class,
-            ModuleHtmlView.TestCase.class,
             ModuleInfoTestCase.class,
             ModulePropertiesTestCase.class,
-            ModuleStaticResolverImpl.TestCase.class,
-            MultiValuedMapCollectors.TestCase.class,
-            NestedGroupsTest.class,
             NotificationServiceImpl.TestCase.class,
-            Portal.TestCase.class,
             PortalJUnitTest.class,
             PostgreSql92Dialect.TestCase.class,
             ProductRegistry.TestCase.class,
-            PropertyManager.TestCase.class,
             RadeoxRenderer.RadeoxRenderTest.class,
-            //RateLimiter.TestCase.class,
-            ResultSetDataIterator.TestCase.class,
-            ResultSetSelectorTestCase.class,
-            RhinoService.TestCase.class,
-            RowTrackingResultSetWrapper.TestCase.class,
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
-            SecurityManager.TestCase.class,
-            SimpleTranslator.TranslateTestCase.class,
-            SQLFragment.TestCase.class,
             SqlScriptController.TestCase.class,
-            SqlSelectorTestCase.class,
-            StatementDataIterator.TestCase.class,
-            StatementUtils.TestCase.class,
-            StorageProvisioner.TestCase.class,
-            Table.DataIteratorTestCase.class,
-            Table.TestCase.class,
-            TableSelectorTestCase.class,
-            TableViewFormTestCase.class,
-            TabLoader.TabLoaderTestCase.class,
-            TempTableInClauseGenerator.TestCase.class,
-            URLHelper.TestCase.class,
-            UserController.TestCase.class,
-            ViewCategoryManager.TestCase.class,
-            WebdavResolverImpl.TestCase.class
+            UserController.TestCase.class
         );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
@@ -1141,66 +1066,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
-                DateUtil.TestCase.class,
-                TSVWriter.TestCase.class,
-                TSVMapWriter.Tests.class,
-                ExcelLoader.ExcelLoaderTestCase.class,
-                ExcelFactory.ExcelFactoryTestCase.class,
-                ModuleDependencySorter.TestCase.class,
-                DatabaseCache.TestCase.class,
-                PasswordExpiration.TestCase.class,
-                BooleanFormat.TestCase.class,
-                FileUtil.TestCase.class,
-                FileType.TestCase.class,
-                TabLoader.HeaderMatchTest.class,
-                MemTracker.TestCase.class,
-                StringExpressionFactory.TestCase.class,
-                Path.TestCase.class,
-                PageFlowUtil.TestCase.class,
-                ResultSetUtil.TestCase.class,
-                ArrayListMap.TestCase.class,
-                DbScope.DialectTestCase.class,
-                ValidEmail.TestCase.class,
-                RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
-                CachingDataIterator.ScrollTestCase.class,
-                StringUtilsLabKey.TestCase.class,
-                Compress.TestCase.class,
-                ExtUtil.TestCase.class,
-                JsonTest.class,
-                ExtUtil.TestCase.class,
-                ReplacedRunFilter.TestCase.class,
-                MultiValuedRenderContext.TestCase.class,
-                SubfolderWriter.TestCase.class,
-                Aggregate.TestCase.class,
-                CaseInsensitiveHashSet.TestCase.class,
-                SwapQueue.TestCase.class,
-                ApiXmlWriter.TestCase.class,
-                TidyUtil.TestCase.class,
-                JSONDataLoader.HeaderMatchTest.class,
-                JSONDataLoader.MetadataTest.class,
-                JSONDataLoader.RowTest.class,
-                EmailTemplate.TestCase.class,
-                HelpTopic.TestCase.class,
-                CaseInsensitiveHashMap.TestCase.class,
-                CaseInsensitiveMapWrapper.TestCase.class,
-                StatsServiceImpl.TestCase.class,
-                NumberUtilsLabKey.TestCase.class,
-                SimpleFilter.FilterTestCase.class,
-                SimpleFilter.InClauseTestCase.class,
-                SimpleFilter.BetweenClauseTestCase.class,
-                InlineInClauseGenerator.TestCase.class,
-                CollectionUtils.TestCase.class,
-                MarkableIterator.TestCase.class,
-                Sampler.TestCase.class,
-                BuilderObjectFactory.TestCase.class,
-                ChecksumUtil.TestCase.class,
-                MaterializedQueryHelper.TestCase.class,
-                ScriptEngineManagerImpl.TestCase.class,
-                ConvertHelper.TestCase.class,
-                RReport.TestCase.class,
-                CopyFileRootPipelineJob.TestCase.class
-        ));
+        return Set.of(
+            CopyFileRootPipelineJob.TestCase.class,
+            ScriptEngineManagerImpl.TestCase.class,
+            StatsServiceImpl.TestCase.class,
+            CommandLineTokenizer.TestCase.class
+        );
     }
 
     @Override

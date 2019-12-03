@@ -41,6 +41,7 @@ public class EnumValueToSwitch extends ValueToCommandArgs
         _switches = switches;
     }
 
+    @Override
     public List<String> toArgs(String value)
     {
         if (value != null)
