@@ -110,7 +110,8 @@ public class Encryption
         byte[] bytes = generateRandomBytes(16);
         map.put(SALT_KEY, Base64.encodeBase64String(bytes));
 
-        // Mutating ensure operation maybe be called during a get
+        // Seems very unlikely that we'd attempt to read encrypted data before we'd write any encrypted data on a production
+        // server, but it could happen during development. Allow this mutating ensure operation during a GET.
         try (var ignored = SpringActionController.ignoreSqlUpdates())
         {
             map.save();
