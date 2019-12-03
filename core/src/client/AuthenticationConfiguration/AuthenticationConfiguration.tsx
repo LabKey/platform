@@ -5,12 +5,15 @@ import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGripVertical, faPencilAlt, faCheckSquare, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
+import { LinkContainer } from 'react-router-bootstrap';
 import Immutable from 'immutable';
 
 import "@glass/base/dist/base.css"
 import "./authenticationConfiguration.scss";
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
+// Todo, meta:
+// Finalize TS, Immutable
 
 // connectivity from LABKEY.js instead
 // import * as Ajax from '../../../resources/scripts/labkey/Ajax.js';
@@ -19,16 +22,16 @@ import {currentContainer, effectivePermissions, hasPermission} from "@labkey/api
 
 // Todo:
 // Find a nicer solution for the highlight
-// Make pointer upon hover-over
+// make reusable component
 class CheckBoxRows extends React.Component<any>{
     render(){
         return(
             <div className={"bottom-margin"}>
                 {this.props.checked
-                    ? <span className="noHighlight" onClick={() => this.props.checkGlobalAuthBox()}>
+                    ? <span className="noHighlight clickable" onClick={() => this.props.checkGlobalAuthBox()}>
                         <FontAwesomeIcon size='lg' icon={faCheckSquare} color={"#0073BB"} />
                     </span>
-                    : <span className="noHighlight" onClick={() => this.props.checkGlobalAuthBox()}>
+                    : <span className="noHighlight clickable" onClick={() => this.props.checkGlobalAuthBox()}>
                         <FontAwesomeIcon size='lg' icon={faSquare} color={"#adadad"}/>
                     </span>
                 }
@@ -44,13 +47,12 @@ class CheckBoxRows extends React.Component<any>{
 // use Immutable in handleCheckbox
 // move render const into a const folder?
 // bubble up form elements into app component
+// might be a better way to do the rowTexts thing you're doing
+// hook up default email domain!
 interface GACProps {
-    // defaultEmailDomainTextField: any
-    // selfSignUpCheckBox: boolean
-    // userEmailEditCheckbox: boolean
-    // autoCreateAuthUsersCheckbox: boolean
     preSaveConfigState: any
     currentConfigState: any
+    what: any
 }
 class GlobalAuthenticationConfigurations extends React.Component<any, GACProps>{
     constructor(props) {
@@ -68,11 +70,12 @@ class GlobalAuthenticationConfigurations extends React.Component<any, GACProps>{
                 userEmailEditCheckbox: false,
                 autoCreateAuthUsersCheckbox: false,
                 defaultEmailDomainTextField: "",
-            }
+            },
 
+
+            what: this.props.autoCreateAuthUsers,
         };
         this.handleChange = this.handleChange.bind(this);
-        this.handleCheckbox = this.handleCheckbox.bind(this);
         this.saveGlobalAuthConfigs = this.saveGlobalAuthConfigs.bind(this);
         this.getPermissions = this.getPermissions.bind(this);
     }
@@ -93,16 +96,6 @@ class GlobalAuthenticationConfigurations extends React.Component<any, GACProps>{
         // }));
     }
 
-    // To Reviewer: I found this extra function was necessary in order to make TS happy with the dynamic state key;
-    // open to learning a cleaner way to do it
-    handleCheckbox(id: string) {
-        let oldState = this.state[id];
-        this.setState(prevState => ({
-            ...prevState,
-            [id]: !oldState
-        }))
-    }
-
     saveGlobalAuthConfigs(parameter, enabled){
         Ajax.request({
             url: ActionURL.buildURL("login", "setAuthenticationParameter"), //generate this url
@@ -119,21 +112,22 @@ class GlobalAuthenticationConfigurations extends React.Component<any, GACProps>{
     }
 
     getPermissions(){
-        let myContainer = Security.currentContainer;
-        // console.log("mycontainer: ", myContainer);
-        let info;
-
-
-        Security.getUserPermissions({
-            success: (data) => { console.log(data)}
-        });
+        // let myContainer = Security.currentContainer;
+        // // console.log("mycontainer: ", myContainer);
+        // let info;
+        //
+        //
+        // Security.getUserPermissions({
+        //     success: (data) => { console.log(data)}
+        // });
+        console.log(this.props);
     }
 
     render() {
         const rowTexts = [
-            {id: "selfSignUpCheckBox", text: "Allow self sign up"},
-            {id: "userEmailEditCheckbox", text: "Allow users to edit their own email addresses"},
-            {id: "autoCreateAuthUsersCheckbox", text: "Auto-create authenticated users"}];
+            {id: "selfSignUp", text: "Allow self sign up"},
+            {id: "userEmailEdit", text: "Allow users to edit their own email addresses"},
+            {id: "autoCreateAuthUsers", text: "Auto-create authenticated users"}];
 
         return(
             <Panel>
@@ -149,8 +143,8 @@ class GlobalAuthenticationConfigurations extends React.Component<any, GACProps>{
                         (<CheckBoxRows
                             key={text.id}
                             rowText={text.text}
-                            checked={this.state[text.id]}
-                            checkGlobalAuthBox={() => {this.handleCheckbox(text.id)}}
+                            checked={this.props[text.id]}
+                            checkGlobalAuthBox={() => {this.props.checkGlobalAuthBox(text.id)}}
                         />)
                     )}
 
@@ -167,7 +161,7 @@ class GlobalAuthenticationConfigurations extends React.Component<any, GACProps>{
                     </div>
 
                     <br/>
-                    {/*<Button className={'labkey-button primary'} onClick={() => {this.getpermissions()}}>Save and Finish</Button>*/}
+                    {/*<Button className={'labkey-button primary'} onClick={() => {this.getPermissions()}}>Save and Finish</Button>*/}
 
                 </Panel.Body>
             </Panel>
@@ -181,6 +175,7 @@ interface AuthRowProps {
     authType: any
     toggleValue: any
     modalOpen: any
+    color: any
 }
 // Todo:
 // don't use the style to round the corners
@@ -191,9 +186,10 @@ class AuthRow extends React.Component<any, AuthRowProps>{
         this.state = {
             descriptionField: "",
             serverUrlField: "",
-            authType: "LDAP2",
+            authType: "LDAP",
             toggleValue: false,
-            modalOpen: false
+            modalOpen: false,
+            color: false
         };
         this.onToggle = this.onToggle.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -222,10 +218,14 @@ class AuthRow extends React.Component<any, AuthRowProps>{
         const HIGHLIGHT_BLUE = '#2980B9';  // See $blue-border in variables.scss
         const NOT_HIGHLIGHT_GRAY = '#999999';
         return(
-            <div className="domain-field-row domain-row-border-default">
+            <div
+                className="domain-field-row domain-row-border-default"
+                onMouseOver={() => {this.setState({color: true})}}
+                onMouseOut={() => {this.setState({color: false})}}
+            >
                 <div className="domain-row-container row">
                     <div className="domain-row-handle">
-                        <FontAwesomeIcon size='lg' color={(false) ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY} icon={faGripVertical}/>
+                        <FontAwesomeIcon size='lg' color={(this.state.color) ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY} icon={faGripVertical}/>
                         {/*<DragDropHandle highlighted={true}/>*/}
                     </div>
 
@@ -268,7 +268,7 @@ class AuthRow extends React.Component<any, AuthRowProps>{
                             </Col>
 
                             <Col xs={1} className='domain-row-base-fields'>
-                                <div onClick={() => this.onToggle("modalOpen")}>
+                                <div className={"clickable"} onClick={() => this.onToggle("modalOpen")}>
                                     <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
                                 </div>
                             </Col>
@@ -286,10 +286,13 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
         super(props);
         this.state = {
             items: this.getItems(5)
+            // items: this.uhItems()l
         };
         this.onDragEnd = this.onDragEnd.bind(this);
         this.getItems = this.getItems.bind(this);
         this.reorder = this.reorder.bind(this);
+        this.ohBoy = this.ohBoy.bind(this);
+
     }
 
     getItems = (count) =>
@@ -298,6 +301,17 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
             content: `item ${k}`
 
         }));
+
+    uhItems(){
+        return this.props.primary;
+    }
+
+    ohBoy(){
+        console.log("ohboy");
+        const configs = this.props.primary;
+        console.log("primary: ", configs);
+        console.log("state: ", this.state)
+    }
 
     reorder = (list, startIndex, endIndex) => {
         const result = Array.from(list);
@@ -329,14 +343,20 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
 
 
     render() {
+        // console.log("bleh: ", this.props.primary);
+        // console.log("state!! ", this.state);
+
+
+        this.ohBoy();
+
         return(
             <div>
                 <DragDropContext onDragEnd={this.onDragEnd}>
                     <Droppable droppableId="auth-config-droppable">
                         {(provided) => (
-                            <div {...provided.droppableProps} ref={provided.innerRef}>
+                            <div ref={provided.innerRef} {...provided.droppableProps}>
                                 {this.state.items.map((item, index) => (
-                                    <Draggable key={item.id} draggableId={item.id} index={index}>
+                                    <Draggable key={item.id} draggableId={item.id} index={index} >
                                         {(provided) => (
                                             <div
                                                 ref={provided.innerRef}
@@ -360,27 +380,22 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
     }
 }
 
+// todo:
+// add new configurations is not in order
+// lol fix the 'get help with auth' href
 class AuthenticationConfigurations extends React.Component<any>{
     render(){
-        // dummy variables
-        let authOptions = [
-            {name: "CAS", description:"cas description", id:1},
-            {name: "LDAP", description:"ldap description", id:2},
-            {name:"SAML", description:"saml description", id:3}];
+        let addNew = this.props.addNew;
 
         return(
             <Panel>
                 <Panel.Heading> <strong>Authentication Configurations </strong> </Panel.Heading>
                 <Panel.Body>
                     <DropdownButton id="dropdown-basic-button" title="Add New">
-                        {authOptions.map((authOption) => (
-                            <MenuItem key={authOption.id}>
-                                {/*<Link to="">*/}
-                                    {authOption.name} : {authOption.description}
-
-                                {/*</Link>*/}
-                                {/*<a href={"https://stackoverflow.com/questions/19935480/bootstrap-3-how-to-make-head-of-dropdown-link-clickable-in-navbar"}>*/}
-                                {/*</a>*/}
+                        {this.props.addNew &&
+                        Object.keys(addNew).map((authOption) => (
+                            <MenuItem key={authOption} href={addNew[authOption].configLink}>
+                                    {authOption} : {addNew[authOption].description}
                             </MenuItem>
                         ))}
                     </DropdownButton>
@@ -390,8 +405,8 @@ class AuthenticationConfigurations extends React.Component<any>{
                     <hr/>
 
                     <strong> Labkey Login Form Authentications </strong>
-                    <LabelHelpTip title={'test'} body={() => {
-                        return (<div> Tip 1: Ask Adam on text </div>)
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> Authentications in this group make use of LabKey's login form. During login, LabKey will attempt validation in the order that the configurations below are listed. </div>)
                     }}/>
 
                     <br/><br/>
@@ -399,7 +414,7 @@ class AuthenticationConfigurations extends React.Component<any>{
                     <Tabs defaultActiveKey={1} id="uncontrolled-tab-example">
                         <Tab eventKey={1} title="Primary">
                             <div className={"auth-tab"}>
-                                <AuthConfigRowDnDPanel className={"auth-tab"}/>
+                                <AuthConfigRowDnDPanel className={"auth-tab"} primary={this.props.primary}/>
                             </div>
 
                         </Tab>
@@ -424,10 +439,6 @@ class AuthenticationConfigurations extends React.Component<any>{
                     }}/>
 
                     <br/><br/>
-
-                    {/*<div className={"auth-tab"}>*/}
-                    {/*    <DragNDropMe className={"auth-tab"}/>*/}
-                    {/*</div>*/}
 
                 </Panel.Body>
             </Panel>
@@ -593,10 +604,14 @@ interface AppProps {
     // selfSignUpCheckBox: boolean
     // userEmailEditCheckbox: boolean
     // autoCreateAuthUsersCheckbox: boolean
-    preSaveConfigState: any
-    currentConfigState: any
+
+    // preSaveConfigState: any
+    // currentConfigState: any
     canEdit: boolean
     value: any
+    globalAuthConfigs: any
+    addNew: any
+    primary: any
 }
 export class App extends React.Component<any, AppProps> {
 
@@ -608,31 +623,66 @@ export class App extends React.Component<any, AppProps> {
             // tickAutoCreateAuthUsers: false
             value: false,
             canEdit: false,
-            preSaveConfigState: {
-                selfSignUpCheckBox: false,
-                userEmailEditCheckbox: false,
-                autoCreateAuthUsersCheckbox: false,
-                defaultEmailDomainTextField: "",
-            },
-            currentConfigState: {
-                selfSignUpCheckBox: false,
-                userEmailEditCheckbox: false,
-                autoCreateAuthUsersCheckbox: false,
-                defaultEmailDomainTextField: "",
-            }
-
+            globalAuthConfigs: null,
+            addNew: null,
+            primary: null,
+            // preSaveConfigState: {
+            //     selfSignUpCheckBox: false,
+            //     userEmailEditCheckbox: false,
+            //     autoCreateAuthUsersCheckbox: false,
+            //     defaultEmailDomainTextField: "",
+            // },
+            // currentConfigState: {
+            //     selfSignUpCheckBox: false,
+            //     userEmailEditCheckbox: false,
+            //     autoCreateAuthUsersCheckbox: false,
+            //     defaultEmailDomainTextField: "",
+            // }
         };
         // this.checkGlobalAuthBox = this.checkGlobalAuthBox.bind(this);
         this.savepls = this.savepls.bind(this);
-        this.getpermissions = this.getpermissions.bind(this);
+        this.getPermissions = this.getPermissions.bind(this);
+        this.cancelChanges = this.cancelChanges.bind(this);
+        this.checkGlobalAuthBox = this.checkGlobalAuthBox.bind(this);
+
     }
 
-    cancelChanges = () => {
-        console.log("to do")
-    };
+    componentDidMount() {
+        Ajax.request({
+            url: "/labkey/login-InitialMount.api", //generate this url
+            method : 'GET',
+            scope: this,
+            failure: function(error){
+                console.log("fail: ", error);
+            },
+            success: function(result){
+                let response = JSON.parse(result.response);
+                this.setState({...response});
+                console.log({...response});
+            }
+        })
+    }
 
-    checkGlobalAuthBox = () => {
-        alert("uh");
+    // GAC
+
+    // To Reviewer: I found this extra function was necessary in order to make TS happy with the dynamic state key;
+    // open to learning a cleaner way to do it
+    checkGlobalAuthBox(id: string) {
+        let oldState = this.state.globalAuthConfigs[id];
+        this.setState(prevState => ({
+            ...prevState,
+            globalAuthConfigs: {
+                ...prevState.globalAuthConfigs,
+                [id]: !oldState
+            }
+        }));
+    }
+
+    // End GAC
+
+    cancelChanges() {
+        console.log(this.state);
+        console.log("globalAuthConfig props: ",{...this.state.globalAuthConfigs});
     };
 
     savepls(){
@@ -646,11 +696,13 @@ export class App extends React.Component<any, AppProps> {
             },
             success: function(result){
                 console.log("success: ", result);
+                this.state({...result});
+                console.log(this.state);
             }
         })
     }
 
-    getpermissions(){
+    getPermissions(){
         Security.getUserPermissions({
             success: (data) => {
                 let canEdit = data.container.effectivePermissions.includes("org.labkey.api.security.permissions.AdminOperationsPermission");
@@ -658,7 +710,7 @@ export class App extends React.Component<any, AppProps> {
             }
         });
         // /labkey/login-setAuthenticationParameter.view
-        let thing = ActionURL.buildURL("login", "setAuthenticationParameter")
+        let thing = ActionURL.buildURL("login", "setAuthenticationParameter");
         console.log("thingie ", thing)
     }
 
@@ -666,14 +718,18 @@ export class App extends React.Component<any, AppProps> {
         return(
             <div>
                 <GlobalAuthenticationConfigurations
-                    {...this.state}
-                    // checkGlobalAuthBox={() => this.checkGlobalAuthBox()}
+                    {...this.state.globalAuthConfigs}
+                    checkGlobalAuthBox={this.checkGlobalAuthBox}
                 />
-                <AuthenticationConfigurations/>
+
+                <AuthenticationConfigurations
+                    addNew={this.state.addNew}
+                    primary={this.state.primary}
+                />
 
                 {false && <Alert>You have unsaved changes.</Alert>}
 
-                <Button className={'labkey-button primary'} onClick={this.getpermissions}>Save and Finish</Button>
+                <Button className={'labkey-button primary'} onClick={this.getPermissions}>Save and Finish</Button>
 
                 <Button className={'labkey-button'} onClick={this.cancelChanges} style={{marginLeft: '10px'}}>Cancel</Button>
             </div>

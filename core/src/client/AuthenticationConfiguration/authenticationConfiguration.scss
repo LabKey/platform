@@ -11,11 +11,16 @@
 
 // from platform/experiment/resources/web/experiment/gen/domainDesigner.css
 // todo: import instead
+// check if styling is duplicate
+
+.clickable {
+  cursor:pointer;
+}
 
 .domain-field-row {
   border: 1px solid;
   border-radius: 2px;
-  margin: 0 0 20px 0;
+  //margin-bottom: 20px;
   background-color: white;
   outline: none;
 }
