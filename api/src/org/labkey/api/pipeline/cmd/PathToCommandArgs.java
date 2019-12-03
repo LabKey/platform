@@ -25,6 +25,7 @@ import java.util.Set;
 */
 public abstract class PathToCommandArgs extends TaskPathToCommandArgs
 {
+    @Override
     public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         return toArgs(getPaths(task));

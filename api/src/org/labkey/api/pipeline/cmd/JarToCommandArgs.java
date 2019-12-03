@@ -78,6 +78,7 @@ public class JarToCommandArgs extends ListToCommandArgs
         return (jobParams == null ? null : jobParams.get(_versionParamName));
     }
 
+    @Override
     public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (_jarPath == null || _jarPath.length() == 0)

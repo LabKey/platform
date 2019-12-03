@@ -40,6 +40,7 @@ public class JoinedBooleanToSwitch extends TaskToCommandArgs
             converter.setParent(this);
     }
 
+    @Override
     public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         StringBuilder switches = new StringBuilder();

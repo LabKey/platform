@@ -37,6 +37,7 @@ public class RequiredSwitch extends RequiredInLine
         _switchName = switchName;
     }
 
+    @Override
     public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         // Ignore the key and job, and just return the switch.

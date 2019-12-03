@@ -47,6 +47,7 @@ public class RequiredValueCommandArg extends JobParamToCommandArgs
         _formatter = formatter;
     }
 
+    @Override
     public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited)
     {
         return _formatter.toArgs(_value);
