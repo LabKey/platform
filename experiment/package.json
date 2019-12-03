@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.2.0-fb-smPermissionsManagement.7"
+    "@labkey/components": "0.2.0-fb-smPermissionsManagement.8"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
