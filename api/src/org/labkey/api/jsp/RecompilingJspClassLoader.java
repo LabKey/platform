@@ -123,8 +123,6 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     // so we include their individual lib directories in the classpath for the JSPs.
                     for (ResourceFinder apiFinder : apiResourceFinders)
                         cp.addDirectory(new File(apiFinder.getBuildPath(), "/explodedModule/lib"));
-                    cp.addDirectory(getWebInfLib());
-                    cp.addDirectory(getWebInfClasses());
                     cp.addDirectory(getModulesApiLib());
 
                     // Compile the .jsp file
@@ -298,15 +296,5 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private String getModulesApiLib()
     {
         return AppProps.getInstance().getProjectRoot() + "/build/modules-api";
-    }
-
-    private String getWebInfLib()
-    {
-        return AppProps.getInstance().getProjectRoot() + "/build/deploy/labkeyWebapp/WEB-INF/lib";
-    }
-
-    private String getWebInfClasses()
-    {
-        return AppProps.getInstance().getProjectRoot() + "/build/deploy/labkeyWebapp/WEB-INF/classes";
     }
 }

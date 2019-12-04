@@ -78,7 +78,8 @@ public class JarToCommandArgs extends ListToCommandArgs
         return (jobParams == null ? null : jobParams.get(_versionParamName));
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    @Override
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         if (_jarPath == null || _jarPath.length() == 0)
             return Collections.emptyList();
@@ -88,16 +89,16 @@ public class JarToCommandArgs extends ListToCommandArgs
         RequiredInLine converterInline = new RequiredInLine();
         converterInline.setParent(this);
         converterInline.setValue(PipelineJobService.get().getJavaPath());
-        args.addAll(converterInline.toArgs(task, visited));
+        args.addAll(converterInline.toArgs(task, params, visited));
 
         for (TaskToCommandArgs converter : getConverters())
-            args.addAll(converter.toArgs(task, visited));
+            args.addAll(converter.toArgs(task, params, visited));
 
         args.add("-jar");
 
         converterInline.setValue(PipelineJobService.get().getJarPath(_jarPath,
                 task.getInstallPath(), _softwarePackage, getVersion(task)));
-        args.addAll(converterInline.toArgs(task, visited));
+        args.addAll(converterInline.toArgs(task, params, visited));
 
         return args;
     }

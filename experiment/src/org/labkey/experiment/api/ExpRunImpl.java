@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cloud.CloudStoreService;
@@ -400,7 +401,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public Map<ExpMaterial, String> getMaterialInputs()
+    public @NotNull Map<ExpMaterial, String> getMaterialInputs()
     {
         ensureFullyPopulated();
         return _materialInputs;

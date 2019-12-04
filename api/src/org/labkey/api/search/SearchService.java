@@ -15,6 +15,7 @@
  */
 package org.labkey.api.search;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,8 +53,10 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 /**
  * User: matthewb
@@ -176,6 +179,19 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
+
+        default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
+        {
+            ListUtils.partition(list, batchSize).forEach(sublist ->
+            {
+                addRunnable( () ->
+                    sublist.stream()
+                            .map(mapper::apply)
+                            .filter(Objects::nonNull)
+                            .forEach(doc -> addResource(doc, PRIORITY.item))
+                    , PRIORITY.group);
+            });
+        }
     }
 
 
@@ -245,11 +261,14 @@ public interface SearchService
     {
         public int doc;
         public String docid;
+        public String category;
         public String container;
         public String title;
         public String summary;
         public String url;
         public String navtrail;
+        public String identifiers; // identifiersHi
+        public float score;
 
         public String normalizeHref(Path contextPath)
         {

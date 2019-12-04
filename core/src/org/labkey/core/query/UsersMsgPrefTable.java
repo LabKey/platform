@@ -15,14 +15,15 @@
  */
 package org.labkey.core.query;
 
-import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -62,11 +63,13 @@ public class UsersMsgPrefTable extends UsersTable
     {
         super.addColumns();
 
-        var msgCol = addColumn(new EmailSettingsColumn("MessageSettings", "messages", this));
-        msgCol.setDisplayColumnFactory(NotificationSettingColumn::new);
-
-        var fileCol = addColumn(new EmailSettingsColumn("FileSettings", "files", this));
-        fileCol.setDisplayColumnFactory(NotificationSettingColumn::new);
+        // Add a column for each registered email ConfigTypeProvider
+        MessageConfigService.get().getConfigTypes().stream()
+            .map(p->new EmailSettingsColumn(p.getSettingsColumnName(), p.getType(), this))
+            .forEach(esc->{
+                addColumn(esc);
+                esc.setDisplayColumnFactory(NotificationSettingColumn::new);
+            });
 
         // add all of the active users who have read permission to this container to an in clause, this avoids
         // having to do the permission checking at render time and fixes the pagination display issues
@@ -98,12 +101,12 @@ public class UsersMsgPrefTable extends UsersTable
         columns.add(FieldKey.fromParts("DisplayName"));
         columns.add(FieldKey.fromParts("FirstName"));
         columns.add(FieldKey.fromParts("LastName"));
-
         columns.add(FieldKey.fromParts("Email"));
         columns.add(FieldKey.fromParts("LastLogin"));
         columns.add(FieldKey.fromParts("Groups"));
-        columns.add(FieldKey.fromParts("FileSettings"));
-        columns.add(FieldKey.fromParts("MessageSettings"));
+
+        MessageConfigService.get().getConfigTypes()
+            .forEach(p->columns.add(FieldKey.fromParts(p.getSettingsColumnName())));
 
         return columns;
     }
@@ -123,8 +126,8 @@ public class UsersMsgPrefTable extends UsersTable
 
             _type = type;
             _container = parent.getContainer();
-            _emailPrefsTable = CommSchema.getInstance().getTableInfoEmailPrefs();
-            _emailOptionsTable = CommSchema.getInstance().getTableInfoEmailOptions();
+            _emailPrefsTable = CoreSchema.getInstance().getTableInfoEmailPrefs();
+            _emailOptionsTable = CoreSchema.getInstance().getTableInfoEmailOptions();
 
             // set up the join aliases
             _emailPrefsJoin = name + "$" + "EmailPrefsJoin$";
