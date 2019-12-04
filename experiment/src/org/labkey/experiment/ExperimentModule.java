@@ -146,7 +146,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public double getVersion()
     {
-        return 19.30;
+        return 19.31;
     }
 
     @Nullable
@@ -539,28 +539,25 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-//        if (c == ContainerManager.getSharedContainer())
-//            OntologyManager.indexConcepts(task);
-
-        Runnable r = () -> {
+        task.addRunnable(() -> {
             for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
             {
                 sampleSet.index(task);
             }
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
-            {
-                material.index(task);
-            }
+        task.addRunnable(() -> {
+            // batch by the 100's
+            List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
+            task.addResourceList(materials, 100, ExpMaterialImpl::createIndexDocument);
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
-            {
-                data.index(task);
-            }
-        };
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
-
+        task.addRunnable(() -> {
+            List<ExpDataImpl> datas = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
+            task.addResourceList(datas, 100, ExpDataImpl::createDocument);
+        }, SearchService.PRIORITY.bulk);
     }
+
 
     @Override
     public void indexDeleted()
