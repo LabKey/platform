@@ -112,6 +112,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -595,16 +596,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             assert StringUtils.isNotEmpty((String)props.get(PROPERTY.categories.toString()));
 
-            addTerms(doc, props, PROPERTY.categories, FIELD_NAME.searchCategories, null);
-            addTerms(doc, props, PROPERTY.identifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
-            addTerms(doc, props, PROPERTY.identifiersMed, FIELD_NAME.identifiersMed, null);
-            addTerms(doc, props, PROPERTY.identifiersHi, FIELD_NAME.identifiersHi, null);
+            addTerms(doc, FIELD_NAME.searchCategories, Field.Store.YES, terms(PROPERTY.categories, props, null));
+            addTerms(doc, FIELD_NAME.identifiersLo, PROPERTY.identifiersLo, props, identifiersLo);
+            addTerms(doc, FIELD_NAME.identifiersMed, PROPERTY.identifiersMed, props, null);
+            addTerms(doc, FIELD_NAME.identifiersHi, Field.Store.YES, terms(PROPERTY.identifiersHi, props, null));
 
             doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
 
-            addTerms(doc, props, PROPERTY.keywordsLo, FIELD_NAME.keywordsLo, null);
-            addTerms(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed.toString());
-            addTerms(doc, props, PROPERTY.keywordsHi, FIELD_NAME.keywordsHi, null);
+            addTerms(doc, FIELD_NAME.keywordsLo, PROPERTY.keywordsLo, props, null);
+            addTerms(doc, FIELD_NAME.keywordsMed, PROPERTY.keywordsMed, props, keywordsMed.toString());
+            addTerms(doc, FIELD_NAME.keywordsHi, PROPERTY.keywordsHi, props, null);
 
             // === Don't index, store ===
 
@@ -844,14 +845,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-
-    private void addTerms(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String computedTerms)
+    private String terms(PROPERTY property, Map<String, ?> props, @Nullable String computedTerms)
     {
+        if (null == computedTerms)
+            return (String)props.get(property.toString());
         String documentTerms = (String)props.get(property.toString());
-        String terms = (null == computedTerms ? "" : computedTerms + " ") + (null == documentTerms ? "" : documentTerms);
+        if (null == documentTerms)
+            return computedTerms;
+        return computedTerms + " " + documentTerms;
+    }
 
-        if (!terms.isEmpty())
-            doc.add(new TextField(fieldName.toString(), terms, Field.Store.NO));
+    private void addTerms(Document doc, FIELD_NAME fieldName, Field.Store store, String terms)
+    {
+        if (StringUtils.isNotBlank(terms))
+            doc.add(new TextField(fieldName.toString(), terms, store));
+    }
+
+    private void addTerms(Document doc, FIELD_NAME fieldName, PROPERTY property, Map<String, ?> props,  @Nullable String computedTerms)
+    {
+        addTerms(doc, fieldName, Field.Store.NO, terms(property, props, computedTerms));
     }
 
     private void addUserField(Document doc, FIELD_NAME fieldName, @Nullable Integer userId)
@@ -1453,11 +1465,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = searcher.doc(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
+            hit.category = doc.get(FIELD_NAME.searchCategories.toString());
             hit.container = doc.get(FIELD_NAME.container.toString());
             hit.docid = doc.get(FIELD_NAME.uniqueId.toString());
             hit.summary = doc.get(FIELD_NAME.summary.toString());
             hit.url = doc.get(FIELD_NAME.url.toString());
             hit.doc = scoreDoc.doc;
+            hit.identifiers = doc.get(FIELD_NAME.identifiersHi.toString());
+            hit.score = scoreDoc.score;
 
             // BUG patch see 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index
