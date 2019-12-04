@@ -2594,7 +2594,7 @@ public class LoginController extends SpringActionController
                 sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId()));
                 sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
 //                primaries.put((configuration.getRowId()), sh);
-                sh.put("id", (configuration.getRowId()));
+                sh.put("id", "id" + configuration.getRowId());
                 primaries1.add(sh);
             }
 

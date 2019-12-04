@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGripVertical, faPencilAlt, faCheckSquare, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { LinkContainer } from 'react-router-bootstrap';
-import Immutable from 'immutable';
+import {Map, List, fromJS} from 'immutable';
 
 import "@glass/base/dist/base.css"
 import "./authenticationConfiguration.scss";
@@ -19,6 +19,85 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 // import * as Ajax from '../../../resources/scripts/labkey/Ajax.js';
 import { Ajax, ActionURL, Security } from '@labkey/api'
 import {currentContainer, effectivePermissions, hasPermission} from "@labkey/api/dist/labkey/Security";
+
+// ----------------
+// move components into proper place
+
+class LightupHandle extends React.Component<any, {highlight: boolean}>{
+    constructor(props){
+        super(props);
+        this.state = {
+            highlight: false
+        };
+    }
+
+    render(){
+        const HIGHLIGHT_BLUE = '#2980B9';  // See $blue-border in variables.scss
+        const NOT_HIGHLIGHT_GRAY = '#999999';
+
+        return(
+            <div>
+                <FontAwesomeIcon size='lg' color={(this.props.highlight) ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY} icon={faGripVertical}/>
+            </div>
+        )
+    }
+}
+
+// todo: remove the margin-left
+class GenericAuthRow extends React.Component<any, {color: any}>{
+    constructor(props){
+        super(props);
+        this.state = {
+            color: false
+        };
+    }
+
+    render(){
+        return(
+            <div
+                className="domain-field-row domain-row-border-default"
+                onMouseOver={() => {this.setState({color: true})}}
+                onMouseOut={() => {this.setState({color: false})}}
+            >
+                <div className="domain-row-container row">
+                    <div className="domain-row-handle">
+                        {this.props.handle}
+                    </div>
+
+                    <div className="domain-row-main row-flex">
+
+                        <Col xs={9} className='domain-row-base-fields'>
+                            <Col xs={4}>
+                                {this.props.description}
+                            </Col>
+                            <Col xs={4}>
+                                {this.props.url}
+                            </Col>
+                            <Col xs={1} className={this.props.nameClassName}>
+                                {this.props.name}
+                            </Col>
+                        </Col>
+
+                        <Col xs={1}/>
+
+                        <Col xs={2} className={"domain-row-base-fields"}>
+                            <Col xs={8}>
+                                {this.props.enabled}
+                            </Col>
+
+                            <Col xs={4} >
+                                {this.props.edit}
+                            </Col>
+                        </Col>
+
+                        {this.props.modal}
+                    </div>
+                </div>
+            </div>
+    )}
+}
+
+// -----------------
 
 // Todo:
 // Find a nicer solution for the highlight
@@ -175,7 +254,7 @@ interface AuthRowProps {
     authType: any
     toggleValue: any
     modalOpen: any
-    color: any
+    highlight: any
 }
 // Todo:
 // don't use the style to round the corners
@@ -186,10 +265,10 @@ class AuthRow extends React.Component<any, AuthRowProps>{
         this.state = {
             descriptionField: "",
             serverUrlField: "",
-            authType: "LDAP",
+            authType: "",
             toggleValue: false,
             modalOpen: false,
-            color: false
+            highlight: false
         };
         this.onToggle = this.onToggle.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -200,7 +279,6 @@ class AuthRow extends React.Component<any, AuthRowProps>{
             ...prevState,
             [toggled]: !this.state[toggled]
         }));
-        // console.log(this.state[toggled]);
     }
 
     // see if others handle this differently
@@ -210,72 +288,60 @@ class AuthRow extends React.Component<any, AuthRowProps>{
             ...prevState,
             [name]: value
         }));
-        // console.log(this.state[name]);
     }
 
     render(){
-        let {modalOpen, ...rest} = this.state;
-        const HIGHLIGHT_BLUE = '#2980B9';  // See $blue-border in variables.scss
-        const NOT_HIGHLIGHT_GRAY = '#999999';
+        // is this bad style?
+        const description = <FormControl
+            id={this.props.id}
+            name="description"
+            type="text"
+            value={this.props.description}
+            onChange={(e) => this.props.handleChangeToPrimary(e)}
+            placeholder="Enter text"
+            style ={{borderRadius: "5px"}}
+        />;
+
+        const url = <FormControl
+            name="url"
+            type="text"
+            value={this.props.url}
+            onChange={(e) => this.props.handleChangeToPrimary(e)}
+            placeholder="Enter text"
+            style ={{borderRadius: "5px"}}
+        />;
+
+        const enabled = <ReactBootstrapToggle
+            onClick={() => this.props.handlePrimaryToggle(this.props.enabled, this.props.id)}
+            on="Enabled"
+            off="Disabled"
+            onstyle={"primary"}
+            active={this.props.enabled}
+            style={{width: "90px", height: "28px"}}
+        />;
+
+        const edit = <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggle("modalOpen")}>
+            <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
+        </div>;
+
+        let {modalOpen, ...rest} = this.props;
+        const modal = (this.state.modalOpen &&  <ConfigurationModal {...rest} closeModal={() => {this.onToggle("modalOpen")}} />);
+
         return(
             <div
-                className="domain-field-row domain-row-border-default"
-                onMouseOver={() => {this.setState({color: true})}}
-                onMouseOut={() => {this.setState({color: false})}}
+                onMouseOver={() => {this.setState({highlight: true})}}
+                onMouseOut={() => {this.setState({highlight: false})}}
             >
-                <div className="domain-row-container row">
-                    <div className="domain-row-handle">
-                        <FontAwesomeIcon size='lg' color={(this.state.color) ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY} icon={faGripVertical}/>
-                        {/*<DragDropHandle highlighted={true}/>*/}
-                    </div>
-
-                    <div className="domain-row-main row-flex">
-                            <Col xs={9} className='domain-row-base-fields'>
-                                <Col xs={4}>
-                                    <FormControl
-                                        name="descriptionField"
-                                        type="text"
-                                        value={this.state.descriptionField}
-                                        onChange={(e) => this.handleChange(e)}
-                                        placeholder="Enter text"
-                                        style ={{borderRadius: "5px"}}
-                                    />
-                                </Col>
-                                <Col xs={3}>
-                                    <FormControl
-                                        name="serverUrlField"
-                                        type="text"
-                                        value={this.state.serverUrlField}
-                                        onChange={(e) => this.handleChange(e)}
-                                        placeholder="Enter text"
-                                        style ={{borderRadius: "5px"}}
-                                    />
-                                </Col>
-                                <Col xs={2} style={{marginTop: "5px"}}>
-                                    {this.state.authType}
-                                </Col>
-                            </Col>
-
-                            <Col xs={2} className='domain-row-base-fields'>
-                                <ReactBootstrapToggle
-                                    onClick={() => this.onToggle("toggleValue")}
-                                    on="Enabled"
-                                    off="Disabled"
-                                    onstyle={"primary"}
-                                    active={this.state.toggleValue}
-                                    style={{width: "90px", height: "28px"}}
-                                />
-                            </Col>
-
-                            <Col xs={1} className='domain-row-base-fields'>
-                                <div className={"clickable"} onClick={() => this.onToggle("modalOpen")}>
-                                    <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
-                                </div>
-                            </Col>
-                    </div>
-
-                    {this.state.modalOpen &&  <ConfigurationModal {...rest} closeModal={() => {this.onToggle("modalOpen")}} />}
-                </div>
+                <GenericAuthRow
+                    handle = {<LightupHandle highlight={this.state.highlight}/>}
+                    description = {description}
+                    url = {url}
+                    name = {this.props.authName}
+                    nameClassName = {"down"}
+                    enabled = {enabled}
+                    edit = {edit}
+                    modal = {modal}
+                />
             </div>
         )
     }
@@ -285,25 +351,22 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
     constructor(props){
         super(props);
         this.state = {
-            items: this.getItems(5)
-            // items: this.uhItems()l
+            // items: this.getItems(5)
+            items: this.uhItems()
         };
         this.onDragEnd = this.onDragEnd.bind(this);
-        this.getItems = this.getItems.bind(this);
         this.reorder = this.reorder.bind(this);
         this.ohBoy = this.ohBoy.bind(this);
-
+        this.uhItems = this.uhItems.bind(this);
     }
 
-    getItems = (count) =>
-        Array.from({ length: count }, (v, k) => k).map(k => ({
-            id: `item-${k}`,
-            content: `item ${k}`
-
-        }));
-
     uhItems(){
-        return this.props.primary;
+        let bigArr = [
+            {id:"1", name: "CAS", description: "CAS Configuration"},
+            {id:"2", name: "LDAP", description: "LDAP Configuration"}
+        ];
+
+        return bigArr;
     }
 
     ohBoy(){
@@ -337,8 +400,6 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
         this.setState({
             items
         });
-
-        console.log(this.state);
     }
 
 
@@ -346,16 +407,19 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
         // console.log("bleh: ", this.props.primary);
         // console.log("state!! ", this.state);
 
+        // this.ohBoy();
 
-        this.ohBoy();
+        const primaryConfigsWithoutDatabase = this.props.primary.slice(0, -1);
+        const dataBaseConfig = this.props.primary.slice(-1)[0];
+        // console.log("UH ", dataBaseConfig);
 
         return(
             <div>
-                <DragDropContext onDragEnd={this.onDragEnd}>
+                <DragDropContext onDragEnd={this.props.onDragEnd}>
                     <Droppable droppableId="auth-config-droppable">
                         {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {this.state.items.map((item, index) => (
+                                {primaryConfigsWithoutDatabase.map((item, index) => (
                                     <Draggable key={item.id} draggableId={item.id} index={index} >
                                         {(provided) => (
                                             <div
@@ -363,7 +427,14 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
                                             >
-                                                <AuthRow/>
+                                                <AuthRow
+                                                    id={index.toString()}
+                                                    authName={item.name}
+                                                    enabled={item.enabled}
+                                                    description={item.description}
+                                                    handleChangeToPrimary={this.props.handleChangeToPrimary}
+                                                    handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                                />
                                             </div>
                                         )}
                                     </Draggable>
@@ -371,10 +442,14 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
                                 {provided.placeholder}
                             </div>
                         )}
-
-
                     </Droppable>
                 </DragDropContext>
+
+                {dataBaseConfig && <GenericAuthRow
+                    name={dataBaseConfig.name}
+                    enabled={(dataBaseConfig.enabled) ? "Enabled" : "Disabled"}
+                    description={dataBaseConfig.description}
+                />}
             </div>
         )
     }
@@ -383,9 +458,12 @@ class AuthConfigRowDnDPanel extends React.Component<any, {items: any}>{
 // todo:
 // add new configurations is not in order
 // lol fix the 'get help with auth' href
+// put in loading wheel
+// where is your hr?
 class AuthenticationConfigurations extends React.Component<any>{
     render(){
         let addNew = this.props.addNew;
+        let primary = this.props.primary;
 
         return(
             <Panel>
@@ -414,7 +492,14 @@ class AuthenticationConfigurations extends React.Component<any>{
                     <Tabs defaultActiveKey={1} id="uncontrolled-tab-example">
                         <Tab eventKey={1} title="Primary">
                             <div className={"auth-tab"}>
-                                <AuthConfigRowDnDPanel className={"auth-tab"} primary={this.props.primary}/>
+                                {primary &&
+                                <AuthConfigRowDnDPanel
+                                        className={"auth-tab"}
+                                        primary={primary}
+                                        onDragEnd={this.props.onDragEnd}
+                                        handleChangeToPrimary={this.props.handleChangeToPrimary}
+                                        handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                />}
                             </div>
 
                         </Tab>
@@ -461,8 +546,8 @@ class ConfigurationModal extends React.Component<any, ConfigurationModalProps>{
         this.state = {
             modalTitle: `Configure ${this.props.authType} #1`,
             description: `${this.props.authType} #1 Status`,
-            toggleValue: this.props.toggleValue,
-            descriptionField: this.props.descriptionField,
+            toggleValue: this.props.enabled,
+            descriptionField: this.props.description,
             serverUrlField: this.props.serverUrlField,
             redirectCheckbox: false,
             logoImage: null
@@ -522,7 +607,7 @@ class ConfigurationModal extends React.Component<any, ConfigurationModalProps>{
                         Description:
 
                         <FormControl
-                            name="descriptionField"
+                            name="description"
                             type="text"
                             value={this.state.descriptionField}
                             onChange={(e) => this.handleChange(e)}
@@ -599,7 +684,7 @@ class ConfigurationModal extends React.Component<any, ConfigurationModalProps>{
     }
 }
 
-interface AppProps {
+interface AppState {
     // defaultEmailDomainTextField: any
     // selfSignUpCheckBox: boolean
     // userEmailEditCheckbox: boolean
@@ -608,12 +693,11 @@ interface AppProps {
     // preSaveConfigState: any
     // currentConfigState: any
     canEdit: boolean
-    value: any
-    globalAuthConfigs: any
-    addNew: any
-    primary: any
+    globalAuthConfigs: Object
+    addNew: Object
+    primary: Array<Object>
 }
-export class App extends React.Component<any, AppProps> {
+export class App extends React.Component<any, AppState> {
 
     constructor(props) {
         super(props);
@@ -621,7 +705,6 @@ export class App extends React.Component<any, AppProps> {
             // tickSelfSignup: false,
             // tickEditOwnEmail: false,
             // tickAutoCreateAuthUsers: false
-            value: false,
             canEdit: false,
             globalAuthConfigs: null,
             addNew: null,
@@ -645,6 +728,12 @@ export class App extends React.Component<any, AppProps> {
         this.cancelChanges = this.cancelChanges.bind(this);
         this.checkGlobalAuthBox = this.checkGlobalAuthBox.bind(this);
 
+        this.onDragEnd = this.onDragEnd.bind(this);
+        this.reorder = this.reorder.bind(this);
+
+        this.handleChangeToPrimary = this.handleChangeToPrimary.bind(this);
+        this.handlePrimaryToggle = this.handlePrimaryToggle.bind(this);
+
     }
 
     componentDidMount() {
@@ -665,8 +754,7 @@ export class App extends React.Component<any, AppProps> {
 
     // GAC
 
-    // To Reviewer: I found this extra function was necessary in order to make TS happy with the dynamic state key;
-    // open to learning a cleaner way to do it
+    // todo: use immutable
     checkGlobalAuthBox(id: string) {
         let oldState = this.state.globalAuthConfigs[id];
         this.setState(prevState => ({
@@ -678,7 +766,85 @@ export class App extends React.Component<any, AppProps> {
         }));
     }
 
-    // End GAC
+    // DnD Panel
+    reorder = (list, startIndex, endIndex) => {
+        const result = Array.from(list);
+        const [removed] = result.splice(startIndex, 1);
+        result.splice(endIndex, 0, removed);
+
+        return result;
+    };
+
+    onDragEnd(result)
+    {
+        if (!result.destination)
+        {
+            return;
+        }
+
+        const items = this.reorder(
+            this.state.primary,
+            result.source.index,
+            result.destination.index
+        );
+
+        this.setState({
+            primary: items
+        });
+    }
+
+    // rough
+    handleChangeToPrimary(event) {
+        let {name, value, id} = event.target;
+        const l = List(this.state.primary);
+        // console.log(l.toArray());
+        const l2 = l.setIn([id, name], value);
+
+        const thing = l2.toArray();
+        // console.log(thing);
+
+        this.setState(prevState => ({
+            ...prevState,
+            primary: thing
+        }))
+    }
+
+
+    // rough
+    handlePrimaryToggle(toggle, id){
+        const l = List(this.state.primary);
+        const l2 = l.setIn([id, 'enabled'], !toggle);
+        const thing = l2.toArray();
+        this.setState(prevState => ({
+            ...prevState,
+            primary: thing
+        }))
+    }
+
+    handleChangeToPrimary1(event){
+        const zero = "0";
+        let {name, value, id} = event.target;
+        console.log("bing!");
+
+        const map = List(this.state.primary);
+        console.log("oldstate: ", map.toObject());
+
+        const listUpdated = map.setIn([id, name], value);
+        console.log("newstate1: ", listUpdated.toArray());
+        // final = listUpdated.toObject() as AppState;
+
+        // this.setState(() => ({primary: listUpdated}));
+        // console.log("newsatte? ", this.state);
+
+
+        // const map = Immutable.Map(this.state);
+        // const map2 = map.setIn(['primary', id, name], value);
+
+        // console.log("newstate: ", map2.toObject());
+        // this.setState({primary: [{}, {}]});
+    }
+
+    // End
 
     cancelChanges() {
         console.log(this.state);
@@ -716,7 +882,7 @@ export class App extends React.Component<any, AppProps> {
 
     render() {
         return(
-            <div>
+            <div style={{minWidth:"1040px"}}>
                 <GlobalAuthenticationConfigurations
                     {...this.state.globalAuthConfigs}
                     checkGlobalAuthBox={this.checkGlobalAuthBox}
@@ -725,6 +891,9 @@ export class App extends React.Component<any, AppProps> {
                 <AuthenticationConfigurations
                     addNew={this.state.addNew}
                     primary={this.state.primary}
+                    onDragEnd={this.onDragEnd}
+                    handleChangeToPrimary={this.handleChangeToPrimary}
+                    handlePrimaryToggle={this.handlePrimaryToggle}
                 />
 
                 {false && <Alert>You have unsaved changes.</Alert>}
