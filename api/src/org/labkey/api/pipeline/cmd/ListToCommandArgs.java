@@ -18,6 +18,7 @@ package org.labkey.api.pipeline.cmd;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,11 +63,12 @@ public class ListToCommandArgs extends TaskToCommandArgs
         _converters.add(converter);
     }
 
-    public List<String> toArgsInner(CommandTask task, Set<TaskToCommandArgs> visited) throws IOException
+    @Override
+    public List<String> toArgsInner(CommandTask task, Map<String, String> params, Set<TaskToCommandArgs> visited) throws IOException
     {
         ArrayList<String> args = new ArrayList<>();
         for (TaskToCommandArgs converter : getConverters())
-            args.addAll(converter.toArgs(task, visited));
+            args.addAll(converter.toArgs(task, params, visited));
         return args;
     }
 }

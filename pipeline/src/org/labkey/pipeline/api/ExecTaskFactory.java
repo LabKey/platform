@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.util.CommandLineTokenizer.tokenize;
+
 /**
  * User: kevink
  * Date: 12/30/13
@@ -125,11 +127,9 @@ public class ExecTaskFactory extends SimpleTaskFactory
     {
         List<TaskToCommandArgs> ret = new ArrayList<>();
 
-        // TODO: Better parsing: handle quoting and whitespace in tokens
-        String[] parts = command.split(" ");
+        List<String> parts = tokenize(command);
         for (String part : parts)
         {
-            part = part.trim();
             if (part.length() == 0)
                 continue;
 

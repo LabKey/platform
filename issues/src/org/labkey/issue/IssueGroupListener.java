@@ -30,11 +30,13 @@ import java.beans.PropertyChangeEvent;
 public class IssueGroupListener implements GroupListener
 {
     // Any change to a group could change assigned to lists
+    @Override
     public void principalAddedToGroup(Group g, UserPrincipal user)
     {
         IssueManager.uncache();
     }
 
+    @Override
     public void principalDeletedFromGroup(Group g, UserPrincipal user)
     {
         IssueManager.uncache();
