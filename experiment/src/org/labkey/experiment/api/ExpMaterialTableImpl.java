@@ -563,7 +563,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
                 }
-                visibleColumns.add(propColumn.getFieldKey());
+
+                //fix for Issue 38341: domain designer advanced settings 'show in default view' setting is not respected
+                if (!propColumn.isHidden())
+                {
+                    visibleColumns.add(propColumn.getFieldKey());
+                }
             }
             addColumn(propColumn);
         }

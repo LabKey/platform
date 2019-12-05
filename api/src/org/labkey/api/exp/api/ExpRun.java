@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
@@ -63,7 +64,7 @@ public interface ExpRun extends ExpObject, ExpLineageItem
     String getEntityId();
 
     /** @return map from material object to role name. Multiple inputs might use the same role name, hence the direction of the map */
-    Map<ExpMaterial, String> getMaterialInputs();
+    @NotNull Map<ExpMaterial, String> getMaterialInputs();
 
     /** @return map from data object to role name. Multiple inputs might use the same role name, hence the direction of the map */
     Map<ExpData, String> getDataInputs();

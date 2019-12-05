@@ -56,7 +56,7 @@ public abstract class EmailPrefsSelector
     private Map<User, PreferencePicker> createEmailPrefsMap(Container c)
     {
         int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
-        UserPreference[] upArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
+        Collection<? extends UserPreference> upArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
         Map<User, PreferencePicker> map = new HashMap<>();
 
         for (UserPreference up : upArray)

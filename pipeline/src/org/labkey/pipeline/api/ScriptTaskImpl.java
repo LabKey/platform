@@ -33,10 +33,8 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.RserveScriptEngine;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -48,9 +46,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 
 /**
  * User: kevink
@@ -72,85 +68,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
         _writeTaskInfoFile = true;
     }
 
-    /**
-     * Create the replacements map that will be used by the ExternalScriptEngine
-     * to generate the script before executing it.  The replaced paths will be
-     * resolved to paths in the work directory.
-     */
-    private Map<String, String> createReplacements(ScriptEngine engine, @Nullable File scriptFile, String transformSessionId) throws IOException
-    {
-        Map<String, String> replacements = new HashMap<>();
-
-        // Input paths
-        for (String key : _factory.getInputPaths().keySet())
-        {
-            String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
-            if (inputPaths.length == 0)
-            {
-                // Replace empty file token with empty string
-                replacements.put(key, "");
-            }
-            else if (inputPaths.length == 1)
-            {
-                if (inputPaths[0] == null)
-                    replacements.put(key, "");
-                else
-                    replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
-            }
-            else
-            {
-                // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
-                // NOTE: The script parser matches ${input1.txt} to the first input file which isn't the same as ${input1[1].txt} which may be the 2nd file in the set of files represented by "input1.txt"
-            }
-        }
-
-        // Output paths
-        for (String key : _factory.getOutputPaths().keySet())
-        {
-            String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
-            if (outputPaths.length == 0)
-            {
-                // Replace empty file token with empty string
-                replacements.put(key, "");
-            }
-            else if (outputPaths.length == 1)
-            {
-                if (outputPaths[0] == null)
-                    replacements.put(key, "");
-                else
-                    replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
-            }
-            else
-            {
-                // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
-            }
-        }
-
-        // Job parameters
-        for (Map.Entry<String, String> entry : getJob().getParameters().entrySet())
-        {
-            replacements.put(entry.getKey(), Matcher.quoteReplacement(entry.getValue()));
-        }
-
-        // Job info replacement
-        //File jobInfoFile = getJobSupport().getJobInfoFile();
-        //replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, rewritePath(engine, jobInfoFile.getAbsolutePath()));
-
-        // Task info replacement
-        File taskInfoFile = getTaskInfoFile();
-        String taskInfoRelativePath = _wd.getRelativePath(taskInfoFile);
-        replacements.put(PipelineJob.PIPELINE_TASK_INFO_PARAM, taskInfoRelativePath);
-
-        // Task output parameters file replacement
-        File taskOutputParamsFile = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
-        String taskOutputParamsRelativePath = _wd.getRelativePath(taskOutputParamsFile);
-        replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
-
-        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, transformSessionId, replacements);
-
-        return replacements;
-    }
-
     private ScriptEngine getScriptEngine(Container c, LabkeyScriptEngineManager mgr, String extension)
     {
         ScriptEngine engine = mgr.getEngineByName(extension);
@@ -164,7 +81,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
     // TODO: Rhino engine.  A non-ExternalScriptEngine won't use the PARAM_REPLACEMENT_MAP binding.
     // CONSIDER: Use ScriptEngineReport to generate a script prolog
     @Override
-    protected boolean runCommand(RecordedAction action) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
     {
         // Get the script engine
         LabkeyScriptEngineManager mgr = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
@@ -176,8 +93,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
         _engine = getScriptEngine(getJob().getContainer(), mgr, extension);
         if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
-
-        final String apikey = SecurityManager.beginTransformSession(getJob().getUser());
 
         try
         {
@@ -244,7 +159,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)
                 bindings.put(ExternalScriptEngine.TIMEOUT, _factory.getTimeout());
 
-            Map<String, String> replacements = createReplacements(_engine, scriptFile, apikey);
+            Map<String, String> replacements = createReplacements(scriptFile, apikey);
             bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, replacements);
 
             // Write task properties file into the work directory
@@ -313,7 +228,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
         finally
         {
-            SecurityManager.endTransformSession(apikey);
             _engine = null;
         }
     }
