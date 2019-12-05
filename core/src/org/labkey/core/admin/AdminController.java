@@ -37,7 +37,25 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.admin.AdminUrls;
@@ -69,13 +87,16 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.jsp.LabKeyJspWriter;
+import org.labkey.api.message.settings.AbstractConfigTypeProvider.EmailConfigFormImpl;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
+import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
+import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -92,7 +113,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -151,7 +171,7 @@ import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
@@ -213,7 +233,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -324,7 +343,8 @@ public class AdminController extends SpringActionController
             // Show Concepts tab only if the experiment module is enabled in this container
             return c.getActiveModules().contains(ModuleLoader.getInstance().getModule("Experiment"));
         }, AdminController.ConceptsAction.class);
-        addTab(TYPE.FolderManagement,"Notifications", "messages", NOT_ROOT, NotificationsAction.class);
+        // Show Notifications tab only if we have registered notification providers
+        addTab(TYPE.FolderManagement,"Notifications", "notifications", c->NOT_ROOT.test(c) && !MessageConfigService.get().getConfigTypes().isEmpty(), NotificationsAction.class);
         addTab(TYPE.FolderManagement,"Export", "export", NOT_ROOT, ExportFolderAction.class);
         addTab(TYPE.FolderManagement,"Import", "import", NOT_ROOT, ImportFolderAction.class);
         addTab(TYPE.FolderManagement,"Files", "files", FOLDERS_AND_PROJECTS, FileRootsAction.class);
@@ -468,25 +488,19 @@ public class AdminController extends SpringActionController
 
         ActionURL getLookAndFeelResourcesURL(Container c)
         {
-            ActionURL url = new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("tabId", "resources");
-            return url;
+            return new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
         public ActionURL getProjectSettingsMenuURL(Container c)
         {
-            ActionURL url = new ActionURL(MenuBarAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("tabId", "menubar");
-            return url;
+            return new ActionURL(MenuBarAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
         public ActionURL getProjectSettingsFileURL(Container c)
         {
-            ActionURL url = new ActionURL(FilesAction.class, LookAndFeelProperties.getSettingsContainer(c));
-            url.addParameter("tabId", "files");
-            return url;
+            return new ActionURL(FilesAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
@@ -526,19 +540,19 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getManageFoldersURL(Container c)
         {
-            return getFolderManagementURL(ManageFoldersAction.class, c, "folderTree");
+            return new ActionURL(ManageFoldersAction.class, c);
         }
 
         @Override
         public ActionURL getExportFolderURL(Container c)
         {
-            return getFolderManagementURL(ExportFolderAction.class, c, "export");
+            return new ActionURL(ExportFolderAction.class, c);
         }
 
         @Override
         public ActionURL getImportFolderURL(Container c)
         {
-            return getFolderManagementURL(ImportFolderAction.class, c, "import");
+            return new ActionURL(ImportFolderAction.class, c);
         }
 
         @Override
@@ -579,31 +593,31 @@ public class AdminController extends SpringActionController
         @Override
         public ActionURL getFileRootsURL(Container c)
         {
-            return getFolderManagementURL(FileRootsAction.class, c, "files");
+            return new ActionURL(FileRootsAction.class, c);
         }
 
         @Override
         public ActionURL getFolderSettingsURL(Container c)
         {
-            return getFolderManagementURL(FolderSettingsAction.class, c, "settings");
+            return new ActionURL(FolderSettingsAction.class, c);
         }
 
         @Override
         public ActionURL getNotificationsURL(Container c)
         {
-            return getFolderManagementURL(NotificationsAction.class, c, "messages");
+            return new ActionURL(NotificationsAction.class, c);
         }
 
         @Override
         public ActionURL getModulePropertiesURL(Container c)
         {
-            return getFolderManagementURL(ModulePropertiesAction.class, c, "props");
+            return new ActionURL(ModulePropertiesAction.class, c);
         }
 
         @Override
         public ActionURL getMissingValuesURL(Container c)
         {
-            return getFolderManagementURL(MissingValuesAction.class, c, "mvIndicators");
+            return new ActionURL(MissingValuesAction.class, c);
         }
 
         public ActionURL getInitialFolderSettingsURL(Container c)
@@ -638,11 +652,6 @@ public class AdminController extends SpringActionController
         public ActionURL getTrackedAllocationsViewerURL()
         {
             return new ActionURL(TrackedAllocationsViewerAction.class, ContainerManager.getRoot());
-        }
-
-        public static ActionURL getFolderManagementURL(Class<? extends Controller> actionClass, Container c, String tabId)
-        {
-            return new ActionURL(actionClass, c).addParameter("tabId", tabId);
         }
     }
 
@@ -693,11 +702,8 @@ public class AdminController extends SpringActionController
             }
             else if (maintenanceMode)
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                {
-                    content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
-                }
+                WikiRenderingService wikiService = WikiRenderingService.get();
+                content =  wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             }
 
             if (content == null)
@@ -882,19 +888,7 @@ public class AdminController extends SpringActionController
         {
             VBox views = new VBox();
             List<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-
-            // DefaultModule and CoreModule compareTo() implementations claim to cooperate to put Core first in the sort order... but it doesn't work
-            modules.sort((m1, m2) ->
-            {
-                if (m1.getName().equalsIgnoreCase(m2.getName()))
-                    return 0;
-                else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m1.getName()))
-                    return -1;
-                else if (CoreModule.CORE_MODULE_NAME.equalsIgnoreCase(m2.getName()))
-                    return 1;
-                else
-                    return m1.getName().compareToIgnoreCase(m2.getName());
-            });
+            modules.sort(Comparator.naturalOrder());
 
             String jarRegEx = "^([\\w-\\.]+\\.jar)\\|";
             StringBuilder errorSource = new StringBuilder();
@@ -910,13 +904,10 @@ public class AdminController extends SpringActionController
 
             if (errorSource.length() > 0)
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                {
-                    // Copy all the warnings to the top
-                    String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
-                    views.addView(new HtmlView(html), 0);
-                }
+                WikiRenderingService renderingService = WikiRenderingService.get();
+                // Copy all the warnings to the top
+                String html = renderingService.getFormattedHtml(WikiRendererType.RADEOX, errorSource.toString());
+                views.addView(new HtmlView(html), 0);
             }
 
             return views;
@@ -984,14 +975,9 @@ public class AdminController extends SpringActionController
 
             if (StringUtils.isNotEmpty(wikiSource))
             {
-                WikiService wikiService = WikiService.get();
-                if (null != wikiService)
-                {
-                    String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
-                    _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
-                }
-                else
-                    _html = "<p class='labkey-error'>NO WIKI SERVICE AVAILABLE!</p>";
+                WikiRenderingService wikiService = WikiRenderingService.get();
+                String html = wikiService.getFormattedHtml(WikiRendererType.RADEOX, wikiSource);
+                _html = "<style type=\"text/css\">\ntr.table-odd td { background-color: #EEEEEE; }</style>\n" + html;
             }
         }
 
@@ -2692,7 +2678,7 @@ public class AdminController extends SpringActionController
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            try (QueryProfiler.QueryStatTsvWriter writer = new QueryProfiler.QueryStatTsvWriter())
+            try (QueryStatTsvWriter writer = new QueryStatTsvWriter())
             {
                 writer.setFilenamePrefix("SQL_Queries");
                 writer.write(response);
@@ -2869,11 +2855,14 @@ public class AdminController extends SpringActionController
             }
 
             String message = PageFlowUtil.jsString(sb);
-            html.append("<td><a href=\"#\" onClick=\"alert(");
-            html.append(message);
-            html.append(");return false;\">");
-            html.append(PageFlowUtil.filter(description));
-            html.append("</a></td>");
+            if (!message.isEmpty())
+            {
+                html.append("<td><a href=\"#\" onClick=\"alert(");
+                html.append(message);
+                html.append(");return false;\">");
+                html.append(PageFlowUtil.filter(description));
+                html.append("</a></td>");
+            }
         }
 
         private void appendLongs(StringBuilder html, Long... stats)
@@ -5657,9 +5646,9 @@ public class AdminController extends SpringActionController
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
             VBox defaultsView = new VBox(
-                    new HtmlView(
-                            "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
-                                    "You can change this folder's default settings for email notifications here.")
+                new HtmlView(
+                    "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
+                        "You can change this folder's default settings for email notifications here.")
             );
 
             PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
@@ -5669,17 +5658,16 @@ public class AdminController extends SpringActionController
             }
 
             return new VBox(
-                    new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, errors),
-                    defaultsView,
-                    new VBox(
-                            new HtmlView(
-                                    "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
-                                            "The list below contains all users with READ access to this folder who are able to receive notifications<br/>" +
-                                            "by email for message boards and file content events. A user's current message or file notification setting is<br/>" +
-                                            "visible in the appropriately named column.<br/><br/>" +
-                                            "To bulk edit individual settings: select one or more users, click the 'Update user settings' menu, and select the notification type."),
-                            queryView
-                    )
+                new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, errors),
+                defaultsView,
+                new VBox(
+                    new HtmlView(
+                        "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
+                            "The list below contains all users with read access to this folder who are able to receive notifications. Each user's current<br/>" +
+                            "notification setting is visible in the appropriately named column.<br/><br/>" +
+                            "To bulk edit individual settings: select one or more users, click the 'Update user settings' menu, and select the notification type."),
+                    queryView
+                )
             );
         }
 
@@ -5703,6 +5691,104 @@ public class AdminController extends SpringActionController
             }
             errors.reject(SpringActionController.ERROR_MSG, "Unable to find the selected config provider");
             return false;
+        }
+    }
+
+
+    public static class NotifyOptionsForm
+    {
+        private String _type;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        public ConfigTypeProvider getProvider()
+        {
+            return MessageConfigService.get().getConfigType(getType());
+        }
+    }
+
+    /**
+     * Action to populate an Ext store with email notification options for admin settings
+     */
+    @RequiresPermission(AdminPermission.class)
+    public class GetEmailOptionsAction extends ReadOnlyApiAction<NotifyOptionsForm>
+    {
+        @Override
+        public ApiResponse execute(NotifyOptionsForm form, BindException errors)
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            ConfigTypeProvider provider = form.getProvider();
+            if (provider != null)
+            {
+                List<Map> options = new ArrayList<>();
+
+                // if the list of options is not for the folder default, add an option to use the folder default
+                if (getViewContext().get("isDefault") == null)
+                    options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
+
+                for (NotificationOption option : provider.getOptions())
+                {
+                    options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
+                }
+                resp.put("success", true);
+                if (!options.isEmpty())
+                    resp.put("options", options);
+            }
+            else
+                resp.put("success", false);
+
+            return resp;
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public class SetBulkEmailOptionsAction extends MutatingApiAction<EmailConfigFormImpl>
+    {
+        @Override
+        public ApiResponse execute(EmailConfigFormImpl form, BindException errors)
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            ConfigTypeProvider provider = form.getProvider();
+            String srcIdentifier = getContainer().getId();
+
+            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true);
+
+            if (!selections.isEmpty() && provider != null)
+            {
+                int newOption = form.getIndividualEmailOption();
+
+                for (String user : selections)
+                {
+                    User projectUser = UserManager.getUser(Integer.parseInt(user));
+                    UserPreference pref = provider.getPreference(getContainer(), projectUser, srcIdentifier);
+
+                    int currentEmailOption = pref != null ? pref.getEmailOptionId() : -1;
+
+                    //has this projectUser's option changed? if so, update
+                    //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
+                    if (currentEmailOption != newOption)
+                    {
+                        provider.savePreference(getUser(), getContainer(), projectUser, newOption, srcIdentifier);
+                    }
+                }
+                resp.put("success", true);
+            }
+            else
+            {
+                resp.put("success", false);
+                resp.put("message", "There were no users selected");
+            }
+            return resp;
         }
     }
 
@@ -10120,12 +10206,6 @@ public class AdminController extends SpringActionController
         public final HtmlString helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final HtmlString welcomeLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
-
-
-        public static ActionURL getCustomPageElementLink(Container c)
-        {
-            return PremiumService.get().getConfCustomPageElements(c);
-        }
     }
 
 

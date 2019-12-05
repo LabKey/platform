@@ -504,7 +504,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Pair<Domain, Map<DomainProperty, Object>> createRunDomain(Container c, User user)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
-        domain.setDescription("The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.");
+        domain.setDescription("Define the run fields for this assay design. The user is prompted for these fields once per run and they will be applied to all rows in the run.");
         return new Pair<>(domain, Collections.emptyMap());
     }
 
@@ -516,9 +516,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user, boolean includeStandardProperties)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
-        domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The batch " +
-                "is a convenience to let users set properties that seldom change in one place and import many runs " +
-                "using them. This is the first step of the import process.");
+        domain.setDescription("Define the batch fields for this assay design. The user is prompted for these fields once for each set of runs they import to this assay.");
 
         if (includeStandardProperties)
         {
@@ -848,6 +846,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (name.startsWith(defaultPrefix))
                 name = name.substring(defaultPrefix.length());
             Domain domainCopy = PropertyService.get().createDomain(targetContainer, getPresubstitutionLsid(domainLsid.getNamespacePrefix()), name);
+            domainCopy.setDescription(domain.getDescription());
             for (DomainProperty propSrc : domain.getProperties())
             {
                 DomainProperty propCopy = domainCopy.addProperty();
@@ -1404,6 +1403,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 String editLink = editURL.toString();
                 if (!protocolContainer.equals(contextContainer))
                 {
+                    // TODO issue with the returnURL on this editLink if it has its own params
                     editLink = "javascript: if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
                 }
                 manageMenu.addChild("Edit assay design", editLink);

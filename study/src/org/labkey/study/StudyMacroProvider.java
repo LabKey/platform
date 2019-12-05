@@ -35,6 +35,7 @@ import java.util.Map;
  */
 public class StudyMacroProvider implements MacroProvider
 {
+    @Override
     public HttpView getView(String name, Map<String, String> params, ViewContext parentContext)
     {
         if ("datasets".equals(name))

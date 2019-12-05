@@ -70,7 +70,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         }
     }
 
-    static final String RECOMMENDED = PRODUCT_NAME + " 2017 is the recommended version.";
+    static final String RECOMMENDED = PRODUCT_NAME + " 2019 is the recommended version.";
 
     @Override
     public @Nullable SqlDialect createFromMetadata(DatabaseMetaData md, boolean logWarnings, boolean primaryDataSource) throws SQLException, DatabaseNotSupportedException
@@ -104,14 +104,15 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
         if (version >= 100)
         {
-            if (version >= 150)
+            if (version >= 160)
             {
-                // Warn for SQL Server 2019, for now. TODO: remove after further testing and SS 2019 release.
+                // Warn for > SQL Server 2019, for now.
                 if (logWarnings)
                     LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new MicrosoftSqlServer2019Dialect(_tableResolver);
             }
+
+            if (version >= 150)
+                return new MicrosoftSqlServer2019Dialect(_tableResolver);
 
             if (version >= 140)
                 return new MicrosoftSqlServer2017Dialect(_tableResolver);
@@ -206,6 +207,11 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +                       // Normal
                     "EXECUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +                    // EXECUTE
                     "execute core.executeJavaUpgradeCode'upgradeCode'\n" +                     // execute
+
+                    "EXEC core.executeJavaInitializationCode 'upgradeCode'\n" +                // executeJavaInitializationCode works as a synonym
+                    "EXECUTE core.executeJavaInitializationCode 'upgradeCode'\n" +             // EXECUTE
+                    "execute core.executeJavaInitializationCode'upgradeCode'\n" +              // execute
+
                     "    EXEC     core.executeJavaUpgradeCode    'upgradeCode'         \n" +   // Lots of whitespace
                     "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode'\n" +                       // Case insensitive
                     "execute core.executeJavaUpgradeCode'upgradeCode';\n" +                    // execute (with ;)
@@ -213,6 +219,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
                     "exec CORE.EXECUTEJAVAUPGRADECODE 'upgradeCode';     \n" +                 // Case insensitive (with ;)
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'     ;\n" +                 // Lots of whitespace with ; at end
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode'";                          // No line ending
+
 
             String badSql =
                     "/* EXEC core.executeJavaUpgradeCode 'upgradeCode'\n" +           // Inside block comment
@@ -230,7 +237,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
             SqlDialect dialect = getEarliestSqlDialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
-            assertEquals(10, good.getCounter());
+            assertEquals(13, good.getCounter());
 
             TestUpgradeCode bad = new TestUpgradeCode();
             dialect.runSql(null, badSql, bad, null, null);

@@ -100,9 +100,9 @@
 
             applyOverride: function (override) {
                 if (override) {
-                    this.update("<span class='labkey-link' style='font-size:smaller;'>Revert to template value</span>");
+                    this.update("<span class='labkey-link'>Revert to template value</span>");
                 } else {
-                    this.update("<span class='labkey-link' style='font-size:smaller;'>Override template value</span>");
+                    this.update("<span class='labkey-link'>Override template value</span>");
 
                     var value = this.resetValueFunction();
                     if (value !== undefined)

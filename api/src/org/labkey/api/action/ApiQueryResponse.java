@@ -229,7 +229,7 @@ public class ApiQueryResponse implements ApiResponse
         _dataRegion.setAllowAsync(true);
         try
         {
-            return _dataRegion.getResultSet(_ctx);
+            return _dataRegion.getResults(_ctx);
         }
         catch (ConversionException e)
         {
@@ -559,7 +559,7 @@ public class ApiQueryResponse implements ApiResponse
             return ensureJSONDate(value);
     }
 
-    protected Object ensureJSONDate(Object value)
+    protected static Object ensureJSONDate(Object value)
     {
         return value instanceof Date ? DateUtil.formatJsonDateTime((Date)value) : value;
     }

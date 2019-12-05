@@ -31,7 +31,7 @@
     String errors = formatMissedErrorsStr("form");
     if (errors.length() > 0)
     {
-        %><%=text(errors)%><%
+        %><%=unsafe(errors)%><%
     }
 %>
 <style>
@@ -48,7 +48,7 @@
         <labkey:input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>"/>
     </div>
     <div class="reset-form-item">
-        <%= button("Reset").submit(true).attributes(Collections.singletonMap("name", "reset"))%>
+        <%= button("Reset").submit(true).name("reset")%>
         <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
     </div>
 </labkey:form>

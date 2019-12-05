@@ -33,6 +33,7 @@ import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -53,7 +54,6 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -77,6 +77,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -144,7 +145,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public double getVersion()
     {
-        return 19.21;
+        return 19.31;
     }
 
     @Nullable
@@ -189,13 +190,18 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
 
-        AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
-                "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
+        //AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
+        //        "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+
+        WebdavService.get().addExpDataProvider((path, container) -> {
+            ExpData expData = ExperimentService.get().getExpDataByURL(path, container);
+            return expData == null ? Collections.emptyList() : Collections.singletonList(expData);
+        });
     }
 
     @Override
@@ -531,28 +537,25 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-//        if (c == ContainerManager.getSharedContainer())
-//            OntologyManager.indexConcepts(task);
-
-        Runnable r = () -> {
+        task.addRunnable(() -> {
             for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
             {
                 sampleSet.index(task);
             }
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
-            {
-                material.index(task);
-            }
+        task.addRunnable(() -> {
+            // batch by the 100's
+            List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
+            task.addResourceList(materials, 100, ExpMaterialImpl::createIndexDocument);
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
-            {
-                data.index(task);
-            }
-        };
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
-
+        task.addRunnable(() -> {
+            List<ExpDataImpl> datas = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
+            task.addResourceList(datas, 100, ExpDataImpl::createDocument);
+        }, SearchService.PRIORITY.bulk);
     }
+
 
     @Override
     public void indexDeleted()

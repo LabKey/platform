@@ -130,6 +130,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
+    public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
+    {
+        return SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName());
+    }
+
     @Deprecated
     public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
@@ -138,7 +143,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public AssayProtocolSchema(User user, Container container, @NotNull AssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        super(SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName()), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
+        super(schemaName(provider, protocol), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
 
         if (protocol == null)
             throw new NotFoundException("Assay protocol not found");
@@ -712,7 +717,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
 
                             DataView dataView = allResultsQueryView.createDataView();
-                            try (Results r = dataView.getDataRegion().getResultSet(dataView.getRenderContext()))
+                            try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
                             {
                                 final int rowCount = r.getSize();
 

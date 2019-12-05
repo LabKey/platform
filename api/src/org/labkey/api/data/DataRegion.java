@@ -755,34 +755,40 @@ public class DataRegion extends DisplayElement
         return null == getSettings() ? Collections.emptyMap() : getSettings().getQueryParameters();
     }
 
+    @Deprecated  // Use getResults() instead
+    final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
+    {
+        return getResults(ctx);
+    }
+
     /**
-     * Get a ResultSet from the DataRegion.
-     * Has the side-effect of setting the ResultSet and this DataRegion
+     * Get a Results from the DataRegion.
+     * Has the side-effect of setting the Results and this DataRegion
      * on the RenderContext and selecting any aggregates
      * (including the row count aggregate, unless pagination or pagination count are false.)
-     * Callers should check for ReadPermission before requesting a ResultSet.
+     * Callers should check for ReadPermission before requesting a Results.
      *
      * @param ctx The RenderContext
-     * @return A new ResultSet or the existing ResultSet in the RenderContext or null if no READ permission.
+     * @return A new Results or the existing Results in the RenderContext or null if no READ permission.
      * @throws SQLException SQLException
      * @throws IOException  IOException
      */
-    final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
+    final public Results getResults(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission("DataRegion.getResultSet()", ReadPermission.class))
+        if (!ctx.getViewContext().hasPermission("DataRegion.getResults()", ReadPermission.class))
             return null;
 
         DataRegion oldRegion = ctx.getCurrentRegion();
         if (oldRegion != this)
             ctx.setCurrentRegion(this);
 
-        Results rs = null;
+        Results results = null;
         boolean success = false;
 
         try
         {
-            rs = ctx.getResults();
-            if (null == rs)
+            results = ctx.getResults();
+            if (null == results)
             {
                 TableInfo tinfoMain = getTable();
                 if (null == tinfoMain)
@@ -791,13 +797,13 @@ public class DataRegion extends DisplayElement
                 }
                 else
                 {
-                    rs = getResultSet(ctx, isAllowAsync());
+                    results = getResults(ctx, isAllowAsync());
                 }
             }
 
             getAggregateResults(ctx);
             success = true;
-            return rs;
+            return results;
         }
         finally
         {
@@ -805,14 +811,14 @@ public class DataRegion extends DisplayElement
 
             // If getAggregateResults() throws then we won't be returning rs... so close it now
             if (!success)
-                ResultSetUtil.close(rs);
+                ResultSetUtil.close(results);
         }
     }
 
 
-    protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
+    protected Results getResults(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        return ctx.getResultSet(getSelectColumns(), getDisplayColumns(), getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
+        return ctx.getResults(getSelectColumns(), getDisplayColumns(), getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
     }
 
 
@@ -823,9 +829,9 @@ public class DataRegion extends DisplayElement
 
     public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
     {
-        Results rs = ctx.getResults();
-        assert rs != null;
-        _complete = rs.isComplete();
+        Results results = ctx.getResults();
+        assert results != null;
+        _complete = results.isComplete();
 
         boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
         countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
@@ -968,7 +974,7 @@ public class DataRegion extends DisplayElement
             return;
         }
 
-        ResultSet rs = null;
+        Results results = null;
         try
         {
             boolean showParameterForm = false;
@@ -980,7 +986,7 @@ public class DataRegion extends DisplayElement
                     if (null != t && !t.getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
                         showParameterForm = true;
                     else
-                        rs = getResultSet(ctx);
+                        results = getResults(ctx);
                 }
                 catch (QueryService.NamedParameterNotProvided x)
                 {
@@ -1001,12 +1007,12 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                _renderTableNew(ctx, out, rs);
+                _renderTableNew(ctx, out, results);
             }
         }
         finally
         {
-            ResultSetUtil.close(rs);
+            ResultSetUtil.close(results);
         }
     }
 
@@ -1809,17 +1815,7 @@ public class DataRegion extends DisplayElement
 
         if (value != null && url != null)
         {
-            Map<String, String> props;
-            if (column.getLinkTarget() != null)
-            {
-                props = Collections.singletonMap("target", column.getLinkTarget());
-            }
-            else
-            {
-                props = Collections.emptyMap();
-            }
-
-            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).attributes(props).toString());
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).target(column.getLinkTarget()).toString());
         }
     }
 
@@ -1952,8 +1948,8 @@ public class DataRegion extends DisplayElement
 
     private void initDetailsResultSet(RenderContext ctx) throws SQLException
     {
-        Results rs = ctx.getResults();
-        if (null != rs)
+        Results results = ctx.getResults();
+        if (null != results)
             return;
 
         TableInfo tinfoMain = getTable();
@@ -2198,7 +2194,7 @@ public class DataRegion extends DisplayElement
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
-            String msg = "This will edit " + StringUtilsLabKey.pluralize(ctx.getForm().getSelectedRows().length, "row");
+            String msg = "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row");
             out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
 

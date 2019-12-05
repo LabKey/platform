@@ -194,6 +194,8 @@ public class DataViewService
             o.put("schemaName", info.getSchemaName());
         if (info.getQueryName() != null)
             o.put("queryName", info.getQueryName());
+        if (info.getViewName() != null)
+            o.put("viewName", info.getViewName());
 
         if (info.getDefaultIconCls() != null)
             o.put("defaultIconCls", info.getDefaultIconCls());

@@ -235,7 +235,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
                                    (DataRegion.MODE_UPDATE == ctx.getMode() && filterMap.containsKey(FilterOperation.update)) ? filterMap.get(FilterOperation.update) :
                                     Collections.emptyList();
 
-        return lookupTable.getSelectList(getLookupColumnName(), filters, null);
+        return lookupTable.getSelectList(getLookupColumnName(), filters, null, _displayColumnName);
     }
 
 

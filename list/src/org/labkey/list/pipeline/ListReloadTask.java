@@ -37,7 +37,6 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
 {
     public static final String LIST_NAME_KEY = "name";
     public static final String LIST_ID_KEY = "id";
-    public static final String LIST_MERGE_OPTION = "mergeData";
 
     public ListReloadTask(Factory factory, PipelineJob job)
     {
@@ -77,13 +76,13 @@ public class ListReloadTask extends PipelineJob.Task<ListReloadTask.Factory>
                 else if (params.containsKey(LIST_NAME_KEY))
                     inputDataMap.put(dataFile.getName(), new Pair<>(LIST_NAME_KEY, params.get(LIST_NAME_KEY)));
 
-                if (params.containsKey(LIST_MERGE_OPTION))
-                    useMerge = Boolean.parseBoolean(params.get(LIST_MERGE_OPTION));
+                if (params.containsKey(ListImportContext.LIST_MERGE_OPTION))
+                    useMerge = Boolean.parseBoolean(params.get(ListImportContext.LIST_MERGE_OPTION));
 
                 if (!inputDataMap.isEmpty() || useMerge)
                     context = new ListImportContext(inputDataMap, useMerge, true);
 
-
+                context.setProps(params);
                 ListReloadJob reloadJob = new ListReloadJob(job.getInfo(), pr, dataFile, job.getLogFile(), context);
                 ListReloadJob unserializedJob = (ListReloadJob) PipelineJob.deserializeJob(PipelineJob.serializeJob(reloadJob, false));   // Force round trip to ensure serialization works
                 unserializedJob.run();

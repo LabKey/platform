@@ -358,7 +358,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setRedactedText(String redactedText)
     {
-        if (!isEdited() && getRedactedText() == redactedText)
+        if (!isEdited() && ((getRedactedText() != null && getRedactedText().equals(redactedText))
+                || (getRedactedText() == null && redactedText == null)))
             return;
         edit().setRedactedText(redactedText);
     }

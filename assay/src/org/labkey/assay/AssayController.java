@@ -109,7 +109,9 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -124,24 +126,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
-import org.labkey.assay.actions.AssayBatchDetailsAction;
-import org.labkey.assay.actions.AssayBatchesAction;
-import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
-import org.labkey.assay.actions.DeleteProtocolAction;
-import org.labkey.assay.actions.GetAssayBatchAction;
-import org.labkey.assay.actions.GetAssayBatchesAction;
-import org.labkey.assay.actions.GetProtocolAction;
-import org.labkey.assay.actions.ImportAction;
-import org.labkey.assay.actions.ImportRunApiAction;
-import org.labkey.assay.actions.PipelineDataCollectorRedirectAction;
-import org.labkey.assay.actions.SaveAssayBatchAction;
-import org.labkey.assay.actions.SaveProtocolAction;
-import org.labkey.assay.actions.SetDefaultValuesAssayAction;
-import org.labkey.assay.actions.ShowSelectedDataAction;
-import org.labkey.assay.actions.ShowSelectedRunsAction;
-import org.labkey.assay.actions.TemplateAction;
-import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.actions.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -177,6 +162,9 @@ public class AssayController extends SpringActionController
             GetAssayBatchAction.class,
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
+            GetAssayRunAction.class,
+            GetAssayRunsAction.class,
+            SaveAssayRunsAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
             TransformResultsAction.class,
@@ -942,7 +930,7 @@ public class AssayController extends SpringActionController
                 url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
 
             return url;
         }
@@ -1565,6 +1553,34 @@ public class AssayController extends SpringActionController
             ret.addChild("Data Import");
 
             return ret;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetValidPublishTargetsAction extends ReadOnlyApiAction
+    {
+        @Override
+        public ApiResponse execute(Object object, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<Map<String, Object>> containersInfo = new ArrayList<>();
+
+            AssayPublishService service = AssayPublishService.get();
+            if (service != null)
+            {
+                for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
+                {
+                    Container container = study.getContainer();
+                    Map<String, Object> containerInfo = new HashMap<>();
+                    containerInfo.put("id", container.getId());
+                    containerInfo.put("name", container.getName());
+                    containerInfo.put("path", container.getPath());
+                    containersInfo.add(containerInfo);
+                }
+            }
+
+            response.put("containers", containersInfo);
+            return response;
         }
     }
 }

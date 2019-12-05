@@ -417,12 +417,6 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public ModelAndView createAssayDesignerView(Map<String, String> properties)
-    {
-        return new AssayGWTView(new AssayApplication.AssayDesigner(), properties);
-    }
-
-    @Override
     public ModelAndView createAssayImportView(Map<String, String> properties)
     {
         return new AssayGWTView(new AssayApplication.AssayImporter(), properties);
@@ -604,25 +598,6 @@ public class AssayManager implements AssayService
             if (null == provider)
                 continue;
 
-            List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
-
-            if (runs.isEmpty())
-                continue;
-
-            StringBuilder runKeywords = new StringBuilder();
-
-            for (ExpRun run : runs)
-            {
-                runKeywords.append(" ");
-                runKeywords.append(run.getName());
-
-                if (null != run.getComments())
-                {
-                    runKeywords.append(" ");
-                    runKeywords.append(run.getComments());
-                }
-            }
-
             String name = protocol.getName();
             String instrument = protocol.getInstrument();
             String description = protocol.getDescription();
@@ -632,18 +607,38 @@ public class AssayManager implements AssayService
             User modifiedBy = protocol.getModifiedBy();
             Date modified = protocol.getModified();
 
-            ActionURL assayRunsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
-
+            ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
+            assayBeginURL.setExtraPath(c.getId());
             String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-            String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment) + runKeywords.toString();
+            String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
             Map<String, Object> m = new HashMap<>();
             m.put(SearchService.PROPERTY.title.toString(), name);
             m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
             m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
-            String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
-            assayRunsURL.setExtraPath(c.getId());
-            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayRunsURL, createdBy, created, modifiedBy, modified, m);
+            String docId = c.getId() + ":assay: " + protocol.getRowId();
+
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
+
+            if (!runs.isEmpty())
+            {
+                StringBuilder runKeywords = new StringBuilder();
+
+                for (ExpRun run : runs)
+                {
+                    runKeywords.append(" ");
+                    runKeywords.append(run.getName());
+
+                    if (null != run.getComments())
+                    {
+                        runKeywords.append(" ");
+                        runKeywords.append(run.getComments());
+                    }
+                }
+
+                body += runKeywords.toString();
+            }
+            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
             task.addResource(r, SearchService.PRIORITY.item);
         }
     }

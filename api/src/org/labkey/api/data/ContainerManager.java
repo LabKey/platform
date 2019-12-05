@@ -140,6 +140,7 @@ public class ContainerManager
     private static final String PROJECT_LIST_ID = "Projects";
 
     public static final String HOME_PROJECT_PATH = "/home";
+    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
 
     private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
@@ -1582,7 +1583,7 @@ public class ContainerManager
 
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
 
-        try (DbScope.Transaction t = CORE.getSchema().getScope().ensureTransaction())
+        DbScope.RetryFn<Boolean> tryDeleteContainer = (tx) ->
         {
             deletingContainers.put(c.getId(), user.getUserId());
 
@@ -1592,7 +1593,6 @@ public class ContainerManager
             if (sel.exists())
             {
                 _removeFromCache(c);
-                t.commit();
                 return false;
             }
 
@@ -1619,7 +1619,7 @@ public class ContainerManager
 
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
-            t.addCommitTask(() ->
+            tx.addCommitTask(() ->
             {
                 // Be sure that we've waited until any threads that might be populating the cache have finished
                 // before we guarantee that we've removed this now-deleted container
@@ -1634,14 +1634,22 @@ public class ContainerManager
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             addAuditEvent(user, c, c.getContainerNoun(true) + " " + c.getPath() + " was deleted");
-            t.commit();
+            return true;
+        };
+
+        try
+        {
+            boolean success = CORE.getSchema().getScope().executeWithRetry(tryDeleteContainer);
+            if (success)
+            {
+                LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
+            }
+            return success;
         }
         finally
         {
             deletingContainers.remove(c.getId());
         }
-        LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
-        return true;
     }
 
     public static boolean isDeletable(Container c)
@@ -2213,10 +2221,15 @@ public class ContainerManager
     {
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.
-        return bootstrapContainer(Container.DEFAULT_SUPPORT_PROJECT_PATH,
+        return bootstrapContainer(DEFAULT_SUPPORT_PROJECT_PATH,
                 RoleManager.getRole(AuthorRole.class),
                 RoleManager.getRole(ReaderRole.class),
                 null);
+    }
+
+    public static Container getDefaultSupportContainer()
+    {
+        return getForPath(DEFAULT_SUPPORT_PROJECT_PATH);
     }
 
     public static String[] getAliasesForContainer(Container c)

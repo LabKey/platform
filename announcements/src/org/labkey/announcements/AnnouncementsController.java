@@ -75,6 +75,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
@@ -124,7 +125,6 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
 import org.springframework.beans.PropertyValues;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BindException;
@@ -146,6 +146,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE_RENDERER_TYPE;
 
 /**
  * Shows a set of announcementModels or bulletin board items with replies.
@@ -1087,7 +1089,6 @@ public class AnnouncementsController extends SpringActionController
             Container c = getViewContext().getContainer();
 
             // In reshow case we leave all form values as is so user can correct the errors.
-            WikiService wikiService = WikiService.get();
             WikiRendererType currentRendererType;
             Integer assignedTo;
 
@@ -1097,8 +1098,8 @@ public class AnnouncementsController extends SpringActionController
             {
                 String rendererTypeName = (String) form.get("rendererType");
 
-                if (null == rendererTypeName && null != wikiService)
-                    currentRendererType = wikiService.getDefaultMessageRendererType();
+                if (null == rendererTypeName)
+                    currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 else
                     currentRendererType = WikiRendererType.valueOf(rendererTypeName);
 
@@ -1114,7 +1115,7 @@ public class AnnouncementsController extends SpringActionController
 
                 String expires = DateUtil.formatDate(c, cal.getTime());
                 form.set("expires", expires);
-                currentRendererType = null != wikiService ? wikiService.getDefaultMessageRendererType() : null;
+                currentRendererType = DEFAULT_MESSAGE_RENDERER_TYPE;
                 assignedTo = settings.getDefaultAssignedTo();
             }
             else
@@ -1587,7 +1588,7 @@ public class AnnouncementsController extends SpringActionController
             //save the default settings
             AnnouncementManager.saveDefaultEmailOption(getContainer(), form.getDefaultEmailOption());
 
-            for (MessageConfigService.NotificationOption option : AnnouncementManager.getEmailOptions())
+            for (NotificationOption option : AnnouncementManager.getEmailOptions())
             {
                 if (option.getEmailOptionId() == form.getDefaultEmailOption())
                 {
@@ -1602,103 +1603,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class SetBulkEmailOptions extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
-    {
-        @Override
-        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
-        {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            MessageConfigService.ConfigTypeProvider provider = form.getProvider();
-            String srcIdentifier = getContainer().getId();
-
-            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true);
-
-            if (!selections.isEmpty() && provider != null)
-            {
-                int newOption = form.getIndividualEmailOption();
-
-                for (String user : selections)
-                {
-                    User projectUser = UserManager.getUser(Integer.parseInt(user));
-                    MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), projectUser, srcIdentifier);
-
-                    int currentEmailOption = pref != null ? pref.getEmailOptionId() : -1;
-
-                    //has this projectUser's option changed? if so, update
-                    //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
-                    if (currentEmailOption != newOption)
-                    {
-                        provider.savePreference(getUser(), getContainer(), projectUser, newOption, srcIdentifier);
-                    }
-                }
-                resp.put("success", true);
-            }
-            else
-            {
-                resp.put("success", false);
-                resp.put("message", "There were no users selected");
-            }
-            return resp;
-        }
-    }
-
-    public static class NotifyOptionsForm
-    {
-        private String _type;
-
-        public String getType()
-        {
-            return _type;
-        }
-
-        public void setType(String type)
-        {
-            _type = type;
-        }
-
-        public MessageConfigService.ConfigTypeProvider getProvider()
-        {
-            return MessageConfigService.get().getConfigType(getType());
-        }
-    }
-
-    /**
-     * Action to populate an Ext store with email notification options for admin settings
-     */
-    @RequiresPermission(AdminPermission.class)
-    public class GetEmailOptions extends ReadOnlyApiAction<NotifyOptionsForm>
-    {
-        @Override
-        public ApiResponse execute(NotifyOptionsForm form, BindException errors)
-        {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
-            MessageConfigService.ConfigTypeProvider provider = form.getProvider();
-            if (provider != null)
-            {
-                List<Map> options = new ArrayList<>();
-
-                // if the list of options is not for the folder default, add an option to use the folder default
-                if (getViewContext().get("isDefault") == null)
-                    options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
-
-                for (MessageConfigService.NotificationOption option : provider.getOptions())
-                {
-                    options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
-                }
-                resp.put("success", true);
-                if (!options.isEmpty())
-                    resp.put("options", options);
-            }
-            else
-                resp.put("success", false);
-
-            return resp;
-        }
-    }
-
-    // Used for testing the daily digest email notifications
+    // Used for testing announcement daily digest email notifications
     @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
     public class SendDailyDigestAction extends MutatingApiAction
@@ -2136,8 +2041,14 @@ public class AnnouncementsController extends SpringActionController
 
             ListBean bean = new ListBean(c, url, user, settings, perm, displayAll);
             NavTree menu = new NavTree("");
+            ViewContext context = getViewContext();
+            boolean isAdminMode = PageFlowUtil.isPageAdminMode(context);
 
-            addAdminMenus(bean, menu, getViewContext());
+            if ((bean.emailPrefsURL != null) && !isAdminMode)
+                menu.addChild("Email Preferences", bean.emailPrefsURL);
+
+            if (isAdminMode)
+                addAdminMenus(bean, menu, getViewContext());
 
             setNavMenu(menu);
         }

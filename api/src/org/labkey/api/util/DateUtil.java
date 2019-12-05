@@ -78,26 +78,24 @@ public class DateUtil
      */
     private static class _Calendar extends GregorianCalendar
     {
-        public _Calendar(TimeZone tz, Locale locale)
+        _Calendar(TimeZone tz, Locale locale)
         {
             super(tz, locale);
         }
 
 
-        public _Calendar(TimeZone tz, Locale locale, int year, int mon, int mday, int hour, int min, int sec, int ms)
+        _Calendar(TimeZone tz, Locale locale, int year, int mon, int mday, int hour, int min, int sec, int ms)
         {
             super(tz, locale);
-            //noinspection MagicConstant
             set(year, mon, mday, hour, min, sec);
             set(Calendar.MILLISECOND, ms);
         }
 
-        public _Calendar(TimeZone tz, Locale locale, long l)
+        _Calendar(TimeZone tz, Locale locale, long l)
         {
             super(tz, locale);
             setTimeInMillis(l);
         }
-
 
         public void setTimeInMillis(long millis)
         {
@@ -109,15 +107,16 @@ public class DateUtil
 
 
     // disallow date overflow arithmetic
-    public static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec)
+    private static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, int ms)
     {
-        Calendar cal = new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, 0);
+        Calendar cal = new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, ms);
         if (cal.get(Calendar.YEAR) != year ||
             cal.get(Calendar.MONTH) != mon ||
             cal.get(Calendar.DAY_OF_MONTH) != mday ||
             cal.get(Calendar.HOUR_OF_DAY) != hour ||
             cal.get(Calendar.MINUTE) != min ||
-            cal.get(Calendar.SECOND) != sec)
+            cal.get(Calendar.SECOND) != sec ||
+            cal.get(Calendar.MILLISECOND) != ms)
             throw new IllegalArgumentException();
         return cal;
     }
@@ -337,6 +336,8 @@ public class DateUtil
         int hour = -1;
         int min = -1;
         int sec = -1;
+        double nanos = -1;
+        int decimalPosition = 1_000_000_000;    // used to compute nanos
         char c, si;
         int i = 0;
         int n, digits;
@@ -451,8 +452,24 @@ validNum:       {
                             hour = n;
                         else if (min < 0)
                             min = n;
+                        else if (sec < 0)
+                            sec = n;
                         else
                             throw new ConversionException(s);
+                        break validNum;
+                    }
+                    // '.' can also be a date separator so check for fractional second before parsing date separator
+                    if (c == '.' && min >= 0 && sec < 0)
+                    {
+                        sec = n;
+                        i++;
+                        nanos = 0;
+                        while (i < limit && '0' <= (c = s.charAt(i)) && c <= '9')
+                        {
+                            decimalPosition /= 10;
+                            nanos += decimalPosition * (c - '0');
+                            i++;
+                        }
                         break validNum;
                     }
                     if (c == '/' || c == '-' || c == '.')
@@ -506,6 +523,12 @@ validNum:       {
                     if (min >= 0 && sec < 0)
                     {
                         sec = n;
+                        break validNum;
+                    }
+                    // handle crazy FCS format hh:mm:ss:jiffy format (e.g. 1/60 sec)
+                    if (sec >= 0 && nanos < 0 && prevc == ':')
+                    {
+                        nanos = 1_000_000_000.0 * n / 60;
                         break validNum;
                     }
                     if (mday < 0)
@@ -623,6 +646,9 @@ validNum:       {
                 break;
         }
 
+        if (nanos < 0)
+            nanos = 0;
+        int ms = (int)Math.round(nanos / 1_000_000.0);
         if (sec < 0)
             sec = 0;
         if (min < 0)
@@ -632,10 +658,10 @@ validNum:       {
 
         if (option == DateTimeOption.TimeOnly)
         {
-            if (hour >= 24 || min >= 60 || sec >= 60)
+            if (hour >= 24 || min >= 60 || sec >= 60 || nanos >= 1_000_000_000)
                 throw new ConversionException(s);
 
-            return 1000L * (hour * (60*60) + (min * 60) + sec);
+            return (hour * 60*60*1000L) + (min * 60*1000L) + (sec * 1000L) + ms;
         }
         
         //
@@ -667,7 +693,7 @@ validNum:       {
 
         try
         {
-            Calendar cal = newCalendarStrict(tz, year, mon, mday, hour, min, sec);
+            Calendar cal = newCalendarStrict(tz, year, mon, mday, hour, min, sec, ms);
 
             return cal.getTimeInMillis();
         }
@@ -805,31 +831,13 @@ validNum:       {
 
     private static long parseDateTime(String s, MonthDayOption md)
     {
-        int ms = 0;
         try
         {
-            // strip off trailing decimal :00:00.000
-            int len = s.length();
-            int period = s.lastIndexOf('.');
-            if (period > 6 && period >= len - 4 && period < len - 1 &&
-                    s.charAt(period - 3) == ':' &&
-                    s.charAt(period - 6) == ':')
-            {
-                String m = s.substring(period + 1);
-                ms = Integer.parseInt(m);
-                if (m.length() == 1)
-                    ms *= 100;
-                else if (m.length() == 2)
-                    ms *= 10;
-                s = s.substring(0, period);
-            }
-
-            long time = parseDateTimeEN(s, DateTimeOption.DateTime, md);
-            return time + ms;
+            return parseDateTimeEN(s, DateTimeOption.DateTime, md);
         }
         catch (ConversionException ignored) {}
 
-        return parseSpecialFormats(s) + ms;
+        return parseSpecialFormats(s);
     }
 
 
@@ -918,24 +926,7 @@ validNum:       {
 
     public static long parseTime(String s)
     {
-        // strip off trailing decimal :00:00.000
-        int ms = 0;
-        int len = s.length();
-        int period = s.lastIndexOf('.');
-        if (period > 6 && period >= len - 4 && period < len - 1 &&
-                s.charAt(period - 3) == ':' &&
-                s.charAt(period - 6) == ':')
-        {
-            String m = s.substring(period + 1);
-            ms = Integer.parseInt(m);
-            if (m.length() == 1)
-                ms *= 100;
-            else if (m.length() == 2)
-                ms *= 10;
-            s = s.substring(0, period);
-        }
-        long time = parseDateTimeUS(s, DateTimeOption.TimeOnly);
-        return time + ms;
+        return parseDateTimeUS(s, DateTimeOption.TimeOnly);
     }
 
 
@@ -1510,6 +1501,24 @@ Parse:
             assertEquals(datetimeExpected-6000, parseDateTime("03 feb 2001 04:05 am"));
             assertEquals(datetimeExpected, parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
 
+            // milliseconds trimmed to 3 decimal places
+            assertEquals(datetimeExpected+100, parseDateTime("03-FEB-2001 04:05:06.1"));
+            assertEquals(datetimeExpected+120, parseDateTime("03-FEB-2001 04:05:06.12"));
+            assertEquals(datetimeExpected+123, parseDateTime("03-FEB-2001 04:05:06.123"));
+            assertEquals(datetimeExpected+123, parseDateTime("03-FEB-2001 04:05:06.1234"));
+            assertEquals(datetimeExpected+123, parseDateTime("03-FEB-2001 04:05:06.123456"));
+
+            // fractional seconds
+            assertEquals(datetimeExpected, parseDateTime("03-FEB-2001 04:05:06:00"));
+            // "01" fractional seconds is .01666 seconds, rounded to .017
+            assertEquals(datetimeExpected+17, parseDateTime("03-FEB-2001 04:05:06:01"));
+            assertEquals(datetimeExpected+17, parseDateTime("03-FEB-2001 4:05:06:01"));
+            assertEquals(datetimeExpected+133, parseDateTime("03-FEB-2001 04:05:06:08"));
+            assertEquals(datetimeExpected+983, parseDateTime("03-FEB-2001 04:05:06:59"));
+            // invalid fractional seconds > 59
+            assertIllegalDateTime("03-FEB-2001 04:05:06:60");
+            assertIllegalDateTime("03-FEB-2001 04:05:06:61");
+
             // Test parseXMLDate() handling of time and date time values
 //            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
             assertEquals(Timestamp.valueOf("1970-01-01 15:02:00").getTime(), parseDateTime("15:02:00.0000000"));
@@ -1829,6 +1838,25 @@ Parse:
             assertEquals(timeSecExpected+7, parseTime("4:05:06.007"));
             assertEquals(timeSecExpected+70, parseTime("4:05:06.07"));
             assertEquals(timeSecExpected+700, parseTime("4:05:06.7"));
+
+            // milliseconds trimmed to 3 decimal places
+            assertEquals(timeSecExpected+100, parseTime("4:05:06.1"));
+            assertEquals(timeSecExpected+120, parseTime("4:05:06.12"));
+            assertEquals(timeSecExpected+123, parseTime("4:05:06.123"));
+            assertEquals(timeSecExpected+123, parseTime("4:05:06.1234"));
+            assertEquals(timeSecExpected+123, parseTime("4:05:06.123456"));
+
+            // fractional seconds
+            assertEquals(timeSecExpected, parseTime("4:05:06:00"));
+            // "01" fractional seconds is .01666 seconds, rounded to .017
+            assertEquals(timeSecExpected+17, parseTime("4:05:06:01"));
+            assertEquals(timeSecExpected+17, parseTime("04:05:06:01"));
+            assertEquals(timeSecExpected+133, parseTime("4:05:06:08"));
+            assertEquals(timeSecExpected+983, parseTime("4:05:06:59"));
+            // invalid fractional seconds > 59
+            assertIllegalTime("4:05:06:60");
+            assertIllegalTime("4:05:06:61");
+
             assertIllegalTime("2/3/2001 4:05:06");
             assertIllegalTime("4/05:06");
             assertIllegalTime("4:05/06");

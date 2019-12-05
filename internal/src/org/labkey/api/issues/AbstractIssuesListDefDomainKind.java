@@ -150,7 +150,13 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, false, true);
+        return null;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
     }
 
     @Nullable

@@ -28,22 +28,26 @@ import java.beans.PropertyChangeEvent;
  */
 public class IssueUserListener implements UserListener
 {
+    @Override
     public void userAddedToSite(User user)
     {
         IssueManager.uncache(); // Might change assigned to lists
     }
 
+    @Override
     public void userDeletedFromSite(User user)
     {
         IssueManager.deleteUserEmailPreferences(user);
         IssueManager.uncache(); // Might change assigned to lists
     }
 
+    @Override
     public void userAccountDisabled(User user)
     {
         IssueManager.uncache();
     }
 
+    @Override
     public void userAccountEnabled(User user)
     {
         IssueManager.uncache();

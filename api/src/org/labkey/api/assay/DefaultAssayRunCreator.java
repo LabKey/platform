@@ -185,19 +185,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
-            ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
+            ExperimentService.get().getSchema().getScope().addCommitTask(() -> {
+                try
                 {
-                    try
-                    {
-                        PipelineService.get().queueJob(pipelineJob);
-                    }
-                    catch (PipelineValidationException e)
-                    {
-                        throw new UnexpectedException(e);
-                    }
+                    PipelineService.get().queueJob(pipelineJob);
+                }
+                catch (PipelineValidationException e)
+                {
+                    throw new UnexpectedException(e);
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
         }

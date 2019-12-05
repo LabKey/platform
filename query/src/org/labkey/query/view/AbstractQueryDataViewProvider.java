@@ -99,6 +99,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 
             info.setSchemaName(view.getSchemaName());
             info.setQueryName(view.getQueryName());
+            info.setViewName(view.getName());
 
             // run url and details url are the same for now
             ActionURL runUrl = getViewRunURL(context.getUser(), ctxContainer, view);

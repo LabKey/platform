@@ -20,9 +20,28 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -46,12 +65,13 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -68,6 +88,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
 
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
 {
@@ -317,7 +339,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
                         ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
-                        result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(false));
+                        result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), false));
                         return result;
                     }
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
@@ -339,7 +361,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return ret;
             case ReplacedByRun:
                 var replacedByRunCol = wrapColumn(alias, _rootTable.getColumn("ReplacedByRunId"));
-                replacedByRunCol.setFk(getExpSchema().getRunIdForeignKey());
+                replacedByRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 replacedByRunCol.setLabel("Replaced By");
                 replacedByRunCol.setShownInInsertView(false);
                 replacedByRunCol.setShownInUpdateView(false);
@@ -360,7 +382,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
                 replacesSQL.append(".RowId)");
                 var replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
-                replacesRunCol.setFk(getExpSchema().getRunIdForeignKey());
+                replacesRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 replacesRunCol.setLabel("Replaces");
                 replacesRunCol.setDescription("The run that this run replaces, usually with updated or corrected information");
                 return replacesRunCol;
@@ -369,8 +391,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 batchIdCol.setUserEditable(false);
                 batchIdCol.setShownInInsertView(false);
                 batchIdCol.setShownInUpdateView(false);
-                batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(true));
+                batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return batchIdCol;
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -427,7 +451,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRun + "')");
         ExprColumn ret = new ExprColumn(this, Column.Input.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
-        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, new DelegatingContainerFilter(this)));
+        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, getContainerFilter()));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -439,7 +463,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND exp.ProtocolApplication.CpasType = '" + ExpProtocol.ApplicationType.ExperimentRunOutput + "')");
         ExprColumn ret = new ExprColumn(this, Column.Output.toString(), sql, JdbcType.INTEGER);
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
-        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, new DelegatingContainerFilter(this)));
+        ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, getContainerFilter()));
         ret.setIsUnselectable(true);
         return ret;
     }
@@ -471,6 +495,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             @Override
             public TableInfo getLookupTableInfo()
             {
+                final ContainerFilter cf = ExpRunTableImpl.this.getContainerFilter();
                 VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
                 {
                     @NotNull
@@ -489,13 +514,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         return sql;
                     }
                 };
-                t.setContainerFilter(new DelegatingContainerFilter(ExpRunTableImpl.this));
-
                 var runCol = new BaseColumnInfo("RunId", t, JdbcType.INTEGER);
                 t.addColumn(runCol);
 
                 var dataCol = new BaseColumnInfo(dataIdName, t, JdbcType.INTEGER);
-                dataCol.setFk(getExpSchema().getDataIdForeignKey());
+                dataCol.setFk(getExpSchema().getDataIdForeignKey(cf));
                 t.addColumn(dataCol);
                 return t;
             }
@@ -532,6 +555,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Output);
         addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
+
+        addColumn(Column.Properties);
+        addVocabularyDomains();
 
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
@@ -784,7 +810,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         public TableInfo getLookupTableInfo()
         {
-            VirtualTable result = new VirtualTable(ExperimentServiceImpl.get().getSchema(), "Experiments");
+            VirtualTable result = new VirtualTable<>(ExperimentServiceImpl.get().getSchema(), "Experiments", getUserSchema());
             for (ExpExperiment experiment : getExperiments())
             {
                 var column = new BaseColumnInfo(experiment.getName(), JdbcType.BOOLEAN);
@@ -828,6 +854,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
     private static class RunTableUpdateService extends AbstractQueryUpdateService
     {
+        private RemapCache _cache = new RemapCache();       // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
+
         RunTableUpdateService(ExpRunTable queryTable)
         {
             super(queryTable);
@@ -900,14 +928,36 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             {
                                 value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
                             }
+
+                            ForeignKey fk = col.getFk();
+                            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+                            {
+                                if (fk != null && fk.allowImportByAlternateKey() && value != null)
+                                {
+                                    try
+                                    {
+                                        value = ConvertUtils.convert(String.valueOf(value), col.getJavaClass());
+                                    }
+                                    catch (ConversionException e)
+                                    {
+                                        Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
+                                        if (remappedValue != null)
+                                            value = remappedValue;
+                                    }
+                                }
+                            }
                             run.setProperty(user, propertyDescriptor, value);
 
                             Object newValue = value;
-                            TableInfo fkTableInfo = col.getFkTableInfo();
-                            if (fkTableInfo != null)
+                            TableInfo fkTableInfo = fk != null ? fk.getLookupTableInfo() : null;
+                            String lookupColumnName = fk != null ? fk.getLookupColumnName() : null;
+                            ColumnInfo lookupColumn = fkTableInfo != null && lookupColumnName != null ? fkTableInfo.getColumn(lookupColumnName) : null;
+
+                            // Don't attempt type conversion if the lookup target isn't the PK column
+                            if (lookupColumn != null && lookupColumn.isKeyField())
                             {
                                 // Do type conversion in case there's a mismatch in the lookup source and target columns
-                                Class<?> keyColumnType = fkTableInfo.getPkColumns().get(0).getJavaClass();
+                                Class<?> keyColumnType = lookupColumn.getJavaClass();
                                 if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
                                 {
                                     newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);

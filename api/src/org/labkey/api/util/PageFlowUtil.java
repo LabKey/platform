@@ -35,9 +35,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
-import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -56,7 +54,6 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelProvider;
@@ -139,7 +136,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
@@ -1258,16 +1254,6 @@ public class PageFlowUtil
         return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
-    /**
-     *  Returns an onClick handler that posts to the specified url, providing a CSRF token.
-     */
-    @Deprecated
-    @RemoveIn20_1  // TODO: Unused -- all callers now delegate to builder methods that implement post-on-click
-    public static String postOnClickJavaScript(ActionURL url)
-    {
-        return postOnClickJavaScript(url.getLocalURIString(), null);
-    }
-
     public static ButtonBuilder button(String text)
     {
         return new ButtonBuilder(text);
@@ -1332,24 +1318,6 @@ public class PageFlowUtil
     public static HtmlString generateBackButton(String text)
     {
         return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
-    }
-
-    @RemoveIn20_1 // No usages
-    public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
-    {
-        return button(text)
-                .attributes(attributes)
-                .dropdown(true)
-                .href(href)
-                .onClick(onClick)
-                .toString();
-    }
-
-    /* Renders a span and a drop down arrow image wrapped in a link */
-    @RemoveIn20_1 // No usages
-    public static String generateDropDownButton(String text, String href, String onClick)
-    {
-        return generateDropDownButton(text, href, onClick, null);
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
@@ -1430,80 +1398,10 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 42 usages.
+    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 37 usages.
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, URLHelper url, String id)
-    {
-        return link(text).href(url).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href, String id)
-    {
-        return link(text).href(href).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href)
-    {
-        return link(text).href(href).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String unstyledTextLink(String text, String href, String onClickScript, String id)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).clearClasses().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String unstyledTextLink(String text, URLHelper url)
-    {
-        return link(text).href(url).clearClasses().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return iconLink(iconCls, tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String helpPopup(String title, String helpText)
@@ -2325,7 +2223,7 @@ public class PageFlowUtil
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-        json.put("notifications", getNotificationJson(user));
+            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationsByUser(null, user.getUserId(), true).size()));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2400,48 +2298,6 @@ public class PageFlowUtil
             }
         }
         return tourProps;
-    }
-
-    public static JSONObject getNotificationJson(User user)
-    {
-        Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
-        Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
-        int unreadCount = 0;
-        boolean hasRead = false;
-
-        NotificationService service = NotificationService.get();
-        if (service != null && user != null && !user.isGuest())
-        {
-            List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
-            for (Notification notification : userNotifications)
-            {
-                if (notification.getReadOn() != null)
-                {
-                    hasRead = true;
-                    continue;
-                }
-
-                Map<String, Object> notifPropMap = notification.asPropMap();
-                notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), user));
-                notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
-                notificationsPropMap.put(notification.getRowId(), notifPropMap);
-
-                String groupLabel = service.getNotificationTypeLabel(notification.getType());
-                if (!notificationGroupingsMap.containsKey(groupLabel))
-                {
-                    notificationGroupingsMap.put(groupLabel, new ArrayList<>());
-                }
-                notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
-
-                unreadCount++;
-            }
-        }
-
-        JSONObject notifications = new JSONObject(notificationsPropMap);
-        notifications.put("grouping", notificationGroupingsMap);
-        notifications.put("unreadCount", unreadCount);
-        notifications.put("hasRead", hasRead);
-        return notifications;
     }
 
     public static String getServerSessionHash()

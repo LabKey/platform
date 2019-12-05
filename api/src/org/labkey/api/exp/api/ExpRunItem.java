@@ -26,7 +26,7 @@ import java.util.List;
  * User: jeckels
  * Date: Jul 28, 2008
  */
-public interface ExpRunItem extends ExpObject
+public interface ExpRunItem extends ExpObject, ExpLineageItem
 {
     @Nullable
     String getDescription();

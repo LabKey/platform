@@ -42,6 +42,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -127,6 +128,7 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -160,16 +162,19 @@ public class FileContentController extends SpringActionController
 
     public static class FileUrlsImpl implements FileUrls
     {
+        @Override
         public ActionURL urlBegin(Container container)
         {
             return new ActionURL(BeginAction.class, container);
         }
 
+        @Override
         public ActionURL urlShowAdmin(Container container)
         {
             return new ActionURL(ShowAdminAction.class, container);
         }
 
+        @Override
         public ActionURL urlFileEmailPreference(Container container)
         {
             return new ActionURL(FileEmailPreferenceAction.class, container);
@@ -179,8 +184,9 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
-        WebdavResource _resource;
+        private WebdavResource _resource;
 
+        @Override
         public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
         {
             if (null == form.getFileName())
@@ -392,6 +398,7 @@ public class FileContentController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
@@ -1344,32 +1351,48 @@ public class FileContentController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> rows = new ArrayList<>();
             TableInfo tableInfo = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
-            new TableSelector(tableInfo).forEachMap(data ->
+
+            // add lookup display columns
+            List<ColumnInfo> columns = new ArrayList<>(tableInfo.getColumns());
+            if (form.getCustomProperties() != null)
+            {
+                Arrays.stream(form.getCustomProperties())
+                        .map(tableInfo::getColumn)
+                        .filter(column -> null != column && column.getDisplayField() != null)
+                        .map(ColumnInfo::getDisplayField)
+                        .forEach(columns::add);
+            }
+
+            // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
+            final int MAX_ROW_COUNT = 10000;
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("dataFileUrl"), null, CompareType.NONBLANK);
+
+            new TableSelector(tableInfo, columns, filter, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");
-                if (null != encodedUrl)
+                Map<String, Object> row = new HashMap<>();
+                java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
+                row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
+                row.put("rowId", data.get("RowId"));
+                row.put("name", data.get("Name"));
+                if (null != form.getCustomProperties())
                 {
-                    Map<String, Object> row = new HashMap<>();
-                    java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
-                    row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
-                    row.put("rowId", data.get("RowId"));
-                    row.put("name", data.get("Name"));
-                    if (null != form.getCustomProperties())
+                    for (String property : form.getCustomProperties())
                     {
-                        for (String property : form.getCustomProperties())
+                        ColumnInfo column = tableInfo.getColumn(property);
+                        if (null != column)
                         {
-                            ColumnInfo column = tableInfo.getColumn(property);
-                            if (null != column)
-                            {
-                                Map<String, Object> map = new HashMap<>();
-                                map.put("value", data.get(column.getAlias()));
-                                StringExpression url = column.getEffectiveURL();
-                                if (null != url)
-                                    map.put("url", url.eval(data));
+                            ColumnInfo displayColumn = column.getDisplayField();
 
-                                // Display value for a lookup has already been handled by Exp.Data
-                                row.put(property, map);
-                            }
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
+                            StringExpression url = column.getEffectiveURL();
+                            if (null != url)
+                                map.put("url", url.eval(data));
+
+                            // Display value for a lookup has already been handled by Exp.Data
+                            row.put(property, map);
                         }
                     }
                     rows.add(row);

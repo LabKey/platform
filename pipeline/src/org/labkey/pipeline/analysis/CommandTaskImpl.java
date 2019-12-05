@@ -17,10 +17,12 @@ package org.labkey.pipeline.analysis;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.DefaultDataTransformer;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
@@ -43,6 +45,7 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
@@ -297,7 +300,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             try
             {
                 // If it produces nothing for the command line, then this command should not be executed.
-                return commandNameConverter.toArgs(task, new HashSet<TaskToCommandArgs>()).size() != 0;
+                return commandNameConverter.toArgs(task, job.getParameters(), new HashSet<TaskToCommandArgs>()).size() != 0;
             }
             finally
             {
@@ -355,9 +358,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             _converter = converter;
         }
 
-        public List<String> toArgs(CommandTask task) throws IOException
+        public List<String> toArgs(CommandTask task, Map<String, String> params) throws IOException
         {
-            return _converter.toArgs(task, new HashSet<TaskToCommandArgs>());
+            return _converter.toArgs(task, params, new HashSet<TaskToCommandArgs>());
         }
 
         public boolean isCopyInput()
@@ -569,6 +572,87 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
+    /**
+     * The parameter replacement map created as the task is run and used
+     * to replace tokens the script or the command line before executing it.
+     * The replaced paths will be resolved to paths in the work directory.
+     */
+    protected Map<String, String> createReplacements(@Nullable File scriptFile, String transformSessionId) throws IOException
+    {
+        Map<String, String> replacements = new HashMap<>();
+
+        // Input paths
+        for (String key : _factory.getInputPaths().keySet())
+        {
+            String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
+            if (inputPaths.length == 0)
+            {
+                // Replace empty file token with empty string
+                replacements.put(key, "");
+            }
+            else if (inputPaths.length == 1)
+            {
+                if (inputPaths[0] == null)
+                    replacements.put(key, "");
+                else
+                    replacements.put(key, Matcher.quoteReplacement(inputPaths[0].replaceAll("\\\\", "/")));
+            }
+            else
+            {
+                // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
+                // NOTE: The script parser matches ${input1.txt} to the first input file which isn't the same as ${input1[1].txt} which may be the 2nd file in the set of files represented by "input1.txt"
+            }
+        }
+
+        // Output paths
+        for (String key : _factory.getOutputPaths().keySet())
+        {
+            String[] outputPaths = getProcessPaths(WorkDirectory.Function.output, key);
+            if (outputPaths.length == 0)
+            {
+                // Replace empty file token with empty string
+                replacements.put(key, "");
+            }
+            else if (outputPaths.length == 1)
+            {
+                if (outputPaths[0] == null)
+                    replacements.put(key, "");
+                else
+                    replacements.put(key, Matcher.quoteReplacement(outputPaths[0].replaceAll("\\\\", "/")));
+            }
+            else
+            {
+                // CONSIDER: Add replacement for each file?  ${input[0].txt}, ${input[1].txt}, ${input[*].txt}
+            }
+        }
+
+        // Job parameters
+        for (Map.Entry<String, String> entry : getJob().getParameters().entrySet())
+        {
+            replacements.put(entry.getKey(), Matcher.quoteReplacement(entry.getValue()));
+        }
+
+        // Task info replacement
+        File taskInfoFile = getTaskInfoFile();
+        if (taskInfoFile != null)
+        {
+            String taskInfoRelativePath = _wd.getRelativePath(taskInfoFile);
+            replacements.put(PipelineJob.PIPELINE_TASK_INFO_PARAM, taskInfoRelativePath);
+        }
+
+        // Task output parameters file replacement
+        if (_wd != null)
+        {
+            File taskOutputParamsFile = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
+            String taskOutputParamsRelativePath = _wd.getRelativePath(taskOutputParamsFile);
+            replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
+        }
+
+        DefaultDataTransformer.addStandardParameters(null, getJob().getContainer(), scriptFile, transformSessionId, replacements);
+
+        return replacements;
+    }
+
     // CONDISER: Use PipelineJobService.get().getPathMapper() when translating paths
     protected String rewritePath(String path)
     {
@@ -578,6 +662,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
+        final String apikey = SecurityManager.beginTransformSession(getJob().getUser());
+
         try
         {
             RecordedAction action = new RecordedAction(_factory.getProtocolActionName());
@@ -605,7 +691,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (getJobSupport().getParametersFile() != null)
                 _wd.inputFile(getJobSupport().getParametersFile(), true);
 
-            if (!runCommand(action))
+            if (!runCommand(action, apikey))
                 return new RecordedActionSet();
 
             // Read output parameters file, record output parameters, and discard it.
@@ -635,6 +721,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
         finally
         {
+            SecurityManager.endTransformSession(apikey);
             _wd = null;
         }
     }
@@ -647,9 +734,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
      * @throws PipelineJobException
      */
     // TODO: Add task and job version information to the recorded action.
-    protected boolean runCommand(RecordedAction action) throws IOException, PipelineJobException
+    protected boolean runCommand(RecordedAction action, String apikey) throws IOException, PipelineJobException
     {
-        ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
+        Map<String, String> replacements = createReplacements(null, apikey);
+
+        ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this, replacements));
         applyEnvironment(pb);
 
         List<String> args = pb.command();
@@ -658,6 +747,13 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return false;
 
         String commandLine = StringUtils.join(args, " ");
+
+        if (AppProps.getInstance().isDevMode())
+        {
+            getJob().header("Replacements");
+            for (Map.Entry<String, String> entry : replacements.entrySet())
+                getJob().info(entry.getKey() + ": " + entry.getValue());
+        }
 
         // Just output the command line, if debug mode is set.
         if (_factory.isPreview())

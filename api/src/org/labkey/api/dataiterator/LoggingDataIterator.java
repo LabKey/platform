@@ -39,6 +39,31 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
 
     DataIterator _data;
 
+    public static DataIteratorBuilder wrap(DataIteratorBuilder dib)
+    {
+        if (dib instanceof Wrapper)
+            return dib;
+        if (_staticLog.isEnabledFor(Level.DEBUG))
+            return new Wrapper(dib);
+        return dib;
+    }
+
+    public static class Wrapper implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _dib;
+
+        Wrapper(DataIteratorBuilder dib)
+        {
+            _dib = dib;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            return LoggingDataIterator.wrap(_dib.getDataIterator(context));
+        }
+    }
+
 
     public static DataIterator wrap(DataIterator in)
     {
@@ -85,15 +110,15 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
         for (int i=0 ; i<=_data.getColumnCount() ; i++)
         {
             String name = _data.getColumnInfo(i).getName();
-            if (name.length() > 50)
-                name = name.substring(name.length()-50);
+            if (name.length() > 30)
+                name = name.substring(name.length()-30);
             Object value = _data.get(i);
             String cls = null == value ? "NULL" : value.getClass().getSimpleName();
             if (null == value)
                 value = "";
             if (value instanceof Map)
                 value = value.getClass() + "@" + System.identityHashCode(value);
-            formatter.format("%50s %10s| %s\n", name, cls, value);
+            formatter.format("%30s %10s| %s\n", name, cls, value);
         }
 
         if (supportsGetMap())
@@ -157,7 +182,7 @@ public class LoggingDataIterator extends AbstractDataIterator implements Scrolla
     @Override
     public void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName() + "\n");
+        super.debugLogInfo(sb);
         if (null != _data)
             _data.debugLogInfo(sb);
     }

@@ -313,4 +313,10 @@ public class PropertyColumn extends LookupColumn
     {
         return PropertyService.get().getPropertyValidators(_pd);
     }
+
+    public boolean isVocabulary()
+    {
+        return _pd.isVocabulary();
+    }
+
 }

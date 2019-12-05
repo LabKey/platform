@@ -276,7 +276,16 @@ public class SecurityManager
 
     public static void addGroupListener(GroupListener listener)
     {
-        _listeners.add(listener);
+        addGroupListener(listener, false);
+    }
+
+    /** Adds a listener with option to specify that it needs to be executed before the other listeners */
+    public static void addGroupListener(GroupListener listener, boolean meFirst)
+    {
+        if (meFirst)
+            _listeners.add(0, listener);
+        else
+            _listeners.add(listener);
     }
 
     private static List<GroupListener> getListeners()
@@ -1654,7 +1663,7 @@ public class SecurityManager
     {
         Container proj = c.getProject();
 
-        if (null == proj)
+        if (null == proj || u == null)
             return "";
 
         int[] groupIds = u.getGroups();
@@ -2188,7 +2197,7 @@ public class SecurityManager
         return groupId;
     }
 
-    // CONSIDER: Support multiple LDAP domains?
+    // TODO: Update to iterate through all configurations
     public static boolean isLdapEmail(ValidEmail email)
     {
         String ldapDomain = AuthenticationManager.getLdapDomain();

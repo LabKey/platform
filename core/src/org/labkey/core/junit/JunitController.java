@@ -33,20 +33,20 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.action.StatusReportingRunnableAction;
+import org.labkey.api.jsp.JspTest;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -71,10 +71,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.Attribute.*;
-import static org.labkey.api.util.HtmlString.NBSP;
-
 
 public class JunitController extends SpringActionController
 {
@@ -86,89 +82,15 @@ public class JunitController extends SpringActionController
         setActionResolver(_resolver);
     }
 
-
-    class JUnitView extends WebPartView
+    public static class JUnitViewBean
     {
-        final Map<String, List<Class>> testCases;
-        final boolean showRunButtons;
+        public final Map<String, List<Class>> testCases;
+        public final boolean showRunButtons;
 
-        JUnitView(Map<String, List<Class>> tests, boolean buttons)
+        JUnitViewBean(Map<String, List<Class>> tests, boolean buttons)
         {
-            super(FrameType.DIV);
             this.testCases = tests;
             this.showRunButtons = buttons;
-        }
-
-        @Override
-        protected void renderView(Object model, PrintWriter out)
-        {
-            renderViewDOM(model,out);
-        }
-
-        protected void renderViewDOM(Object model, PrintWriter out)
-        {
-            DIV(TABLE(cl("labkey-data-region"), testCases.keySet().stream().map(module ->
-                    createHtmlFragment(
-                        TR(TD(at(colspan,"3"),A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)),module))),
-                        testCases.get(module).stream().map(clazz ->
-                            TR(
-                                TD(at(style,"width:60px;"), NBSP),
-                                showRunButtons ? TD(at(style,"font-size:66%; color:gray;"), getScope(clazz).name(), NBSP, NBSP) : null,
-                                TD(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName())), clazz.getName())
-                            ))
-            ))))).appendTo(out);
-
-            if (showRunButtons)
-            {
-                createHtmlFragment(
-                        BR(), PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())),
-                        BR(), PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")),
-                        BR(), PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")),
-                        LK.FORM(at(name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
-                        BR(), PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true)),
-                        BR(), PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer()))
-                ).appendTo(out);
-            }
-        }
-
-        protected void renderViewOLD(Object model, PrintWriter out)
-        {
-            out.println("<div><table class=\"labkey-data-region\">");
-
-            for (String module : testCases.keySet())
-            {
-                ActionURL moduleURL = new ActionURL(RunAction.class, getContainer()).addParameter("module", module);
-
-                out.println("<tr><td colspan=3>");
-                out.println("<a href=\"" + PageFlowUtil.filter(moduleURL.getLocalURIString()) + "\">" + module + "</a>");
-                out.println("</td></tr>");
-
-                for (Class clazz : testCases.get(module))
-                {
-                    ActionURL testCaseURL = new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName());
-                    out.println("<tr>");
-                    out.println("<td style=\"width:60px;\">&nbsp;</td>");
-                    if (showRunButtons)
-                    {
-                        out.println("<td style=\"font-size:66%; color:gray;\">" + getScope(clazz) + "&nbsp;&nbsp;</td>");
-                    }
-                    out.println("<td> <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">" + clazz.getName() + "</a></td>");
-                    out.println("</tr>");
-                }
-                out.println("<tr><td colspan=3>&nbsp;</td></tr>");
-            }
-
-            out.println("</table></div>");
-
-            if (showRunButtons)
-            {
-                out.print("<p><br>" + PageFlowUtil.button("Run All").href(new ActionURL(RunAction.class, getContainer())) + "</p>");
-                out.print("<p><br>" + PageFlowUtil.button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")) + "</p>");
-                out.print("<p><br>" + PageFlowUtil.button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")) + "</p>");
-
-                out.print("<form name=\"run2\" action=\"" + new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.button("Run In Background #1 (Experimental)").submit(true) + "</form>");
-                out.print("<br>" + PageFlowUtil.button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())));
-            }
         }
     }
 
@@ -179,7 +101,9 @@ public class JunitController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new JUnitView(JunitManager.getTestCases(), true);
+            return new JspView("/org/labkey/core/junit/runner.jsp",
+                    new JUnitViewBean(JunitManager.getTestCases(), true),
+                    errors);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -189,12 +113,25 @@ public class JunitController extends SpringActionController
     }
 
 
-    static private TestWhen.When getScope(Class cls)
+    static public TestWhen.When getScope(Class cls)
     {
         TestWhen ann = (TestWhen)cls.getAnnotation(TestWhen.class);
-        if (null == ann)
-            return TestWhen.When.DRT;
-        return ann.value();
+        if (null != ann)
+            return ann.value();
+        if (JspTest.class.isAssignableFrom(cls))
+        {
+            if (JspTest.DRT.class.isAssignableFrom(cls))
+                return TestWhen.When.DRT;
+            if (JspTest.BVT.class.isAssignableFrom(cls))
+                return TestWhen.When.BVT;
+            if (JspTest.DAILY.class.isAssignableFrom(cls))
+                return TestWhen.When.DAILY;
+            if (JspTest.WEEKLY.class.isAssignableFrom(cls))
+                return TestWhen.When.WEEKLY;
+            if (JspTest.PERFORMANCE.class.isAssignableFrom(cls))
+                return TestWhen.When.PERFORMANCE;
+        }
+        return TestWhen.When.DRT;
     }
 
 
@@ -212,7 +149,10 @@ public class JunitController extends SpringActionController
                 // check if the client has gone away
                 getViewContext().getResponse().getWriter().print(" ");
                 getViewContext().getResponse().flushBuffer();
-                results.add(JunitRunner.run(testClass));
+                if (form.getMethodName() == null)
+                    results.add(JunitRunner.run(testClass));
+                else
+                    results.add(JunitRunner.run(testClass, form.getMethodName()));
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -487,7 +427,7 @@ public class JunitController extends SpringActionController
             if (testCase == null)
                 throw new RuntimeException("testCase parameter required");
 
-            Class clazz = Class.forName(testCase);
+            Class clazz = findTestClass(form.getTestCase());
             JunitRunner.RunnerResult result = JunitRunner.run(clazz);
 
             int status = HttpServletResponse.SC_OK;
@@ -558,6 +498,7 @@ public class JunitController extends SpringActionController
     {
         private String _module;
         private String _testCase;
+        private String _methodName;
         private TestWhen.When _scope = TestWhen.When.WEEKLY;
 
         public String getTestCase()
@@ -569,6 +510,16 @@ public class JunitController extends SpringActionController
         public void setTestCase(String testCase)
         {
             _testCase = testCase;
+        }
+
+        public String getMethodName()
+        {
+            return _methodName;
+        }
+
+        public void setMethodName(String methodName)
+        {
+            _methodName = methodName;
         }
 
         public String getModule()
@@ -597,7 +548,7 @@ public class JunitController extends SpringActionController
     }
 
 
-    private Class findTestClass(String testCase)
+    private static Class findTestClass(String testCase)
     {
         Map<String, List<Class>> testCases = JunitManager.getTestCases();
 

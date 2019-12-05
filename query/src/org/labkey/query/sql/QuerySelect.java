@@ -121,7 +121,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query._querySource;
-        _savedName = query._name;
+        _savedName = query._debugName;
 
         for (QParameter p : query._parameters)
             parametersInScope.add(new FieldKey(null, p.getName()));
@@ -1627,6 +1627,8 @@ groupByLoop:
                     sql.nextPrefix(",");
                 }
                 sql.popPrefix();
+                if (null == _limit)
+                    getSqlDialect().appendSortOnSubqueryWithoutLimitQualifier(sql);
             }
         }
         if (_limit != null)

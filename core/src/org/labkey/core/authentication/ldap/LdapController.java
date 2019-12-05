@@ -16,26 +16,25 @@
 package org.labkey.core.authentication.ldap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.ldap.Config;
 import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationConfigureAction;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -51,9 +50,12 @@ public class LdapController extends SpringActionController
     }
 
 
-    public static ActionURL getConfigureURL(boolean reshow)
+    public static ActionURL getConfigureURL(@Nullable Integer rowId, boolean reshow)
     {
         ActionURL url = new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+
+        if (null != rowId)
+            url.addParameter("configuration", rowId);
 
         if (reshow)
             url.addParameter("reshow", "1");
@@ -63,14 +65,15 @@ public class LdapController extends SpringActionController
 
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ConfigureAction extends FormViewAction<Config>
+    public class ConfigureAction extends AuthenticationConfigureAction<LdapConfigureForm, LdapConfiguration>
     {
-        public ModelAndView getView(Config form, boolean reshow, BindException errors)
+        @Override
+        public ModelAndView getConfigureView(LdapConfigureForm form, boolean reshow, BindException errors)
         {
-            form.setSASL(LdapAuthenticationManager.useSASL());
             return new JspView<>("/org/labkey/core/authentication/ldap/configure.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("configLdap");
@@ -78,9 +81,31 @@ public class LdapController extends SpringActionController
             return root;
         }
 
-        public void validateCommand(Config target, Errors errors)
+        @Override
+        protected void validateForm(LdapConfigureForm form, Errors errors)
         {
-            String template = target.getPrincipalTemplate();
+            String servers = form.getServers();
+
+            if (StringUtils.isBlank(form.getServers()))
+            {
+                errors.reject(ERROR_MSG, "Invalid server URL(s): server URLs cannot be blank");
+            }
+            else
+            {
+                for (String server : servers.split(";"))
+                {
+                    server = server.trim();
+                    if (!StringUtils.startsWithAny(server.toLowerCase(), "ldap://", "ldaps://"))
+                        errors.reject(ERROR_MSG, "Invalid server URL - \"" + server + "\": LDAP URLs must start with ldap:// or ldaps://");
+                }
+            }
+
+            if (StringUtils.isBlank(form.getDomain()))
+            {
+                errors.reject(ERROR_MSG, "Invalid domain: domain cannot be blank");
+            }
+
+            String template = form.getPrincipalTemplate();
 
             if (StringUtils.isBlank(template))
             {
@@ -95,15 +120,10 @@ public class LdapController extends SpringActionController
             }
         }
 
-        public boolean handlePost(Config config, BindException errors)
+        @Override
+        public ActionURL getSuccessURL(LdapConfigureForm form)
         {
-            LdapAuthenticationManager.saveProperties(config);
-            return true;
-        }
-
-        public ActionURL getSuccessURL(Config config)
-        {
-            return getConfigureURL(true);  // Redirect to same action -- reload props from database
+            return getConfigureURL(form.getRowId(), true);  // Redirect to same action -- reload props from database
         }
     }
 
@@ -111,43 +131,71 @@ public class LdapController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class TestLdapAction extends FormViewAction<TestLdapForm>
     {
+        @Override
         public void validateCommand(TestLdapForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(TestLdapForm form, boolean reshow, BindException errors)
         {
+            // First time through, set first server and substitute current user's email into principal template
             if (!reshow)
-                form.setSASL(LdapAuthenticationManager.useSASL());
+            {
+                String server = StringUtils.trimToEmpty(form.getServer()).split(";")[0];
+                form.setServer(server);
+
+                User user = getUser();
+                ValidEmail email;
+
+                try
+                {
+                    email = new ValidEmail(user.getEmail());
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                String principal = LdapAuthenticationManager.substituteEmailTemplate(form.getPrincipal(), email);
+
+                if ("null".equals(principal))
+                    principal = null;
+
+                form.setPrincipal(principal);
+            }
 
             HttpView view = new JspView<>("/org/labkey/core/authentication/ldap/testLdap.jsp", form, errors);
             PageConfig page = getPageConfig();
-            if (null == form.getMessage() || form.getMessage().length() < 200)
+            if (null == form.getMessage())
                 page.setFocusId("server");
             page.setTemplate(PageConfig.Template.Dialog);
             return view;
         }
 
+        @Override
         public boolean handlePost(TestLdapForm form, BindException errors)
         {
             try
             {
-                boolean success = LdapAuthenticationManager.connect(form.getServer(), form.getPrincipal(), form.getPassword(), form.getSASL());
-                form.setMessage("<b>Connected to server. Authentication " + (success ? "succeeded" : "failed") + ".</b>");
+                boolean success = LdapAuthenticationManager.connect(form.getServer(), form.getPrincipal(), form.getPassword(), form.getSasl());
+                form.setMessage(HtmlString.unsafe("<b>Connected to server. Authentication " + (success ? "succeeded" : "failed") + ".</b>"));
             }
             catch (Exception e)
             {
-                String message = "<b>Failed to connect with these settings. Error was:</b><br>" + ExceptionUtil.renderException(e);
+                HtmlString message = HtmlString.unsafe("<b>Failed to connect with these settings. Error was:</b><br>" + ExceptionUtil.renderException(e));
                 form.setMessage(message);
             }
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(TestLdapForm testLdapAction)
         {
             return null;   // Always reshow form
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -155,40 +203,13 @@ public class LdapController extends SpringActionController
     }
 
 
-    public static class TestLdapForm extends ReturnUrlForm implements HasViewContext
+    public static class TestLdapForm
     {
-        private String server = LdapAuthenticationManager.getServers()[0];
+        private String server;
         private String principal;
         private String password;
-        private String message;
-        private boolean useSASL = false;  // Always initialize to false because of checkbox behavior
-
-        @Override
-        public void setViewContext(ViewContext context)
-        {
-            User user = context.getUser();
-            ValidEmail email;
-
-            try
-            {
-                email = new ValidEmail(user.getEmail());
-            }
-            catch(ValidEmail.InvalidEmailException e)
-            {
-                throw new RuntimeException(e);
-            }
-
-            principal = LdapAuthenticationManager.substituteEmailTemplate(LdapAuthenticationManager.getPrincipalTemplate(), email);
-
-            if ("null".equals(principal))
-                principal = null;
-        }
-
-        @Override
-        public ViewContext getViewContext()
-        {
-            return null;
-        }
+        private HtmlString message;
+        private boolean sasl = false;  // Always initialize to false because of checkbox behavior
 
         public String getPrincipal()
         {
@@ -223,22 +244,23 @@ public class LdapController extends SpringActionController
             this.server = server;
         }
 
-        public boolean getSASL()
+        public boolean getSasl()
         {
-            return useSASL;
+            return sasl;
         }
 
-        public void setSASL(boolean useSASL)
+        @SuppressWarnings("UnusedDeclaration")
+        public void setSasl(boolean sasl)
         {
-            this.useSASL = useSASL;
+            this.sasl = sasl;
         }
 
-        public String getMessage()
+        public HtmlString getMessage()
         {
             return message;
         }
 
-        public void setMessage(String message)
+        public void setMessage(HtmlString message)
         {
             this.message = message;
         }

@@ -30,8 +30,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
@@ -78,6 +78,9 @@ public class ExperimentJSONConverter
 
     // Data properties
     public static final String DATA_CLASS = "dataClass";
+
+    // Domain kinds
+    public static final String VOCABULARY_DOMAIN = "Vocabulary";
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain)
     {
@@ -197,19 +200,18 @@ public class ExperimentJSONConverter
             }
         }
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+
+        var objectProps = object.getObjectProperties();
+        for (var propPair : objectProps.entrySet())
         {
-            var objectProps = object.getObjectProperties();
-            for (var propPair : objectProps.entrySet())
-            {
-                String propertyURI = propPair.getKey();
-                if (seenPropertyURIs.contains(propertyURI))
-                    continue;
-                seenPropertyURIs.add(propertyURI);
-                ObjectProperty op = propPair.getValue();
-                propertiesObject.put(propertyURI, op.value());
-            }
+            String propertyURI = propPair.getKey();
+            if (seenPropertyURIs.contains(propertyURI))
+                continue;
+            seenPropertyURIs.add(propertyURI);
+            ObjectProperty op = propPair.getValue();
+            propertiesObject.put(propertyURI, op.value());
         }
+
 
         if (!propertiesObject.isEmpty())
             jsonObject.put(PROPERTIES, propertiesObject);
@@ -252,7 +254,7 @@ public class ExperimentJSONConverter
         }
         else
         {
-            jsonObject = serializeStandardProperties(material, sampleSet.getType().getProperties());
+            jsonObject = serializeStandardProperties(material, sampleSet.getDomain().getProperties());
             if (sampleSet.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
@@ -269,7 +271,7 @@ public class ExperimentJSONConverter
         return jsonObject;
     }
 
-    public static Map<PropertyDescriptor, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties)
+    public static Map<PropertyDescriptor, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties) throws ValidationException
     {
         Map<PropertyDescriptor, Object> properties = new HashMap<>();
 
@@ -297,19 +299,32 @@ public class ExperimentJSONConverter
                 value = convertProperty(value, dp, container);
                 properties.put(dp.getPropertyDescriptor(), value);
             }
-            else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+            // resolve propName by PropertyURI if propName looks like a URI
+            else if (URIUtil.hasURICharacters(propName))
             {
-                // resolve propName by PropertyURI if propName looks like a URI
-                if (URIUtil.hasURICharacters(propName))
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
+
+                //ask OM to get the list of domains and check the domains (vocabulary domain)
+                if (pd != null)
                 {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
-                    if (pd != null)
+                    List<Domain> domainsForPropertyDescriptor = OntologyManager.getDomainsForPropertyDescriptor(container, pd);
+
+                    boolean propertyInVocabulary = domainsForPropertyDescriptor.stream().anyMatch(domain -> domain.getDomainKind().getKindName().equals(VOCABULARY_DOMAIN));
+
+                    //only properties that exist in any vocabulary in this container are saved in the batch
+                    if(propertyInVocabulary)
                     {
                         value = convertProperty(value, pd, container);
                         properties.put(pd, value);
                     }
                 }
+                else
+                {
+                    throw new ValidationException("Property does not exist in any Vocabulary Domain in this container: " + propName);
+
+                }
             }
+
         }
 
         return properties;

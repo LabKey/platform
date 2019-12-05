@@ -146,6 +146,20 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
     {
     }
 
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        super.debugLogInfo(sb);
+
+        _cols.stream().forEach(p -> {
+            sb.append("    " + p.getName() + "\n");
+        });
+
+        if (_rows != null)
+        {
+            sb.append("    rows: " + _rows.size());
+        }
+    }
 
     public static class Builder extends DataIteratorBuilder.Wrapper
     {

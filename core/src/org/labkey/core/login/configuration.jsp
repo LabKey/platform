@@ -16,24 +16,34 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.jsp.JspBase" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.MenuButton" %>
+<%@ page import="org.labkey.api.data.RenderContext" %>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
+<%@ page import="org.labkey.api.security.AuthenticationConfiguration" %>
+<%@ page import="org.labkey.api.security.AuthenticationConfigurationCache" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider" %>
-<%@ page import="org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.function.Function" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Collection<PrimaryAuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
     Collection<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
-    boolean isExternalProviderEnabled = AuthenticationManager.isExternalProviderEnabled();
+    boolean isExternalProviderEnabled = AuthenticationManager.isExternalConfigurationEnabled();
     boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
     LoginUrls urls = urlProvider(LoginUrls.class);
@@ -45,8 +55,29 @@
     }
 </style>
 
-<labkey:panel title="Installed primary authentication providers">
-    <% appendProviders(out, primary, urls, canEdit); %>
+<labkey:panel title="Primary authentication configurations">
+    <%
+        // Hack -- for now, allow a single LDAP configuration in community
+        PremiumService svc = PremiumService.get();
+        Set<AuthenticationProvider> inUse = svc.isFileWatcherSupported() ? Collections.emptySet() :
+            AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class).stream()
+                .map((Function<AuthenticationConfiguration, AuthenticationProvider>) AuthenticationConfiguration::getAuthenticationProvider)
+                .collect(Collectors.toSet());
+
+        if (canEdit)
+        {
+            MenuButton btn = new MenuButton("Add...");
+            primary.stream()
+                .filter(ap->null != ap.getConfigurationLink())
+                .filter(ap->!ap.isPermanent() && !inUse.contains(ap))
+                .sorted(Comparator.comparing(AuthenticationProvider::getName))
+                .forEach(ap->btn.addMenuItem(ap.getName() + " - " + ap.getDescription(), ap.getConfigurationLink()));
+
+            if (btn.getNavTree().hasChildren())
+                btn.render(new RenderContext(getViewContext()), out);
+        }
+        appendConfigurations(out, canEdit);
+    %>
 </labkey:panel>
 
 <%
@@ -54,7 +85,7 @@
     {
 %>
         <labkey:panel title="Installed secondary authentication providers">
-            <% appendProviders(out, secondary, urls, canEdit); %>
+            <% appendSecondaryProviders(out, secondary, urls, canEdit); %>
         </labkey:panel>
 <%
     }
@@ -183,7 +214,7 @@
 <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
 
 <%!
-    private void appendProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, boolean canEdit) throws IOException
+    private void appendSecondaryProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, boolean canEdit) throws IOException
     {
         out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
@@ -191,7 +222,6 @@
                 "    <td class=\"labkey-column-header\">Name</td>\n" +
                 "    <td class=\"labkey-column-header\">Status</td>\n" +
                 "    <td class=\"labkey-column-header\">Configuration</td>\n" +
-                "    <td class=\"labkey-column-header\">Logos</td>\n" +
                 "    <td class=\"labkey-column-header\">Description</td>\n" +
                 "</tr>");
 
@@ -240,23 +270,71 @@
             ActionURL url = authProvider.getConfigurationLink();
 
             out.print("<td>");
-            if (null == url || !canEdit)
+            if (null == url)
                 out.print("&nbsp;");
             else
-                out.print(link("configure", url));
-            out.print("</td>");
-
-            out.print("<td>");
-            if (canEdit && authProvider instanceof SSOAuthenticationProvider)
-            {
-                ActionURL pickLogoURL = urls.getPickLogosURL(authProvider);
-                out.print(link("pick logos", pickLogoURL));
-            };
+                out.print(link(canEdit ? "configure" : "view configuration", url));
             out.print("</td>");
 
             out.print("<td>");
             out.print(authProvider.getDescription());
             out.print("</td>");
+
+            out.print("</tr>\n");
+
+            rowIndex++;
+        }
+
+        out.print("</table>");
+    }
+
+    private void appendConfigurations(JspWriter out, boolean canEdit) throws IOException
+    {
+        Collection<AuthenticationConfiguration> configurations = AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class);
+        boolean includeDeleteColumn = canEdit && configurations.size() > 1;  // Don't show "delete" column if database auth is the only configuration
+        out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
+
+        out.print("<tr>\n" +
+                "    <td class=\"labkey-column-header\">Description</td>\n" +
+                "    <td class=\"labkey-column-header\">Provider</td>\n" +
+                "    <td class=\"labkey-column-header\">Enabled</td>\n" +
+                "    <td " + (includeDeleteColumn ? "colspan=\"2\" " : "") + "class=\"labkey-column-header\">Configuration</td>\n" +
+                "</tr>");
+
+        int rowIndex = 0;
+        for (AuthenticationConfiguration configuration : configurations)
+        {
+            out.print("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
+            out.print(h(configuration.getDescription()));
+            out.print("</td>");
+
+            out.print("<td>");
+            out.print(h(configuration.getAuthenticationProvider().getName()));
+            out.print("</td>");
+
+            out.print("<td style=\"text-align:center;\">");
+            out.print("<span class=\"" + (configuration.isEnabled() ? "fa fa-check-square" : "fa fa-square-o") + "\"></span>");
+            out.print("</td>");
+
+            ActionURL url = configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId());
+
+            out.print("<td>");
+            if (null == url)
+                out.print("&nbsp;");
+            else
+                out.print(link(canEdit ? "edit" : "view", url));
+            out.print("</td>");
+
+            if (includeDeleteColumn)
+            {
+                out.print("<td>");
+                if (configuration.getAuthenticationProvider().isPermanent())
+                    out.print("&nbsp;");
+                else
+                    out.print(link("delete", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()))
+                        .usePost("Are you sure you want to delete the \"" + configuration.getDescription() + "\" authentication configuration?"));
+                out.print("</td>");
+            }
 
             out.print("</tr>\n");
 

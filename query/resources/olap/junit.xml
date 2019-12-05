@@ -1,5 +1,10 @@
 <Schema name="query" description="JUnit Cube Schema">
 
+    <Annotations>
+        <!-- enable support for MDX -->
+        <Annotation name="EnableMondrian">TRUE</Annotation>
+    </Annotations>
+
 
     <Cube name="JunitCube" visible="true" defaultMeasure="RowCount" cache="true" enabled="true">
 
@@ -14,15 +19,15 @@
 
         <Dimension name="Participant" foreignKey="ptid">
             <Hierarchy visible="true" hasAll="true" primaryKey="ptid">
-                <Table name="participant"/>
+                <Table schema="rolap_test" name="participant"/>
                 <Level name="Participant" visible="true" column="ptid" />
             </Hierarchy>
             <Hierarchy name="Gender" visible="true" hasAll="true" primaryKey="ptid">
-                <Table name="participant" schema="rolap_test"/>
+                <Table schema="rolap_test" name="participant" />
                 <Level name="Gender" visible="true" type="String" uniqueMembers="true" column="gender" />
             </Hierarchy>
             <Hierarchy name="Species" visible="true" hasAll="true" primaryKey="ptid">
-                <Table name="participant" schema="rolap_test"/>
+                <Table schema="rolap_test" name="participant" />
                 <Level name="Species" visible="true" type="String" uniqueMembers="true" column="species" />
             </Hierarchy>
         </Dimension>
@@ -46,7 +51,7 @@
 
         <Dimension name="Assay" foreignKey="assay">
             <Hierarchy primaryKey="Name" hasAll="true">
-                <Table name="assay"/>
+                <Table schema="rolap_test" name="assay"/>
                 <Level name="Name" visible="true" column="name" nameColumn="label" />
             </Hierarchy>
         </Dimension>

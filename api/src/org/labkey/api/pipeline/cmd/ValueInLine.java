@@ -23,6 +23,7 @@ import java.util.List;
 */
 public class ValueInLine extends ValueToCommandArgs
 {
+    @Override
     public List<String> toArgs(String value)
     {
         if (value != null && value.length() > 0)

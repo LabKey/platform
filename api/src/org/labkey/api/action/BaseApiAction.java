@@ -63,7 +63,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
-    private ObjectMapper _mapper;
+    private ObjectMapper _requestObjectMapper;
+    private ObjectMapper _responseObjectMapper;
 
     protected enum CommonParameters
     {
@@ -344,12 +345,14 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return Pair.of(form, errors);
     }
 
-
-    private ObjectMapper getObjectMapper()
+    private ObjectMapper getRequestObjectMapper()
     {
-        if (_mapper == null)
-            _mapper = createObjectMapper();
-        return _mapper;
+        return _requestObjectMapper == null ? _requestObjectMapper = createRequestObjectMapper() : _requestObjectMapper;
+    }
+
+    private ObjectMapper getResponseObjectMapper()
+    {
+        return _responseObjectMapper == null ? _responseObjectMapper = createResponseObjectMapper() : _responseObjectMapper;
     }
 
     /**
@@ -364,16 +367,23 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
      *     return om;
      * </pre>
      */
-    protected ObjectMapper createObjectMapper()
+    protected ObjectMapper createRequestObjectMapper()
+    {
+        return JsonUtil.DEFAULT_MAPPER;
+    }
+
+    /**
+     * {@link #createRequestObjectMapper()}
+    */
+    protected ObjectMapper createResponseObjectMapper()
     {
         return JsonUtil.DEFAULT_MAPPER;
     }
 
     protected ObjectReader getObjectReader(Class c)
     {
-        return getObjectMapper().readerFor(c);
+        return getRequestObjectMapper().readerFor(c);
     }
-
 
     /**
      * Parse POST body as JSONObject then use either CustomApiForm or spring form binding to populate the FORM instance.
@@ -527,7 +537,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     protected ApiResponseWriter createResponseWriter() throws IOException
     {
         // Let the response format dictate how we write the response. Typically JSON, but not always.
-        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getObjectMapper());
+        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getResponseObjectMapper());
         if (_marshaller == Marshaller.Jackson)
             writer.setSerializeViaJacksonAnnotations(true);
         return writer;

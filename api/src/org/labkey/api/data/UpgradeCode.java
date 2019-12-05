@@ -18,7 +18,7 @@ package org.labkey.api.data;
 /**
  * Marker interface for code that is invoked via a SQL upgrade script to perform upgrade operations that are
  * difficult or impossible to perform in straight-SQL. Methods are invoked via reflection based on calls to the
- * core.executeJavaUpgradeCode "stored procedure" from the SQL script.
+ * core.executeJavaUpgradeCode or core.executeJavaInitializationCode "stored procedures" from the SQL script.
  * User: adam
  * Date: Nov 21, 2008
  */

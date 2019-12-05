@@ -142,7 +142,7 @@ LABKEY.discuss.removeAttachment = function(eid, name, xid) {
 
     var _convertFormat = function(fromFormat, toFormat, body, elementToUpdate) {
         LABKEY.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("wiki", "transformWiki"),
+            url : LABKEY.ActionURL.buildURL("core", "transformWiki"),
             method : 'POST',
             jsonData : {
                 body: body,

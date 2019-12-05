@@ -202,7 +202,7 @@ function tinyMceHandleEvent(evt) {
 
         setStatus("Converting Format...");
         LABKEY.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("wiki", "transformWiki"),
+            url : LABKEY.ActionURL.buildURL("core", "transformWiki"),
             method : 'POST',
             jsonData : {
                 body: $(_idSel + 'body').val(),

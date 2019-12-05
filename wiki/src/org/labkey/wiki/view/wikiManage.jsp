@@ -156,9 +156,9 @@
                         %>
                     </select></td>
                     <td valign="top" >
-                        <%= button("Move Up").attributes("style='width:100px'").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <%= button("Move Up").style("width:100px").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder', " + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
                         <br/>
-                        <%= button("Move Down").attributes("style='width:100px'").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
+                        <%= button("Move Down").style("width:100px").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder', "  + PageFlowUtil.jsString(WikiController.NextAction.manage.name()) + ")") %>
                     </td>
                 </tr>
             </table>
@@ -185,7 +185,7 @@
                    </select>
                 </td>
                 <td valign="top">
-                    <%= button("Move Up").attributes(Map.of("style","width:200px;")).submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
+                    <%= button("Move Up").style("width:200px;").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%>
                     <br><br>
                     <%= button("Move Down").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
                 </td>
@@ -203,12 +203,12 @@
 <input type="hidden" name="originalName" value="<%= h(wiki.getName()) %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
-<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.page.name()) + "; return true;").attributes(Map.of("title","Save Changes")) %>
+<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.page.name()) + "; return true;").title("Save Changes") %>
 <%= button("Delete").href(new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName())) %>
-<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").attributes(Map.of("title","Edit Content and Attachments")) %>
+<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").title("Edit Content and Attachments") %>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (String name : bean.pageNames) out.print(text(PageFlowUtil.jsString(name) + ",")); %>];
+    existingWikiPages = [<% for (String name : bean.pageNames) out.print(unsafe(PageFlowUtil.jsString(name) + ",")); %>];
 
     function checkWikiName(name)
     {

@@ -47,14 +47,14 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
             case Material:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("MaterialId"));
-                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null));
+                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null, getContainerFilter()));
                 return result;
             }
             case Role:
                 return wrapColumn(alias, _rootTable.getColumn("Role"));
             case TargetProtocolApplication:
                 var result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
-                result.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                result.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 return result;
 
             case LSID:
@@ -78,7 +78,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
             case ProtocolInput:
             {
                 var col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
-                col.setFk(getExpSchema().getMaterialProtocolInputForeignKey());
+                col.setFk(getExpSchema().getMaterialProtocolInputForeignKey(getContainerFilter()));
                 col.setHidden(true);
                 return col;
             }

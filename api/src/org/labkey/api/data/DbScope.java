@@ -29,7 +29,6 @@ import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
 import org.labkey.api.data.dialect.SqlDialectManager;
-import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
@@ -82,18 +81,12 @@ import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-
-import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
-import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas.
@@ -146,6 +139,7 @@ public class DbScope
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final LabKeyDataSourceProperties _labkeyProps;
     private final DataSourceProperties _dsProps;
+    private final boolean _rds;
 
     /**
      * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
@@ -222,6 +216,7 @@ public class DbScope
     public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
     {
         @NotNull
+        @Override
         public String getKind()
         {
             return "NORMAL";
@@ -254,6 +249,7 @@ public class DbScope
 
     public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
     {
+        @Override
         @NotNull
         public String getKind()
         {
@@ -283,6 +279,7 @@ public class DbScope
         _tableCache = null;
         _labkeyProps = null;
         _dsProps = null;
+        _rds = false;
     }
 
 
@@ -371,6 +368,7 @@ public class DbScope
             _labkeyProps = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
+            _rds = _dialect.isRds(this);
         }
     }
 
@@ -569,6 +567,7 @@ public class DbScope
                 throw new SQLException("For testing purposes - simulated autocommit setting failure");
             }
 
+            LOG.debug("setAutoCommit(false)");
             conn.setAutoCommit(false);
             connectionSetupSuccessful = true;
         }
@@ -603,7 +602,21 @@ public class DbScope
                         transactions.add(result);
                         stackDepth = transactions.size();
                     }
-                    serverLocks.forEach(Lock::lock);
+                    boolean serverLockSuccess = false;
+                    try
+                    {
+                        serverLocks.forEach(Lock::lock);
+                        serverLockSuccess = true;
+                    }
+                    finally
+                    {
+                        if (!serverLockSuccess)
+                        {
+                            // We're throwing an exception so the caller will never get the transaction object to
+                            // be able to close it, so do it now
+                            result.close();
+                        }
+                    }
                     if (stackDepth > 2)
                         LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
@@ -629,7 +642,7 @@ public class DbScope
     /** Won't retry if we're already in a transaction
      * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
      */
-    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn)
+    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
         // don't retry if we're already in a transaction, it won't help
         ReturnType ret = null;
@@ -639,7 +652,7 @@ public class DbScope
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
-            try (DbScope.Transaction transaction = ensureTransaction())
+            try (DbScope.Transaction transaction = ensureTransaction(extraLocks))
             {
                 ret = fn.exec(transaction);
                 transaction.commit();
@@ -1286,6 +1299,11 @@ public class DbScope
         return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
     }
 
+    public boolean isRds()
+    {
+        return _rds;
+    }
+
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
     // then attempt to create the database. Return true if the database existed, false if it was just created. Throw if some
     // other exception occurs (e.g., connection fails repeatedly with something other than "database doesn't exist" or database
@@ -1672,8 +1690,8 @@ public class DbScope
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions
-            Set<Runnable> tasks = new HashSet<>(getRunnables(transaction));
+            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashSet
+            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction));
 
             for (Runnable task : tasks)
             {
@@ -1953,6 +1971,7 @@ public class DbScope
                             CommitTaskOption.PRECOMMIT.run(this);
                             conn.commit();
                             conn.setAutoCommit(true);
+                            LOG.debug("setAutoCommit(true)");
                         }
                         finally
                         {
@@ -2556,7 +2575,7 @@ public class DbScope
 
             final Object notifier = new Object();
 
-            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsers(), user.getUserId());
+            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
             // let's try to intentionally cause a deadlock
@@ -2594,7 +2613,11 @@ public class DbScope
                 lockHome.lock();
                 txFg.commit();
             }
-            catch (Throwable x)
+            catch (InterruptedException x)
+            {
+                throw new RuntimeException(x);
+            }
+            catch (DeadlockLoserDataAccessException x)
             {
                 fgException = x;
             }
@@ -2610,8 +2633,90 @@ public class DbScope
                 }
             }
 
-            assert bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException;
+            assertTrue( bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException );
         }
+
+
+        // TODO this test generates "ERROR ConnectionWrapper ... Probable connection leak"
+        // @Test
+        public void testLockException()
+        {
+            // test ServerLock failures
+
+            Lock failServerLock = new ServerLock()
+            {
+                @Override public void lock() { throw new DeadlockLoserDataAccessException("test",null); }
+            };
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
+            {
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof DeadlockLoserDataAccessException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
+                {
+                    fail("shouldn't get here");
+                    txFg.commit();
+                }
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof DeadlockLoserDataAccessException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+            // test _non_ ServerLock failures
+
+            Lock failLock = new Lock()
+            {
+                @Override public void lock() { throw new NullPointerException(); }
+                @Override public void lockInterruptibly() throws InterruptedException { }
+                @Override public boolean tryLock() { return false; }
+                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { return false; }
+                @Override public void unlock() { }
+                @NotNull @Override public Condition newCondition() { return null; }
+            };
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+            {
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof NullPointerException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+                {
+                    fail("shouldn't get here");
+                    txFg.commit();
+                }
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof NullPointerException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+        }
+
 
         @Test
         public void testTryWithResources() throws SQLException
@@ -2638,3 +2743,4 @@ public class DbScope
         }
     }
 }
+

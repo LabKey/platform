@@ -39,6 +39,9 @@ public class TempTableInfo extends SchemaTableInfo
     {
         super(schema, DatabaseTableType.TABLE, name, name, schema.getName() + "." + name + "$" + new GUID().toStringNoDashes());
 
+        // make sure TempTableTracker is initialized _before_ caller executes CREATE TABLE
+        TempTableTracker.init();
+
         // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
         _tempTableName = getSelectName();
 

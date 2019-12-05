@@ -52,6 +52,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.experiment.CustomProperties;
 import org.labkey.experiment.CustomPropertyRenderer;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -264,80 +265,80 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
 
         // do the least possible amount of work here
         final SearchService.IndexTask indexTask = task;
-        final ExpMaterialImpl me = this;
-        indexTask.addRunnable(
-            () -> {
-                ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(me);
-                url.setExtraPath(getContainer().getId());
-
-                Map<String, Object> props = new HashMap<>();
-                Set<String> identifiersHi = new HashSet<>();
-
-                // Name is identifier with highest weight
-                identifiersHi.add(getName());
-
-                // Add aliases in parenthesis in the title
-                StringBuilder title = new StringBuilder("Sample - " + getName());
-                Collection<String> aliases = this.getAliases();
-                if (!aliases.isEmpty())
-                {
-                    title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
-                    identifiersHi.addAll(aliases);
-                }
+        var document = createIndexDocument();
+        indexTask.addResource(document, SearchService.PRIORITY.item);
+    }
 
 
-                props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
-                props.put(SearchService.PROPERTY.title.toString(), title.toString());
-                props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
-                props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+    @NotNull
+    public WebdavResource createIndexDocument()
+    {
+        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(this);
+        url.setExtraPath(getContainer().getId());
 
-                StringBuilder body = new StringBuilder();
+        Map<String, Object> props = new HashMap<>();
+        Set<String> identifiersHi = new HashSet<>();
 
-                // Append the interesting standard properties: "Source Experiment Run", "Source Protocol", and "Source Protocol Application"
-                append(body, getDescription());
-                append(body, getRun());
-                append(body, getSourceProtocol());
-                append(body, getSourceApplication());
+        // Name is identifier with highest weight
+        identifiersHi.add(getName());
 
-                // Add all String and Integer custom property descriptions and values to body
-                CustomProperties.iterate(getContainer(), getObjectProperties().values(), RENDERER_MAP, (indent, description, value) ->
-                {
-                    append(body, description);
-                    append(body, value);
-                });
+        // Add aliases in parenthesis in the title
+        StringBuilder title = new StringBuilder("Sample - " + getName());
+        Collection<String> aliases = this.getAliases();
+        if (!aliases.isEmpty())
+        {
+            title.append(" (").append(StringUtils.join(aliases, ", ")).append(")");
+            identifiersHi.addAll(aliases);
+        }
 
-                ExpSampleSet ss = getSampleSet();
-                if (null != ss)
-                {
-                    String sampleSetName = ss.getName();
-                    ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", ss.getRowId());
-                    NavTree t = new NavTree("SampleSet - " + sampleSetName, show);
-                    String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
-                    props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-                    // Add sample set name to body, if it's not already present
-                    if (-1 == body.indexOf(sampleSetName))
-                        append(body, sampleSetName);
-                }
+        props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
+        props.put(SearchService.PROPERTY.title.toString(), title.toString());
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample");      // Treat the word "Sample" a low priority keyword
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
-                SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
-                        getContainer().getId(), "text/plain",
-                        body.toString(), url,
-                        getCreatedBy(), getCreated(),
-                        getModifiedBy(), getModified(),
-                        props)
-                {
-                    @Override
-                    public void setLastIndexed(long ms, long modified)
-                    {
-                        ExperimentServiceImpl.get().setMaterialLastIndexed(getRowId(), ms);
-                    }
-                };
+        StringBuilder body = new StringBuilder();
 
-                indexTask.addResource(sdr, SearchService.PRIORITY.item);
+        // Append the interesting standard properties: "Source Experiment Run", "Source Protocol", and "Source Protocol Application"
+        append(body, getDescription());
+        append(body, getRun());
+        append(body, getSourceProtocol());
+        append(body, getSourceApplication());
+
+        // Add all String and Integer custom property descriptions and values to body
+        CustomProperties.iterate(getContainer(), getObjectProperties().values(), RENDERER_MAP, (indent, description, value) ->
+        {
+            append(body, description);
+            append(body, value);
+        });
+
+        ExpSampleSet ss = getSampleSet();
+        if (null != ss)
+        {
+            String sampleSetName = ss.getName();
+            ActionURL show = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer()).addParameter("rowId", ss.getRowId());
+            NavTree t = new NavTree("SampleSet - " + sampleSetName, show);
+            String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
+            props.put(SearchService.PROPERTY.navtrail.toString(), nav);
+
+            // Add sample set name to body, if it's not already present
+            if (-1 == body.indexOf(sampleSetName))
+                append(body, sampleSetName);
+        }
+
+        return new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                getContainer().getId(), "text/plain",
+                body.toString(), url,
+                getCreatedBy(), getCreated(),
+                getModifiedBy(), getModified(),
+                props)
+        {
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                ExperimentServiceImpl.get().setMaterialLastIndexed(getRowId(), ms);
             }
-            , SearchService.PRIORITY.bulk
-        );
+        };
     }
 
     private static void append(StringBuilder sb, @Nullable Identifiable identifiable)
@@ -396,7 +397,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         ExpSampleSetImpl sampleSet = (ExpSampleSetImpl)getSampleSet();
         Map<String,Object> uriMap = getProperties(sampleSet);
         Map<PropertyDescriptor, Object> values = new HashMap<>();
-        for (DomainProperty pd : sampleSet.getType().getProperties())
+        for (DomainProperty pd : sampleSet.getDomain().getProperties())
         {
             values.put(pd.getPropertyDescriptor(), uriMap.get(pd.getPropertyURI()));
         }

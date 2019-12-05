@@ -100,7 +100,7 @@
         <span style="cursor:pointer;color:green" class="fa fa-plus-circle" onclick="addRow()"></span>&nbsp<span>Add State</span>
             &nbsp&nbsp&nbsp&nbsp
             <%= button("Delete Unused QC States")
-                    .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + qh(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
+                    .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + q(baseDeleteStateURL.clone().addParameter("all", "true").getLocalURIString()) + ")") %>
     </labkey:panel>
 
     <%

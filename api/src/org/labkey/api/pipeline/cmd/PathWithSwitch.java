@@ -35,6 +35,7 @@ public class PathWithSwitch extends PathToCommandArgs
         _switchName = switchName;
     }
 
+    @Override
     public List<String> toArgs(String[] paths)
     {
         ArrayList<String> args = new ArrayList<>();

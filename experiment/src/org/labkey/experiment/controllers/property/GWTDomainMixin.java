@@ -31,13 +31,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "reservedFieldNames",
         "excludeFromExportFieldNames",
         "phiNotAllowedFieldNames",
-        // The default value options and the default-default should not be on GWTDomain
-        "defaultDefaultValueType",
-        "defaultValueOptions",
         "defaultValuesURL",
         "provisioned",
         "domainException",
 })
+
+@JsonFilter("listDomainsActionFilter")
 
 public interface GWTDomainMixin
 {

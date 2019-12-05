@@ -933,7 +933,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         DataRegion rgn = view.getDataRegion();
         RenderContext renderContext = view.getRenderContext();
 
-        try (ResultSet rs = rgn.getResultSet(renderContext))
+        try (Results results = rgn.getResults(renderContext))
         {
             List<DisplayColumn> allColumns = getExportColumns(rgn.getDisplayColumns());
             List<DisplayColumn> columns = new ArrayList<>();
@@ -953,11 +953,11 @@ public class SpecimenQueryView extends BaseStudyQueryView
             builder.append("  </tr>\n");
             int row = 0;
 
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
 
-            while (rs.next())
+            while (results.next())
             {
-                renderContext.setRow(factory.getRowMap(rs));
+                renderContext.setRow(factory.getRowMap(results));
                 builder.append("  <tr style=\"background-color:").append(row++ % 2 == 0 ? "#FFFFFF" : "#DDDDDD").append("\">\n");
                 builder.append("    <td style=\"border: 1px solid #BBBBBB\">").append(row).append("</td>\n");
                 for (DisplayColumn col : columns)

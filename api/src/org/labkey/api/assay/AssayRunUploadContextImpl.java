@@ -20,14 +20,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -167,7 +173,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _batchProperties;
     }
 
-    private static Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties)
+    private Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties)
     {
         Map<DomainProperty, String> properties = new HashMap<>();
         if (rawProperties != null)
@@ -181,9 +187,39 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     value = rawProperties.get(prop.getPropertyURI());
                 properties.put(prop, Objects.toString(value, null));
             }
+
+            addVocabularyProperties(properties, rawProperties);
         }
 
         return unmodifiableMap(properties);
+    }
+
+    private void addVocabularyProperties(Map<DomainProperty, String> properties, Map<String, Object> rawProperties)
+    {
+        // 1. Only properties belonging to a VocabularyDomain will be added.
+        // 2. This is the only implementation of AssayRunUploadContext for adding these properties as importRuns Api uses this implementation.
+
+        for (Map.Entry<String, Object> property : rawProperties.entrySet())
+        {
+            if (URIUtil.hasURICharacters(property.getKey()) && !properties.containsKey(property.getKey()))
+            {
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(property.getKey(), _container);
+
+                if (null == pd)
+                {
+                    throw new NotFoundException("Property URI is not valid - " + property.getKey());
+                }
+                List<Domain> domains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd);
+                List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
+
+                if (vocabularyDomains.isEmpty())
+                {
+                    throw new NotFoundException("No Vocabularies found for this property - " + property.getKey());
+                }
+                DomainProperty dp = vocabularyDomains.get(0).getPropertyByURI(property.getKey());
+                properties.put(dp, property.getValue().toString());
+            }
+        }
     }
 
     public String getComments()

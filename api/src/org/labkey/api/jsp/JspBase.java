@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp;
 
-import org.apache.catalina.manager.util.SessionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -66,7 +65,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;

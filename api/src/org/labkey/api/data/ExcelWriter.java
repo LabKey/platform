@@ -52,7 +52,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -167,8 +166,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         public abstract void setMetadata(Workbook workbook, Map<String, String> metadata);
     }
 
-    public static final int MAX_ROWS_EXCEL_97 = 65535;
-
     protected static final String SHEET_DRAWING = "~~excel-sheet-drawing~~";
     protected static final String SHEET_IMAGE_SIZES = "~~excel-sheet-image-sizes~~";
     protected static final String SHEET_IMAGE_PICTURES = "~~excel-sheet-image-pictures~~";
@@ -223,18 +220,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         _workbook = workbook == null ? docType.createWorkbook() : workbook;
     }
 
-    public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelWriter parentWriter)
-    {
-        this(parentWriter._docType, parentWriter._workbook);
-        _wrappingTextFormat = parentWriter.getWrappingTextFormat();
-        _nonWrappingTextFormat = parentWriter.getNonWrappingTextFormat();
-        _boldFormat = parentWriter.getBoldFormat();
-        _formatters = parentWriter._formatters;
-
-        setResults(rs);
-        addDisplayColumns(displayColumns);
-    }
-
     public ExcelWriter(Results rs, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
     {
         this(docType);
@@ -247,29 +232,10 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         this(rs, displayColumns, ExcelDocumentType.xls);
     }
 
-
-    public ExcelWriter(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, ExcelDocumentType docType)
-    {
-        this(docType);
-        setResultSet(rs, fieldMap);
-        addDisplayColumns(displayColumns);
-    }
-
-
-    public ExcelWriter(DbSchema schema, String query) throws SQLException
-    {
-        this(ExcelDocumentType.xls);
-        ResultSet rs = new SqlSelector(schema, query).setMaxRows(_docType.getMaxRows()).getResultSet();
-        setResultSet(rs);
-        createColumns(rs.getMetaData());
-    }
-
-
     public void setCaptionType(ColumnHeaderType type)
     {
         _captionType = type;
     }
-
 
     public void setShowInsertableColumnsOnly(boolean b, @Nullable List<FieldKey> includeColumns)
     {
@@ -301,7 +267,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
     public void createColumns(ResultSetMetaData md) throws SQLException
     {
         int columnCount = md.getColumnCount();
@@ -316,22 +281,19 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         setColumns(cols);
     }
 
-
     public void setResults(Results rs)
     {
+        // CDSExportQueryView and ExportExcelReport build up multi-sheet workbooks by repeatedly setting Results and rendering
+        // sheets. Need close any previously used ResultSet before overwriting.
+        if (_rs != null)
+        {
+            try
+            {
+                _rs.close();
+            }
+            catch (SQLException ignored) {}
+        }
         _rs = rs;
-    }
-
-    @Deprecated // Use setResults()
-    public void setResultSet(ResultSet rs)
-    {
-        _rs = new ResultsImpl(rs);
-    }
-
-    @Deprecated // Use setResults()
-    public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
-    {
-        _rs = new ResultsImpl(rs, fieldMap);
     }
 
     // Sheet names must be 31 characters or shorter, and must not contain \:/[]? or *
@@ -725,7 +687,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         }
     }
 
-
     public void adjustColumnWidths(RenderContext ctx, Sheet sheet, List visibleColumns)
     {
         if (sheet instanceof SXSSFSheet)
@@ -735,13 +696,6 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         {
             ((ExcelColumn) visibleColumns.get(column)).adjustWidth(ctx, sheet, column, 0, _totalDataRows);
         }
-    }
-
-
-    public void renderGrid(Sheet sheet, ResultSet rs) throws SQLException, MaxRowsExceededException
-    {
-        RenderContext ctx = new RenderContext(HttpView.currentContext());
-        renderGrid(ctx, sheet, getVisibleColumns(ctx), new ResultsImpl(rs));
     }
 
     public void renderGrid(Sheet sheet, Results rs) throws SQLException, MaxRowsExceededException
@@ -885,18 +839,17 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
         if (null == rs)
             return;
 
-        try (rs)
-        {
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            ctx.setResults(rs);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+        ctx.setResults(rs);
 
-            // Output all the rows, but don't exceed the document's maximum number of rows
-            while (rs.next() && _currentRow <= _docType.getMaxRows())
-            {
-                ctx.setRow(factory.getRowMap(rs));
-                renderGridRow(sheet, ctx, visibleColumns);
-            }
+        // Output all the rows, but don't exceed the document's maximum number of rows
+        while (rs.next() && _currentRow <= _docType.getMaxRows())
+        {
+            ctx.setRow(factory.getRowMap(rs));
+            renderGridRow(sheet, ctx, visibleColumns);
         }
+
+        // Note: No need to close() the ResultSet; ExcelWriter.close() handles that
     }
 
 
@@ -948,7 +901,7 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setCommentLines(@NotNull List<String> commentLines)
     {
-        _commentLines = Collections.unmodifiableList(new ArrayList<>(commentLines));
+        _commentLines = List.copyOf(commentLines);
     }
 
     @Override

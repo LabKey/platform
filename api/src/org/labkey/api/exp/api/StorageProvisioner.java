@@ -89,7 +89,8 @@ public class StorageProvisioner
     {
         assert create.start();
 
-        try (Transaction transaction = scope.ensureTransaction())
+        // CONSIDER: could combine the two SELECT here: SELECT...FOR UPDATE (domain.getDatabaseLock()) and the SELECT (getDomainDescriptor())
+        try (Transaction transaction = scope.ensureTransaction(domain.getDatabaseLock()))
         {
             // reselect in a transaction
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
@@ -273,10 +274,9 @@ public class StorageProvisioner
         // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
-        String tableName = domain.getStorageTableName();
-        if (null == tableName)
+        if (null == domain.getStorageTableName())
         {
-            tableName = _create(scope, kind, domain);
+            _create(scope, kind, domain);
             return;
         }
 
@@ -286,7 +286,6 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
-        int changeCount = 0;
         for (DomainProperty prop : properties)
         {
             if (prop.getName() == null || prop.getName().length() == 0)
@@ -303,12 +302,10 @@ public class StorageProvisioner
             if (null != spec)
             {
                 change.addColumn(spec);
-                changeCount++;
             }
             if (prop.isMvEnabled())
             {
                 change.addColumn(makeMvColumn(prop));
-                changeCount++;
             }
         }
 
@@ -547,7 +544,7 @@ public class StorageProvisioner
                 map.put(scn, name);
         }
 
-        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map);
+        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map, domain);
 
         for (ColumnInfo from : sti.getColumns())
         {
@@ -607,12 +604,19 @@ public class StorageProvisioner
     {
         private final SchemaTableInfo _inner;
         private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
+        private Domain _domain;
 
         _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
         {
             super(schema, name);
             _inner = inner;
             _map.putAll(map);
+        }
+
+        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map, Domain domain)
+        {
+            this(schema, name, inner, map);
+            _domain = domain;
         }
 
         @Override
@@ -709,14 +713,14 @@ public class StorageProvisioner
         @Override
         public ObjectUriType getObjectUriType()
         {
-            return null;
+            return _domain.getDomainKind().getObjectUriColumn();
         }
 
         @Nullable
         @Override
         public String getObjectURIColumnName()
         {
-            return null;
+            return _domain.getDomainKind().getObjectUriColumnName();
         }
 
         @Nullable
@@ -766,29 +770,23 @@ public class StorageProvisioner
     }
 
 
-
-    private static final Object ENSURE_LOCK = new Object();
-
     /**
      * This is really an internal method, use createTableInfo() in most scenarios
      * This is public to support upgrade scenarios only.
      */
     public static String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
     {
-        synchronized (ENSURE_LOCK)
+        String tableName = domain.getStorageTableName();
+
+        if (null == tableName)
         {
-            String tableName = domain.getStorageTableName();
-
-            if (null == tableName)
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                try (var ignored = SpringActionController.ignoreSqlUpdates())
-                {
-                    tableName = _create(scope, kind, domain);
-                }
+                tableName = _create(scope, kind, domain);
             }
-
-            return tableName;
         }
+
+        return tableName;
     }
 
     enum RequiredIndicesAction

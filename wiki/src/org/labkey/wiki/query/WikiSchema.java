@@ -29,7 +29,6 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
 
 import java.util.Collections;
 import java.util.Set;
@@ -43,13 +42,19 @@ public class WikiSchema extends UserSchema
 {
     private static final Set<String> TABLE_NAMES;
 
+    /** Name of the UserSchema exposed by the Wiki module */
+    public static final String SCHEMA_NAME = "wiki";
+
     private static final String CURRENT_WIKI_VERSIONS = "CurrentWikiVersions";
     private static final String ALL_WIKI_VERSIONS = "AllWikiVersions";
+
+    /** Name of the table exposed with the list of renderer types */
+    public static final String RENDERER_TYPE_TABLE_NAME = "RendererType";
 
     static
     {
         Set<String> names = new TreeSet<>();
-        names.add(WikiService.RENDERER_TYPE_TABLE_NAME);
+        names.add(RENDERER_TYPE_TABLE_NAME);
         names.add(CURRENT_WIKI_VERSIONS);
         names.add(ALL_WIKI_VERSIONS);
         TABLE_NAMES = Collections.unmodifiableSet(names);
@@ -57,7 +62,7 @@ public class WikiSchema extends UserSchema
 
     public static void register(Module module)
     {
-        DefaultSchema.registerProvider(WikiService.SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
@@ -65,6 +70,7 @@ public class WikiSchema extends UserSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new WikiSchema(schema.getUser(), schema.getContainer());
@@ -74,17 +80,17 @@ public class WikiSchema extends UserSchema
 
     public WikiSchema(User user, Container container)
     {
-        super(WikiService.SCHEMA_NAME, "Contains information about wiki pages", user, container, CommSchema.getInstance().getSchema());
+        super(SCHEMA_NAME, "Contains information about wiki pages", user, container, CommSchema.getInstance().getSchema());
     }
 
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        if (WikiService.RENDERER_TYPE_TABLE_NAME.equalsIgnoreCase(name))
+        if (RENDERER_TYPE_TABLE_NAME.equalsIgnoreCase(name))
         {
             EnumTableInfo<WikiRendererType> result = new EnumTableInfo<>(WikiRendererType.class, this, "Contains the type of renderers available to format content", false);
             result.setPublicSchemaName(getName());
-            result.setName(WikiService.RENDERER_TYPE_TABLE_NAME);
+            result.setName(RENDERER_TYPE_TABLE_NAME);
             return result;
         }
         else if (CURRENT_WIKI_VERSIONS.equalsIgnoreCase(name) || ALL_WIKI_VERSIONS.equalsIgnoreCase(name))
