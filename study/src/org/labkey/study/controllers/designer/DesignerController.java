@@ -253,7 +253,7 @@ public class DesignerController extends SpringActionController
                     params.put("finishURL", form.getFinishURL());
 
                 HttpView studyView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
-                if (0 != form.getStudyId() && info != null)
+                if (0 != form.getStudyId() && info != null && DiscussionService.get() != null)
                 {
                     HttpView discussion = DiscussionService.get().getDiscussionArea(
                             getViewContext(),
