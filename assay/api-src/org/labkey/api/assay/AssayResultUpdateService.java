@@ -173,10 +173,11 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         {
             String objectLsid = dataObjectMap.get("LSID").toString();
             OntologyObject objectToDelete = OntologyManager.getOntologyObject(container, objectLsid);
+            ProvenanceService pvs = ProvenanceService.get();
 
-            if (null != objectToDelete)
+            if (null != objectToDelete && null != pvs)
             {
-                ProvenanceService.get().deleteObjectProvenance(objectToDelete.getObjectId());
+                pvs.deleteObjectProvenance(objectToDelete.getObjectId());
                 OntologyManager.deleteOntologyObject(objectLsid, container, false);
             }
         }
