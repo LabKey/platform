@@ -46,7 +46,7 @@ import java.util.List;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
-@BaseWebDriverTest.ClassTimeout(minutes = 20)
+@BaseWebDriverTest.ClassTimeout(minutes = 30)
 public abstract class SearchTest extends StudyBaseTest
 {
     private final SearchHelper _searchHelper = new SearchHelper(this, 6);
