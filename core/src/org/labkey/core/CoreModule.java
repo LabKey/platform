@@ -36,7 +36,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -46,7 +45,6 @@ import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -127,7 +125,6 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
@@ -175,6 +172,7 @@ import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.core.authentication.ldap.LdapController;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
+import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
@@ -391,10 +389,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
                 {
                     Map<String, Object> healthValues = new HashMap<>();
-                    Boolean allConnected = true;
+                    boolean allConnected = true;
                     for (DbScope dbScope : DbScope.getDbScopes())
                     {
-                        Boolean dbConnected;
+                        boolean dbConnected;
                         try (Connection conn = dbScope.getConnection())
                         {
                             dbConnected = conn != null;
@@ -728,7 +726,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             String rootContainerId = rootContainer.getId();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
 
-            for (Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
+            for (Map.Entry<String, String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
             {
                 Map<String, Object> params = new HashMap<>();
                 params.put("Container", rootContainerId);
@@ -1067,10 +1065,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getUnitTests()
     {
         return Set.of(
+            CommandLineTokenizer.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class,
-            CommandLineTokenizer.TestCase.class
+            StatsServiceImpl.TestCase.class
         );
     }
 

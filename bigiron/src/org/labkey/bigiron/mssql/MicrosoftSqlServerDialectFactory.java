@@ -31,6 +31,7 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
@@ -50,7 +51,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     private static final Logger LOG = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
     public static final String PRODUCT_NAME = "Microsoft SQL Server";
 
-    private volatile TableResolver _tableResolver = new StandardTableResolver();
+    private static volatile TableResolver TABLE_RESOLVER = new StandardTableResolver();
+
+    static TableResolver getTableResolver()
+    {
+        return TABLE_RESOLVER;
+    }
 
     private String getProductName()
     {
@@ -64,7 +70,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         {
             case "net.sourceforge.jtds.jdbc.Driver":
             case "com.microsoft.sqlserver.jdbc.SQLServerDriver":
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
+                return new MicrosoftSqlServer2012Dialect();
             default:
                 return null;
         }
@@ -97,46 +103,28 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     private SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
     {
-        // Good resources for past & current SQL Server version numbers:
-        // - http://www.sqlteam.com/article/sql-server-versions
-        // - http://sqlserverbuilds.blogspot.se/
+        MicrosoftSqlServerVersion mssv = MicrosoftSqlServerVersion.get(version);
 
-        // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
-        if (version >= 100)
+        if (mssv == MicrosoftSqlServerVersion.MICROSOFT_SQL_SERVER_UNSUPPORTED || (primaryDataSource && !mssv.isPrimaryAllowed()))
+            throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+
+        SqlDialect dialect = mssv.getDialect();
+
+        if (logWarnings)
         {
-            if (version >= 160)
+            if (mssv.isDeprecated())
             {
-                // Warn for > SQL Server 2019, for now.
-                if (logWarnings)
-                    LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                String deprecationMessage = "LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + "; please upgrade. " + RECOMMENDED;
+                LOG.warn(deprecationMessage);
+                dialect.setDeprecationMessage(HtmlString.of(deprecationMessage));
             }
-
-            if (version >= 150)
-                return new MicrosoftSqlServer2019Dialect(_tableResolver);
-
-            if (version >= 140)
-                return new MicrosoftSqlServer2017Dialect(_tableResolver);
-
-            if (version >= 130)
-                return new MicrosoftSqlServer2016Dialect(_tableResolver);
-
-            if (version >= 120)
-                return new MicrosoftSqlServer2014Dialect(_tableResolver);
-
-            if (version >= 110)
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
-
-            // Accept 2008 or 2008R2 as an external/supplemental database, but not as the primary database
-            if (!primaryDataSource)
+            else if (!mssv.isTested())
             {
-                if (logWarnings)
-                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new MicrosoftSqlServer2008R2Dialect(_tableResolver);
+                LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
             }
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
+        return dialect;
     }
 
     @Override
@@ -149,13 +137,13 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // The SQL Server dialects are identical, so just test one
-        return PageFlowUtil.set(new MicrosoftSqlServer2012Dialect(_tableResolver));
+        return PageFlowUtil.set(new MicrosoftSqlServer2012Dialect());
     }
 
     @Override
     public void setTableResolver(TableResolver tableResolver)
     {
-        _tableResolver = tableResolver;
+        TABLE_RESOLVER = tableResolver;
     }
 
 
@@ -166,6 +154,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
     {
+        @Override
         public void testDialectRetrieval()
         {
             // These should result in bad database exception

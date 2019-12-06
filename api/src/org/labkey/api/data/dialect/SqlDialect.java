@@ -30,6 +30,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -81,6 +82,7 @@ public abstract class SqlDialect
 
     private int _databaseVersion = 0;
     private String _productVersion = "0";
+    private @Nullable HtmlString _deprecationMessage = null;
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
@@ -454,6 +456,11 @@ public abstract class SqlDialect
     public void setProductVersion(String productVersion)
     {
         _productVersion = productVersion;
+    }
+
+    public void setDeprecationMessage(@NotNull HtmlString deprecationMessage)
+    {
+        _deprecationMessage = deprecationMessage;
     }
 
     public abstract String getProductName();
@@ -1366,6 +1373,8 @@ public abstract class SqlDialect
     //   should reflect the final database configuration
     public void addAdminWarningMessages(Warnings warnings)
     {
+        if (null != _deprecationMessage)
+            warnings.add(_deprecationMessage);
     }
 
     public abstract List<String> getChangeStatements(TableChange change);
