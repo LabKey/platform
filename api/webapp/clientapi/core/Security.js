@@ -1211,8 +1211,7 @@ LABKEY.Security = new function()
                 params: { resourceId: config.resourceId },
                 success: LABKEY.Utils.getCallbackWrapper(function(data, req){
                     data.policy.requestedResourceId = config.resourceId;
-                    var policy = new LABKEY.SecurityPolicy(data.policy);
-                    LABKEY.Utils.getOnSuccess(config).call(config.scope || this, policy, data.relevantRoles, req);
+                    LABKEY.Utils.getOnSuccess(config).call(config.scope || this, data.policy, data.relevantRoles, req);
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });

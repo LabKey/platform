@@ -777,15 +777,10 @@ public class ExpDataIterators
                     _importAliases :
                     new CaseInsensitiveHashMap<>();
 
-            DataIterator step0 = input;
+            SimpleTranslator step0 = new SimpleTranslator(input, context);
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
-            {
-                SimpleTranslator st = new SimpleTranslator(input, context);
-                st.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
-                st.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias"));
-                st.setDebugName("rename alias column");
-                step0 = LoggingDataIterator.wrap(st);
-            }
+                step0.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
