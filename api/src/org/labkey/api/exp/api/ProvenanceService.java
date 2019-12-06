@@ -54,4 +54,8 @@ public interface ProvenanceService
      */
     void deleteRunProvenance(int runId);
 
+    /**
+     * Delete provenance for a assay result row.
+     */
+    void deleteObjectProvenance(int objectId);
 }

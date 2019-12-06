@@ -20,12 +20,17 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -153,9 +158,28 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
+
+        TableInfo datatableInfo = this.getQueryTable();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
+        filter.addCondition(FieldKey.fromParts("rowId"), oldRowMap.get("rowId"));
+
+        Map<String, Object> dataObjectMap = new TableSelector(datatableInfo, filter, null).getMap();
+
         Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
         ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, "Deleted data row.");
+
+        if (null != dataObjectMap)
+        {
+            String objectLsid = dataObjectMap.get("LSID").toString();
+            OntologyObject objectToDelete = OntologyManager.getOntologyObject(container, objectLsid);
+
+            if (null != objectToDelete)
+            {
+                ProvenanceService.get().deleteObjectProvenance(objectToDelete.getObjectId());
+                OntologyManager.deleteOntologyObject(objectLsid, container, false);
+            }
+        }
 
         return result;
     }

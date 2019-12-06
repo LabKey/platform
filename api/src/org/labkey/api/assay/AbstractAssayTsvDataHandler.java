@@ -312,7 +312,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
                         AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
                         AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(null, protocol.getContainer(), protocol, null);
-                        TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING);
+                        TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
                         if (assayDataTable != null)
                         {
                             ColumnInfo lsidCol = assayDataTable.getColumn("LSID");

@@ -578,6 +578,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterialAliasMap();
 
+    TableInfo getTinfoEdge();
+
     @Deprecated
     default String getDefaultSampleSetLsid()
     {
