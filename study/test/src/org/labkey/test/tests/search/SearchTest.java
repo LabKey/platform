@@ -36,6 +36,7 @@ import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.WikiHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
+import org.labkey.test.util.search.SearchResultsQueue;
 
 import java.io.File;
 import java.util.Arrays;
@@ -49,7 +50,8 @@ import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 @BaseWebDriverTest.ClassTimeout(minutes = 30)
 public abstract class SearchTest extends StudyBaseTest
 {
-    private final SearchHelper _searchHelper = new SearchHelper(this, 6);
+    private static final SearchResultsQueue SEARCH_RESULTS_QUEUE = new SearchResultsQueue();
+    private final SearchHelper _searchHelper = new SearchHelper(this, SEARCH_RESULTS_QUEUE).setMaxTries(6);
     
     private static final String FOLDER_A = "Folder Apple";
     private static final String FOLDER_B = "Folder Banana"; // Folder move destination
