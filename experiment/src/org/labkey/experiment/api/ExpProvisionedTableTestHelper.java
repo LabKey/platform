@@ -19,6 +19,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.TestContext;
 
+import java.io.StringWriter;
+import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -109,6 +111,25 @@ public class ExpProvisionedTableTestHelper
     protected List<Map<String, Object>> updateRows(Container c, List<Map<String, Object>> rowsToUpdate,  List<Map<String, Object>> oldKeys, String tableName) throws Exception
     {
         return this.updateRows(c, rowsToUpdate, oldKeys, tableName, null);
+    }
+
+    static void assertMultiValue(Object value, String... expected) throws Exception
+    {
+        Assert.assertNotNull(value);
+        String s;
+        if (value instanceof Clob)
+        {
+            StringWriter sw = new StringWriter();
+            org.apache.commons.io.IOUtils.copy(((Clob)value).getCharacterStream(),sw);
+            s = sw.toString();
+        }
+        else
+        {
+            s = String.valueOf(value);
+        }
+
+        for (String e : expected)
+            Assert.assertTrue("Failed to find '" + e + "' in multivalue '" + s + "'", s.contains(e));
     }
 
 }

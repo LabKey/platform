@@ -26,4 +26,5 @@ This page is for troubleshooting and testing purposes.
 [&nbsp;<a href="<%=h(buildURL(TypesController.ImportVocabularyAction.class))%>">Import&nbsp;Concepts</a>&nbsp;]<br>
 [&nbsp;<a href="<%=h(buildURL(TypesController.FindConceptsAction.class))%>">Search&nbsp;Concepts</a>&nbsp;]<br>
 [&nbsp;<a href="<%=h(buildURL(TypesController.TypesAction.class))%>">View&nbsp;Types</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(buildURL(TypesController.CheckResolveAction.class))%>">Resolve LSIDs</a>&nbsp;]<br>
 </div>

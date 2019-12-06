@@ -3,13 +3,13 @@ package org.labkey.assay;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineProvider;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -63,6 +63,7 @@ public class ModuleAssayCache
         private final List<AssayProvider> _assayProviders = new LinkedList<>();
         private final Map<String, PipelineProvider> _pipelineProviders = new HashMap<>();
         private final Set<String> _runLsidPrefixes = new HashSet<>();
+        private final Set<String> _resultLsidPrefixes = new HashSet<>();
 
         private ModuleAssayCollections()
         {
@@ -89,6 +90,8 @@ public class ModuleAssayCache
                         _pipelineProviders.put(pipelineProvider.getName(), pipelineProvider);
                     }
                     _runLsidPrefixes.add(provider.getRunLSIDPrefix());
+                    if (provider.getResultRowLSIDPrefix() != null)
+                        _resultLsidPrefixes.add(provider.getResultRowLSIDPrefix());
                 }
             }
         }
@@ -106,6 +109,11 @@ public class ModuleAssayCache
         public Set<String> getRunLsidPrefixes()
         {
             return _runLsidPrefixes;
+        }
+
+        public Set<String> getResultLsidPrefixes()
+        {
+            return _resultLsidPrefixes;
         }
     }
 

@@ -92,7 +92,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineage;
-import org.labkey.api.exp.api.ExpLineageItem;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
@@ -6481,7 +6480,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class LineageAction extends ReadOnlyApiAction<ExpLineageOptions>
     {
-        private Set<ExpLineageItem> _seeds;
+        private Set<Identifiable> _seeds;
 
         @Override
         public void validateForm(ExpLineageOptions options, Errors errors)
@@ -6495,16 +6494,11 @@ public class ExperimentController extends SpringActionController
                     if (id == null)
                         throw new NotFoundException("Unable to resolve object: " + lsid);
 
-                    if (!(id instanceof ExpLineageItem))
-                        throw new ApiUsageException("Lineage seed must be a data, material, or run: " + id.getClass().getName());
-
-                    ExpLineageItem seed = (ExpLineageItem)id;
-
                     // ensure that the protocol output lineage is in the same container as the request
-                    if (seed instanceof ExpObject && !getContainer().equals(seed.getContainer()))
-                        throw new ApiUsageException("Protocol requested must be in the same folder that the request originates. Protocol folder : " + seed.getContainer().getPath());
+                    if (!getContainer().equals(id.getContainer()))
+                        throw new ApiUsageException("Object requested must be in the same folder that the request originates: " + id.getContainer().getPath());
 
-                    _seeds.add(seed);
+                    _seeds.add(id);
                 }
             }
             else
