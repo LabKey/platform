@@ -158,29 +158,37 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygook", 1.0, 14.0, "", null);
-            badProductName("SQL Server", 1.0, 14.0, "", null);
-            badProductName("sqlserver", 1.0, 14.0, "", null);
+            badProductName("Gobbledygook", 13.0, 14.0, "", null);
+            badProductName("SQL Server", 13.0, 14.0, "", null);
+            badProductName("sqlserver", 13.0, 14.0, "", null);
 
-            // < 10.5 should result in bad version error
-            badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
+            // < 10.0 should result in bad version error
+            badVersion("Microsoft SQL Server", 8.0, 10.0, null, null);
+
+            // Point releases aren't valid
+            badVersion("Microsoft SQL Server", 10.1, 10.3, null, null);
+            badVersion("Microsoft SQL Server", 11.3, 11.6, null, null);
+            badVersion("Microsoft SQL Server", 12.7, 12.9, null, null);
+            badVersion("Microsoft SQL Server", 13.1, 13.3, null, null);
+            badVersion("Microsoft SQL Server", 14.5, 14.7, null, null);
 
             String driverName = "jTDS Type 4 JDBC Driver for MS SQL Server and Sybase";
 
-            // >= 10.0 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.0, 11.0, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
+            // 10.0 and 10.5 should result in MicrosoftSqlServer2008R2Dialect
+            good("Microsoft SQL Server", 10.0, 10.0, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.5, 10.5, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
 
-            // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
-            good("Microsoft SQL Server", 11.0, 12.0, "", null, driverName, MicrosoftSqlServer2012Dialect.class);
+            // 11.0 should result in MicrosoftSqlServer2012Dialect
+            good("Microsoft SQL Server", 11.0, 11.0, "", null, driverName, MicrosoftSqlServer2012Dialect.class);
 
-            // >= 12.0 and < 13.0 should result in MicrosoftSqlServer2014Dialect
-            good("Microsoft SQL Server", 12.0, 13.0, "", null, driverName, MicrosoftSqlServer2014Dialect.class);
+            // 12.0 should result in MicrosoftSqlServer2014Dialect
+            good("Microsoft SQL Server", 12.0, 12.0, "", null, driverName, MicrosoftSqlServer2014Dialect.class);
 
-            // >= 13.0 and < 14.0 should result in MicrosoftSqlServer2016Dialect
-            good("Microsoft SQL Server", 13.0, 14.0, "", null, driverName, MicrosoftSqlServer2016Dialect.class);
+            // 13.0 should result in MicrosoftSqlServer2016Dialect
+            good("Microsoft SQL Server", 13.0, 13.0, "", null, driverName, MicrosoftSqlServer2016Dialect.class);
 
-            // >= 14.0 and < 15.0 should result in MicrosoftSqlServer2017Dialect
-            good("Microsoft SQL Server", 14.0, 15.0, "", null, driverName, MicrosoftSqlServer2017Dialect.class);
+            // 14.0 should result in MicrosoftSqlServer2017Dialect
+            good("Microsoft SQL Server", 14.0, 14.0, "", null, driverName, MicrosoftSqlServer2017Dialect.class);
 
             // >= 15.0 should result in MicrosoftSqlServer2019Dialect
             good("Microsoft SQL Server", 15.0, 17.0, "", null, driverName, MicrosoftSqlServer2019Dialect.class);
