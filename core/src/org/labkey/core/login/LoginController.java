@@ -2574,7 +2574,7 @@ public class LoginController extends SpringActionController
         public ApiResponse execute(Object o, BindException errors)
         {
             Collection<AuthenticationProvider.PrimaryAuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
-            Collection<AuthenticationProvider.SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
+            Collection<AuthenticationProvider.SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders(); // anticipate multiauth
             boolean isExternalProviderEnabled = AuthenticationManager.isExternalConfigurationEnabled();
             boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
             LoginUrls urls = urlProvider(LoginUrls.class);
@@ -2582,21 +2582,50 @@ public class LoginController extends SpringActionController
 
             ApiSimpleResponse res = new ApiSimpleResponse();
 //            Map <Integer, Object> primaries = new HashMap<>();
-            ArrayList <Map> primaries1 = new ArrayList<>();
+            ArrayList<Map> SSO = new ArrayList<>();
+            ArrayList<Map> LDAP = new ArrayList<>();
 
+
+            // in here you can put stuff in 'sso' or 'formAuth' based on the name
             Collection<AuthenticationConfiguration> configurations = AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class);
-            for (AuthenticationConfiguration configuration : configurations)
+            for (AuthenticationConfiguration configuration : configurations) // for this, could do
             {
-                Map <String, Object> sh = new HashMap<>();
-                sh.put("description", configuration.getDescription());
-                sh.put("name", configuration.getAuthenticationProvider().getName());
-                sh.put("enabled", configuration.isEnabled());
-                sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId()));
-                sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
-//                primaries.put((configuration.getRowId()), sh);
-                sh.put("id", "id" + configuration.getRowId());
-                primaries1.add(sh);
+                String name = configuration.getAuthenticationProvider().getName();
+                Map<String, Object> sh = new HashMap<>();
+                if (name == "LDAP" || name == "Database"){
+                    sh.put("description", configuration.getDescription());
+                    sh.put("name", configuration.getAuthenticationProvider().getName());
+                    sh.put("enabled", configuration.isEnabled());
+                    sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl
+                    sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
+                    sh.put("id", "id" + configuration.getRowId());
+                    LDAP.add(sh);
+                } else {
+                    sh.put("description", configuration.getDescription());
+                    sh.put("name", configuration.getAuthenticationProvider().getName());
+                    sh.put("enabled", configuration.isEnabled());
+                    sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl
+                    sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
+                    sh.put("id", "id" + configuration.getRowId());
+                    SSO.add(sh);
+                }
             }
+
+
+            ArrayList<Map> secondaries = new ArrayList<>();
+            for (AuthenticationProvider authProvider : secondary)
+            {
+                Map<String, Object> items = new HashMap<>();
+                items.put("name", authProvider.getName());
+                items.put("ficamOK", (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved()));
+                items.put("isPermanent", authProvider.isPermanent());
+                items.put("isActive", AuthenticationManager.isActive(authProvider));
+//                items.put("enableURL", urls.getEnableProviderURL(authProvider)); //might cause nullpointer?
+                items.put("configureUrl", authProvider.getConfigurationLink());
+                items.put("description", authProvider.getDescription());
+                secondaries.add(items);
+            }
+
 
             Map <String, Boolean> globalAuthConfigs = new HashMap<>();
             globalAuthConfigs.put("selfSignUp", AuthenticationManager.isRegistrationEnabled());
@@ -2611,8 +2640,9 @@ public class LoginController extends SpringActionController
                     AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class).stream()
                             .map((Function<AuthenticationConfiguration, AuthenticationProvider>) AuthenticationConfiguration::getAuthenticationProvider)
                             .collect(Collectors.toSet());
+//            don;t need stuff above
             primary.stream()
-                    .filter(ap->null != ap.getConfigurationLink())
+                    .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
                     .filter(ap->!ap.isPermanent() && !inUse.contains(ap))
                     .sorted(Comparator.comparing(AuthenticationProvider::getName))
                     .forEach(
@@ -2626,8 +2656,9 @@ public class LoginController extends SpringActionController
                     );
 
 
-            res.put("primary", new JSONArray(primaries1));
-//            res.put("secondary", secondary);
+            res.put("rowInfo", new JSONArray(SSO));
+            res.put("primaryLDAP", new JSONArray(LDAP));
+            res.put("secondary", new JSONArray(secondaries));
             res.put("globalAuthConfigs", globalAuthConfigs);
             res.put("canEdit", canEdit);
             res.put("addNew", addNew);
