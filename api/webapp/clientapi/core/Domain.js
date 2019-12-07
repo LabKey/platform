@@ -269,7 +269,6 @@ LABKEY.Domain.create({
 });
          </pre>
          */
-
         listDomains : function(config)
         {
             var params = {
@@ -342,6 +341,31 @@ LABKEY.Domain.create({
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
                 config.containerPath);
+        },
+
+        /**
+         * Get property descriptor information.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} [config.success] Success callback is a function that is called with an array of property information in the same format as 'fields' within {@link LABKEY.Domain.DomainDesign}.
+         * @param {Function} [config.failure] Failure callback.
+         * @param {Array} config.propertyIds Array of integer propertyIds.
+         * @param {Array} config.propertyURIs Array of string propertyURIs.
+         * @param {String} config.containerPath Container path of the property definitions.
+         */
+        getProperties : function (config)
+        {
+            var parameters = {};
+            if (config.propertyIds)
+                parameters.propertyIds = config.propertyIds;
+
+            if (config.propertyURIs)
+                parameters.propertyURIs = config.propertyURIs;
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("property", "getProperties.api", config.containerPath, parameters),
+                success: LABKEY.Utils.getCallbackWrapper(config.success),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true)
+            });
         }
     };
 
