@@ -430,6 +430,7 @@ public class LoginController extends SpringActionController
             config.setTitle("Register");
             config.setTemplate(PageConfig.Template.Dialog);
             config.setIncludeLoginLink(false);
+            config.setIncludeSearch(false);
 
             JspView jsp = new JspView("/org/labkey/core/login/register.jsp");
 
@@ -1103,6 +1104,7 @@ public class LoginController extends SpringActionController
 
         page.setTemplate(PageConfig.Template.Dialog);
         page.setIncludeLoginLink(false);
+        page.setIncludeSearch(false);
         page.setTitle("Sign In");
 
         WebPartView view = getLoginView(errors);
@@ -1207,6 +1209,7 @@ public class LoginController extends SpringActionController
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle("Terms Of Use");
             page.setIncludeLoginLink(false);
+            page.setIncludeSearch(false);
 
             return view;
         }
@@ -1599,6 +1602,7 @@ public class LoginController extends SpringActionController
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle(getTitle());
             page.setIncludeLoginLink(false);
+            page.setIncludeSearch(false);
 
             // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnURL = form.getReturnURLHelper();
@@ -1742,7 +1746,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return "Your email address has been verified! Create an account password below.";
+            return "Your email address (" + form.getEmail() + ") has been verified! Create an account password below.";
         }
 
         @Override
@@ -2184,6 +2188,8 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTitle("Reset Password");
+            getPageConfig().setIncludeSearch(false);
             getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
             getPageConfig().setNoIndex();
 

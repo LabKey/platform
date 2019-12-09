@@ -326,6 +326,7 @@ public class AuthenticationManager
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
+            getPageConfig().setIncludeSearch(false);
 
             return new SimpleErrorView(errors, false);
         }

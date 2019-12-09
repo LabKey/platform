@@ -107,7 +107,7 @@
 %>
         <ul class="navbar-nav-lk">
 <%
-    if (showSearch)
+    if (showSearch && pageConfig.shouldIncludeSearch())
     {
 %>
             <li class="navbar-search hidden-xs">
