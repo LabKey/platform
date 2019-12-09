@@ -469,6 +469,12 @@ public class MothershipController extends SpringActionController
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Save Upgrade Message");
+        }
     }
 
     @RequiresPermission(ReadPermission.class)
