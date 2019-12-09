@@ -774,9 +774,9 @@ public class SecurityApiActions
                 {
                     // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
                     if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission");
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission.");
                     if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission");
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission.");
                 }
             }
 
