@@ -458,7 +458,7 @@ public class LoginController extends SpringActionController
         {
             if (StringUtils.isEmpty(form.getEmail()) || StringUtils.isEmpty(form.getEmailConfirmation()))
             {
-                errors.reject(ERROR_REQUIRED, "You must verify your email address");
+                errors.reject(ERROR_REQUIRED, "You must verify your email address.");
             }
             else
             {
@@ -466,10 +466,10 @@ public class LoginController extends SpringActionController
                 {
                     ValidEmail email = new ValidEmail(form.getEmail());
                     if (!form.getEmail().equals(form.getEmailConfirmation()))
-                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match.  Please verify your email addresses below.");
+                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match. Please verify your email addresses below.");
                     else if (UserManager.userExists(email))
                     {
-                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account.  If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>.  Otherwise, please contact your administrator.");
+                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account. If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>. Otherwise, please contact your administrator.");
                     }
                 }
                 catch (InvalidEmailException e)
@@ -482,14 +482,14 @@ public class LoginController extends SpringActionController
             if (expectedKatpcha == null)
             {
                 logger.error("Captcha not initialized for self-registration attempt");
-                errors.reject(ERROR_MSG,"Captcha not initialized, please retry");
+                errors.reject(ERROR_MSG,"Captcha not initialized, please retry.");
             }
             else
             {
                 if (!expectedKatpcha.equalsIgnoreCase(StringUtils.trimToNull(form.getKaptchaText())))
                 {
                     logger.warn("Captcha text did not match for self-registration attempt for " + form.getEmail());
-                    errors.reject(ERROR_MSG,"Verification text does not match, please retry");
+                    errors.reject(ERROR_MSG,"Verification text does not match, please retry.");
                 }
             }
         }
@@ -502,7 +502,7 @@ public class LoginController extends SpringActionController
             if (!AuthenticationManager.isRegistrationEnabled())
             {
                 _log.warn("Attempt to register user using email " + form.getEmail() + " with registration not enabled");
-                throw new NotFoundException("Registration is not enabled");
+                throw new NotFoundException("Registration is not enabled.");
             }
 
             ValidEmail email = new ValidEmail(form.getEmail());
@@ -514,7 +514,7 @@ public class LoginController extends SpringActionController
             }
             catch (ConfigurationException e)
             {
-                errors.reject(ERROR_MSG, "There was a problem sending the registration email.  Please contact your administrator.");
+                errors.reject(ERROR_MSG, "There was a problem sending the registration email. Please contact your administrator.");
                 _log.error("Error adding self registered user", e);
             }
             response.put("success", !errors.hasErrors());

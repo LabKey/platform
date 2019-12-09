@@ -1,20 +1,21 @@
-<div id="registration-header" class="auth-header">Register</div>
-<div class="labkey-error" id="errors"></div>
-<div id="registration-content" class="auth-form-body">
-    <form class="register-form" name="register" action="javascript:void(0)">
+<form class="auth-form register-form" name="register" action="javascript:void(0)">
+    <div id="registration-header" class="auth-header">Register for a New Account</div>
+    <div class="labkey-error" id="errors"></div>
+    <div id="registration-content" class="auth-form-body">
+        <p>Already have an account? <a href="login-login.view?">Sign In</a></p>
         <label for="email">Email</label>
         <input id="email" name="email" type="text" class="input-block" tabindex="1" autofocus>
-        <label for="emailConfirmation">
-            Email (verify)
-        </label>
+
+        <label for="emailConfirmation">Confirm Email</label>
         <input id="emailConfirmation" name="emailConfirmation" type="text" class="input-block" tabindex="2">
 
-        <div>To help protect against abuse by bots, please enter the six characters shown below (case-insensitive). <a href="javascript: window.location.reload()">Reload the page to get a new image.</a></div>
-        <img src="<%= contextPath %>/kaptcha.jpg" alt="Verification text" title="Verification text" height="50" width="200"  />
+        <div>Please enter the six characters shown below (case-insensitive).</div>
+        <div><img src="<%= contextPath %>/kaptcha.jpg" alt="Verification text" title="Verification text" height="50" width="200"/></div>
+        <div><a href="javascript: window.location.reload()">Reload the page to get a new image.</a></div>
         <input id="kaptchaText" name="kaptchaText" type="text" class="input-block" tabindex="3" autofocus>
 
-        <div>
+        <div class="auth-item">
             <input type="submit" tab-index="-1" class="register-submit-button"/><a class="labkey-button primary register-btn"><span>Register</span></a>
         </div>
-    </form>
-</div>
+    </div>
+</form>
