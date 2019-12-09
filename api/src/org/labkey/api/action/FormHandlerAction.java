@@ -43,8 +43,8 @@ public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
         return new SimpleErrorView(errors);
     }
 
-    public final NavTree appendNavTrail(NavTree root)
+    public NavTree appendNavTrail(NavTree root)
     {
-        return getPageConfig().getTitle() == null ? root : root.addChild(getPageConfig().getTitle());
+        return null == getPageConfig().getTitle() ? root : root.addChild(getPageConfig().getTitle());
     }
 }
