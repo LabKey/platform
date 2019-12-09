@@ -500,6 +500,12 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL(PermissionsAction.class, getContainer());
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Standard Delete Group");
+        }
     }
 
     public static class PermissionsForm extends ReturnUrlForm
@@ -1223,6 +1229,12 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL("Security", getViewContext().getRequest().getParameter("view"), getContainer());
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Update Permissions");
+        }
     }
 
     public static class AddUsersForm extends ReturnUrlForm
@@ -1558,6 +1570,9 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Reset Password");
+
             String message;
             boolean loginExists = false;
 
