@@ -21,9 +21,9 @@
 <%=formatMissedErrorsInTable("form", 2)%>
 <labkey:form enctype="multipart/form-data" action="configure.post" method="post" layout="horizontal">
     <input type="hidden" name="configuration" value="<%=h(form.getConfiguration())%>">
-    <labkey:input type="text" name="description" size="50" value="<%=h(form.getDescription())%>" label="Description" />
     <labkey:input type="checkbox" name="enabled" label="Enabled" checked="<%=form.isEnabled()%>" />
     <input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>enabled">
+    <labkey:input type="text" name="description" size="50" value="<%=h(form.getDescription())%>" label="Description" />
     <%
         ModelAndView view = urlProvider(LoginUrls.class).getPickLogosView(form.getRowId(), false, false, null);
         include(view, out);
