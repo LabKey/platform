@@ -629,7 +629,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         // Job parameters
         for (Map.Entry<String, String> entry : getJob().getParameters().entrySet())
         {
-            replacements.put(entry.getKey(), Matcher.quoteReplacement(entry.getValue()));
+            String value = entry.getValue();
+            if (value != null)
+                value = Matcher.quoteReplacement(value);
+            replacements.put(entry.getKey(), value);
         }
 
         // Task info replacement

@@ -297,7 +297,7 @@ LABKEY.Experiment.loadBatch({
             }
 
             LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("assay", "getAssayRuns", LABKEY.ActionURL.getContainer()),
+                url: LABKEY.ActionURL.buildURL("assay", "getAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -364,9 +364,13 @@ LABKEY.Experiment.saveBatch({
         {
             function createExp(json)
             {
+                var runs = [];
                 if (json.runs) {
-                    return new LABKEY.Exp.RunGroup(json.runs);
+                    for (var i = 0; i < json.runs.length; i++) {
+                        runs.push(new LABKEY.Exp.Run(json.runs[i]));
+                    }
                 }
+                return runs;
             }
 
             LABKEY.Ajax.request({
@@ -376,8 +380,11 @@ LABKEY.Experiment.saveBatch({
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 scope: config.scope,
                 jsonData : {
+                    assayId: config.assayId,
+                    assayName: config.assayName,
+                    providerName: config.providerName,
+                    protocolName: config.protocolName,
                     runs: config.runs,
-                    protocolName: config.protocolName
                 },
                 scope: config.scope,
                 headers: {
@@ -874,7 +881,6 @@ LABKEY.Exp.DataClass = function (config)
 
     LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
-    this.data = config.data;
     this.description = config.description;
     this.sampleSet = config.sampleSet;
 };

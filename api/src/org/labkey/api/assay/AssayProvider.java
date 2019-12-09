@@ -19,10 +19,13 @@ package org.labkey.api.assay;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -37,8 +40,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.Pair;
@@ -281,6 +282,21 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
 
     String getRunLSIDPrefix();
+
+    /**
+     * @return LSID Namespace prefix for assay result rows
+     */
+    @Nullable String getResultRowLSIDPrefix();
+
+    /**
+     * @return Provider specific sql expression
+     */
+    @Nullable String getResultRowLSIDExpression();
+
+    /**
+     * Get the URL for an assay result row's LSID.
+     */
+    @Nullable ActionURL getResultRowURL(Container container, Lsid lsid);
 
     /**
      * Return a SQL pattern that can be used to match a protocol's LSID to this AssayProvider.

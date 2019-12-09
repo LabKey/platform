@@ -431,7 +431,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (insertUpdateChoice.equals("merge"))
             verb = "inserted or updated";
         else
-            verb = insertUpdateChoice + "ed";
+            verb = insertUpdateChoice + (insertUpdateChoice.endsWith("e") ? "d" : "ed");
 
         SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
                 getContainer().getId(), "Samples " + verb + " in: " + _sampleset.getName());

@@ -42,7 +42,6 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     @Nullable Integer getObjectId();
     void setLSID(String lsid);
     void setLSID(Lsid lsid);
-    String getLSIDNamespacePrefix();
     void setName(String name);
     @Nullable
     URLHelper detailsURL();
