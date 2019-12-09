@@ -46,6 +46,10 @@
     margin-top: 15px;
 }
 
+.auth-form label {
+    font-weight: bold;
+}
+
 .input-block {
     display: block;
     width: 100%;

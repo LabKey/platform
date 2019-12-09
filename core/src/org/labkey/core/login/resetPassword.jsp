@@ -21,9 +21,16 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
-<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("login.css");
+    }
+%>
 <%
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
@@ -34,21 +41,14 @@
         %><%=unsafe(errors)%><%
     }
 %>
-<style>
-    .reset-form-item {
-        margin-top: 15px;
-    }
-    .labkey-button {
-        width: 75px;
-    }
-</style>
-<p>To reset your password, type in your email address and click the Reset button.</p>
-<labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" layout="horizontal">
-    <div class="reset-form-item">
-        <labkey:input id="EmailInput" type="text" name="email" value="<%=h(form.getEmail())%>"/>
-    </div>
-    <div class="reset-form-item">
-        <%= button("Reset").submit(true).name("reset")%>
-        <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
+<labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" className="auth-form">
+    <div class="auth-header">Reset Password</div>
+    <div class="auth-form-body">
+        <p>To reset your password, type in your email address and click the Reset button.</p>
+        <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off" value="<%=h(form.getEmail())%>">
+        <div class="auth-item">
+            <%= button("Reset").submit(true).name("reset")%>
+            <%= button("Cancel").href(urlProvider(LoginUrls.class).getLoginURL(doneURL)) %>
+        </div>
     </div>
 </labkey:form>
