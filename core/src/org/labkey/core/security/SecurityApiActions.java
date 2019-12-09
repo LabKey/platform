@@ -290,7 +290,7 @@ public class SecurityApiActions
                 user = currentUser;
 
             if (null == user)
-                throw new IllegalArgumentException("No user found that matches specified userId or email address");
+                throw new IllegalArgumentException("No user found that matches specified userId or email address.");
 
             //if user is not current user, current user must have admin perms in container
             if (!user.equals(currentUser) && !container.hasPermission(currentUser, AdminPermission.class))

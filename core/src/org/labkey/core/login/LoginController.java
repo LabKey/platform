@@ -425,7 +425,7 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
             if (!AuthenticationManager.isRegistrationEnabled())
-                throw new NotFoundException("Registration is not enabled");
+                throw new NotFoundException("Registration is not enabled.");
             PageConfig config = getPageConfig();
             config.setTitle("Register");
             config.setTemplate(PageConfig.Template.Dialog);
