@@ -65,12 +65,10 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
         else if (json.has(ExperimentJSONConverter.PROTOCOL_NAME))
         {
             String protocolName = json.optString(ExperimentJSONConverter.PROTOCOL_NAME);
-            {
-                if (ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME.equals(protocolName))
-                    protocol = ExperimentService.get().ensureSampleDerivationProtocol(getUser());
-                else
-                    throw new IllegalArgumentException("protocol name is only supported for :" + ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME);
-            }
+            if (ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME.equals(protocolName))
+                protocol = ExperimentService.get().ensureSampleDerivationProtocol(getUser());
+            else
+                throw new IllegalArgumentException("protocol name is only supported for :" + ExperimentService.SAMPLE_DERIVATION_PROTOCOL_NAME);
         }
         else
             throw new IllegalArgumentException("assayId or assayName or protocolName must be provided.");

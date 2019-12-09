@@ -28,8 +28,13 @@ import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
@@ -43,6 +48,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -70,7 +76,21 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.CODE;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.H2;
+import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 
 /**
@@ -686,4 +706,53 @@ public class TypesController extends SpringActionController
             this.prefixMatch = prefixMatch;
         }
     }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class CheckResolveAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"),
+                    SimpleFilter.createContainerFilter(getContainer()), new Sort("ObjectId")).getArrayList(String.class);
+
+            return new HtmlView("Check Resolve LSIDs",
+                    DIV(H2("Resolving " + objectURIs.size() + " objects"),
+                            UL(objectURIs.stream().map(this::resolve))));
+        }
+
+        public DOM.Renderable resolve(String objectURI)
+        {
+            try
+            {
+                Identifiable obj = LsidManager.get().getObject(objectURI);
+                if (obj == null)
+                    return LI(cl("text-warning bg-warning"),
+                            "Failed to resolve: ", lsid(objectURI));
+                else
+                {
+                    ActionURL url = LsidManager.get().getDisplayURL(objectURI);
+                    return LI("Resolved '", lsid(objectURI), "' to object (" + obj.getClass().getSimpleName() + "): ",
+                            url != null ? A(at(href, url), obj.getName()) : obj.getName());
+                }
+            }
+            catch (Exception e)
+            {
+                return LI(cl("text-danger bg-danger"),
+                        "Error when resolving '", lsid(objectURI), "': ", e.getMessage());
+            }
+        }
+
+        public DOM.Renderable lsid(String lsid)
+        {
+            return CODE(cl("small"), lsid);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
 }

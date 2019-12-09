@@ -22,13 +22,18 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
@@ -37,6 +42,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -104,6 +110,26 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public void setLookupQuery(String lookupQuery)
     {
         _lookupQuery = lookupQuery;
+    }
+
+    public Lookup getLookup()
+    {
+        Lookup ret = new Lookup();
+        String containerId = getLookupContainer();
+        ret.setQueryName(getLookupQuery());
+        ret.setSchemaName(getLookupSchema());
+        if (ret.getQueryName() == null || ret.getSchemaName() == null)
+            return null;
+
+        if (containerId != null)
+        {
+            Container container = ContainerManager.getForId(containerId);
+            if (container == null)
+                return null;
+
+            ret.setContainer(container);
+        }
+        return ret;
     }
 
     public PropertyDescriptor()
@@ -474,6 +500,15 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         return false;
     }
 
+    public @NotNull Collection<? extends IPropertyValidator> getValidators()
+    {
+        return PropertyService.get().getPropertyValidators(this);
+    }
+
+    public @NotNull Collection<ConditionalFormat> getConditionalFormats()
+    {
+        return PropertyService.get().getConditionalFormats(this);
+    }
 
     // ParameterDescription
 

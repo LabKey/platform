@@ -75,6 +75,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
@@ -1590,7 +1591,7 @@ public class AnnouncementsController extends SpringActionController
             //save the default settings
             AnnouncementManager.saveDefaultEmailOption(getContainer(), form.getDefaultEmailOption());
 
-            for (MessageConfigService.NotificationOption option : AnnouncementManager.getEmailOptions())
+            for (NotificationOption option : AnnouncementManager.getEmailOptions())
             {
                 if (option.getEmailOptionId() == form.getDefaultEmailOption())
                 {
@@ -1605,103 +1606,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class SetBulkEmailOptions extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
-    {
-        @Override
-        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors)
-        {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            MessageConfigService.ConfigTypeProvider provider = form.getProvider();
-            String srcIdentifier = getContainer().getId();
-
-            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true);
-
-            if (!selections.isEmpty() && provider != null)
-            {
-                int newOption = form.getIndividualEmailOption();
-
-                for (String user : selections)
-                {
-                    User projectUser = UserManager.getUser(Integer.parseInt(user));
-                    MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), projectUser, srcIdentifier);
-
-                    int currentEmailOption = pref != null ? pref.getEmailOptionId() : -1;
-
-                    //has this projectUser's option changed? if so, update
-                    //creating new record in EmailPrefs table if there isn't one, or deleting if set back to folder default
-                    if (currentEmailOption != newOption)
-                    {
-                        provider.savePreference(getUser(), getContainer(), projectUser, newOption, srcIdentifier);
-                    }
-                }
-                resp.put("success", true);
-            }
-            else
-            {
-                resp.put("success", false);
-                resp.put("message", "There were no users selected");
-            }
-            return resp;
-        }
-    }
-
-    public static class NotifyOptionsForm
-    {
-        private String _type;
-
-        public String getType()
-        {
-            return _type;
-        }
-
-        public void setType(String type)
-        {
-            _type = type;
-        }
-
-        public MessageConfigService.ConfigTypeProvider getProvider()
-        {
-            return MessageConfigService.get().getConfigType(getType());
-        }
-    }
-
-    /**
-     * Action to populate an Ext store with email notification options for admin settings
-     */
-    @RequiresPermission(AdminPermission.class)
-    public class GetEmailOptions extends ReadOnlyApiAction<NotifyOptionsForm>
-    {
-        @Override
-        public ApiResponse execute(NotifyOptionsForm form, BindException errors)
-        {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
-            MessageConfigService.ConfigTypeProvider provider = form.getProvider();
-            if (provider != null)
-            {
-                List<Map> options = new ArrayList<>();
-
-                // if the list of options is not for the folder default, add an option to use the folder default
-                if (getViewContext().get("isDefault") == null)
-                    options.add(PageFlowUtil.map("id", -1, "label", "Folder default"));
-
-                for (MessageConfigService.NotificationOption option : provider.getOptions())
-                {
-                    options.add(PageFlowUtil.map("id", option.getEmailOptionId(), "label", option.getEmailOption()));
-                }
-                resp.put("success", true);
-                if (!options.isEmpty())
-                    resp.put("options", options);
-            }
-            else
-                resp.put("success", false);
-
-            return resp;
-        }
-    }
-
-    // Used for testing the daily digest email notifications
+    // Used for testing announcement daily digest email notifications
     @Marshal(Marshaller.Jackson)
     @RequiresSiteAdmin
     public class SendDailyDigestAction extends MutatingApiAction

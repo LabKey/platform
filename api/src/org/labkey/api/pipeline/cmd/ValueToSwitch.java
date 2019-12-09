@@ -24,6 +24,7 @@ import java.util.List;
 */
 public class ValueToSwitch extends AbstractValueToNamedSwitch
 {
+    @Override
     public List<String> toArgs(String value)
     {
         if (value != null && value.length() > 0)
