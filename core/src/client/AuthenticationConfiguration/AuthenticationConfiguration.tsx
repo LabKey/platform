@@ -19,23 +19,23 @@ import { Ajax, ActionURL, Security } from '@labkey/api'
 interface Props {} // Q: Is this how you specify no props?
 
 interface State {
-    canEdit: boolean
+    singleSignOnAuth: Array<Object>
+    loginFormAuth: any
+    secondaryAuth: any
     globalAuthConfigs: Object
-    addNew: Object
-    primary: Array<Object>
-    primaryLDAP: any
-    secondary: any
+    canEdit: boolean
+    addNewPrimary: Object
 }
 export class App extends React.Component<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
-            canEdit: false,
+            singleSignOnAuth: null,
+            loginFormAuth: null,
+            secondaryAuth: null,
             globalAuthConfigs: null,
-            addNew: null,
-            primary: null,
-            primaryLDAP: null,
-            secondary: null,
+            canEdit: false,
+            addNewPrimary: null,
         };
 
         // Testing functions
@@ -103,20 +103,28 @@ export class App extends React.Component<Props, State> {
     }
 
     onDragEnd(result) {
+        console.log("result ", result.source.droppableId);
+        const stateSection = result.source.droppableId;
+
         if (!result.destination)
         {
             return;
         }
 
         const items = this.reorder(
-            this.state.primary,
+            this.state[stateSection],
             result.source.index,
             result.destination.index
         );
 
-        this.setState({
-            primary: items
-        });
+        // this.setState({
+        //     singleSignOnAuth: items
+        // });
+
+        this.setState(prevState => ({
+            ...prevState,
+            [stateSection]: items
+        }))
     }
 
     reorder = (list, startIndex, endIndex) => {
@@ -130,7 +138,7 @@ export class App extends React.Component<Props, State> {
     // rough
     handleChangeToPrimary(event) {
         let {name, value, id} = event.target;
-        const l = List(this.state.primary);
+        const l = List(this.state.singleSignOnAuth);
         // console.log(l.toArray());
         const l2 = l.setIn([id, name], value);
 
@@ -144,29 +152,29 @@ export class App extends React.Component<Props, State> {
     }
 
     // rough
-    handlePrimaryToggle(toggle, id){
-        const l = List(this.state.primary);
+    handlePrimaryToggle(toggle, id, stateSection){
+        const l = List(this.state[stateSection]);
         const l2 = l.setIn([id, 'enabled'], !toggle);
         const thing = l2.toArray();
         this.setState(prevState => ({
             ...prevState,
-            primary: thing
+            [stateSection]: thing
         }))
     }
 
     render() {
         return(
-            <div style={{minWidth:"1040px"}}>
+            <div style={{minWidth:"1100px"}}>
                 <GlobalAuthConfigs
                     {...this.state.globalAuthConfigs}
                     checkGlobalAuthBox={this.checkGlobalAuthBox}
                 />
 
                 <AuthConfigMasterPanel
-                    addNew={this.state.addNew}
-                    primary={this.state.primary}
-                    primaryLDAP={this.state.primaryLDAP}
-                    secondary={this.state.secondary}
+                    singleSignOnAuth={this.state.singleSignOnAuth}
+                    loginFormAuth={this.state.loginFormAuth}
+                    secondary={this.state.secondaryAuth}
+                    addNewPrimary={this.state.addNewPrimary}
                     onDragEnd={this.onDragEnd}
                     handleChangeToPrimary={this.handleChangeToPrimary}
                     handlePrimaryToggle={this.handlePrimaryToggle}

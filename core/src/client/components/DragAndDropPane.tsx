@@ -1,9 +1,11 @@
 import * as React from "react";
 import SimpleAuthRow from "./SimpleAuthRow";
-import DraggableAuthRow from "./DraggableAuthRow";
+import EditableAuthRow from "./EditableAuthRow";
 
 
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faGripVertical} from "@fortawesome/free-solid-svg-icons";
 
 
 interface Props {
@@ -12,6 +14,7 @@ interface Props {
     onDragEnd: any
     handleChangeToPrimary: any
     handlePrimaryToggle: any
+    stateSection: string
 }
 export default class DragAndDropPane extends React.Component<Props>{
     constructor(props){
@@ -20,10 +23,10 @@ export default class DragAndDropPane extends React.Component<Props>{
     }
 
     forTestingFunc(){
-        console.log("ohboy");
-        const configs = this.props.rowInfo;
-        console.log("your props: ", configs);
-        console.log("state: ", this.state)
+        // console.log("ohboy");
+        // const configs = this.props.rowInfo;
+        // console.log("your props: ", configs);
+        // console.log("state: ", this.state)
     }
 
     render() {
@@ -35,7 +38,7 @@ export default class DragAndDropPane extends React.Component<Props>{
         return(
             <div>
                 <DragDropContext onDragEnd={this.props.onDragEnd}>
-                    <Droppable droppableId="auth-config-droppable">
+                    <Droppable droppableId={this.props.stateSection}>
                         {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps}>
                                 {this.props.rowInfo.map((item, index) => (
@@ -46,7 +49,7 @@ export default class DragAndDropPane extends React.Component<Props>{
                                                 {...provided.draggableProps}
                                                 {...provided.dragHandleProps}
                                             >
-                                                <DraggableAuthRow
+                                                <EditableAuthRow
                                                     id={index.toString()}
                                                     rowId={item.id}
                                                     authName={item.name}
@@ -55,6 +58,7 @@ export default class DragAndDropPane extends React.Component<Props>{
                                                     description={item.description}
                                                     handleChangeToPrimary={this.props.handleChangeToPrimary}
                                                     handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                                    stateSection={this.props.stateSection}
                                                 />
                                             </div>
                                         )}
@@ -65,13 +69,25 @@ export default class DragAndDropPane extends React.Component<Props>{
                         )}
                     </Droppable>
                 </DragDropContext>
+            </div>
+        )
+    }
+}
 
-                {/*{dataBaseConfig && <SimpleAuthRow*/}
-                {/*        handle={null}*/}
-                {/*        description={dataBaseConfig.description}*/}
-                {/*        name={dataBaseConfig.name}*/}
-                {/*        enabled={(dataBaseConfig.enabled) ? "Enabled" : "Disabled"}*/}
-                {/*/>}*/}
+
+interface HandleProps {
+    highlight: boolean
+}
+interface HandleState { }
+
+class LightupHandle extends React.Component<HandleProps, HandleState>{
+    render(){
+        const HIGHLIGHT_BLUE = '#2980B9';
+        const NOT_HIGHLIGHT_GRAY = '#999999';
+
+        return(
+            <div>
+                <FontAwesomeIcon size='lg' color={(this.props.highlight) ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY} icon={faGripVertical}/>
             </div>
         )
     }

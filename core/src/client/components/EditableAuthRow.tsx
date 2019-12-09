@@ -20,12 +20,14 @@ interface Props {
     description: string
     handleChangeToPrimary: any
     handlePrimaryToggle: any
+    stateSection: String
+    noHandleIcon?: boolean
 }
 interface State {
     modalOpen: boolean
     highlight: boolean
 }
-export default class DraggableAuthRow extends React.Component<Props, State>{
+export default class EditableAuthRow extends React.Component<Props, State>{
     constructor(props){
         super(props);
         this.state = {
@@ -45,10 +47,10 @@ export default class DraggableAuthRow extends React.Component<Props, State>{
     render(){
         const enabled =
             <ReactBootstrapToggle
-                onClick={() => this.props.handlePrimaryToggle(this.props.enabled, this.props.id)}
+                onClick={() => this.props.handlePrimaryToggle(this.props.enabled, this.props.id, this.props.stateSection)}
                 on="Enabled"
                 off="Disabled"
-                onstyle={"rowInfo"}
+                onstyle={"primary"}
                 active={this.props.enabled}
                 style={{width: "90px", height: "28px"}}
             />;
@@ -66,7 +68,7 @@ export default class DraggableAuthRow extends React.Component<Props, State>{
                 onMouseOut={() => {this.setState({highlight: false})}}
             >
                 <SimpleAuthRow
-                    handle = {<LightupHandle highlight={this.state.highlight}/>}
+                    handle = {this.props.noHandleIcon ? null : <LightupHandle highlight={this.state.highlight}/>}
                     description = {this.props.description}
                     url = {this.props.url || "http://labkey/login-configure.view?"}
                     name = {this.props.authName}
