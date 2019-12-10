@@ -1387,14 +1387,15 @@ public class AuthenticationManager
             returnURL = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
         }
 
-        // If this is user's first login or some required field is blank then go to update page first
         if (!properties.isSkipProfile())
         {
-            if (user.isFirstLogin() || PageFlowUtil.urlProvider(UserUrls.class).requiresProfileUpdate(user))
+            // if some required field is blank then go to update profile page
+            if (PageFlowUtil.urlProvider(UserUrls.class).requiresProfileUpdate(user))
                 returnURL = PageFlowUtil.urlProvider(UserUrls.class).getUserUpdateURL(current, returnURL, user.getUserId());
         }
-        // Else if we are told to skipProfile, reset the user cache since it may not think this user has logged in yet
-        else if (user.getLastLogin() == null)
+
+        // if this is the users first login, reset the user cache
+        if (null == user.getLastLogin())
         {
             UserManager.clearUserList();
         }
