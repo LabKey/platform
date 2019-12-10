@@ -424,7 +424,7 @@ public class AssayPublishManager implements AssayPublishService
 
                     if (null != pvs)
                     {
-                        pvs.addProvenanceInputs(sourceContainer, run.getInputProtocolApplication(), resultRowLsids);
+                        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
 
                         // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
                         Set<Pair<String, String>> lsidPairs = new HashSet<>();
@@ -435,7 +435,7 @@ public class AssayPublishManager implements AssayPublishService
                             {
                                 lsidPairs.add(Pair.of(resultRowlsidsList.get(i), lsids.get(i)));
                             }
-                            pvs.addProvenance(sourceContainer, run.getOutputProtocolApplication(), lsidPairs);
+                            pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
                         }
 
                         // Call syncRunEdges

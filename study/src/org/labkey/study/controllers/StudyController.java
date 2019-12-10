@@ -67,10 +67,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
@@ -2942,7 +2944,6 @@ public class StudyController extends BaseStudyController
             // Need to handle this by groups of source lsids -- each assay container needs logging
             MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
 
-
             if (originalSourceLsid != null)
             {
                 sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
@@ -2977,6 +2978,21 @@ public class StudyController extends BaseStudyController
                 }
             }
             def.deleteRows(allLsids);
+
+            // The subset of recalled rows from the “StudyPublish” run should be removed from the input provenance and mapping provenance.
+            if (!form.isDeleteAllData())
+            {
+                ProvenanceService pvs = ProvenanceService.get();
+                allLsids.forEach(lsid -> {
+                    OntologyObject expObject = OntologyManager.getOntologyObject(getContainer(), lsid);
+
+                    if (null != expObject && null != pvs)
+                    {
+                        pvs.deleteObjectProvenance(expObject.getObjectId());
+                    }
+                });
+
+            }
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
