@@ -68,7 +68,7 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
     }
 
     @Override
-    public void beforeDeleteData(List<ExpData> data) throws ExperimentException
+    public void beforeDeleteData(List<ExpData> data, User user) throws ExperimentException
     {
     }
 
