@@ -80,7 +80,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      * In the case of moving runs to another container, the data rows could later be re-attached to the relevant data/run
      * without needing to fully reimport. In cases of actual deletion, deleteData() will later be called.
      */
-    void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
+    void beforeDeleteData(List<ExpData> datas, User user) throws ExperimentException;
 
     /**
      * Completely delete all database rows attached to this data object.
