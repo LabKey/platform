@@ -839,7 +839,7 @@ public class LoginController extends SpringActionController
     {
         if (null == rawEmail)
         {
-            return Pair.of(false, "You must enter an email address");
+            return Pair.of(false, "You must enter an email address.");
         }
 
         ValidEmail email;

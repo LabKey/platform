@@ -34,15 +34,13 @@
 <%
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
-
     String errors = formatMissedErrorsStr("form");
-    if (errors.length() > 0)
-    {
-        %><%=unsafe(errors)%><%
-    }
 %>
 <labkey:form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>" className="auth-form">
     <div class="auth-header">Reset Password</div>
+    <% if (errors.length() > 0) { %>
+        <%=unsafe(errors)%>
+    <% } %>
     <div class="auth-form-body">
         <p>To reset your password, type in your email address and click the Reset button.</p>
         <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off" value="<%=h(form.getEmail())%>">
