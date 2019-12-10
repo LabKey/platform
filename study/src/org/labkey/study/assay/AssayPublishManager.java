@@ -108,6 +108,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -412,7 +413,7 @@ public class AssayPublishManager implements AssayPublishService
 
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), resultRowIds, CompareType.IN);
                     Collection<Map<String, Object>> resultRowsMap = new TableSelector(assayDataTable, Set.of(lsidCol), filter, null).getMapCollection();
-                    Set<String> resultRowLsids = new HashSet<>();
+                    Set<String> resultRowLsids = new LinkedHashSet<>();
 
                     for (Map<String, Object> resultRow : resultRowsMap)
                     {
@@ -424,6 +425,21 @@ public class AssayPublishManager implements AssayPublishService
                     if (null != pvs)
                     {
                         pvs.addProvenanceInputs(sourceContainer, run.getInputProtocolApplication(), resultRowLsids);
+
+                        // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
+                        Set<Pair<String, String>> lsidPairs = new HashSet<>();
+                        List<String> resultRowlsidsList = new ArrayList<>(resultRowLsids);
+                        if (lsids.size() == resultRowLsids.size())
+                        {
+                            for (var i=0; i<lsids.size(); i++)
+                            {
+                                lsidPairs.add(Pair.of(resultRowlsidsList.get(i), lsids.get(i)));
+                            }
+                            pvs.addProvenance(sourceContainer, run.getOutputProtocolApplication(), lsidPairs);
+                        }
+
+                        // Call syncRunEdges
+                        ExperimentService.get().syncRunEdges(run);
                     }
                 }
             }
