@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
@@ -67,6 +68,7 @@ public class ExperimentJSONConverter
     public static final String PROTOCOL_NAME = "protocolName"; // non-assay backed protocol name
 
     // Run properties
+    public static final String PROTOCOL = "protocol";
     public static final String DATA_INPUTS = "dataInputs";
     public static final String MATERIAL_INPUTS = "materialInputs";
     public static final String ROLE = "role";
@@ -93,6 +95,7 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeStandardProperties(run, domain == null ? null : domain.getProperties());
         jsonObject.put(COMMENT, run.getComments());
+        jsonObject.put(PROTOCOL, serializeProtocol(run.getProtocol(), user));
 
         JSONArray inputDataArray = new JSONArray();
         for (ExpData data : run.getDataInputs().keySet())
@@ -112,6 +115,17 @@ public class ExperimentJSONConverter
 
         serializeRunOutputs(jsonObject, run.getDataOutputs(), run.getMaterialOutputs(), user);
 
+        return jsonObject;
+    }
+
+    public static JSONObject serializeProtocol(ExpProtocol protocol, User user)
+    {
+        if (protocol == null || !protocol.getContainer().hasPermission(user, ReadPermission.class))
+            return null;
+
+        // Just include basic protocol properties for now.
+        // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
+        JSONObject jsonObject = serializeStandardProperties(protocol);
         return jsonObject;
     }
 
@@ -140,8 +154,8 @@ public class ExperimentJSONConverter
         obj.put(MATERIAL_OUTPUTS, outputMaterialArray);
     }
 
-
-    public static JSONObject serializeStandardProperties(ExpObject object, List<? extends DomainProperty> properties)
+    // Serialize only the base properties -- does not include object properties
+    public static JSONObject serializeStandardProperties(ExpObject object)
     {
         JSONObject jsonObject = new JSONObject();
 
@@ -162,6 +176,14 @@ public class ExperimentJSONConverter
         String comment = object.getComment();
         if (comment != null)
             jsonObject.put(COMMENT, object.getComment());
+
+        return jsonObject;
+    }
+
+    // Serialize standard properties including object properties and the optional domain properties
+    public static JSONObject serializeStandardProperties(ExpObject object, @Nullable List<? extends DomainProperty> properties)
+    {
+        JSONObject jsonObject = serializeStandardProperties(object);
 
         // Add the custom properties
         Set<String> seenPropertyURIs = new HashSet<>();

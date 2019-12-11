@@ -1,9 +1,9 @@
-<%@ page import="org.labkey.api.data.CoreSchema" %>
-<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
-<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %><%--
+<%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
+<%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
+<%@ page import="org.labkey.api.view.HttpView" %><%--
  * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@
     int depth = bean.getDepth() == 0 ? 1000 : bean.getDepth();
     var CONCAT = unsafe(dialect.isPostgreSQL() ? "||" : "+");
 
-    assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType);
+    assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType) || "Object".equals(expType);
 %>
   /* CTE */
     $PARENTS_INNER$ AS
@@ -68,7 +68,8 @@
         --'no role' AS role,
 
         -- parent columns
-        COALESCE(PM.container, PD.container, PR.container)    AS parent_container,
+        COALESCE(PM.container, PD.container, PR.container, PO.container)
+                                                              AS parent_container,
         CASE
         WHEN PM.rowId IS NOT NULL
           THEN 'Material'
@@ -76,14 +77,17 @@
           THEN 'Data'
         WHEN PR.rowId IS NOT NULL
           THEN 'ExperimentRun'
+        WHEN PO.objectId IS NOT NULL
+          THEN 'Object'
         END                                                   AS parent_expType,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
-        COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS parent_lsid,
-        COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS parent_rowId,
+        COALESCE(PM.lsid, PD.lsid, PR.lsid, PO.objectUri)     AS parent_lsid,
+        COALESCE(PM.rowId, PD.rowId, PR.rowId, PO.objectId)   AS parent_rowId,
 
         -- child columns
-        COALESCE(CM.container, CD.container, CR.container)    AS child_container,
+        COALESCE(CM.container, CD.container, CR.container, CO.container)
+                                                              AS child_container,
         CASE
         WHEN CM.rowId IS NOT NULL
           THEN 'Material'
@@ -91,21 +95,25 @@
           THEN 'Data'
         WHEN CR.rowId IS NOT NULL
           THEN 'ExperimentRun'
+        WHEN CO.objectId IS NOT NULL
+          THEN 'Object'
         END                                                   AS child_expType,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
-        COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS child_lsid,
-        COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS child_rowId
+        COALESCE(CM.lsid, CD.lsid, CR.lsid, CO.objectUri)     AS child_lsid,
+        COALESCE(CM.rowId, CD.rowId, CR.rowId, CO.objectId)   AS child_rowId
 
       FROM $PARENTS_INNER$ AS I
 
         LEFT OUTER JOIN exp.material PM      ON I.fromObjectId = PM.ObjectId
         LEFT OUTER JOIN exp.data PD          ON I.fromObjectId = PD.ObjectId
         LEFT OUTER JOIN exp.experimentrun PR ON I.fromObjectId = PR.ObjectId
+        LEFT OUTER JOIN exp.object PO        ON I.fromObjectId = PO.ObjectId
 
         LEFT OUTER JOIN exp.material CM      ON I.toObjectId  = CM.ObjectId
         LEFT OUTER JOIN exp.data CD          ON I.toObjectId  = CD.ObjectId
         LEFT OUTER JOIN exp.experimentrun CR ON I.toObjectId  = CR.ObjectId
+        LEFT OUTER JOIN exp.object CO        ON I.toObjectId  = CO.ObjectId
 
   ),
 
@@ -146,6 +154,7 @@
         --'no role' AS role,
 
         -- parent columns
+        --I.fromObjectId                                        AS parent_objectId,
         COALESCE(PM.container, PD.container, PR.container)    AS parent_container,
         CASE
         WHEN PM.rowId IS NOT NULL
@@ -154,14 +163,18 @@
           THEN 'Data'
         WHEN PR.rowId IS NOT NULL
           THEN 'ExperimentRun'
+        WHEN PO.objectId IS NOT NULL
+          THEN 'Object'
         END                                                   AS parent_expType,
         COALESCE(PM.cpasType, PD.cpasType, PR.protocolLsid)   AS parent_cpasType,
         COALESCE(PM.name, PD.name, PR.name)                   AS parent_name,
-        COALESCE(PM.lsid, PD.lsid, PR.lsid)                   AS parent_lsid,
-        COALESCE(PM.rowId, PD.rowId, PR.rowId)                AS parent_rowId,
+        COALESCE(PM.lsid, PD.lsid, PR.lsid, PO.objectUri)     AS parent_lsid,
+        COALESCE(PM.rowId, PD.rowId, PR.rowId, PO.objectId)   AS parent_rowId,
 
         -- child columns
-        COALESCE(CM.container, CD.container, CR.container)    AS child_container,
+        --I.toObjectId                                          AS child_objectId,
+        COALESCE(CM.container, CD.container, CR.container, CO.container)
+                                                              AS child_container,
         CASE
         WHEN CM.rowId IS NOT NULL
           THEN 'Material'
@@ -169,20 +182,24 @@
           THEN 'Data'
         WHEN CR.rowId IS NOT NULL
           THEN 'ExperimentRun'
+        WHEN CO.objectId IS NOT NULL
+          THEN 'Object'
         END                                                   AS child_expType,
         COALESCE(CM.cpasType, CD.cpasType, CR.protocolLsid)   AS child_cpasType,
         COALESCE(CM.name, CD.name, CR.name)                   AS child_name,
-        COALESCE(CM.lsid, CD.lsid, CR.lsid)                   AS child_lsid,
-        COALESCE(CM.rowId, CD.rowId, CR.rowId)                AS child_rowId
+        COALESCE(CM.lsid, CD.lsid, CR.lsid, CO.objectUri)     AS child_lsid,
+        COALESCE(CM.rowId, CD.rowId, CR.rowId, CO.objectId)   AS child_rowId
 
       FROM $CHILDREN_INNER$ AS I
 
         LEFT OUTER JOIN exp.material PM      ON I.fromObjectId = PM.ObjectId
         LEFT OUTER JOIN exp.data PD          ON I.fromObjectId = PD.ObjectId
         LEFT OUTER JOIN exp.experimentrun PR ON I.fromObjectId = PR.ObjectId
+        LEFT OUTER JOIN exp.object PO        ON I.fromObjectId = PO.ObjectId
 
         LEFT OUTER JOIN exp.material CM      ON I.toObjectId = CM.ObjectId
         LEFT OUTER JOIN exp.data CD          ON I.toObjectId = CD.ObjectId
         LEFT OUTER JOIN exp.experimentrun CR ON I.toObjectId = CR.ObjectId
+        LEFT OUTER JOIN exp.object CO        ON I.toObjectId = CO.ObjectId
 
   )

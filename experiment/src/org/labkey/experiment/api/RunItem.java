@@ -16,7 +16,6 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.IdentifiableBase;
-import org.labkey.api.data.Container;
 
 import java.util.Date;
 
@@ -27,7 +26,6 @@ import java.util.Date;
  */
 public abstract class RunItem extends IdentifiableBase
 {
-    private Container _container;
     private Integer _runId;
     private int _rowId;
     private Date _created;
@@ -46,16 +44,6 @@ public abstract class RunItem extends IdentifiableBase
     public void setRowId(int rowId)
     {
         _rowId = rowId;
-    }
-
-    public void setContainer(Container parent)
-    {
-        _container = parent;
-    }
-
-    public Container getContainer()
-    {
-        return _container;
     }
 
     public Integer getRunId()

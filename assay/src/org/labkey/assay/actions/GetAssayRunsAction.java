@@ -1,18 +1,26 @@
 package org.labkey.assay.actions;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiresPermission(ReadPermission.class)
 public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.AssayRunsForm>
@@ -23,35 +31,60 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
         List<JSONObject> runs = new ArrayList<>();
         JSONObject result = new JSONObject();
 
-        if (!assayRunsForm.getRunIds().isEmpty() && !assayRunsForm.getLsids().isEmpty())
+        if (assayRunsForm.getLsids() != null && !assayRunsForm.getLsids().isEmpty())
         {
-            return new ApiSimpleResponse("Error", "Must provide either list of runIds or list of lsids.");
+            runs = assayRunsForm.getLsids().stream()
+                    .map(this::getRun)
+                    .map(this::serializeRun)
+                    .collect(Collectors.toList());
         }
-
-        if (!assayRunsForm.getLsids().isEmpty())
+        else if (assayRunsForm.getRunIds() != null && !assayRunsForm.getRunIds().isEmpty())
         {
-            assayRunsForm.getLsids().forEach(lsid -> {
-                ExpRun run = ExperimentService.get().getExpRun(lsid);
-                if (null != run)
-                {
-                    runs.add(AssayJSONConverter.serializeRun(run, null, run.getProtocol(), getUser()));
-                }
-            });
+            runs = assayRunsForm.getRunIds().stream()
+                    .map(this::getRun)
+                    .map(this::serializeRun)
+                    .collect(Collectors.toList());
         }
-        else if (!assayRunsForm.getRunIds().isEmpty())
+        else
         {
-            assayRunsForm.getRunIds().forEach(runId -> {
-                ExpRun run = ExperimentService.get().getExpRun(runId);
-                if (null != run)
-                {
-                    runs.add(AssayJSONConverter.serializeRun(run, null, run.getProtocol(), getUser()));
-                }
-            });
+            throw new ApiUsageException("Must provide either list of runIds or list of lsids.");
         }
 
         result.put("runs", runs);
 
         return new ApiSimpleResponse(result);
+    }
+
+    JSONObject serializeRun(@NotNull ExpRun run)
+    {
+        ExpProtocol protocol = run.getProtocol();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+
+        return AssayJSONConverter.serializeRun(run, provider, run.getProtocol(), getUser());
+    }
+
+    ExpRun getRun(int runId)
+    {
+        ExpRun run = ExperimentService.get().getExpRun(runId);
+        if (run == null)
+            throw new NotFoundException("Run not found: " + runId);
+
+        if (!run.getContainer().equals(getContainer()))
+            throw new NotFoundException("Run '" + runId + "' not found in folder: " + getContainer().getPath());
+
+        return run;
+    }
+
+    ExpRun getRun(String lsid)
+    {
+        ExpRun run = ExperimentService.get().getExpRun(lsid);
+        if (run == null)
+            throw new NotFoundException("Run not found: " + lsid);
+
+        if (!run.getContainer().equals(getContainer()))
+            throw new NotFoundException("Run '" + lsid + "' not found in folder: " + getContainer().getPath());
+
+        return run;
     }
 
     static class AssayRunsForm

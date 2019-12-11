@@ -30,7 +30,6 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -41,6 +40,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -282,6 +282,11 @@ public class DomainUtil
 
     public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop)
     {
+        return getPropertyDescriptor(prop.getPropertyDescriptor());
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop)
+    {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
 
         gwtProp.setPropertyId(prop.getPropertyId());
@@ -292,7 +297,7 @@ public class DomainUtil
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());
-        gwtProp.setRangeURI(prop.getType().getTypeURI());
+        gwtProp.setRangeURI(prop.getRangeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
         gwtProp.setShownInInsertView(prop.isShownInInsertView());
@@ -303,12 +308,12 @@ public class DomainUtil
         gwtProp.setRecommendedVariable(prop.isRecommendedVariable());
         gwtProp.setDefaultScale(prop.getDefaultScale().name());
         gwtProp.setMvEnabled(prop.isMvEnabled());
-        gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
+        gwtProp.setFacetingBehaviorType(prop.getFacetingBehaviorType().name());
         gwtProp.setPHI(prop.getPHI().name());
         gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
-        gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
-        StringExpression url = prop.getPropertyDescriptor().getURL();
+        gwtProp.setImportAliases(prop.getImportAliases());
+        StringExpression url = prop.getURL();
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());

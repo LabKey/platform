@@ -47,10 +47,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
@@ -114,8 +117,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1172,9 +1177,8 @@ public class PropertyController extends SpringActionController
                     ContainerService.get().getForPath(containerDomainForm.getContainerPath());
 
             List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
-            ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            return resp.put("domains", listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
+            return success(listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
     }
 
@@ -1252,6 +1256,71 @@ public class PropertyController extends SpringActionController
             this.includeProjectAndShared = includeProjectAndShared;
         }
     }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
+    {
+        @Override
+        public Object execute(GetPropertiesForm form, BindException errors) throws Exception
+        {
+            Stream<PropertyDescriptor> properties;
+            if (form.getPropertyIds() != null && !form.getPropertyIds().isEmpty())
+            {
+                properties = form.getPropertyIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(OntologyManager::getPropertyDescriptor)
+                        .filter(Objects::nonNull)
+                        .filter(pd -> getContainer().equals(pd.getContainer()));
+            }
+            else if (form.getPropertyURIs() != null && !form.getPropertyURIs().isEmpty())
+            {
+                properties = form.getPropertyURIs().stream()
+                        .filter(Objects::nonNull)
+                        .map(uri -> OntologyManager.getPropertyDescriptor(uri, getContainer()))
+                        .filter(Objects::nonNull);
+            }
+            else
+            {
+                throw new ApiUsageException("Expected propertyIds or propertyURIs");
+            }
+
+            List<GWTPropertyDescriptor> gwtProps = properties
+                    .map(DomainUtil::getPropertyDescriptor)
+                    .collect(Collectors.toList());
+
+            return success(gwtProps);
+        }
+    }
+
+    public static class GetPropertiesForm
+    {
+        private List<Integer> propertyIds;
+        private List<String> propertyURIs;
+
+        public List<Integer> getPropertyIds()
+        {
+            return propertyIds;
+        }
+
+        public void setPropertyIds(List<Integer> propertyIds)
+        {
+            this.propertyIds = propertyIds;
+        }
+
+        public List<String> getPropertyURIs()
+        {
+            return propertyURIs;
+        }
+
+        public void setPropertyURIs(List<String> propertyURIs)
+        {
+            this.propertyURIs = propertyURIs;
+        }
+
+    }
+
 
     public static class TestCase extends Assert
     {

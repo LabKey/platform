@@ -85,9 +85,6 @@ public abstract class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
-    private static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
-    private static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
-    private static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
 
 
     private static boolean isNameHeader(String name)
@@ -421,64 +418,13 @@ public abstract class UploadSamplesHelper
     private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        Integer rowId;
-        try
-        {
-            rowId = ConvertHelper.convert(sampleName, Integer.class);
-        }
-        catch (ConversionException e1)
-        {
-            try
-            {
-                if (sampleSetName == null)
-                    rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-                else
-                    rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-
-                if (rowId == null)
-                    return null;
-            }
-            catch (ConversionException e2)
-            {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Failed to resolve '" + sampleName + "' into a sample.");
-                if (sampleSetName == null)
-                {
-                    sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
-                }
-                sb.append(" " + e2.getMessage());
-                throw new ValidationException(sb.toString());
-            }
-        }
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
+        return ExperimentService.get().findExpMaterial(c, user, sampleSetName, sampleName, cache, materialCache);
     }
 
     private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException
     {
-        Integer rowId;
-        try
-        {
-            rowId = ConvertHelper.convert(dataName, Integer.class);
-        }
-        catch (ConversionException e1)
-        {
-            try
-            {
-                rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-                if (rowId == null)
-                    return null;
-            }
-            catch (ConversionException e2)
-            {
-                throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
-            }
-        }
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return dataCache.computeIfAbsent(rowId, svc::getExpData);
+        return ExperimentService.get().findExpData(c, user, dataClassName, dataName, cache, dataCache);
     }
 
 
