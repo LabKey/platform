@@ -26,10 +26,18 @@ public class HtmlView extends WebPartView
 {
     private String _contentType = null;
     private HtmlString _html;
+    private DOM.Renderable _renderable;
 
     public HtmlView(DOM.Renderable renderable)
     {
-        this(DOM.createHtml(renderable));
+        super(FrameType.DIV);
+        _renderable = renderable;
+    }
+
+    public HtmlView(String title, DOM.Renderable renderable)
+    {
+        this(renderable);
+        setTitle(title);
     }
 
     public HtmlView()
@@ -55,11 +63,6 @@ public class HtmlView extends WebPartView
     public HtmlView(String title, String html)
     {
         this(title, HtmlString.unsafe(html));
-    }
-
-    public HtmlView(String title, DOM.Renderable renderable)
-    {
-        this(title, DOM.createHtml(renderable));
     }
 
     public HtmlView(String title, HtmlString html)
@@ -103,6 +106,9 @@ public class HtmlView extends WebPartView
         if (null != _contentType)
             getViewContext().getResponse().setContentType(_contentType);
 
-        out.print(_html);
+        if (_html != null)
+            out.print(_html);
+        else if (_renderable != null)
+            _renderable.appendTo(out);
     }
 }

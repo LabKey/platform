@@ -168,8 +168,6 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
-import org.labkey.core.authentication.ldap.LdapController;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
@@ -300,7 +298,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("util", UtilController.class);
         addController("logger", LoggerController.class);
         addController("mini-profiler", MiniProfilerController.class);
-        addController("ldap", LdapController.class);
         addController("notification", NotificationController.class);
         addController("product", ProductController.class);
 
@@ -370,8 +367,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
                 "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
                         "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
-
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)

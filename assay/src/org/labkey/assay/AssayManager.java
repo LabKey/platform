@@ -19,7 +19,16 @@ package org.labkey.assay;
 import gwt.client.org.labkey.assay.AssayApplication;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayFlagHandler;
+import org.labkey.api.assay.AssayHeaderLinkProvider;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayResultsHeaderProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
@@ -56,18 +65,9 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayColumnInfoRenderer;
-import org.labkey.api.assay.AssayHeaderLinkProvider;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayResultsHeaderProvider;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -250,15 +250,22 @@ public class AssayManager implements AssayService
     {
         // ExpRunLsidHandler has no state, so safe to use a singleton.
         private final LsidHandler _fileBasedAssayLsidHandler = new ExpRunLsidHandler();
+        // AssayResultLsidHandler has no state, so safe to use a singleton.
+        private final LsidHandler _fileBasedAssayResultLsidHandler = new LsidManager.OntologyObjectLsidHandler();
 
         @Nullable
         @Override
         public LsidHandler findHandler(String authority, String namespacePrefix)
         {
-            if (AppProps.getInstance().getDefaultLsidAuthority().equals(authority) && getModuleAssayCollections().getRunLsidPrefixes().contains(namespacePrefix))
-                return _fileBasedAssayLsidHandler;
-            else
-                return null;
+            if (AppProps.getInstance().getDefaultLsidAuthority().equals(authority))
+            {
+                if (getModuleAssayCollections().getRunLsidPrefixes().contains(namespacePrefix))
+                    return _fileBasedAssayLsidHandler;
+                else if (getModuleAssayCollections().getResultLsidPrefixes().contains(namespacePrefix))
+                    return _fileBasedAssayResultLsidHandler;
+            }
+
+            return null;
         }
     }
 
