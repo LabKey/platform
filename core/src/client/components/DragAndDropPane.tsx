@@ -16,7 +16,7 @@ interface Props {
     handlePrimaryToggle: any
     stateSection: string
 }
-export default class DragAndDropPane extends React.Component<Props>{
+export default class DragAndDropPane extends React.PureComponent<Props>{
     constructor(props){
         super(props);
         this.forTestingFunc = this.forTestingFunc.bind(this);

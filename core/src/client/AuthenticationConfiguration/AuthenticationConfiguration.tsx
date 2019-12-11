@@ -25,8 +25,9 @@ interface State {
     globalAuthConfigs: Object
     canEdit: boolean
     addNewPrimary: Object
+    dirty: boolean
 }
-export class App extends React.Component<Props, State> {
+export class App extends React.PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -36,14 +37,16 @@ export class App extends React.Component<Props, State> {
             globalAuthConfigs: null,
             canEdit: false,
             addNewPrimary: null,
+            dirty: false,
         };
 
         // Testing functions
         this.savePls = this.savePls.bind(this);
-        this.cancelChanges = this.cancelChanges.bind(this);
+        this.saveChanges = this.saveChanges.bind(this);
 
-        // For GlobalAuthConfigs
-        this.checkGlobalAuthBox = this.checkGlobalAuthBox.bind(this);
+        this.checkIfDirty = this.checkIfDirty.bind(this);
+        this.isEquivalent = this.isEquivalent.bind(this);
+
 
         // For AuthConfigMasterPanel
         this.onDragEnd = this.onDragEnd.bind(this);
@@ -85,22 +88,37 @@ export class App extends React.Component<Props, State> {
         })
     }
 
-    cancelChanges() {
+    checkIfDirty(obj1, obj2){
+        let dirty = !this.isEquivalent(obj1, obj2);
+
+        this.setState(prevState => ({
+            ...prevState,
+            dirty: dirty
+        }))
+    }
+
+    isEquivalent(a, b) {
+        let aProps = Object.getOwnPropertyNames(a);
+        let bProps = Object.getOwnPropertyNames(b);
+
+        if (aProps.length != bProps.length) {
+            return false;
+        }
+
+        for (var i = 0; i < aProps.length; i++) {
+            let propName = aProps[i];
+
+            if (a[propName] !== b[propName]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    saveChanges() {
         console.log(this.state);
         console.log("globalAuthConfig props: ",{...this.state.globalAuthConfigs});
     };
-
-    // todo: use immutable?
-    checkGlobalAuthBox(id: string) {
-        let oldState = this.state.globalAuthConfigs[id];
-        this.setState(prevState => ({
-            ...prevState,
-            globalAuthConfigs: {
-                ...prevState.globalAuthConfigs,
-                [id]: !oldState
-            }
-        }));
-    }
 
     onDragEnd(result) {
         console.log("result ", result.source.droppableId);
@@ -116,10 +134,6 @@ export class App extends React.Component<Props, State> {
             result.source.index,
             result.destination.index
         );
-
-        // this.setState({
-        //     singleSignOnAuth: items
-        // });
 
         this.setState(prevState => ({
             ...prevState,
@@ -165,10 +179,12 @@ export class App extends React.Component<Props, State> {
     render() {
         return(
             <div style={{minWidth:"1100px"}}>
-                <GlobalAuthConfigs
-                    {...this.state.globalAuthConfigs}
-                    checkGlobalAuthBox={this.checkGlobalAuthBox}
-                />
+                {this.state.globalAuthConfigs &&
+                    <GlobalAuthConfigs
+                        {...this.state.globalAuthConfigs}
+                        checkDirty = {this.checkIfDirty}
+                    />
+                }
 
                 <AuthConfigMasterPanel
                     singleSignOnAuth={this.state.singleSignOnAuth}
@@ -180,11 +196,22 @@ export class App extends React.Component<Props, State> {
                     handlePrimaryToggle={this.handlePrimaryToggle}
                 />
 
-                {false && <Alert>You have unsaved changes.</Alert>}
+                {this.state.dirty && <Alert>You have unsaved changes to your authentication configurations. Hit "Save and Finish" to apply these changes.</Alert>}
 
-                <Button className={'labkey-button primary'} onClick={this.cancelChanges}>Save and Finish</Button>
+                <Button
+                    className={'labkey-button primary'}
+                    onClick={this.saveChanges}
+                >
+                    Save and Finish
+                </Button>
 
-                <Button className={'labkey-button'} onClick={this.cancelChanges} style={{marginLeft: '10px'}}>Cancel</Button>
+                <Button
+                    className={'labkey-button'}
+                    onClick={() => {window.location.href = ActionURL.buildURL("admin", "showAdmin" )}}
+                    style={{marginLeft: '10px'}}
+                >
+                    Cancel
+                </Button>
             </div>
         );
     }

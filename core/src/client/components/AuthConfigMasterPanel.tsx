@@ -40,7 +40,7 @@ interface Props {
     handleChangeToPrimary: any
     handlePrimaryToggle: any
 }
-export default class AuthConfigMasterPanel extends React.Component<Props, State>{
+export default class AuthConfigMasterPanel extends React.PureComponent<Props, State>{
     constructor(props) {
         super(props);
         this.state = {
@@ -128,17 +128,12 @@ export default class AuthConfigMasterPanel extends React.Component<Props, State>
                                                 enabled={(loginFormAuth.slice(-1)[0].enabled) ? "Enabled" : "Disabled"}
                                                 // url={(loginFormAuth.slice(-1)[0].url)}
                                         />
-
                                     </div>
                                 }
 
-
                             </div>
-
                             <hr/>
-
                             <strong> Single Sign On Authentications </strong>
-
 
                             <LabelHelpTip title={'test'} body={() => {
                                 return (<div> Tip 2: text </div>)
@@ -162,28 +157,13 @@ export default class AuthConfigMasterPanel extends React.Component<Props, State>
 
                             <div className={"auth-tab"}>
 
-                                {/*{secondary && <SimpleAuthRow*/}
-                                {/*        handle={null}*/}
-                                {/*        description={dataBaseConfig.description}*/}
-                                {/*        name={dataBaseConfig.name}*/}
-                                {/*        enabled={(dataBaseConfig.enabled) ? "Enabled" : "Disabled"}*/}
-                                {/*/>}*/}
-
-                                {/*<SimpleAuthRow*/}
-                                {/*    handle={null}*/}
-                                {/*    description={item.name}*/}
-                                {/*    url={item.description}*/}
-                                {/*    name={""}*/}
-                                {/*    enabled={(item.enabled) ? "Enabled" : "Disabled"}*/}
-                                {/*/>*/}
-
                                 {secondary && secondary.map((item, index) => (
 
                                     <EditableAuthRow
                                         id={index.toString()}
                                         rowId={index.toString()}
                                         authName={""}
-                                        url={item.description.slice(0,50) + "..."}
+                                        url={item.description.slice(0,34) + "..."}
                                         enabled={item.enabled}
                                         description={item.name}
                                         handleChangeToPrimary={this.props.handleChangeToPrimary}
@@ -192,9 +172,6 @@ export default class AuthConfigMasterPanel extends React.Component<Props, State>
                                         noHandleIcon={true}
                                     />
                                 ))}
-
-
-                                {/*<DraggableAuthRow />*/}
 
                             </div>
 

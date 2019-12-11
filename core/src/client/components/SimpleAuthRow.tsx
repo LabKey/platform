@@ -20,7 +20,7 @@ interface State {
     color: boolean
 }
 
-export default class SimpleAuthRow extends React.Component<Props, State>{
+export default class SimpleAuthRow extends React.PureComponent<Props, State>{
     constructor(props){
         super(props);
         this.state = {

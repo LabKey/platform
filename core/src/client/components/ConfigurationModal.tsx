@@ -18,7 +18,7 @@ interface ConfigurationModalProps {
     logoImage: any
     toggleValue: any
 }
-export default class ConfigurationModal extends React.Component<any, ConfigurationModalProps> {
+export default class ConfigurationModal extends React.PureComponent<any, ConfigurationModalProps> {
     constructor(props) {
         super(props);
         this.state = {
