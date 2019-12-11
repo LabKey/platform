@@ -290,7 +290,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     @Override
-    public void beforeDeleteData(List<ExpData> data) throws ExperimentException
+    public void beforeDeleteData(List<ExpData> data, User user) throws ExperimentException
     {
         for (ExpData d : data)
         {
@@ -311,7 +311,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         domain = provider.getResultsDomain(protocol);
 
                         AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
-                        AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(null, protocol.getContainer(), protocol, null);
+                        AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
                         TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
                         if (assayDataTable != null)
                         {
