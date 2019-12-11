@@ -2923,6 +2923,7 @@ public class StudyController extends BaseStudyController
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
 
             Collection<String> allLsids;
+            Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
             if (!form.isDeleteAllData())
             {
                 allLsids = DataRegionSelection.getSelected(getViewContext(), true);
@@ -2977,22 +2978,72 @@ public class StudyController extends BaseStudyController
                     StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
-            def.deleteRows(allLsids);
 
             // The subset of recalled rows from the “StudyPublish” run should be removed from the input provenance and mapping provenance.
-            if (!form.isDeleteAllData())
-            {
-                ProvenanceService pvs = ProvenanceService.get();
-                allLsids.forEach(lsid -> {
-                    OntologyObject expObject = OntologyManager.getOntologyObject(getContainer(), lsid);
+            Map<ExpRun, List<String>> selectedLsidsRunMap = new HashMap<>();
+            Map<ExpRun, List<String>> allLsidsRunMap = new HashMap<>();
+            ProvenanceService pvs = ProvenanceService.get();
 
-                    if (null != expObject && null != pvs)
-                    {
-                        pvs.deleteObjectProvenance(expObject.getObjectId());
-                    }
+            if (null != pvs)
+            {
+                // get runs for selected lsids
+                allLsids.forEach(lsid -> {
+                    pvs.getProtocolApplications(lsid).forEach(protocolApp -> {
+                        ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
+                        if (null != selectedLsidsRunMap.get(run))
+                        {
+                            List<String> lsids = selectedLsidsRunMap.get(run);
+                            lsids.add(lsid);
+                            selectedLsidsRunMap.put(run, lsids);
+                        }
+                        else
+                        {
+                            List<String> lsids = new ArrayList<>();
+                            lsids.add(lsid);
+                            selectedLsidsRunMap.put(run, lsids);
+                        }
+                    });
+
                 });
 
+                // get runs for all lsids
+                allDatasetLsids.forEach(lsid -> {
+                    pvs.getProtocolApplications(lsid).forEach(protocolApp -> {
+                        ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
+                        if (null != allLsidsRunMap.get(run))
+                        {
+                            List<String> lsids = allLsidsRunMap.get(run);
+                            lsids.add(lsid);
+                            allLsidsRunMap.put(run, lsids);
+                        }
+                        else
+                        {
+                            List<String> lsids = new ArrayList<>();
+                            lsids.add(lsid);
+                            allLsidsRunMap.put(run, lsids);
+                        }
+                    });
+                });
             }
+
+            allLsids.forEach(lsid -> {
+                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+                if (null != expObject)
+                {
+                    pvs.deleteObjectProvenance(expObject.getObjectId());
+                }
+            });
+
+            // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
+            selectedLsidsRunMap.forEach((run, lsidList) -> {
+                ExperimentService.get().syncRunEdges(run);
+                if (null != allLsidsRunMap.get(run) && lsidList.size() == allLsidsRunMap.get(run).size())
+                {
+                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), run.getRowId());
+                }
+            });
+
+            def.deleteRows(allLsids);
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
