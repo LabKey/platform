@@ -27,31 +27,8 @@ import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderPropertiesImpl;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
+import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.api.ExpObject;
@@ -322,7 +299,7 @@ public class OntologyManager
      * <p>
      * Name->Value is preferred, we are using TableInfo after all.
      */
-    public static List<String> insertTabDelimited(TableInfo tableInsert, Container c, User user,
+    public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
                                                   Logger logger)
@@ -331,7 +308,7 @@ public class OntologyManager
         return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true);
     }
 
-    public static List<String> updateTabDelimited(TableInfo tableInsert, Container c, User user,
+    public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
                                                   Logger logger)
@@ -340,7 +317,7 @@ public class OntologyManager
         return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false);
     }
 
-    private static List<String> saveTabDelimited(TableInfo table, Container c, User user,
+    private static List<Map<String, Object>> saveTabDelimited(TableInfo table, Container c, User user,
                                                  UpdateableTableImportHelper helper,
                                                  List<Map<String, Object>> rows,
                                                  Logger logger,
@@ -358,7 +335,7 @@ public class OntologyManager
         DbScope scope = table.getSchema().getScope();
 
         assert scope.isTransactionActive();
-        List<String> resultingLsids = new ArrayList<>(rows.size());
+        List<Map<String, Object>> results = new ArrayList<>(rows.size());
 
         Domain d = table.getDomain();
         List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
@@ -375,11 +352,11 @@ public class OntologyManager
             conn = scope.getConnection();
             if (insert)
             {
-                parameterMap = ((UpdateableTableInfo) table).insertStatement(conn, user);
+                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, true);
             }
             else
             {
-                parameterMap = ((UpdateableTableInfo) table).updateStatement(conn, user, null);
+                parameterMap = StatementUtils.updateStatement(conn, table, c, user, false, true);
             }
             List<ValidationError> errors = new ArrayList<>();
 
@@ -419,7 +396,7 @@ public class OntologyManager
                 parameterMap.clearParameters();
 
                 String lsid = helper.beforeImportObject(currentRow);
-                resultingLsids.add(lsid);
+                currentRow.put("lsid", lsid);
 
                 //
                 // NOTE we validate based on columninfo/propertydescriptor
@@ -513,7 +490,13 @@ public class OntologyManager
 
                 helper.bindAdditionalParameters(currentRow, parameterMap);
                 parameterMap.execute();
+                if (insert)
+                {
+                    int rowId = parameterMap.getRowId();
+                    currentRow.put("rowId", rowId);
+                }
                 helper.afterImportObject(currentRow);
+                results.add(currentRow);
                 rowCount++;
             }
 
@@ -542,7 +525,7 @@ public class OntologyManager
                 scope.releaseConnection(conn);
         }
 
-        return resultingLsids;
+        return results;
     }
 
     // TODO: Consolidate with ColumnValidator
