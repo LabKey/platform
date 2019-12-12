@@ -47,6 +47,7 @@ public interface AssayPublishService
     String DATE_PROPERTY_NAME = "Date";
     String SOURCE_LSID_PROPERTY_NAME = "SourceLSID";
     String TARGET_STUDY_PROPERTY_NAME = "TargetStudy";
+    String RUN_LSID_PROPERTY_NAME = "RunLsid";
 
     String AUTO_COPY_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
 

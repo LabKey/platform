@@ -241,7 +241,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                     String runLSID = (String)runLSIDColumn.getValue(rs);
                     int resultRowId = (int)rowIdColumn.getValue(rs);
-                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId(), resultRowId);
+                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId(), resultRowId, protocol.getRowId());
 
                     if (sourceContainer == null)
                     {
@@ -262,6 +262,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
 
                     dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
+                    dataMap.put(AssayPublishService.RUN_LSID_PROPERTY_NAME, runLSID);
                     dataMap.put(getTableMetadata(protocol).getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
@@ -322,9 +323,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    protected String getSourceLSID(String runLSID, int dataId, int resultRowId)
+    protected String getSourceLSID(String runLSID, int dataId, int resultRowId, int protocolId)
     {
-        return getResultRowLSIDExpression() + resultRowId;
+        return getResultRowLSIDExpression() == null ? runLSID : getResultRowLSIDExpression() + ".Protocol-" + protocolId + ":" + resultRowId;
     }
 
     public void registerLsidHandler()

@@ -355,7 +355,7 @@ public class AssayPublishManager implements AssayPublishService
         return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
     }
 
-    private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
+    private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps) // getRunLsid
     {
         Map<String, int[]> lsidMap = new HashMap<>();
 
@@ -363,7 +363,7 @@ public class AssayPublishManager implements AssayPublishService
         {
             for (Map.Entry<String, Object> entry : map.entrySet())
             {
-                if (entry.getKey().equalsIgnoreCase("sourcelsid"))
+                if (entry.getKey().equalsIgnoreCase("RunLsid"))
                 {
                     String lsid = String.valueOf(entry.getValue());
                     int[] count = lsidMap.computeIfAbsent(lsid, k -> new int[1]);
