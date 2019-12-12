@@ -132,6 +132,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -152,6 +153,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.Writer;
@@ -431,41 +433,38 @@ public class DavController extends SpringActionController
         return config;
     }
 
-
-    private class WebdavResponse implements ResponseHelper.HttpServletResp
+    private class WebdavResponse extends HttpServletResponseWrapper
     {
-        private HttpServletResponse _response;
         private WebdavStatus _status = null;
-        private String _message = null;
         private boolean _sendError = false;
 
         WebdavResponse(HttpServletResponse response)
         {
-            _response = response;
+            super(response);
         }
 
-        // Used by ResponseHelper.checkIfHeaders
+        @Override
+        public HttpServletResponse getResponse()
+        {
+            return (HttpServletResponse)super.getResponse();
+        }
+
+        @Override
         public void sendError(int code)
         {
             sendError(WebdavStatus.fromCode(code));
         }
 
-        // Used by ResponseHelper.checkIfHeaders
+        @Override
+        public void sendError(int sc, String msg) throws IOException
+        {
+            sendError(WebdavStatus.fromCode(sc), msg);
+        }
+
+        @Override
         public void setStatus(int code)
         {
             setStatus(WebdavStatus.fromCode(code));
-        }
-
-        // Used by ResponseHelper.checkIfHeaders
-        public void addHeader(String name, String value)
-        {
-            _response.addHeader(name, value);
-        }
-
-        // Used by ResponseHelper.checkIfHeaders
-        public void setHeader(String name, String value)
-        {
-            _response.setHeader(name, value);
         }
 
         WebdavStatus sendError(WebdavStatus status)
@@ -493,11 +492,13 @@ public class DavController extends SpringActionController
             try
             {
                 if (null == StringUtils.trimToNull(message))
-                    _response.sendError(status.code);
+                {
+                    super.sendError(status.code);
+                }
                 else
                 {
                     String accept = StringUtils.join(getRequest().getHeader("Accept"), "," , getRequest().getParameter("Accept"));
-                    if(CONTENT_TYPE_JSON.equals(getRequest().getHeader("Content-Type")) ||
+                    if (CONTENT_TYPE_JSON.equals(getRequest().getHeader("Content-Type")) ||
                             accept.contains(CONTENT_TYPE_JSON))
                     {
                         JSONObject o = new JSONObject();
@@ -509,19 +510,19 @@ public class DavController extends SpringActionController
                                 "post".equals(getViewContext().getActionURL().getAction()) &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
-                            _response.setHeader("Content-Type", "text/html");
-                            _response.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
+                            super.setHeader("Content-Type", "text/html");
+                            super.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
                         }
                         else
                         {
-                            _response.setHeader("Content-Type", CONTENT_TYPE_JSON);
-                            _response.getWriter().write(o.toString());
-                            _response.setStatus(HttpServletResponse.SC_OK);
+                            super.setHeader("Content-Type", CONTENT_TYPE_JSON);
+                            super.getWriter().write(o.toString());
+                            super.setStatus(HttpServletResponse.SC_OK);
                         }
                     }
                     else
                     {
-                        _response.sendError(status.code, message);
+                        super.sendError(status.code, message);
                     }
                 }
                 _status = status;
@@ -542,7 +543,7 @@ public class DavController extends SpringActionController
             assert _status == null || (200 <= _status.code && _status.code < 300);
             try
             {
-                _response.setStatus(status.code);
+                super.setStatus(status.code);
             }
             catch (Exception x)
             {
@@ -552,118 +553,120 @@ public class DavController extends SpringActionController
             return status;
         }
 
-        WebdavStatus getStatus()
+        @Override
+        public int getStatus()
+        {
+            if (_status != null)
+                return _status.code;
+
+            return HttpServletResponse.SC_OK;
+        }
+
+        WebdavStatus getWebdavStatus()
         {
             return _status;
         }
 
-        String getMessage()
-        {
-            return _message;
-        }
-
         void setPublicStatic(int days)
         {
-            ResponseHelper.setPublicStatic(_response, days);
+            ResponseHelper.setPublicStatic(this.getResponse(), days);
         }
 
         void setContentEncoding(String value)
         {
-            _response.setHeader("Content-Encoding", value);
-            _response.addHeader("Vary", "Accept-Encoding");
+            super.setHeader("Content-Encoding", value);
+            super.addHeader("Vary", "Accept-Encoding");
         }
 
         void setCacheForUserOnly()
         {
-            ResponseHelper.setPrivate(_response);
+            ResponseHelper.setPrivate(this.getResponse());
         }
 
         void setContentDisposition(String value)
         {
-            _response.setHeader("Content-Disposition", value);
+            super.setHeader("Content-Disposition", value);
         }
 
-        void  setContentType(String contentType)
+        @Override
+        public void setContentType(String contentType)
         {
-            _response.setContentType(contentType);
+            super.setContentType(contentType);
         }
 
         void setContentLength(long contentLength)
         {
             if (contentLength < Integer.MAX_VALUE)
             {
-                _response.setContentLength((int)contentLength);
+                super.setContentLength((int)contentLength);
             }
             else
             {
                 // Set the content-length as String to be able to use a long
-                _response.setHeader("content-length", "" + contentLength);
+                super.setHeader("content-length", "" + contentLength);
             }
         }
 
         void setContentRange(long fileLength)
         {
-            _response.addHeader("Content-Range", "bytes */" + fileLength);
+            super.addHeader("Content-Range", "bytes */" + fileLength);
         }
 
         void addContentRange(Range range)
         {
-            _response.addHeader("Content-Range", "bytes "+ range.start + "-" + range.end + "/" + range.length);
+            super.addHeader("Content-Range", "bytes "+ range.start + "-" + range.end + "/" + range.length);
         }
 
 
         void setEntityTag(String etag)
         {
-            _response.setHeader("ETag", etag);
+            super.setHeader("ETag", etag);
         }
 
         void setLastModified(long d)
         {
-            _response.setHeader("Last-Modified", getHttpDateFormat(d));
+            super.setHeader("Last-Modified", getHttpDateFormat(d));
         }
 
         void addLockToken(String lockToken)
         {
-            _response.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
+            super.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
         }
 
         void setMethodsAllowed(CharSequence methods)
         {
-            _response.addHeader("Allow", methods.toString());
+            super.addHeader("Allow", methods.toString());
         }
 
         void addOptionsHeaders()
         {
-            _response.addHeader("DAV", "1,2");
-            _response.addHeader("MS-Author-Via", "DAV");
+            super.addHeader("DAV", "1,2");
+            super.addHeader("MS-Author-Via", "DAV");
         }
 
         void setRealm(String realm)
         {
-            _response.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
+            super.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
         }
 
         void setLocation(String value)
         {
-            _response.setHeader("Location", value);
+            super.setHeader("Location", value);
         }
 
-        ServletOutputStream getOutputStream() throws IOException
-        {
-            return _response.getOutputStream();
-        }
-        
+
         StringBuilder sbLogResponse = new StringBuilder();
 
-        Writer getWriter() throws IOException
+        @Override
+        public PrintWriter getWriter() throws IOException
         {
-            Writer responseWriter = _response.getWriter();
+            PrintWriter responseWriter = super.getWriter();
             assert track(responseWriter);
 
             if (!_log.isDebugEnabled())
                 return responseWriter;
 
-            FilterWriter f = new java.io.FilterWriter(responseWriter)
+            PrintWriter p = new PrintWriter(new FilterWriter(responseWriter)
             {
                 @Override
                 public void write(int c) throws IOException
@@ -704,9 +707,9 @@ public class DavController extends SpringActionController
                     super.close();
                     assert untrack(out);
                 }
-            };
-            assert track(f);
-            return f;
+            });
+            assert track(p);
+            return p;
         }
     }
 
@@ -764,7 +767,7 @@ public class DavController extends SpringActionController
 
 //                    _log.info("DoMethod " + method + " " + getResourcePath());    // TODO TEMP logging
                     WebdavStatus ret = doMethod();
-                    assert null != ret || getResponse().getStatus() != null;
+                    assert null != ret || getResponse().getWebdavStatus() != null;
                     if (null != ret && 200 <= ret.code && ret.code < 300)
                         getResponse().setStatus(ret);
                 }
@@ -830,10 +833,9 @@ public class DavController extends SpringActionController
             {
                 if (getResponse().sbLogResponse.length() > 0)
                     _log.debug(getResponse().sbLogResponse);
-                WebdavStatus status = getResponse().getStatus();
-                String message = getResponse().getMessage();
+                WebdavStatus status = getResponse().getWebdavStatus();
                 _log.debug("<<<< " + (status != null ? status.code : 0) + " " +
-                        StringUtils.defaultString(message, null != status ? status.message : "") + " " +
+                        (null != status ? status.message : "") + " " +
                         DateUtil.formatDuration(System.currentTimeMillis()-start));
             }
 
@@ -1211,7 +1213,7 @@ public class DavController extends SpringActionController
 
             try
             {
-                CSRFUtil.validate(getRequest(), getResponse()._response);
+                CSRFUtil.validate(getRequest(), getResponse());
             }
             catch (CSRFException ex)
             {

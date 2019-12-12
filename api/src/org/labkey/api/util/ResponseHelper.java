@@ -22,6 +22,7 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.StringTokenizer;
@@ -83,50 +84,6 @@ public class ResponseHelper
         setPublicStatic(response, Duration.ofDays(days));
     }
 
-    // Minimal interface needed by the <code>checkIfHeaders</code> to
-    // support both HttpServletResponse and DavResponse.
-    public interface HttpServletResp
-    {
-        void sendError(int status) throws IOException;
-        void setHeader(String name, String value);
-        void addHeader(String name, String value);
-        void setStatus(int code);
-    }
-
-    public static class HttpServletResponseWrapper implements HttpServletResp
-    {
-        private HttpServletResponse _response;
-
-        HttpServletResponseWrapper(HttpServletResponse response)
-        {
-            _response = response;
-        }
-
-        @Override
-        public void sendError(int status) throws IOException
-        {
-            _response.sendError(status);
-        }
-
-        @Override
-        public void setHeader(String name, String value)
-        {
-            _response.setHeader(name, value);
-        }
-
-        @Override
-        public void addHeader(String name, String value)
-        {
-            _response.addHeader(name, value);
-        }
-
-        @Override
-        public void setStatus(int code)
-        {
-            _response.setStatus(code);
-        }
-    }
-
     /**
      * Check if the conditions specified in the optional If headers are
      * satisfied.
@@ -142,7 +99,7 @@ public class ResponseHelper
                                          String eTag, long lastModified)
             throws IOException
     {
-        return checkIfHeaders(context.getRequest(), new HttpServletResponseWrapper(context.getResponse()), eTag, lastModified);
+        return checkIfHeaders(context.getRequest(), context.getResponse(), eTag, lastModified);
     }
 
     /**
@@ -158,7 +115,7 @@ public class ResponseHelper
      *         request processing is stopped
      */
     public static boolean checkIfHeaders(HttpServletRequest request,
-                                         HttpServletResp response,
+                                         HttpServletResponse response,
                                          String eTag, long lastModified)
         throws IOException
     {
@@ -178,7 +135,7 @@ public class ResponseHelper
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private static boolean checkIfMatch(HttpServletRequest request, HttpServletResp response, String eTag) throws IOException
+    private static boolean checkIfMatch(HttpServletRequest request, HttpServletResponse response, String eTag) throws IOException
     {
         String headerValue = request.getHeader("If-Match");
         if (headerValue != null)
@@ -216,7 +173,7 @@ public class ResponseHelper
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private static boolean checkIfModifiedSince(HttpServletRequest request, HttpServletResp response, String eTag, long lastModified)
+    private static boolean checkIfModifiedSince(HttpServletRequest request, HttpServletResponse response, String eTag, long lastModified)
     {
         try
         {
@@ -253,7 +210,7 @@ public class ResponseHelper
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private static boolean checkIfNoneMatch(HttpServletRequest request, HttpServletResp response, String eTag) throws IOException
+    private static boolean checkIfNoneMatch(HttpServletRequest request, HttpServletResponse response, String eTag) throws IOException
     {
         String headerValue = request.getHeader("If-None-Match");
         if (headerValue != null)
@@ -303,7 +260,7 @@ public class ResponseHelper
      *         and false if the condition is not satisfied, in which case request
      *         processing is stopped
      */
-    private static boolean checkIfUnmodifiedSince(HttpServletRequest request, HttpServletResp response, long lastModified) throws IOException
+    private static boolean checkIfUnmodifiedSince(HttpServletRequest request, HttpServletResponse response, long lastModified) throws IOException
     {
         try
         {
