@@ -1208,16 +1208,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
                 if (folderType != null)
                     ContainerManager.getHomeContainer().setFolderType(folderType, user);
+                else
+                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
             }
 
             if ("logoImage".equalsIgnoreCase(prop.getName()))
-                incrementRevision = setSiteLogoImage(getModuleResourceFromPropValue(prop.getValue()), user);
+                incrementRevision = setSiteLogoImage(prop.getValue(), user);
 
             if ("iconImage".equalsIgnoreCase(prop.getName()))
-                incrementRevision = setSiteIconImage(getModuleResourceFromPropValue(prop.getValue()), user);
+                incrementRevision = setSiteIconImage(prop.getValue(), user);
 
             if ("customStylesheet".equalsIgnoreCase(prop.getName()))
-                incrementRevision = setSiteCustomStylesheet(getModuleResourceFromPropValue(prop.getValue()), user);
+                incrementRevision = setSiteCustomStylesheet(prop.getValue(), user);
         }
 
         // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
@@ -1225,8 +1227,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
     }
 
-    private boolean setSiteLogoImage(Resource resource, User user)
+    private boolean setSiteLogoImage(String propValue, User user)
     {
+        Resource resource = getModuleResourceFromPropValue(propValue);
         if (resource != null)
         {
             try
@@ -1240,11 +1243,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
+        LOG.error("Unable to find logoImage resource during server startup: " + propValue);
         return false;
     }
 
-    private boolean setSiteIconImage(Resource resource, User user)
+    private boolean setSiteIconImage(String propValue, User user)
     {
+        Resource resource = getModuleResourceFromPropValue(propValue);
         if (resource != null)
         {
             try
@@ -1258,11 +1263,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
+        LOG.error("Unable to find iconImage resource during server startup: " + propValue);
         return false;
     }
 
-    private boolean setSiteCustomStylesheet(Resource resource, User user)
+    private boolean setSiteCustomStylesheet(String propValue, User user)
     {
+        Resource resource = getModuleResourceFromPropValue(propValue);
         if (resource != null)
         {
             try
@@ -1276,6 +1283,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         }
 
+        LOG.error("Unable to find customStylesheet resource during server startup: " + propValue);
         return false;
     }
 
