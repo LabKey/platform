@@ -4,7 +4,6 @@ import {Button, Alert} from 'react-bootstrap'
 import {Map, List, fromJS} from 'immutable';
 
 import "./authenticationConfiguration.scss";
-import "@glass/base/dist/base.css"
 import GlobalAuthConfigs from '../components/GlobalAuthConfigs';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { Ajax, ActionURL, Security } from '@labkey/api'
@@ -183,6 +182,7 @@ export class App extends React.PureComponent<Props, State> {
                     <GlobalAuthConfigs
                         {...this.state.globalAuthConfigs}
                         checkDirty = {this.checkIfDirty}
+                        canEdit={this.state.canEdit}
                     />
                 }
 
@@ -191,6 +191,8 @@ export class App extends React.PureComponent<Props, State> {
                     loginFormAuth={this.state.loginFormAuth}
                     secondary={this.state.secondaryAuth}
                     addNewPrimary={this.state.addNewPrimary}
+                    canEdit={this.state.canEdit}
+                    // canEdit={false}  // for testing
                     onDragEnd={this.onDragEnd}
                     handleChangeToPrimary={this.handleChangeToPrimary}
                     handlePrimaryToggle={this.handlePrimaryToggle}

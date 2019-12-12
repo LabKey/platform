@@ -1,9 +1,12 @@
 import * as React from 'react'
 
 import { Panel, DropdownButton, MenuItem, Tab, Tabs} from 'react-bootstrap'
-import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import { LabelHelpTip } from '@glass/base';
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faInfoCircle} from "@fortawesome/free-solid-svg-icons";
+
+import { LabelHelpTip } from '@labkey/components';
+
 import DragAndDropPane from "./DragAndDropPane";
 import EditableAuthRow from "./EditableAuthRow";
 import SimpleAuthRow from "./SimpleAuthRow";
@@ -39,6 +42,7 @@ interface Props {
     onDragEnd: any
     handleChangeToPrimary: any
     handlePrimaryToggle: any
+    canEdit: boolean
 }
 export default class AuthConfigMasterPanel extends React.PureComponent<Props, State>{
     constructor(props) {
@@ -60,30 +64,14 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
         let loginFormAuth = this.props.loginFormAuth;
         let secondary = this.props.secondary;
 
-
-
-        // let primaryDropdownOptions =
-        //     Object.keys(addNewPrimary).map((authOption) => (
-        //         <MenuItem key={authOption} href={addNewPrimary[authOption].configLink}>
-        //             {authOption} : {addNewPrimary[authOption].description}
-        //         </MenuItem>
-        //     ));
-
-        // if (loginFormAuth){
-        //     const primaryConfigsWithoutDatabase = loginFormAuth.slice(0, -1);
-        //     const dataBaseConfig = loginFormAuth.slice(-1)[0];
-        //
-        //     console.log("loginFormAuth ", loginFormAuth);
-        //     console.log("primaryConfigsWithoutDatabase ", primaryConfigsWithoutDatabase);
-        // }
-
         return(
             <Panel>
                 <Panel.Heading> <strong>Authentication Configurations </strong> </Panel.Heading>
                 <Panel.Body>
                     <DropdownButton id="dropdown-basic-button" title={"Add New " + this.state.addNewAuthWhichDropdown}>
 
-                        {((this.state.addNewAuthWhichDropdown == "Primary")
+                        {this.props.canEdit &&
+                            ((this.state.addNewAuthWhichDropdown == "Primary")
                             ? this.props.addNewPrimary &&
                                 Object.keys(addNewPrimary).map((authOption) => (
                                     <MenuItem key={authOption} href={addNewPrimary[authOption].configLink}>
@@ -110,46 +98,50 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
                     <Tabs defaultActiveKey={1} id="tab-panel" onSelect={(key) => {this.addNewAuthWhichDropdown(key)}}>
                         <Tab eventKey={1} title="Primary" >
                             <div className={"auth-tab"}>
-                                {loginFormAuth &&
+                                {(loginFormAuth && this.props.canEdit)
+                                    ?
                                     <div>
                                         <DragAndDropPane
-                                                className={"auth-tab"}
-                                                rowInfo={loginFormAuth.slice(0, -1)}
-                                                onDragEnd={this.props.onDragEnd}
-                                                handleChangeToPrimary={this.props.handleChangeToPrimary}
-                                                handlePrimaryToggle={this.props.handlePrimaryToggle}
-                                                stateSection="loginFormAuth"
+                                            className={"auth-tab"}
+                                            rowInfo={loginFormAuth.slice(0, -1)}
+                                            onDragEnd={this.props.onDragEnd}
+                                            handleChangeToPrimary={this.props.handleChangeToPrimary}
+                                            handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                            stateSection="loginFormAuth"
                                         />
 
                                         <SimpleAuthRow
-                                                handle={null}
-                                                description={loginFormAuth.slice(-1)[0].description}
-                                                name={loginFormAuth.slice(-1)[0].name}
-                                                enabled={(loginFormAuth.slice(-1)[0].enabled) ? "Enabled" : "Disabled"}
-                                                // url={(loginFormAuth.slice(-1)[0].url)}
+                                            handle={null}
+                                            description={loginFormAuth.slice(-1)[0].description}
+                                            name={loginFormAuth.slice(-1)[0].name}
+                                            enabled={(loginFormAuth.slice(-1)[0].enabled) ? "Enabled" : "Disabled"}
+                                            // url={(loginFormAuth.slice(-1)[0].url)}
                                         />
                                     </div>
+
+                                    : <ViewOnlyAuthConfigRows data={this.props.loginFormAuth}/>
                                 }
 
                             </div>
                             <hr/>
                             <strong> Single Sign On Authentications </strong>
 
-                            <LabelHelpTip title={'test'} body={() => {
-                                return (<div> Tip 2: text </div>)
+                            <LabelHelpTip title={'Tip'} body={() => {
+                                return (<div> Single Sign On Authentications (SSOs) allow the use of one set of login credentials that are authenticated by the third party service provider (e.g. Google or Github). </div>)
                             }}/>
 
                             <br/><br/>
 
-                            {singleSignOnAuth &&
-                                <DragAndDropPane
-                                        className={"auth-tab"}
-                                        rowInfo={singleSignOnAuth}
-                                        onDragEnd={this.props.onDragEnd}
-                                        handleChangeToPrimary={this.props.handleChangeToPrimary}
-                                        handlePrimaryToggle={this.props.handlePrimaryToggle}
-                                        stateSection="singleSignOnAuth"
-                                />
+                            {(singleSignOnAuth && this.props.canEdit)
+                                ? <DragAndDropPane
+                                            className={"auth-tab"}
+                                            rowInfo={singleSignOnAuth}
+                                            onDragEnd={this.props.onDragEnd}
+                                            handleChangeToPrimary={this.props.handleChangeToPrimary}
+                                            handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                            stateSection="singleSignOnAuth"
+                                    />
+                                : <ViewOnlyAuthConfigRows data={singleSignOnAuth}/>
                             }
 
                         </Tab>
@@ -157,21 +149,24 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
 
                             <div className={"auth-tab"}>
 
-                                {secondary && secondary.map((item, index) => (
-
-                                    <EditableAuthRow
-                                        id={index.toString()}
-                                        rowId={index.toString()}
-                                        authName={""}
-                                        url={item.description.slice(0,34) + "..."}
-                                        enabled={item.enabled}
-                                        description={item.name}
-                                        handleChangeToPrimary={this.props.handleChangeToPrimary}
-                                        handlePrimaryToggle={this.props.handlePrimaryToggle}
-                                        stateSection="secondaryAuth"
-                                        noHandleIcon={true}
-                                    />
-                                ))}
+                                {(secondary && this.props.canEdit)
+                                    ?
+                                    secondary.map((item, index) => (
+                                        <EditableAuthRow
+                                            id={index.toString()}
+                                            rowId={index.toString()}
+                                            authName={""}
+                                            url={item.description.slice(0,34) + "..."}
+                                            enabled={item.enabled}
+                                            description={item.name}
+                                            handleChangeToPrimary={this.props.handleChangeToPrimary}
+                                            handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                            stateSection="secondaryAuth"
+                                            noHandleIcon={true}
+                                        />
+                                    ))
+                                    : <ViewOnlyAuthConfigRows data={secondary}/>
+                                }
 
                             </div>
 
@@ -181,5 +176,28 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
                 </Panel.Body>
             </Panel>
         )
+    }
+}
+
+class ViewOnlyAuthConfigRows extends React.PureComponent<any, any>
+{
+    render(){
+        let data = this.props.data;
+        let moreInfoIcon = <FontAwesomeIcon size='1x' icon={faInfoCircle}/>;
+
+        return(
+            <div>
+
+                {data && data.map((item) => (
+                    <SimpleAuthRow
+                        description={item.description}
+                        name={item.name}
+                        enabled={item.enabled ? "Enabled" : "Disabled"}
+                        edit={moreInfoIcon}
+                    />
+                ))}
+
+            </div>
+        );
     }
 }

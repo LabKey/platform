@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimes} from "@fortawesome/free-solid-svg-icons";
 
 import CheckBoxWithText from "./CheckBoxWithText";
-import {FileAttachmentForm} from "@glass/base";
+import { FileAttachmentForm } from '@labkey/components';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 

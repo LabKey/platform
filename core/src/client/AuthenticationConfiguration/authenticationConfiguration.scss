@@ -13,14 +13,6 @@
 // todo: import instead
 // check if styling is duplicate
 
-.down{
-  margin-top: 5px;
-}
-
-.clickable {
-  cursor:pointer;
-}
-
 .domain-field-row {
   border: 1px solid;
   border-radius: 2px;
@@ -95,6 +87,13 @@
   align-items: center;
 }
 
+.down{
+  margin-top: 5px;
+}
+
+.clickable {
+  cursor:pointer;
+}
 
 // oh, my god, the toggle
 // grabbed from sampleManagement/resources/web/sampleManagement/gen/sampleManagement-styles.css

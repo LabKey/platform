@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Panel, FormControl, Button } from 'react-bootstrap'
+import { Panel } from 'react-bootstrap'
 import { Ajax, ActionURL } from '@labkey/api'
 
 import CheckBoxWithText from './CheckBoxWithText';
@@ -42,10 +42,6 @@ export default class GlobalAuthConfigs extends React.PureComponent<any, any>{
             ...prevState,
             [id]: !oldState
         }), () => this.props.checkDirty(this.state, this.props));
-
-        // console.log("checkdirty");
-        // console.log(this.props);
-        // console.log(this.state);
     }
 
     saveGlobalAuthConfigs(parameter, enabled){
@@ -71,6 +67,7 @@ export default class GlobalAuthConfigs extends React.PureComponent<any, any>{
             {id: "SelfServiceEmailChanges", text: "Allow users to edit their own email addresses"},
             {id: "AutoCreateAccounts", text: "Auto-create authenticated users"}];
 
+
         return(
             <Panel>
                 <Panel.Heading>
@@ -88,7 +85,7 @@ export default class GlobalAuthConfigs extends React.PureComponent<any, any>{
                         key={text.id}
                         rowText={text.text}
                         checked={this.state[text.id]}
-                        onClick={() => {this.checkGlobalAuthBox(text.id)}}
+                        onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
                     />
                 ))}
 

@@ -5,6 +5,8 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import SimpleAuthRow from "./SimpleAuthRow";
 import ConfigurationModal from "./ConfigurationModal";
+import DynamicConfigurationModal from "./DynamicConfigurationModal";
+
 
 // Todo:
 // don't use the style to round the corners
@@ -60,7 +62,8 @@ export default class EditableAuthRow extends React.Component<Props, State>{
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>;
 
-        const modal = (this.state.modalOpen &&  <ConfigurationModal {...this.props} closeModal={() => {this.onToggle("modalOpen")}} />);
+        // const modal = (this.state.modalOpen &&  <ConfigurationModal {...this.props} closeModal={() => {this.onToggle("modalOpen")}} />);
+        const dynamicModal = (this.state.modalOpen && <DynamicConfigurationModal {...this.props} closeModal={() => {this.onToggle("modalOpen")}}/>)
 
         return(
             <div
@@ -74,7 +77,7 @@ export default class EditableAuthRow extends React.Component<Props, State>{
                     name = {this.props.authName}
                     enabled = {enabled}
                     edit = {edit}
-                    modal = {modal}
+                    modal = {dynamicModal}
                 />
             </div>
         )

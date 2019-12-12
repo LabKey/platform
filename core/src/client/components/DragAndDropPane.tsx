@@ -32,9 +32,6 @@ export default class DragAndDropPane extends React.PureComponent<Props>{
     render() {
         this.forTestingFunc();
 
-        const primaryConfigsWithoutDatabase = this.props.rowInfo.slice(0, -1);
-        const dataBaseConfig = this.props.rowInfo.slice(-1)[0];
-
         return(
             <div>
                 <DragDropContext onDragEnd={this.props.onDragEnd}>
