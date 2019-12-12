@@ -629,14 +629,6 @@
         <shownInDetailsView>false</shownInDetailsView>
         <datatype>Varchar</datatype>
       </column>
-      <column columnName="runlsid">
-        <columnTitle>Run Lsid</columnTitle>
-        <propertyURI>http://cpas.labkey.com/Study#RunLSID</propertyURI>
-        <shownInInsertView>false</shownInInsertView>
-        <shownInUpdateView>false</shownInUpdateView>
-        <shownInDetailsView>false</shownInDetailsView>
-        <datatype>Varchar</datatype>
-      </column>
       <column columnName="created">
         <columnTitle>Created</columnTitle>
         <description>Date record/form was created</description>

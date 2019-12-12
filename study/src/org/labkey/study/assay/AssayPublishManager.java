@@ -409,6 +409,10 @@ public class AssayPublishManager implements AssayPublishService
                     // Skip "TargetStudy"
                     if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         continue;
+
+                    // Skip "RunLsid"
+                    if (AssayPublishService.RUN_LSID_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                        continue;
                 }
                 assert uri != null : "Expected all properties to already be present in assay type. Couldn't find one for " + entry.getKey();
                 newMap.put(uri, entry.getValue());
