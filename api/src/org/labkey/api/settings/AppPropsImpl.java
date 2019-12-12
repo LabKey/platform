@@ -543,8 +543,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     public static void populateSiteSettingsWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
         // for a list of recognized site setting properties refer to: AppPropsImpl.java
@@ -553,12 +551,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             return;
         WriteableAppProps writeable = AppProps.getWriteableInstance();
         startupProps
-            .forEach(prop -> {
-                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                {
-                    writeable.storeStringValue(prop.getName(), prop.getValue());
-                }
-            });
+            .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
         writeable.save(null);
     }
 

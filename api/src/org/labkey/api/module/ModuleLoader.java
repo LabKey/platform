@@ -1992,22 +1992,29 @@ public class ModuleLoader implements Filter
 
     /**
      * Returns the config properties for the specified scope. If no scope is
-     * specified then all properties are returned.
+     * specified then all properties are returned. If the server is bootstrapping then
+     * properties with both the bootstrap and startup modifiers are returned otherwise only
+     * startup properties are returned.
      */
     @NotNull
     public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
     {
+        Collection<ConfigProperty> props = Collections.emptyList();
         if (!_configPropertyMap.isEmpty())
         {
             if (scope != null)
             {
                 if (_configPropertyMap.containsKey(scope))
-                    return _configPropertyMap.get(scope);
+                    props = _configPropertyMap.get(scope);
             }
             else
-                return _configPropertyMap.values();
+                props = _configPropertyMap.values();
         }
-        return Collections.emptyList();
+
+        // filter out bootstrap scoped properties in the non-bootstrap startup case
+        return props.stream()
+                .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || ModuleLoader.getInstance().isNewInstall())
+                .collect(Collectors.toList());
     }
 
 

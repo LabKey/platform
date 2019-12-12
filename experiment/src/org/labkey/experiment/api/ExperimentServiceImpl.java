@@ -33,7 +33,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -123,7 +122,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -4392,7 +4390,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             for (Map.Entry<ExperimentDataHandler, List<ExpData>> entry : handlers.entrySet())
             {
-                entry.getKey().beforeDeleteData(entry.getValue());
+                entry.getKey().beforeDeleteData(entry.getValue(), user);
             }
         }
         catch (ExperimentException e)
