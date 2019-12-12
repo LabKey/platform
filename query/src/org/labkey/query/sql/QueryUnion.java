@@ -282,20 +282,19 @@ public class QueryUnion extends QueryRelation
 
 		if (null != sort && sort.size() > 0)
 		{
-			if (sort.size() > 0)
-			{
-				unionSql.append("\nORDER BY ");
-				String comma = "";
-				for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
-				{
-					QExpr expr = resolveFields(entry.getKey());
-					unionSql.append(comma);
-					unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
-					if (!entry.getValue())
-						unionSql.append(" DESC");
-					comma = ", ";
-				}
-			}
+            unionSql.append("\nORDER BY ");
+            String comma = "";
+            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            {
+                QExpr expr = resolveFields(entry.getKey());
+                unionSql.append(comma);
+                unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
+                if (!entry.getValue())
+                    unionSql.append(" DESC");
+                comma = ", ";
+            }
+            if (null == _limit)
+                dialect.appendSortOnSubqueryWithoutLimitQualifier(unionSql);
 		}
         if (null != _limit)
         {
