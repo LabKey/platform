@@ -70,10 +70,8 @@ import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
@@ -151,6 +149,7 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
@@ -175,7 +174,6 @@ import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
@@ -190,7 +188,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.beans.Introspector;
@@ -1106,7 +1103,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            deleteExistingLogo(getContainer(), getUser());
+            LookAndFeelPropertiesManager.get().deleteExistingLogo(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return true;
         }
@@ -1161,22 +1158,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    static void deleteExistingLogo(Container c, User user)
-    {
-        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
-        for (Attachment attachment : attachments)
-        {
-            if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))
-            {
-                AttachmentService.get().deleteAttachment(parent, attachment.getName(), user);
-                AttachmentCache.clearLogoCache();
-            }
-        }
-    }
-
-
     @RequiresPermission(AdminPermission.class)
     public class ResetFaviconAction extends FormHandlerAction
     {
@@ -1188,7 +1169,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            deleteExistingFavicon(getContainer(), getUser());
+            LookAndFeelPropertiesManager.get().deleteExistingFavicon(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
             return true;
@@ -1200,15 +1181,6 @@ public class AdminController extends SpringActionController
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
-
-
-    static void deleteExistingFavicon(Container c, User user)
-    {
-        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-        AttachmentService.get().deleteAttachment(parent, AttachmentCache.FAVICON_FILE_NAME, user);
-        AttachmentCache.clearFavIconCache();
-    }
-
 
     @RequiresPermission(AdminPermission.class)
     public class DeleteCustomStylesheetAction extends FormHandlerAction
@@ -1221,7 +1193,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            deleteExistingCustomStylesheet(getContainer(), getUser());
+            LookAndFeelPropertiesManager.get().deleteExistingCustomStylesheet(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return true;
         }
@@ -1232,17 +1204,6 @@ public class AdminController extends SpringActionController
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
-
-
-    static void deleteExistingCustomStylesheet(Container c, User user)
-    {
-        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-        AttachmentService.get().deleteAttachment(parent, AttachmentCache.STYLESHEET_FILE_NAME, user);
-
-        // This custom stylesheet is still cached in CoreController, but look & feel revision checking should ensure
-        // that it gets cleared out on the next request.
-    }
-
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
@@ -9880,7 +9841,7 @@ public class AdminController extends SpringActionController
             {
                 try
                 {
-                    handleLogoFile(logoFile, c);
+                    LookAndFeelPropertiesManager.get().handleLogoFile(logoFile, c, getUser());
                 }
                 catch (Exception e)
                 {
@@ -9894,7 +9855,7 @@ public class AdminController extends SpringActionController
             {
                 try
                 {
-                    handleIconFile(iconFile, c);
+                    LookAndFeelPropertiesManager.get().handleIconFile(iconFile, c, getUser());
                 }
                 catch (Exception e)
                 {
@@ -9908,7 +9869,7 @@ public class AdminController extends SpringActionController
             {
                 try
                 {
-                    handleCustomStylesheetFile(customStylesheetFile, c);
+                    LookAndFeelPropertiesManager.get().handleCustomStylesheetFile(customStylesheetFile, c, getUser());
                 }
                 catch (Exception e)
                 {
@@ -9923,57 +9884,6 @@ public class AdminController extends SpringActionController
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
 
             return true;
-        }
-
-        private void handleLogoFile(MultipartFile file, Container c) throws ServletException, IOException
-        {
-            User user = getUser();
-
-            // Set the name to something we'll recognize as a logo file
-            String uploadedFileName = file.getOriginalFilename();
-            int index = uploadedFileName.lastIndexOf(".");
-            if (index == -1)
-            {
-                throw new ServletException("No file extension on the uploaded image");
-            }
-
-            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-            // Get rid of any existing logo
-            AdminController.deleteExistingLogo(c, user);
-
-            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedFileName.substring(index));
-            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
-            AttachmentCache.clearLogoCache();
-        }
-
-        private void handleIconFile(MultipartFile file, Container c) throws IOException, ServletException
-        {
-            User user = getUser();
-
-            if (!file.getOriginalFilename().toLowerCase().endsWith(".ico"))
-            {
-                throw new ServletException("FavIcon must be a .ico file");
-            }
-
-            AdminController.deleteExistingFavicon(c, user);
-
-            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.FAVICON_FILE_NAME);
-            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
-            AttachmentCache.clearFavIconCache();
-        }
-
-        private void handleCustomStylesheetFile(MultipartFile file, Container c) throws IOException
-        {
-            User user = getUser();
-
-            AdminController.deleteExistingCustomStylesheet(c, user);
-
-            LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-            AttachmentFile renamed = new SpringAttachmentFile(file, AttachmentCache.STYLESHEET_FILE_NAME);
-            AttachmentService.get().addAttachments(parent, Collections.singletonList(renamed), user);
-
-            // Don't need to clear cache -- lookAndFeelRevision gets checked on retrieval
         }
     }
 

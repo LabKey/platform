@@ -36,7 +36,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -46,7 +45,6 @@ import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -74,6 +72,7 @@ import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
@@ -106,6 +105,7 @@ import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -127,7 +127,6 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
@@ -848,6 +847,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
+        populateLookAndFeelWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
@@ -1190,5 +1190,108 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void indexDeleted()
     {
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
+    }
+
+    /**
+     * This method will handle those startup props for LookAndFeelSettings which are not stored in WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps().
+     */
+    private void populateLookAndFeelWithStartupProps()
+    {
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+        boolean incrementRevision = false;
+
+        for (ConfigProperty prop : startupProps)
+        {
+            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            {
+                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
+                if (folderType != null)
+                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
+            }
+
+            if ("logoImage".equalsIgnoreCase(prop.getName()))
+                incrementRevision = setSiteLogoImage(getModuleResourceFromPropValue(prop.getValue()), user);
+
+            if ("iconImage".equalsIgnoreCase(prop.getName()))
+                incrementRevision = setSiteIconImage(getModuleResourceFromPropValue(prop.getValue()), user);
+
+            if ("customStylesheet".equalsIgnoreCase(prop.getName()))
+                incrementRevision = setSiteCustomStylesheet(getModuleResourceFromPropValue(prop.getValue()), user);
+        }
+
+        // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+        if (incrementRevision)
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+    }
+
+    private boolean setSiteLogoImage(Resource resource, User user)
+    {
+        if (resource != null)
+        {
+            try
+            {
+                LookAndFeelPropertiesManager.get().handleLogoFile(resource, ContainerManager.getRoot(), user);
+                return true;
+            }
+            catch(Exception e)
+            {
+                LOG.error("Exception setting logoImage during server startup.", e);
+            }
+        }
+
+        return false;
+    }
+
+    private boolean setSiteIconImage(Resource resource, User user)
+    {
+        if (resource != null)
+        {
+            try
+            {
+                LookAndFeelPropertiesManager.get().handleIconFile(resource, ContainerManager.getRoot(), user);
+                return true;
+            }
+            catch(Exception e)
+            {
+                LOG.error("Exception setting iconImage during server startup.", e);
+            }
+        }
+
+        return false;
+    }
+
+    private boolean setSiteCustomStylesheet(Resource resource, User user)
+    {
+        if (resource != null)
+        {
+            try
+            {
+                LookAndFeelPropertiesManager.get().handleCustomStylesheetFile(resource, ContainerManager.getRoot(), user);
+                return true;
+            }
+            catch(Exception e)
+            {
+                LOG.error("Exception setting customStylesheet during server startup.", e);
+            }
+        }
+
+        return false;
+    }
+
+    private Resource getModuleResourceFromPropValue(String propValue)
+    {
+        if (propValue != null)
+        {
+            // split the prop value on the separator char to get the module name and resource path in that module
+            String moduleName = propValue.substring(0, propValue.indexOf(":"));
+            String resourcePath = propValue.substring(propValue.indexOf(":") + 1);
+
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+            if (module != null)
+                return module.getModuleResource(resourcePath);
+        }
+
+        return null;
     }
 }
