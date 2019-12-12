@@ -40,6 +40,7 @@ import org.labkey.api.collections.MultiValuedMapCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -161,6 +162,32 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEF_CACHE = ModuleResourceCaches.create("Module query definitions cache", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
+
+    private static final FileSystemDirectoryListener INVALIDATE_QUERY_METADATA_HANDLER = new FileSystemDirectoryListener()
+    {
+        @Override
+        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            QueryService.get().updateLastModified();
+        }
+
+        @Override
+        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            QueryService.get().updateLastModified();
+        }
+
+        @Override
+        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            QueryService.get().updateLastModified();
+        }
+
+        @Override
+        public void overflow()
+        {
+        }
+    };
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
@@ -657,6 +684,12 @@ public class QueryServiceImpl implements QueryService
                 .map(resource -> new ModuleQueryDef(module, resource))
                 .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
         }
+
+        @Override
+        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return INVALIDATE_QUERY_METADATA_HANDLER;
+        }
     }
 
     public QueryDefinition getQueryDef(User user, @NotNull Container container, String schema, String name)
@@ -1002,6 +1035,12 @@ public class QueryServiceImpl implements QueryService
                 .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
                 .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+        }
+
+        @Override
+        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -2125,6 +2164,12 @@ public class QueryServiceImpl implements QueryService
                 .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
                 .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+        }
+
+        @Override
+        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 

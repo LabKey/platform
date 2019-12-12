@@ -1148,7 +1148,7 @@ public class DbScope
     /** Invalidates this schema and all its associated tables */
     public void invalidateSchema(String schemaName, DbSchemaType type)
     {
-        //QueryService.get().updateLastModified();// is needed?
+        QueryService.get().updateLastModified();
         _schemaCache.remove(schemaName, type);
         invalidateAllTables(schemaName, type);
     }
@@ -1166,7 +1166,7 @@ public class DbScope
     // from the DbSchema.
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
-        //QueryService.get().updateLastModified();// is needed?
+        QueryService.get().updateLastModified();
         _tableCache.remove(schemaName, tableName, type);
         _schemaCache.remove(schemaName, type);
     }
