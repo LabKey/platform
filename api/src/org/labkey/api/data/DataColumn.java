@@ -655,7 +655,15 @@ public class DataColumn extends DisplayColumn
             String textInputValue = strVal;
             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
             {
-                Object displayValue = getDisplayValue(ctx);
+                Object displayValue = null;
+                TableViewForm viewForm = ctx.getForm();
+                if (viewForm != null && viewForm.contains(this, ctx))
+                {
+                    // On error reshow, use the user supplied form value
+                    displayValue = viewForm.get(formFieldName);
+                }
+                if (displayValue == null)
+                    displayValue = getDisplayValue(ctx);
                 textInputValue = Objects.toString(displayValue, strVal);
             }
             renderTextFormInput(ctx, out, formFieldName, value, textInputValue, disabledInput);

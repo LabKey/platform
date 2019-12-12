@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -35,6 +36,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
@@ -147,13 +149,28 @@ public class MothershipSchema extends UserSchema
         FilteredTable result = new FilteredTable<>(MothershipManager.get().getTableInfoSoftwareRelease(), this, cf);
         result.wrapAllColumns(true);
 
-        result.getMutableColumn("SVNURL").setWidth("500");
+        SQLFragment descriptionSQL = new SQLFragment("CASE WHEN " +
+                ExprColumn.STR_TABLE_ALIAS + ".VcsBranch IS NULL OR " + ExprColumn.STR_TABLE_ALIAS + ".BuildTime IS NULL THEN " +
+                ExprColumn.STR_TABLE_ALIAS + ".BuildNumber ELSE ").
+                append(result.getSqlDialect().concatenate(
+                        ExprColumn.STR_TABLE_ALIAS + ".VcsBranch",
+                        "', '",
+                        "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".BuildTime AS VARCHAR)",
+                        "', '",
+                        ExprColumn.STR_TABLE_ALIAS + ".BuildNumber")).append(" END");
+        result.addColumn(new ExprColumn(result, "Description", descriptionSQL, JdbcType.VARCHAR));
 
         List<FieldKey> defaultCols = new ArrayList<>();
+        defaultCols.add(FieldKey.fromParts("BuildNumber"));
+        defaultCols.add(FieldKey.fromParts("VcsUrl"));
+        defaultCols.add(FieldKey.fromParts("VcsRevision"));
+        defaultCols.add(FieldKey.fromParts("VcsBranch"));
+        defaultCols.add(FieldKey.fromParts("VcsTag"));
+        defaultCols.add(FieldKey.fromParts("BuildTime"));
         defaultCols.add(FieldKey.fromParts("Description"));
-        defaultCols.add(FieldKey.fromParts("SVNRevision"));
-        defaultCols.add(FieldKey.fromParts("SVNURL"));
         result.setDefaultVisibleColumns(defaultCols);
+
+        result.setTitleColumn("Description");
 
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowUpdateAction.class, getContainer()), Collections.singletonMap("softwareReleaseId", "SoftwareReleaseId")));
 
@@ -198,7 +215,7 @@ public class MothershipSchema extends UserSchema
         result.addColumn(exceptionCountCol);
 
         List<FieldKey> defaultCols = new ArrayList<>();
-        defaultCols.add(FieldKey.fromString("SVNRevision"));
+        defaultCols.add(FieldKey.fromString("VcsRevision"));
         defaultCols.add(FieldKey.fromString("Duration"));
         defaultCols.add(FieldKey.fromString("LastKnownTime"));
         defaultCols.add(FieldKey.fromString("DatabaseProductName"));
@@ -325,32 +342,17 @@ public class MothershipSchema extends UserSchema
         result.wrapAllColumns(true);
         result.getMutableColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
-        LookupForeignKey softwareReleaseFK = new LookupForeignKey("SoftwareReleaseId")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return getTable(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
-            }
-        };
+        ForeignKey softwareReleaseFK = new QueryForeignKey(QueryForeignKey.from(this, null).table(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME));
 
-        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxSVNRevision", getSoftwareReleaseSQL("DESC", false), JdbcType.VARCHAR);
-        maxRevisionColumn.setDescription("Highest SVN revision (and corresponding SVN branch)");
+        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxRevision", getSoftwareReleaseSQL("DESC"), JdbcType.VARCHAR);
+        maxRevisionColumn.setDescription("Most recent release with a report");
+        maxRevisionColumn.setFk(softwareReleaseFK);
         result.addColumn(maxRevisionColumn);
 
-        ExprColumn maxRevisionLookupColumn = new ExprColumn(result, "MaxSVNRevisionLookup", getSoftwareReleaseSQL("DESC", true), JdbcType.INTEGER);
-        maxRevisionLookupColumn.setFk(softwareReleaseFK);
-        maxRevisionLookupColumn.setDescription("Highest SVN revision (and corresponding SVN branch). Slower, but full lookup to mothership.SoftwareRelease");
-        result.addColumn(maxRevisionLookupColumn);
-
-        ExprColumn minRevisionColumn = new ExprColumn(result, "MinSVNRevision", getSoftwareReleaseSQL("ASC", false), JdbcType.VARCHAR);
-        minRevisionColumn.setDescription("Lowest SVN revision (and corresponding SVN branch)");
+        ExprColumn minRevisionColumn = new ExprColumn(result, "MinRevision", getSoftwareReleaseSQL("ASC"), JdbcType.INTEGER);
+        minRevisionColumn.setFk(softwareReleaseFK);
+        minRevisionColumn.setDescription("Oldest release with a report");
         result.addColumn(minRevisionColumn);
-
-        ExprColumn minRevisionLookupColumn = new ExprColumn(result, "MinSVNRevisionLookup", getSoftwareReleaseSQL("ASC", true), JdbcType.INTEGER);
-        minRevisionLookupColumn.setFk(softwareReleaseFK);
-        minRevisionColumn.setDescription("Smallest SVN revision (and corresponding SVN branch). Slower, but full lookup to mothership.SoftwareRelease");
-        result.addColumn(minRevisionLookupColumn);
 
         String path = MothershipManager.get().getIssuesContainer(getContainer());
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
@@ -372,7 +374,7 @@ public class MothershipSchema extends UserSchema
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(FieldKey.fromParts("Instances"));
-        defaultCols.add(FieldKey.fromParts("MaxSVNRevision"));
+        defaultCols.add(FieldKey.fromParts("MaxRevision"));
         defaultCols.add(FieldKey.fromParts("LastReport"));
         defaultCols.add(FieldKey.fromParts("BugNumber"));
         defaultCols.add(FieldKey.fromParts("AssignedTo"));
@@ -384,17 +386,17 @@ public class MothershipSchema extends UserSchema
         return result;
     }
 
-    private SQLFragment getSoftwareReleaseSQL(String sort, boolean lookup)
+    private SQLFragment getSoftwareReleaseSQL(String sort)
     {
-        // We want the SoftwareReleaseId from the row that has the min or max SVN revision value
+        // We want the SoftwareReleaseId from the row that has the most recent build time
 
-        // Do a sort by SVNRevision 
-        SQLFragment subselect = new SQLFragment("SELECT " + (lookup ? "ss.SoftwareReleaseId" : "sr.Description" ) + " FROM " +
+        // Do a sort by BuildTime, and then revision since old reports that predate BuildTimes can still maybe give the right value
+        SQLFragment subselect = new SQLFragment("SELECT ss.SoftwareReleaseId FROM " +
                 MothershipManager.get().getTableInfoExceptionReport() + " er, " +
                 MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
                 MothershipManager.get().getTableInfoServerSession() + " ss " +
                 " WHERE er.ExceptionStackTraceId = " + STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
-                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId ORDER BY SVNRevision " + sort);
+                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId ORDER BY BuildTime " + sort + ", VCSRevision " + sort);
 
         // Then apply a limit so that we only get one row back
         SQLFragment result = new SQLFragment("(");

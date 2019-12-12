@@ -40,6 +40,7 @@ public class BooleanToSwitch extends AbstractValueToNamedSwitch
         _negative = negative;
     }
 
+    @Override
     public List<String> toArgs(String value)
     {
         List<String> params = getSwitchFormat().format(getSwitchName());

@@ -381,7 +381,7 @@ public abstract class EmailTemplate
 
     public String renderSubject(Container c)
     {
-        return render(c, getSubject());
+        return render(c, getSubject(), ContentType.Plain);
     }
 
     public InternetAddress renderFrom(Container c, String senderEmail) throws UnsupportedEncodingException

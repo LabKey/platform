@@ -139,6 +139,7 @@ public class DbScope
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final LabKeyDataSourceProperties _labkeyProps;
     private final DataSourceProperties _dsProps;
+    private final boolean _rds;
 
     /**
      * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
@@ -278,6 +279,7 @@ public class DbScope
         _tableCache = null;
         _labkeyProps = null;
         _dsProps = null;
+        _rds = false;
     }
 
 
@@ -366,6 +368,7 @@ public class DbScope
             _labkeyProps = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
+            _rds = _dialect.isRds(this);
         }
     }
 
@@ -1296,6 +1299,11 @@ public class DbScope
     public static boolean isPrimaryDataSource(String dsName)
     {
         return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
+    }
+
+    public boolean isRds()
+    {
+        return _rds;
     }
 
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
@@ -2631,21 +2639,15 @@ public class DbScope
         }
 
 
-        @Test
+        // TODO this test generates "ERROR ConnectionWrapper ... Probable connection leak"
+        // @Test
         public void testLockException()
         {
+            // test ServerLock failures
+
             Lock failServerLock = new ServerLock()
             {
                 @Override public void lock() { throw new DeadlockLoserDataAccessException("test",null); }
-            };
-            Lock failLock = new Lock()
-            {
-                @Override public void lock() { throw new NullPointerException(); }
-                @Override public void lockInterruptibly() throws InterruptedException { }
-                @Override public boolean tryLock() { return false; }
-                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { return false; }
-                @Override public void unlock() { }
-                @NotNull @Override public Condition newCondition() { return null; }
             };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
@@ -2676,9 +2678,17 @@ public class DbScope
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
 
-
             // test _non_ ServerLock failures
 
+            Lock failLock = new Lock()
+            {
+                @Override public void lock() { throw new NullPointerException(); }
+                @Override public void lockInterruptibly() throws InterruptedException { }
+                @Override public boolean tryLock() { return false; }
+                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { return false; }
+                @Override public void unlock() { }
+                @NotNull @Override public Condition newCondition() { return null; }
+            };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
             {
@@ -2735,3 +2745,4 @@ public class DbScope
         }
     }
 }
+

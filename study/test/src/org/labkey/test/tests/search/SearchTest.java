@@ -20,6 +20,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.labkey.remoteapi.CommandException;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
@@ -35,6 +36,7 @@ import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.WikiHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
+import org.labkey.test.util.search.SearchResultsQueue;
 
 import java.io.File;
 import java.util.Arrays;
@@ -45,9 +47,11 @@ import java.util.List;
 import static org.labkey.test.util.PermissionsHelper.MemberType.group;
 import static org.labkey.test.util.SearchHelper.getUnsearchableValue;
 
+@BaseWebDriverTest.ClassTimeout(minutes = 30)
 public abstract class SearchTest extends StudyBaseTest
 {
-    private final SearchHelper _searchHelper = new SearchHelper(this);
+    private static final SearchResultsQueue SEARCH_RESULTS_QUEUE = new SearchResultsQueue();
+    private final SearchHelper _searchHelper = new SearchHelper(this, SEARCH_RESULTS_QUEUE).setMaxTries(6);
     
     private static final String FOLDER_A = "Folder Apple";
     private static final String FOLDER_B = "Folder Banana"; // Folder move destination
@@ -144,32 +148,35 @@ public abstract class SearchTest extends StudyBaseTest
         _listHelper.deleteList();
 
         _searchHelper.enqueueSearchItem("BoarQPine");
-        _searchHelper.enqueueSearchItem("Panda", Locator.bodyLinkContainingText("List " + fullySearchableList));
-        _searchHelper.enqueueSearchItem("2003-01-02", Locator.bodyLinkContainingText("List " + fullySearchableList));
-        _searchHelper.enqueueSearchItem("12345", Locator.bodyLinkContainingText("List " + fullySearchableList));  //Issue 15419
-        _searchHelper.enqueueSearchItem("Owlbear", Locator.bodyLinkContainingText("List " + textOnlySearchableList));
+        _searchHelper.enqueueSearchItem("Panda", Locator.linkContainingText("List " + fullySearchableList));
+        _searchHelper.enqueueSearchItem("2003-01-02", Locator.linkContainingText("List " + fullySearchableList));
+        _searchHelper.enqueueSearchItem("12345", Locator.linkContainingText("List " + fullySearchableList));  //Issue 15419
+        _searchHelper.enqueueSearchItem("Owlbear", Locator.linkContainingText("List " + textOnlySearchableList));
         _searchHelper.enqueueSearchItem("54321");
-        _searchHelper.enqueueSearchItem(metaOnlySearchable, Locator.bodyLinkContainingText("List " + metaOnlySearchable));
-        _searchHelper.enqueueSearchItem("Turtleduck", Locator.bodyLinkContainingText("List " + metaOnlySearchable)); //this phrase is present in the metadata-only file
-        _searchHelper.enqueueSearchItem("Cat", Locator.bodyLinkContainingText("List " + customizedIndexingList));
+        _searchHelper.enqueueSearchItem(metaOnlySearchable, Locator.linkContainingText("List " + metaOnlySearchable));
+        _searchHelper.enqueueSearchItem("Turtleduck", Locator.linkContainingText("List " + metaOnlySearchable)); //this phrase is present in the metadata-only file
+        _searchHelper.enqueueSearchItem("Cat", Locator.linkContainingText("List " + customizedIndexingList));
         _searchHelper.enqueueSearchItem("Garfield");
     }
 
+    @LogMethod
     protected void doVerifySteps()
     {
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName());
         renameFolderAndReSearch();
         moveFolderAlterListsAndReSearch();
         deleteFolderAndVerifyNoResults();
     }
 
+    @LogMethod
     private void renameFolderAndReSearch()
     {
         _containerHelper.renameFolder(getProjectName(), getFolderName(), FOLDER_C, true);
         FOLDER_NAME = FOLDER_C;
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + getFolderName(), "searchAfterFolderRename");
     }
 
+    @LogMethod
     private void moveFolderAlterListsAndReSearch()
     {
         try
@@ -190,7 +197,7 @@ public abstract class SearchTest extends StudyBaseTest
         _listHelper.insertNewRow(data);
         _searchHelper.enqueueSearchItem(newAnimal, Locator.linkContainingText(listIndexAsWhole));
         goBack();
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), "searchAfterMoveAndInsert");
 
         // Test case for 20109 Regression after migration to hard tables, updating a row didn't update the index
         log("Verifying list index updated on row update.");
@@ -203,10 +210,11 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem("Panda"); // Search for Panda should now return no results.
         _searchHelper.enqueueSearchItem(updateAnimal, Locator.linkContainingText(fullySearchableList));
         goBack();
-        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), false);
+        _searchHelper.verifySearchResults("/" + getProjectName() + "/" + FOLDER_B + "/" + getFolderName(), "searchAfterListUpdate");
 
     }
 
+    @LogMethod
     private void deleteFolderAndVerifyNoResults()
     {
         _containerHelper.deleteProject(getProjectName());

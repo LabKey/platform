@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
@@ -260,37 +259,16 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
         else
             projectMenu().navigateToFolder(PROJECT_NAME, subFolder);
 
-        UIAssayHelper uiAssayHelper = new UIAssayHelper(this);
-        uiAssayHelper.goToUploadXarPage();
+        _assayHelper.uploadXarFileAsAssayDesign(assayFile, 1);
 
-        setFormElement(Locator.name("uploadFile"), assayFile);
-        clickAndWait(Locator.lkButton("Upload"));
-        waitForElement(Locator.linkContainingText("COMPLETE"), 120000);
-
-        importAssayRun(subFolder, assayName, runProperties, assayRunFile);
-    }
-
-    private void importAssayRun(@Nullable String subFolder, String assayName, @Nullable Map<String, Object> runProperties, File assayRunFile)
-    {
-
-        UIAssayHelper uiAssayHelper = new UIAssayHelper(this);
-
-        String path;
-        if(null == subFolder)
+        try
         {
-            goToProjectHome(PROJECT_NAME);
-            path = PROJECT_NAME;
+            _assayHelper.importAssay(assayName, assayRunFile, (Map)null, runProperties);
         }
-        else
+        catch (CommandException | IOException e)
         {
-            projectMenu().navigateToFolder(PROJECT_NAME, subFolder);
-            path = PROJECT_NAME + "/" + subFolder;
+            throw new RuntimeException("Failed to import assay run", e);
         }
-
-        refresh();  // Have had cases where going to project home didn't show the newly created Assay.
-
-        uiAssayHelper.importAssay(assayName, assayRunFile, path, null, runProperties);
-
     }
 
     private void reImportAssayRun(@Nullable String subFolder, String assayName, String currentRunName, @Nullable Map<String, Object> runProperties, File assayRunFile)
@@ -309,8 +287,6 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
             projectMenu().navigateToFolder(PROJECT_NAME, subFolder);
             path = PROJECT_NAME + "/" + subFolder;
         }
-
-        refresh();
 
         uiAssayHelper.reImportAssay(assayName, currentRunName, assayRunFile, path, null, runProperties);
 

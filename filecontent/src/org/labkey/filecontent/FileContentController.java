@@ -42,6 +42,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -161,16 +162,19 @@ public class FileContentController extends SpringActionController
 
     public static class FileUrlsImpl implements FileUrls
     {
+        @Override
         public ActionURL urlBegin(Container container)
         {
             return new ActionURL(BeginAction.class, container);
         }
 
+        @Override
         public ActionURL urlShowAdmin(Container container)
         {
             return new ActionURL(ShowAdminAction.class, container);
         }
 
+        @Override
         public ActionURL urlFileEmailPreference(Container container)
         {
             return new ActionURL(FileEmailPreferenceAction.class, container);
@@ -180,8 +184,9 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
-        WebdavResource _resource;
+        private WebdavResource _resource;
 
+        @Override
         public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
         {
             if (null == form.getFileName())
@@ -393,6 +398,7 @@ public class FileContentController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
@@ -1360,34 +1366,33 @@ public class FileContentController extends SpringActionController
             // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
             final int MAX_ROW_COUNT = 10000;
 
-            new TableSelector(tableInfo, columns, null, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("dataFileUrl"), null, CompareType.NONBLANK);
+
+            new TableSelector(tableInfo, columns, filter, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");
-                if (null != encodedUrl)
+                Map<String, Object> row = new HashMap<>();
+                java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
+                row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
+                row.put("rowId", data.get("RowId"));
+                row.put("name", data.get("Name"));
+                if (null != form.getCustomProperties())
                 {
-                    Map<String, Object> row = new HashMap<>();
-                    java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
-                    row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
-                    row.put("rowId", data.get("RowId"));
-                    row.put("name", data.get("Name"));
-                    if (null != form.getCustomProperties())
+                    for (String property : form.getCustomProperties())
                     {
-                        for (String property : form.getCustomProperties())
+                        ColumnInfo column = tableInfo.getColumn(property);
+                        if (null != column)
                         {
-                            ColumnInfo column = tableInfo.getColumn(property);
-                            if (null != column)
-                            {
-                                ColumnInfo displayColumn = column.getDisplayField();
+                            ColumnInfo displayColumn = column.getDisplayField();
 
-                                Map<String, Object> map = new HashMap<>();
-                                map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
-                                StringExpression url = column.getEffectiveURL();
-                                if (null != url)
-                                    map.put("url", url.eval(data));
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
+                            StringExpression url = column.getEffectiveURL();
+                            if (null != url)
+                                map.put("url", url.eval(data));
 
-                                // Display value for a lookup has already been handled by Exp.Data
-                                row.put(property, map);
-                            }
+                            // Display value for a lookup has already been handled by Exp.Data
+                            row.put(property, map);
                         }
                     }
                     rows.add(row);

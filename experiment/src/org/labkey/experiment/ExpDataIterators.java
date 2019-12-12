@@ -768,7 +768,7 @@ public class ExpDataIterators
                 for (int i = 0; i < input.getColumnCount(); i++)
                     hasFileLink |= PropertyType.FILE_LINK == input.getColumnInfo(i).getPropertyType();
                 if (hasFileLink)
-                    input = new FileLinkDataIterator(input, context, _container, _fileLinkDirectory);
+                    input = LoggingDataIterator.wrap(new FileLinkDataIterator(input, context, _container, _fileLinkDirectory));
             }
 
             final Map<String, Integer> colNameMap = DataIteratorUtil.createColumnNameMap(input);
@@ -777,30 +777,25 @@ public class ExpDataIterators
                     _importAliases :
                     new CaseInsensitiveHashMap<>();
 
-            DataIterator step0 = input;
+            SimpleTranslator step0 = new SimpleTranslator(input, context);
+            step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
-            {
-                SimpleTranslator st = new SimpleTranslator(input, context);
-                st.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
-                st.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias"));
-                st.setDebugName("rename alias column");
-                step0 = st;
-            }
+                step0.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step2 = new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
+            DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
                     .setKeyColumns(Collections.singleton("lsid"))
                     .setAddlSkipColumns(Set.of("generated","sourceapplicationid"))     // generated has database DEFAULT 0
-                    .setCommitRowsBeforeContinuing(true)
+                    .setCommitRowsBeforeContinuing(true))
                     ;
 
             //pass in voc cols here
             Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
 
-            DataIteratorBuilder step3 = new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
                     .setKeyColumns(Collections.singleton("lsid"))
-                    .setVocabularyProperties(vocabularyDomainProperties);
+                    .setVocabularyProperties(vocabularyDomainProperties));
 
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
             boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
@@ -808,17 +803,17 @@ public class ExpDataIterators
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))
             {
-                step4 = new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample);
+                step4 = LoggingDataIterator.wrap(new ExpDataIterators.FlagDataIteratorBuilder(step3, _user, isSample));
             }
 
             // Wire up derived parent/child data and materials
-            DataIteratorBuilder step5 = new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample);
+            DataIteratorBuilder step5 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step4, _container, _user, isSample));
 
             // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step6 = step5;
             DataIteratorBuilder step7 = step6;
             if (null != _indexFunction)
-                step7 = new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction); // may need to add this after the aliases are set
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
 
             return LoggingDataIterator.wrap(step7.getDataIterator(context));
         }

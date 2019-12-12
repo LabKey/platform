@@ -1031,7 +1031,7 @@ public class SqlScriptController extends SpringActionController
     public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors)
+        public ModelAndView getView(ConsolidateForm form, BindException errors) throws IOException
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
@@ -1098,10 +1098,18 @@ public class SqlScriptController extends SpringActionController
 
                     if (null != drop)
                         allFiles.remove(drop.getDescription());
+
+                    // Remove all the filenames listed in ignored_scripts.txt
+                    allFiles.removeAll(provider.getIgnoredScripts(schema.getSqlDialect()));
                 }
 
-                if (!allFiles.isEmpty())
-                    unclaimedFiles.addAll(allFiles);
+                // Remove standard files that can exist in any script directory
+                allFiles.remove("ignored_scripts.txt");
+                allFiles.remove("README.txt");
+                allFiles.remove("required_scripts.txt");
+
+                // Anything that's left is "unclaimed" and will get a warning below
+                unclaimedFiles.addAll(allFiles);
             }
 
             StringBuilder html = new StringBuilder();
@@ -1124,42 +1132,6 @@ public class SqlScriptController extends SpringActionController
             }
 
             html.append("  </table>\n");
-
-            html.append("  <br><br><table>\n");
-            html.append("    <tr><td>The standard LabKey script runner will never execute the files below; either their names don't match the required format or" +
-                    " the specified schema isn't claimed by their module.</td></tr>\n");
-            html.append("    <tr><td>&nbsp;</td></tr>\n");
-            html.append("  </table>\n");
-
-            html.append("  <table>\n");
-            html.append("    <tr><th align=\"left\">File</th></tr>\n");
-
-            for (String filename : unclaimedFiles)
-            {
-                html.append("    <tr><td>");
-                html.append(filename);
-                html.append("</td></tr>\n");
-            }
-
-            html.append("  </table>\n");
-
-            unclaimedFiles.remove("labkey-0.00-13.30.sql");
-
-            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
-            {
-                // TODO: Since some of these come from other modules, create a registration mechanism.
-                unclaimedFiles.remove("group_concat_install.sql");
-                unclaimedFiles.remove("group_concat_install_1.00.23696.sql");
-                unclaimedFiles.remove("group_concat_uninstall.sql");
-                unclaimedFiles.remove("Naturalize_install_1.0.1.sql");      // From the LDK module
-                unclaimedFiles.remove("Naturalize_uninstall.sql");      // From the LDK module
-                unclaimedFiles.remove("PremiumStats_install_1.0.1.sql");
-                unclaimedFiles.remove("PremiumStats_uninstall.sql");
-            }
-
-            // specifically allow db scripts to have README and required_scripts.txt files
-            unclaimedFiles.remove("README.txt");
-            unclaimedFiles.remove("required_scripts.txt");
 
             if (!unclaimedFiles.isEmpty())
             {

@@ -16,7 +16,6 @@
 package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.commons.collections4.Factory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
@@ -800,10 +799,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public final void setVcsRevision(String svnRevision)
+    public final void setVcsRevision(String vcsRevision)
     {
         checkLocked();
-        _vcsRevision = svnRevision;
+        _vcsRevision = vcsRevision;
     }
 
     @Nullable
@@ -814,10 +813,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public final void setVcsUrl(String svnUrl)
+    public final void setVcsUrl(String vcsUrl)
     {
         checkLocked();
-        _vcsUrl = svnUrl;
+        _vcsUrl = vcsUrl;
     }
 
     @Nullable
@@ -889,6 +888,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _buildUser = buildUser;
     }
 
+    @Override
     public final String getBuildTime()
     {
         return _buildTime;

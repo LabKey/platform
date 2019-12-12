@@ -16,11 +16,9 @@
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security, Utils} from "@labkey/api";
-import {DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@glass/domainproperties";
-import {Alert, LoadingSpinner, PermissionTypes} from "@glass/base";
+import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@labkey/components";
 
-import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@labkey/components/dist/components.css"
 
 type State = {
     protocolId: number,
@@ -63,6 +61,7 @@ export class App extends React.Component<any, State> {
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
+            containerPath: LABKEY.container.path,
             success: (data) => {
                 this.setState(() => ({
                     hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1
@@ -121,11 +120,11 @@ export class App extends React.Component<any, State> {
     }
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('project', 'begin'));
+        this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
     };
 
     onComplete = (model: AssayProtocolModel) => {
-        this.navigate(ActionURL.buildURL('assay', 'assayBegin', null, {rowId: model.protocolId}));
+        this.navigate(ActionURL.buildURL('assay', 'assayBegin', LABKEY.container.path, {rowId: model.protocolId}));
     };
 
     onChange = (model: AssayProtocolModel) => {
@@ -149,7 +148,7 @@ export class App extends React.Component<any, State> {
                             {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
                             {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
                             {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
-                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer.path : undefined)}
+                            {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer['path'] : undefined)}
                             {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
                             {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
                             {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
@@ -190,6 +189,7 @@ export class App extends React.Component<any, State> {
                 onCancel={this.onCancel}
                 onComplete={this.onComplete}
                 onChange={this.onChange}
+                useTheme={true}
             />
         )
     }

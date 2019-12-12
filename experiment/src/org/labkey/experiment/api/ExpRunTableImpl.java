@@ -929,9 +929,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                 value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
                             }
 
+                            ForeignKey fk = col.getFk();
                             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
                             {
-                                if (col.getFk() != null && value != null)
+                                if (fk != null && fk.allowImportByAlternateKey() && value != null)
                                 {
                                     try
                                     {
@@ -939,7 +940,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                     }
                                     catch (ConversionException e)
                                     {
-                                        ForeignKey fk = col.getFk();
                                         Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
                                         if (remappedValue != null)
                                             value = remappedValue;
@@ -949,11 +949,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             run.setProperty(user, propertyDescriptor, value);
 
                             Object newValue = value;
-                            TableInfo fkTableInfo = col.getFkTableInfo();
-                            if (fkTableInfo != null)
+                            TableInfo fkTableInfo = fk != null ? fk.getLookupTableInfo() : null;
+                            String lookupColumnName = fk != null ? fk.getLookupColumnName() : null;
+                            ColumnInfo lookupColumn = fkTableInfo != null && lookupColumnName != null ? fkTableInfo.getColumn(lookupColumnName) : null;
+
+                            // Don't attempt type conversion if the lookup target isn't the PK column
+                            if (lookupColumn != null && lookupColumn.isKeyField())
                             {
                                 // Do type conversion in case there's a mismatch in the lookup source and target columns
-                                Class<?> keyColumnType = fkTableInfo.getPkColumns().get(0).getJavaClass();
+                                Class<?> keyColumnType = lookupColumn.getJavaClass();
                                 if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
                                 {
                                     newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);

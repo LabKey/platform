@@ -27,7 +27,6 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -45,7 +44,6 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyValidationError;
@@ -420,7 +418,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 mgr.addAuditEvent(_list, user, container, "An existing list record was deleted", entityId, deletedRecord, null);
 
                 // Remove discussions
-                DiscussionService.get().deleteDiscussions(container, user, entityId);
+                if (DiscussionService.get() != null)
+                    DiscussionService.get().deleteDiscussions(container, user, entityId);
 
                 // Remove attachments
                 if (hasAttachmentProperties())
@@ -467,7 +466,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
         // Delete Discussions
-        DiscussionService.get().deleteDiscussions(container, user, entityIds);
+        if (DiscussionService.get() != null)
+            DiscussionService.get().deleteDiscussions(container, user, entityIds);
 
         // Delete Attachments
         if (hasAttachmentProperties())

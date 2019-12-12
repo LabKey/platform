@@ -19,10 +19,8 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.query.BatchValidationException;
 
 import java.beans.PropertyDescriptor;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -122,8 +120,10 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     @Override
     public void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName() + "\n");
+        super.debugLogInfo(sb);
         sb.append("    " + _class.getName());
+        if (_rows != null)
+            sb.append("    rows: " + _rows.size());
     }
 
 

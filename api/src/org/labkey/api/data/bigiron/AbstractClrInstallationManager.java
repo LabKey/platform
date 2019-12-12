@@ -16,6 +16,7 @@
 package org.labkey.api.data.bigiron;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
@@ -24,18 +25,25 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
-import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.data.SqlScriptRunner.SqlScript;
+import org.labkey.api.data.SqlScriptRunner.SqlScriptException;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.Warnings;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
 import java.sql.Connection;
 
 /**
@@ -47,6 +55,8 @@ import java.sql.Connection;
  */
 public abstract class AbstractClrInstallationManager
 {
+    private static final Logger LOG = Logger.getLogger(AbstractClrInstallationManager.class);
+
     @Nullable
     private String _installedVersion = null;
 
@@ -90,7 +100,7 @@ public abstract class AbstractClrInstallationManager
     private boolean uninstallPrevious(ModuleContext context)
     {
         FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getModule(getModuleName()));
-        SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, getSchema(), getBaseScriptName() + "_uninstall.sql", getSchema().getName());
+        SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, getSchema(), getBaseScriptName() + "_uninstall.sql", getSchema().getName());
 
         try
         {
@@ -114,10 +124,12 @@ public abstract class AbstractClrInstallationManager
 
     private void install(ModuleContext context)
     {
-        SqlScriptRunner.SqlScript script = getInstallScript();
+        boolean rds = getSchema().getScope().isRds();
+        SqlScript script = getInstallScript(!rds);
 
         try (Connection conn = getSchema().getScope().getUnpooledConnection())
         {
+            LOG.info("Executing " + script.getDescription() + " against " + (rds ? "an RDS" : "a non-RDS") + " database");
             SqlScriptManager.get(script.getProvider(), script.getSchema()).runScript(context.getUpgradeUser(), script, context, conn);
         }
         catch (Throwable t)
@@ -134,10 +146,16 @@ public abstract class AbstractClrInstallationManager
     }
 
     @NotNull
-    public SqlScriptRunner.SqlScript getInstallScript()
+    public SqlScript getInstallScript()
+    {
+        return getInstallScript(true);
+    }
+
+    @NotNull
+    public SqlScript getInstallScript(boolean includeEnableClrStatements)
     {
         String scriptName = getBaseScriptName() +  "_install_" + getCurrentVersion() + ".sql";
-        FileSqlScriptProvider provider = new FileSqlScriptProvider(ModuleLoader.getInstance().getModule(getModuleName()));
+        FileSqlScriptProvider provider = new ClrInstallationScriptProvider(ModuleLoader.getInstance().getModule(getModuleName()), includeEnableClrStatements);
         return new FileSqlScriptProvider.FileSqlScript(provider, getSchema(), scriptName, getSchema().getName());
     }
 
@@ -191,6 +209,41 @@ public abstract class AbstractClrInstallationManager
             builder.append(" ").append(new HelpTopic(helpTopic).getSimpleLinkHtml("View installation instructions."));
 
         warnings.add(builder.getHtmlString());
+    }
+
+    private static class ClrInstallationScriptProvider extends FileSqlScriptProvider
+    {
+        private final boolean _includeEnableClrStatements;
+
+        public ClrInstallationScriptProvider(Module module, boolean includeEnableClrStatements)
+        {
+            super(module);
+            _includeEnableClrStatements = includeEnableClrStatements;
+        }
+
+        @Override
+        protected String getContents(DbSchema schema, String filename) throws SqlScriptException
+        {
+            String substitution = _includeEnableClrStatements ? getEnableClrStatements(schema.getSqlDialect()) : "";
+            return super.getContents(schema, filename).replace("@@ENABLE_CLR_STATEMENTS@@", substitution);
+        }
+
+        private String getEnableClrStatements(SqlDialect dialect) throws SqlScriptException
+        {
+            Module core = ModuleLoader.getInstance().getCoreModule();
+            String enableClrFilename = "enable_clr.sql";
+            Path path = Path.parse(core.getSqlScriptsPath(dialect)).append(enableClrFilename);
+            Resource r = core.getModuleResource(path);
+
+            try
+            {
+                return PageFlowUtil.getStreamContentsAsString(r.getInputStream());
+            }
+            catch (IOException e)
+            {
+                throw new SqlScriptException(e, enableClrFilename);
+            }
+        }
     }
 
     protected abstract DbSchema getSchema();

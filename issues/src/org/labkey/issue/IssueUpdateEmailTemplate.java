@@ -144,14 +144,14 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
         {
             public String getStringValue(Container c)
             {
-                return _newIssue.getType();
+                return _newIssue.getProperty(Issue.Prop.type);
             }
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("area", "The current area of the issue")
         {
             public String getStringValue(Container c)
             {
-                return _newIssue.getArea();
+                return _newIssue.getProperty(Issue.Prop.area);
             }
         });
         _replacements.add(new ReplacementParam<String>("priority", String.class, "The current priority of the issue")
@@ -159,18 +159,18 @@ public class IssueUpdateEmailTemplate extends UserOriginatedEmailTemplate
             @Override
             public String getValue(Container c)
             {
-                if (_newIssue == null || _newIssue.getPriority() == null)
+                if (_newIssue == null)
                 {
                     return null;
                 }
-                return _newIssue.getPriority().toString();
+                return _newIssue.getProperty(Issue.Prop.priority);
             }
         });
         _replacements.add(new IssueUpdateEmailTemplate.StringReplacementParam("milestone", "The current milestone of the issue")
         {
             public String getStringValue(Container c)
             {
-                return _newIssue.getMilestone();
+                return _newIssue.getProperty(Issue.Prop.milestone);
             }
         });
         _replacements.add(new IssueUpdateEmailTemplate.UserIdReplacementParam("openedBy", "The user that opened the issue")

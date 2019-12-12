@@ -45,6 +45,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.AssayException;
@@ -54,6 +55,7 @@ import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
@@ -354,7 +356,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     }
 
     @Override
-    public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException
+    public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException, ValidationException
     {
         // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
         // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
@@ -382,10 +384,22 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         {
                             domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
                             domain.setName(assay.getName() + " " + domain.getName());
-                            DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), getContainer());
-                            dd = dd.edit().setDescription(domain.getDescription()).build();
-                            OntologyManager.updateDomainDescriptor(dd);
-                            domainURIs.add(domain.getDomainURI());
+                            GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer());
+                            if (gwtDomain == null)
+                            {
+                                Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
+                                domainURIs.add(newDomain.getTypeURI());
+                            }
+                            else
+                            {
+                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, org.labkey.api.assay.AssayService.get().getProvider(assay.getProviderName()));
+                                if (domainErrors.hasErrors())
+                                {
+                                    throw domainErrors;
+                                }
+                                domainURIs.add(domain.getDomainURI());
+                            }
+
                         }
                         setPropertyDomainURIs(protocol, domainURIs);
                     }
@@ -497,16 +511,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     StringBuilder errors = new StringBuilder();
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
-                        List<String> domainErrors = updateDomainDescriptor(domain, protocol, provider);
-                        for (String error : domainErrors)
-                        {
-                            errors.append(error).append("\n");
-                        }
+                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider);
 
                         // Need to bail out inside of the loop because some errors may have left the DB connection in
                         // an unusable state.
-                        if (errors.length() > 0)
-                            throw new AssayException(errors.toString());
+                        if (domainErrors.hasErrors())
+                            throw domainErrors;
                     }
 
                     QueryService.get().updateLastModified();
@@ -517,11 +527,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 catch (UnexpectedException e)
                 {
                     Throwable cause = e.getCause();
-                    throw new AssayException(cause.getMessage());
+                    throw new ValidationException(cause.getMessage());
                 }
                 catch (ExperimentException e)
                 {
-                    throw new AssayException(e.getMessage());
+                    throw new ValidationException(e.getMessage());
                 }
             }
             else
@@ -529,7 +539,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
+    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
     {
         GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
@@ -540,7 +550,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
         }
         provider.changeDomain(getUser(), protocol, previous, domain);
-        return updateDomainDescriptor(previous, domain);
+        return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
     }
 
     @Override

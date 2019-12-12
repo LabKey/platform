@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
+
 /**
  * Base functionality for objects that have an LSID.
  * User: migra
@@ -24,5 +26,12 @@ public interface Identifiable
 {
     String getLSID();
 
+    default String getLSIDNamespacePrefix()
+    {
+        return new Lsid(getLSID()).getNamespacePrefix();
+    }
+
     String getName();
+
+    Container getContainer();
 }

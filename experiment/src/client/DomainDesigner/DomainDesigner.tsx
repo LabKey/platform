@@ -16,13 +16,11 @@
 
 import {List} from "immutable";
 import * as React from 'react'
-import { Button, Panel } from "react-bootstrap";
+import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
+import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
 
-import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@labkey/components/dist/components.css"
 import "./domainDesigner.scss";
 
 interface IAppState {
@@ -44,12 +42,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
-        let messages = List<IBannerMessage>().asMutable();
+        let messages = List<IBannerMessage>();
         if ((!schemaName || !queryName) && !domainId) {
             let msg =  'Missing required parameter: domainId or schemaName and queryName.';
             let msgType = 'danger';
             let bannerMsg ={message : msg, messageType : msgType};
-            messages.push(bannerMsg);
+            messages = messages.push(bannerMsg);
         }
 
         this.state = {
@@ -58,7 +56,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             domainId,
             returnUrl,
             submitting: false,
-            messages: messages.asImmutable(),
+            messages,
             showConfirm: false,
             dirty: false
         };
@@ -120,18 +118,11 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }
             })
             .catch((badDomain) => {
-                // get error messages, fall back on the top level exception
-                let bannerMsgs = getBannerMessages(badDomain);
-                if (bannerMsgs && bannerMsgs.size === 0 && badDomain.domainException.exception) {
-                    bannerMsgs = List<IBannerMessage>([{message: badDomain.domainException.exception, messageType: 'danger'}]);
-                }
-
                 this.setState(() => ({
                     domain: badDomain,
-                    submitting: false,
-                    messages: bannerMsgs
+                    submitting: false
                 }));
-            })
+            });
     };
 
     submitAndNavigate = () => {
@@ -139,10 +130,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
+
         this.setState((state) => ({
             domain: newDomain,
-            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: getBannerMessages(newDomain)
+            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
     };
 
@@ -173,7 +164,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', LABKEY.container.path);
         });
     };
 
@@ -192,22 +183,18 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     renderButtons() {
-        const { submitting } = this.state;
+        const { submitting, domain } = this.state;
 
         return (
-            <WizardNavButtons
-                cancel={this.onCancelBtnHandler}
-                containerClassName=""
-                includeNext={false}>
-                <Button
-                    type='submit'
-                    bsClass='btn btn-success'
-                    onClick={() => this.submitHandler(true)}
-                    disabled={submitting}
-                >
-                    Finish
-                </Button>
-            </WizardNavButtons>
+                <Row>
+                    <Col xs={1}>
+                        <Button className='domain-designer-save-btn' onClick={this.onCancelBtnHandler}>Cancel</Button>
+                    </Col>
+                    <Col xs={10} />
+                    <Col xs={1}>
+                        <Button className='pull-right domain-designer-save-btn' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+                    </Col>
+                </Row>
         )
     }
 
@@ -237,7 +224,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         headerTitle={'Fields'}
                         domain={domain}
                         onChange={this.onChangeHandler}
-                        showHeaderFieldCount={false}
+                        useTheme={true}
                     />
                 }
                 { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {

@@ -59,7 +59,6 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.HtmlString.EMPTY_STRING;

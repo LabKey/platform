@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Iterables;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
@@ -45,28 +46,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BeanObjectFactory;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
@@ -77,6 +57,7 @@ import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.LsidType;
@@ -108,6 +89,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.model.GWTIndex;
@@ -178,6 +160,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1272,7 +1255,8 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
-    public ExpDataClassImpl getDataClass(String lsid)
+    @Override
+    public ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
         DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
@@ -1348,6 +1332,73 @@ public class ExperimentServiceImpl implements ExperimentService
         Data data = new SqlSelector(table.getSchema().getScope(), sql).getObject(Data.class);
 
         return data == null ? null : new ExpDataImpl(data);
+    }
+
+    @Override
+    public ExpData findExpData(Container c, User user,
+                            @NotNull String dataClassName, String dataName,
+                            RemapCache cache, Map<Integer, ExpData> dataCache)
+            throws ValidationException
+    {
+        Integer rowId;
+        try
+        {
+            rowId = ConvertHelper.convert(dataName, Integer.class);
+        }
+        catch (ConversionException e1)
+        {
+            try
+            {
+                rowId = cache.remap(ExpSchema.SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
+                if (rowId == null)
+                    return null;
+            }
+            catch (ConversionException e2)
+            {
+                throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e2.getMessage());
+            }
+        }
+
+        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        return dataCache.computeIfAbsent(rowId, svc::getExpData);
+    }
+
+    @Override
+    public @Nullable ExpMaterial findExpMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException
+    {
+        Integer rowId;
+        try
+        {
+            rowId = ConvertHelper.convert(sampleName, Integer.class);
+        }
+        catch (ConversionException e1)
+        {
+            try
+            {
+                if (sampleSetName == null)
+                    rowId = cache.remap(ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+                else
+                    rowId = cache.remap(SamplesSchema.SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
+
+                if (rowId == null)
+                    return null;
+            }
+            catch (ConversionException e2)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Failed to resolve '" + sampleName + "' into a sample.");
+                if (sampleSetName == null)
+                {
+                    sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
+                }
+                sb.append(" " + e2.getMessage());
+                throw new ValidationException(sb.toString());
+            }
+        }
+
+        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
+        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
     }
 
     @Override
@@ -2122,7 +2173,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Set<ExpRun> oldRuns = new HashSet<>(oldCollectRunsToInvestigate(start, options));
         if (!runs.equals(oldRuns))
         {
-            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestiate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
+            LOG.warn("Mismatch between collectRunsAndRolesToInvestigate and oldCollectRunsToInvestigate. start: " + start + "\nruns: " + runs + "\nold runs:" + oldRuns);
             return false;
         }
         return true;
@@ -2130,35 +2181,55 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     @NotNull
-    public ExpLineage getLineage(Container c, User user, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options)
     {
         return getLineage(c, user, Set.of(start), options);
     }
 
     @NotNull
-    public ExpLineage getLineage(Container c, User user, @NotNull Set<ExpLineageItem> seeds, @NotNull ExpLineageOptions options)
+    public ExpLineage getLineage(Container c, User user, @NotNull Set<Identifiable> seeds, @NotNull ExpLineageOptions options)
     {
         // validate seeds
-        List<String> lsids = new ArrayList<>(seeds.size());
-        for (ExpLineageItem seed : seeds)
+        Set<Integer> seedObjectIds = new HashSet<>(seeds.size());
+        Set<String> seedLsids = new HashSet<>(seeds.size());
+        for (Identifiable seed : seeds)
         {
-            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem)seed))
+            if (seed.getLSID() == null)
+                throw new RuntimeException("Lineage not available for unknown object");
+
+            // CONSIDER: add objectId to Identifiable?
+            int objectId = -1;
+            if (seed instanceof ExpObject)
+                objectId = ((ExpObject)seed).getObjectId();
+            else if (seed instanceof IdentifiableBase)
+                objectId = ((IdentifiableBase)seed).getObjectId();
+
+            if (objectId == -1)
+                throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
+
+            if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem) seed))
                 throw new RuntimeException("Lineage not available for unknown material: " + seed.getLSID());
 
             // ensure that the protocol output lineage is in the same container as the request
             if (c != null && !c.equals(seed.getContainer()))
                 throw new RuntimeException("Lineage for '" + seed.getName() + "' must be in the folder '" + c.getPath() + "', got: " + seed.getContainer().getPath());
 
-            lsids.add(seed.getLSID());
+            if (!seedLsids.add(seed.getLSID()))
+                throw new RuntimeException("Requested lineage for duplicate LSID seed: " + seed.getLSID());
+
+            if (!seedObjectIds.add(objectId))
+                throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
         }
 
-        SQLFragment sqlf = generateExperimentTreeSQL(lsids, options);
+        options.setUseObjectIds(true);
+        SQLFragment sqlf = generateExperimentTreeSQLObjectIdsSeeds(seedObjectIds, options);
         Set<Integer> dataIds = new HashSet<>();
         Set<Integer> materialIds = new HashSet<>();
         Set<Integer> runIds = new HashSet<>();
+        Set<String> objectLsids = new HashSet<>();
         Set<ExpLineage.Edge> edges = new HashSet<>();
 
-        for (ExpLineageItem seed : seeds)
+        for (Identifiable seed : seeds)
         {
             // create additional edges from the run for each ExpMaterial or ExpData seed
             if (seed instanceof ExpRunItem)
@@ -2191,14 +2262,14 @@ public class ExperimentServiceImpl implements ExperimentService
             if (parentRowId == null || childRowId == null)
             {
                 LOG.error(String.format("Node not found for lineage: %s.\n  depth=%d, parentLsid=%s, parentType=%s, parentRowId=%d, childLsid=%s, childType=%s, childRowId=%d",
-                        StringUtils.join(lsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
+                        StringUtils.join(seedLsids, ", "), depth, parentLSID, parentExpType, parentRowId, childLSID, childExpType, childRowId));
             }
             else
             {
                 edges.add(new ExpLineage.Edge(parentLSID, childLSID, role));
 
                 // Don't include the seed in the lineage collections
-                if (!lsids.contains(parentLSID))
+                if (!seedLsids.contains(parentLSID))
                 {
                     // process parents
                     if ("Data".equals(parentExpType))
@@ -2207,10 +2278,12 @@ public class ExperimentServiceImpl implements ExperimentService
                         materialIds.add(parentRowId);
                     else if ("ExperimentRun".equals(parentExpType))
                         runIds.add(parentRowId);
+                    else if ("Object".equals(parentExpType))
+                        objectLsids.add(parentLSID);
                 }
 
                 // Don't include the seed in the lineage collections
-                if (!lsids.contains(childLSID))
+                if (!seedLsids.contains(childLSID))
                 {
                     // process children
                     if ("Data".equals(childExpType))
@@ -2219,6 +2292,8 @@ public class ExperimentServiceImpl implements ExperimentService
                         materialIds.add(childRowId);
                     else if ("ExperimentRun".equals(childExpType))
                         runIds.add(childRowId);
+                    else if ("Object".equals(childExpType))
+                        objectLsids.add(childLSID);
                 }
             }
         });
@@ -2244,12 +2319,28 @@ public class ExperimentServiceImpl implements ExperimentService
         else
             runs = new HashSet<>(expRuns);
 
-        return new ExpLineage(seeds, datas, materials, runs, edges);
+        Set<Identifiable> otherObjects = new HashSet<>(objectLsids.size());
+        for (String lsid : objectLsids)
+        {
+            Identifiable obj = LsidManager.get().getObject(lsid);
+            if (obj != null)
+            {
+                if (user == null || obj.getContainer().hasPermission(user, ReadPermission.class))
+                    otherObjects.add(obj);
+            }
+            else
+            {
+                LOG.warn("Failed to get object for LSID '" + lsid + "' referenced in lineage for seed: " +  StringUtils.join(seedLsids, ", "));
+            }
+        }
+
+        return new ExpLineage(seeds, datas, materials, runs, otherObjects, edges);
     }
 
 
-    public SQLFragment generateExperimentTreeSQL(List<String> lsids, ExpLineageOptions options)
+    public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
+        assert options.isUseObjectIds() == false;
         String comma="";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
@@ -2260,16 +2351,24 @@ public class ExperimentServiceImpl implements ExperimentService
         return generateExperimentTreeSQL(sqlf, options);
     }
 
-
-
-    public static class ExperimentGraphBean
+    public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
-        public String expType = null;
+        assert options.isUseObjectIds() == true;
+        String comma="";
+        SQLFragment sqlf = new SQLFragment("VALUES ");
+        for (Integer objectId : objectIds)
+        {
+            sqlf.append(comma).append("(").append(objectId).append(")");
+            comma = ",";
+        }
+        return generateExperimentTreeSQL(sqlf, options);
     }
+
+
 
     private String getSourceSql(ExpLineageOptions options, String source)
     {
-        var view = new JspView<>(ExperimentServiceImpl.class, source, options);
+        var view = new JspView<>(source, options);
         view.setFrame(WebPartView.FrameType.NOT_HTML);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -2290,7 +2389,7 @@ public class ExperimentServiceImpl implements ExperimentService
     /* return <ParentsQuery,ChildrenQuery> */
     private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, ExpLineageOptions options)
     {
-        String sourceSQL = getSourceSql(options, options.isForLookup() ? "ExperimentRunGraphForLookup2.jsp" : "ExperimentRunGraph2.jsp");
+        String sourceSQL = getSourceSql(options, options.isForLookup() ? "/org/labkey/experiment/api/ExperimentRunGraphForLookup2.jsp" : "/org/labkey/experiment/api/ExperimentRunGraph2.jsp");
 
         Map<String,String> map = new HashMap<>();
 
@@ -2747,11 +2846,30 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
+            Set<Pair<Integer, Integer>> provenanceStartingInputs = Collections.emptySet();
+            Set<Pair<Integer, Integer>> provenanceFinalOutputs = Collections.emptySet();
+
+            ProvenanceService pvs = ProvenanceService.get();
+            if (pvs != null)
+            {
+                ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
+                if (null != startProtocolApp)
+                {
+                    provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
+                }
+
+                ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
+                if (null != finalProtocolApp)
+                {
+                    provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
+                }
+            }
+
             // delete all existing edges for this run
             if (deleteFirst)
                 removeEdgesForRun(runId);
 
-            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size();
+            int edgeCount = fromDataLsids.size() + fromMaterialLsids.size() + toDataLsids.size() + toMaterialLsids.size() + provenanceStartingInputs.size() + provenanceFinalOutputs.size();
             LOG.debug(String.format("  edge counts: input data=%d, input materials=%d, output data=%d, output materials=%d, total=%d",
                     fromDataLsids.size(), fromMaterialLsids.size(), toDataLsids.size(), toMaterialLsids.size(), edgeCount));
 
@@ -2802,6 +2920,18 @@ public class ExperimentServiceImpl implements ExperimentService
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
 
+                if (!provenanceStartingInputs.isEmpty())
+                {
+                    for (Pair<Integer, Integer> pair : provenanceStartingInputs)
+                    {
+                        Integer fromId = pair.first;
+                        if (null != fromId)
+                        {
+                            if (seen.add(fromId))
+                                prepEdgeForInsert(params, fromId, runObjectId, runId);
+                        }
+                    }
+                }
 
                 //
                 // run lsid -> to lsid
@@ -2820,6 +2950,19 @@ public class ExperimentServiceImpl implements ExperimentService
                     int objectid = (Integer)toMaterialLsid.get("objectid");
                     if (seen.add(objectid))
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
+                }
+
+                if (!provenanceFinalOutputs.isEmpty())
+                {
+                    for (Pair<Integer, Integer> pair : provenanceFinalOutputs)
+                    {
+                        Integer toObjectId = pair.second;
+                        if (null != toObjectId)
+                        {
+                            if (seen.add(toObjectId))
+                                prepEdgeForInsert(params, runObjectId, toObjectId, runId);
+                        }
+                    }
                 }
 
                 insertEdges(params);
@@ -2868,7 +3011,38 @@ public class ExperimentServiceImpl implements ExperimentService
         }
     }
 
+    public List<ProtocolApplication> getProtocolApplicationsForRun(int runId)
+    {
+        List<ProtocolApplication> protocolApplications = new TableSelector(getTinfoProtocolApplication(), new SimpleFilter(FieldKey.fromParts("RunId"), runId), null).getArrayList(ProtocolApplication.class);
+        protocolApplications.sort(Comparator.comparing(org.labkey.experiment.api.ProtocolApplication::getActionSequence));
+        return protocolApplications;
+    }
 
+    public ProtocolApplication getStartingProtocolApplication(int runId)
+    {
+        List<ProtocolApplication> protocolApplications = getProtocolApplicationsForRun(runId);
+        ProtocolApplication protocolApplication = null;
+
+        if (!protocolApplications.isEmpty())
+        {
+            protocolApplication = protocolApplications.get(0);
+        }
+        return protocolApplication;
+    }
+
+    public ProtocolApplication getFinalProtocolApplication(int runId)
+    {
+        List<ProtocolApplication> protocolApplications = getProtocolApplicationsForRun(runId);
+        ProtocolApplication protocolApplication = null;
+
+        if (!protocolApplications.isEmpty())
+        {
+            int size = protocolApplications.size();
+            protocolApplication = protocolApplications.get(size-1);
+        }
+
+        return protocolApplication;
+    }
 
     public boolean isUnknownMaterial(@NotNull ExpRunItem output)
     {
@@ -2919,8 +3093,14 @@ public class ExperimentServiceImpl implements ExperimentService
         // so other cases can be added in the future
         AttachmentService.get().deleteAttachments(new ExpRunAttachmentParent(run));
 
-        run.deleteProtocolApplications(datasToDelete, user);
+        // remove edges prior to deleting protocol applications
+        // Calling deleteProtocolApplications calls ExperimentService.beforeDeleteData() which
+        // eventually calls AbstractAssayTsvDataHandler.beforeDeleteData() to clean up any assay results
+        // as well as the exp.object for the assay result rows.  The assay result rows will have an
+        // output exp.edge created by the provenance module.
         removeEdgesForRun(runId);
+
+        run.deleteProtocolApplications(datasToDelete, user);
 
         //delete run properties and all children
         OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
@@ -3126,7 +3306,9 @@ public class ExperimentServiceImpl implements ExperimentService
             if (null != type)
                 return type;
         }
-
+        // AssayRunMaterial, AssayRunTSVData, GeneralAssayProtocol, LuminexAssayProtocol
+        // Recipe
+        // AssayDomain-SampleWellGroup
         String typeName = new SqlSelector(getExpSchema(), findTypeSql, lsid.toString()).getObject(String.class);
         return LsidType.get(typeName);
     }
@@ -3308,7 +3490,16 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), url);
+        List<String> urls = new ArrayList<>();
+        urls.add(url);
+        // Issue 17202 - for directories, check if the path was stored in the database without a trailing slash, but do
+        // it in a single query instead of two separate DB calls
+        if (url.endsWith("/"))
+        {
+            urls.add(url.substring(0, url.length() - 1));
+        }
+
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("DataFileUrl"), urls));
         if (c != null)
         {
             filter.addCondition(FieldKey.fromParts("Container"), c);
@@ -3318,11 +3509,6 @@ public class ExperimentServiceImpl implements ExperimentService
         if (data.length > 0)
         {
             return new ExpDataImpl(data[0]);
-        }
-        // Issue 17202 - for directories, check if the path was stored in the database without a trailing slash
-        if (url.endsWith("/"))
-        {
-            return getExpDataByURL(url.substring(0, url.length() - 1), c);
         }
         return null;
     }
@@ -3620,8 +3806,6 @@ public class ExperimentServiceImpl implements ExperimentService
      * Finds the subset of materialIds that are used as inputs to runs.
      *
      * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
-     * @param materialIds
-     * @return
      */
     public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
     {
@@ -4206,7 +4390,7 @@ public class ExperimentServiceImpl implements ExperimentService
             }
             for (Map.Entry<ExperimentDataHandler, List<ExpData>> entry : handlers.entrySet())
             {
-                entry.getKey().beforeDeleteData(entry.getValue());
+                entry.getKey().beforeDeleteData(entry.getValue(), user);
             }
         }
         catch (ExperimentException e)
@@ -5101,7 +5285,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
-                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT);
+                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT, POSTROLLBACK);
             }
             else
             {
@@ -5232,8 +5416,24 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
-                                            Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+    public ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+    {
+        return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas, transformedDatas, info, log, loadDataFiles, null, null);
+    }
+
+    @Override
+    public ExpRun saveSimpleExperimentRun(ExpRun baseRun,
+                                          Map<ExpMaterial, String> inputMaterials,
+                                          Map<ExpData, String> inputDatas,
+                                          Map<ExpMaterial, String> outputMaterials,
+                                          Map<ExpData, String> outputDatas,
+                                          Map<ExpData, String> transformedDatas,
+                                          ViewBackgroundInfo info,
+                                          Logger log,
+                                          boolean loadDataFiles,
+                                          @Nullable Set<String> runInputLsids,
+                                          @Nullable Set<Pair<String, String>> finalOutputLsids)
+            throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 
@@ -5320,6 +5520,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             initializeProtocolApplication(protApp1, date, action1, run, parentProtocol, context);
             protApp1.save(user);
+
+            if (null != runInputLsids)
+            {
+                protApp1.addProvenanceInput(runInputLsids);
+            }
+
             addDataInputs(inputDatas, protApp1._object, user);
             addMaterialInputs(inputMaterials, protApp1._object, user);
 
@@ -5362,6 +5568,12 @@ public class ExperimentServiceImpl implements ExperimentService
 
             initializeProtocolApplication(protApp3, date, action3, run, outputProtocol, context);
             protApp3.save(user);
+
+            if (null != finalOutputLsids && !finalOutputLsids.isEmpty())
+            {
+                protApp3.addProvenanceMapping(finalOutputLsids);
+            }
+
             addDataInputs(outputDatas, protApp3._object, user);
             addMaterialInputs(outputMaterials, protApp3._object, user);
 
@@ -5562,7 +5774,7 @@ public class ExperimentServiceImpl implements ExperimentService
             Map<String, ExperimentRun> runLsidToRowId = saveExpRunsBatch(_container, _runParams);
 
             // insert into the protocolapplication table
-            createProtocolAppParams(_container, _protAppRecords, _protAppParams, _context, runLsidToRowId);
+            createProtocolAppParams(_protAppRecords, _protAppParams, _context, runLsidToRowId);
             saveExpProtocolApplicationBatch(_protAppParams);
 
             // insert into the materialinput table
@@ -5616,7 +5828,7 @@ public class ExperimentServiceImpl implements ExperimentService
         /**
          * Replace the placeholder run id with the actual run id
          */
-        private void createProtocolAppParams(Container c, List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context, Map<String, ExperimentRun> runLsidToRowId) throws XarFormatException
+        private void createProtocolAppParams(List<ProtocolAppRecord> protAppRecords, List<List<?>> protAppParams, XarContext context, Map<String, ExperimentRun> runLsidToRowId) throws XarFormatException
         {
             for (ProtocolAppRecord rec : protAppRecords)
             {
@@ -6004,7 +6216,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     public ExpDataClassImpl createDataClass(
-            Container c, User u, String name, String description,
+            @NotNull Container c, @NotNull User u, @NotNull String name, String description,
             List<GWTPropertyDescriptor> properties,
             List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
             @Nullable TemplateInfo templateInfo)

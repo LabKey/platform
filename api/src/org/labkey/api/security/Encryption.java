@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
@@ -108,7 +109,13 @@ public class Encryption
         PropertyMap map = store.getWritableProperties(CATEGORY, true);
         byte[] bytes = generateRandomBytes(16);
         map.put(SALT_KEY, Base64.encodeBase64String(bytes));
-        map.save();
+
+        // Seems very unlikely that we'd attempt to read encrypted data before we'd write any encrypted data on a production
+        // server, but it could happen during development. Allow this mutating ensure operation during a GET.
+        try (var ignored = SpringActionController.ignoreSqlUpdates())
+        {
+            map.save();
+        }
 
         return bytes;
     }

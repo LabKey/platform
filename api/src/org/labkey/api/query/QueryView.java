@@ -93,7 +93,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -204,6 +203,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _useQueryViewActionExportURLs = false;
     private boolean _printView = false;
     private boolean _exportView = false;
+    private boolean _apiResponseView = false;
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
     private boolean _showReports = true;
@@ -496,21 +496,25 @@ public class QueryView extends WebPartView<Object>
         if (expr == null)
             return null;
 
-        switch (action)
+        // Don't append the returnURL parameter in API responses
+        if (!isApiResponseView())
         {
-            case detailsQueryRow:
-            case updateQueryRow:
-            case insertQueryRow:
-            case importData:
-            case updateQueryRows:
-            case deleteQueryRows:
+            switch (action)
             {
-                // ICK
-                URLHelper returnURL = getReturnURL();
-                if (returnURL != null)
+                case detailsQueryRow:
+                case updateQueryRow:
+                case insertQueryRow:
+                case importData:
+                case updateQueryRows:
+                case deleteQueryRows:
                 {
-                    String encodedReturnURL = PageFlowUtil.encode(returnURL.getLocalURIString());
-                    expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(ActionURL.Param.returnUrl.name(), encodedReturnURL);
+                    // ICK
+                    URLHelper returnURL = getReturnURL();
+                    if (returnURL != null)
+                    {
+                        String encodedReturnURL = PageFlowUtil.encode(returnURL.getLocalURIString());
+                        expr = ((StringExpressionFactory.AbstractStringExpression) expr).addParameter(ActionURL.Param.returnUrl.name(), encodedReturnURL);
+                    }
                 }
             }
         }
@@ -1373,9 +1377,12 @@ public class QueryView extends WebPartView<Object>
             return;
         if (null == getExportScriptFactory("r"))
             return;
-        ActionURL exportUrl = urlFor(QueryAction.exportScript).replaceParameter("scriptType","r");
+        ActionURL exportUrl = urlFor(QueryAction.exportScript);
+        if (null == exportUrl)
+            return;
+        exportUrl.replaceParameter("scriptType","r");
         TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), selectionKey,
-                                                                   getColumnHeaderType(), exportUrl, null, null);
+                getColumnHeaderType(), exportUrl, null, null);
         HttpView exportView = rss.getExportToRStudioView(textBean);
         if (exportView == null)
             return;
@@ -2156,11 +2163,13 @@ public class QueryView extends WebPartView<Object>
                 List<FieldKey> keys = getSettings().getFieldKeys();
                 FieldKey starKey = FieldKey.fromParts("*");
 
+                // include details and update columns if they've been requested
+                addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
+
                 //special-case: if one of the keys is *, add all columns from the
                 //TableInfo and remove the * so that Query doesn't choke on it
                 if (keys.contains(starKey))
                 {
-                    addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
                     rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
                     // Since the client requested all columns, don't filter which ones get sent back
@@ -2187,7 +2196,7 @@ public class QueryView extends WebPartView<Object>
         ret.setFrame(WebPartView.FrameType.NONE);
         rgn.setAllowAsync(true);
         ButtonBar bb = new ButtonBar();
-        if (!isPrintView() && !isExportView())
+        if (!(isApiResponseView() || isPrintView() || isExportView()))
         {
             populateButtonBar(ret, bb);
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
@@ -2196,7 +2205,7 @@ public class QueryView extends WebPartView<Object>
         }
         rgn.setButtonBar(bb);
 
-        rgn.setButtonBarPosition(isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
+        rgn.setButtonBarPosition(isApiResponseView() || isPrintView() ? DataRegion.ButtonBarPosition.NONE : _buttonBarPosition);
 
         if (getSettings() != null && getSettings().getShowRows() == ShowRows.ALL)
         {
@@ -2299,8 +2308,8 @@ public class QueryView extends WebPartView<Object>
         rc.setCache(false);
         try
         {
-            Results rs = rgn.getResultSet(rc);
-            TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+            Results results = rgn.getResults(rc);
+            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()));
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
             // don't step on default
             if (null != headerType)
@@ -2336,7 +2345,7 @@ public class QueryView extends WebPartView<Object>
             rgn.setAllowAsync(async);
             view.getRenderContext().setCache(cache);
             RenderContext ctx = view.getRenderContext();
-            if (null == rgn.getResultSet(ctx))
+            if (null == rgn.getResults(ctx))
                 return null;
             return new ResultsImpl(ctx);
         }
@@ -2374,9 +2383,8 @@ public class QueryView extends WebPartView<Object>
 
         try
         {
-            ResultSet rs = rgn.getResultSet(rc);
-            Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
-            ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
+            Results results = rgn.getResults(rc);
+            ExcelWriter ew = new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType);
             ew.setFilenamePrefix(getSettings().getQueryName());
             ew.setAutoSize(true);
             return ew;
@@ -2664,7 +2672,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            _exportView = true;
+            _apiResponseView = true;
             setShowDetailsColumn(response.isIncludeDetailsColumn());
             setShowUpdateColumn(response.isIncludeUpdateColumn());
             DataView view = createDataView();
@@ -2682,7 +2690,12 @@ public class QueryView extends WebPartView<Object>
             RenderContext ctx = view.getRenderContext();
             rgn.setAllowAsync(false);
             rgn.prepareDisplayColumns(ctx.getContainer());
-            response.initialize(ctx, rgn, table, response.isIncludeDetailsColumn() ? rgn.getDisplayColumns() : getExportColumns(rgn.getDisplayColumns()));
+            List<DisplayColumn> displayColumns;
+            if (response.isIncludeDetailsColumn() || response.isIncludeUpdateColumn())
+                displayColumns = rgn.getDisplayColumns();
+            else
+                displayColumns = getExportColumns(rgn.getDisplayColumns());
+            response.initialize(ctx, rgn, table, displayColumns);
         }
         else
         {
@@ -2712,7 +2725,7 @@ public class QueryView extends WebPartView<Object>
         // Assume that it can, and rely on the fact that Excel throws out rows if there are more than it can handle
         RenderContext ctx = configureForExcelExport(ExcelWriter.ExcelDocumentType.xlsx, view, rgn);
 
-        ResultSet rs = rgn.getResultSet(ctx);
+        Results results = rgn.getResults(ctx);
 
         // Bug 5610 & 6179. Excel web queries don't work over SSL if caching is disabled,
         // so we need to allow caching so that Excel can read from IE on Windows.
@@ -2720,7 +2733,7 @@ public class QueryView extends WebPartView<Object>
         ResponseHelper.setPrivate(response);
 
         HtmlWriter writer = new HtmlWriter();
-        writer.write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
+        writer.write(results, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
         logAuditEvent("Exported to Excel Web Query data", writer.getDataRowCount());
     }
@@ -2869,6 +2882,8 @@ public class QueryView extends WebPartView<Object>
 
     protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
     {
+        // Print view and export view don't need details and update columns,
+        // but the selectRows API can turn them on to include the URLs in the response format.
         if (isPrintView() || isExportView())
             return;
 
@@ -2996,6 +3011,11 @@ public class QueryView extends WebPartView<Object>
     public boolean isExportView()
     {
         return _exportView;
+    }
+
+    public boolean isApiResponseView()
+    {
+        return _apiResponseView;
     }
 
     public boolean isUseQueryViewActionExportURLs()

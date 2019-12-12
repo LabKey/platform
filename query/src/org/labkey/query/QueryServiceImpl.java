@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -48,8 +49,6 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
-import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -70,7 +69,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
@@ -89,7 +87,6 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.QuerySnapshotDef;
-import org.labkey.query.reports.ReportsController;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QDot;
 import org.labkey.query.sql.QExpr;
@@ -127,7 +124,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -140,7 +136,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -171,6 +166,7 @@ public class QueryServiceImpl implements QueryService
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
+    private QueryAnalysisService _queryAnalysisService;
 
     private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
@@ -2349,7 +2345,8 @@ public class QueryServiceImpl implements QueryService
         return getSelectSQL(table, selectColumns, filter, sort, maxRows, offset, forceSort, QueryLogging.emptyQueryLogging());
     }
 
-	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
+	@Override
+    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
 	{
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
@@ -3068,22 +3065,10 @@ public class QueryServiceImpl implements QueryService
     }
     */
 
-    public static QuerySchema resolveSchema(QuerySchema start, SchemaKey k)
-    {
-        QuerySchema schema = start;
-        for (var part : k.getParts())
-        {
-            schema = schema.getSchema(part);
-            if (null == schema)
-                return null;
-        }
-        return schema;
-    }
-
-
+    @Override
     public TableInfo analyzeQuery(
         QuerySchema schema, String queryName,
-        HashSetValuedHashMap<DependencyObject,DependencyObject> dependencyGraph,
+        SetValuedMap<DependencyObject,DependencyObject> dependencyGraph,
         @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings)
     {
         Object qort;
@@ -3113,126 +3098,17 @@ public class QueryServiceImpl implements QueryService
         return query.getTableInfo();
     }
 
+    @Override
+    public void registerQueryAnalysisProvider(QueryAnalysisService provider)
+    {
+        _queryAnalysisService = provider;
+    }
 
     @Override
-    public void analyzeFolder(DefaultSchema startSchema, HashSetValuedHashMap<DependencyObject, DependencyObject> deps)
+    public QueryAnalysisService getQueryAnalysisService()
     {
-        new QueryAnalyzer(startSchema, deps).run();
-        new ReportAnalyzer(startSchema, deps).run();
-
+        return _queryAnalysisService;
     }
-
-
-    static class QueryAnalyzer implements Runnable, Supplier<HashSetValuedHashMap<DependencyObject, DependencyObject>>
-    {
-        final QueryServiceImpl queryService;
-        final DefaultSchema defaultSchema;
-        final HashSetValuedHashMap<DependencyObject, DependencyObject> deps;
-
-        Set<SchemaKey> schemaKeys = new HashSet<>();
-        LinkedList<QuerySchema> schemasToProcess = new LinkedList<>();
-
-        QueryAnalyzer(DefaultSchema defaultSchema, HashSetValuedHashMap<DependencyObject, DependencyObject> deps)
-        {
-            this.defaultSchema = defaultSchema;
-            this.queryService = (QueryServiceImpl)QueryService.get();
-            this.deps = deps;
-            schemasToProcess.add(defaultSchema);
-        }
-
-        void add(@Nullable QuerySchema s)
-        {
-            if (null == s)
-                return;
-            if (!defaultSchema.getContainer().equals(s.getContainer()))
-                return;
-            if (s instanceof QuerySchema.ContainerSchema)
-                return;
-            if (schemaKeys.add(((UserSchema)s).getSchemaPath()))
-                schemasToProcess.add(s);
-        }
-
-        @Override
-        public void run()
-        {
-            while (!schemasToProcess.isEmpty())
-            {
-                QuerySchema s = schemasToProcess.removeFirst();
-                LOG.debug("Analyze schema: " + s.getName());
-                if (s instanceof UserSchema)
-                {
-                    for (var entry : ((UserSchema) s).getQueryDefs().entrySet())
-                    {
-                        String queryName = entry.getKey();
-                        LOG.debug("Analyze query : " + s.getName() + "." + queryName);
-                        var errors = new ArrayList<QueryException>();
-                        var warnings = new ArrayList<QueryParseException>();
-                        queryService.analyzeQuery(s, queryName, deps, errors, warnings);
-                    }
-                }
-
-                for (String schemaName : s.getSchemaNames())
-                {
-                    add(s.getSchema(schemaName));
-                }
-            }
-        }
-
-        @Override
-        public HashSetValuedHashMap<DependencyObject, DependencyObject> get()
-        {
-            return deps;
-        }
-    }
-
-
-    static class ReportAnalyzer implements Runnable
-    {
-        final DefaultSchema defaultSchema;
-        final HashSetValuedHashMap<DependencyObject,DependencyObject> deps;
-
-        ReportAnalyzer(DefaultSchema defaultSchema, HashSetValuedHashMap<DependencyObject,DependencyObject> deps)
-        {
-            this.defaultSchema = defaultSchema;
-            this.deps = deps;
-        }
-
-        @Override
-        public void run()
-        {
-            ViewContext vc = new ViewContext(new ViewBackgroundInfo(defaultSchema.getContainer(), defaultSchema.getUser(), defaultSchema.getContainer().getStartURL(defaultSchema.getUser())));
-
-            for (var report : ReportService.get().getReports(defaultSchema.getUser(), defaultSchema.getContainer()))
-            {
-                if (isBlank(report.getDescriptor().getReportKey()))
-                    continue;
-
-                // report
-                ActionURL reportURL = report.getEditReportURL(vc);
-                if (null == reportURL)
-                    reportURL = report.getRunReportURL(vc);
-                if (null == reportURL)
-                    new ReportsController.ReportUrlsImpl().urlManageViews(vc.getContainer());
-                DependencyObject r = new DependencyObject(DependencyType.Report,defaultSchema.getContainer(),new SchemaKey(null,"~reports~"), report.getDescriptor().getReportName(), reportURL);
-
-                // bound query
-                var parts = ReportUtil.splitReportKey(report.getDescriptor().getReportKey());
-                SchemaKey schemaPath = SchemaKey.fromString(parts[0]);
-                String queryName = parts[1];
-                QuerySchema targetSchema = resolveSchema(defaultSchema, schemaPath);
-                if (null == targetSchema)
-                    continue;
-                var type = DependencyType.Table;
-                if (null != ((UserSchema)targetSchema).getQueryDef(queryName))
-                    type = DependencyType.Query;
-                ActionURL queryURL = new QueryController.QueryUrlsImpl().urlSchemaBrowser(defaultSchema.getContainer(), targetSchema.getName(), queryName);
-                DependencyObject q = new DependencyObject(type, defaultSchema.getContainer(), schemaPath, queryName, queryURL);
-
-                deps.put(r,q);
-            }
-        }
-    }
-
 
     public static class TestCase extends Assert
     {
@@ -3348,37 +3224,37 @@ public class QueryServiceImpl implements QueryService
             assertEquals(JdbcType.TINYINT, t.getColumn("ti").getJdbcType());
             assertEquals(JdbcType.VARCHAR, t.getColumn("s").getJdbcType());
 
-            try (Results rs = new TableSelector(t).getResults())
+            try (Results results = new TableSelector(t).getResults())
             {
-                assertEquals(JdbcType.BIGINT, rs.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
-                assertEquals(JdbcType.BOOLEAN, rs.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
-                assertEquals(JdbcType.CHAR, rs.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
-                assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
-                assertEquals(JdbcType.DOUBLE, rs.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
-                assertEquals(JdbcType.INTEGER, rs.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
-                assertEquals(JdbcType.LONGVARCHAR, rs.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
-                assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
-                assertEquals(JdbcType.REAL, rs.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
-                assertEquals(JdbcType.SMALLINT, rs.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
-                assertEquals(JdbcType.TIMESTAMP, rs.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
-                assertEquals(JdbcType.TINYINT, rs.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
-                assertEquals(JdbcType.VARCHAR, rs.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
+                assertEquals(JdbcType.BIGINT, results.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
+                assertEquals(JdbcType.BOOLEAN, results.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
+                assertEquals(JdbcType.CHAR, results.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
+                assertEquals(JdbcType.DECIMAL, results.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
+                assertEquals(JdbcType.DOUBLE, results.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
+                assertEquals(JdbcType.INTEGER, results.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
+                assertEquals(JdbcType.LONGVARCHAR, results.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
+                assertEquals(JdbcType.DECIMAL, results.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
+                assertEquals(JdbcType.REAL, results.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
+                assertEquals(JdbcType.SMALLINT, results.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
+                assertEquals(JdbcType.TIMESTAMP, results.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
+                assertEquals(JdbcType.TINYINT, results.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
+                assertEquals(JdbcType.VARCHAR, results.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
 
-                ResultSetMetaData rsmd = rs.getMetaData();
-                assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(rs.findColumn("bint")));
-                assertTrue(Types.BIT==rsmd.getColumnType(rs.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(rs.findColumn("bit")));
-                assertTrue(Types.CHAR==rsmd.getColumnType(rs.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(rs.findColumn("char")));
-                assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("dec")));
-                assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(rs.findColumn("d")));
-                assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(rs.findColumn("i")));
-                int columntype = rsmd.getColumnType(rs.findColumn("text"));
+                ResultSetMetaData rsmd = results.getMetaData();
+                assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(results.findColumn("bint")));
+                assertTrue(Types.BIT==rsmd.getColumnType(results.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(results.findColumn("bit")));
+                assertTrue(Types.CHAR==rsmd.getColumnType(results.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(results.findColumn("char")));
+                assertTrue(Types.DECIMAL==rsmd.getColumnType(results.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(results.findColumn("dec")));
+                assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(results.findColumn("d")));
+                assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(results.findColumn("i")));
+                int columntype = rsmd.getColumnType(results.findColumn("text"));
                 assertTrue(Types.LONGVARCHAR == columntype || Types.CLOB == columntype || Types.VARCHAR == columntype || Types.LONGNVARCHAR == columntype);
-                assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("num")));
-                assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(rs.findColumn("real")));
-                assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(rs.findColumn("sint")));
-                assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
-                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
-                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(rs.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(rs.findColumn("s")));
+                assertTrue(Types.DECIMAL==rsmd.getColumnType(results.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(results.findColumn("num")));
+                assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(results.findColumn("real")));
+                assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(results.findColumn("sint")));
+                assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(results.findColumn("ts")));
+                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(results.findColumn("ti")));
+                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(results.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(results.findColumn("s")));
             }
         }
 

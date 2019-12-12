@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -26,6 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Utility class to resolve a String value to a lookup target table using query.  The lookup table's
+ * primary key, alternate keys, and title column will be used to resolve the lookup value.
+ */
 public class RemapCache
 {
     public static final String EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE = "resolve-lookups-by-value";
@@ -39,6 +45,9 @@ public class RemapCache
         final Container _container;
         final ContainerFilter.Type _containerFilterType;
 
+        // fetched on demand
+        TableInfo _table;
+
         public Key(SchemaKey schemaKey, String queryName, User user, Container container, ContainerFilter.Type containerFilterType)
         {
             _schemaKey = schemaKey;
@@ -46,6 +55,40 @@ public class RemapCache
             _user = user;
             _container = container;
             _containerFilterType = containerFilterType;
+            _table = null;
+        }
+
+        public Key(SchemaKey schemaKey, String queryName, User user, Container container, ContainerFilter.Type containerFilterType,
+                   @NotNull TableInfo lookupTable)
+        {
+            _schemaKey = schemaKey;
+            _queryName = queryName;
+            _user = user;
+            _container = container;
+            _containerFilterType = containerFilterType;
+            _table = lookupTable;
+        }
+
+        @NotNull
+        TableInfo getTable()
+        {
+            if (_table == null)
+            {
+                UserSchema schema = QueryService.get().getUserSchema(_user, _container, _schemaKey);
+                if (schema == null)
+                    throw new NotFoundException("Schema not found: " + _schemaKey.toString());
+                // TODO ContainerFilter test usages of this code
+                ContainerFilter containerFilter = null;
+                if (_containerFilterType != null)
+                    containerFilter = _containerFilterType.create(_user);
+                TableInfo table = schema.getTable(_queryName, containerFilter);
+                if (table == null)
+                    throw new NotFoundException("Table not found: " + _queryName);
+
+                _table = table;
+            }
+
+            return _table;
         }
 
         @Override
@@ -73,21 +116,26 @@ public class RemapCache
         return new Key(schemaName, queryName, user, c, filterType);
     }
 
+    private Key key(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, @NotNull TableInfo table)
+    {
+        return new Key(schemaName, queryName, user, c, filterType, table);
+    }
+
     private SimpleTranslator.RemapPostConvert remapper(Key key, Map<Key, SimpleTranslator.RemapPostConvert> remapCache)
     {
         return remapCache.computeIfAbsent(key, (k) -> {
-            UserSchema schema = QueryService.get().getUserSchema(key._user, key._container, key._schemaKey);
-            if (schema == null)
-                throw new NotFoundException("Schema not found: " + key._schemaKey.toString());
-            // TODO ContainerFilter test usages of this code
-            ContainerFilter containerFilter = null;
-            if (key._containerFilterType != null)
-                containerFilter = key._containerFilterType.create(key._user);
-            TableInfo table = schema.getTable(key._queryName, containerFilter);
-            if (table == null)
-                throw new NotFoundException("Table not found: " + key._queryName);
+            TableInfo table = key.getTable();
             return new SimpleTranslator.RemapPostConvert(table, true, SimpleTranslator.RemapMissingBehavior.Null);
         });
+    }
+
+    private <V> V remap(Key key, String value)
+    {
+        SimpleTranslator.RemapPostConvert remap = remapper(key, remaps);
+        if (remap == null)
+            throw new NotFoundException("Failed to create remap: " + key._schemaKey.toString() + "." + key._queryName);
+        //noinspection unchecked
+        return (V) remap.mappedValue(value);
     }
 
     /**
@@ -95,11 +143,19 @@ public class RemapCache
      */
     public <V> V remap(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, String value)
     {
-        SimpleTranslator.RemapPostConvert remap = remapper(key(schemaName, queryName, user, c, filterType), remaps);
-        if (remap == null)
-            throw new NotFoundException("Failed to create remap: " + schemaName.toString() + "." + queryName);
-        //noinspection unchecked
-        return (V) remap.mappedValue(value);
+        return remap(key(schemaName, queryName, user, c, filterType), value);
+    }
+
+    /**
+     * Convert the string value to the target table's PK value by using the table's unique indices.
+     */
+    public <V> V remap(TableInfo lookupTable, User user, Container c, ContainerFilter.Type filterType, String value)
+    {
+        SchemaKey schemaName = lookupTable.getUserSchema().getSchemaPath();
+        String queryName = Objects.toString(lookupTable.getPublicName(), lookupTable.getName());
+        Key key = key(schemaName, queryName, user, c, filterType, lookupTable);
+
+        return remap(key(schemaName, queryName, user, c, filterType), value);
     }
 
 }

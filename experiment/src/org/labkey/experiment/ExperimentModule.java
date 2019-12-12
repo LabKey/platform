@@ -19,6 +19,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -33,6 +35,7 @@ import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -53,7 +56,6 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -62,8 +64,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
@@ -77,6 +77,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassDataTestCase;
 import org.labkey.experiment.api.ExpDataClassType;
@@ -89,6 +90,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.LineagePerfTest;
+import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.SampleSetServiceImpl;
@@ -144,7 +146,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public double getVersion()
     {
-        return 19.30;
+        return 19.31;
     }
 
     @Nullable
@@ -196,6 +198,11 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+
+        WebdavService.get().addExpDataProvider((path, container) -> {
+            ExpData expData = ExperimentService.get().getExpDataByURL(path, container);
+            return expData == null ? Collections.emptyList() : Collections.singletonList(expData);
+        });
     }
 
     @Override
@@ -492,7 +499,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 UniqueValueCounterTestCase.class,
                 ExperimentServiceImpl.TestCase.class,
                 ExpDataTableImpl.TestCase.class,
-                ExperimentStressTest.class
+                ExperimentStressTest.class,
+                LineageTest.class
                 , LineagePerfTest.class));
     }
 
@@ -531,28 +539,25 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-//        if (c == ContainerManager.getSharedContainer())
-//            OntologyManager.indexConcepts(task);
-
-        Runnable r = () -> {
+        task.addRunnable(() -> {
             for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
             {
                 sampleSet.index(task);
             }
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
-            {
-                material.index(task);
-            }
+        task.addRunnable(() -> {
+            // batch by the 100's
+            List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
+            task.addResourceList(materials, 100, ExpMaterialImpl::createIndexDocument);
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
-            {
-                data.index(task);
-            }
-        };
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
-
+        task.addRunnable(() -> {
+            List<ExpDataImpl> datas = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
+            task.addResourceList(datas, 100, ExpDataImpl::createDocument);
+        }, SearchService.PRIORITY.bulk);
     }
+
 
     @Override
     public void indexDeleted()

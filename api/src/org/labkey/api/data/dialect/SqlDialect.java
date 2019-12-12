@@ -95,7 +95,7 @@ public abstract class SqlDialect
         initializeSqlTypeIntMap();
         initializeJdbcTableTypeMap(_tableTypeMap);
         Set<String> types = _tableTypeMap.keySet();
-        _tableTypes = types.toArray(new String[types.size()]);
+        _tableTypes = types.toArray(new String[0]);
 
         _reservedWordSet = getReservedWords();
 
@@ -304,7 +304,7 @@ public abstract class SqlDialect
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
 
-    protected String getDatabaseMaintenanceSql()
+    protected @Nullable String getDatabaseMaintenanceSql()
     {
         return null;
     }
@@ -929,9 +929,9 @@ public abstract class SqlDialect
         return true;
     }
 
-    protected class SQLSyntaxException extends SQLException
+    protected static class SQLSyntaxException extends SQLException
     {
-        private Collection<String> _errors;
+        private final Collection<String> _errors;
 
         protected SQLSyntaxException(Collection<String> errors)
         {
@@ -1066,6 +1066,10 @@ public abstract class SqlDialect
     abstract public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString, SQLFragment startIndex);
 
     abstract public boolean allowSortOnSubqueryWithoutLimit();
+
+    public void appendSortOnSubqueryWithoutLimitQualifier(SQLFragment builder)
+    {
+    }
 
     // Substitute the parameter values into the SQL statement.
     public String substituteParameters(SQLFragment frag)
@@ -1454,9 +1458,15 @@ public abstract class SqlDialect
         required
     }
 
-    public final class MetadataParameterInfo
+    // Simple check. Subclasses can override to provide better checks.
+    public boolean isRds(DbScope scope)
     {
-        private Map<ParamTraits, Integer> paramTraits = new HashMap<>();
+        return StringUtils.containsIgnoreCase(scope.getURL(), "rds.amazonaws.com");
+    }
+
+    public static final class MetadataParameterInfo
+    {
+        private final Map<ParamTraits, Integer> paramTraits;
         private Object value = new Object();
 
         public MetadataParameterInfo(Map<ParamTraits, Integer> paramTraits)

@@ -83,6 +83,6 @@ public interface DataIterator extends Closeable
 
     default void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName()).append("\n");
+        sb.append("  " + getDebugName() + ": " + this.getClass().getName() + "\n");
     }
 }

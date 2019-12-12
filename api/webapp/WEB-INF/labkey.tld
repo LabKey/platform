@@ -174,15 +174,6 @@
         </attribute>
     </tag>
     <tag>
-        <name>helpPopup</name>
-        <tag-class>org.labkey.api.jsp.taglib.HelpPopupTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>title</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-    </tag>
-    <tag>
         <name>csrf</name>
         <tag-class>org.labkey.api.jsp.taglib.CsrfInputTag</tag-class>
         <body-content>empty</body-content>

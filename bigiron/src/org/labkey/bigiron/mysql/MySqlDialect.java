@@ -293,4 +293,10 @@ public class MySqlDialect extends SimpleSqlDialect
     {
         return true;
     }
+
+    @Override
+    public boolean supportsRoundDouble()
+    {
+        return true;
+    }
 }

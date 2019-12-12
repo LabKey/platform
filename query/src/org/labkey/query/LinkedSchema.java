@@ -244,9 +244,12 @@ public class LinkedSchema extends ExternalSchema
 
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>(queries.size());
 
+        // Workaround for issue 38946 - need to make sure we're doing a case insensitive comparison
+        Set<String> insenstitiveAvailableQueries = new CaseInsensitiveHashSet(_availableQueries);
+
         for (String key : queries.keySet())
         {
-            if (_availableQueries.contains(key) && (nameFilter == null || nameFilter.equalsIgnoreCase(key)))
+            if (insenstitiveAvailableQueries.contains(key) && (nameFilter == null || nameFilter.equalsIgnoreCase(key)))
             {
                 QueryDefinition queryDef = queries.get(key);
                 TableInfo table = queryDef.getTable(new ArrayList<>(), true);

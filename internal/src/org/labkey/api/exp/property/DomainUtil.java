@@ -40,6 +40,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -281,6 +282,11 @@ public class DomainUtil
 
     public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop)
     {
+        return getPropertyDescriptor(prop.getPropertyDescriptor());
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop)
+    {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
 
         gwtProp.setPropertyId(prop.getPropertyId());
@@ -291,7 +297,7 @@ public class DomainUtil
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());
-        gwtProp.setRangeURI(prop.getType().getTypeURI());
+        gwtProp.setRangeURI(prop.getRangeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
         gwtProp.setShownInInsertView(prop.isShownInInsertView());
@@ -302,12 +308,12 @@ public class DomainUtil
         gwtProp.setRecommendedVariable(prop.isRecommendedVariable());
         gwtProp.setDefaultScale(prop.getDefaultScale().name());
         gwtProp.setMvEnabled(prop.isMvEnabled());
-        gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
+        gwtProp.setFacetingBehaviorType(prop.getFacetingBehaviorType().name());
         gwtProp.setPHI(prop.getPHI().name());
         gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
-        gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
-        StringExpression url = prop.getPropertyDescriptor().getURL();
+        gwtProp.setImportAliases(prop.getImportAliases());
+        StringExpression url = prop.getURL();
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
@@ -906,6 +912,16 @@ public class DomainUtil
         }
     }
 
+    private static String getDomainErrorMessage(@Nullable GWTDomain domain, String message)
+    {
+        if (domain != null && domain.getName() != null)
+        {
+            return domain.getName() + " -- " + message;
+        }
+
+        return message;
+    }
+
     /**
      * Validate domain property descriptors for things like duplicate names, missing names, and check against required fields.
      * @param domain The updated domain to validate
@@ -913,7 +929,8 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
+        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
+                : new CaseInsensitiveHashSet(updates.getReservedFieldNames()));
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
@@ -926,24 +943,24 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Please provide a name for each field."));
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name))
+            if (reservedNames.contains(name))
             {
                 //check if a new field is a reserved field or an existing field is updated to a reserved field
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
-                    exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
+                    exception.addFieldError(name, getDomainErrorMessage(updates,("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
+                String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;
