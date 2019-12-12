@@ -3092,6 +3092,12 @@ public class AdminController extends SpringActionController
             // If the test is invoking system maintenance then return the URL instead
             return form.isTest() ? null : _url;
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("System Maintenance");
+        }
     }
 
 

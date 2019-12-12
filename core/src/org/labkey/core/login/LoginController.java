@@ -2444,6 +2444,12 @@ public class LoginController extends SpringActionController
         {
             return getUrls().getConfigureURL();
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Set Login Provider");
+        }
     }
 
     @Deprecated
