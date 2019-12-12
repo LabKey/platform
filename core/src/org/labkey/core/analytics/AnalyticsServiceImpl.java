@@ -232,15 +232,13 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     static public void populateSettingsWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
         PropertyManager.PropertyMap properties = PropertyManager.getWritableProperties(PROP_CATEGORY, true);
         ModuleLoader.getInstance().getConfigProperties(PROP_CATEGORY)
                 .forEach(prop ->{
                     try
                     {
                         AnalyticsProperty analyticsProperty = AnalyticsProperty.valueOf(prop.getName());
-                        if (isBootstrap || prop.getModifier() != ConfigProperty.modifier.bootstrap)
-                            properties.put(analyticsProperty.toString(), prop.getValue());
+                        properties.put(analyticsProperty.toString(), prop.getValue());
                     }
                     catch (IllegalArgumentException ex)
                     {

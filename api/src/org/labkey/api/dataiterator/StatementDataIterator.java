@@ -567,7 +567,6 @@ public class StatementDataIterator extends AbstractDataIterator
                     // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
                     //noinspection ThrowableResultOfMethodCallIgnored
                     getRowError().addGlobalError(x);
-                    m.close();
                     throw _context.getErrors();
                 }
             }

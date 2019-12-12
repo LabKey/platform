@@ -1601,7 +1601,7 @@ groupByLoop:
         }
         if (_orderBy != null)
         {
-            if (_limit == null & !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
+            if (_limit == null && !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
                 reportWarning("The underlying database does not supported nested ORDER BY unless LIMIT is also specified. Ignoring ORDER BY.", _orderBy);
             }
