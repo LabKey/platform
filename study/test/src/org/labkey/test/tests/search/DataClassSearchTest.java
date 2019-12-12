@@ -35,6 +35,7 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Search;
 import org.labkey.test.util.SearchHelper;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
+import org.labkey.test.util.search.SearchResultsQueue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +52,8 @@ public class DataClassSearchTest extends BaseWebDriverTest
         return SearchAdminAPIHelper.DirectoryType.Default;
     }
 
-    private final SearchHelper _searchHelper = new SearchHelper(this);
+    private static final SearchResultsQueue SEARCH_RESULTS_QUEUE = new SearchResultsQueue();
+    private final SearchHelper _searchHelper = new SearchHelper(this, SEARCH_RESULTS_QUEUE);
 
     private static final String DATA_CLASS_DOMAIN_1 = "DataClassSearchTestDomain1";
     private static final String DATA_CLASS_DOMAIN_2 = "DataClassSearchTestDomain2";
