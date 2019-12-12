@@ -1570,8 +1570,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
         {
-            if (getPageConfig().getTitle() == null)
-                setTitle("Reset Password");
+            setTitle("Confirm Password Reset");
 
             String message;
             boolean loginExists = false;
@@ -1648,6 +1647,7 @@ public class SecurityController extends SpringActionController
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            setTitle("Password Reset Success");
             return new HtmlView(page);
         }
 
@@ -1670,6 +1670,7 @@ public class SecurityController extends SpringActionController
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            setTitle("Password Reset Failed");
             return new HtmlView(page);
         }
 
