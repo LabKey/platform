@@ -89,7 +89,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
                     List<DatasetDefinition> datasetDefinitions = study.getDatasets();
                     for (DatasetDefinition datasetDefinition : datasetDefinitions)
                     {
-                        List<String> datasetLsids = StudyManager.getInstance().getDatasetLSIDs(UserManager.getUser(c.getCreatedBy()), datasetDefinition);
+                        List<String> datasetLsids = StudyManager.getInstance().getDatasetLSIDs(User.getSearchUser(), datasetDefinition);
                         if (datasetLsids.contains(lsid.toString()))
                         {
                             for (String datasetLsid : datasetLsids)
@@ -105,7 +105,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
 
                 if (null != targetDataset)
                 {
-                    Map<String, Object> datasetRow = targetDataset.getDatasetRow(UserManager.getUser(c.getCreatedBy()), lsid.toString());
+                    Map<String, Object> datasetRow = targetDataset.getDatasetRow(User.getSearchUser(), lsid.toString());
 
                     BigDecimal sequenceNum = (BigDecimal) datasetRow.get("SequenceNum");
                     String ptid = (String) datasetRow.get("ParticipantId");
