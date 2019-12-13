@@ -4,7 +4,7 @@ import {Button, FormControl, Modal} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimes} from "@fortawesome/free-solid-svg-icons";
 
-import CheckBoxWithText from "./CheckBoxWithText";
+import FACheckBox from "./FACheckBox";
 import { FileAttachmentForm } from '@labkey/components';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
@@ -53,7 +53,7 @@ export default class ConfigurationModal extends React.PureComponent<any, Configu
         })
     };
 
-    handleChange(event) {
+        handleChange(event) {
         let {name, value} = event.target;
         this.setState(prevState => ({
             ...prevState,
@@ -125,8 +125,8 @@ export default class ConfigurationModal extends React.PureComponent<any, Configu
 
                     <br/>
 
-                    <CheckBoxWithText
-                        rowText= "Re-direct login page to CAS login page by default"
+                    <FACheckBox
+                        // rowText= "Re-direct login page to CAS login page by default"
                         checked={true}
                         // onClick={() => {this.handleCheckbox(text.id)}}
                         onClick={() => {console.log("placeholder")}}

@@ -11,10 +11,9 @@ import { faSquare } from '@fortawesome/free-regular-svg-icons';
 interface Props {
     checked: boolean
     onClick: any
-    rowText: String
 }
 
-export default class CheckBoxWithText extends React.PureComponent<Props>{
+export default class FACheckBox extends React.PureComponent<any>{
     render(){
         let checkedOrNot = (this.props.checked
                 ? <FontAwesomeIcon size='lg' icon={faCheckSquare} color={"#0073BB"} />
@@ -22,15 +21,11 @@ export default class CheckBoxWithText extends React.PureComponent<Props>{
         );
 
         return(
-            <div className={"bottom-margin"}>
-
-                <span className="noHighlight clickable" onClick={() => this.props.onClick()}>
+            <>
+                <span className="noHighlight clickable" style={{}} onClick={() => this.props.onClick()}>
                     { checkedOrNot }
                 </span>
-
-                <span className={"left-margin"}> {this.props.rowText} </span>
-
-            </div>
+            </>
         )
     }
 }

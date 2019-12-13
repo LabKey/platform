@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Panel } from 'react-bootstrap'
 import { Ajax, ActionURL } from '@labkey/api'
 
-import CheckBoxWithText from './CheckBoxWithText';
+import FACheckBox from './FACheckBox';
 
 
 // Todo:
@@ -81,15 +81,24 @@ export default class GlobalAuthConfigs extends React.PureComponent<any, any>{
                 <br/><br/>
 
                 {rowTexts.map((text) => (
-                    <CheckBoxWithText
-                        key={text.id}
-                        rowText={text.text}
-                        checked={this.state[text.id]}
-                        onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
-                    />
+                    <div className={"bottom-margin"}>
+                        <FACheckBox
+                            key={text.id}
+                            checked={this.state[text.id]}
+                            onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
+                        />
+
+                        <span style={{marginLeft:"15px"}}>
+                            {text.text}
+                        </span>
+                    </div>
+
                 ))}
 
-                {/* For testing, to delete */}
+
+
+
+                    {/* For testing, to delete */}
                 {/*<Button*/}
                 {/*    style={{marginLeft: "2em"}}*/}
                 {/*    className={'labkey-button'}*/}
