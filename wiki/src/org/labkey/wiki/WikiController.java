@@ -1002,6 +1002,12 @@ public class WikiController extends SpringActionController
 
             return true;
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Copy Wiki");
+        }
     }
 
 
