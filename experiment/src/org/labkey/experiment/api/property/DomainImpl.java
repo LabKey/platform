@@ -759,6 +759,7 @@ public class DomainImpl implements Domain
             }
 
             transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            QueryService.get().updateLastModified();
             transaction.commit();
         }
     }

@@ -80,6 +80,15 @@ public enum WebdavStatus
         this.message = text;
     }
 
+    public static WebdavStatus fromCode(int code)
+    {
+        for (WebdavStatus status : values())
+            if (status.code == code)
+                return status;
+
+        throw new IllegalArgumentException("Unknown code: " + code);
+    }
+
     public String toString()
     {
         return "" + code + " " + message;

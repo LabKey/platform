@@ -662,4 +662,19 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _commandName;
     }
 
+    /**
+     * Cacheable resources can calculate a last modified timestamp to send to the browser.
+     */
+    protected long getLastModified(FORM form)
+    {
+        return Long.MIN_VALUE;
+    }
+
+    /**
+     * Cacheable resources can calculate an ETag header to send to the browser.
+     */
+    protected String getETag(FORM form)
+    {
+        return null;
+    }
 }

@@ -46,7 +46,6 @@ public class ConfigProperty
     {
         bootstrap,
         startup,
-        immutable,
     }
 
     public ConfigProperty(String name, String value, @Nullable String modifierType, @Nullable String scope)
