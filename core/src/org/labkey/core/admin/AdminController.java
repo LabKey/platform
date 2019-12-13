@@ -1117,11 +1117,6 @@ public class AdminController extends SpringActionController
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Reset Logo");
-        }
     }
 
 
@@ -1166,11 +1161,6 @@ public class AdminController extends SpringActionController
             return _returnUrl;
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Reset Properties");
-        }
     }
 
 
@@ -1212,11 +1202,6 @@ public class AdminController extends SpringActionController
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Reset Favicon");
-        }
     }
 
 
@@ -1248,12 +1233,6 @@ public class AdminController extends SpringActionController
         public URLHelper getSuccessURL(Object o)
         {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Delete Custom Stylesheet");
         }
 
     }
@@ -3100,11 +3079,6 @@ public class AdminController extends SpringActionController
             return form.isTest() ? null : _url;
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("System Maintenance");
-        }
     }
 
 
@@ -6162,11 +6136,6 @@ public class AdminController extends SpringActionController
             return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnURLHelper());
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Delete Custom Email");
-        }
     }
 
 

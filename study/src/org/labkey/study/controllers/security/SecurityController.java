@@ -603,11 +603,6 @@ public class SecurityController extends SpringActionController
             return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Study Security");
-        }
     }
 
     public enum PermissionType implements EnumHasHtmlString<PermissionType>

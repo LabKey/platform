@@ -2357,11 +2357,6 @@ public class QueryController extends SpringActionController
             return form.getReturnActionURL();
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Delete Rows");
-        }
     }
 
     @RequiresPermission(ReadPermission.class)

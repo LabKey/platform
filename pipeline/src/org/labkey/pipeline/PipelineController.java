@@ -727,11 +727,6 @@ public class PipelineController extends SpringActionController
             return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Update Root Permissions");
-        }
     }
 
     public static class PermissionForm extends ReturnUrlForm

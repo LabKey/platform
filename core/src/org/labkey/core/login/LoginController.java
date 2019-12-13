@@ -1458,11 +1458,6 @@ public class LoginController extends SpringActionController
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Stop Impersonating");
-        }
     }
 
 
@@ -2445,11 +2440,6 @@ public class LoginController extends SpringActionController
             return getUrls().getConfigureURL();
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Set Login Provider");
-        }
     }
 
     @Deprecated
@@ -2517,11 +2507,6 @@ public class LoginController extends SpringActionController
             return getUrls().getConfigureURL();
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Delete Configuration");
-        }
     }
 
     public static ActionURL getConfigureDbLoginURL(boolean reshow)

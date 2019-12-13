@@ -251,11 +251,6 @@ public class PlateController extends SpringActionController
             return new ActionURL(BeginAction.class, getContainer());
         }
 
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Delete Assay");
-        }
     }
 
     public static class CopyTemplateBean
