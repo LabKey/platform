@@ -9,9 +9,12 @@
         <label for="emailConfirmation">Confirm Email</label>
         <input id="emailConfirmation" name="emailConfirmation" type="text" class="input-block" tabindex="2">
 
-        <div>Please enter the six characters shown below (case-insensitive).</div>
-        <div><img src="<%= contextPath %>/kaptcha.jpg" alt="Verification text" title="Verification text" height="50" width="200"/></div>
-        <div><a href="javascript: window.location.reload()">Reload the page to get a new image.</a></div>
+        <label for="kaptchaText">Verification</label>
+        <p>
+            <div>Please enter the six characters shown below (case-insensitive).</div>
+            <div><a href="javascript: window.location.reload()">Reload the page to get a new image.</a></div>
+            <div><img src="<%= contextPath %>/kaptcha.jpg" alt="Verification text" title="Verification text" height="50" width="200"/></div>
+        </p>
         <input id="kaptchaText" name="kaptchaText" type="text" class="input-block" tabindex="3" autofocus>
 
         <div class="auth-item">

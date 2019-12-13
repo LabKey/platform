@@ -21,6 +21,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
@@ -219,6 +220,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -1185,7 +1187,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         r.run();
     }
 
-    
     @Override
     public void indexDeleted()
     {
@@ -1212,14 +1213,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
             }
 
-            if ("logoImage".equalsIgnoreCase(prop.getName()))
-                incrementRevision = setSiteLogoImage(prop.getValue(), user);
-
-            if ("iconImage".equalsIgnoreCase(prop.getName()))
-                incrementRevision = setSiteIconImage(prop.getValue(), user);
-
-            if ("customStylesheet".equalsIgnoreCase(prop.getName()))
-                incrementRevision = setSiteCustomStylesheet(prop.getValue(), user);
+            SiteResourceHandler handler = getResourceHandler(prop.getName());
+            if (handler != null)
+                incrementRevision = setSiteResource(handler, prop, user);
         }
 
         // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
@@ -1227,63 +1223,43 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
     }
 
-    private boolean setSiteLogoImage(String propValue, User user)
+    private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
     {
-        Resource resource = getModuleResourceFromPropValue(propValue);
-        if (resource != null)
+        switch (name)
         {
-            try
-            {
-                LookAndFeelPropertiesManager.get().handleLogoFile(resource, ContainerManager.getRoot(), user);
-                return true;
-            }
-            catch(Exception e)
-            {
-                LOG.error("Exception setting logoImage during server startup.", e);
-            }
+            case "logoImage":
+                return LookAndFeelPropertiesManager.get()::handleLogoFile;
+            case "iconImage":
+                return LookAndFeelPropertiesManager.get()::handleIconFile;
+            case "customStylesheet":
+                return LookAndFeelPropertiesManager.get()::handleCustomStylesheetFile;
+            default:
+                return null;
         }
-
-        LOG.error("Unable to find logoImage resource during server startup: " + propValue);
-        return false;
     }
 
-    private boolean setSiteIconImage(String propValue, User user)
-    {
-        Resource resource = getModuleResourceFromPropValue(propValue);
-        if (resource != null)
-        {
-            try
-            {
-                LookAndFeelPropertiesManager.get().handleIconFile(resource, ContainerManager.getRoot(), user);
-                return true;
-            }
-            catch(Exception e)
-            {
-                LOG.error("Exception setting iconImage during server startup.", e);
-            }
-        }
-
-        LOG.error("Unable to find iconImage resource during server startup: " + propValue);
-        return false;
+    @FunctionalInterface
+    public interface SiteResourceHandler {
+        void accept(Resource resource, Container container, User user) throws ServletException, IOException;
     }
 
-    private boolean setSiteCustomStylesheet(String propValue, User user)
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)
     {
-        Resource resource = getModuleResourceFromPropValue(propValue);
+        Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)
         {
             try
             {
-                LookAndFeelPropertiesManager.get().handleCustomStylesheetFile(resource, ContainerManager.getRoot(), user);
+                resourceHandler.accept(resource, ContainerManager.getRoot(), user);
                 return true;
             }
             catch(Exception e)
             {
-                LOG.error("Exception setting customStylesheet during server startup.", e);
+                LOG.error(String.format("Exception setting %1$s during server startup.", prop.getName()), e);
             }
         }
 
-        LOG.error("Unable to find customStylesheet resource during server startup: " + propValue);
+        LOG.error(String.format("Unable to find %1$s resource during server startup: %2$s", prop.getName(), prop.getValue()));
         return false;
     }
 

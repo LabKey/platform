@@ -79,3 +79,9 @@ ul.sso-list > li {
     width: 75px;
     margin-right: 25px;
 }
+
+.forgot-password-link {
+    text-align: right;
+    width: 284px;
+    display: inline-block;
+}

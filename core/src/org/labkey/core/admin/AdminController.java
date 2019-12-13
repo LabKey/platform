@@ -230,6 +230,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1092,8 +1093,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class ResetLogoAction extends FormHandlerAction
+    abstract class ResetResourceAction extends FormHandlerAction
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -1103,7 +1103,7 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            LookAndFeelPropertiesManager.get().deleteExistingLogo(getContainer(), getUser());
+            getDeleteResourceDelegate().accept(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return true;
         }
@@ -1113,8 +1113,39 @@ public class AdminController extends SpringActionController
         {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
+
+        protected abstract @NotNull BiConsumer<Container, User> getDeleteResourceDelegate();
     }
 
+    @RequiresPermission(AdminPermission.class)
+    public class ResetLogoAction extends ResetResourceAction
+    {
+        @Override
+        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
+        {
+            return LookAndFeelPropertiesManager.get()::deleteExistingLogo;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class ResetFaviconAction extends ResetResourceAction
+    {
+        @Override
+        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
+        {
+            return LookAndFeelPropertiesManager.get()::deleteExistingFavicon;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public class DeleteCustomStylesheetAction extends ResetResourceAction
+    {
+        @Override
+        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
+        {
+            return LookAndFeelPropertiesManager.get()::deleteExistingCustomStylesheet;
+        }
+    }
 
     @RequiresPermission(AdminPermission.class)
     public class ResetPropertiesAction extends FormHandlerAction
@@ -1155,53 +1186,6 @@ public class AdminController extends SpringActionController
         public URLHelper getSuccessURL(Object o)
         {
             return _returnUrl;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ResetFaviconAction extends FormHandlerAction
-    {
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            LookAndFeelPropertiesManager.get().deleteExistingFavicon(getContainer(), getUser());
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class DeleteCustomStylesheetAction extends FormHandlerAction
-    {
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            LookAndFeelPropertiesManager.get().deleteExistingCustomStylesheet(getContainer(), getUser());
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
     }
 

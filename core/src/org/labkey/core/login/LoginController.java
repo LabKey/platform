@@ -1885,7 +1885,7 @@ public class LoginController extends SpringActionController
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Password", PASSWORD1_TEXT_FIELD_NAME));
-            list.put(new SimpleNamedObject("Retype Password", PASSWORD2_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Confirm Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -2106,6 +2106,7 @@ public class LoginController extends SpringActionController
         public final String buttonText;
         public final String title;
 
+        // TODO switch to builder pattern
         private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError,
                                 String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
                                 Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable,

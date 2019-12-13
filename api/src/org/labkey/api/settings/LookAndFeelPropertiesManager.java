@@ -31,26 +31,24 @@ public class LookAndFeelPropertiesManager
 
     public void handleLogoFile(MultipartFile file, Container c, User user) throws ServletException, IOException
     {
-        String name = file.getOriginalFilename();
-        verifyLogoFileName(name);
-
-        AttachmentFile renamed = new SpringAttachmentFile(file, getLogoFileName(name));
+        String logoFileName = getLogoFileName(file.getOriginalFilename());
+        AttachmentFile renamed = new SpringAttachmentFile(file, logoFileName);
         handleLogoFile(renamed, c, user);
     }
 
     public void handleLogoFile(Resource resource, Container c, User user) throws ServletException, IOException
     {
-        String name = resource.getName();
-        verifyLogoFileName(name);
-
-        AttachmentFile attachmentFile = new InputStreamAttachmentFile(resource.getInputStream(), getLogoFileName(name));
+        String logoFileName = getLogoFileName(resource.getName());
+        AttachmentFile attachmentFile = new InputStreamAttachmentFile(resource.getInputStream(), logoFileName);
         handleLogoFile(attachmentFile, c, user);
     }
 
-    private String getLogoFileName(String uploadedName)
+    private String getLogoFileName(String name) throws ServletException
     {
+        verifyLogoFileName(name);
+
         // Set the name to something we'll recognize as a logo file
-        return AttachmentCache.LOGO_FILE_NAME_PREFIX + uploadedName.substring(uploadedName.lastIndexOf("."));
+        return AttachmentCache.LOGO_FILE_NAME_PREFIX + name.substring(name.lastIndexOf("."));
     }
 
     private void verifyLogoFileName(String name) throws ServletException
