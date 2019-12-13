@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -72,6 +73,39 @@ public interface AuthenticationProvider
     {
         return getConfigurationLink();
     }
+
+    /**
+     * Returns a JSONArray of the field descriptors for the required provider-specific settings. JSON metadata is a small
+     * subset of our standard column metadata (e.g., what getQueryDetails.api returns).
+     *
+     * @return A JSONArray of field descriptors or null if this provider doesn't want a settings page
+     */
+    default @Nullable JSONArray getSettingsFields()
+    {
+        return null;
+    }
+
+    default Map<String, Object> getSettingsField(String name, FieldType type, String caption, String description, boolean required, Object defaultValue)
+    {
+        return Map.of(
+            "name", name,
+            "type", type.toString(),
+            "caption", caption,
+            "description", description,
+            "required", required,
+            "defaultValue", defaultValue
+        );
+    }
+
+    enum FieldType
+    {
+        checkbox,
+        input,
+        option,
+        password,
+        textarea  // textarea that allows paste or file upload (e.g., SAML settings)
+    }
+
     @NotNull String getName();
     @NotNull String getDescription();
 

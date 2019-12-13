@@ -64,6 +64,8 @@ public class TestSsoProvider implements SSOAuthenticationProvider
         return "A trivial, insecure SSO authentication provider (for test purposes only)";
     }
 
+    // TODO: Remove this once we stop upgrading from 19.3
+
     @Override
     public @Nullable TestSsoConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
     {
