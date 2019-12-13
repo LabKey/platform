@@ -545,7 +545,7 @@ public class ExcelColumn extends RenderColumn
 
         for (ConditionalFormat format : columnInfo.getConditionalFormats())
         {
-            if (format.meetsCriteria(o))
+            if (format.meetsCriteria(columnInfo, o))
             {
                 CellStyle excelFormat = _formats.get(format);
                 if (excelFormat == null)

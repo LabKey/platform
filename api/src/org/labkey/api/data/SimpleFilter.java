@@ -228,7 +228,7 @@ public class SimpleFilter implements Filter
         abstract public List<FieldKey> getFieldKeys();
 
         /** @return whether the value meets the criteria of this filter */
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             return false;
         }
@@ -487,11 +487,11 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             for (FilterClause clause : getClauses())
             {
-                if (clause.meetsCriteria(value))
+                if (clause.meetsCriteria(col, value))
                 {
                     return true;
                 }
@@ -508,11 +508,11 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             for (FilterClause clause : getClauses())
             {
-                if (!clause.meetsCriteria(value))
+                if (!clause.meetsCriteria(col, value))
                 {
                     return false;
                 }
@@ -559,9 +559,9 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
-            return !_clause.meetsCriteria(value);
+            return !_clause.meetsCriteria(col, value);
         }
     }
 
@@ -818,13 +818,13 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
                 FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
-                if (compareClause.meetsCriteria(value))
+                if (compareClause.meetsCriteria(col, value))
                 {
                     return true;
                 }
@@ -966,13 +966,13 @@ public class SimpleFilter implements Filter
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
                 FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().get(0), params);
-                if (compareClause.meetsCriteria(value))
+                if (compareClause.meetsCriteria(col, value))
                 {
                     return true;
                 }
@@ -1461,10 +1461,12 @@ public class SimpleFilter implements Filter
         return false;
     }
 
-    public boolean meetsCriteria(Map<FieldKey, ?> map)
+    public boolean meetsCriteria(TableInfo table, Map<FieldKey, ?> map)
     {
         if (_clauses == null || _clauses.isEmpty())
             return true;
+
+        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(table, getAllFieldKeys());
 
         for (FilterClause clause : _clauses)
         {
@@ -1475,8 +1477,9 @@ public class SimpleFilter implements Filter
                 throw new IllegalArgumentException("Can't check filter criteria of multi-column clauses");
 
             FieldKey fieldKey = fieldKeys.get(0);
+            ColumnInfo col = cols.get(fieldKey);
             Object value = map.get(fieldKey);
-            if (!clause.meetsCriteria(value))
+            if (!clause.meetsCriteria(col, value))
                 return false;
         }
 
@@ -1535,54 +1538,55 @@ public class SimpleFilter implements Filter
 
             Calendar cJan15 = asCalendar("2001-01-15");
 
+            ColumnInfo col = new BaseColumnInfo("x", JdbcType.DATE);
             FieldKey x = FieldKey.fromParts("x");
             CompareClause eqCompareClause = new CompareType.DateEqCompareClause(x, cJan15);
-            assertFalse(eqCompareClause.meetsCriteria(dJan14));
-            assertFalse(eqCompareClause.meetsCriteria(dJan14noon));
-            assertTrue(eqCompareClause.meetsCriteria(dJan15));
-            assertTrue(eqCompareClause.meetsCriteria(dJan15noon));
-            assertFalse(eqCompareClause.meetsCriteria(dJan16));
-            assertFalse(eqCompareClause.meetsCriteria(dJan16noon));
+            assertFalse(eqCompareClause.meetsCriteria(col, dJan14));
+            assertFalse(eqCompareClause.meetsCriteria(col, dJan14noon));
+            assertTrue(eqCompareClause.meetsCriteria(col, dJan15));
+            assertTrue(eqCompareClause.meetsCriteria(col, dJan15noon));
+            assertFalse(eqCompareClause.meetsCriteria(col, dJan16));
+            assertFalse(eqCompareClause.meetsCriteria(col, dJan16noon));
 
             CompareClause neqCompareClause = new CompareType.DateNeqCompareClause(x, cJan15);
-            assertTrue(neqCompareClause.meetsCriteria(dJan14));
-            assertTrue(neqCompareClause.meetsCriteria(dJan14noon));
-            assertFalse(neqCompareClause.meetsCriteria(dJan15));
-            assertFalse(neqCompareClause.meetsCriteria(dJan15noon));
-            assertTrue(neqCompareClause.meetsCriteria(dJan16));
-            assertTrue(neqCompareClause.meetsCriteria(dJan16noon));
+            assertTrue(neqCompareClause.meetsCriteria(col, dJan14));
+            assertTrue(neqCompareClause.meetsCriteria(col, dJan14noon));
+            assertFalse(neqCompareClause.meetsCriteria(col, dJan15));
+            assertFalse(neqCompareClause.meetsCriteria(col, dJan15noon));
+            assertTrue(neqCompareClause.meetsCriteria(col, dJan16));
+            assertTrue(neqCompareClause.meetsCriteria(col, dJan16noon));
 
             CompareClause ltCompareClause = new CompareType.DateLtCompareClause(x, cJan15);
-            assertTrue(ltCompareClause.meetsCriteria(dJan14));
-            assertTrue(ltCompareClause.meetsCriteria(dJan14noon));
-            assertFalse(ltCompareClause.meetsCriteria(dJan15));
-            assertFalse(ltCompareClause.meetsCriteria(dJan15noon));
-            assertFalse(ltCompareClause.meetsCriteria(dJan16));
-            assertFalse(ltCompareClause.meetsCriteria(dJan16noon));
+            assertTrue(ltCompareClause.meetsCriteria(col, dJan14));
+            assertTrue(ltCompareClause.meetsCriteria(col, dJan14noon));
+            assertFalse(ltCompareClause.meetsCriteria(col, dJan15));
+            assertFalse(ltCompareClause.meetsCriteria(col, dJan15noon));
+            assertFalse(ltCompareClause.meetsCriteria(col, dJan16));
+            assertFalse(ltCompareClause.meetsCriteria(col, dJan16noon));
 
             CompareClause lteCompareClause = new CompareType.DateLteCompareClause(x, cJan15);
-            assertTrue(lteCompareClause.meetsCriteria(dJan14));
-            assertTrue(lteCompareClause.meetsCriteria(dJan14noon));
-            assertTrue(lteCompareClause.meetsCriteria(dJan15));
-            assertTrue(lteCompareClause.meetsCriteria(dJan15noon));
-            assertFalse(lteCompareClause.meetsCriteria(dJan16));
-            assertFalse(lteCompareClause.meetsCriteria(dJan16noon));
+            assertTrue(lteCompareClause.meetsCriteria(col, dJan14));
+            assertTrue(lteCompareClause.meetsCriteria(col, dJan14noon));
+            assertTrue(lteCompareClause.meetsCriteria(col, dJan15));
+            assertTrue(lteCompareClause.meetsCriteria(col, dJan15noon));
+            assertFalse(lteCompareClause.meetsCriteria(col, dJan16));
+            assertFalse(lteCompareClause.meetsCriteria(col, dJan16noon));
 
             CompareClause gtCompareClause = new CompareType.DateGtCompareClause(x, cJan15);
-            assertFalse(gtCompareClause.meetsCriteria(dJan14));
-            assertFalse(gtCompareClause.meetsCriteria(dJan14noon));
-            assertFalse(gtCompareClause.meetsCriteria(dJan15));
-            assertFalse(gtCompareClause.meetsCriteria(dJan15noon));
-            assertTrue(gtCompareClause.meetsCriteria(dJan16));
-            assertTrue(gtCompareClause.meetsCriteria(dJan16noon));
+            assertFalse(gtCompareClause.meetsCriteria(col, dJan14));
+            assertFalse(gtCompareClause.meetsCriteria(col, dJan14noon));
+            assertFalse(gtCompareClause.meetsCriteria(col, dJan15));
+            assertFalse(gtCompareClause.meetsCriteria(col, dJan15noon));
+            assertTrue(gtCompareClause.meetsCriteria(col, dJan16));
+            assertTrue(gtCompareClause.meetsCriteria(col, dJan16noon));
 
             CompareClause gteCompareClause = new CompareType.DateGteCompareClause(x, cJan15);
-            assertFalse(gteCompareClause.meetsCriteria(dJan14));
-            assertFalse(gteCompareClause.meetsCriteria(dJan14noon));
-            assertTrue(gteCompareClause.meetsCriteria(dJan15));
-            assertTrue(gteCompareClause.meetsCriteria(dJan15noon));
-            assertTrue(gteCompareClause.meetsCriteria(dJan16));
-            assertTrue(gteCompareClause.meetsCriteria(dJan16noon));
+            assertFalse(gteCompareClause.meetsCriteria(col, dJan14));
+            assertFalse(gteCompareClause.meetsCriteria(col, dJan14noon));
+            assertTrue(gteCompareClause.meetsCriteria(col, dJan15));
+            assertTrue(gteCompareClause.meetsCriteria(col, dJan15noon));
+            assertTrue(gteCompareClause.meetsCriteria(col, dJan16));
+            assertTrue(gteCompareClause.meetsCriteria(col, dJan16noon));
 
             //DoesNotContain
             //DoesNotStartwith
