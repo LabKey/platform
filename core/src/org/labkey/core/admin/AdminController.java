@@ -1249,6 +1249,13 @@ public class AdminController extends SpringActionController
         {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
         }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Delete Custom Stylesheet");
+        }
+
     }
 
 
