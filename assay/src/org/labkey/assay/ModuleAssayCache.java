@@ -10,6 +10,7 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineProvider;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -55,6 +56,7 @@ public class ModuleAssayCache
         synchronized (PROVIDER_LOCK)
         {
             _moduleAssayCollections = null;
+            QueryService.get().updateLastModified();
         }
     }
 

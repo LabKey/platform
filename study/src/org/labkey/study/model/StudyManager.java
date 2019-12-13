@@ -599,6 +599,7 @@ public class StudyManager
             StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
             transaction.commit();
         }
+        QueryService.get().updateLastModified();
         ContainerManager.notifyContainerChange(container.getId(), ContainerManager.Property.StudyChange);
         return study;
     }
@@ -627,6 +628,7 @@ public class StudyManager
             String comment = "Dataset security type changed from " + oldStudy.getSecurityType() + " to " + study.getSecurityType();
             StudyService.get().addStudyAuditEvent(study.getContainer(), user, comment);
         }
+        QueryService.get().updateLastModified();
     }
 
     public void createDatasetDefinition(User user, Container container, int datasetId)
@@ -649,6 +651,7 @@ public class StudyManager
             // and ends up attempting to create the domain as well
             datasetDefinition.getStorageTableInfo();
 
+            QueryService.get().updateLastModified();
             transaction.commit();
         }
         indexDataset(null, datasetDefinition);
@@ -813,6 +816,7 @@ public class StudyManager
                 // And post-commit to make sure that no other threads have reloaded the cache in the meantime
                 uncache(datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
+            QueryService.get().updateLastModified();
             transaction.commit();
         }
         indexDataset(null, datasetDefinition);
