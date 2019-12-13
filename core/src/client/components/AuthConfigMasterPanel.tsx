@@ -35,7 +35,7 @@ interface State {
     addNewAuthWhichDropdown: string
 }
 interface Props {
-    addNewPrimary: Object
+    primary: Object
     singleSignOnAuth: Array<Object>
     loginFormAuth: Array<loginFormAuthObject>
     secondary: any
@@ -44,7 +44,7 @@ interface Props {
     handlePrimaryToggle: any
     canEdit: boolean
 }
-export default class AuthConfigMasterPanel extends React.PureComponent<Props, State>{
+export default class AuthConfigMasterPanel extends React.PureComponent<any, State>{
     constructor(props) {
         super(props);
         this.state = {
@@ -59,7 +59,7 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
     }
 
     render(){
-        let addNewPrimary = this.props.addNewPrimary;
+        let primary = this.props.primary;
         let singleSignOnAuth = this.props.singleSignOnAuth;
         let loginFormAuth = this.props.loginFormAuth;
         let secondary = this.props.secondary;
@@ -72,10 +72,10 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
 
                         {this.props.canEdit &&
                             ((this.state.addNewAuthWhichDropdown == "Primary")
-                            ? this.props.addNewPrimary &&
-                                Object.keys(addNewPrimary).map((authOption) => (
-                                    <MenuItem key={authOption} href={addNewPrimary[authOption].configLink}>
-                                        {authOption} : {addNewPrimary[authOption].description}
+                            ? primary &&
+                                Object.keys(primary).map((authOption) => (
+                                    <MenuItem key={authOption} href={primary[authOption].configLink}>
+                                        {authOption} : {primary[authOption].description}
                                     </MenuItem>
                                 ))
                             : "Secondary (in progress)"
@@ -108,6 +108,7 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
                                             handleChangeToPrimary={this.props.handleChangeToPrimary}
                                             handlePrimaryToggle={this.props.handlePrimaryToggle}
                                             stateSection="loginFormAuth"
+                                            deleteAction={this.props.deleteAction}
                                         />
 
                                         <SimpleAuthRow
@@ -140,7 +141,9 @@ export default class AuthConfigMasterPanel extends React.PureComponent<Props, St
                                             handleChangeToPrimary={this.props.handleChangeToPrimary}
                                             handlePrimaryToggle={this.props.handlePrimaryToggle}
                                             stateSection="singleSignOnAuth"
-                                    />
+                                            deleteAction={this.props.deleteAction}
+                                            primary={this.props.primary}
+                                />
                                 : <ViewOnlyAuthConfigRows data={singleSignOnAuth}/>
                             }
 

@@ -2640,9 +2640,9 @@ public class LoginController extends SpringActionController
             res.put("singleSignOnAuth", new JSONArray(singleSignOnAuth));
             res.put("loginFormAuth", new JSONArray(loginFormAuth));
             res.put("secondaryAuth", new JSONArray(secondaries));
-            res.put("globalAuthConfigs", globalAuthSettings);  // TODO: globalAuthSettings?
+            res.put("globalAuthSettings", globalAuthSettings);
             res.put("canEdit", canEdit);
-            res.put("addNewPrimary", addNew);
+            res.put("primary", addNew);
 //            res.put("urls", urls);
 
             return res;

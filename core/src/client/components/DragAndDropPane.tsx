@@ -16,7 +16,7 @@ interface Props {
     handlePrimaryToggle: any
     stateSection: string
 }
-export default class DragAndDropPane extends React.PureComponent<Props>{
+export default class DragAndDropPane extends React.PureComponent<any>{
     constructor(props){
         super(props);
         this.forTestingFunc = this.forTestingFunc.bind(this);
@@ -24,48 +24,54 @@ export default class DragAndDropPane extends React.PureComponent<Props>{
 
     forTestingFunc(){
         // console.log("ohboy");
-        // const configs = this.props.rowInfo;
-        // console.log("your props: ", configs);
+        const configs = this.props.rowInfo;
+        console.log("your props: ", this.props.primary["CAS"]);
         // console.log("state: ", this.state)
     }
 
     render() {
-        this.forTestingFunc();
-
+        // this.forTestingFunc();
         return(
+
             <div>
-                <DragDropContext onDragEnd={this.props.onDragEnd}>
-                    <Droppable droppableId={this.props.stateSection}>
-                        {(provided) => (
-                            <div ref={provided.innerRef} {...provided.droppableProps}>
-                                {this.props.rowInfo.map((item, index) => (
-                                    <Draggable key={item.id} draggableId={item.id} index={index} >
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                            >
-                                                <EditableAuthRow
-                                                    id={index.toString()}
-                                                    rowId={item.id}
-                                                    authName={item.name}
-                                                    url={""}
-                                                    enabled={item.enabled}
-                                                    description={item.description}
-                                                    handleChangeToPrimary={this.props.handleChangeToPrimary}
-                                                    handlePrimaryToggle={this.props.handlePrimaryToggle}
-                                                    stateSection={this.props.stateSection}
-                                                />
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                ))}
-                                {provided.placeholder}
-                            </div>
-                        )}
-                    </Droppable>
-                </DragDropContext>
+                {(this.props.rowInfo && this.props.primary) &&
+                    <DragDropContext onDragEnd={this.props.onDragEnd}>
+                        <Droppable droppableId={this.props.stateSection}>
+                            {(provided) => (
+                                <div ref={provided.innerRef} {...provided.droppableProps}>
+                                    {this.props.rowInfo.map((item, index) => (
+                                        <Draggable key={item.id} draggableId={item.id} index={index}>
+                                            {(provided) => (
+                                                <div
+                                                    ref={provided.innerRef}
+                                                    {...provided.draggableProps}
+                                                    {...provided.dragHandleProps}
+                                                >
+                                                    <EditableAuthRow
+                                                        id={index.toString()}
+                                                        rowId={item.id}
+                                                        authName={item.name}
+                                                        url={""}
+                                                        enabled={item.enabled}
+                                                        deleteURL={item.deleteUrl}
+                                                        description={item.description}
+                                                        handleChangeToPrimary={this.props.handleChangeToPrimary}
+                                                        handlePrimaryToggle={this.props.handlePrimaryToggle}
+                                                        stateSection={this.props.stateSection}
+                                                        deleteAction={this.props.deleteAction}
+                                                        modalType={...this.props.primary[item.name]}
+                                                    />
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+
+                        </Droppable>
+                    </DragDropContext>
+                }
             </div>
         )
     }

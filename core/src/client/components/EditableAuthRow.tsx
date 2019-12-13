@@ -1,11 +1,12 @@
 import * as React from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faGripVertical, faPencilAlt} from "@fortawesome/free-solid-svg-icons";
+import {faGripVertical, faPencilAlt, faTimesCircle} from "@fortawesome/free-solid-svg-icons";
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import SimpleAuthRow from "./SimpleAuthRow";
 import ConfigurationModal from "./ConfigurationModal";
 import DynamicConfigurationModal from "./DynamicConfigurationModal";
+import {Col} from "react-bootstrap";
 
 
 // Todo:
@@ -29,7 +30,7 @@ interface State {
     modalOpen: boolean
     highlight: boolean
 }
-export default class EditableAuthRow extends React.Component<Props, State>{
+export default class EditableAuthRow extends React.Component<any, State>{
     constructor(props){
         super(props);
         this.state = {
@@ -57,13 +58,23 @@ export default class EditableAuthRow extends React.Component<Props, State>{
                 style={{width: "90px", height: "28px"}}
             />;
 
+        const deleteIcon =
+            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.props.deleteAction(this.props.rowId, this.props.stateSection)}>
+                <FontAwesomeIcon icon={faTimesCircle} color={"#d9534f"} />
+            </div>;
+
         const edit =
             <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggle("modalOpen")}>
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>;
 
         // const modal = (this.state.modalOpen &&  <ConfigurationModal {...this.props} closeModal={() => {this.onToggle("modalOpen")}} />);
-        const dynamicModal = (this.state.modalOpen && <DynamicConfigurationModal {...this.props} closeModal={() => {this.onToggle("modalOpen")}}/>)
+        const dynamicModal = (this.state.modalOpen &&
+                <DynamicConfigurationModal
+                    type={this.props.modalType}
+                    closeModal={() => {this.onToggle("modalOpen")}}
+                    {...this.props}
+                />);
 
         return(
             <div
@@ -76,6 +87,7 @@ export default class EditableAuthRow extends React.Component<Props, State>{
                     url = {this.props.url || "http://labkey/login-configure.view?"}
                     name = {this.props.authName}
                     enabled = {enabled}
+                    delete = {deleteIcon}
                     edit = {edit}
                     modal = {dynamicModal}
                 />

@@ -23,7 +23,7 @@ interface State {
     secondaryAuth: any
     globalAuthConfigs: Object
     canEdit: boolean
-    addNewPrimary: Object
+    primary: Object
     dirty: boolean
 }
 export class App extends React.PureComponent<Props, State> {
@@ -35,7 +35,7 @@ export class App extends React.PureComponent<Props, State> {
             secondaryAuth: null,
             globalAuthConfigs: null,
             canEdit: false,
-            addNewPrimary: null,
+            primary: null,
             dirty: false,
         };
 
@@ -52,6 +52,8 @@ export class App extends React.PureComponent<Props, State> {
         this.reorder = this.reorder.bind(this);
         this.handleChangeToPrimary = this.handleChangeToPrimary.bind(this);
         this.handlePrimaryToggle = this.handlePrimaryToggle.bind(this);
+        this.deleteAction = this.deleteAction.bind(this);
+
     }
 
     componentDidMount() {
@@ -175,6 +177,32 @@ export class App extends React.PureComponent<Props, State> {
         }))
     }
 
+    deleteAction(id, stateSection){
+        let prevState = this.state[stateSection];
+        let newState = prevState.filter((auth) => {
+            return auth.id !== id;
+        });
+
+        this.setState(prevState => ({
+            ...prevState,
+            [stateSection]: newState
+        }),
+            () => {
+            Ajax.request({
+                url: ActionURL.buildURL("login", "deleteConfiguration"),
+                method : 'POST',
+                params: {configuration: id.slice(2)},
+                scope: this,
+                failure: function(error){
+                    console.log("fail: ", error);
+                },
+                success: function(){
+                    console.log("success");
+                }
+            })}
+        )
+    }
+
     render() {
         return(
             <div style={{minWidth:"1100px"}}>
@@ -190,12 +218,13 @@ export class App extends React.PureComponent<Props, State> {
                     singleSignOnAuth={this.state.singleSignOnAuth}
                     loginFormAuth={this.state.loginFormAuth}
                     secondary={this.state.secondaryAuth}
-                    addNewPrimary={this.state.addNewPrimary}
+                    primary={this.state.primary}
                     canEdit={this.state.canEdit}
                     // canEdit={false}  // for testing
                     onDragEnd={this.onDragEnd}
                     handleChangeToPrimary={this.handleChangeToPrimary}
                     handlePrimaryToggle={this.handlePrimaryToggle}
+                    deleteAction={this.deleteAction}
                 />
 
                 {this.state.dirty && <Alert>You have unsaved changes to your authentication configurations. Hit "Save and Finish" to apply these changes.</Alert>}

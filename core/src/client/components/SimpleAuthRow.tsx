@@ -1,6 +1,9 @@
 import * as React from 'react'
 import { Col } from 'react-bootstrap'
 
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faTimesCircle} from "@fortawesome/free-solid-svg-icons";
+
 // todo:
 // remove the margin-left
 // fix the classname-down issue
@@ -20,7 +23,7 @@ interface State {
     color: boolean
 }
 
-export default class SimpleAuthRow extends React.PureComponent<Props, State>{
+export default class SimpleAuthRow extends React.PureComponent<any, State>{
     constructor(props){
         super(props);
         this.state = {
@@ -58,11 +61,16 @@ export default class SimpleAuthRow extends React.PureComponent<Props, State>{
                             <Col xs={1}/>
 
                             <Col xs={2} className={"domain-row-base-fields"}>
-                                <Col xs={8}>
+                                <Col xs={7}>
                                     {this.props.enabled}
                                 </Col>
 
-                                <Col xs={4} >
+                                <Col xs={1}>
+                                    {this.props.delete}
+                                </Col>
+
+
+                                <Col xs={3} >
                                     {this.props.edit}
                                 </Col>
                             </Col>

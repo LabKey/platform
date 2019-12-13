@@ -99,8 +99,6 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
                         />
                     </div>
 
-
-
                 </Modal.Body>
             </Modal>
         );
