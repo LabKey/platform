@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -44,7 +43,6 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.premium.PremiumService;
 import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
@@ -52,8 +50,9 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
-import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -103,15 +102,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
@@ -2586,7 +2581,7 @@ public class LoginController extends SpringActionController
             ArrayList<Map> loginFormAuth = new ArrayList<>();
 
             Collection<AuthenticationConfiguration> configurations = AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class);
-            for (AuthenticationConfiguration configuration : configurations)
+            for (AuthenticationConfiguration<?> configuration : configurations)
             {
                 String name = configuration.getAuthenticationProvider().getName();
                 Map<String, Object> sh = new HashMap<>();
@@ -2597,16 +2592,15 @@ public class LoginController extends SpringActionController
                 sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl
                 sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
                 sh.put("id", "id" + configuration.getRowId());
+                sh.putAll(configuration.getCustomProperties());
 
-                if (name == "LDAP" || name == "Database"){
-                    loginFormAuth.add(sh);
-                } else {
+                if (configuration instanceof SSOAuthenticationConfiguration<?>)
                     singleSignOnAuth.add(sh);
-                }
+                else if (configuration instanceof LoginFormAuthenticationConfiguration<?>)
+                    loginFormAuth.add(sh);
             }
 
-
-            ArrayList<Map> secondaries = new ArrayList<>();
+            ArrayList<Map<String, Object>> secondaries = new ArrayList<>();
             for (AuthenticationProvider authProvider : secondary)
             {
                 Map<String, Object> items = new HashMap<>();
@@ -2620,38 +2614,36 @@ public class LoginController extends SpringActionController
                 secondaries.add(items);
             }
 
-
-            Map <String, Boolean> globalAuthConfigs = new HashMap<>();
-            globalAuthConfigs.put("SelfRegistration", AuthenticationManager.isRegistrationEnabled());
-            globalAuthConfigs.put("SelfServiceEmailChanges", AuthenticationManager.isSelfServiceEmailChangesEnabled());
-            globalAuthConfigs.put("AutoCreateAccounts", isExternalProviderEnabled);
-
+            Map <String, Boolean> globalAuthSettings = new HashMap<>();
+            globalAuthSettings.put("SelfRegistration", AuthenticationManager.isRegistrationEnabled());
+            globalAuthSettings.put("SelfServiceEmailChanges", AuthenticationManager.isSelfServiceEmailChangesEnabled());
+            globalAuthSettings.put("AutoCreateAccounts", isExternalProviderEnabled);
 
             // For 'add new' buttons
             Map <String, Object> addNew = new HashMap<>();
             primary.stream()
-                    .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
-                    .filter(ap->!ap.isPermanent())
-                    .sorted(Comparator.comparing(AuthenticationProvider::getName))
-                    .forEach(
-                            ap->{{
-                                Map<String, Object> addNewConfig = Map.of(
-                                        "description", ap.getDescription(),
-                                        "configLink", ap.getConfigurationLink()
-                                );
-                                addNew.put(ap.getName(), addNewConfig);
-                            }}
-                    );
-
+                .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
+                .filter(ap->!ap.isPermanent())
+                .sorted(Comparator.comparing(AuthenticationProvider::getName))
+                .forEach(
+                    ap->{{
+                        Map<String, Object> addNewConfig = Map.of(
+                            "description", ap.getDescription(),
+                            "configLink", ap.getConfigurationLink(),
+                            "sso", ap instanceof SSOAuthenticationProvider,
+                            "settingsFields", ap.getSettingsFields()
+                        );
+                        addNew.put(ap.getName(), addNewConfig);
+                    }}
+                );
 
             res.put("singleSignOnAuth", new JSONArray(singleSignOnAuth));
             res.put("loginFormAuth", new JSONArray(loginFormAuth));
             res.put("secondaryAuth", new JSONArray(secondaries));
-            res.put("globalAuthConfigs", globalAuthConfigs);
+            res.put("globalAuthConfigs", globalAuthSettings);  // TODO: globalAuthSettings?
             res.put("canEdit", canEdit);
             res.put("addNewPrimary", addNew);
 //            res.put("urls", urls);
-
 
             return res;
         }

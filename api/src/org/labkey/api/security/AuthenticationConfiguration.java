@@ -9,6 +9,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public interface AuthenticationConfiguration<AP extends AuthenticationProvider> extends AttachmentParent
 {
@@ -25,6 +26,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     @NotNull String getDescription();
     @NotNull AP getAuthenticationProvider();
     boolean isEnabled();
+    Map<String, Object> getCustomProperties();
 
     interface SSOAuthenticationConfiguration<AP extends SSOAuthenticationProvider> extends AuthenticationConfiguration<AP>
     {

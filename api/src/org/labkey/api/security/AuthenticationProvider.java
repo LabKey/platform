@@ -80,9 +80,9 @@ public interface AuthenticationProvider
      *
      * @return A JSONArray of field descriptors or null if this provider doesn't want a settings page
      */
-    default @Nullable JSONArray getSettingsFields()
+    default @NotNull JSONArray getSettingsFields()
     {
-        return null;
+        return new JSONArray();
     }
 
     default Map<String, Object> getSettingsField(String name, FieldType type, String caption, String description, boolean required, Object defaultValue)

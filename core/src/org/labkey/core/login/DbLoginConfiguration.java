@@ -12,11 +12,11 @@ public class DbLoginConfiguration extends BaseAuthenticationConfiguration<DbLogi
     private final PasswordRule _passwordRule;
     private final PasswordExpiration _expiration;
 
-    protected DbLoginConfiguration(String key, DbLoginAuthenticationProvider provider, Map<String, String> props)
+    protected DbLoginConfiguration(DbLoginAuthenticationProvider provider, Map<String, String> stringProperties, Map<String, Object> properties)
     {
-        super(key, provider, props);
-        _passwordRule = PasswordRule.valueOf(props.getOrDefault(DbLoginManager.Key.Strength.toString(), PasswordRule.Weak.toString()));
-        _expiration = PasswordExpiration.valueOf(props.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
+        super(provider, properties);
+        _passwordRule = PasswordRule.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Strength.toString(), PasswordRule.Weak.toString()));
+        _expiration = PasswordExpiration.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
     }
 
     @Override

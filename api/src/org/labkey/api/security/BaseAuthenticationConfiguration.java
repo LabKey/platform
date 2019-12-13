@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.ContainerManager;
 
+import java.util.Collections;
 import java.util.Map;
 
 public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationProvider> implements AuthenticationConfiguration<AP>
@@ -13,15 +14,6 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     private final boolean _enabled;
     private final int _rowId;
     private final String _entityId;
-
-    protected BaseAuthenticationConfiguration(String key, AP provider, Map<String, String> props)
-    {
-        _rowId = 0;
-        _entityId = null;
-        _provider = provider;
-        _description = props.get("Description");
-        _enabled = Boolean.valueOf(props.get("Enabled"));
-    }
 
     public BaseAuthenticationConfiguration(AP provider, Map<String, Object> props)
     {
@@ -73,5 +65,11 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     public boolean isEnabled()
     {
         return _enabled;
+    }
+
+    @Override
+    public Map<String, Object> getCustomProperties()
+    {
+        return Collections.emptyMap();
     }
 }
