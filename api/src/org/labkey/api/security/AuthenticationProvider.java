@@ -69,6 +69,10 @@ public interface AuthenticationProvider
     );
 
     @Nullable ActionURL getConfigurationLink();
+    default @NotNull ActionURL getSaveLink()
+    {
+        return new ActionURL();
+    }
     default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
     {
         return getConfigurationLink();

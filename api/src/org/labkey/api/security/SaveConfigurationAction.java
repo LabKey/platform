@@ -1,0 +1,64 @@
+package org.labkey.api.security;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.Table;
+import org.labkey.api.view.NotFoundException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+
+public abstract class SaveConfigurationAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration> extends MutatingApiAction<F>
+{
+    protected @Nullable AC _configuration = null;
+
+    private void initializeConfiguration(F form)
+    {
+        Integer rowId = form.getConfiguration();
+
+        if (null != rowId)
+        {
+            _configuration = (AC)AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+
+            if (null == _configuration)
+                throw new NotFoundException("Configuration not found");
+        }
+    }
+
+    @Override
+    public void validateForm(F form, Errors errors)
+    {
+        initializeConfiguration(form);
+        if (StringUtils.isBlank(form.getDescription()))
+        {
+            errors.reject(ERROR_MSG, "Invalid description: description cannot be blank");
+        }
+    }
+
+    @Override
+    public Object execute(F form, BindException errors) throws Exception
+    {
+        if (errors.hasErrors())
+            return null;
+        saveForm(form, getUser());
+        return new ApiSimpleResponse("success", true);
+    }
+
+    public static void saveForm(AuthenticationConfigureForm form, @Nullable User user)
+    {
+        if (null == form.getRowId())
+        {
+            Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
+        }
+        else
+        {
+            Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
+        }
+
+        AuthenticationConfigurationCache.clear();
+    }
+}

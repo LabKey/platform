@@ -102,11 +102,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
@@ -2568,20 +2568,10 @@ public class LoginController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            Collection<AuthenticationProvider.PrimaryAuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
-            Collection<AuthenticationProvider.SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders(); // anticipate multiauth
-            boolean isExternalProviderEnabled = AuthenticationManager.isExternalConfigurationEnabled();
-            boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
-            LoginUrls urls = urlProvider(LoginUrls.class);
+            ArrayList<Map<String, Object>> ssoConfigurations = new ArrayList<>();
+            ArrayList<Map<String, Object>> formConfigurations = new ArrayList<>();
 
-
-            ApiSimpleResponse res = new ApiSimpleResponse();
-
-            ArrayList<Map> singleSignOnAuth = new ArrayList<>();
-            ArrayList<Map> loginFormAuth = new ArrayList<>();
-
-            Collection<AuthenticationConfiguration> configurations = AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class);
-            for (AuthenticationConfiguration<?> configuration : configurations)
+            for (AuthenticationConfiguration<?> configuration : AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class))
             {
                 String name = configuration.getAuthenticationProvider().getName();
                 Map<String, Object> sh = new HashMap<>();
@@ -2591,59 +2581,54 @@ public class LoginController extends SpringActionController
                 sh.put("enabled", configuration.isEnabled());
                 sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl
                 sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
-                sh.put("id", "id" + configuration.getRowId());
+                sh.put("id", "id" + configuration.getRowId()); // TODO: rowId
                 sh.putAll(configuration.getCustomProperties());
 
                 if (configuration instanceof SSOAuthenticationConfiguration<?>)
-                    singleSignOnAuth.add(sh);
+                    ssoConfigurations.add(sh);
                 else if (configuration instanceof LoginFormAuthenticationConfiguration<?>)
-                    loginFormAuth.add(sh);
+                    formConfigurations.add(sh);
             }
 
-            ArrayList<Map<String, Object>> secondaries = new ArrayList<>();
-            for (AuthenticationProvider authProvider : secondary)
-            {
-                Map<String, Object> items = new HashMap<>();
-                items.put("name", authProvider.getName());
-                items.put("ficamOK", (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved()));
-                items.put("isPermanent", authProvider.isPermanent());
-                items.put("enabled", AuthenticationManager.isActive(authProvider));
-//                items.put("enableURL", urls.getEnableProviderURL(authProvider)); //might cause nullpointer?
-                items.put("configureUrl", authProvider.getConfigurationLink());
-                items.put("description", authProvider.getDescription());
-                secondaries.add(items);
-            }
-
-            Map <String, Boolean> globalAuthSettings = new HashMap<>();
+            Map<String, Boolean> globalAuthSettings = new HashMap<>();
             globalAuthSettings.put("SelfRegistration", AuthenticationManager.isRegistrationEnabled());
             globalAuthSettings.put("SelfServiceEmailChanges", AuthenticationManager.isSelfServiceEmailChangesEnabled());
-            globalAuthSettings.put("AutoCreateAccounts", isExternalProviderEnabled);
+            globalAuthSettings.put("AutoCreateAccounts", AuthenticationManager.isExternalConfigurationEnabled());
+            // TODO: I think we need to add a setting for AuthenticationManager.isAutoCreateAccountsEnabled() as well
 
-            // For 'add new' buttons
-            Map <String, Object> addNew = new HashMap<>();
-            primary.stream()
+            // Primary providers
+            Map<String, Object> primary = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
                 .filter(ap->!ap.isPermanent())
-                .sorted(Comparator.comparing(AuthenticationProvider::getName))
-                .forEach(
-                    ap->{{
-                        Map<String, Object> addNewConfig = Map.of(
-                            "description", ap.getDescription(),
-                            "configLink", ap.getConfigurationLink(),
-                            "sso", ap instanceof SSOAuthenticationProvider,
-                            "settingsFields", ap.getSettingsFields()
-                        );
-                        addNew.put(ap.getName(), addNewConfig);
-                    }}
-                );
+                .collect(Collectors.toMap(AuthenticationProvider::getName, ap->Map.of(
+                    "description", ap.getDescription(),
+                    "saveLink", ap.getSaveLink().toString(),
+                    "configLink", ap.getConfigurationLink(),
+                    "sso", ap instanceof SSOAuthenticationProvider,
+                    "settingsFields", ap.getSettingsFields()
+                )));
 
-            res.put("singleSignOnAuth", new JSONArray(singleSignOnAuth));
-            res.put("loginFormAuth", new JSONArray(loginFormAuth));
-            res.put("secondaryAuth", new JSONArray(secondaries));
+            // Secondary providers
+            List<Map<String, Object>> secondary = AuthenticationManager.getAllSecondaryProviders().stream()
+                .map(sp->{
+                    Map<String, Object> items = new HashMap<>();
+                    items.put("name", sp.getName());
+                    items.put("ficamOK", (AuthenticationManager.isAcceptOnlyFicamProviders() && !sp.isFicamApproved()));
+                    items.put("isPermanent", sp.isPermanent());
+                    items.put("enabled", AuthenticationManager.isActive(sp));
+                    items.put("configureUrl", sp.getConfigurationLink());
+                    items.put("description", sp.getDescription());
+                    return items;
+                })
+                .collect(Collectors.toList());
+
+            ApiSimpleResponse res = new ApiSimpleResponse();
+            res.put("primary", primary);
+            res.put("secondaryAuth", new JSONArray(secondary));
             res.put("globalAuthSettings", globalAuthSettings);
-            res.put("canEdit", canEdit);
-            res.put("primary", addNew);
-//            res.put("urls", urls);
+            res.put("singleSignOnAuth", new JSONArray(ssoConfigurations));
+            res.put("loginFormAuth", new JSONArray(formConfigurations));
+            res.put("canEdit", getContainer().hasPermission(getUser(), AdminOperationsPermission.class));
 
             return res;
         }
