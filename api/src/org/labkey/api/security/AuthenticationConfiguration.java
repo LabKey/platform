@@ -1,6 +1,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
@@ -24,6 +25,10 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
 
     int getRowId();
     @NotNull String getDescription();
+    default @Nullable String getDetails()
+    {
+        return null;
+    }
     @NotNull AP getAuthenticationProvider();
     boolean isEnabled();
     Map<String, Object> getCustomProperties();

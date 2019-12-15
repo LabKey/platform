@@ -2576,12 +2576,13 @@ public class LoginController extends SpringActionController
                 String name = configuration.getAuthenticationProvider().getName();
                 Map<String, Object> sh = new HashMap<>();
 
+                sh.put("name", name);  // TODO: "provider"?
                 sh.put("description", configuration.getDescription());
-                sh.put("name", name);
+                sh.put("details", configuration.getDetails());
                 sh.put("enabled", configuration.isEnabled());
-                sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl
+                sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl -- TODO: Remove
                 sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
-                sh.put("id", "id" + configuration.getRowId()); // TODO: rowId
+                sh.put("id", "id" + configuration.getRowId()); // TODO: change to or add "rowId"
                 sh.putAll(configuration.getCustomProperties());
 
                 if (configuration instanceof SSOAuthenticationConfiguration<?>)
@@ -2636,8 +2637,9 @@ public class LoginController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public PasswordRule currentRule = DbLoginManager.getPasswordRule();
-        public PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
+        public final PasswordRule currentRule = DbLoginManager.getPasswordRule();
+        public final PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
+
         public boolean reshow = false;
 
         private String strength = "Weak";
