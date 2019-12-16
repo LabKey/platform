@@ -54,6 +54,7 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -518,6 +519,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             throw domainErrors;
                     }
 
+                    QueryService.get().updateLastModified();
                     transaction.commit();
                     AssayManager.get().clearProtocolCache();
                     return getAssayDefinition(assay.getProtocolId(), false);

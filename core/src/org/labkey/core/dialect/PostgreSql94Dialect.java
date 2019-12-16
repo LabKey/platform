@@ -47,15 +47,8 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
     }
 
     @Override
-    public void addAdminWarningMessages(Warnings warnings)
-    {
-        // Override the 9.3 override... no warnings for 9.4+
-    }
-
-    @Override
     public String getMedianFunction()
     {
         return "percentile_cont";
     }
-
 }

@@ -62,6 +62,12 @@ public class GetSchemaQueryTreeAction extends ReadOnlyApiAction<GetSchemaQueryTr
         return _withHtmlEncoding ? PageFlowUtil.filter(s) : s;
     }
 
+    @Override
+    protected long getLastModified(Form form)
+    {
+        return QueryService.get().metadataLastModified();
+    }
+
     public ApiResponse execute(Form form, BindException errors) throws Exception
     {
         _withHtmlEncoding = form.isWithHtmlEncoding();

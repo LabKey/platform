@@ -63,6 +63,8 @@ import java.util.Set;
 
 public interface QueryService
 {
+    static final String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
 
@@ -114,6 +116,12 @@ public interface QueryService
     DetailsURL urlDefault(Container container, QueryAction action, TableInfo table);
 
     // TODO: These probably need to change to support data source qualified schema names
+
+    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
+    long metadataLastModified();
+
+    /** Invalidate the value used for the "Last-Modified" time stamp. */
+    void updateLastModified();
 
     /** Get schema for SchemaKey encoded path. */
     UserSchema getUserSchema(User user, Container container, String schemaPath);

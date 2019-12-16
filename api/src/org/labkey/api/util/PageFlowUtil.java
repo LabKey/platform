@@ -50,6 +50,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;

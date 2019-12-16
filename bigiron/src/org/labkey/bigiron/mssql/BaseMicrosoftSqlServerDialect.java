@@ -34,7 +34,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.Warnings;
 
@@ -118,12 +117,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
-    private final TableResolver _tableResolver;
-
-    BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
-    {
-        _tableResolver = tableResolver;
-    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -1651,10 +1644,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public void addAdminWarningMessages(Warnings warnings)
     {
+        super.addAdminWarningMessages(warnings);
         ClrAssemblyManager.addAdminWarningMessages(warnings);
-
-        if ("2008R2".equals(getProductVersion()))
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
     }
 
     @Override
@@ -1970,7 +1961,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     protected TableResolver getTableResolver()
     {
-        return _tableResolver;
+        return MicrosoftSqlServerDialectFactory.getTableResolver();
     }
 
     @Override
