@@ -40,7 +40,7 @@ public class ParentOfCompareType extends CompareType
     }
 
     @Override
-    protected boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
+    public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
     {
         throw new UnsupportedOperationException("Conditional formatting not yet supported for EXP_PARENT_OF");
     }
