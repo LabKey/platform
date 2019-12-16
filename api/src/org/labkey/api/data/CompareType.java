@@ -1277,8 +1277,8 @@ public abstract class CompareType
         if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey)
             return true;
 
-        if (lookupSchemaName.equalsIgnoreCase("core") &&
-                (lookupQueryName.equalsIgnoreCase("users") || lookupQueryName.equalsIgnoreCase("usersdata")))
+        if ("core".equalsIgnoreCase(lookupSchemaName) &&
+                ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName)))
             return true;
 
         return false;
@@ -1294,7 +1294,7 @@ public abstract class CompareType
             return false;
 
         String propertyURI = col.getPropertyURI();
-        if (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName"))
+        if (propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName")))
             return true;
 
         return false;
