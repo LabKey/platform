@@ -31,6 +31,7 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StandardTableResolver;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
@@ -50,7 +51,12 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     private static final Logger LOG = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
     public static final String PRODUCT_NAME = "Microsoft SQL Server";
 
-    private volatile TableResolver _tableResolver = new StandardTableResolver();
+    private static volatile TableResolver TABLE_RESOLVER = new StandardTableResolver();
+
+    static TableResolver getTableResolver()
+    {
+        return TABLE_RESOLVER;
+    }
 
     private String getProductName()
     {
@@ -64,7 +70,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         {
             case "net.sourceforge.jtds.jdbc.Driver":
             case "com.microsoft.sqlserver.jdbc.SQLServerDriver":
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
+                return new MicrosoftSqlServer2012Dialect();
             default:
                 return null;
         }
@@ -97,46 +103,28 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     private SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
     {
-        // Good resources for past & current SQL Server version numbers:
-        // - http://www.sqlteam.com/article/sql-server-versions
-        // - http://sqlserverbuilds.blogspot.se/
+        MicrosoftSqlServerVersion mssv = MicrosoftSqlServerVersion.get(version);
 
-        // We support only 2012 and higher as the primary data source, or 2008/2008R2 as an external data source
-        if (version >= 100)
+        if (mssv == MicrosoftSqlServerVersion.MICROSOFT_SQL_SERVER_UNSUPPORTED || (primaryDataSource && !mssv.isPrimaryAllowed()))
+            throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+
+        SqlDialect dialect = mssv.getDialect();
+
+        if (logWarnings)
         {
-            if (version >= 160)
+            if (mssv.isDeprecated())
             {
-                // Warn for > SQL Server 2019, for now.
-                if (logWarnings)
-                    LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
+                String deprecationMessage = "LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + "; please upgrade. " + RECOMMENDED;
+                LOG.warn(deprecationMessage);
+                dialect.setDeprecationMessage(HtmlString.of(deprecationMessage));
             }
-
-            if (version >= 150)
-                return new MicrosoftSqlServer2019Dialect(_tableResolver);
-
-            if (version >= 140)
-                return new MicrosoftSqlServer2017Dialect(_tableResolver);
-
-            if (version >= 130)
-                return new MicrosoftSqlServer2016Dialect(_tableResolver);
-
-            if (version >= 120)
-                return new MicrosoftSqlServer2014Dialect(_tableResolver);
-
-            if (version >= 110)
-                return new MicrosoftSqlServer2012Dialect(_tableResolver);
-
-            // Accept 2008 or 2008R2 as an external/supplemental database, but not as the primary database
-            if (!primaryDataSource)
+            else if (!mssv.isTested())
             {
-                if (logWarnings)
-                    LOG.warn("LabKey Server no longer supports " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-                return new MicrosoftSqlServer2008R2Dialect(_tableResolver);
+                LOG.warn("LabKey Server has not been tested against " + getProductName() + " version " + databaseProductVersion + ". " + RECOMMENDED);
             }
         }
 
-        throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
+        return dialect;
     }
 
     @Override
@@ -149,13 +137,13 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // The SQL Server dialects are identical, so just test one
-        return PageFlowUtil.set(new MicrosoftSqlServer2012Dialect(_tableResolver));
+        return PageFlowUtil.set(new MicrosoftSqlServer2012Dialect());
     }
 
     @Override
     public void setTableResolver(TableResolver tableResolver)
     {
-        _tableResolver = tableResolver;
+        TABLE_RESOLVER = tableResolver;
     }
 
 
@@ -166,32 +154,41 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
     {
+        @Override
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygook", 1.0, 14.0, "", null);
-            badProductName("SQL Server", 1.0, 14.0, "", null);
-            badProductName("sqlserver", 1.0, 14.0, "", null);
+            badProductName("Gobbledygook", 13.0, 14.0, "", null);
+            badProductName("SQL Server", 13.0, 14.0, "", null);
+            badProductName("sqlserver", 13.0, 14.0, "", null);
 
-            // < 10.5 should result in bad version error
-            badVersion("Microsoft SQL Server", 0.0, 10.0, null, null);
+            // < 10.0 should result in bad version error
+            badVersion("Microsoft SQL Server", 8.0, 10.0, null, null);
+
+            // Point releases aren't valid
+            badVersion("Microsoft SQL Server", 10.1, 10.3, null, null);
+            badVersion("Microsoft SQL Server", 11.3, 11.6, null, null);
+            badVersion("Microsoft SQL Server", 12.7, 12.9, null, null);
+            badVersion("Microsoft SQL Server", 13.1, 13.3, null, null);
+            badVersion("Microsoft SQL Server", 14.5, 14.7, null, null);
 
             String driverName = "jTDS Type 4 JDBC Driver for MS SQL Server and Sybase";
 
-            // >= 10.0 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.0, 11.0, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
+            // 10.0 and 10.5 should result in MicrosoftSqlServer2008R2Dialect
+            good("Microsoft SQL Server", 10.0, 10.0, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.5, 10.5, "", null, driverName, MicrosoftSqlServer2008R2Dialect.class);
 
-            // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
-            good("Microsoft SQL Server", 11.0, 12.0, "", null, driverName, MicrosoftSqlServer2012Dialect.class);
+            // 11.0 should result in MicrosoftSqlServer2012Dialect
+            good("Microsoft SQL Server", 11.0, 11.0, "", null, driverName, MicrosoftSqlServer2012Dialect.class);
 
-            // >= 12.0 and < 13.0 should result in MicrosoftSqlServer2014Dialect
-            good("Microsoft SQL Server", 12.0, 13.0, "", null, driverName, MicrosoftSqlServer2014Dialect.class);
+            // 12.0 should result in MicrosoftSqlServer2014Dialect
+            good("Microsoft SQL Server", 12.0, 12.0, "", null, driverName, MicrosoftSqlServer2014Dialect.class);
 
-            // >= 13.0 and < 14.0 should result in MicrosoftSqlServer2016Dialect
-            good("Microsoft SQL Server", 13.0, 14.0, "", null, driverName, MicrosoftSqlServer2016Dialect.class);
+            // 13.0 should result in MicrosoftSqlServer2016Dialect
+            good("Microsoft SQL Server", 13.0, 13.0, "", null, driverName, MicrosoftSqlServer2016Dialect.class);
 
-            // >= 14.0 and < 15.0 should result in MicrosoftSqlServer2017Dialect
-            good("Microsoft SQL Server", 14.0, 15.0, "", null, driverName, MicrosoftSqlServer2017Dialect.class);
+            // 14.0 should result in MicrosoftSqlServer2017Dialect
+            good("Microsoft SQL Server", 14.0, 14.0, "", null, driverName, MicrosoftSqlServer2017Dialect.class);
 
             // >= 15.0 should result in MicrosoftSqlServer2019Dialect
             good("Microsoft SQL Server", 15.0, 17.0, "", null, driverName, MicrosoftSqlServer2019Dialect.class);
