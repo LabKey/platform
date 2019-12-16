@@ -2582,7 +2582,8 @@ public class LoginController extends SpringActionController
                 sh.put("enabled", configuration.isEnabled());
                 sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl -- TODO: Remove
                 sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
-                sh.put("id", "id" + configuration.getRowId()); // TODO: change to or add "rowId"
+                sh.put("id", "id" + configuration.getRowId());
+                sh.put("configuration", configuration.getRowId());
                 sh.putAll(configuration.getCustomProperties());
 
                 if (configuration instanceof SSOAuthenticationConfiguration<?>)
