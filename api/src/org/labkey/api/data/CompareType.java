@@ -24,22 +24,27 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.util.ArrayList;
@@ -53,6 +58,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Comparison operators that can be used to create filters over columns.
@@ -69,6 +78,7 @@ import java.util.Set;
  */
 public abstract class CompareType
 {
+    public static final String ME_FILTER_PARAM_VALUE = "~me~";
     public static final String JSON_MARKER_START = "{json:";
     public static final String JSON_MARKER_END = "}";
 
@@ -1220,12 +1230,12 @@ public abstract class CompareType
         String stringValue = (String)paramVal;
 
         // Expand the magic 'me' value if the column is a userid or a user display name
-        if ("~me~".equals(stringValue))
+        if (ME_FILTER_PARAM_VALUE.equals(stringValue))
         {
             // get the current user from the query env
             User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
 
-            if (isUserIdLookup(colInfo))
+            if (isUserIdColumn(colInfo))
             {
                 if (user != null)
                     return user.getUserId();
@@ -1245,20 +1255,26 @@ public abstract class CompareType
         return getParamValue(colInfo, stringValue);
     }
 
-    private static boolean isUserIdLookup(ColumnRenderProperties col)
+    // Returns true if the column is an integer user id column or is a lookup to core.Users
+    private static boolean isUserIdColumn(ColumnRenderProperties col)
     {
         if (col.getJdbcType() != JdbcType.INTEGER)
             return false;
 
-        String sqlTypeName = null;
         ForeignKey fk = null;
         String lookupSchemaName = null;
         String lookupQueryName = null;
         if (col instanceof ColumnInfo)
         {
             ColumnInfo colInfo = (ColumnInfo)col;
-            sqlTypeName = colInfo.getSqlTypeName();
+            String sqlTypeName = colInfo.getSqlTypeName();
+            if ("userid".equalsIgnoreCase(sqlTypeName))
+                return true;
+
             fk = colInfo.getFk();
+            if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey)
+                return true;
+
             if (fk != null)
             {
                 lookupSchemaName = fk.getLookupSchemaName();
@@ -1271,12 +1287,6 @@ public abstract class CompareType
             lookupQueryName = ((PropertyDescriptor)col).getLookupQuery();
         }
 
-        if ("userid".equalsIgnoreCase(sqlTypeName))
-            return true;
-
-        if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey)
-            return true;
-
         if ("core".equalsIgnoreCase(lookupSchemaName) &&
                 ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName)))
             return true;
@@ -1285,6 +1295,7 @@ public abstract class CompareType
     }
 
     // TODO: How can I tell if this column is the core.Users DisplayName display column?
+    // Returns true if the column is a varchar user display value column
     private static boolean isUserDisplayColumn(ColumnRenderProperties col)
     {
         if (col.getJdbcType() != JdbcType.VARCHAR)
@@ -2072,5 +2083,60 @@ public abstract class CompareType
         ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(userIdSQL).append(")");
         ret.append(")");
         return ret;
+    }
+
+    public static class TestCase
+    {
+        @Test
+        public void testMeFilterValue()
+        {
+            User user = TestContext.get().getUser();
+            Container container = ContainerManager.getSharedContainer();
+            UserSchema core = QueryService.get().getUserSchema(user, container, "core");
+
+            // lookup to core.SiteUsers
+            TableInfo usersTable = core.getTable("Users");
+            assertTrue(isUserIdColumn(usersTable.getColumn("UserId")));
+            assertTrue(isUserIdColumn(usersTable.getColumn("CreatedBy")));
+            assertTrue(isUserIdColumn(usersTable.getColumn("Owner")));
+
+            // lookup to core.Users
+            TableInfo usersAndGroupsTable = core.getTable("UsersAndGroups");
+            assertTrue(isUserIdColumn(usersTable.getColumn("UserId")));
+
+            TableInfo containerTable = core.getTable("Containers");
+            assertTrue(isUserIdColumn(((FilteredTable)containerTable).getRealTable().getColumn("CreatedBy")));
+
+            ColumnInfo createdByCol = containerTable.getColumn("CreatedBy");
+            assertTrue(isUserIdColumn(createdByCol));
+            assertFalse(isUserDisplayColumn(createdByCol));
+
+            // verify the user lookup display column
+            ColumnInfo createdByDisplayCol = createdByCol.getFk().createLookupColumn(createdByCol, "DisplayName");
+            assertFalse(isUserIdColumn(createdByDisplayCol));
+            assertTrue(isUserDisplayColumn(createdByDisplayCol));
+
+            // expand the '~me~' filter parameter value
+            assertEquals(user.getUserId(), CompareType.convertParamValue(createdByCol, ME_FILTER_PARAM_VALUE));
+            assertEquals(user.getDisplayName(user), CompareType.convertParamValue(createdByDisplayCol, ME_FILTER_PARAM_VALUE));
+
+            // create PropertyDescriptor with lookup to core.Users table
+            PropertyDescriptor userPd = new PropertyDescriptor();
+            userPd.setPropertyType(PropertyType.INTEGER);
+            userPd.setName("Owner");
+            userPd.setLookupSchema("core");
+            userPd.setLookupQuery("Users");
+            assertTrue(isUserIdColumn(userPd));
+            assertEquals(user.getUserId(), CompareType.convertParamValue(userPd, ME_FILTER_PARAM_VALUE));
+
+            // verify conditional formatting matches
+            SimpleFilter.FilterClause clause = CompareType.EQUAL.createFilterClause(createdByCol.getFieldKey(), ME_FILTER_PARAM_VALUE);
+            assertFalse(clause.meetsCriteria(createdByCol, User.guest.getUserId()));
+            assertTrue(clause.meetsCriteria(createdByCol, user.getUserId()));
+            assertTrue(clause.meetsCriteria(userPd, user.getUserId()));
+            assertFalse(clause.meetsCriteria(createdByDisplayCol, user.getUserId()));
+            assertTrue(clause.meetsCriteria(createdByDisplayCol, user.getDisplayName(user)));
+        }
+
     }
 }
