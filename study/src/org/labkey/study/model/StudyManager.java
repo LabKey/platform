@@ -60,8 +60,12 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
@@ -2742,6 +2746,34 @@ public class StudyManager
 
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
+
+        // When the dataset is deleted, the provenance rows should be cleaned up
+        ProvenanceService pvs = ProvenanceService.get();
+        if (null != pvs)
+        {
+            Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetLSIDs(user, ds);
+
+            allDatasetLsids.forEach(lsid -> {
+                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+
+                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+                if (null != expObject)
+                {
+                    pvs.deleteObjectProvenance(expObject.getObjectId());
+                }
+
+                if (!protocolApplications.isEmpty())
+                {
+                    ExperimentService expService = ExperimentService.get();
+                    protocolApplications.forEach(protocolApp -> {
+                        ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
+                        expService.syncRunEdges(run);
+                        expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
+                    });
+                }
+
+            });
+        }
 
         deleteDatasetType(study, user, ds);
         try {

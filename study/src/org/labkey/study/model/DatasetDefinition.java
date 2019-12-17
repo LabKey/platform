@@ -47,11 +47,14 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -2564,10 +2567,93 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return result;
     }
 
+    private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
+    {
+        Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetLSIDs(u, this);
+
+        // The subset of recalled rows from the “StudyPublish” run should be removed from the input provenance and mapping provenance.
+        Map<ExpRun, List<String>> selectedLsidsRunMap = new HashMap<>();
+        Map<ExpRun, List<String>> allLsidsRunMap = new HashMap<>();
+
+        // get runs for selected lsids
+        lsids.forEach(lsid -> {
+            Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+
+            if (!protocolApplications.isEmpty())
+            {
+                protocolApplications.forEach(protocolApp -> {
+                    ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
+                    if (null != selectedLsidsRunMap.get(run))
+                    {
+                        List<String> selectedLsids = selectedLsidsRunMap.get(run);
+                        selectedLsids.add(lsid);
+                        selectedLsidsRunMap.put(run, selectedLsids);
+                    }
+                    else
+                    {
+                        List<String> selectedLsids = new ArrayList<>();
+                        selectedLsids.add(lsid);
+                        selectedLsidsRunMap.put(run, selectedLsids);
+                    }
+                });
+            }
+
+        });
+
+        // get runs for all lsids
+        allDatasetLsids.forEach(lsid -> {
+            Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+
+            if (!protocolApplications.isEmpty())
+            {
+                protocolApplications.forEach(protocolApp -> {
+                    ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
+                    if (null != allLsidsRunMap.get(run))
+                    {
+                        List<String> alllsids = allLsidsRunMap.get(run);
+                        alllsids.add(lsid);
+                        allLsidsRunMap.put(run, alllsids);
+                    }
+                    else
+                    {
+                        List<String> alllsids = new ArrayList<>();
+                        alllsids.add(lsid);
+                        allLsidsRunMap.put(run, alllsids);
+                    }
+                });
+            }
+        });
+
+        lsids.forEach(lsid -> {
+            OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+            if (null != expObject)
+            {
+                pvs.deleteObjectProvenance(expObject.getObjectId());
+                OntologyManager.deleteOntologyObject(lsid, getContainer(), false);
+            }
+        });
+
+        // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
+        selectedLsidsRunMap.forEach((run, lsidList) -> {
+            ExperimentService.get().syncRunEdges(run);
+            if (null != allLsidsRunMap.get(run) && lsidList.size() == allLsidsRunMap.get(run).size())
+            {
+                ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
+            }
+        });
+    }
+
     public void deleteDatasetRows(User u, Collection<String> lsids)
     {
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
+
+        ProvenanceService pvs = ProvenanceService.get();
+
+        if (null != pvs)
+        {
+            deleteProvenance(u, lsids, pvs);
+        }
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {

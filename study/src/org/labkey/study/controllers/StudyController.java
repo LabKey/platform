@@ -2979,82 +2979,6 @@ public class StudyController extends BaseStudyController
                 }
             }
 
-            // The subset of recalled rows from the “StudyPublish” run should be removed from the input provenance and mapping provenance.
-            Map<ExpRun, List<String>> selectedLsidsRunMap = new HashMap<>();
-            Map<ExpRun, List<String>> allLsidsRunMap = new HashMap<>();
-            ProvenanceService pvs = ProvenanceService.get();
-
-            if (null != pvs)
-            {
-                // get runs for selected lsids
-                allLsids.forEach(lsid -> {
-                    Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
-
-                    if (!protocolApplications.isEmpty())
-                    {
-                        protocolApplications.forEach(protocolApp -> {
-                            ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
-                            if (null != selectedLsidsRunMap.get(run))
-                            {
-                                List<String> lsids = selectedLsidsRunMap.get(run);
-                                lsids.add(lsid);
-                                selectedLsidsRunMap.put(run, lsids);
-                            }
-                            else
-                            {
-                                List<String> lsids = new ArrayList<>();
-                                lsids.add(lsid);
-                                selectedLsidsRunMap.put(run, lsids);
-                            }
-                        });
-                    }
-
-                });
-
-                // get runs for all lsids
-                allDatasetLsids.forEach(lsid -> {
-                    Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
-
-                    if (!protocolApplications.isEmpty())
-                    {
-                        protocolApplications.forEach(protocolApp -> {
-                            ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
-                            if (null != allLsidsRunMap.get(run))
-                            {
-                                List<String> lsids = allLsidsRunMap.get(run);
-                                lsids.add(lsid);
-                                allLsidsRunMap.put(run, lsids);
-                            }
-                            else
-                            {
-                                List<String> lsids = new ArrayList<>();
-                                lsids.add(lsid);
-                                allLsidsRunMap.put(run, lsids);
-                            }
-                        });
-                    }
-                });
-            }
-
-            allLsids.forEach(lsid -> {
-                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
-                if (null != expObject)
-                {
-                    pvs.deleteObjectProvenance(expObject.getObjectId());
-                }
-            });
-
-            // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
-            selectedLsidsRunMap.forEach((run, lsidList) -> {
-                ExperimentService.get().syncRunEdges(run);
-                if (null != allLsidsRunMap.get(run) && lsidList.size() == allLsidsRunMap.get(run).size())
-                {
-                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), getUser(), run.getRowId());
-                }
-            });
-
-            def.deleteRows(allLsids);
-
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
             {
@@ -4726,35 +4650,6 @@ public class StudyController extends BaseStudyController
 
             if (errors.hasErrors())
                 return false;
-
-            // When the dataset is deleted, the provenance rows should be cleaned up
-            ProvenanceService pvs = ProvenanceService.get();
-            if (null != pvs)
-            {
-                Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), ds);
-
-                allDatasetLsids.forEach(lsid -> {
-                    Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
-
-                    OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
-                    if (null != expObject)
-                    {
-                        pvs.deleteObjectProvenance(expObject.getObjectId());
-                    }
-
-                    if (!protocolApplications.isEmpty())
-                    {
-                        ExperimentService expService = ExperimentService.get();
-                        protocolApplications.forEach(protocolApp -> {
-                            ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
-                            expService.syncRunEdges(run);
-                            expService.deleteExperimentRunsByRowIds(getContainer(), getUser(), run.getRowId());
-                        });
-                    }
-
-                });
-            }
-
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
