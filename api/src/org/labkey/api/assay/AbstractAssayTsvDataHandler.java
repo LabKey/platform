@@ -910,7 +910,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 if (o instanceof String && remappableLookup.containsKey(pd))
                 {
                     TableInfo lookupTable = remappableLookup.get(pd);
-                    Object remapped = cache.remap(lookupTable, user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, (String)o);
+                    Object remapped = cache.remap(lookupTable, (String)o);
                     if (remapped == null)
                     {
                         errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': " + o, pd.getName()));
