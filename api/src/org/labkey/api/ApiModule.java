@@ -63,6 +63,8 @@ public class ApiModule extends CodeOnlyModule
 
         if (AppProps.getInstance().isDevMode())
         {
+            // Avoid doing this on pipeline remote servers to avoid the need for a dependency on the JSP API JAR.
+            // See issue 39242
             LabKeyJspFactory.register();
         }
     }

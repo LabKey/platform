@@ -36,6 +36,7 @@ public class LabKeyJspFactory extends JspFactory implements ShutdownListener
         _factory = factory;
     }
 
+    /** Replace the default JspFactory with a custom factory that injects our own JspWriter implementation */
     public static void register()
     {
         LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
