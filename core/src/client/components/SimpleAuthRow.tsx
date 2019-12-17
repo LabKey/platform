@@ -1,5 +1,5 @@
-import * as React from 'react'
-import { Col } from 'react-bootstrap'
+import React, { PureComponent } from 'react';
+import { Col } from 'react-bootstrap';
 
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimesCircle} from "@fortawesome/free-solid-svg-icons";
@@ -18,12 +18,11 @@ interface Props {
     modal?: boolean | JSX.Element
     key?: any
 }
-
 interface State {
     color: boolean
 }
 
-export default class SimpleAuthRow extends React.PureComponent<any, State>{
+export default class SimpleAuthRow extends PureComponent<any, State> {
     constructor(props){
         super(props);
         this.state = {
@@ -71,7 +70,7 @@ export default class SimpleAuthRow extends React.PureComponent<any, State>{
 
 
                                 <Col xs={3} >
-                                    {this.props.edit}
+                                    {this.props.editIcon}
                                 </Col>
                             </Col>
 

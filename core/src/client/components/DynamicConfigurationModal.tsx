@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { PureComponent } from 'react';
 import {Button, FormControl, Modal} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimes} from "@fortawesome/free-solid-svg-icons";
@@ -8,8 +8,7 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { LabelHelpTip } from '@labkey/components';
 
-
-export default class DynamicConfigurationModal extends React.PureComponent<any, any> {
+export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
@@ -17,71 +16,41 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
             description: `${this.props.authName} Status`,
             toggleValue: this.props.enabled,
             descriptionField: this.props.description,
-            // serverUrlField: this.props.serverUrlField,
-            // redirectCheckbox: false,
-            fields:
-                [
-                    {
-                        "defaultValue": "",
-                        "name": "serverUrl",
-                        "caption": "CAS Server URL",
-                        "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
-                        "type": "input",
-                        "required": true
-                    },
-                    {
-                        "defaultValue": true,
-                        "name": "redirect",
-                        "caption": "Default to CAS Login",
-                        "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
-                        "type": "checkbox",
-                        "required": false
-                    }
-                ]
         };
-        this.onToggle = this.onToggle.bind(this);
-        this.dynamicallyCreateFields = this.dynamicallyCreateFields.bind(this);
-        this.handleChange = this.handleChange.bind(this);
-        this.checkCheckBox = this.checkCheckBox.bind(this);
-
     }
 
-
-    componentDidMount() {
+    componentDidMount = () => {
         let fieldValues = {};
-        this.state.fields.forEach( (field) => {
-                fieldValues[field.name] = field.defaultValue
-            }
-        );
+        // this.state.fields.forEach((field) => {
+        //         fieldValues[field.name] = field.defaultValue
+        //     }
+        // );
 
-        this.setState(prevState => ({
-            ...prevState,
+        this.setState(() => ({
             ...fieldValues
         })
             ,() => {console.log(this.state)} //for testing
         );
-    }
+    };
 
-    onToggle() {
+    onToggle = () => {
         this.setState({ toggleValue: !this.state.toggleValue });
         console.log(this.state.toggleValue);
-    }
+    };
 
-    handleChange(event) {
-        let {name, value} = event.target;
-        this.setState(prevState => ({
-            ...prevState,
+    handleChange = (event) => {
+        const {name, value} = event.target;
+        this.setState(() => ({
             [name]: value
         }));
 
         console.log(name, " ", value);
-    }
+    };
 
-    checkCheckBox(name) {
+    checkCheckBox = (name) => {
 
-        let oldState = this.state[name];
-        this.setState(prevState => ({
-            ...prevState,
+        const oldState = this.state[name];
+        this.setState(() => ({
             [name]: !oldState
         })
             // , () => this.props.checkDirty(this.state, this.props)
@@ -89,32 +58,41 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
 
         console.log(oldState, name);
 
-    }
+    };
 
-    dynamicallyCreateFields(fields) {
+    dynamicallyCreateFields = (fields) => {
         return fields.map((field, index) => {
             switch (field.type) {
                 case "input":
-                    return <TextInput
-                        key={index.toString()}
-                        className={"bottom-margin"}
-                        handleChange={this.handleChange}
-                        value={this.state[field.name]}
-                        {...field} />;
+                    return (
+                        <TextInput
+                            key={index}
+                            className={"bottom-margin"}
+                            handleChange={this.handleChange}
+                            value={this.state[field.name]}
+                            {...field}
+                        />
+                    );
                 case "checkbox":
-                    return <CheckBoxInput
-                        key={index.toString()}
-                        className={"bottom-margin"}
-                        checkCheckBox={this.checkCheckBox}
-                        value={this.state[field.name]}
-                        {...field} />;
+                    return (
+                        <CheckBoxInput
+                            key={index}
+                            className={"bottom-margin"}
+                            checkCheckBox={this.checkCheckBox}
+                            value={this.state[field.name]}
+                            {...field}
+                        />
+                    );
+                default:
+                    return <div> lol I'm not supposed to be here </div>;
             }
         })
-    }
+    };
 
     render() {
-        let fields = this.state.fields;
+        // let type = this.props.type.settingsFields;
 
+        console.log(this.props);
         return (
             <Modal show={true} onHide={() => {}}>
                 <Modal.Header>
@@ -124,13 +102,13 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
                             size='sm'
                             icon={faTimes}
                             style={{float: "right", marginTop: "5px"}}
-                            onClick={() => this.props.closeModal()}
+                            onClick={this.props.closeModal}
                         />
                     </Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
-                    <strong> {this.state.description} </strong>
+                    <span className="boldText"> {this.state.description} </span>
                     <ReactBootstrapToggle
                         onClick={this.onToggle}
                         on="Enabled"
@@ -141,7 +119,7 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
                     />
 
                     <hr/>
-                    <strong> Settings </strong>
+                    <span className="boldText"> Settings </span>
                     <br/><br/>
 
                     <div style={{height: "40px"}}>
@@ -158,7 +136,7 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
                     </div>
 
 
-                    {fields && this.dynamicallyCreateFields(fields)}
+                    {/*{this.props.type.settingsFields && this.dynamicallyCreateFields(this.props.type.settingsFields)}*/}
 
                     <br/>
                     <hr/>
@@ -169,12 +147,12 @@ export default class DynamicConfigurationModal extends React.PureComponent<any, 
 
                     <Button
                         className={'labkey-button'}
-                        onClick={() => this.props.closeModal()}
+                        onClick={this.props.closeModal}
                         style={{marginLeft: '10px'}}
                     >
                         Cancel
                     </Button>
-                    
+
                 </Modal.Body>
             </Modal>
         );
@@ -189,7 +167,8 @@ interface TextInputProps {
     "description": string
     "required": boolean
 }
-class TextInput extends React.PureComponent<any, any> {
+
+class TextInput extends PureComponent<any, any> {
     render() {
         return(
             <div style={{height: "40px"}}>
@@ -224,9 +203,8 @@ interface CheckBoxInputProps {
     "description": string
     "required": boolean
 }
-class CheckBoxInput extends React.PureComponent<any, any> {
 
-
+class CheckBoxInput extends PureComponent<any, any> {
     render() {
         return(
             <div >
@@ -242,7 +220,7 @@ class CheckBoxInput extends React.PureComponent<any, any> {
                     <FACheckBox
                         rowText={this.props.caption}
                         checked={this.props.value}
-                        onClick={() => {this.props.checkCheckBox(this.props.name)}}
+                        onClick={() => {this.props.checkCheckBox(this.props.name)}} //probably can get rid of outer wrapper
                         // onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
                     />
                 </span>

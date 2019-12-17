@@ -1,13 +1,10 @@
-import * as React from "react";
+import React, { PureComponent } from 'react';
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGripVertical, faPencilAlt, faTimesCircle} from "@fortawesome/free-solid-svg-icons";
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import SimpleAuthRow from "./SimpleAuthRow";
-import ConfigurationModal from "./ConfigurationModal";
 import DynamicConfigurationModal from "./DynamicConfigurationModal";
-import {Col} from "react-bootstrap";
-
 
 // Todo:
 // don't use the style to round the corners
@@ -21,36 +18,42 @@ interface Props {
     url: string
     enabled: boolean
     description: string
-    handleChangeToPrimary: any
     handlePrimaryToggle: any
     stateSection: String
     noHandleIcon?: boolean
 }
 interface State {
-    modalOpen: boolean
-    highlight: boolean
+    modalOpen?: boolean
+    highlight?: boolean
 }
-export default class EditableAuthRow extends React.Component<any, State>{
+
+export default class EditableAuthRow extends PureComponent<any, State> {
     constructor(props){
         super(props);
         this.state = {
             modalOpen: false,
             highlight: false
         };
-        this.onToggle = this.onToggle.bind(this);
     }
 
-    onToggle(toggled) {
-        this.setState(prevState => ({
-            ...prevState,
+    onToggleModal = (toggled) => {
+        this.setState(() => ({
             [toggled]: !this.state[toggled]
         }));
-    }
+    };
+
+    onToggleClicked = () => {
+        this.props.handlePrimaryToggle(this.props.enabled, this.props.id, this.props.stateSection);
+    };
+
+    onDeleteClicked = () => {
+        this.props.deleteAction(this.props.rowId, this.props.stateSection);
+    };
 
     render(){
         const enabled =
             <ReactBootstrapToggle
-                onClick={() => this.props.handlePrimaryToggle(this.props.enabled, this.props.id, this.props.stateSection)}
+                onClick={() => this.onToggleClicked()}
                 on="Enabled"
                 off="Disabled"
                 onstyle={"primary"}
@@ -59,20 +62,19 @@ export default class EditableAuthRow extends React.Component<any, State>{
             />;
 
         const deleteIcon =
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.props.deleteAction(this.props.rowId, this.props.stateSection)}>
+            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onDeleteClicked()}>
                 <FontAwesomeIcon icon={faTimesCircle} color={"#d9534f"} />
             </div>;
 
-        const edit =
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggle("modalOpen")}>
+        const editIcon =
+            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>;
 
-        // const modal = (this.state.modalOpen &&  <ConfigurationModal {...this.props} closeModal={() => {this.onToggle("modalOpen")}} />);
         const dynamicModal = (this.state.modalOpen &&
                 <DynamicConfigurationModal
                     type={this.props.modalType}
-                    closeModal={() => {this.onToggle("modalOpen")}}
+                    closeModal={() => {this.onToggleModal("modalOpen")}}
                     {...this.props}
                 />);
 
@@ -88,7 +90,7 @@ export default class EditableAuthRow extends React.Component<any, State>{
                     name = {this.props.authName}
                     enabled = {enabled}
                     delete = {deleteIcon}
-                    edit = {edit}
+                    editIcon = {editIcon}
                     modal = {dynamicModal}
                 />
             </div>
@@ -99,9 +101,8 @@ export default class EditableAuthRow extends React.Component<any, State>{
 interface HandleProps {
     highlight: boolean
 }
-interface HandleState { }
 
-class LightupHandle extends React.Component<HandleProps, HandleState>{
+class LightupHandle extends PureComponent<HandleProps> {
     render(){
         const HIGHLIGHT_BLUE = '#2980B9';
         const NOT_HIGHLIGHT_GRAY = '#999999';

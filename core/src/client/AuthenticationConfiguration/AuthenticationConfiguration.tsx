@@ -1,12 +1,13 @@
-import * as React from 'react'
+import React, { PureComponent } from 'react';
 
-import {Button, Alert} from 'react-bootstrap'
+import {Button, Alert} from 'react-bootstrap';
 import {Map, List, fromJS} from 'immutable';
 
-import "./authenticationConfiguration.scss";
-import GlobalAuthConfigs from '../components/GlobalAuthConfigs';
+import GlobalAuthSettings from '../components/GlobalAuthSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
-import { Ajax, ActionURL, Security } from '@labkey/api'
+import { Ajax, ActionURL, Security } from '@labkey/api';
+
+import "./authenticationConfiguration.scss";
 
 // Todo, meta:
 // Finalize TS, Immutable
@@ -18,45 +19,34 @@ import { Ajax, ActionURL, Security } from '@labkey/api'
 interface Props {} // Q: Is this how you specify no props?
 
 interface State {
-    singleSignOnAuth: Array<Object>
-    loginFormAuth: any
-    secondaryAuth: any
-    globalAuthConfigs: Object
-    canEdit: boolean
-    primary: Object
-    dirty: boolean
+    singleSignOnAuth?: Array<Object>
+    loginFormAuth?: any
+    secondaryAuth?: any
+    globalAuthSettings?: Object
+    canEdit?: boolean
+    primary?: Object
+    dirty?: boolean
 }
-export class App extends React.PureComponent<Props, State> {
+
+export class App extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
             singleSignOnAuth: null,
             loginFormAuth: null,
             secondaryAuth: null,
-            globalAuthConfigs: null,
+            globalAuthSettings: null,
             canEdit: false,
             primary: null,
             dirty: false,
         };
-
-        // Testing functions
-        this.savePls = this.savePls.bind(this);
-        this.saveChanges = this.saveChanges.bind(this);
-
-        this.checkIfDirty = this.checkIfDirty.bind(this);
-        this.isEquivalent = this.isEquivalent.bind(this);
-
-
-        // For AuthConfigMasterPanel
-        this.onDragEnd = this.onDragEnd.bind(this);
-        this.reorder = this.reorder.bind(this);
-        this.handleChangeToPrimary = this.handleChangeToPrimary.bind(this);
-        this.handlePrimaryToggle = this.handlePrimaryToggle.bind(this);
-        this.deleteAction = this.deleteAction.bind(this);
-
     }
 
     componentDidMount() {
+        this.loadInitialConfigData();
+    }
+
+    loadInitialConfigData = () => {
         Ajax.request({
             url: ActionURL.buildURL("login", "InitialMount"),
             method : 'GET',
@@ -65,14 +55,14 @@ export class App extends React.PureComponent<Props, State> {
                 console.log("fail: ", error);
             },
             success: function(result){
-                let response = JSON.parse(result.response);
+                const response = JSON.parse(result.response);
                 this.setState({...response});
                 console.log({...response});
             }
         })
-    }
+    };
 
-    savePls() {
+    savePls = () => {
         Ajax.request({
             url: ActionURL.buildURL("login", "setAuthenticationParameter"),
             method : 'POST',
@@ -87,60 +77,59 @@ export class App extends React.PureComponent<Props, State> {
                 console.log(this.state);
             }
         })
-    }
+    };
 
-    checkIfDirty(obj1, obj2){
-        let dirty = !this.isEquivalent(obj1, obj2);
+    checkIfDirty = (obj1, obj2) => {
+        const dirty = !this.isEquivalent(obj1, obj2);
 
-        this.setState(prevState => ({
-            ...prevState,
-            dirty: dirty
-        }))
-    }
+        this.setState(() => ({ dirty }));
+    };
 
-    isEquivalent(a, b) {
-        let aProps = Object.getOwnPropertyNames(a);
-        let bProps = Object.getOwnPropertyNames(b);
+    isEquivalent = (a, b) => {
+        const aProps = Object.keys(a);
+        const bProps = Object.keys(b);
 
         if (aProps.length != bProps.length) {
             return false;
         }
 
         for (var i = 0; i < aProps.length; i++) {
-            let propName = aProps[i];
+            const propName = aProps[i];
 
             if (a[propName] !== b[propName]) {
                 return false;
             }
         }
-        return true;
-    }
 
-    saveChanges() {
-        console.log(this.state);
-        console.log("globalAuthConfig props: ",{...this.state.globalAuthConfigs});
+        // minor todo
+        // return aProps.some((key) => {
+        //     return a[key] !== b[key];
+        // });
     };
 
-    onDragEnd(result) {
-        console.log("result ", result.source.droppableId);
-        const stateSection = result.source.droppableId;
+    saveChanges = () => {
+        console.log(this.state);
+        console.log("globalAuthConfig props: ",{...this.state.globalAuthSettings});
+    };
 
-        if (!result.destination)
-        {
+    onDragEnd = (result) => {
+        if (!result.destination) {
             return;
         }
 
-        const items = this.reorder(
+        // console.log("result ", result.source.droppableId);
+        const stateSection = result.source.droppableId;
+
+        const items = this.reorder (
             this.state[stateSection],
             result.source.index,
             result.destination.index
         );
 
-        this.setState(prevState => ({
-            ...prevState,
+        this.setState(() => ({
             [stateSection]: items
         }))
-    }
+    };
 
     reorder = (list, startIndex, endIndex) => {
         const result = Array.from(list);
@@ -151,40 +140,34 @@ export class App extends React.PureComponent<Props, State> {
     };
 
     // rough
-    handleChangeToPrimary(event) {
-        let {name, value, id} = event.target;
-        const l = List(this.state.singleSignOnAuth);
-        // console.log(l.toArray());
-        const l2 = l.setIn([id, name], value);
-
-        const thing = l2.toArray();
-        // console.log(thing);
-
-        this.setState(prevState => ({
-            ...prevState,
-            primary: thing
-        }))
-    }
-
-    // rough
-    handlePrimaryToggle(toggle, id, stateSection){
+    handlePrimaryToggle = (toggle, id, stateSection) => {
         const l = List(this.state[stateSection]);
         const l2 = l.setIn([id, 'enabled'], !toggle);
         const thing = l2.toArray();
-        this.setState(prevState => ({
-            ...prevState,
+        this.setState(() => ({
             [stateSection]: thing
-        }))
-    }
+        }));
 
-    deleteAction(id, stateSection){
-        let prevState = this.state[stateSection];
-        let newState = prevState.filter((auth) => {
+        // const prevConfig = this.state[stateSection][id];
+        // const newConfig = {...prevConfig, enabled: !toggle };
+        // console.log(newConfig);
+
+        // this.setState( (prevState) => ({
+        //     ...prevState,
+        //     [stateSection]: {
+        //         ...prevState[stateSection],
+        //         [id]: newConfig
+        //     }
+        // }), () => console.log(this.state));
+    };
+
+    deleteAction = (id, stateSection) => {
+        const prevState = this.state[stateSection];
+        const newState = prevState.filter((auth) => {
             return auth.id !== id;
         });
 
-        this.setState(prevState => ({
-            ...prevState,
+        this.setState(() => ({
             [stateSection]: newState
         }),
             () => {
@@ -201,14 +184,16 @@ export class App extends React.PureComponent<Props, State> {
                 }
             })}
         )
-    }
+    };
 
     render() {
+        const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
+
         return(
             <div style={{minWidth:"1100px"}}>
-                {this.state.globalAuthConfigs &&
-                    <GlobalAuthConfigs
-                        {...this.state.globalAuthConfigs}
+                {this.state.globalAuthSettings &&
+                    <GlobalAuthSettings
+                        {...this.state.globalAuthSettings}
                         checkDirty = {this.checkIfDirty}
                         canEdit={this.state.canEdit}
                     />
@@ -222,12 +207,11 @@ export class App extends React.PureComponent<Props, State> {
                     canEdit={this.state.canEdit}
                     // canEdit={false}  // for testing
                     onDragEnd={this.onDragEnd}
-                    handleChangeToPrimary={this.handleChangeToPrimary}
                     handlePrimaryToggle={this.handlePrimaryToggle}
                     deleteAction={this.deleteAction}
                 />
 
-                {this.state.dirty && <Alert>You have unsaved changes to your authentication configurations. Hit "Save and Finish" to apply these changes.</Alert>}
+                {this.state.dirty && <Alert> {alertText} </Alert>}
 
                 <Button
                     className={'labkey-button primary'}

@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { PureComponent } from 'react';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckSquare } from '@fortawesome/free-solid-svg-icons';
@@ -13,7 +13,7 @@ interface Props {
     onClick: any
 }
 
-export default class FACheckBox extends React.PureComponent<any>{
+export default class FACheckBox extends PureComponent<any> {
     render(){
         let checkedOrNot = (this.props.checked
                 ? <FontAwesomeIcon size='lg' icon={faCheckSquare} color={"#0073BB"} />

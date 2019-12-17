@@ -1,10 +1,15 @@
-import * as React from 'react'
+import React, { PureComponent } from 'react';
 
-import { Panel } from 'react-bootstrap'
-import { Ajax, ActionURL } from '@labkey/api'
+import { Panel } from 'react-bootstrap';
+import { Ajax, ActionURL } from '@labkey/api';
 
 import FACheckBox from './FACheckBox';
 
+const ROW_TEXTS = [
+    {id: "SelfRegistration", text: "Allow self sign up"},
+    {id: "SelfServiceEmailChanges", text: "Allow users to edit their own email addresses"},
+    {id: "AutoCreateAccounts", text: "Auto-create authenticated users"},
+];
 
 // Todo:
 // Interface
@@ -23,28 +28,26 @@ interface State {
     SelfServiceEmailChanges: boolean
     AutoCreateAccounts: boolean
     what: any
-    // globalAuthConfigs: any
+    // globalAuthSettings: any
 }
-export default class GlobalAuthConfigs extends React.PureComponent<any, any>{
+
+export default class GlobalAuthSettings extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
             ...this.props
         };
-        this.saveGlobalAuthConfigs = this.saveGlobalAuthConfigs.bind(this);
-        this.checkGlobalAuthBox = this.checkGlobalAuthBox.bind(this);
     }
 
     // todo: use immutable?
-    checkGlobalAuthBox(id: string) {
-        let oldState = this.state[id];
-        this.setState(prevState => ({
-            ...prevState,
+    checkGlobalAuthBox = (id: string) => {
+        const oldState = this.state[id];
+        this.setState(() => ({
             [id]: !oldState
         }), () => this.props.checkDirty(this.state, this.props));
-    }
+    };
 
-    saveGlobalAuthConfigs(parameter, enabled){
+    saveGlobalAuthConfigs = (parameter, enabled) => {
         Ajax.request({
             url: ActionURL.buildURL("login", "setAuthenticationParameter"),
             method : 'POST',
@@ -57,45 +60,39 @@ export default class GlobalAuthConfigs extends React.PureComponent<any, any>{
                 console.log("success: ", result);
             }
         })
-    }
+    };
 
 
 
     render() {
-        const rowTexts = [
-            {id: "SelfRegistration", text: "Allow self sign up"},
-            {id: "SelfServiceEmailChanges", text: "Allow users to edit their own email addresses"},
-            {id: "AutoCreateAccounts", text: "Auto-create authenticated users"}];
+        const rowTexts = ROW_TEXTS.map((text) => (
+            <div className={"bottom-margin"} key={text.id}>
+                <FACheckBox
+                    key={text.id}
+                    checked={this.state[text.id]}
+                    onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
+                />
+
+                <span style={{marginLeft:"15px"}}>
+                    {text.text}
+                </span>
+            </div>
+        ));
 
 
         return(
             <Panel>
                 <Panel.Heading>
-                    <strong>Global Authentication Configurations</strong>
+                    <span className="boldText">Global Authentication Configurations</span>
                 </Panel.Heading>
 
                 <Panel.Body>
 
-                <strong> Sign up and email options</strong>
+                <span className="boldText"> Sign up and email options</span>
 
                 <br/><br/>
 
-                {rowTexts.map((text) => (
-                    <div className={"bottom-margin"}>
-                        <FACheckBox
-                            key={text.id}
-                            checked={this.state[text.id]}
-                            onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
-                        />
-
-                        <span style={{marginLeft:"15px"}}>
-                            {text.text}
-                        </span>
-                    </div>
-
-                ))}
-
-
+                {rowTexts}
 
 
                     {/* For testing, to delete */}
