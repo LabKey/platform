@@ -500,6 +500,7 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL(PermissionsAction.class, getContainer());
         }
+
     }
 
     public static class PermissionsForm extends ReturnUrlForm
@@ -1223,6 +1224,7 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL("Security", getViewContext().getRequest().getParameter("view"), getContainer());
         }
+
     }
 
     public static class AddUsersForm extends ReturnUrlForm
@@ -1558,6 +1560,8 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
         {
+            setTitle("Confirm Password Reset");
+
             String message;
             boolean loginExists = false;
 
@@ -1633,6 +1637,7 @@ public class SecurityController extends SpringActionController
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            setTitle("Password Reset Success");
             return new HtmlView(page);
         }
 
@@ -1655,6 +1660,7 @@ public class SecurityController extends SpringActionController
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            setTitle("Password Reset Failed");
             return new HtmlView(page);
         }
 

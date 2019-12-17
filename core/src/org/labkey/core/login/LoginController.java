@@ -1457,6 +1457,7 @@ public class LoginController extends SpringActionController
         {
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
+
     }
 
 
@@ -2438,6 +2439,7 @@ public class LoginController extends SpringActionController
         {
             return getUrls().getConfigureURL();
         }
+
     }
 
     @Deprecated
@@ -2504,6 +2506,7 @@ public class LoginController extends SpringActionController
         {
             return getUrls().getConfigureURL();
         }
+
     }
 
     public static ActionURL getConfigureDbLoginURL(boolean reshow)
@@ -2662,6 +2665,9 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Migrate Authentication Configurations");
+
             return new HtmlView(HtmlString.of("Are you sure you want to re-run the authentication configuration migration? This may cause duplicate configurations (which can be deleted)."));
         }
 

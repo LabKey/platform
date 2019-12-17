@@ -250,6 +250,7 @@ public class PlateController extends SpringActionController
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
+
     }
 
     public static class CopyTemplateBean
