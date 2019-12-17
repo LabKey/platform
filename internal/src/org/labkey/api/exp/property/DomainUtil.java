@@ -297,7 +297,7 @@ public class DomainUtil
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());
-        gwtProp.setRangeURI(prop.getRangeURI());
+        gwtProp.setRangeURI(prop.getPropertyType() != null ? prop.getPropertyType().getTypeUri() : prop.getRangeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
         gwtProp.setShownInInsertView(prop.isShownInInsertView());

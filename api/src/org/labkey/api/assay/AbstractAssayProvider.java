@@ -324,7 +324,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected String getSourceLSID(String runLSID, int dataId, int resultRowId)
     {
-        return getResultRowLSIDExpression() + resultRowId;
+        return runLSID;
     }
 
     public void registerLsidHandler()
