@@ -36,12 +36,10 @@ import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
-import javax.servlet.jsp.JspFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -63,12 +61,9 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
 
-        // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
         if (AppProps.getInstance().isDevMode())
         {
-            LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
-            JspFactory.setDefaultFactory(factory);
-            ContextListener.addShutdownListener(factory);
+            LabKeyJspFactory.register();
         }
     }
 
