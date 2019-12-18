@@ -52,6 +52,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         super(props);
         this.state = {
             toggleValue: this.props.enabled,
+            description: this.props.description
         };
     }
 
@@ -71,38 +72,19 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
     saveEditedModal = (controller) => {
         const formObjTest = {
-            _serverUrl: "https://www.labkey.org/cas",
-            _autoRedirect: false,
-            _deletedLogos: null,
-            _configuration: 18,
-            _description: "CAS Configuration 2",
-            _enabled: true,
-            _returnUrl: "",
-            _cancelUrl: "",
-            _successUrl: "",
+            serverUrl: this.state.serverUrl,
+            autoRedirect: this.state.autoRedirect,
+            configuration: this.props.configuration,
+            description: this.props.description,
+            enabled: this.props.enabled,
         };
-
-        const formObjTest2 = {
-            serverUrl: "https://www.labkey.org/cas",
-            autoRedirect: false,
-            deletedLogos: null,
-            configuration: 18,
-            description: "CAS Configuration 2",
-            enabled: true,
-            returnUrl: "",
-            cancelUrl: "",
-            successUrl: "",
-        };
-
-        const formJSONTest = JSON.stringify(formObjTest);
-        console.log("our json: " + formJSONTest);
 
         Ajax.request({
             url: ActionURL.buildURL("CasClient", "SaveConfiguration"),
             method : 'POST',
-            params: {configuration: 18},
+            // params: {configuration: 18},
             scope: this,
-            jsonData: formJSONTest,
+            jsonData: formObjTest,
             failure: function(error){
                 console.log("fail: ", error.response);
             },
@@ -170,7 +152,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // let type = this.props.type.settingsFields;
         // (this.props.type && console.log(this.props.type.settingsFields));
         // console.log(this.props);
-        const {description} = this.props;
+        const {description} = this.state;
 
         return (
             <Modal show={true} onHide={() => {}} >
