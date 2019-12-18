@@ -113,6 +113,8 @@ import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
+import static org.labkey.api.security.AuthenticationManager.getConfigurationMap;
+import static org.labkey.api.security.AuthenticationManager.getSsoConfigurationMap;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
@@ -2576,27 +2578,13 @@ public class LoginController extends SpringActionController
 
             for (AuthenticationConfiguration<?> configuration : AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class))
             {
-                String name = configuration.getAuthenticationProvider().getName();
-                Map<String, Object> sh = new HashMap<>();
-
-                sh.put("provider", name);
-                sh.put("description", configuration.getDescription());
-                sh.put("details", configuration.getDetails());
-                sh.put("enabled", configuration.isEnabled());
-                sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // TODO: Remove once settings modals are used universally
-                sh.put("id", "id" + configuration.getRowId());
-                sh.put("configuration", configuration.getRowId());
-                sh.putAll(configuration.getCustomProperties());
-
                 if (configuration instanceof SSOAuthenticationConfiguration<?>)
                 {
-                    ssoConfigurations.add(sh);
-                    sh.put("headerLogoUrl", AuthenticationManager.generateLogoUrl((SSOAuthenticationConfiguration<?>)configuration, AuthLogoType.HEADER));
-                    sh.put("loginLogoUrl", AuthenticationManager.generateLogoUrl((SSOAuthenticationConfiguration<?>)configuration, AuthLogoType.LOGIN_PAGE));
+                    ssoConfigurations.add(getSsoConfigurationMap((SSOAuthenticationConfiguration<?>)configuration));
                 }
                 else if (configuration instanceof LoginFormAuthenticationConfiguration<?>)
                 {
-                    formConfigurations.add(sh);
+                    formConfigurations.add(getConfigurationMap(configuration));
                 }
             }
 
@@ -2604,7 +2592,6 @@ public class LoginController extends SpringActionController
             globalAuthSettings.put(SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled());
             globalAuthSettings.put(SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled());
             globalAuthSettings.put(AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled());
-            globalAuthSettings.put("Revision", AppProps.getInstance().getLookAndFeelRevision());
 
             // Primary providers
             Map<String, Object> primary = AuthenticationManager.getAllPrimaryProviders().stream()

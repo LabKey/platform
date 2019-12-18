@@ -10,9 +10,11 @@ import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.util.Map;
+
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
-public abstract class SaveConfigurationAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration> extends MutatingApiAction<F>
+public abstract class SaveConfigurationAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration<?>> extends MutatingApiAction<F>
 {
     protected @Nullable AC _configuration = null;
 
@@ -22,7 +24,7 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
 
         if (null != rowId)
         {
-            _configuration = (AC)AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+            _configuration = getFromCache(rowId);
 
             if (null == _configuration)
                 throw new NotFoundException("Configuration not found");
@@ -54,11 +56,12 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
     {
         if (errors.hasErrors())
             return null;
-        saveForm(form, getUser());
-        return new ApiSimpleResponse("success", true);
+        save(form, getUser(), errors);
+        Map<String, Object> map = getConfigurationMap(form.getRowId());
+        return new ApiSimpleResponse(Map.of("success", true, "configuration", map));
     }
 
-    public static void saveForm(AuthenticationConfigureForm form, @Nullable User user)
+    public void save(F form, @Nullable User user, BindException errors)
     {
         if (null == form.getRowId())
         {
@@ -70,5 +73,17 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
         }
 
         AuthenticationConfigurationCache.clear();
+    }
+
+    protected AC getFromCache(int rowId)
+    {
+        //noinspection unchecked
+        return (AC)AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+    }
+
+    protected Map<String, Object> getConfigurationMap(int rowId)
+    {
+        AC configuration = getFromCache(rowId);
+        return AuthenticationManager.getConfigurationMap(configuration);
     }
 }

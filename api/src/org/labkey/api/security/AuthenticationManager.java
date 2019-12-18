@@ -1463,7 +1463,7 @@ public class AuthenticationManager
 
                 if (null != logo)
                 {
-                    return "<img src=\"" + generateLogoUrl(_configuration, logoType) + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\"" +
+                    return "<img src=\"" + generateLogoUrl(_configuration, logoType) + "\"" +
                             " alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
                 }
             }
@@ -1479,7 +1479,32 @@ public class AuthenticationManager
     // In most cases, callers will want to add a "revision" parameter with the look & feel revision value to defeat browser caching
     public static String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
     {
-        return AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image?configuration=" + configuration.getRowId();
+        return AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image?configuration=" + configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision();
+    }
+
+    public static Map<String, Object> getSsoConfigurationMap(SSOAuthenticationConfiguration<?> configuration)
+    {
+        Map<String, Object> map = getConfigurationMap(configuration);
+        map.put("headerLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.HEADER));
+        map.put("loginLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.LOGIN_PAGE));
+
+        return map;
+    }
+
+    public static Map<String, Object> getConfigurationMap(AuthenticationConfiguration<?> configuration)
+    {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", configuration.getAuthenticationProvider().getName()); // TODO: Remove!
+        map.put("provider", configuration.getAuthenticationProvider().getName());
+        map.put("description", configuration.getDescription());
+        map.put("details", configuration.getDetails());
+        map.put("enabled", configuration.isEnabled());
+        map.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // TODO: Remove once settings modals are used universally
+        map.put("id", "id" + configuration.getRowId());
+        map.put("configuration", configuration.getRowId());
+        map.putAll(configuration.getCustomProperties());
+
+        return map;
     }
 
     public static class TestCase extends Assert

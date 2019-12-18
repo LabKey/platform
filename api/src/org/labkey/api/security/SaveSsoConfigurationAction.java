@@ -1,6 +1,7 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -18,18 +19,18 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationAction.SaveSsoConfigurationForm<AC>, AC extends SSOAuthenticationConfiguration> extends SaveConfigurationAction<F, AC>
+public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationAction.SaveSsoConfigurationForm<AC>, AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationAction<F, AC>
 {
     @Override
-    public Object execute(F form, BindException errors) throws Exception
+    public void save(F form, @Nullable User user, BindException errors)
     {
-        super.execute(form, errors);
-        return handleLogos(form, errors);  // Always reshow the page so user can view updates. After post, second button will change to "Done".
+        super.save(form, user, errors);
+        handleLogos(form, errors);  // Always reshow the page so user can view updates. After post, second button will change to "Done".
     }
 
-    protected boolean handleLogos(F form, BindException errors)
+    protected void handleLogos(F form, BindException errors)
     {
-        SSOAuthenticationConfiguration configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
+        SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
         Map<String, MultipartFile> fileMap = getFileMap();
         boolean changedLogos = deleteLogos(form, configuration);
 
@@ -41,7 +42,6 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
         catch (Exception e)
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            return false;
         }
 
         // If user changed one or both logos then...
@@ -52,12 +52,10 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
             // Bump the look & feel revision to force browsers to retrieve new logo
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
-
-        return true;
     }
 
     // Returns true if a new logo is saved
-    private boolean handleLogo(SSOAuthenticationConfiguration configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
+    private boolean handleLogo(SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
     {
         if (null == configuration)
             throw new NotFoundException("Configuration not found");
@@ -77,7 +75,7 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
     }
 
     // Returns true if a logo is deleted
-    public boolean deleteLogos(F form, SSOAuthenticationConfiguration configuration)
+    public boolean deleteLogos(F form, SSOAuthenticationConfiguration<?> configuration)
     {
         String[] deletedLogos = form.getDeletedLogos();
 
@@ -90,7 +88,14 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
         return true;
     }
 
-    public static abstract class SaveSsoConfigurationForm<AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureForm<AC>
+    @Override
+    protected Map<String, Object> getConfigurationMap(int rowId)
+    {
+        AC configuration = getFromCache(rowId);
+        return AuthenticationManager.getSsoConfigurationMap(configuration);
+    }
+
+    public static abstract class SaveSsoConfigurationForm<AC extends SSOAuthenticationConfiguration<?>> extends AuthenticationConfigureForm<AC>
     {
         private boolean _autoRedirect = false;
         private String[] _deletedLogos;
@@ -103,11 +108,13 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
             _autoRedirect = authenticationConfiguration.isAutoRedirect();
         }
 
+        @SuppressWarnings("unused") // Accessed via reflection in Table.insert()/update()
         public boolean isAutoRedirect()
         {
             return _autoRedirect;
         }
 
+        @SuppressWarnings("unused") // Accessed via reflection in Table.insert()/update()
         public void setAutoRedirect(boolean autoRedirect)
         {
             _autoRedirect = autoRedirect;
