@@ -89,7 +89,8 @@ public class StorageProvisioner
     {
         assert create.start();
 
-        try (Transaction transaction = scope.ensureTransaction())
+        // CONSIDER: could combine the two SELECT here: SELECT...FOR UPDATE (domain.getDatabaseLock()) and the SELECT (getDomainDescriptor())
+        try (Transaction transaction = scope.ensureTransaction(domain.getDatabaseLock()))
         {
             // reselect in a transaction
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
@@ -769,29 +770,23 @@ public class StorageProvisioner
     }
 
 
-
-    private static final Object ENSURE_LOCK = new Object();
-
     /**
      * This is really an internal method, use createTableInfo() in most scenarios
      * This is public to support upgrade scenarios only.
      */
     public static String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
     {
-        synchronized (ENSURE_LOCK)
+        String tableName = domain.getStorageTableName();
+
+        if (null == tableName)
         {
-            String tableName = domain.getStorageTableName();
-
-            if (null == tableName)
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                try (var ignored = SpringActionController.ignoreSqlUpdates())
-                {
-                    tableName = _create(scope, kind, domain);
-                }
+                tableName = _create(scope, kind, domain);
             }
-
-            return tableName;
         }
+
+        return tableName;
     }
 
     enum RequiredIndicesAction

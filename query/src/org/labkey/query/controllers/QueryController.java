@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -1833,8 +1834,12 @@ public class QueryController extends SpringActionController
             Map<String, String> props = new HashMap<>();
             props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
-            props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString() + "#metadata");
-            props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
+            var sourceQuery = _query.urlFor(QueryAction.sourceQuery, getContainer());
+            if (null != sourceQuery)
+                props.put(MetadataEditor.EDIT_SOURCE_URL, sourceQuery.getLocalURIString() + "#metadata");
+            var executeQuery = _query.urlFor(QueryAction.executeQuery, getContainer());
+            if (null != executeQuery)
+                props.put(MetadataEditor.VIEW_DATA_URL, executeQuery.getLocalURIString());
 
             return new GWTView(MetadataEditor.class, props);
         }
@@ -1855,7 +1860,11 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new SchemaAction(_form).appendNavTrail(root);
-            root.addChild("Edit Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
+            var metadataQuery = _query.urlFor(QueryAction.metadataQuery);
+            if (null != metadataQuery)
+                root.addChild("Edit Metadata: " + _form.getQueryName(), metadataQuery);
+            else
+                root.addChild("Edit Metadata: " + _form.getQueryName());
             return root;
         }
     }
@@ -2783,7 +2792,9 @@ public class QueryController extends SpringActionController
             // requested minimal columns, as we now do for ExtJS stores
             if (form.isMinimalColumns())
             {
-                response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+                // Be sure to use the settings from the view, as it may have swapped it out with a customized version.
+                // See issue 38747.
+                response.setColumnFilter(view.getSettings().getFieldKeys());
             }
 
             return response;
@@ -6470,6 +6481,49 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            JSONObject ret = new JSONObject();
+
+            QueryService.QueryAnalysisService analysisService = QueryService.get().getQueryAnalysisService();
+            if (analysisService != null)
+            {
+                DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+                var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
+
+                analysisService.analyzeFolder(start, deps);
+                ret.put("success", true);
+
+                JSONObject objects = new JSONObject();
+                for (var from : deps.keySet())
+                {
+                    objects.put(from.getKey(), from.toJSON());
+                    for (var to : deps.get(from))
+                        objects.put(to.getKey(), to.toJSON());
+                }
+                ret.put("objects", objects);
+
+                JSONArray dependants = new JSONArray();
+                for (var from : deps.keySet())
+                {
+                    JSONArray toList = new JSONArray();
+                    for (var to : deps.get(from))
+                        dependants.put(new String[] {from.getKey(), to.getKey()});
+                }
+                ret.put("graph", dependants);
+            }
+            else
+            {
+                ret.put("success", false);
+            }
+            return ret;
         }
     }
 

@@ -16,7 +16,6 @@
 package org.labkey.core;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
@@ -31,6 +30,8 @@ import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
+import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
@@ -63,7 +64,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
@@ -81,10 +81,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.wiki.WikiRenderingService;
-import org.labkey.api.vcs.VcsService;
-import org.labkey.core.qc.QCStateImporter;
-import org.labkey.core.qc.QCStateWriter;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -147,11 +143,11 @@ import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -178,6 +174,7 @@ import org.labkey.api.webdav.WebFilesResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
@@ -210,10 +207,6 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
 import org.labkey.core.authentication.ldap.LdapController;
-import org.labkey.core.authentication.test.TestSecondaryController;
-import org.labkey.core.authentication.test.TestSecondaryProvider;
-import org.labkey.core.authentication.test.TestSsoController;
-import org.labkey.core.authentication.test.TestSsoProvider;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
@@ -221,11 +214,14 @@ import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
+import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
+import org.labkey.core.qc.QCStateImporter;
+import org.labkey.core.qc.QCStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -407,14 +403,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
                         "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
 
-        // test authentication provider implementations... dev mode only
-        if (AppProps.getInstance().isDevMode())
-        {
-            addController("testsecondary", TestSecondaryController.class);
-            AuthenticationManager.registerProvider(new TestSecondaryProvider());
-            addController("testsso", TestSsoController.class);
-            AuthenticationManager.registerProvider(new TestSsoProvider());
-        }
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
 
         SiteValidationService svc = SiteValidationService.get();
@@ -516,6 +504,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return new ArrayList<>(Arrays.asList(
             new AlwaysAvailableWebPartFactory("Contacts")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), CoreQuerySchema.NAME);
@@ -533,6 +522,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("FolderNav")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     FolderNavigationForm form = getForm(portalCtx);
@@ -560,6 +550,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbooks")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
@@ -578,6 +569,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbook Description")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
@@ -594,6 +586,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Projects")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -612,6 +605,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Subfolders")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -639,6 +633,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             // TODO: Delete this? I see no usages
             new BaseWebPartFactory("ProjectNav")
             {
+                @Override
+                @RemoveIn20_1
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
@@ -655,6 +651,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -675,6 +672,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
 
+                @Override
                 public HttpView getEditView(WebPart webPart, ViewContext context)
                 {
                     CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -709,7 +707,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         if (moduleContext.isNewInstall())
         {
-            bootstrap();
+            bootstrap(moduleContext.getUpgradeUser());
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -739,7 +737,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    private void bootstrap()
+    private void bootstrap(User upgradeUser)
     {
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
@@ -760,11 +758,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
         SecurityPolicyManager.savePolicy(policy, false);
 
+        // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
+        FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
+
         // Users & guests can read from /home
-        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        home.setFolderType(collaborationType, upgradeUser);
+        addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
+
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, upgradeUser);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, upgradeUser);
 
         try
         {
@@ -815,6 +820,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
+        FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
         {
@@ -996,8 +1002,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             return results;
         });
 
-        LdapAuthenticationManager.registerMetricsProvider();
-
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
 
@@ -1013,7 +1017,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         catch (Exception e)
         {
-            LOG.error(e);
+            LOG.error("Exception registering MarkdownServiceImpl", e);
         }
     }
 

@@ -54,6 +54,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
+import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -148,9 +149,9 @@ public class SampleSetDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowAttachmentProperties()
+    public boolean allowFileLinkProperties()
     {
-        return false;
+        return true;
     }
 
     @Override
@@ -167,7 +168,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override
@@ -256,7 +257,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, @Nullable Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -266,13 +267,13 @@ public class SampleSetDomainKind extends AbstractDomainKind
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-        Object[] idCols = arguments.containsKey("idCols") ? (Object[])arguments.get("idCols") : new Object[0];
+        Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? (Object[])arguments.get("idCols") : new Object[0];
         int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
         int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
         int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
-        int parentCol = arguments.get("parentCol") instanceof Number ? ((Number)arguments.get("parentCol")).intValue() : -1;
+        int parentCol = (arguments != null && arguments.get("parentCol") instanceof Number) ? ((Number)arguments.get("parentCol")).intValue() : -1;
 
-        String nameExpression = arguments.containsKey("nameExpression") ? Objects.toString(arguments.get("nameExpression"), null) : null;
+        String nameExpression = (arguments != null && arguments.containsKey("nameExpression")) ? Objects.toString(arguments.get("nameExpression"), null) : null;
 
         ExpSampleSet ss;
         try

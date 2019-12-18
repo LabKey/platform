@@ -406,4 +406,14 @@ LABKEY.Domain.create({
     * @type Object
 */
 
+/**
+ * @name indices
+ * @description An array of objects that each designate an index upon the domain.  Each object has the following properties:
+ *      <ul>
+ *          <li><b>columnNames:</b> An array of strings, where each string is the name of a domain field that will be an index. (array)</li>
+ *          <li><b>unique:</b> Indicates whether the domain field is allowed to contain any duplicate values. (boolean)</li>
+ *      </ul>
+ * @type Object
+ */
+
 /**#@-*/

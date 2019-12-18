@@ -264,6 +264,55 @@ LABKEY.Experiment.loadBatch({
         },
 
         /**
+         * Loads runs from the server.
+         * @param config An object that contains the following configuration parameters
+         * @param {Array} config.lsids. The list of run lsids.
+         * @param {Array} config.runIds The list of run ids.
+         * @param {function} config.success The function to call when the function finishes successfully.
+         * This function will be called with a the parameters:
+         * <ul>
+         * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.failure] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @static
+         */
+        loadRuns : function (config)
+        {
+            function createExp(json)
+            {
+                var runs = [];
+                if (json.runs) {
+                    for (var i = 0; i < json.runs.length; i++) {
+                        runs.push(new LABKEY.Exp.Run(json.runs[i]));
+                    }
+                }
+                return runs;
+            }
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("assay", "getAssayRuns", LABKEY.ActionURL.getContainer()),
+                method: 'POST',
+                success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                scope: config.scope,
+                jsonData : {
+                    runIds: config.runIds,
+                    lsids: config.lsids
+                },
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
+        /**
          * Saves a modified batch.
          * Runs within the batch may refer to existing data and material objects, either inputs or outputs, by ID or LSID.
          * Runs may also define new data and materials objects by not specifying an ID or LSID in their properties.

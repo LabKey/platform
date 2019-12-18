@@ -581,7 +581,7 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExpObjectForm form, BindException errors)
         {
-            _source = (ExpSampleSetImpl) ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getRowId());
+            _source = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getRowId());
             if (_source == null && form.getLsid() != null)
             {
                 if (form.getLsid().equalsIgnoreCase("Material") || form.getLsid().equalsIgnoreCase("Sample"))
@@ -590,7 +590,7 @@ public class ExperimentController extends SpringActionController
                     throw new RedirectException(new ActionURL(ShowAllMaterialsAction.class, getContainer()));
                 }
                 // Check if the URL specifies the LSID, and stick the bean back into the form
-                _source = (ExpSampleSetImpl) ExperimentService.get().getSampleSet(form.getLsid());
+                _source = SampleSetServiceImpl.get().getSampleSet(form.getLsid());
             }
 
             if (_source == null)
@@ -1019,10 +1019,12 @@ public class ExperimentController extends SpringActionController
             if (table.hasPermission(getUser(), UpdatePermission.class))
             {
                 ActionURL updateUrl = _dataClass.urlUpdate(getUser(), getContainer(), getViewContext().getActionURL());
+                updateUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                 ActionButton editButton = new ActionButton("Edit", updateUrl);
                 bb.add(editButton);
 
                 ActionURL editFields = _dataClass.urlEditDefinition(getViewContext());
+                editFields.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
                 ActionButton editFieldsButton = new ActionButton("Edit Fields", editFields);
                 bb.add(editFieldsButton);
             }
@@ -3579,7 +3581,7 @@ public class ExperimentController extends SpringActionController
             if (form.getRowId() == null)
                 return;
 
-            ExpSampleSetImpl source = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(form.getRowId());
+            ExpSampleSetImpl source = SampleSetServiceImpl.get().getSampleSet(form.getRowId());
             if (source == null)
                 return;
 
@@ -3757,9 +3759,9 @@ public class ExperimentController extends SpringActionController
 
         public ExpSampleSetImpl getSampleSet(Container container) throws NotFoundException
         {
-            ExpSampleSetImpl sampleSet = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(getLSID());
+            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getLSID());
             if (sampleSet == null)
-                sampleSet = (ExpSampleSetImpl) SampleSetService.get().getSampleSet(getRowId());
+                sampleSet = SampleSetServiceImpl.get().getSampleSet(getRowId());
 
             if (sampleSet == null)
             {
@@ -3938,7 +3940,11 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             initRequest(form);
-            return getDefaultImportView(form, true, null, errors);
+            setHelpTopic("importSampleSets");           // page wide help topic
+            setImportHelpTopic("importSampleSets");     // importOptions help topic
+            setShowImportOptions(true);
+            setTypeName("samples");
+            return getDefaultImportView(form, errors);
         }
 
 
@@ -5033,7 +5039,7 @@ public class ExperimentController extends SpringActionController
                 form.setOutputCount(1);
             }
 
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
+            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
             if (form.getTargetSampleSetId() != 0 && sampleSet == null)
             {
                 throw new NotFoundException("Could not find sample set with rowId " + form.getTargetSampleSetId());
@@ -5117,13 +5123,11 @@ public class ExperimentController extends SpringActionController
                 inputMaterials.put(materials.get(i), inputRole);
             }
 
-            ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
-
-            Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+            ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), form.getTargetSampleSetId());
 
             DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleSet, form.getOutputCount(), getContainer(), getUser());
 
-            Map<String, Map<DomainProperty, String>> allProperties;
+            Map<Lsid, Map<DomainProperty, String>> allProperties;
             try
             {
                 boolean valid = true;
@@ -5132,7 +5136,7 @@ public class ExperimentController extends SpringActionController
                 if (!valid)
                     return false;
 
-                allProperties = helper.getSampleProperties(getViewContext().getRequest());
+                allProperties = helper.getSampleProperties(getViewContext().getRequest(), inputMaterials.keySet());
             }
             catch (DuplicateMaterialException e)
             {
@@ -5144,35 +5148,45 @@ public class ExperimentController extends SpringActionController
                 errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
                 return false;
             }
-            int i = 0;
-            for (Map.Entry<String, Map<DomainProperty, String>> entry : allProperties.entrySet())
+
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
-                Map<DomainProperty, String> props = entry.getValue();
-                String name = helper.determineMaterialName(props);
-                ExpMaterial outputMaterial = ExperimentService.get().createExpMaterial(getContainer(), entry.getKey(), name);
-                if (sampleSet != null)
+                Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+                int i = 0;
+                for (Map.Entry<Lsid, Map<DomainProperty, String>> entry : allProperties.entrySet())
                 {
-                    outputMaterial.setCpasType(sampleSet.getLSID());
-                }
-                outputMaterial.save(getUser());
+                    Map<DomainProperty, String> props = entry.getValue();
+                    Lsid lsid = entry.getKey();
+                    String name = lsid.getObjectId();
+                    assert name != null;
 
-                if (sampleSet != null)
-                {
-                    Map<String, Object> pvs = new HashMap<>();
-                    for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
-                        pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                    ((ExpMaterialImpl) outputMaterial).setProperties(getUser(), pvs);
+                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), entry.getKey().toString(), name);
+                    if (sampleSet != null)
+                    {
+                        outputMaterial.setCpasType(sampleSet.getLSID());
+                    }
+                    outputMaterial.save(getUser());
+
+                    if (sampleSet != null)
+                    {
+                        Map<String, Object> pvs = new HashMap<>();
+                        for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
+                            pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
+                        outputMaterial.setProperties(getUser(), pvs);
+                    }
+
+                    outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
                 }
 
-                outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
+                ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
+
+                tx.commit();
+
+                _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
+
+                if (form.getDataRegionSelectionKey() != null)
+                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             }
-
-            ExperimentService.get().deriveSamples(inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
-
-            _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
-
-            if (form.getDataRegionSelectionKey() != null)
-                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
 
             return true;
         }
@@ -6359,34 +6373,25 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDomainEditorURL(Container container, String domainURI, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings)
+        public ActionURL getDomainEditorURL(Container container, String domainURI, boolean createOrEdit)
         {
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (domain != null)
+                return getDomainEditorURL(container, domain);
+
             ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
             url.addParameter("domainURI", domainURI);
-            applyDomainEditorUrlParams(allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings, url);
+            if (createOrEdit)
+                url.addParameter("createOrEdit", true);
             return url;
         }
 
         @Override
-        public ActionURL getDomainEditorURL(Container container, Domain domain, boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings)
+        public ActionURL getDomainEditorURL(Container container, Domain domain)
         {
-            if (!ExperimentService.get().useUXDomainDesigner())
-                return getDomainEditorURL(container, domain.getTypeURI(), allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings);
-
-            ActionURL url = new ActionURL("experiment", "domainDesigner", container);
+            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
             url.addParameter("domainId", domain.getTypeId());
-            applyDomainEditorUrlParams(allowAttachmentProperties, allowFileLinkProperties, showDefaultValueSettings, url);
             return url;
-        }
-
-        private void applyDomainEditorUrlParams(boolean allowAttachmentProperties, boolean allowFileLinkProperties, boolean showDefaultValueSettings, ActionURL url)
-        {
-            if (allowAttachmentProperties)
-                url.addParameter("allowAttachmentProperties", "1");
-            if (allowFileLinkProperties)
-                url.addParameter("allowFileLinkProperties", "1");
-            if (showDefaultValueSettings)
-                url.addParameter("showDefaultValueSettings", "1");
         }
 
         @Override

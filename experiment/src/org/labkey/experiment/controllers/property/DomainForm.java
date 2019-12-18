@@ -36,9 +36,6 @@ public class DomainForm extends ViewForm
     private String _domainURI;
     private Integer _domainId;
     private boolean _createOrEdit = false;
-    private boolean _allowFileLinkProperties = false;
-    private boolean _allowAttachmentProperties = false;
-    private boolean _showDefaultValueSettings = false;
 
     public int getDomainId()
     {
@@ -146,35 +143,5 @@ public class DomainForm extends ViewForm
     public void setCreateOrEdit(boolean b)
     {
         _createOrEdit = b;
-    }
-
-    public boolean getAllowFileLinkProperties()
-    {
-        return _allowFileLinkProperties;
-    }
-
-    public void setAllowFileLinkProperties(boolean allowFileLinkProperties)
-    {
-        _allowFileLinkProperties = allowFileLinkProperties;
-    }
-
-    public boolean getAllowAttachmentProperties()
-    {
-        return _allowAttachmentProperties;
-    }
-
-    public void setAllowAttachmentProperties(boolean allowAttachmentProperties)
-    {
-        _allowAttachmentProperties = allowAttachmentProperties;
-    }
-
-    public boolean isShowDefaultValueSettings()
-    {
-        return _showDefaultValueSettings;
-    }
-
-    public void setShowDefaultValueSettings(boolean showDefaultValueSettings)
-    {
-        _showDefaultValueSettings = showDefaultValueSettings;
     }
 }

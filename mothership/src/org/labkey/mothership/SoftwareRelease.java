@@ -16,6 +16,8 @@
 
 package org.labkey.mothership;
 
+import java.util.Date;
+
 /**
  * User: jeckels
  * Date: Aug 29, 2006
@@ -23,10 +25,14 @@ package org.labkey.mothership;
 public class SoftwareRelease
 {
     private int _softwareReleaseId;
-    private Integer _SVNRevision;
-    private String _SVNURL;
-    private String _description;
+    private String _vcsRevision;
+    private String _vcsUrl;
+    private String _vcsBranch;
+    private String _vcsTag;
     private String _container;
+    private Date _buildTime;
+
+    private String _buildNumber;
 
     public String getContainer()
     {
@@ -38,24 +44,24 @@ public class SoftwareRelease
         _container = container;
     }
 
-    public Integer getSVNRevision()
+    public String getVcsRevision()
     {
-        return _SVNRevision;
+        return _vcsRevision;
     }
 
-    public void setSVNRevision(Integer SVNRevision)
+    public void setVcsRevision(String vcsRevision)
     {
-        _SVNRevision = SVNRevision;
+        _vcsRevision = vcsRevision;
     }
 
-    public String getDescription()
+    public String getVcsUrl()
     {
-        return _description;
+        return _vcsUrl;
     }
 
-    public void setDescription(String description)
+    public void setVcsUrl(String vcsUrl)
     {
-        _description = description;
+        _vcsUrl = vcsUrl;
     }
 
     public int getSoftwareReleaseId()
@@ -68,13 +74,66 @@ public class SoftwareRelease
         _softwareReleaseId = softwareReleaseId;
     }
 
-    public String getSVNURL()
+    public Date getBuildTime()
     {
-        return _SVNURL;
+        return _buildTime;
     }
 
-    public void setSVNURL(String SVNURL)
+    public void setBuildTime(Date buildDate)
     {
-        _SVNURL = SVNURL;
+        _buildTime = buildDate;
+    }
+
+    public String getVcsBranch()
+    {
+        return _vcsBranch;
+    }
+
+    public void setVcsBranch(String vcsBranch)
+    {
+        _vcsBranch = vcsBranch;
+    }
+
+    public String getVcsTag()
+    {
+        return _vcsTag;
+    }
+
+    public void setVcsTag(String vcsTag)
+    {
+        _vcsTag = vcsTag;
+    }
+
+    public String getBuildNumber()
+    {
+        return _buildNumber;
+    }
+
+    public void setBuildNumber(String buildNumber)
+    {
+        _buildNumber = buildNumber;
+    }
+
+    public Integer getSVNRevision()
+    {
+        if (_buildNumber != null && _buildNumber.contains("."))
+        {
+            // Issue 36116 - use first part of build number (which is the latest across all SVN modules)
+            String[] parts = _buildNumber.split("\\.");
+            try
+            {
+                return Integer.parseInt(parts[0]);
+            }
+            catch (NumberFormatException ignored) {}
+        }
+        if (_vcsRevision != null && _vcsRevision.length() < 10)
+        {
+            try
+            {
+                return Integer.parseInt(_vcsRevision);
+            }
+            catch (NumberFormatException ignored) {}
+        }
+        return null;
     }
 }

@@ -80,6 +80,4 @@ public class SurveyTableDomainKind extends SimpleTableDomainKind
         }
         return (namespacePrefix.equalsIgnoreCase(SimpleModule.NAMESPACE_PREFIX + "-survey") && objectId.equalsIgnoreCase("users")) ? Handler.Priority.MEDIUM : null;
     }
-
-
 }

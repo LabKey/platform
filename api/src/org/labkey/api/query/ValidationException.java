@@ -15,6 +15,8 @@
  */
 package org.labkey.api.query;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
+import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.RuntimeSQLException;
 import org.springframework.validation.BindException;
@@ -59,6 +61,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     private String _schemaName;
     private String _queryName;
+    private String _domainName;
     private Map<String, Object> _row;
     private int _rowNumber = -1;
     private SEVERITY _severity = SEVERITY.ERROR;
@@ -163,6 +166,16 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public String getQueryName()
     {
         return _queryName;
+    }
+
+    public String getDomainName()
+    {
+        return _domainName;
+    }
+
+    public void setDomainName(String domainName)
+    {
+        _domainName = domainName;
     }
 
     public Map<String, Object> getRow()

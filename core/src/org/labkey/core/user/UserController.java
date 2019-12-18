@@ -19,6 +19,7 @@ package org.labkey.core.user;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -125,7 +126,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.DbLoginConfiguration;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -420,7 +421,7 @@ public class UserController extends SpringActionController
 
     public abstract class BaseActivateUsersAction extends FormViewAction<UserIdForm>
     {
-        private boolean _active = true;
+        private final boolean _active;
 
         protected BaseActivateUsersAction(boolean active)
         {
@@ -915,6 +916,8 @@ public class UserController extends SpringActionController
             boolean isOwnRecord = _pkVal.equals(_userId);
             HttpView view;
 
+            getModifiableUser(_pkVal); // Will throw if specified user is guest or non-existent
+
             if (user.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
                 ButtonBar bb = createSubmitCancelButtonBar(form);
@@ -990,9 +993,7 @@ public class UserController extends SpringActionController
                 return;
             }
 
-            User user = UserManager.getUser(NumberUtils.toInt(userId));
-            if (null == user)
-                throw new NotFoundException("User not found :" + userId);
+            User user = getModifiableUser(NumberUtils.toInt(userId));
 
             // don't let non-site admin edit details of site admin account
             if (user.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
@@ -1499,16 +1500,13 @@ public class UserController extends SpringActionController
             User user = getUser();
             int userId = user.getUserId();
             _detailsUserId = form.getUserId();
-            User detailsUser = UserManager.getUser(_detailsUserId);
+            User detailsUser = getModifiableUser(_detailsUserId);
 
             boolean isOwnRecord = (_detailsUserId == userId);
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
                 authorizeUserAction(_detailsUserId, "view details of", true);
-
-            if (null == detailsUser || detailsUser.isGuest())
-                throw new NotFoundException("User does not exist");
 
             Container c = getContainer();
             boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
@@ -1568,8 +1566,8 @@ public class UserController extends SpringActionController
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            // see if any of the SSO auth providers are set to autoRedirect from the login action
-            boolean isLoginAutoRedirect = AuthenticationManager.getSSOAuthProviderAutoRedirect() != null;
+            // see if any of the SSO auth configurations are set to autoRedirect from the login action
+            boolean isLoginAutoRedirect = AuthenticationManager.getAutoRedirectSSOAuthConfiguration() != null;
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
@@ -1666,14 +1664,6 @@ public class UserController extends SpringActionController
                     if (getContainer().isRoot())
                         settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
 
-
-                    List<FieldKey> columns = new ArrayList<>();
-
-                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED));
-                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_CREATED_BY));
-                    columns.add(FieldKey.fromParts(UserAuditProvider.COLUMN_NAME_COMMENT));
-
-                    settings.setFieldKeys(columns);
                     settings.setBaseFilter(filter);
                     settings.setQueryName(UserManager.USER_AUDIT_EVENT);
 
@@ -1770,7 +1760,7 @@ public class UserController extends SpringActionController
 
                 if (_urlUserId != form.getUserId())
                 {
-                    errors.reject(ERROR_MSG, "You aren't allowed to change another user's password!");
+                    errors.reject(ERROR_MSG, "You aren't allowed to change another user's email!");
                 }
                 else
                 {
@@ -1780,16 +1770,7 @@ public class UserController extends SpringActionController
             else  // site or app admin, could be another user's ID
             {
                 _urlUserId = form.getUserId();
-                User user = UserManager.getUser(_urlUserId);
-
-                if (null == user)
-                {
-                    errors.reject(ERROR_MSG, "User does not exist");
-                }
-                else
-                {
-                    form._user = user;  // Push validated user into form for JSP
-                }
+                form._user = getModifiableUser(_urlUserId);  // Push validated user into form for JSP
             }
 
             if (form.getIsFromVerifiedLink())
@@ -1917,7 +1898,7 @@ public class UserController extends SpringActionController
             else  // admin, so use form user ID, which may be different from admin's
             {
                 userId = form.getUserId();
-                user = UserManager.getUser(userId);
+                user = getModifiableUser(userId);
             }
 
             if (!isUserManager)  // need to verify email before changing if not site or app admin
@@ -2039,8 +2020,12 @@ public class UserController extends SpringActionController
         {
             try
             {
-                DbLoginAuthenticationProvider loginProvider = (DbLoginAuthenticationProvider) AuthenticationManager.getProvider("Database");
-                return loginProvider.authenticate(email, password, returnUrlHelper).isAuthenticated();
+                Collection<DbLoginConfiguration> configurations = AuthenticationManager.getActiveConfigurations(DbLoginConfiguration.class);
+                if (configurations.size() != 1)
+                    throw new IllegalStateException("Expected exactly one DbAuthenticationConfiguration, but was: " + configurations.size());
+
+                DbLoginConfiguration configuration = configurations.iterator().next();
+                return configuration.getAuthenticationProvider().authenticate(configuration, email, password, returnUrlHelper).isAuthenticated();
             }
             catch (ValidEmail.InvalidEmailException e)
             {
@@ -2292,6 +2277,21 @@ public class UserController extends SpringActionController
         sm.setType("Request email address");
 
         return sm;
+    }
+
+    /**
+     * Ensure that the specified user exists and is not the "Guest" user
+     * @param userId The user ID to validate
+     * @return The {@link User} corresponding to the userId provided, according to the above requirements
+     */
+    @NotNull private static User getModifiableUser(int userId)
+    {
+        User user = UserManager.getUser(userId);
+        if (null == user)
+            throw new NotFoundException("User not found :" + userId);
+        if (user.isGuest())
+            throw new NotFoundException("Action not valid for Guest user");
+        return user;
     }
 
     public static class RequestAddressEmailTemplate extends SecurityManager.SecurityEmailTemplate

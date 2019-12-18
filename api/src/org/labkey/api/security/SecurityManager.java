@@ -2188,7 +2188,7 @@ public class SecurityManager
         return groupId;
     }
 
-    // CONSIDER: Support multiple LDAP domains?
+    // TODO: Update to iterate through all configurations
     public static boolean isLdapEmail(ValidEmail email)
     {
         String ldapDomain = AuthenticationManager.getLdapDomain();

@@ -30,6 +30,7 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -244,6 +245,7 @@ public class DomainUtil
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
         d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
+        d.setDefaultValueOptions(domainKind.getDefaultValueOptions(domain), domainKind.getDefaultDefaultType(domain));
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
         d.setQueryName(domainKind.getMetaDataTableName());
@@ -272,6 +274,8 @@ public class DomainUtil
             gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
             gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
             gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+            gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
         return gwtDomain;
     }
@@ -903,6 +907,16 @@ public class DomainUtil
         }
     }
 
+    private static String getDomainErrorMessage(@Nullable GWTDomain domain, String message)
+    {
+        if (domain != null && domain.getName() != null)
+        {
+            return domain.getName() + " -- " + message;
+        }
+
+        return message;
+    }
+
     /**
      * Validate domain property descriptors for things like duplicate names, missing names, and check against required fields.
      * @param domain The updated domain to validate
@@ -910,7 +924,8 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
+        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
+                : new CaseInsensitiveHashSet(updates.getReservedFieldNames()));
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
@@ -923,24 +938,24 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Please provide a name for each field."));
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name))
+            if (reservedNames.contains(name))
             {
                 //check if a new field is a reserved field or an existing field is updated to a reserved field
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
-                    exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
+                    exception.addFieldError(name, getDomainErrorMessage(updates,("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
+                String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;

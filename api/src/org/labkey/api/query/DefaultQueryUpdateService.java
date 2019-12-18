@@ -33,6 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -48,6 +49,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,8 +60,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
+
+import static org.labkey.api.dataiterator.DataIteratorUtil.createTableMap;
 
 /**
  * QueryUpdateService implementation that supports Query TableInfos that are backed by both a hard table and a Domain.
@@ -352,24 +356,26 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             queryToDb.put(entry.getValue(), entry.getKey());
         }
 
+        setSpecialColumns(container, row, user, UpdatePermission.class);
+
+        Map<String,ColumnInfo> tableAliasesMap = DataIteratorUtil.createTableMap(getQueryTable(), true);
+        Map<ColumnInfo, Pair<String,Object>> colFrequency = new HashMap<>();
+
         //resolve passed in row including columns in the table and other properties (vocabulary properties) not in the Domain/table
         for (Map.Entry<String, Object> entry: row.entrySet())
         {
             if (!rowStripped.containsKey(entry.getKey()))
             {
-               ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+                ColumnInfo col = getQueryTable().getColumn(entry.getKey());
+
+                if (null == col)
+                {
+                    col = tableAliasesMap.get(entry.getKey());
+                }
+
                if (null != col)
                {
                    final String name = col.getName();
-                   String key = name;
-                   if (!row.containsKey(key))
-                   {
-                       // Check if the row map contains an alias for the column
-                       Optional<String> firstAlias = col.getImportAliasSet().stream().filter(row::containsKey).findFirst();
-                       if (!firstAlias.isPresent())
-                           continue;
-                       key = firstAlias.get();
-                   }
 
                    // Skip readonly and wrapped columns.  The wrapped column is usually a pk column and can't be updated.
                    if (col.isReadOnly() || col.isCalculated())
@@ -386,15 +392,27 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                            || name.equalsIgnoreCase("EntityId"))
                        continue;
 
+                   // Throw error if more than one row properties having different values match up to the same column.
+                   if (!colFrequency.containsKey(col))
+                   {
+                       colFrequency.put(col, Pair.of(entry.getKey(),entry.getValue()));
+                   }
+                   else
+                   {
+                       if (!Objects.equals(colFrequency.get(col).second, entry.getValue()))
+                       {
+                           throw new ValidationException("Property key - " + colFrequency.get(col).first + " and " + entry.getKey() + " matched for the same column.");
+                       }
+                   }
+
                    // We want a map using the DbTable column names as keys, so figure out the right name to use
-                   String dbName = queryToDb.containsKey(name) ? queryToDb.get(name) : name;
+                   String dbName = queryToDb.getOrDefault(name, name);
                    rowStripped.put(dbName, entry.getValue());
                }
             }
         }
 
         convertTypes(container, rowStripped);
-        setSpecialColumns(container, row, user, UpdatePermission.class);
         validateUpdateRow(rowStripped);
 
         if (row.get("container") != null)

@@ -163,6 +163,7 @@ public class AssayController extends SpringActionController
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
             GetAssayRunAction.class,
+            GetAssayRunsAction.class,
             SaveAssayRunsAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
@@ -1563,15 +1564,21 @@ public class AssayController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             List<Map<String, Object>> containersInfo = new ArrayList<>();
-            for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
+
+            AssayPublishService service = AssayPublishService.get();
+            if (service != null)
             {
-                Container container = study.getContainer();
-                Map<String, Object> containerInfo = new HashMap<>();
-                containerInfo.put("id", container.getId());
-                containerInfo.put("name", container.getName());
-                containerInfo.put("path", container.getPath());
-                containersInfo.add(containerInfo);
+                for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
+                {
+                    Container container = study.getContainer();
+                    Map<String, Object> containerInfo = new HashMap<>();
+                    containerInfo.put("id", container.getId());
+                    containerInfo.put("name", container.getName());
+                    containerInfo.put("path", container.getPath());
+                    containersInfo.add(containerInfo);
+                }
             }
+
             response.put("containers", containersInfo);
             return response;
         }

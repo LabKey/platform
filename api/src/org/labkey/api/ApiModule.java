@@ -33,14 +33,13 @@ import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationLogoType;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
-import javax.servlet.jsp.JspFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -62,12 +61,11 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
 
-        // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
         if (AppProps.getInstance().isDevMode())
         {
-            LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
-            JspFactory.setDefaultFactory(factory);
-            ContextListener.addShutdownListener(factory);
+            // Avoid doing this on pipeline remote servers to avoid the need for a dependency on the JSP API JAR.
+            // See issue 39242
+            LabKeyJspFactory.register();
         }
     }
 
@@ -82,6 +80,7 @@ public class ApiModule extends CodeOnlyModule
     protected void doStartup(ModuleContext moduleContext)
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
+        AuthenticationManager.registerMetricsProvider();
     }
 
     @Override
