@@ -55,8 +55,10 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
+    @Override
     public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
+    @Override
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
@@ -162,7 +164,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
             if (null != reader)
             {
-                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets(), ctx.getActivity()))
+                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets(), true, ctx.getActivity()))
                     return;
             }
 

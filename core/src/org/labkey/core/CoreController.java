@@ -156,6 +156,8 @@ import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -2528,12 +2530,77 @@ public class CoreController extends SpringActionController
             return _qcStateHandler;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteQCStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)
                 returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
             return returnUrl;
+        }
+    }
+
+    public static class TransformWikiForm
+    {
+        private String _body;
+        private String _fromFormat;
+        private String _toFormat;
+
+        public String getBody()
+        {
+            return _body;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setBody(String body)
+        {
+            _body = body;
+        }
+
+        public String getFromFormat()
+        {
+            return _fromFormat;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setFromFormat(String fromFormat)
+        {
+            _fromFormat = fromFormat;
+        }
+
+        public String getToFormat()
+        {
+            return _toFormat;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setToFormat(String toFormat)
+        {
+            _toFormat = toFormat;
+        }
+    }
+
+    @SuppressWarnings("unused") // Called from JavaScript: discuss.js, wikiEdit.js
+    @RequiresNoPermission
+    public class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
+    {
+        @Override
+        public ApiResponse execute(TransformWikiForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String newBody = form.getBody();
+
+            if (StringUtils.equals(WikiRendererType.HTML.name(), form.getToFormat()))
+            {
+                WikiRendererType fromType = WikiRendererType.valueOf(form.getFromFormat());
+                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody);
+            }
+
+            response.put("toFormat", form.getToFormat());
+            response.put("fromFormat", form.getFromFormat());
+            response.put("body", newBody);
+
+            return response;
         }
     }
 }

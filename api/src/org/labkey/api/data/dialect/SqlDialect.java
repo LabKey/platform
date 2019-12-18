@@ -1067,6 +1067,10 @@ public abstract class SqlDialect
 
     abstract public boolean allowSortOnSubqueryWithoutLimit();
 
+    public void appendSortOnSubqueryWithoutLimitQualifier(SQLFragment builder)
+    {
+    }
+
     // Substitute the parameter values into the SQL statement.
     public String substituteParameters(SQLFragment frag)
     {

@@ -18,6 +18,8 @@ package org.labkey.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.SetValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -44,27 +46,7 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.CustomViewChangeListener;
-import org.labkey.api.query.CustomViewInfo;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidNamedSetException;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryChangeListener;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -154,6 +136,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 
@@ -180,6 +163,7 @@ public class QueryServiceImpl implements QueryService
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
+    private QueryAnalysisService _queryAnalysisService;
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -238,7 +222,7 @@ public class QueryServiceImpl implements QueryService
             String expression = (String)getParamVals()[0];
             List<QueryParseException> errors = new ArrayList<>();
             QExpr parseResult;
-            if (StringUtils.isBlank(value))
+            if (isBlank(value))
                 parseResult = null;
             else
                 parseResult = new SqlParser(null, null).parseExpr(expression, errors);
@@ -300,7 +284,7 @@ public class QueryServiceImpl implements QueryService
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             String expression = (String)getParamVals()[0];
-            if (StringUtils.isBlank(expression))
+            if (isBlank(expression))
                 return new SQLFragment("1=1");
             // reparse because we have a dialect now
             List<QueryParseException> errors = new ArrayList<>();
@@ -3049,6 +3033,51 @@ public class QueryServiceImpl implements QueryService
         Set<ColumnInfo> lookups = walk.visitTop(schemas, null);
     }
     */
+
+    @Override
+    public TableInfo analyzeQuery(
+        QuerySchema schema, String queryName,
+        SetValuedMap<DependencyObject,DependencyObject> dependencyGraph,
+        @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings)
+    {
+        Object qort;
+        if (schema instanceof UserSchema)
+            qort = ((UserSchema)schema)._getTableOrQuery(queryName, null, true, false, errors);
+        else
+            qort = schema.getTable(queryName, null);
+        TableInfo t = (qort instanceof TableInfo) ? (TableInfo)qort : null;
+        QueryDefinitionImpl qdef = (qort instanceof QueryDefinitionImpl) ? (QueryDefinitionImpl)qort : null;
+
+        if (null != t)
+            return t;
+
+        if (null == qdef)
+        {
+            if (errors.isEmpty())
+                throw new QueryException("Query not found: " + queryName);
+            return null;
+        }
+
+        Query query = qdef.getQuery(schema, errors, null, true);
+
+        warnings.addAll(query.getParseWarnings());
+        errors.addAll(query.getParseErrors());
+        dependencyGraph.putAll(query.getDependencies());
+
+        return query.getTableInfo();
+    }
+
+    @Override
+    public void registerQueryAnalysisProvider(QueryAnalysisService provider)
+    {
+        _queryAnalysisService = provider;
+    }
+
+    @Override
+    public QueryAnalysisService getQueryAnalysisService()
+    {
+        return _queryAnalysisService;
+    }
 
     public static class TestCase extends Assert
     {

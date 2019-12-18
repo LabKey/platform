@@ -146,6 +146,7 @@ import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
@@ -204,8 +205,9 @@ public class StudyManager
     protected StudyManager()
     {
         // prevent external construction with a private default constructor
-        _studyHelper = new QueryHelper<StudyImpl>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
+        _studyHelper = new QueryHelper<>(() -> StudySchema.getInstance().getTableInfoStudy(), StudyImpl.class)
         {
+            @Override
             public List<StudyImpl> get(final Container c, SimpleFilter filterArg, final String sortString)
             {
                 assert filterArg == null && sortString == null;
@@ -3666,7 +3668,7 @@ public class StudyManager
     }
 
 
-    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared, @Nullable Activity activity)
+    public boolean importDatasetSchemas(StudyImpl study, final User user, SchemaReader reader, BindException errors, boolean createShared, boolean allowDomainUpdates, @Nullable Activity activity)
     {
         if (errors.hasErrors())
             return false;
@@ -3746,19 +3748,22 @@ public class StudyManager
                 ReportPropsManager.get().importProperties(def.getEntityId(), def.getDefinitionContainer(), user, d.tags);
         }
 
-        // now that we actually have datasets, create/update the domains
-        Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
-        Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
+        // optional param to control whether field additions or deletions are permitted
+        if (allowDomainUpdates)
+        {
+            // now that we actually have datasets, create/update the domains
+            Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<>();
+            Map<String, List<? extends DomainProperty>> domainsPropertiesMap = new CaseInsensitiveHashMap<>();
 
-        buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
+            buildPropertySaveAndDeleteLists(datasetDefEntryMap, list, domainsMap, domainsPropertiesMap);
 
-        dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+            dropNotRequiredIndices(reader, datasetDefEntryMap, domainsMap);
 
-        if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap))
-            return false;
+            if (!deleteAndSaveProperties(user, errors, domainsMap, domainsPropertiesMap))
+                return false;
 
-        addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
-
+            addMissingRequiredIndices(reader, datasetDefEntryMap, domainsMap);
+        }
         return true;
     }
 
@@ -4633,7 +4638,7 @@ public class StudyManager
 
     public List<StudyImpl> getAncillaryStudies(Container sourceStudyContainer)
     {
-        // in the upgrade case there  may not be any ancillary studyies
+        // in the upgrade case there may not be any ancillary studies
         TableInfo t = StudySchema.getInstance().getTableInfoStudy();
         ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
         if (null == ssci || ssci.isUnselectable())
@@ -4645,18 +4650,26 @@ public class StudyManager
     // Return collection of current snapshots that are configured to refresh specimens
     public Collection<StudySnapshot> getRefreshStudySnapshots()
     {
+        return getStudySnapshots(new SQLFragment(" AND Refresh = ?", Boolean.TRUE));
+    }
+
+    // Return collection of all current snapshots
+    private Collection<StudySnapshot> getStudySnapshots(@Nullable SQLFragment filter)
+    {
         SQLFragment sql = new SQLFragment("SELECT ss.* FROM ");
         sql.append(StudySchema.getInstance().getTableInfoStudy(), "s");
         sql.append(" JOIN ");
         sql.append(StudySchema.getInstance().getTableInfoStudySnapshot(), "ss");
-        sql.append(" ON s.StudySnapshot = ss.RowId AND Source IS NOT NULL AND Destination IS NOT NULL AND Refresh = ?");
-        sql.add(Boolean.TRUE);
+        sql.append(" ON s.StudySnapshot = ss.RowId AND Source IS NOT NULL AND Destination IS NOT NULL");
+
+        if (null != filter)
+            sql.append(filter);
 
         return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(StudySnapshot.class);
     }
 
     @Nullable
-    public StudySnapshot getRefreshStudySnapshot(Integer snapshotId)
+    public StudySnapshot getStudySnapshot(Integer snapshotId)
     {
         TableSelector selector = new TableSelector(StudySchema.getInstance().getTableInfoStudySnapshot(), new SimpleFilter(FieldKey.fromParts("RowId"), snapshotId), null);
 
@@ -4891,6 +4904,7 @@ public class StudyManager
         {
             NORMAL
             {
+                @Override
                 public void configureDataset(DatasetDefinition dd)
                {
                    dd.setKeyPropertyName("Measure");
@@ -4898,6 +4912,7 @@ public class StudyManager
             },
             DEMOGRAPHIC
             {
+                @Override
                 public void configureDataset(DatasetDefinition dd)
                {
                    dd.setDemographicData(true);
@@ -4905,6 +4920,7 @@ public class StudyManager
             },
             OPTIONAL_GUID
             {
+                @Override
                 public void configureDataset(DatasetDefinition dd)
                 {
                     dd.setKeyPropertyName("GUID");
@@ -6000,6 +6016,79 @@ public class StudyManager
             {
                 assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
             }
+        }
+    }
+
+    public static class StudySnapshotTestCase extends Assert
+    {
+        @Test
+        public void testComplianceSettings()
+        {
+            // We load the SnapshotSettings bean from serialized JSON in the core.StudySnapshot.Settings column. This
+            // test ensures that we serialize using the latest compliance properties but continue to correctly load
+            // older snapshots that might specify "removeProtectedColumns":true instead of "phiLevel":<value>. This
+            // was broken shortly after we migrated to using phiLevel, see #xxxx.
+
+            // phiLevel property takes precedence over legacy properties
+            testComplianceSettings("\"removeProtectedColumns\":true,\"removePhiColumns\":false,\"phiLevel\":\"Limited\",\"shiftDates\":false,\"useAlternateParticipantIds\":false,\"maskClinic\":false", PHI.Limited);
+            testComplianceSettings("\"removeProtectedColumns\":false,\"removePhiColumns\":false,\"phiLevel\":\"Limited\",\"shiftDates\":false,\"useAlternateParticipantIds\":false,\"maskClinic\":false", PHI.Limited);
+            testComplianceSettings("\"phiLevel\":\"Restricted\"", PHI.Restricted);
+            testComplianceSettings("\"phiLevel\":\"PHI\"", PHI.PHI);
+            testComplianceSettings("\"phiLevel\":\"Limited\"", PHI.Limited);
+            testComplianceSettings("\"phiLevel\":\"NotPHI\"", PHI.NotPHI);
+
+            // removeProtectedColumns:true means include no PHI columns
+            testComplianceSettings("\"removeProtectedColumns\":true,\"shiftDates\":true,\"useAlternateParticipantIds\":true,\"maskClinic\":true", PHI.NotPHI);
+            testComplianceSettings("\"removeProtectedColumns\":false,\"shiftDates\":true,\"useAlternateParticipantIds\":true,\"maskClinic\":true", PHI.Restricted);
+
+            // removePhiColumns property should have no effect
+            testComplianceSettings("\"removeProtectedColumns\":true,\"removePhiColumns\":true", PHI.NotPHI);
+            testComplianceSettings("\"removeProtectedColumns\":true,\"removePhiColumns\":false", PHI.NotPHI);
+
+            // If no properties are specified then include all columns
+            testComplianceSettings("\"shiftDates\":true,\"useAlternateParticipantIds\":true,\"maskClinic\":true", PHI.Restricted);
+            testComplianceSettings("", PHI.Restricted);
+        }
+
+        private static final String JSON_PREFIX = "{\"description\":null,\"participantGroups\":[],\"participants\":null,\"datasets\":[5008,5024,5025,5026,5004,5006,5007],\"datasetRefresh\":true,\"datasetRefreshDelay\":30,\"visits\":null,\"specimenRequestId\":null,\"includeSpecimens\":true,\"specimenRefresh\":true,\"studyObjects\":[],\"lists\":[],\"views\":[],\"reports\":[],\"folderObjects\":[]";
+
+        private void testComplianceSettings(String settingsJson, PHI expectedLevel)
+        {
+            String json = JSON_PREFIX + (StringUtils.isNotEmpty(settingsJson) ? "," + settingsJson + "}" : "}");
+            StudySnapshot snapshot = new StudySnapshot();
+            snapshot.setSettings(json);
+
+            testSnapshot(snapshot, expectedLevel);
+        }
+
+        @Test
+        public void testStoredSnapshots()
+        {
+            Collection<StudySnapshot> snapshots = StudyManager.getInstance().getStudySnapshots(null);
+
+            for (StudySnapshot snapshot : snapshots)
+            {
+                PHI level = snapshot.getSnapshotSettings().getPhiLevel();
+                testSnapshot(snapshot, level);
+                StudySnapshot snapshotFromRowId = StudyManager.getInstance().getStudySnapshot(snapshot.getRowId());
+                testSnapshot(snapshotFromRowId, level);
+            }
+        }
+
+        private void testSnapshot(StudySnapshot snapshot, PHI expectedLevel)
+        {
+            assertNotNull(snapshot);
+            assertNotNull(expectedLevel);
+            SnapshotSettings settings = snapshot.getSnapshotSettings();
+            assertNotNull("getPhiLevel() returned null", settings.getPhiLevel());
+            assertEquals(expectedLevel, settings.getPhiLevel());
+
+            // Test the settings JSON that this snapshot generates
+            String serializedJson = snapshot.getSettings();
+            String expectedLevelJson = "\"phiLevel\":\"" + expectedLevel.name() + "\"";
+            assertTrue("Serialized JSON did not include " + expectedLevelJson, serializedJson.contains(expectedLevelJson));
+            assertFalse("Serialized JSON included removeProtectedColumns", serializedJson.contains("removeProtectedColumns"));
+            assertFalse("Serialized JSON included removePhiColumns", serializedJson.contains("removePhiColumns"));
         }
     }
 }

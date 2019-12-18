@@ -20,9 +20,28 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -52,7 +71,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -375,6 +393,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 batchIdCol.setShownInUpdateView(false);
                 batchIdCol.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return batchIdCol;
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -535,6 +555,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Output);
         addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
+
+        addColumn(Column.Properties);
+        addVocabularyDomains();
 
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
@@ -906,9 +929,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                 value = saveFile(container, col.getName(), value, AssayFileWriter.DIR_NAME);
                             }
 
+                            ForeignKey fk = col.getFk();
                             if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
                             {
-                                if (col.getFk() != null && value != null)
+                                if (fk != null && fk.allowImportByAlternateKey() && value != null)
                                 {
                                     try
                                     {
@@ -916,7 +940,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                     }
                                     catch (ConversionException e)
                                     {
-                                        ForeignKey fk = col.getFk();
                                         Object remappedValue = _cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), user, container, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
                                         if (remappedValue != null)
                                             value = remappedValue;
@@ -926,11 +949,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                             run.setProperty(user, propertyDescriptor, value);
 
                             Object newValue = value;
-                            TableInfo fkTableInfo = col.getFkTableInfo();
-                            if (fkTableInfo != null)
+                            TableInfo fkTableInfo = fk != null ? fk.getLookupTableInfo() : null;
+                            String lookupColumnName = fk != null ? fk.getLookupColumnName() : null;
+                            ColumnInfo lookupColumn = fkTableInfo != null && lookupColumnName != null ? fkTableInfo.getColumn(lookupColumnName) : null;
+
+                            // Don't attempt type conversion if the lookup target isn't the PK column
+                            if (lookupColumn != null && lookupColumn.isKeyField())
                             {
                                 // Do type conversion in case there's a mismatch in the lookup source and target columns
-                                Class<?> keyColumnType = fkTableInfo.getPkColumns().get(0).getJavaClass();
+                                Class<?> keyColumnType = lookupColumn.getJavaClass();
                                 if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
                                 {
                                     newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);

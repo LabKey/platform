@@ -42,20 +42,20 @@
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%=h(bean.getDataRegionSelectionKey())%>"/>
     <% } %>
 
-    <table>
+    <table class="lk-fields-table">
         <tr>
             <td class="labkey-form-label">Source materials:</td>
             <td>
-                <table>
+                <table class="labkey-data-region-legacy labkey-show-borders">
                     <tr>
-                        <td valign="bottom" class="labkey-form-label"><strong>Name</strong></td>
-                        <td valign="bottom" class="labkey-form-label"><strong>Role</strong><%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
+                        <td class="labkey-column-header">Name</td>
+                        <td class="labkey-column-header">Role<%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
                     </tr>
                 <%
                 int roleIndex = 0;
                 for (ExpMaterial material : bean.getSourceMaterials().keySet())
                 { %>
-                    <tr>
+                    <tr class="<%=h(roleIndex % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
                         <td><input type="hidden" name="rowIds" value="<%= material.getRowId()%>" /><%= h(material.getName())%></td>
                         <td><select name="inputRole<%= roleIndex %>" onchange="document.getElementById('customRole<%= roleIndex %>').disabled = this.value != '<%= ExperimentController.DeriveSamplesChooseTargetBean.CUSTOM_ROLE %>';">
                             <option value=""></option>

@@ -89,9 +89,7 @@ public abstract class AbstractDomainKind extends DomainKind
         if (domainURI == null)
             return null;
 
-        ActionURL ret = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI, allowAttachmentProperties(), allowFileLinkProperties(), false);
-        ret.addParameter("createOrEdit", true);
-        return ret;
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(container, domainURI, true);
     }
 
     // Override to customize the nav trail on shared pages like edit domain
@@ -281,7 +279,7 @@ public abstract class AbstractDomainKind extends DomainKind
     @Override
     public boolean exceedsMaxLength(Domain domain, DomainProperty prop)
     {
-        if (prop.getPropertyDescriptor().isStringType())
+        if (!prop.getPropertyDescriptor().isStringType())
             return false;
 
         String schema = getStorageSchemaName();

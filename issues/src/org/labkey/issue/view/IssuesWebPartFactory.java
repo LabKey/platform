@@ -78,7 +78,7 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
     @Nullable
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
-        if (IssueManager.getDefaultIssueListDefName(context.getContainer()) != null)
+        if (!IssueManager.getIssueListDefs(context.getContainer()).isEmpty())
             return new IssuesListView.IssuesListConfig(webPart);
         else
             return null;

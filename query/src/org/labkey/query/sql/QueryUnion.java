@@ -238,7 +238,7 @@ public class QueryUnion extends QueryRelation
 
                         else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(columnTypes.get(i)) &&
                                 !type.equals(columnTypes.get(i)) && JdbcType.OTHER.equals(JdbcType.promote(type, columnTypes.get(i))))
-                            Query.parseError(_query.getParseErrors(), _query._name + ": Mismatched types in UNION (" +
+                            Query.parseError(_query.getParseErrors(), _query._debugName + ": Mismatched types in UNION (" +
                                     type.name() + ", " + columnTypes.get(i).name() + ") for column position " + i, _qunion);
                         i += 1;
                     }

@@ -1357,7 +1357,10 @@ public class FileContentController extends SpringActionController
                         .forEach(columns::add);
             }
 
-            new TableSelector(tableInfo, columns, null, null).forEachMap(data ->
+            // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
+            final int MAX_ROW_COUNT = 10000;
+
+            new TableSelector(tableInfo, columns, null, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");
                 if (null != encodedUrl)

@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
@@ -1833,8 +1834,12 @@ public class QueryController extends SpringActionController
             Map<String, String> props = new HashMap<>();
             props.put("schemaName", form.getSchemaName());
             props.put("queryName", form.getQueryName());
-            props.put(MetadataEditor.EDIT_SOURCE_URL, _form.getQueryDef().urlFor(QueryAction.sourceQuery, getContainer()).toString() + "#metadata");
-            props.put(MetadataEditor.VIEW_DATA_URL, _form.getQueryDef().urlFor(QueryAction.executeQuery, getContainer()).toString());
+            var sourceQuery = _query.urlFor(QueryAction.sourceQuery, getContainer());
+            if (null != sourceQuery)
+                props.put(MetadataEditor.EDIT_SOURCE_URL, sourceQuery.getLocalURIString() + "#metadata");
+            var executeQuery = _query.urlFor(QueryAction.executeQuery, getContainer());
+            if (null != executeQuery)
+                props.put(MetadataEditor.VIEW_DATA_URL, executeQuery.getLocalURIString());
 
             return new GWTView(MetadataEditor.class, props);
         }
@@ -1855,7 +1860,11 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new SchemaAction(_form).appendNavTrail(root);
-            root.addChild("Edit Metadata: " + _form.getQueryName(), _query.urlFor(QueryAction.metadataQuery));
+            var metadataQuery = _query.urlFor(QueryAction.metadataQuery);
+            if (null != metadataQuery)
+                root.addChild("Edit Metadata: " + _form.getQueryName(), metadataQuery);
+            else
+                root.addChild("Edit Metadata: " + _form.getQueryName());
             return root;
         }
     }
@@ -2605,6 +2614,7 @@ public class QueryController extends SpringActionController
         private boolean _includeStyle = false;
         private boolean _includeDisplayValues = false;
         private boolean _minimalColumns = true;
+        private boolean _includeMetadata = true;
 
         public Integer getStart()
         {
@@ -2686,6 +2696,16 @@ public class QueryController extends SpringActionController
             _minimalColumns = minimalColumns;
         }
 
+        public boolean isIncludeMetadata()
+        {
+            return _includeMetadata;
+        }
+
+        public void setIncludeMetadata(boolean includeMetadata)
+        {
+            _includeMetadata = includeMetadata;
+        }
+
         @Override
         protected QuerySettings createQuerySettings(UserSchema schema)
         {
@@ -2747,7 +2767,7 @@ public class QueryController extends SpringActionController
             if (getRequestedApiVersion() >= 13.2)
             {
                 ReportingApiQueryResponse fancyResponse = new ReportingApiQueryResponse(view, isEditable, true, view.getQueryDef().getName(), form.getQuerySettings().getOffset(), null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(), form.isIncludeMetadata());
                 fancyResponse.arrayMultiValueColumns(arrayMultiValueColumns);
                 fancyResponse.includeFormattedValue(includeFormattedValue);
                 response = fancyResponse;
@@ -2757,7 +2777,7 @@ public class QueryController extends SpringActionController
             {
                 response = new ExtendedApiQueryResponse(view, isEditable, true,
                         form.getSchemaName(), form.getQueryName(), form.getQuerySettings().getOffset(), null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(), form.isIncludeMetadata());
             }
             else
             {
@@ -2772,7 +2792,9 @@ public class QueryController extends SpringActionController
             // requested minimal columns, as we now do for ExtJS stores
             if (form.isMinimalColumns())
             {
-                response.setColumnFilter(form.getQuerySettings().getFieldKeys());
+                // Be sure to use the settings from the view, as it may have swapped it out with a customized version.
+                // See issue 38747.
+                response.setColumnFilter(view.getSettings().getFieldKeys());
             }
 
             return response;
@@ -2958,25 +2980,33 @@ public class QueryController extends SpringActionController
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
             boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
+            ApiQueryResponse response;
+
             // 13.2 introduced the getData API action, a condensed response wire format, and a js wrapper to consume the wire format. Support this as an option for legacy APIs.
             if (getRequestedApiVersion() >= 13.2)
             {
-                ReportingApiQueryResponse response = new ReportingApiQueryResponse(view, isEditable, false, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
-                response.includeStyle(form.isIncludeStyle());
-                response.arrayMultiValueColumns(arrayMultiValueColumns);
-                response.includeFormattedValue(includeFormattedValue);
-                return response;
+                ReportingApiQueryResponse fancyResponse = new ReportingApiQueryResponse(view, isEditable, false, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(), form.isIncludeMetadata());
+                fancyResponse.arrayMultiValueColumns(arrayMultiValueColumns);
+                fancyResponse.includeFormattedValue(includeFormattedValue);
+                response = fancyResponse;
             }
-            if (getRequestedApiVersion() >= 9.1)
-                return new ExtendedApiQueryResponse(view, isEditable,
+            else if (getRequestedApiVersion() >= 9.1)
+            {
+                response = new ExtendedApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
-                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn());
+                        metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(), form.isIncludeMetadata());
+            }
             else
-                return new ApiQueryResponse(view, isEditable,
+            {
+                response = new ApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
                         form.isIncludeDisplayValues());
+            }
+            response.includeStyle(form.isIncludeStyle());
+
+            return response;
         }
     }
 
@@ -6451,6 +6481,49 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            JSONObject ret = new JSONObject();
+
+            QueryService.QueryAnalysisService analysisService = QueryService.get().getQueryAnalysisService();
+            if (analysisService != null)
+            {
+                DefaultSchema start = DefaultSchema.get(getUser(), getContainer());
+                var deps = new HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject>();
+
+                analysisService.analyzeFolder(start, deps);
+                ret.put("success", true);
+
+                JSONObject objects = new JSONObject();
+                for (var from : deps.keySet())
+                {
+                    objects.put(from.getKey(), from.toJSON());
+                    for (var to : deps.get(from))
+                        objects.put(to.getKey(), to.toJSON());
+                }
+                ret.put("objects", objects);
+
+                JSONArray dependants = new JSONArray();
+                for (var from : deps.keySet())
+                {
+                    JSONArray toList = new JSONArray();
+                    for (var to : deps.get(from))
+                        dependants.put(new String[] {from.getKey(), to.getKey()});
+                }
+                ret.put("graph", dependants);
+            }
+            else
+            {
+                ret.put("success", false);
+            }
+            return ret;
         }
     }
 
