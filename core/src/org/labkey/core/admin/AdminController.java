@@ -1187,6 +1187,7 @@ public class AdminController extends SpringActionController
         {
             return _returnUrl;
         }
+
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
@@ -3019,6 +3020,7 @@ public class AdminController extends SpringActionController
             // If the test is invoking system maintenance then return the URL instead
             return form.isTest() ? null : _url;
         }
+
     }
 
 
@@ -6075,6 +6077,7 @@ public class AdminController extends SpringActionController
         {
             return new AdminUrlsImpl().getCustomizeEmailURL(getContainer(), form.getTemplateClass(), form.getReturnURLHelper());
         }
+
     }
 
 
@@ -6609,7 +6612,7 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Confirm Project Move");
         }
     }
 
@@ -8138,6 +8141,9 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(ModuleForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Module");
+
             ModuleContext ctx = form.getModuleContext();
             List<String> schemas = ctx.getSchemaList();
             String description = "\"" + ctx.getName() + "\" module";
@@ -9168,7 +9174,7 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root;
+            return root.addChild("Spider Initialization");
         }
 
         @Override

@@ -342,7 +342,7 @@ public class AuthenticationManager
         @Override
         public final NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Validate Authentication");
         }
     }
 

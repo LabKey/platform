@@ -207,13 +207,7 @@ public class DesignerController extends SpringActionController
     {
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-            if (null != getCommand().getPanel())
-                root.addChild("Study Protocol Registration");
-            } catch(Exception e)
-            {}
-            return root;
+            return root.addChild("Study Protocol Registration");
         }
 
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception

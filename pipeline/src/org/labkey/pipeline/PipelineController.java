@@ -726,6 +726,7 @@ public class PipelineController extends SpringActionController
         {
             return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
+
     }
 
     public static class PermissionForm extends ReturnUrlForm
