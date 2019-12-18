@@ -94,6 +94,7 @@ public class TestSecondaryController extends SpringActionController
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
+            getPageConfig().setIncludeSearch(false);
 
             return new JspView<>("/org/labkey/devtools/authentication/testSecondary.jsp", email, errors);
         }

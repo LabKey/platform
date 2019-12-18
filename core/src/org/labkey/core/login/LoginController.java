@@ -360,7 +360,7 @@ public class LoginController extends SpringActionController
 
         if (null == form.getEmail() || null == form.getPassword())
         {
-            errors.reject(ERROR_MSG, "Please sign in using your email address and password");
+            errors.reject(ERROR_MSG, "Please sign in using your email address and password.");
         }
         else
         {
@@ -425,11 +425,12 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
             if (!AuthenticationManager.isRegistrationEnabled())
-                throw new NotFoundException("Registration is not enabled");
+                throw new NotFoundException("Registration is not enabled.");
             PageConfig config = getPageConfig();
             config.setTitle("Register");
             config.setTemplate(PageConfig.Template.Dialog);
             config.setIncludeLoginLink(false);
+            config.setIncludeSearch(false);
 
             JspView jsp = new JspView("/org/labkey/core/login/register.jsp");
 
@@ -457,7 +458,7 @@ public class LoginController extends SpringActionController
         {
             if (StringUtils.isEmpty(form.getEmail()) || StringUtils.isEmpty(form.getEmailConfirmation()))
             {
-                errors.reject(ERROR_REQUIRED, "You must verify your email address");
+                errors.reject(ERROR_REQUIRED, "You must verify your email address.");
             }
             else
             {
@@ -465,10 +466,10 @@ public class LoginController extends SpringActionController
                 {
                     ValidEmail email = new ValidEmail(form.getEmail());
                     if (!form.getEmail().equals(form.getEmailConfirmation()))
-                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match.  Please verify your email addresses below.");
+                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match. Please verify your email addresses below.");
                     else if (UserManager.userExists(email))
                     {
-                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account.  If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>.  Otherwise, please contact your administrator.");
+                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account. If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>. Otherwise, please contact your administrator.");
                     }
                 }
                 catch (InvalidEmailException e)
@@ -481,14 +482,14 @@ public class LoginController extends SpringActionController
             if (expectedKatpcha == null)
             {
                 logger.error("Captcha not initialized for self-registration attempt");
-                errors.reject(ERROR_MSG,"Captcha not initialized, please retry");
+                errors.reject(ERROR_MSG,"Captcha not initialized, please retry.");
             }
             else
             {
                 if (!expectedKatpcha.equalsIgnoreCase(StringUtils.trimToNull(form.getKaptchaText())))
                 {
                     logger.warn("Captcha text did not match for self-registration attempt for " + form.getEmail());
-                    errors.reject(ERROR_MSG,"Verification text does not match, please retry");
+                    errors.reject(ERROR_MSG,"Verification text does not match, please retry.");
                 }
             }
         }
@@ -501,7 +502,7 @@ public class LoginController extends SpringActionController
             if (!AuthenticationManager.isRegistrationEnabled())
             {
                 _log.warn("Attempt to register user using email " + form.getEmail() + " with registration not enabled");
-                throw new NotFoundException("Registration is not enabled");
+                throw new NotFoundException("Registration is not enabled.");
             }
 
             ValidEmail email = new ValidEmail(form.getEmail());
@@ -513,7 +514,7 @@ public class LoginController extends SpringActionController
             }
             catch (ConfigurationException e)
             {
-                errors.reject(ERROR_MSG, "There was a problem sending the registration email.  Please contact your administrator.");
+                errors.reject(ERROR_MSG, "There was a problem sending the registration email. Please contact your administrator.");
                 _log.error("Error adding self registered user", e);
             }
             response.put("success", !errors.hasErrors());
@@ -838,7 +839,7 @@ public class LoginController extends SpringActionController
     {
         if (null == rawEmail)
         {
-            return Pair.of(false, "You must enter an email address");
+            return Pair.of(false, "You must enter an email address.");
         }
 
         ValidEmail email;
@@ -1103,6 +1104,7 @@ public class LoginController extends SpringActionController
 
         page.setTemplate(PageConfig.Template.Dialog);
         page.setIncludeLoginLink(false);
+        page.setIncludeSearch(false);
         page.setTitle("Sign In");
 
         WebPartView view = getLoginView(errors);
@@ -1207,6 +1209,7 @@ public class LoginController extends SpringActionController
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle("Terms Of Use");
             page.setIncludeLoginLink(false);
+            page.setIncludeSearch(false);
 
             return view;
         }
@@ -1593,13 +1596,18 @@ public class LoginController extends SpringActionController
             NamedObjectList nonPasswordInputs = getNonPasswordInputs(form);
             NamedObjectList passwordInputs = getPasswordInputs(form);
             String buttonText = getButtonText();
-            SetPasswordBean bean = new SetPasswordBean(form, getEmailForForm(form), _unrecoverableError, getMessage(form), nonPasswordInputs, passwordInputs, getClass(), isCancellable(form), buttonText);
+            SetPasswordBean bean = new SetPasswordBean(
+                    form, getEmailForForm(form), _unrecoverableError, getMessage(form),
+                    nonPasswordInputs, passwordInputs, getClass(), isCancellable(form),
+                    buttonText, getTitle()
+            );
             HttpView view = new JspView<>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle(getTitle());
             page.setIncludeLoginLink(false);
+            page.setIncludeSearch(false);
 
             // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnURL = form.getReturnURLHelper();
@@ -1743,7 +1751,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return "Your email address has been verified! Create an account password below.";
+            return "Your email address (" + form.getEmail() + ") has been verified! Create an account password below.";
         }
 
         @Override
@@ -1868,7 +1876,7 @@ public class LoginController extends SpringActionController
         protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("Email Address", "email", form.getEmail()));
+            list.put(new SimpleNamedObject("Email", "email", form.getEmail()));
 
             return list;
         }
@@ -1878,7 +1886,7 @@ public class LoginController extends SpringActionController
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Password", PASSWORD1_TEXT_FIELD_NAME));
-            list.put(new SimpleNamedObject("Retype Password", PASSWORD2_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Confirm Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -2008,9 +2016,15 @@ public class LoginController extends SpringActionController
         }
 
         @Override
+        protected String getTitle()
+        {
+            return "Change Password";
+        }
+
+        @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return null != form.getMessage() ? form.getMessage() : "Choose a new password.";
+            return null != form.getMessage() ? form.getMessage() : null;
         }
 
         @Override
@@ -2026,7 +2040,7 @@ public class LoginController extends SpringActionController
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Old Password", "oldPassword"));
             list.put(new SimpleNamedObject("New Password", PASSWORD1_TEXT_FIELD_NAME));
-            list.put(new SimpleNamedObject("Retype New Password", PASSWORD2_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Confirm New Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -2091,8 +2105,13 @@ public class LoginController extends SpringActionController
         public final Class action;
         public final boolean cancellable;
         public final String buttonText;
+        public final String title;
 
-        private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError, String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs, Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable, String buttonText)
+        // TODO switch to builder pattern
+        private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError,
+                                String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
+                                Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable,
+                                String buttonText, String title)
         {
             this.form = form;
             this.email = emailForForm;
@@ -2103,6 +2122,7 @@ public class LoginController extends SpringActionController
             this.action = clazz;
             this.cancellable = cancellable;
             this.buttonText = buttonText;
+            this.title = title;
         }
     }
 
@@ -2185,6 +2205,9 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTitle("Reset Password");
+            getPageConfig().setIncludeLoginLink(false);
+            getPageConfig().setIncludeSearch(false);
             getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
             getPageConfig().setNoIndex();
 
