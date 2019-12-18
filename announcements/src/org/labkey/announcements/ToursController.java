@@ -75,7 +75,7 @@ public class ToursController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return null;
+            return root.addChild("Tours");
         }
     }
 

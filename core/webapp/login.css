@@ -46,6 +46,10 @@
     margin-top: 15px;
 }
 
+.auth-form label {
+    font-weight: bold;
+}
+
 .input-block {
     display: block;
     width: 100%;
@@ -74,4 +78,10 @@ ul.sso-list > li {
 .labkey-button {
     width: 75px;
     margin-right: 25px;
+}
+
+.forgot-password-link {
+    text-align: right;
+    width: 284px;
+    display: inline-block;
 }

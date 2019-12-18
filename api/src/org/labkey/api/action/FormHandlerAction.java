@@ -45,6 +45,6 @@ public abstract class FormHandlerAction<FORM> extends FormViewAction<FORM>
 
     public final NavTree appendNavTrail(NavTree root)
     {
-        return root;
+        return null == getPageConfig().getTitle() ? root.addChild("Error") : root;
     }
 }
