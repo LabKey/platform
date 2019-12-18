@@ -1463,8 +1463,7 @@ public class AuthenticationManager
 
                 if (null != logo)
                 {
-                    return "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image" +
-                            "?configuration=" + _configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\"" +
+                    return "<img src=\"" + generateLogoUrl(_configuration, logoType) + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\"" +
                             " alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
                 }
             }
@@ -1477,6 +1476,11 @@ public class AuthenticationManager
         }
     }
 
+    // In most cases, callers will want to add a "revision" parameter with the look & feel revision value to defeat browser caching
+    public static String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
+    {
+        return AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image?configuration=" + configuration.getRowId();
+    }
 
     public static class TestCase extends Assert
     {

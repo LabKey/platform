@@ -2580,23 +2580,29 @@ public class LoginController extends SpringActionController
                 sh.put("description", configuration.getDescription());
                 sh.put("details", configuration.getDetails());
                 sh.put("enabled", configuration.isEnabled());
-                sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // change to configureUrl -- TODO: Remove
+                sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // TODO: Remove once settings modals are used universally
                 sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
                 sh.put("id", "id" + configuration.getRowId());
                 sh.put("configuration", configuration.getRowId());
                 sh.putAll(configuration.getCustomProperties());
 
                 if (configuration instanceof SSOAuthenticationConfiguration<?>)
+                {
                     ssoConfigurations.add(sh);
+                    sh.put("headerLogoUrl", AuthenticationManager.generateLogoUrl((SSOAuthenticationConfiguration<?>)configuration, AuthLogoType.HEADER));
+                    sh.put("loginLogoUrl", AuthenticationManager.generateLogoUrl((SSOAuthenticationConfiguration<?>)configuration, AuthLogoType.LOGIN_PAGE));
+                }
                 else if (configuration instanceof LoginFormAuthenticationConfiguration<?>)
+                {
                     formConfigurations.add(sh);
+                }
             }
 
-            Map<String, Boolean> globalAuthSettings = new HashMap<>();
+            Map<String, Object> globalAuthSettings = new HashMap<>();
             globalAuthSettings.put("SelfRegistration", AuthenticationManager.isRegistrationEnabled());
             globalAuthSettings.put("SelfServiceEmailChanges", AuthenticationManager.isSelfServiceEmailChangesEnabled());
-            globalAuthSettings.put("AutoCreateAccounts", AuthenticationManager.isExternalConfigurationEnabled());
-            // TODO: I think we need to add a setting for AuthenticationManager.isAutoCreateAccountsEnabled() as well
+            globalAuthSettings.put("AutoCreateAccounts", AuthenticationManager.isAutoCreateAccountsEnabled());
+            globalAuthSettings.put("Revision", AppProps.getInstance().getLookAndFeelRevision());
 
             // Primary providers
             Map<String, Object> primary = AuthenticationManager.getAllPrimaryProviders().stream()
