@@ -2579,12 +2579,11 @@ public class LoginController extends SpringActionController
                 String name = configuration.getAuthenticationProvider().getName();
                 Map<String, Object> sh = new HashMap<>();
 
-                sh.put("name", name);  // TODO: "provider"?
+                sh.put("provider", name);
                 sh.put("description", configuration.getDescription());
                 sh.put("details", configuration.getDetails());
                 sh.put("enabled", configuration.isEnabled());
                 sh.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // TODO: Remove once settings modals are used universally
-                sh.put("deleteUrl", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()));
                 sh.put("id", "id" + configuration.getRowId());
                 sh.put("configuration", configuration.getRowId());
                 sh.putAll(configuration.getCustomProperties());
