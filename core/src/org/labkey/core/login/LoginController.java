@@ -109,7 +109,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
+import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
+import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
@@ -2599,9 +2602,9 @@ public class LoginController extends SpringActionController
             }
 
             Map<String, Object> globalAuthSettings = new HashMap<>();
-            globalAuthSettings.put("SelfRegistration", AuthenticationManager.isRegistrationEnabled());
-            globalAuthSettings.put("SelfServiceEmailChanges", AuthenticationManager.isSelfServiceEmailChangesEnabled());
-            globalAuthSettings.put("AutoCreateAccounts", AuthenticationManager.isAutoCreateAccountsEnabled());
+            globalAuthSettings.put(SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled());
+            globalAuthSettings.put(SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled());
+            globalAuthSettings.put(AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled());
             globalAuthSettings.put("Revision", AppProps.getInstance().getLookAndFeelRevision());
 
             // Primary providers

@@ -30,14 +30,24 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
     }
 
     @Override
-    public void validateForm(F form, Errors errors)
+    public final void validateForm(F form, Errors errors)
     {
         initializeConfiguration(form);
         if (StringUtils.isBlank(form.getDescription()))
         {
             errors.reject(ERROR_MSG, "Invalid description: description cannot be blank");
         }
+        validate(form, errors);
     }
+
+    @Override
+    protected String getCommandClassMethodName()
+    {
+        return "validate";
+    }
+
+    // Force subclasses to override -- this method determines the form type
+    public abstract void validate(F form, Errors errors);
 
     @Override
     public Object execute(F form, BindException errors) throws Exception
