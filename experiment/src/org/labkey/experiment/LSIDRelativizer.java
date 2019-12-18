@@ -16,6 +16,9 @@
 
 package org.labkey.experiment;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.exp.Lsid;
@@ -183,8 +186,12 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
     {
         private final LSIDRelativizer _relativizer;
 
-        private Map<String, String> _originalToRelative = new HashMap<>();
-        private Map<String, String> _relativeToOriginal = new HashMap<>();
+        // Use a bi-directional map to make it efficient to check if a value exists in the map
+        // (not just if a key exists). See issue 39260
+        private BiMap<String, String> _originalToRelative = HashBiMap.create();
+        // Also keep track of the next suffix to append for a given LSID prefix so we don't have to run through the full
+        // sequence of values we already scanned the last time. See issue 39260
+        private Map<String, Integer> _nextExportVersion = new HashMap<>();
 
         private int _nextDataId = 1;
         private int _nextSampleId = 1;
@@ -241,46 +248,35 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
             assert !_originalToRelative.containsKey(originalLSID);
             // Maintain maps in both directions, as we need efficient lookups for both types of LSIDs. See issue 39260
             _originalToRelative.put(originalLSID, relativizedLSID);
-            _relativeToOriginal.put(relativizedLSID, originalLSID);
         }
 
         private String uniquifyRelativizedLSID(String prefix, String objectId, String version)
         {
-            String candidate;
-            int newExportVersion = 0;
-            do
-            {
-                candidate = getNewLSIDCandidate(prefix, objectId, version, newExportVersion);
-                newExportVersion++;
-            } while(_relativeToOriginal.containsKey(candidate));
+            version = StringUtils.trimToNull(version);
 
-            return candidate;
-        }
-
-        /** @param exportVersion if non-zero append to end of LSID to help find a unique value to claim */
-        private String getNewLSIDCandidate(String prefix, String objectId, String version, int exportVersion)
-        {
             StringBuilder sb = new StringBuilder(prefix);
             sb.append(":");
             sb.append(Lsid.encodePart(objectId).replace("%23", "#"));
-            if (version != null && !(version.length() == 0))
+            if (version != null)
             {
                 sb.append(":");
                 sb.append(Lsid.encodePart(version));
-
-                if (exportVersion != 0)
-                {
-                    sb.append("-Export");
-                    sb.append(exportVersion);
-                }
             }
-            else if (exportVersion != 0)
+            String lsidWithoutUniquifier = sb.toString();
+
+            int exportVersion = _nextExportVersion.getOrDefault(lsidWithoutUniquifier, 0);
+            String candidate;
+            do
             {
-                sb.append(":Export");
-                sb.append(exportVersion);
+                candidate = exportVersion == 0 ? lsidWithoutUniquifier :
+                        lsidWithoutUniquifier + (version == null ? ":" : "-") + "Export" + exportVersion;
+                exportVersion++;
             }
+            while (_originalToRelative.containsValue(candidate));
 
-            return sb.toString();
+            _nextExportVersion.put(lsidWithoutUniquifier, exportVersion);
+
+            return candidate;
         }
 
         public int getNextDataId()
@@ -306,6 +302,20 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testUniquificationPerf()
+        {
+            long startTime = System.currentTimeMillis();
+            RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
+            for (int i = 0; i < 1_000_000; i++)
+            {
+                set.relativize("urn:lsid:localhost:Protocol.Folder-" + i + ":MS2.PreSearch");
+            }
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            // This takes ~6 seconds on a dev machine as of test creation in December 2019
+            assertTrue("One minute timeout exceeded for generating LSIDs, time elapsed in milliseconds : " + elapsedTime, elapsedTime < 60_000);
+        }
+
         @Test
         public void testOverlappingLSIDs()
         {
