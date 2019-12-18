@@ -103,7 +103,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
     @Override
     public NavTree appendNavTrail(NavTree root)
     {
-        return null;
+        return root.addChild("Delete Issue Definition");
     }
 
     public static class DeleteIssueListForm

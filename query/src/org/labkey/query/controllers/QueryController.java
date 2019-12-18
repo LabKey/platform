@@ -1191,6 +1191,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(SourceForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Query");
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
 
             if (null == _queryDef)
@@ -2354,6 +2356,7 @@ public class QueryController extends SpringActionController
         {
             return form.getReturnActionURL();
         }
+
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -2465,6 +2468,9 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Insert Row");
+
             InsertView view = new InsertView(tableForm, errors);
             view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
             return view;
@@ -4110,6 +4116,13 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getConfirmView(F form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Schema");
+
+            if (null == form.getBean().getUserSchemaName())
+            {
+                throw new NotFoundException("Schema not specified");
+            }
             form.refreshFromDb();
             return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
         }

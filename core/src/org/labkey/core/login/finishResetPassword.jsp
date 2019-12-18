@@ -18,10 +18,27 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("login.css");
+    }
+%>
 <%
     String message = ((HttpView<String>) HttpView.currentView()).getModelBean();
     ActionURL homeURL = AppProps.getInstance().getHomePageActionURL();
 %>
-<%=message%><br><br>
-<%= button("Home").href(homeURL) %>
+<div class="auth-form">
+    <div class="auth-header">Reset Password</div>
+    <div class="auth-form-body">
+        <p><%=h(message)%></p>
+        <div class="auth-item">
+            <%= button("Home").primary(true).href(homeURL) %>
+        </div>
+    </div>
+</div>
+
+
