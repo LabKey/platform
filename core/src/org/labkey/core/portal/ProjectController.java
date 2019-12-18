@@ -381,7 +381,7 @@ public class ProjectController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return (null != getPageConfig().getTitle() ? root.addChild(getPageConfig().getTitle()) : root.addChild("Project Main Page"));
+            return (root.hasChildren() ? root : root.addChild("Project Main Page"));
         }
     }
 
