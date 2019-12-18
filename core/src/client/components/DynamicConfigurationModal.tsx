@@ -75,8 +75,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             serverUrl: this.state.serverUrl,
             autoRedirect: this.state.autoRedirect,
             configuration: this.props.configuration,
-            description: this.props.description,
-            enabled: this.props.enabled,
+            description: this.state.description,
+            enabled: this.state.toggleValue
         };
 
         Ajax.request({
@@ -95,8 +95,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     onToggle = () => {
-        this.setState({ toggleValue: !this.state.toggleValue });
-        console.log(this.state.toggleValue);
+        this.setState({ toggleValue: !this.state.toggleValue }, () => console.log(this.state.toggleValue));
     };
 
     handleChange = (event) => {
@@ -187,9 +186,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         Description:
 
                         <FormControl
-                            name="descriptionField"
+                            name="description"
                             type="text"
-                            value={description}
+                            value={this.state.description}
                             onChange={(e) => this.handleChange(e)}
                             placeholder="Enter text"
                             style ={{borderRadius: "5px", float: "right", width: "300px"}}
