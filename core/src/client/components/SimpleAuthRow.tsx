@@ -43,14 +43,14 @@ export default class SimpleAuthRow extends PureComponent<any, State> {
                             {this.props.handle}
                         </div>
 
-                        <div className="domain-row-main row-flex">
+                        <div className="domain-row-main">
 
                             <Col xs={9} className='domain-row-base-fields'>
                                 <Col xs={4} className="down">
                                     {this.props.description}
                                 </Col>
                                 <Col xs={4} className="down">
-                                    {this.props.url}
+                                    {this.props.details}
                                 </Col>
                                 <Col xs={1} className="down">
                                     {this.props.name}

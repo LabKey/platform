@@ -6,31 +6,110 @@ import FACheckBox from "./FACheckBox";
 
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import { LabelHelpTip } from '@labkey/components';
+import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
+import "@labkey/components/dist/components.css"
+import {ActionURL, Ajax} from "@labkey/api";
+
+const casFields =
+    <div >
+        <div className="">
+
+            <span className="fileAttachmentLabel">
+                Page Header Logo
+            </span>
+
+            <div className="fileAttachmentComponent">
+                <FileAttachmentForm
+                    showLabel={false}
+                    allowMultiple={false}
+                    allowDirectories={false}
+                    acceptedFormats={".jpeg,.png,.gif,.tif"}
+                    showAcceptedFormats={false}
+                />
+            </div>
+        </div>
+
+        <br/>
+        <div className="">
+            <div className="fileAttachmentLabel">
+                Login Page Logo
+            </div>
+
+            <div className="fileAttachmentComponent">
+                <FileAttachmentForm
+                    showLabel={false}
+                    allowMultiple={false}
+                    allowDirectories={false}
+                    acceptedFormats={".jpeg,.png,.gif,.tif"}
+                    showAcceptedFormats={false}
+                />
+            </div>
+        </div>
+    </div>;
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
-            modalTitle: `Configure ${this.props.authName}`,
-            description: `${this.props.authName} Status`,
             toggleValue: this.props.enabled,
-            descriptionField: this.props.description,
         };
     }
 
     componentDidMount = () => {
         let fieldValues = {};
-        // this.state.fields.forEach((field) => {
-        //         fieldValues[field.name] = field.defaultValue
-        //     }
-        // );
+        this.props.type.settingsFields.forEach((field) => {
+                fieldValues[field.name] = (field.name in this.props ? this.props[field.name] : field.defaultValue);
+            }
+        );
 
         this.setState(() => ({
             ...fieldValues
         })
-            ,() => {console.log(this.state)} //for testing
+            ,() => {console.log("Props ", this.props, "\n", "State ", this.state)} //for testing
         );
+    };
+
+    saveEditedModal = (controller) => {
+        const formObjTest = {
+            _serverUrl: "https://www.labkey.org/cas",
+            _autoRedirect: false,
+            _deletedLogos: null,
+            _configuration: 18,
+            _description: "CAS Configuration 2",
+            _enabled: true,
+            _returnUrl: "",
+            _cancelUrl: "",
+            _successUrl: "",
+        };
+
+        const formObjTest2 = {
+            serverUrl: "https://www.labkey.org/cas",
+            autoRedirect: false,
+            deletedLogos: null,
+            configuration: 18,
+            description: "CAS Configuration 2",
+            enabled: true,
+            returnUrl: "",
+            cancelUrl: "",
+            successUrl: "",
+        };
+
+        const formJSONTest = JSON.stringify(formObjTest);
+        console.log("our json: " + formJSONTest);
+
+        Ajax.request({
+            url: ActionURL.buildURL("CasClient", "SaveConfiguration"),
+            method : 'POST',
+            params: {configuration: 18},
+            scope: this,
+            jsonData: formJSONTest,
+            failure: function(error){
+                console.log("fail: ", error.response);
+            },
+            success: function(result){
+                console.log("success", result)
+            }
+        })
     };
 
     onToggle = () => {
@@ -48,7 +127,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     checkCheckBox = (name) => {
-
         const oldState = this.state[name];
         this.setState(() => ({
             [name]: !oldState
@@ -57,7 +135,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
 
         console.log(oldState, name);
-
     };
 
     dynamicallyCreateFields = (fields) => {
@@ -91,13 +168,15 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
     render() {
         // let type = this.props.type.settingsFields;
+        // (this.props.type && console.log(this.props.type.settingsFields));
+        // console.log(this.props);
+        const {description} = this.props;
 
-        console.log(this.props);
         return (
-            <Modal show={true} onHide={() => {}}>
+            <Modal show={true} onHide={() => {}} >
                 <Modal.Header>
                     <Modal.Title>
-                        {this.state.modalTitle}
+                        {"Configure " + description}
                         <FontAwesomeIcon
                             size='sm'
                             icon={faTimes}
@@ -108,7 +187,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 </Modal.Header>
 
                 <Modal.Body>
-                    <span className="boldText"> {this.state.description} </span>
+                    <span className="boldText"> Configuration Status </span>
                     <ReactBootstrapToggle
                         onClick={this.onToggle}
                         on="Enabled"
@@ -128,7 +207,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         <FormControl
                             name="descriptionField"
                             type="text"
-                            value={this.state.descriptionField}
+                            value={description}
                             onChange={(e) => this.handleChange(e)}
                             placeholder="Enter text"
                             style ={{borderRadius: "5px", float: "right", width: "300px"}}
@@ -136,13 +215,16 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     </div>
 
 
-                    {/*{this.props.type.settingsFields && this.dynamicallyCreateFields(this.props.type.settingsFields)}*/}
+                    {this.props.type && this.dynamicallyCreateFields(this.props.type.settingsFields)}
 
                     <br/>
+
+                    {this.props.name == "CAS" && casFields}
+
                     <hr/>
                     <div style={{float: "right"}}>
                         <a href={""} style={{marginRight: "10px"}}> More about authentication </a>
-                        <Button className={'labkey-button primary'} onClick={()=>{}}>Apply</Button>
+                        <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal("eventuallyControllerName")}>Apply</Button>
                     </div>
 
                     <Button

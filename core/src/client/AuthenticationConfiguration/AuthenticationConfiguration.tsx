@@ -188,24 +188,20 @@ export class App extends PureComponent<Props, State> {
 
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
+        const {globalAuthSettings, ...restProps} = this.state;
 
         return(
             <div style={{minWidth:"1100px"}}>
                 {this.state.globalAuthSettings &&
                     <GlobalAuthSettings
-                        {...this.state.globalAuthSettings}
+                        {...globalAuthSettings}
                         checkDirty = {this.checkIfDirty}
                         canEdit={this.state.canEdit}
                     />
                 }
 
                 <AuthConfigMasterPanel
-                    singleSignOnAuth={this.state.singleSignOnAuth}
-                    loginFormAuth={this.state.loginFormAuth}
-                    secondary={this.state.secondaryAuth}
-                    primary={this.state.primary}
-                    canEdit={this.state.canEdit}
-                    // canEdit={false}  // for testing
+                    {...restProps}
                     onDragEnd={this.onDragEnd}
                     handlePrimaryToggle={this.handlePrimaryToggle}
                     deleteAction={this.deleteAction}

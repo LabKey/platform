@@ -15,7 +15,6 @@ interface Props {
     id: string
     rowId: string
     authName: string
-    url: string
     enabled: boolean
     description: string
     handlePrimaryToggle: any
@@ -47,7 +46,7 @@ export default class EditableAuthRow extends PureComponent<any, State> {
     };
 
     onDeleteClicked = () => {
-        this.props.deleteAction(this.props.rowId, this.props.stateSection);
+        this.props.deleteAction(this.props.id, this.props.stateSection);
     };
 
     render(){
@@ -86,8 +85,8 @@ export default class EditableAuthRow extends PureComponent<any, State> {
                 <SimpleAuthRow
                     handle = {this.props.noHandleIcon ? null : <LightupHandle highlight={this.state.highlight}/>}
                     description = {this.props.description}
-                    url = {this.props.url || "http://labkey/login-configure.view?"}
-                    name = {this.props.authName}
+                    details = {this.props.details}
+                    name = {this.props.name}
                     enabled = {enabled}
                     delete = {deleteIcon}
                     editIcon = {editIcon}

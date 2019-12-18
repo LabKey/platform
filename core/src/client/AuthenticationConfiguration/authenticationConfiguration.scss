@@ -46,9 +46,17 @@
   width: 100%;
 }
 
-.domain-field-row .row {
-  margin-right: 0;
-  margin-left: 0;
+//.domain-field-row .row {
+//  margin-right: 0;
+//  margin-left: 0;
+//}
+
+.domain-field-row {
+  //border: 1px solid;
+  border-radius: 2px;
+  background-color: white;
+  outline: none;
+  margin: 0px;
 }
 
 .domain-row-base-fields {
@@ -97,6 +105,23 @@
 
 .boldText {
   font-weight: bold;
+}
+
+.fileAttachmentLabel {
+  width: 130px;
+  //background-color: blue;
+}
+
+.fileAttachmentRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.fileAttachmentComponent {
+  width: 300px;
+  margin-left: auto;
+  margin-right: 0;
 }
 
 // oh, my god, the toggle
