@@ -2623,25 +2623,33 @@ public class LoginController extends SpringActionController
             Map<String, Object> primary = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
                 .filter(ap->!ap.isPermanent())
-                .collect(Collectors.toMap(AuthenticationProvider::getName, ap->Map.of(
-                    "description", ap.getDescription(),
-                    "saveLink", ap.getSaveLink().toString(),
-                    "configLink", ap.getConfigurationLink(),
-                    "sso", ap instanceof SSOAuthenticationProvider,
-                    "settingsFields", ap.getSettingsFields()
-                )));
+                .collect(Collectors.toMap(AuthenticationProvider::getName, ap->{
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("description", ap.getDescription());
+                    m.put("helpLink", new HelpTopic(ap.getHelpTopic()));
+                    m.put("configLink", ap.getConfigurationLink());
+                    ActionURL saveLink = ap.getSaveLink();
+                    if (null != saveLink)
+                        m.put("saveLink", saveLink);
+                    ActionURL testLink = ap.getTestLink();
+                    if (null != testLink)
+                        m.put("testLink", testLink);
+                    m.put("sso", ap instanceof SSOAuthenticationProvider);
+                    m.put("settingsFields", ap.getSettingsFields());
+                    return m;
+                }));
 
             // Secondary providers
             List<Map<String, Object>> secondary = AuthenticationManager.getAllSecondaryProviders().stream()
                 .map(sp->{
-                    Map<String, Object> items = new HashMap<>();
-                    items.put("name", sp.getName());
-                    items.put("ficamOK", (AuthenticationManager.isAcceptOnlyFicamProviders() && !sp.isFicamApproved()));
-                    items.put("isPermanent", sp.isPermanent());
-                    items.put("enabled", AuthenticationManager.isActive(sp));
-                    items.put("configureUrl", sp.getConfigurationLink());
-                    items.put("description", sp.getDescription());
-                    return items;
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("name", sp.getName());
+                    m.put("ficamOK", (AuthenticationManager.isAcceptOnlyFicamProviders() && !sp.isFicamApproved()));
+                    m.put("isPermanent", sp.isPermanent());
+                    m.put("enabled", AuthenticationManager.isActive(sp));
+                    m.put("configureUrl", sp.getConfigurationLink());
+                    m.put("description", sp.getDescription());
+                    return m;
                 })
                 .collect(Collectors.toList());
 

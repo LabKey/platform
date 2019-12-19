@@ -69,10 +69,24 @@ public interface AuthenticationProvider
     );
 
     @Nullable ActionURL getConfigurationLink();
-    default @NotNull ActionURL getSaveLink()
+
+    default @Nullable ActionURL getSaveLink()
     {
-        return new ActionURL();
+        return null;
     }
+
+    // Generic authentication topic -- implementers should provide the wiki name for their configuration doc page
+    default @NotNull String getHelpTopic()
+    {
+        return "authenticationModule";
+    }
+
+    // Most providers don't have a test action
+    default @Nullable ActionURL getTestLink()
+    {
+        return null;
+    }
+
     default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
     {
         return getConfigurationLink();
