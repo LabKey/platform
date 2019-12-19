@@ -2627,6 +2627,49 @@ public class DataRegion extends DisplayElement
     }
 
     /**
+     * Add a DataRegion message for invalid conditional formats.
+     */
+    private void prepareConditionalFormats(RenderContext ctx)
+    {
+        for (DisplayColumn dc : getDisplayColumns())
+        {
+            String msg = prepareConditionalFormats(dc);
+            if (msg != null)
+                addMessage(new Message(PageFlowUtil.filter(msg), MessageType.WARNING, "filter"));
+        }
+    }
+
+    /**
+     * Check for invalid conditional formats.
+     */
+    private String prepareConditionalFormats(DisplayColumn dc)
+    {
+        ColumnInfo col = dc.getColumnInfo();
+        if (col == null)
+            return null;
+
+        for (ConditionalFormat format : col.getConditionalFormats())
+        {
+            String msg = format.validateFormat(col);
+            if (msg != null)
+                return msg;
+        }
+
+        ColumnInfo displayCol = dc.getDisplayColumnInfo();
+        if (displayCol != null && col != displayCol)
+        {
+            for (ConditionalFormat format : displayCol.getConditionalFormats())
+            {
+                String msg = format.validateFormat(displayCol);
+                if (msg != null)
+                    return msg;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param fieldKey The fieldKey to match a DisplayColumn against.
      * @return DisplayColumn associated with the fieldKey if it is shown in this DataRegion, otherwise, null
      */
@@ -2748,6 +2791,7 @@ public class DataRegion extends DisplayElement
         {
             prepareParameters(ctx);
             prepareFilters(ctx);
+            prepareConditionalFormats(ctx);
         }
 
         prepareView(ctx);

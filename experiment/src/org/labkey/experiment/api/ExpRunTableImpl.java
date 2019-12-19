@@ -666,7 +666,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             String value = buildString(ctx, false);
             for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
             {
-                if (format.meetsCriteria(value))
+                if (format.meetsCriteria(getBoundColumn(), value))
                 {
                     return format.getCssStyle();
                 }
