@@ -113,7 +113,7 @@ public class AuthenticationManager
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
     // Map of user id to login provider. This is needed to handle clean up on logout.
-    private static final Map<Integer, PrimaryAuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
+    private static final Map<Integer, PrimaryAuthenticationProvider<?>> _userProviders = new ConcurrentHashMap<>();
 
     public enum AuthLogoType
     {

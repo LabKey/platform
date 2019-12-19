@@ -89,7 +89,7 @@ public interface AuthenticationProvider
         return new JSONArray();
     }
 
-    default Map<String, Object> getSettingsField(String name, FieldType type, String caption, String description, boolean required, Object defaultValue)
+    default Map<String, Object> getSettingsField(@NotNull String name, @NotNull FieldType type, @NotNull String caption, @NotNull String description, boolean required, Object defaultValue)
     {
         return Map.of(
             "name", name,
