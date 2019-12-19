@@ -9,50 +9,14 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
 import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
-
-const casFields =
-    <div >
-        <div className="">
-
-            <span className="fileAttachmentLabel">
-                Page Header Logo
-            </span>
-
-            <div className="fileAttachmentComponent">
-                <FileAttachmentForm
-                    showLabel={false}
-                    allowMultiple={false}
-                    allowDirectories={false}
-                    acceptedFormats={".jpeg,.png,.gif,.tif"}
-                    showAcceptedFormats={false}
-                />
-            </div>
-        </div>
-
-        <br/>
-        <div className="">
-            <div className="fileAttachmentLabel">
-                Login Page Logo
-            </div>
-
-            <div className="fileAttachmentComponent">
-                <FileAttachmentForm
-                    showLabel={false}
-                    allowMultiple={false}
-                    allowDirectories={false}
-                    acceptedFormats={".jpeg,.png,.gif,.tif"}
-                    showAcceptedFormats={false}
-                />
-            </div>
-        </div>
-    </div>;
+import CasFields from "./CasFields";
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
-            toggleValue: this.props.enabled,
-            description: this.props.description
+            enabled: this.props.enabled,
+            description: this.props.description,
         };
     }
 
@@ -70,21 +34,22 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
     };
 
-    saveEditedModal = (controller) => {
-        const formObjTest = {
-            serverUrl: this.state.serverUrl,
-            autoRedirect: this.state.autoRedirect,
-            configuration: this.props.configuration,
-            description: this.state.description,
-            enabled: this.state.toggleValue
-        };
+    saveEditedModal = (controller, action) => {
+        console.log("pre-save state ", this.state);
+
+        let form = new FormData();
+        form.append("configuration", this.props.configuration);
+        Object.keys(this.state).map(
+            (item) => {
+                form.append(item, this.state[item]);
+            }
+        );
 
         Ajax.request({
-            url: ActionURL.buildURL("CasClient", "SaveConfiguration"),
+            url: ActionURL.buildURL(controller, action),
             method : 'POST',
-            // params: {configuration: 18},
+            form,
             scope: this,
-            jsonData: formObjTest,
             failure: function(error){
                 console.log("fail: ", error.response);
             },
@@ -95,7 +60,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     onToggle = () => {
-        this.setState({ toggleValue: !this.state.toggleValue }, () => console.log(this.state.toggleValue));
+        this.setState({ enabled: !this.state.enabled }, () => console.log(this.state.enabled));
     };
 
     handleChange = (event) => {
@@ -116,6 +81,12 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
 
         console.log(oldState, name);
+    };
+
+    onFileChange = (attachment, logoType) => {
+        this.setState(() => ({[logoType]: attachment.first()})
+            // , () => console.log("asdfadsfhuiIUUHI ", this.state)
+        );
     };
 
     dynamicallyCreateFields = (fields) => {
@@ -152,6 +123,11 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // (this.props.type && console.log(this.props.type.settingsFields));
         // console.log(this.props);
         const {description} = this.state;
+        const baseUrl = ActionURL.getBaseURL(true);
+
+        // move into its own component after finalized
+
+
 
         return (
             <Modal show={true} onHide={() => {}} >
@@ -174,7 +150,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         on="Enabled"
                         off="Disabled"
                         onstyle={"primary"}
-                        active={this.state.toggleValue}
+                        active={this.state.enabled}
                         style={{width: "90px", height: "28px", float: "right"}}
                     />
 
@@ -200,12 +176,18 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <br/>
 
-                    {this.props.name == "CAS" && casFields}
+                    {this.props.name == "CAS" &&
+                        <CasFields
+                            headerLogoUrl={this.props.headerLogoUrl}
+                            loginLogoUrl={this.props.loginLogoUrl}
+                            onFileChange={this.onFileChange}
+                        />
+                    }
 
                     <hr/>
                     <div style={{float: "right"}}>
                         <a href={""} style={{marginRight: "10px"}}> More about authentication </a>
-                        <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal("eventuallyControllerName")}>Apply</Button>
+                        <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal("CasClient", "SaveConfiguration")}>Apply</Button>
                     </div>
 
                     <Button
