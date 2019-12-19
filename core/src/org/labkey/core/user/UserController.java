@@ -1095,7 +1095,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public UserSchema getSchema()
+        public UserSchema createSchema()
         {
             int userId = getUserId();
             boolean checkPermission = mustCheckPermissions(getUser(), userId);

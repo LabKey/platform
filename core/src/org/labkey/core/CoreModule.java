@@ -21,6 +21,7 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
@@ -74,6 +75,7 @@ import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
@@ -106,6 +108,7 @@ import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -220,6 +223,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -848,6 +852,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
+        populateLookAndFeelWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
@@ -1185,10 +1190,95 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         r.run();
     }
 
-    
     @Override
     public void indexDeleted()
     {
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
+    }
+
+    /**
+     * This method will handle those startup props for LookAndFeelSettings which are not stored in WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps().
+     */
+    private void populateLookAndFeelWithStartupProps()
+    {
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+        boolean incrementRevision = false;
+
+        for (ConfigProperty prop : startupProps)
+        {
+            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            {
+                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
+                if (folderType != null)
+                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
+                else
+                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
+            }
+
+            SiteResourceHandler handler = getResourceHandler(prop.getName());
+            if (handler != null)
+                incrementRevision = setSiteResource(handler, prop, user);
+        }
+
+        // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+        if (incrementRevision)
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+    }
+
+    private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
+    {
+        switch (name)
+        {
+            case "logoImage":
+                return LookAndFeelPropertiesManager.get()::handleLogoFile;
+            case "iconImage":
+                return LookAndFeelPropertiesManager.get()::handleIconFile;
+            case "customStylesheet":
+                return LookAndFeelPropertiesManager.get()::handleCustomStylesheetFile;
+            default:
+                return null;
+        }
+    }
+
+    @FunctionalInterface
+    public interface SiteResourceHandler {
+        void accept(Resource resource, Container container, User user) throws ServletException, IOException;
+    }
+
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)
+    {
+        Resource resource = getModuleResourceFromPropValue(prop.getValue());
+        if (resource != null)
+        {
+            try
+            {
+                resourceHandler.accept(resource, ContainerManager.getRoot(), user);
+                return true;
+            }
+            catch(Exception e)
+            {
+                LOG.error(String.format("Exception setting %1$s during server startup.", prop.getName()), e);
+            }
+        }
+
+        LOG.error(String.format("Unable to find %1$s resource during server startup: %2$s", prop.getName(), prop.getValue()));
+        return false;
+    }
+
+    private Resource getModuleResourceFromPropValue(String propValue)
+    {
+        if (propValue != null)
+        {
+            // split the prop value on the separator char to get the module name and resource path in that module
+            String moduleName = propValue.substring(0, propValue.indexOf(":"));
+            String resourcePath = propValue.substring(propValue.indexOf(":") + 1);
+
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+            if (module != null)
+                return module.getModuleResource(resourcePath);
+        }
+
+        return null;
     }
 }
