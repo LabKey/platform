@@ -17,10 +17,11 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.AuthenticationConfiguration;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
+import org.labkey.devtools.authentication.TestSsoController.SaveConfigurationAction;
 import org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm;
 
 /**
@@ -32,7 +33,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
-    public AuthenticationConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+    public TestSsoConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
         return new TestSsoConfiguration(this, cs.getStandardSettings());
     }
@@ -48,6 +49,12 @@ public class TestSsoProvider implements SSOAuthenticationProvider
     public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
     {
         return TestSsoController.getConfigureURL(rowId);
+    }
+
+    @Override
+    public @NotNull ActionURL getSaveLink()
+    {
+        return new ActionURL(SaveConfigurationAction.class, ContainerManager.getRoot());
     }
 
     @NotNull

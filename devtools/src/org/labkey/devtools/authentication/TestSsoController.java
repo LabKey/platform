@@ -28,9 +28,12 @@ import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SSOConfigureAction;
 import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
+import org.labkey.api.security.SaveSsoConfigurationAction;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -142,6 +145,24 @@ public class TestSsoController extends SpringActionController
         public ActionURL getSuccessURL(TestSsoConfigureForm form)
         {
             return getConfigureURL(form.getRowId());  // Redirect to same action -- reload props from database
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class SaveConfigurationAction extends SaveSsoConfigurationAction<TestSsoSaveConfigurationForm, TestSsoConfiguration>
+    {
+        @Override
+        public void validate(TestSsoSaveConfigurationForm form, Errors errors)
+        {
+        }
+    }
+
+    public static class TestSsoSaveConfigurationForm extends SaveSsoConfigurationAction.SaveSsoConfigurationForm<TestSsoConfiguration>
+    {
+        @Override
+        public String getProvider()
+        {
+            return TestSsoProvider.NAME;
         }
     }
 
