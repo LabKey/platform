@@ -204,6 +204,7 @@ public class ApiModule extends CodeOnlyModule
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,
+            CompareType.TestCase.class,
             DbSchema.CachingTestCase.class,
             DbSchema.DDLMethodsTestCase.class,
             DbSchema.SchemaCasingTestCase.class,
