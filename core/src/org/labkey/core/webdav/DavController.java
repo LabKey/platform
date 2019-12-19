@@ -3292,6 +3292,10 @@ public class DavController extends SpringActionController
     {
         Date lastModified = null;
         String lastModifiedHeader = getRequest().getHeader("X-LABKEY-Last-Modified");
+        if (lastModifiedHeader == null)
+        {
+            lastModifiedHeader = getRequest().getParameter("X-LABKEY-Last-Modified");
+        }
         if (lastModifiedHeader != null)
         {
             try
