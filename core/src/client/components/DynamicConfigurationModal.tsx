@@ -9,7 +9,7 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
 import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
-import CasFields from "./CasFields";
+import SSOFields from "./SSOFields";
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
@@ -54,13 +54,17 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 console.log("fail: ", error.response);
             },
             success: function(result){
-                console.log("success", result)
+                // console.log("success", result.response);
+                this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
+                this.props.closeModal();
             }
         })
     };
 
     onToggle = () => {
-        this.setState({ enabled: !this.state.enabled }, () => console.log(this.state.enabled));
+        this.setState({ enabled: !this.state.enabled }
+        // , () => console.log(this.state.enabled)
+        );
     };
 
     handleChange = (event) => {
@@ -69,7 +73,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             [name]: value
         }));
 
-        console.log(name, " ", value);
+        // console.log(name, " ", value);
     };
 
     checkCheckBox = (name) => {
@@ -80,7 +84,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             // , () => this.props.checkDirty(this.state, this.props)
         );
 
-        console.log(oldState, name);
+        // console.log(oldState, name);
     };
 
     onFileChange = (attachment, logoType) => {
@@ -122,18 +126,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // let type = this.props.type.settingsFields;
         // (this.props.type && console.log(this.props.type.settingsFields));
         // console.log(this.props);
-        const {description} = this.state;
         const baseUrl = ActionURL.getBaseURL(true);
-
-        // move into its own component after finalized
-
-
 
         return (
             <Modal show={true} onHide={() => {}} >
                 <Modal.Header>
                     <Modal.Title>
-                        {"Configure " + description}
+                        {"Configure " + this.props.description}
                         <FontAwesomeIcon
                             size='sm'
                             icon={faTimes}
@@ -176,8 +175,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <br/>
 
-                    {this.props.name == "CAS" &&
-                        <CasFields
+                    {this.props.provider == "CAS" &&
+                        <SSOFields
                             headerLogoUrl={this.props.headerLogoUrl}
                             loginLogoUrl={this.props.loginLogoUrl}
                             onFileChange={this.onFileChange}
@@ -252,7 +251,7 @@ interface CheckBoxInputProps {
 class CheckBoxInput extends PureComponent<any, any> {
     render() {
         return(
-            <div >
+            <>
                 <span style={{height:"40px", marginRight:"7px"}}>
                     {this.props.caption}
                 </span>
@@ -265,11 +264,10 @@ class CheckBoxInput extends PureComponent<any, any> {
                     <FACheckBox
                         rowText={this.props.caption}
                         checked={this.props.value}
-                        onClick={() => {this.props.checkCheckBox(this.props.name)}} //probably can get rid of outer wrapper
-                        // onClick={(this.props.canEdit) ? (() => {this.checkGlobalAuthBox(text.id)}) : (() => {})} // empty function might be bad style, here?
+                        onClick={() => {this.props.checkCheckBox(this.props.name)}}
                     />
                 </span>
-            </div>
+            </>
         );
     }
 }

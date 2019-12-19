@@ -140,10 +140,12 @@ export class App extends PureComponent<Props, State> {
     };
 
     // rough
-    handlePrimaryToggle = (toggle, id, stateSection) => {
+    handlePrimaryToggle = (toggle, configuration, stateSection) => {
         const l = List(this.state[stateSection]);
-        const l2 = l.setIn([id, 'enabled'], !toggle);
+        const l2 = l.setIn([configuration, 'enabled'], !toggle);
         const thing = l2.toArray();
+        console.log(" toggle: ", toggle, "\n", "id: ", configuration, "\n", "stateSection: ", stateSection);
+        console.log(thing);
         this.setState(() => ({
             [stateSection]: thing
         }));
@@ -161,10 +163,10 @@ export class App extends PureComponent<Props, State> {
         // }), () => console.log(this.state));
     };
 
-    deleteAction = (id, stateSection) => {
+    deleteAction = (configuration, stateSection) => {
         const prevState = this.state[stateSection];
         const newState = prevState.filter((auth) => {
-            return auth.id !== id;
+            return auth.configuration !== configuration;
         });
 
         this.setState(() => ({
@@ -174,7 +176,7 @@ export class App extends PureComponent<Props, State> {
             Ajax.request({
                 url: ActionURL.buildURL("login", "deleteConfiguration"),
                 method : 'POST',
-                params: {configuration: id.slice(2)},
+                params: {configuration: configuration},
                 scope: this,
                 failure: function(error){
                     console.log("fail: ", error);
@@ -184,6 +186,24 @@ export class App extends PureComponent<Props, State> {
                 }
             })}
         )
+    };
+
+
+
+    updateAuthRowsAfterSave = (config, stateSection) => {
+        const configObj = JSON.parse(config);
+        const configId = configObj.configuration.configuration;
+        console.log("bro ", configObj);
+
+        const prevState = this.state[stateSection];
+        const staleAuthIndex = prevState.findIndex((element) => element.configuration == configId);
+
+        const newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
+        newState[staleAuthIndex] = configObj.configuration;
+
+        console.log(newState);
+        // console.log("removed ", staleAuthRemovedState);
+        this.setState({[stateSection]:newState});
     };
 
     render() {
@@ -205,6 +225,7 @@ export class App extends PureComponent<Props, State> {
                     onDragEnd={this.onDragEnd}
                     handlePrimaryToggle={this.handlePrimaryToggle}
                     deleteAction={this.deleteAction}
+                    updateAuthRowsAfterSave={this.updateAuthRowsAfterSave}
                 />
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}

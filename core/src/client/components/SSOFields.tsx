@@ -5,7 +5,7 @@ import {ActionURL} from "@labkey/api";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faImage} from "@fortawesome/free-solid-svg-icons";
 
-export default class CasFields extends PureComponent<any, any> {
+export default class SSOFields extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
@@ -53,7 +53,7 @@ export default class CasFields extends PureComponent<any, any> {
                             allowDirectories={false}
                             acceptedFormats={".jpeg,.png,.gif,.tif"}
                             showAcceptedFormats={false}
-                            onFileChange={(attachment) => this.props.onFileChange(attachment, "pageHeaderLogo")}
+                            onFileChange={(attachment) => this.props.onFileChange(attachment, "auth_header_logo")}
                         />
                     </div>
                 </div>
@@ -82,7 +82,7 @@ export default class CasFields extends PureComponent<any, any> {
                             allowDirectories={false}
                             acceptedFormats={".jpeg,.png,.gif,.tif"}
                             showAcceptedFormats={false}
-                            onFileChange={(attachment) => this.props.onFileChange(attachment, "loginPageLogo")}
+                            onFileChange={(attachment) => this.props.onFileChange(attachment, "auth_login_page_logo")}
                         />
                     </div>
                 </div>

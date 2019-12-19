@@ -33,11 +33,11 @@ export default class DragAndDropPane extends PureComponent<any> {
     render() {
         // this.forTestingFunc();
         const primary = this.props.primary;
-        console.log("PROPS ", this.props.rowInfo);
+        // console.log("PROPS ", this.props.rowInfo);
 
         let DragAndDropAuthRows =
             this.props.rowInfo.map((item, index) => ( // make this into a own variable
-                <Draggable key={item.id} draggableId={item.id} index={index}>
+                <Draggable key={item.configuration} draggableId={item.configuration} index={index}>
                     {(provided) => (
                         <div
                             ref={provided.innerRef}
@@ -45,12 +45,13 @@ export default class DragAndDropPane extends PureComponent<any> {
                             {...provided.dragHandleProps}
                         >
                             <EditableAuthRow
-                                id={index.toString()}
+                                index={index.toString()}
                                 {...item}
-                                modalType={(primary) && {...primary[item.name]}}
+                                modalType={(primary) && {...primary[item.provider]}}
                                 handlePrimaryToggle={this.props.handlePrimaryToggle}
                                 stateSection={this.props.stateSection}
                                 deleteAction={this.props.deleteAction}
+                                updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                             />
                         </div>
                     )}

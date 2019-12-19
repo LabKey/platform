@@ -42,11 +42,11 @@ export default class EditableAuthRow extends PureComponent<any, State> {
     };
 
     onToggleClicked = () => {
-        this.props.handlePrimaryToggle(this.props.enabled, this.props.id, this.props.stateSection);
+        this.props.handlePrimaryToggle(this.props.enabled, this.props.index, this.props.stateSection);
     };
 
     onDeleteClicked = () => {
-        this.props.deleteAction(this.props.id, this.props.stateSection);
+        this.props.deleteAction(this.props.configuration, this.props.stateSection);
     };
 
     render(){
@@ -72,9 +72,10 @@ export default class EditableAuthRow extends PureComponent<any, State> {
 
         const dynamicModal = (this.state.modalOpen &&
                 <DynamicConfigurationModal
+                    {...this.props}
                     type={this.props.modalType}
                     closeModal={() => {this.onToggleModal("modalOpen")}}
-                    {...this.props}
+                    updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />);
 
         return(

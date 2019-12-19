@@ -85,6 +85,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         onDragEnd={this.props.onDragEnd}
                         handlePrimaryToggle={this.props.handlePrimaryToggle}
                         deleteAction={this.props.deleteAction}
+                        updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                     />
 
                     <SimpleAuthRow
@@ -106,6 +107,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                     onDragEnd={this.props.onDragEnd}
                     handlePrimaryToggle={this.props.handlePrimaryToggle}
                     deleteAction={this.props.deleteAction}
+                    updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />
                 : <ViewOnlyAuthConfigRows data={singleSignOnAuth}/>;
 
