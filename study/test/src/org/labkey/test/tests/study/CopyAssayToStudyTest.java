@@ -22,16 +22,21 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.CustomizeView;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -79,6 +84,12 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
     @Test
     public void verifyAsyncCopyToAssay() throws IOException
     {
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
+        goToFolderManagement();
+        clickAndWait(Locator.linkWithText("Folder Type"));
+        checkCheckbox(Locator.checkboxByTitle("Provenance"));
+        clickButton("Update Folder");
+
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
         clickAndWait(Locator.linkWithText(TEST_ASSAY));
         DataRegionTable assayRuns = new DataRegionTable("Runs", this);
@@ -100,6 +111,68 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
                 "AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1");
 
         assertEquals("expected copied rows should be for ", specimenIds, dataSet.getColumnDataAsText("Specimen ID"));
+
+        CustomizeView datasetCustomizeView = dataSet.openCustomizeGrid();
+        datasetCustomizeView.showHiddenItems();
+        datasetCustomizeView.addColumn("lsid");
+        datasetCustomizeView.applyCustomView();
+
+        List<String> datasetLsids = dataSet.getColumnDataAsText("lsid");
+        checkProvenance(datasetLsids);
+    }
+
+    private void checkProvenance(List<String> datasetLsids) throws MalformedURLException
+    {
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
+        clickAndWait(Locator.linkWithText(TEST_ASSAY));
+        clickAndWait(Locator.linkWithText(TEST_RUN1));
+        DataRegionTable assayResults = new DataRegionTable("Data", this);
+
+        CustomizeView assayResultsCustomView = assayResults.openCustomizeGrid();
+        assayResultsCustomView.addColumn("LSID");
+        assayResultsCustomView.applyCustomView();
+
+        List<String> resultRowLsids = assayResults.getColumnDataAsText("LSID");
+
+        log("Verify StudyPublishRun got created.");
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
+        goToSchemaBrowser();
+        DataRegionTable runTable = viewQueryData("exp", "Runs");
+        assertTextPresent("StudyPublishRun");
+
+        CustomizeView runTableCustomizeView = runTable.openCustomizeGrid();
+        runTableCustomizeView.showHiddenItems();
+        runTableCustomizeView.addColumn("RowId");
+        runTableCustomizeView.saveCustomView();
+
+        Map<String, String> runRow = runTable.getRowDataAsMap(0);
+        String runId = runRow.get("RowId");
+
+        URL url = new URL(WebTestHelper.getBaseURL() + getCurrentContainerPath() + "/" + "experiment-showRunText.view?rowId=" + runId + "&_debug=1");
+        goToURL(url, longWaitForPage);
+
+        log("Verify Provenance information.");
+        assertTextPresent("Provenance");
+
+        resultRowLsids.forEach(resultRowLsid -> assertElementPresent(Locator.linkWithTitle(resultRowLsid)));
+
+        for (var i=0; i<resultRowLsids.size(); i++)
+        {
+            assertElementPresent(Locator.linkWithTitle(datasetLsids.get(i)));
+        }
+
+        // delete dataset
+        navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY2);
+        clickAndWait(Locator.linkWithText("1 dataset"));
+        clickAndWait(Locator.linkWithText("MANAGE DATASETS"));
+        clickAndWait(Locator.linkWithText(TEST_ASSAY));
+        clickButton("Delete Dataset", 0);
+        assertTrue(acceptAlert().contains("Are you sure you want to delete this dataset?"));
+
+        log("Verify StudyPublishRun got deleted.");
+        goToSchemaBrowser();
+        runTable = viewQueryData("exp", "Runs");
+        assertEquals("StudyPublishRun is not deleted.", 0, runTable.getDataRowCount());
     }
 
     /**
