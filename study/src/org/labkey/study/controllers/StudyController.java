@@ -2224,6 +2224,9 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getConfirmView(IdForm idForm, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Unused Visits");
+
             StudyImpl study = getStudyThrowIfNull();
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
@@ -6700,6 +6703,9 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Clear Custom Mapping");
+
             return new HtmlView("Are you sure you want to delete the visit import custom mapping for this study?");
         }
 

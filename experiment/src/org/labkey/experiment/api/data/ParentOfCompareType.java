@@ -16,6 +16,7 @@
 package org.labkey.experiment.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
@@ -39,7 +40,7 @@ public class ParentOfCompareType extends CompareType
     }
 
     @Override
-    public boolean meetsCriteria(Object value, Object[] paramVals)
+    public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
     {
         throw new UnsupportedOperationException("Conditional formatting not yet supported for EXP_PARENT_OF");
     }

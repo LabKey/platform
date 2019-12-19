@@ -454,7 +454,7 @@ public class DataColumn extends DisplayColumn
         for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
         {
             Object value = ctx.get(_displayColumn.getFieldKey());
-            if (format.meetsCriteria(value))
+            if (format.meetsCriteria(_displayColumn, value))
             {
                 return format;
             }
@@ -467,7 +467,7 @@ public class DataColumn extends DisplayColumn
             for (ConditionalFormat format : _displayColumn.getConditionalFormats())
             {
                 Object value = ctx.get(_displayColumn.getFieldKey());
-                if (format.meetsCriteria(value))
+                if (format.meetsCriteria(_displayColumn, value))
                 {
                     return format;
                 }

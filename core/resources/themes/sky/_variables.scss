@@ -1,0 +1,22 @@
+//== Colors
+//
+$white: #FFFFFF;
+$lk-brand-color: #2980b9;
+$lk-secondary-brand-color: #236fa0;
+$lk-theme-dark-accent: $lk-brand-color;
+$lk-theme-light-accent: $lk-secondary-brand-color;
+
+//== Header
+//
+$lk-page-header-bg-color: $lk-brand-color;
+$lk-page-header-icon-color: $white;
+$lk-page-header-text-color: $white;
+$lk-page-header-font-hover-color: $white;
+
+//== Navigation
+//
+$lk-page-nav-bg-color: $lk-secondary-brand-color;
+$lk-nav-dropdown-color: $lk-brand-color;
+//== Pill
+//
+$lk-nav-pills-active-link-hover-bg: $lk-theme-dark-accent;

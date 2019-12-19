@@ -810,9 +810,19 @@ public class DomainUtil
         List<ConditionalFormat> formats = new ArrayList<>();
         for (GWTConditionalFormat format : from.getConditionalFormats())
         {
-            formats.add(new ConditionalFormat(format));
+            ConditionalFormat fmt = new ConditionalFormat(format);
+            String msg = fmt.validateFormat(to.getPropertyDescriptor());
+            if (msg != null)
+            {
+                if (errors == null)
+                    throw new RuntimeException(msg);
+                errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
+                return;
+            }
+            formats.add(fmt);
         }
         to.setConditionalFormats(formats);
+
         // If the incoming DomainProperty specifies its dimension/measure state, respect that value.  Otherwise we need
         // to infer the correct value. This is necessary for code paths like the dataset creation wizard which does not
         // (and should not, for simplicity reasons) provide the user with the option to specify dimension/measure status
@@ -851,7 +861,7 @@ public class DomainUtil
         if (from.isExcludeFromShifting())
             to.setExcludeFromShifting(from.isExcludeFromShifting());
 
-        if(from.getScale() != null)
+        if (from.getScale() != null)
             to.setScale(from.getScale());
     }
 
