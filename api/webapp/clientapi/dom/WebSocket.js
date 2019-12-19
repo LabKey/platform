@@ -59,12 +59,12 @@ LABKEY.WebSocket = new function ()
                 setTimeout(function() {
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
-                        success: function (data) {
-                            if (LABKEY.user.id !== data.id) {
+                        success: LABKEY.Utils.getCallbackWrapper(function(response) {
+                            if (LABKEY.user.id !== response.id) {
                                 displayModal("Session Expired", 'Your session has expired. Please reload the page to continue.');
                             }
-                        },
-                        failure: function (data) {
+                        }),
+                        failure: function () {
                             setTimeout(showDisconnectedMessage, 1000);
                         }
                     });
