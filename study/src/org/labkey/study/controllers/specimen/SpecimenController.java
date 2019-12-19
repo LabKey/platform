@@ -56,6 +56,7 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -1132,7 +1133,7 @@ public class SpecimenController extends BaseStudyController
                     form.isSubmissionResult(), form.getReturnUrl());
             if (form.getExport() != null)
             {
-                bean.getSpecimenQueryView().getSettings().setMaxRows(-1);   // #34998; exporting specimens in a request should include all of them
+                bean.getSpecimenQueryView().getSettings().setMaxRows(Table.ALL_ROWS);   // #34998; exporting specimens in a request should include all of them
                 getUtils().writeExportData(bean.getSpecimenQueryView(), form.getExport());
                 return null;
             }

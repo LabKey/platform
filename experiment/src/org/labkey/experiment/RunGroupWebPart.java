@@ -44,6 +44,8 @@ public class RunGroupWebPart extends QueryView
         setSettings(createQuerySettings(portalCtx, name));
 
         setShowDetailsColumn(false);
+        // Use default delete button, but without showing the confirmation text -- DeleteSelectedExperimentsAction will show a confirmation page.
+        setShowDeleteButtonConfirmationText(false);
 
         if (_narrow)
         {
@@ -93,7 +95,9 @@ public class RunGroupWebPart extends QueryView
             settings.setContainerFilterName(ContainerFilter.Type.CurrentPlusProjectAndShared.name());
         }
         settings.setQueryName(ExpSchema.TableType.RunGroups.toString());
-        settings.getBaseSort().insertSortColumn("Name");
+        if (!settings.isMaxRowsSet())
+            settings.setMaxRows(20);
+        settings.getBaseSort().insertSortColumn("-RowId");
         return settings;
     }
 
@@ -118,17 +122,5 @@ public class RunGroupWebPart extends QueryView
             createExperiment.setDisplayPermission(InsertPermission.class);
             bb.add(createExperiment);
         }
-    }
-
-    @Override
-    public ActionButton createDeleteButton()
-    {
-        // Use default delete button, but without showing the confirmation text -- DeleteSelectedExperimentsAction will show a confirmation page.
-        ActionButton button = super.createDeleteButton();
-        if (button != null)
-        {
-            button.setRequiresSelection(true);
-        }
-        return button;
     }
 }

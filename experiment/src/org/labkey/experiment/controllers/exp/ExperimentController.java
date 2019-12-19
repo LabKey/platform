@@ -343,11 +343,15 @@ public class ExperimentController extends SpringActionController
 
     @ActionNames("begin,gridView")
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends ShowRunsAction
+    public class BeginAction extends SimpleViewAction
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            VBox result = new VBox(super.getView(o, errors));
+            VBox result = new VBox();
+
+            VBox runListView = createRunListView(20);
+            result.addView(runListView);
+
             RunGroupWebPart runGroups = new RunGroupWebPart(getViewContext(), false);
             runGroups.showHeader();
             result.addView(runGroups);
@@ -370,15 +374,7 @@ public class ExperimentController extends SpringActionController
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
-            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
-
-            ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
-            VBox result = new VBox(chooserView, view);
-            result.setTitle(view.getTitle());
-            result.setFrame(WebPartView.FrameType.PORTAL);
-            view.setFrame(WebPartView.FrameType.NONE);
+            VBox result = createRunListView(100);
             return result;
         }
 
@@ -386,6 +382,22 @@ public class ExperimentController extends SpringActionController
         {
             return appendRootNavTrail(root).addChild("Experiment Runs");
         }
+    }
+
+    private VBox createRunListView(int defaultMaxRows)
+    {
+        Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
+        ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
+        JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
+
+        ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
+        view.setFrame(WebPartView.FrameType.NONE);
+        if (!view.getSettings().isMaxRowsSet())
+            view.getSettings().setMaxRows(defaultMaxRows);
+
+        VBox result = new VBox(chooserView, view);
+        result.setFrame(WebPartView.FrameType.PORTAL);
+        return result;
     }
 
     @RequiresPermission(ReadPermission.class)
