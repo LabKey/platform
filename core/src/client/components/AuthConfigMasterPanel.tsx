@@ -91,7 +91,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                     <SimpleAuthRow
                         handle={null}
                         description={loginFormAuth.slice(-1)[0].description}
-                        name={loginFormAuth.slice(-1)[0].name}
+                        provider={loginFormAuth.slice(-1)[0].provider}
                         enabled={(loginFormAuth.slice(-1)[0].enabled) ? "Enabled" : "Disabled"}
                         // url={(loginFormAuth.slice(-1)[0].url)}
                     />
@@ -121,7 +121,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         authName={""}
                         url={item.description.slice(0,34) + "..."} // fix this guy up
                         enabled={item.enabled}
-                        description={item.name}
+                        description={item.provider}
                         handlePrimaryToggle={this.props.handlePrimaryToggle}
                         stateSection="secondaryAuth"
                         noHandleIcon={true}
@@ -205,7 +205,7 @@ class ViewOnlyAuthConfigRows extends PureComponent<any, any> {
                 {data && data.map((item) => (
                     <SimpleAuthRow
                         description={item.description}
-                        name={item.name}
+                        name={item.provider}
                         enabled={item.enabled ? "Enabled" : "Disabled"}
                         editIcon={moreInfoIcon}
                     />

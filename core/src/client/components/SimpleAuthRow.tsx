@@ -53,7 +53,7 @@ export default class SimpleAuthRow extends PureComponent<any, State> {
                                     {this.props.details}
                                 </Col>
                                 <Col xs={1} className="down">
-                                    {this.props.name}
+                                    {this.props.provider}
                                 </Col>
                             </Col>
 

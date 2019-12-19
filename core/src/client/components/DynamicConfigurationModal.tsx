@@ -17,6 +17,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         this.state = {
             enabled: this.props.enabled,
             description: this.props.description,
+            errorMessage: "",
         };
     }
 
@@ -34,8 +35,11 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
     };
 
-    saveEditedModal = (controller, action) => {
-        console.log("pre-save state ", this.state);
+    saveEditedModal = () => {
+        const baseUrl = ActionURL.getBaseURL(true);
+        const saveUrl = baseUrl + this.props.modalType.saveLink;
+
+        // console.log("pre-save state ", this.state);
 
         let form = new FormData();
         form.append("configuration", this.props.configuration);
@@ -46,12 +50,17 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
 
         Ajax.request({
-            url: ActionURL.buildURL(controller, action),
+            url: saveUrl,
             method : 'POST',
             form,
             scope: this,
             failure: function(error){
                 console.log("fail: ", error.response);
+                const errorObj = JSON.parse(error.response);
+                const errorMessage = errorObj.exception
+                console.log("unfortunate state: ", errorObj.exception);
+                // const errorMessage = error.response.fail
+                this.setState(() => ({errorMessage}));
             },
             success: function(result){
                 // console.log("success", result.response);
@@ -117,7 +126,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     );
                 default:
-                    return <div> lol I'm not supposed to be here </div>;
+                    return <div> Error: invalid field type received. </div>;
             }
         })
     };
@@ -126,7 +135,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // let type = this.props.type.settingsFields;
         // (this.props.type && console.log(this.props.type.settingsFields));
         // console.log(this.props);
-        const baseUrl = ActionURL.getBaseURL(true);
 
         return (
             <Modal show={true} onHide={() => {}} >
@@ -182,11 +190,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             onFileChange={this.onFileChange}
                         />
                     }
+                    <div className="editModalErrorMessage"> {this.state.errorMessage} </div>
 
                     <hr/>
+
                     <div style={{float: "right"}}>
-                        <a href={""} style={{marginRight: "10px"}}> More about authentication </a>
-                        <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal("CasClient", "SaveConfiguration")}>Apply</Button>
+                        <a href={""} style={{marginRight: "10px"}}> {"More about " + this.props.provider + " authentication"} </a>
+                        <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}>Apply</Button>
                     </div>
 
                     <Button
@@ -251,7 +261,7 @@ interface CheckBoxInputProps {
 class CheckBoxInput extends PureComponent<any, any> {
     render() {
         return(
-            <>
+            <div className="dynamicFieldSpread">
                 <span style={{height:"40px", marginRight:"7px"}}>
                     {this.props.caption}
                 </span>
@@ -260,14 +270,14 @@ class CheckBoxInput extends PureComponent<any, any> {
                     return (<div> {this.props.description} </div>)
                 }}/>
 
-                <span style={{float:"right", marginRight: "285px", height:"40px"}}>
+                <span style={{float:"right", marginRight: "285px"}}>
                     <FACheckBox
                         rowText={this.props.caption}
                         checked={this.props.value}
                         onClick={() => {this.props.checkCheckBox(this.props.name)}}
                     />
                 </span>
-            </>
+            </div>
         );
     }
 }

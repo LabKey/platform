@@ -87,7 +87,7 @@ export default class EditableAuthRow extends PureComponent<any, State> {
                     handle = {this.props.noHandleIcon ? null : <LightupHandle highlight={this.state.highlight}/>}
                     description = {this.props.description}
                     details = {this.props.details}
-                    name = {this.props.name}
+                    provider = {this.props.provider}
                     enabled = {enabled}
                     delete = {deleteIcon}
                     editIcon = {editIcon}

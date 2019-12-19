@@ -109,7 +109,12 @@ export class App extends PureComponent<Props, State> {
 
     saveChanges = () => {
         console.log(this.state);
-        console.log("globalAuthConfig props: ",{...this.state.globalAuthSettings});
+    };
+
+    getAuthConfigConfigurationArray = (stateSection) => {
+        const authObjsArray = this.state[stateSection];
+        let authArray = authObjsArray.map((auth : any) => { return auth.configuration });
+        console.log(authArray);
     };
 
     onDragEnd = (result) => {
@@ -117,7 +122,6 @@ export class App extends PureComponent<Props, State> {
             return;
         }
 
-        // console.log("result ", result.source.droppableId);
         const stateSection = result.source.droppableId;
 
         const items = this.reorder (
@@ -128,7 +132,9 @@ export class App extends PureComponent<Props, State> {
 
         this.setState(() => ({
             [stateSection]: items
-        }))
+        })
+        , () => console.log(this.state)
+        )
     };
 
     reorder = (list, startIndex, endIndex) => {
