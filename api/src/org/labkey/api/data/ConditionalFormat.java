@@ -33,6 +33,7 @@ import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.ConditionalFormatsType;
 
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -119,7 +120,7 @@ public class ConditionalFormat extends GWTConditionalFormat
     {
         try
         {
-            _meetsCriteria(col, "ignored");
+            _meetsCriteria(col, newValue(col));
             return null;
         }
         catch (RuntimeSQLException e)
@@ -134,6 +135,19 @@ public class ConditionalFormat extends GWTConditionalFormat
             {
                 throw e;
             }
+        }
+    }
+
+    private Object newValue(ColumnRenderProperties col)
+    {
+        try
+        {
+            return col.getJavaClass().getDeclaredConstructor().newInstance();
+        }
+        catch (ReflectiveOperationException e)
+        {
+            // ok
+            return null;
         }
     }
 
