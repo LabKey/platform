@@ -1460,12 +1460,11 @@ public class AuthenticationManager
         {
             try
             {
-                Attachment logo = AttachmentService.get().getAttachment(_configuration, logoType.getFileName());
+                String logoUrl = generateLogoUrl(_configuration, logoType);
 
-                if (null != logo)
+                if (null != logoUrl)
                 {
-                    return "<img src=\"" + generateLogoUrl(_configuration, logoType) + "\"" +
-                            " alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
+                    return "<img src=\"" + logoUrl + "\" alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
                 }
             }
             catch (RuntimeSQLException e)
@@ -1478,9 +1477,11 @@ public class AuthenticationManager
     }
 
     // In most cases, callers will want to add a "revision" parameter with the look & feel revision value to defeat browser caching
-    public static String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
+    public static @Nullable String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
     {
-        return AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image?configuration=" + configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision();
+        Attachment logo = AttachmentService.get().getAttachment(configuration, logoType.getFileName());
+
+        return null != logo ? AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image?configuration=" + configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() : null;
     }
 
     public static Map<String, Object> getSsoConfigurationMap(SSOAuthenticationConfiguration<?> configuration)
