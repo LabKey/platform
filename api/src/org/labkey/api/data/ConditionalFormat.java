@@ -138,6 +138,7 @@ public class ConditionalFormat extends GWTConditionalFormat
         }
     }
 
+    // best-effort to create new value instance for validating conditional format parameters
     private Object newValue(ColumnRenderProperties col)
     {
         try
