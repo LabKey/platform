@@ -219,6 +219,25 @@ public class AuthenticationManager
         addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
+    public static void saveAuthSettings(User user, Map<String, Boolean> map)
+    {
+        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+
+        Map<String, Boolean> changed = map.entrySet().stream()
+            .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!changed.isEmpty())
+        {
+            changed.forEach((k, v)->{
+                props.put(k, Boolean.toString(v));
+                addConfigurationAuditEvent(user, k, v ? "enabled" : "disabled");
+            });
+
+            props.save();
+        }
+    }
+
     public static @Nullable HtmlString getHeaderLogoHtml(URLHelper currentURL)
     {
         return getAuthLogoHtml(currentURL, AuthLogoType.HEADER);
@@ -1496,19 +1515,18 @@ public class AuthenticationManager
     public static Map<String, Object> getConfigurationMap(AuthenticationConfiguration<?> configuration)
     {
         Map<String, Object> map = new HashMap<>();
-        map.put("name", configuration.getAuthenticationProvider().getName()); // TODO: Remove!
         map.put("provider", configuration.getAuthenticationProvider().getName());
         map.put("description", configuration.getDescription());
         map.put("details", configuration.getDetails());
         map.put("enabled", configuration.isEnabled());
         map.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // TODO: Remove once settings modals are used universally
-        map.put("id", "id" + configuration.getRowId());
         map.put("configuration", configuration.getRowId());
         map.putAll(configuration.getCustomProperties());
 
         return map;
     }
 
+    // TODO: Register this!
     public static class TestCase extends Assert
     {
         @Test

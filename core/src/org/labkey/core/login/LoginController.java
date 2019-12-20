@@ -50,9 +50,9 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
@@ -2387,6 +2387,59 @@ public class LoginController extends SpringActionController
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
             return getUrls().appendAuthenticationNavTrail(root);
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
+    {
+        @Override
+        public Object execute(SaveSettingsForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.saveAuthSettings(getUser(), Map.of(
+                SELF_REGISTRATION_KEY, form.isSelfRegistration(),
+                SELF_SERVICE_EMAIL_CHANGES_KEY, form.isSelfServiceEmailChanges(),
+                AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
+            ));
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    public static class SaveSettingsForm
+    {
+        private boolean _selfRegistration;
+        private boolean _selfServiceEmailChanges;
+        private boolean _autoCreateAccounts;
+
+        public boolean isSelfRegistration()
+        {
+            return _selfRegistration;
+        }
+
+        public void setSelfRegistration(boolean selfRegistration)
+        {
+            _selfRegistration = selfRegistration;
+        }
+
+        public boolean isSelfServiceEmailChanges()
+        {
+            return _selfServiceEmailChanges;
+        }
+
+        public void setSelfServiceEmailChanges(boolean selfServiceEmailChanges)
+        {
+            _selfServiceEmailChanges = selfServiceEmailChanges;
+        }
+
+        public boolean isAutoCreateAccounts()
+        {
+            return _autoCreateAccounts;
+        }
+
+        public void setAutoCreateAccounts(boolean autoCreateAccounts)
+        {
+            _autoCreateAccounts = autoCreateAccounts;
         }
     }
 
