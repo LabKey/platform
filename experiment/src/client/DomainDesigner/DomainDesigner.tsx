@@ -183,18 +183,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     renderButtons() {
-        const { submitting, domain } = this.state;
+        const { submitting } = this.state;
 
         return (
-                <Row>
-                    <Col xs={1}>
-                        <Button className='domain-designer-save-btn' onClick={this.onCancelBtnHandler}>Cancel</Button>
-                    </Col>
-                    <Col xs={10} />
-                    <Col xs={1}>
-                        <Button className='pull-right domain-designer-save-btn' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
-                    </Col>
-                </Row>
+                <div className={'domain-form-panel domain-designer-buttons'}>
+                    <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
+                    <Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+                </div>
         )
     }
 
