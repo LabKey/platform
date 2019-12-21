@@ -25,6 +25,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
 
     int getRowId();
     @NotNull String getDescription();
+    int getSortOrder();
     default @Nullable String getDetails()
     {
         return null;

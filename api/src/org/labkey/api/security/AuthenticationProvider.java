@@ -157,7 +157,7 @@ public interface AuthenticationProvider
             .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
     }
 
-    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration> extends AuthenticationProvider
+    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider
     {
         // Providers that need to do special batch-wide processing can override this method
         default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
@@ -180,7 +180,7 @@ public interface AuthenticationProvider
         void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
-    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider<AC>
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>
     {
         // This override allows LdapAuthenticationProvider to invoke the default implementation in PrimaryAuthenticationProvider
         @Override

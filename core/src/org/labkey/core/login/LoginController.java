@@ -102,6 +102,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -2401,6 +2402,10 @@ public class LoginController extends SpringActionController
                 SELF_SERVICE_EMAIL_CHANGES_KEY, form.isSelfServiceEmailChanges(),
                 AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
+
+            // TODO: get arrays/collections of rowIds from form and pass into these methods
+            AuthenticationManager.reorderConfigurations(getUser(), "LDAP", Collections.emptyList());
+            AuthenticationManager.reorderConfigurations(getUser(), "SSO", Collections.emptyList());
 
             return new ApiSimpleResponse("success", true);
         }

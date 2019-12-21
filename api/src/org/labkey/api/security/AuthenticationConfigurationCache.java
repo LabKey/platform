@@ -8,7 +8,6 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 
@@ -65,7 +64,7 @@ public class AuthenticationConfigurationCache
             // state, for example, the LDAP provider can stash all the email domains tied to LDAP authentication, to tailor
             // messages on administration pages.
             Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap =
-                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("RowId"))
+                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations()) // Don't bother sorting since we're going to group by provider
                     .mapStream()
                     .filter(m->null != getProvider(m))  // Filter out providers that no longer exist - null keys throw
                     .collect(Collectors.groupingBy(this::getProvider));
@@ -87,7 +86,7 @@ public class AuthenticationConfigurationCache
         }
 
         // Little helper method simplifies the stream handling above
-        private @Nullable PrimaryAuthenticationProvider getProvider(Map<String, Object> map)
+        private @Nullable PrimaryAuthenticationProvider<?> getProvider(Map<String, Object> map)
         {
             return AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, (String)map.get("Provider"));
         }
@@ -103,10 +102,8 @@ public class AuthenticationConfigurationCache
                 .forEach(this::addConfiguration);
         }
 
-        // For now, group by provider type (SSO vs. LDAP) and order by rowId within those groupings
-        private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR =
-            ((Comparator<AuthenticationConfiguration>) (o1, o2) -> Boolean.compare(o1 instanceof LoginFormAuthenticationConfiguration, o2 instanceof LoginFormAuthenticationConfiguration))
-            .thenComparing(AuthenticationConfiguration::getRowId);
+        // Order by SortOrder & RowId
+        private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR = Comparator.<AuthenticationConfiguration>comparingInt(AuthenticationConfiguration::getSortOrder).thenComparingInt(AuthenticationConfiguration::getRowId);
 
         // Translate a provider's maps into ConfigurationSettings and then ask the provider to convert these into AuthenticationConfigurations
         private List<AuthenticationConfiguration> getConfigurations(PrimaryAuthenticationProvider provider, List<Map<String, Object>> list)
@@ -118,7 +115,7 @@ public class AuthenticationConfigurationCache
             return provider.getAuthenticationConfigurations(settings);
         }
 
-        private void addConfiguration(AuthenticationConfiguration configuration)
+        private void addConfiguration(AuthenticationConfiguration<?> configuration)
         {
             addToMap(_allMap, configuration);
 
@@ -156,7 +153,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    public static @NotNull <T extends AuthenticationConfiguration> Collection<T> getConfigurations(Class<T> clazz)
+    public static @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getConfigurations(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getAll(clazz);
     }

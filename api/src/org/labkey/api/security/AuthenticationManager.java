@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
@@ -52,6 +54,7 @@ import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvi
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
+import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -235,6 +238,23 @@ public class AuthenticationManager
             });
 
             props.save();
+        }
+    }
+
+    public static void reorderConfigurations(User user, String name, Collection<Integer> rowIds)
+    {
+        if (!rowIds.isEmpty())
+        {
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+            MutableInt count = new MutableInt();
+            rowIds.forEach(id->{
+                count.increment();
+                Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Need to pass in mutable map
+            });
+            AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " configurations were reordered");
+            event.setChanges("reordered");
+            AuditLogService.get().addEvent(user, event);
+            AuthenticationConfigurationCache.clear();
         }
     }
 
@@ -446,16 +466,14 @@ public class AuthenticationManager
 
     private static void addConfigurationAuditEvent(User user, String name, String action)
     {
-        AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
-                ContainerManager.getRoot().getId(), name + " was " + action);
+        AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " setting was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
     }
 
-    private static void addProviderAuditEvent(User user, String name,  String action)
+    private static void addProviderAuditEvent(User user, String name, String action)
     {
-        AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
-                ContainerManager.getRoot().getId(), name + " provider was " + action);
+        AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " provider was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
     }
@@ -658,7 +676,6 @@ public class AuthenticationManager
                 errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
             }
         },
-
         PasswordExpired
         {
             @Override
@@ -1113,7 +1130,7 @@ public class AuthenticationManager
 
     public static void logout(@NotNull User user, HttpServletRequest request)
     {
-        PrimaryAuthenticationProvider provider = _userProviders.get(user.getUserId());
+        PrimaryAuthenticationProvider<?> provider = _userProviders.get(user.getUserId());
 
         if (null != provider)
             provider.logout(request);
