@@ -36,19 +36,19 @@ public class AuthenticationConfigurationCache
 
     private static class AuthenticationConfigurationCollections
     {
-        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> _allMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration<?>> _allMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
         {
             @Override
-            protected Set<AuthenticationConfiguration> createCollection()
+            protected Set<AuthenticationConfiguration<?>> createCollection()
             {
                 return new LinkedHashSet<>();
             }
         };
 
-        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> _activeMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration<?>> _activeMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
         {
             @Override
-            protected Set<AuthenticationConfiguration> createCollection()
+            protected Set<AuthenticationConfiguration<?>> createCollection()
             {
                 return new LinkedHashSet<>();
             }
@@ -123,7 +123,7 @@ public class AuthenticationConfigurationCache
                 addToMap(_activeMap, configuration);
         }
 
-        private void addToMap(SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> map, AuthenticationConfiguration configuration)
+        private void addToMap(SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration<?>> map, AuthenticationConfiguration<?> configuration)
         {
             map.put(configuration.getClass(), configuration);
             AuthenticationConfiguration.ALL_CONFIGURATION_INTERFACES
@@ -132,14 +132,14 @@ public class AuthenticationConfigurationCache
                 .forEach(providerClass -> map.put(providerClass, configuration));
         }
 
-        private @NotNull <T extends AuthenticationConfiguration> Collection<T> getAll(Class<T> clazz)
+        private @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getAll(Class<T> clazz)
         {
             Collection<T> configurations = (Collection<T>) _allMap.get(clazz);
 
             return null != configurations ? configurations : Collections.emptyList();
         }
 
-        private @NotNull <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
+        private @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getActive(Class<T> clazz)
         {
             Collection<T> configurations = (Collection<T>) _activeMap.get(clazz);
 
