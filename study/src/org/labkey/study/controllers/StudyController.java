@@ -2981,6 +2981,7 @@ public class StudyController extends BaseStudyController
                     StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
+            def.deleteDatasetRows(getUser(), allLsids);
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)

@@ -2648,15 +2648,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         // Need to fetch the old item in order to log the deletion
         List<Map<String, Object>> oldDatas = getDatasetRows(u, lsids);
 
-        ProvenanceService pvs = ProvenanceService.get();
-
-        if (null != pvs)
-        {
-            deleteProvenance(u, lsids, pvs);
-        }
-
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
+            ProvenanceService pvs = ProvenanceService.get();
+            if (null != pvs)
+            {
+                deleteProvenance(u, lsids, pvs);
+            }
             deleteRows(lsids);
 
             for (Map<String, Object> oldData : oldDatas)
