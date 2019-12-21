@@ -164,7 +164,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    static @NotNull <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
+    static @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getActive(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getActive(clazz);
     }
@@ -175,7 +175,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return The requested configuration or null if not found
      */
-    public static @Nullable <T extends AuthenticationConfiguration> T getActiveConfiguration(Class<T> clazz, int rowId)
+    public static @Nullable <T extends AuthenticationConfiguration<?>> T getActiveConfiguration(Class<T> clazz, int rowId)
     {
         for (T configuration : getActive(clazz))
             if (configuration.getRowId() == rowId)
@@ -190,7 +190,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return The requested configuration or null if not found
      */
-    public static @Nullable <T extends AuthenticationConfiguration> T getConfiguration(Class<T> clazz, int rowId)
+    public static @Nullable <T extends AuthenticationConfiguration<?>> T getConfiguration(Class<T> clazz, int rowId)
     {
         for (T configuration : getConfigurations(clazz))
             if (configuration.getRowId() == rowId)
