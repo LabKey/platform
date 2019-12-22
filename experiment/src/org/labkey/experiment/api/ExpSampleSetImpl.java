@@ -616,7 +616,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), "Sample Set - " + getName());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set");      // Treat the words "Sample Set" as a low priority keyword
+
+        //TODO: Remove 'Set' after completion of naming convention change https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39257
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set Type");      // Treat the words "Sample Set" as a low priority keyword
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
