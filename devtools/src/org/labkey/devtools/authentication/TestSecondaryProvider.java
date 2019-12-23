@@ -19,34 +19,51 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+
+import static org.labkey.devtools.authentication.TestSecondaryController.getConfigureURL;
 
 /**
  * User: adam
  * Date: 3/11/2015
  * Time: 7:45 AM
  */
-public class TestSecondaryProvider implements SecondaryAuthenticationProvider
+public class TestSecondaryProvider implements SecondaryAuthenticationProvider<TestSecondaryConfiguration>
 {
+    public static final String NAME = "TestSecondary";
+
     @Override
     public ActionURL getRedirectURL(User candidate, Container c)
     {
         return TestSecondaryController.getTestSecondaryURL(c);
     }
 
+    @Override
+    public TestSecondaryConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+    {
+        return new TestSecondaryConfiguration(this, cs.getStandardSettings());
+    }
+
     @Nullable
     @Override
     public ActionURL getConfigurationLink()
     {
-        return null;
+        return getConfigurationLink(null);
+    }
+
+    @Override
+    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    {
+        return getConfigureURL(rowId);
     }
 
     @NotNull
     @Override
     public String getName()
     {
-        return "Test Secondary Authentication";
+        return NAME;
     }
 
     @NotNull

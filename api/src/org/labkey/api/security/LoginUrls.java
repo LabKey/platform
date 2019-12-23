@@ -47,12 +47,23 @@ public interface LoginUrls extends UrlProvider
     ActionURL getLogoutURL(Container c, URLHelper returnURL);
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
-    ActionURL getEnableProviderURL(AuthenticationProvider provider);
-    ActionURL getDisableProviderURL(AuthenticationProvider provider);
     ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile);
-    ActionURL getEnableConfigParameterURL(String name);
-    ActionURL getDisableConfigParameterURL(String name);
 
     NavTree appendAuthenticationNavTrail(NavTree root);
+
+
+    @Deprecated
+    ActionURL getEnableConfigParameterURL(String name);
+    @Deprecated
+    ActionURL getDisableConfigParameterURL(String name);
+    @Deprecated
+    ActionURL getEnableProviderURL(AuthenticationProvider provider);
+    @Deprecated
+    ActionURL getDisableProviderURL(AuthenticationProvider provider);
+    @Deprecated
     ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors);
+    @Deprecated
+    ActionURL getOldConfigureURL();
+    @Deprecated
+    NavTree appendOldAuthenticationNavTrail(NavTree root);
 }

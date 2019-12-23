@@ -29,7 +29,9 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
@@ -53,7 +55,7 @@ import java.util.stream.Collectors;
  * Date: Oct 10, 2007
  * Time: 6:49:05 PM
  */
-public interface AuthenticationProvider
+public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?>>
 {
     // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
     List<Class<? extends AuthenticationProvider>> ALL_PROVIDER_INTERFACES = Arrays.asList(
@@ -67,6 +69,8 @@ public interface AuthenticationProvider
             DisableLoginProvider.class,
             ExpireAccountProvider.class
     );
+
+    List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations);
 
     @Nullable ActionURL getConfigurationLink();
 
@@ -157,7 +161,7 @@ public interface AuthenticationProvider
             .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
     }
 
-    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider
+    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider<AC>
     {
         // Providers that need to do special batch-wide processing can override this method
         default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
@@ -266,12 +270,27 @@ public interface AuthenticationProvider
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
-    interface SecondaryAuthenticationProvider extends AuthenticationProvider
+    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider<AC>
     {
+        // Providers that need to do special batch-wide processing can override this method
+        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
+        {
+            return configurations.stream()
+                .map(this::getAuthenticationConfiguration)
+                .collect(Collectors.toList());
+        }
+
+        // Most providers need to override this method to translate a single ConfigurationSettings into an AuthenticationConfiguration
+        default AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+        {
+            throw new IllegalStateException("Shouldn't invoke this method for " + getName());
+        }
+
         /**
          *  Initiate secondary authentication process for the specified user. Candidate has been authenticated via one of the primary providers,
          *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
          */
+        @Deprecated // Moved to SecondaryAuthenticationConfiguration. TODO: Remove
         ActionURL getRedirectURL(User candidate, Container c);
 
         /**

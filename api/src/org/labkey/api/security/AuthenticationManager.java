@@ -28,6 +28,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -44,7 +45,9 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
@@ -440,7 +443,6 @@ public class AuthenticationManager
 
     public static void disableProvider(String name, User user)
     {
-        AuthenticationProvider provider = getProvider(name);
         Set<String> activeNames = getActiveProviders().stream()
             .map(AuthenticationProvider::getName)
             .collect(Collectors.toSet());
@@ -804,7 +806,6 @@ public class AuthenticationManager
 
     public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
-        AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class);
         PrimaryAuthenticationResult result = null;
         try
         {
@@ -827,7 +828,7 @@ public class AuthenticationManager
         {
             AuthenticationResponse firstFailure = null;
 
-            for (LoginFormAuthenticationConfiguration<LoginFormAuthenticationProvider> configuration : AuthenticationConfigurationCache.getActive(LoginFormAuthenticationConfiguration.class))
+            for (LoginFormAuthenticationConfiguration<LoginFormAuthenticationProvider<?>> configuration : AuthenticationConfigurationCache.getActive(LoginFormAuthenticationConfiguration.class))
             {
                 AuthenticationResponse authResponse;
 
@@ -1273,11 +1274,29 @@ public class AuthenticationManager
     }
 
 
+    public static void setSecondaryAuthenticationUser(HttpSession session, int configurationId, User user)
+    {
+        session.setAttribute(getAuthenticationProcessSessionKey(configurationId), user);
+    }
+
+
+    public static @Nullable User getSecondaryAuthenticationUser(HttpSession session, int configurationId)
+    {
+        return (User)session.getAttribute(getAuthenticationProcessSessionKey(configurationId));
+    }
+
+
     private static final String AUTHENTICATION_PROCESS_PREFIX = "AuthenticationProcess$";
 
+    @RemoveIn20_1
     private static String getAuthenticationProcessSessionKey(Class<? extends AuthenticationProvider> clazz)
     {
         return AUTHENTICATION_PROCESS_PREFIX + clazz.getName() + "$User";
+    }
+
+    private static String getAuthenticationProcessSessionKey(int configurationId)
+    {
+        return AUTHENTICATION_PROCESS_PREFIX + configurationId + "$User";
     }
 
 
@@ -1373,13 +1392,33 @@ public class AuthenticationManager
 
             // Validate that secondary auth user matches primary auth user
             if (!secondaryAuthUser.equals(primaryAuthUser))
-            {
                 throw new IllegalStateException("Wrong user");
-            }
-            else
+
+            // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
+        }
+
+        for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
+        {
+            User secondaryAuthUser = getSecondaryAuthenticationUser(session, configuration.getRowId());
+
+            if (null == secondaryAuthUser)
             {
-                // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
+                SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
+                if (provider.bypass())
+                {
+                    _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                    setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
+                    continue;
+                }
+
+                return new AuthenticationResult(configuration.getRedirectURL(primaryAuthUser, c));
             }
+
+            // Validate that secondary auth user matches primary auth user
+            if (!secondaryAuthUser.equals(primaryAuthUser))
+                throw new IllegalStateException("Wrong user");
+
+            // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
         }
 
         // Get the redirect URL from the current session

@@ -15,15 +15,22 @@
  */
 package org.labkey.devtools.authentication;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationConfigureAction;
+import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -54,9 +61,40 @@ public class TestSecondaryController extends SpringActionController
         return new ActionURL(TestSecondaryAction.class, c);
     }
 
+    public static ActionURL getTestSecondaryURL(Container c, int rowId)
+    {
+        ActionURL url = new ActionURL(TestSecondaryAction.class, c);
+        url.addParameter("configuration", rowId);
+
+        return url;
+    }
+
     public static class TestSecondaryForm extends ReturnUrlForm
     {
+        private String _email = null;
+        private int _configuration = -1;
         private boolean _valid;
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
+
+        public int getConfiguration()
+        {
+            return _configuration;
+        }
+
+        @SuppressWarnings("unused")
+        public void setConfiguration(int configuration)
+        {
+            _configuration = configuration;
+        }
 
         public boolean isValid()
         {
@@ -90,13 +128,13 @@ public class TestSecondaryController extends SpringActionController
             if (null == result || null == result.getUser())
                 throw new NotFoundException("You must login before initiating secondary authentication");
 
-            String email = result.getUser().getEmail();
+            form.setEmail(result.getUser().getEmail());
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
             getPageConfig().setIncludeSearch(false);
 
-            return new JspView<>("/org/labkey/devtools/authentication/testSecondary.jsp", email, errors);
+            return new JspView<>("/org/labkey/devtools/authentication/testSecondary.jsp", form, errors);
         }
 
         @Override
@@ -107,7 +145,16 @@ public class TestSecondaryController extends SpringActionController
                 User user = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession()).getUser();
 
                 if (null != user)
-                    AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);
+                {
+                    if (-1 == form.getConfiguration())
+                    {
+                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);
+                    }
+                    else
+                    {
+                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), form.getConfiguration(), user);
+                    }
+                }
 
                 return true;
             }
@@ -126,5 +173,58 @@ public class TestSecondaryController extends SpringActionController
         {
             return null;
         }
+    }
+
+    @AdminConsoleAction
+    public class ConfigureAction extends AuthenticationConfigureAction<TestSecondaryConfigurationForm, TestSecondaryConfiguration>
+    {
+        @Override
+        public ModelAndView getConfigureView(TestSecondaryConfigurationForm form, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/devtools/authentication/testSecondaryConfigure.jsp", form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("authenticationModule");
+            PageFlowUtil.urlProvider(LoginUrls.class).appendOldAuthenticationNavTrail(root).addChild("Configure " + TestSecondaryProvider.NAME + " Authentication");
+            return root;
+        }
+
+        @Override
+        protected void validateForm(TestSecondaryConfigurationForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ActionURL getSuccessURL(TestSecondaryConfigurationForm form)
+        {
+            return getConfigureURL(form.getRowId());  // Redirect to same action -- reload props from database
+        }
+    }
+
+    public static class TestSecondaryConfigurationForm extends AuthenticationConfigureForm<TestSecondaryConfiguration>
+    {
+        public TestSecondaryConfigurationForm()
+        {
+            setDescription("TestSecondary Configuration");
+        }
+
+        @Override
+        public String getProvider()
+        {
+            return TestSecondaryProvider.NAME;
+        }
+    }
+
+    public static ActionURL getConfigureURL(@Nullable Integer configuration)
+    {
+        ActionURL url = new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+
+        if (null != configuration)
+            url.addParameter("configuration", configuration);
+
+        return url;
     }
 }

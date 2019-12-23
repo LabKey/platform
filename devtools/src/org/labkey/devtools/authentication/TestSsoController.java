@@ -132,7 +132,7 @@ public class TestSsoController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("authenticationModule");
-            PageFlowUtil.urlProvider(LoginUrls.class).appendAuthenticationNavTrail(root).addChild("Configure " + TestSsoProvider.NAME + " Authentication");
+            PageFlowUtil.urlProvider(LoginUrls.class).appendOldAuthenticationNavTrail(root).addChild("Configure " + TestSsoProvider.NAME + " Authentication");
             return root;
         }
 

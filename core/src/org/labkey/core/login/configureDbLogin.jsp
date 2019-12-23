@@ -63,7 +63,7 @@
     <tr>
         <td colspan=2>
             <%= hasAdminOpsPerms ? button("Save").submit(true) : "" %>
-            <%= button(!hasAdminOpsPerms || bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getConfigureURL()) %>
+            <%= button(!hasAdminOpsPerms || bean.reshow ? "Done" : "Cancel").href(urlProvider(LoginUrls.class).getOldConfigureURL()) %>
         </td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>

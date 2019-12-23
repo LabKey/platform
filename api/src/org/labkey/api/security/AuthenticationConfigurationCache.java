@@ -63,7 +63,7 @@ public class AuthenticationConfigurationCache
             // AuthenticationConfigurations in a single operation. This allows the provider to definitively record current
             // state, for example, the LDAP provider can stash all the email domains tied to LDAP authentication, to tailor
             // messages on administration pages.
-            Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap =
+            Map<AuthenticationProvider, List<Map<String, Object>>> configurationMap =
                 new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations()) // Don't bother sorting since we're going to group by provider
                     .mapStream()
                     .filter(m->null != getProvider(m))  // Filter out providers that no longer exist - null keys throw
@@ -78,7 +78,7 @@ public class AuthenticationConfigurationCache
             addConfigurations(configurationMap, acceptOnlyFicamProviders);
 
             // Gather and add all the "permanent" configurations -- this should be just a single configuration for Database authentication
-            Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> permanentMap = AuthenticationManager.getAllPrimaryProviders().stream()
+            Map<AuthenticationProvider, List<Map<String, Object>>> permanentMap = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(AuthenticationProvider::isPermanent)
                 .collect(Collectors.toMap(p->p, p->Collections.emptyList()));
 
@@ -86,13 +86,13 @@ public class AuthenticationConfigurationCache
         }
 
         // Little helper method simplifies the stream handling above
-        private @Nullable PrimaryAuthenticationProvider<?> getProvider(Map<String, Object> map)
+        private @Nullable AuthenticationProvider<?> getProvider(Map<String, Object> map)
         {
-            return AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, (String)map.get("Provider"));
+            return AuthenticationProviderCache.getProvider(AuthenticationProvider.class, (String)map.get("Provider"));
         }
 
         // Add all the configurations, one provider group at a time
-        private void addConfigurations(Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap, boolean acceptOnlyFicamProviders)
+        private void addConfigurations(Map<AuthenticationProvider, List<Map<String, Object>>> configurationMap, boolean acceptOnlyFicamProviders)
         {
             configurationMap.entrySet().stream()
                 .filter(e->(!acceptOnlyFicamProviders || e.getKey().isFicamApproved()))
@@ -106,7 +106,7 @@ public class AuthenticationConfigurationCache
         private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR = Comparator.<AuthenticationConfiguration>comparingInt(AuthenticationConfiguration::getSortOrder).thenComparingInt(AuthenticationConfiguration::getRowId);
 
         // Translate a provider's maps into ConfigurationSettings and then ask the provider to convert these into AuthenticationConfigurations
-        private List<AuthenticationConfiguration> getConfigurations(PrimaryAuthenticationProvider provider, List<Map<String, Object>> list)
+        private List<AuthenticationConfiguration> getConfigurations(AuthenticationProvider provider, List<Map<String, Object>> list)
         {
             List<ConfigurationSettings> settings = list.stream()
                 .map(ConfigurationSettings::new)

@@ -10,12 +10,11 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm" %>
-<%@ page import="org.springframework.web.servlet.ModelAndView" %>
+<%@ page import="org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryConfigurationForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<TestSsoConfigureForm> me = (JspView<TestSsoConfigureForm>)HttpView.currentView();
-    TestSsoConfigureForm form = me.getModelBean();
+    JspView<TestSecondaryConfigurationForm> me = (JspView<TestSecondaryConfigurationForm>)HttpView.currentView();
+    TestSecondaryConfigurationForm form = me.getModelBean();
     boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <%=formatMissedErrorsInTable("form", 2)%>
@@ -24,10 +23,6 @@
     <labkey:input type="checkbox" name="enabled" label="Enabled" checked="<%=form.isEnabled()%>" />
     <input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>enabled">
     <labkey:input type="text" name="description" size="50" value="<%=h(form.getDescription())%>" label="Description" />
-    <%
-        ModelAndView view = urlProvider(LoginUrls.class).getPickLogosView(form.getRowId(), false, false, null);
-        include(view, out);
-    %>
     <br/>
     <%=canEdit ? button("Save").submit(true) : ""%>
     <%=button(canEdit ? "Cancel" : "Done").href(form.getReturnActionURL(urlProvider(LoginUrls.class).getOldConfigureURL()))%>

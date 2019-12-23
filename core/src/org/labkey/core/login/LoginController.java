@@ -44,6 +44,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
@@ -163,6 +164,20 @@ public class LoginController extends SpringActionController
         public ActionURL getConfigureURL()
         {
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public ActionURL getOldConfigureURL()
+        {
+            return new ActionURL(OldConfigureAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public NavTree appendOldAuthenticationNavTrail(NavTree root)
+        {
+            root.addChild("Admin Console", AdminController.getShowAdminURL());
+            root.addChild("Authentication (Deprecated)", getOldConfigureURL());
+            return root;
         }
 
         @Override
@@ -2392,6 +2407,24 @@ public class LoginController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
+    @Deprecated // Remove once new UI is implemented and tested
+    public class OldConfigureAction extends SimpleViewAction<ReturnUrlForm>
+    {
+        @Override
+        public ModelAndView getView(ReturnUrlForm form, BindException errors)
+        {
+            return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic(new HelpTopic("authenticationModule"));
+            return getUrls().appendOldAuthenticationNavTrail(root);
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
     {
         @Override
@@ -2466,7 +2499,7 @@ public class LoginController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AuthParameterForm form)
         {
-            return getUrls().getConfigureURL();
+            return getUrls().getOldConfigureURL();
         }
     }
 
@@ -2518,9 +2551,8 @@ public class LoginController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(ProviderForm form)
         {
-            return getUrls().getConfigureURL();
+            return getUrls().getOldConfigureURL();
         }
-
     }
 
     @Deprecated
@@ -2585,9 +2617,8 @@ public class LoginController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(DeleteConfigurationForm form)
         {
-            return getUrls().getConfigureURL();
+            return getUrls().getOldConfigureURL();
         }
-
     }
 
     public static ActionURL getConfigureDbLoginURL(boolean reshow)
@@ -2611,7 +2642,7 @@ public class LoginController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            getUrls().appendAuthenticationNavTrail(root).addChild("Configure Database Authentication");
+            getUrls().appendOldAuthenticationNavTrail(root).addChild("Configure Database Authentication");
             setHelpTopic(new HelpTopic("configDbLogin"));
             return root;
         }

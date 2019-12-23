@@ -272,6 +272,7 @@ public class AdminController extends SpringActionController
 
         // Configuration
         AdminConsole.addLink(Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
+        AdminConsole.addLink(Configuration, "authentication (deprecated)", PageFlowUtil.urlProvider(LoginUrls.class).getOldConfigureURL());
         AdminConsole.addLink(Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root), AdminOperationsPermission.class);
         // TODO move to FileContentModule

@@ -19,8 +19,9 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.MenuButton" %>
 <%@ page import="org.labkey.api.data.RenderContext" %>
-<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfiguration" %>
+<%@ page import="org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration" %>
+<%@ page import="org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfigurationCache" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
@@ -33,11 +34,7 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="java.util.function.Function" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -57,26 +54,19 @@
 
 <labkey:panel title="Primary authentication configurations">
     <%
-        // Hack -- for now, allow a single LDAP configuration in community
-        PremiumService svc = PremiumService.get();
-        Set<AuthenticationProvider> inUse = svc.isFileWatcherSupported() ? Collections.emptySet() :
-            AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class).stream()
-                .map((Function<AuthenticationConfiguration, AuthenticationProvider>) AuthenticationConfiguration::getAuthenticationProvider)
-                .collect(Collectors.toSet());
-
         if (canEdit)
         {
             MenuButton btn = new MenuButton("Add...");
             primary.stream()
                 .filter(ap->null != ap.getConfigurationLink())
-                .filter(ap->!ap.isPermanent() && !inUse.contains(ap))
+                .filter(ap->!ap.isPermanent())
                 .sorted(Comparator.comparing(AuthenticationProvider::getName))
                 .forEach(ap->btn.addMenuItem(ap.getName() + " - " + ap.getDescription(), ap.getConfigurationLink()));
 
             if (btn.getNavTree().hasChildren())
                 btn.render(new RenderContext(getViewContext()), out);
         }
-        appendConfigurations(out, canEdit);
+        appendConfigurations(out, PrimaryAuthenticationConfiguration.class, canEdit);
     %>
 </labkey:panel>
 
@@ -84,8 +74,24 @@
     if (!secondary.isEmpty())
     {
 %>
-        <labkey:panel title="Installed secondary authentication providers">
-            <% appendSecondaryProviders(out, secondary, urls, canEdit); %>
+        <labkey:panel title="Secondary authentication configurations">
+            <%
+                if (canEdit)
+                {
+                    MenuButton btn = new MenuButton("Add...");
+                    secondary.stream()
+                        .filter(ap->null != ap.getConfigurationLink())
+                        .filter(ap->!ap.isPermanent())
+                        .sorted(Comparator.comparing(AuthenticationProvider::getName))
+                        .forEach(ap->btn.addMenuItem(ap.getName() + " - " + ap.getDescription(), ap.getConfigurationLink()));
+
+                    if (btn.getNavTree().hasChildren())
+                        btn.render(new RenderContext(getViewContext()), out);
+                }
+                appendConfigurations(out, SecondaryAuthenticationConfiguration.class, canEdit);
+                out.write("<br/>");
+                appendSecondaryProviders(out, secondary, urls, canEdit);
+            %>
         </labkey:panel>
 <%
     }
@@ -288,9 +294,9 @@
         out.print("</table>");
     }
 
-    private void appendConfigurations(JspWriter out, boolean canEdit) throws IOException
+    private <AC extends AuthenticationConfiguration<?>> void appendConfigurations(JspWriter out, Class<AC> clazz, boolean canEdit) throws IOException
     {
-        Collection<AuthenticationConfiguration> configurations = AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class);
+        Collection<AC> configurations = AuthenticationConfigurationCache.getConfigurations(clazz);
         boolean includeDeleteColumn = canEdit && configurations.size() > 1;  // Don't show "delete" column if database auth is the only configuration
         out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
@@ -302,7 +308,7 @@
                 "</tr>");
 
         int rowIndex = 0;
-        for (AuthenticationConfiguration configuration : configurations)
+        for (AC configuration : configurations)
         {
             out.print("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
             out.print(h(configuration.getDescription()));
