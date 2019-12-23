@@ -114,16 +114,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk,
                 function(queryDetails) {
                     this.queryDetails = queryDetails;
-                    this.loadQueryDependencies();
+                    this.setQueryDetails(this.queryDetails);
                 },
                 this.onLoadError,
                 this);
 
-    },
-
-    loadQueryDependencies : function(){
-        this.parent.mask('loading dependencies');
-        this.queriesCache.load(function(){this.setQueryDetails(this.queryDetails)}, this.onLoadError, this);
     },
 
     onLoadError : function(errorInfo){
@@ -513,10 +508,6 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             var indices = this.formatIndices(queryDetails);
             if (indices)
                 children.push(indices);
-
-            const dependencies = this.formatDependencies();
-            if (dependencies)
-                children.push(dependencies);
         }
 
         return Ext4.create('Ext.Component', {
@@ -686,12 +677,37 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         }, this, {single: true});
 
         this.add(component);
+
+        // add a temporary placeholder for the query dependencies but don't block the entire page
+        this.add({
+            xtype : 'box',
+            height : 100,
+            listeners : {
+                render : {
+                    scope : this,
+                    fn : function(cmp){
+                        cmp.getEl().mask('loading dependencies');
+                        this.queriesCache.load(function(){this.setQueryDependencies(cmp)}, this.onLoadError, this);
+                    }
+                }
+            }
+        });
+    },
+
+    /**
+     * Swap in query dependency report from the placeholder component.
+     */
+    setQueryDependencies : function(cmp){
+        this.remove(cmp);
+        this.add({
+            xtype : 'box',
+            html : this.formatDependencies()
+        });
     },
 
     setQueryDetails : function(queryDetails) {
         this.queryDetails = queryDetails;
         this.renderQueryDetails();
-        this.parent.unmask();
     },
 
     toggleLookupRow : function(expando) {
