@@ -699,10 +699,12 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
      */
     setQueryDependencies : function(cmp){
         this.remove(cmp);
-        this.add({
-            xtype : 'box',
-            html : this.formatDependencies()
-        });
+        var dependencies = this.formatDependencies();
+        if (dependencies)
+            this.add({
+                xtype : 'box',
+                html : dependencies
+            });
     },
 
     setQueryDetails : function(queryDetails) {
