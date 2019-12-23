@@ -75,7 +75,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     /**
      * @throws NotFoundException if the query/table does not exist.
      */
-    public QueryView getQueryView()
+    public final QueryView getQueryView()
     {
         init();
         if (_schema == null)
@@ -285,7 +285,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _schemaName == null ? "" : _schemaName.toString();
     }
 
-    public @Nullable UserSchema getSchema()
+    public final @Nullable UserSchema getSchema()
     {
         init();
         return _schema;
