@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.7.0-fb-jobFromTemplate.15"
+    "@labkey/components": "0.7.0-fb-jobFromTemplate.18"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
