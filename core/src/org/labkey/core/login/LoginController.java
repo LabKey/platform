@@ -46,6 +46,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.*;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
@@ -111,12 +112,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
+import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
-import static org.labkey.api.security.AuthenticationManager.getConfigurationMap;
-import static org.labkey.api.security.AuthenticationManager.getSsoConfigurationMap;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /**
@@ -2688,28 +2687,14 @@ public class LoginController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            ArrayList<Map<String, Object>> ssoConfigurations = new ArrayList<>();
-            ArrayList<Map<String, Object>> formConfigurations = new ArrayList<>();
-
-            for (AuthenticationConfiguration<?> configuration : AuthenticationConfigurationCache.getConfigurations(AuthenticationConfiguration.class))
-            {
-                if (configuration instanceof SSOAuthenticationConfiguration<?>)
-                {
-                    ssoConfigurations.add(getSsoConfigurationMap((SSOAuthenticationConfiguration<?>)configuration));
-                }
-                else if (configuration instanceof LoginFormAuthenticationConfiguration<?>)
-                {
-                    formConfigurations.add(getConfigurationMap(configuration));
-                }
-            }
-
-            Map<String, Object> globalAuthSettings = new HashMap<>();
-            globalAuthSettings.put(SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled());
-            globalAuthSettings.put(SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled());
-            globalAuthSettings.put(AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled());
+            Map<String, Object> globalSettings = Map.of(
+                SELF_REGISTRATION_KEY, AuthenticationManager.isRegistrationEnabled(),
+                SELF_SERVICE_EMAIL_CHANGES_KEY, AuthenticationManager.isSelfServiceEmailChangesEnabled(),
+                AUTO_CREATE_ACCOUNTS_KEY, AuthenticationManager.isAutoCreateAccountsEnabled()
+            );
 
             // Primary providers
-            Map<String, Object> primary = AuthenticationManager.getAllPrimaryProviders().stream()
+            Map<String, Object> primaryProviders = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
                 .filter(ap->!ap.isPermanent())
                 .collect(Collectors.toMap(AuthenticationProvider::getName, ap->{
@@ -2728,8 +2713,18 @@ public class LoginController extends SpringActionController
                     return m;
                 }));
 
+            // SSO configurations
+            JSONArray ssoConfigurations = AuthenticationConfigurationCache.getConfigurations(SSOAuthenticationConfiguration.class).stream()
+                .map(AuthenticationManager::getSsoConfigurationMap)
+                .collect(JSONArray.collector());
+
+            // Login form configurations
+            JSONArray formConfigurations = AuthenticationConfigurationCache.getConfigurations(LoginFormAuthenticationConfiguration.class).stream()
+                .map(AuthenticationManager::getConfigurationMap)
+                .collect(JSONArray.collector());
+
             // Secondary providers
-            List<Map<String, Object>> secondary = AuthenticationManager.getAllSecondaryProviders().stream()
+            JSONArray secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
                 .map(sp->{
                     Map<String, Object> m = new HashMap<>();
                     m.put("name", sp.getName());
@@ -2740,15 +2735,23 @@ public class LoginController extends SpringActionController
                     m.put("description", sp.getDescription());
                     return m;
                 })
-                .collect(Collectors.toList());
+                .collect(JSONArray.collector());
+
+            // Secondary configurations
+            JSONArray secondaryConfigurations = AuthenticationConfigurationCache.getConfigurations(SecondaryAuthenticationConfiguration.class).stream()
+                .map(AuthenticationManager::getConfigurationMap)
+                .collect(JSONArray.collector());
 
             ApiSimpleResponse res = new ApiSimpleResponse();
-            res.put("primary", primary);
-            res.put("secondaryAuth", new JSONArray(secondary));
-            res.put("globalAuthSettings", globalAuthSettings);
-            res.put("singleSignOnAuth", new JSONArray(ssoConfigurations));
-            res.put("loginFormAuth", new JSONArray(formConfigurations));
+            res.put("globalAuthSettings", globalSettings);
             res.put("canEdit", getContainer().hasPermission(getUser(), AdminOperationsPermission.class));
+
+            res.put("primary", primaryProviders);
+            res.put("singleSignOnAuth", ssoConfigurations);
+            res.put("loginFormAuth", formConfigurations);
+
+            res.put("secondaryAuth", secondaryProviders);
+            res.put("secondaryConfigurations", secondaryConfigurations);
 
             return res;
         }

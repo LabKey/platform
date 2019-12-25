@@ -164,6 +164,7 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
     interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider<AC>
     {
         // Providers that need to do special batch-wide processing can override this method
+        @Override
         default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
         {
             return configurations.stream()
@@ -273,6 +274,7 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider<AC>
     {
         // Providers that need to do special batch-wide processing can override this method
+        @Override
         default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
         {
             return configurations.stream()
