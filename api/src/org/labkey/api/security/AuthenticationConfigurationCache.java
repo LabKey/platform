@@ -63,11 +63,14 @@ public class AuthenticationConfigurationCache
             // AuthenticationConfigurations in a single operation. This allows the provider to definitively record current
             // state, for example, the LDAP provider can stash all the email domains tied to LDAP authentication, to tailor
             // messages on administration pages.
-            Map<AuthenticationProvider, List<Map<String, Object>>> configurationMap =
-                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations()) // Don't bother sorting since we're going to group by provider
+            Map<AuthenticationConfigurationFactory, List<Map<String, Object>>> configurationMap =
+                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations()) // Don't bother sorting since we're grouping by provider
                     .mapStream()
-                    .filter(m->null != getProvider(m))  // Filter out providers that no longer exist - null keys throw
-                    .collect(Collectors.groupingBy(this::getProvider));
+                    .filter(m->{
+                        AuthenticationProvider<?> provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, (String)m.get("Provider"));
+                        return (null != provider && (!acceptOnlyFicamProviders || provider.isFicamApproved()));
+                    })
+                    .collect(Collectors.groupingBy(this::getAuthenticationConfigurationFactory));
 
             // Bit of a hack: LdapProvider sets "ldapDomain" to the first configuration's domain. We should add getDomain()
             // to AuthenticationConfiguration and collect all email domains, caching them with the collections. This is only
@@ -75,27 +78,31 @@ public class AuthenticationConfigurationCache
             AuthenticationManager.setLdapDomain(null);
 
             // Add each group of configurations
-            addConfigurations(configurationMap, acceptOnlyFicamProviders);
+            addConfigurations(configurationMap);
 
             // Gather and add all the "permanent" configurations -- this should be just a single configuration for Database authentication
-            Map<AuthenticationProvider, List<Map<String, Object>>> permanentMap = AuthenticationManager.getAllPrimaryProviders().stream()
+            Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> permanentMap = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(AuthenticationProvider::isPermanent)
                 .collect(Collectors.toMap(p->p, p->Collections.emptyList()));
 
-            addConfigurations(permanentMap, acceptOnlyFicamProviders);
+            addConfigurations(permanentMap);
         }
 
         // Little helper method simplifies the stream handling above
-        private @Nullable AuthenticationProvider<?> getProvider(Map<String, Object> map)
+        private @NotNull AuthenticationConfigurationFactory<?> getAuthenticationConfigurationFactory(Map<String, Object> map)
         {
-            return AuthenticationProviderCache.getProvider(AuthenticationProvider.class, (String)map.get("Provider"));
+            String providerName = (String)map.get("Provider");
+            AuthenticationProvider<?> provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, providerName);
+            if (provider instanceof AuthenticationConfigurationFactory)
+                return (AuthenticationConfigurationFactory<?>)provider;
+
+            throw new IllegalStateException("AuthenticationProvider does not implement AuthenticationConfigurationFactory: " + providerName);
         }
 
         // Add all the configurations, one provider group at a time
-        private void addConfigurations(Map<AuthenticationProvider, List<Map<String, Object>>> configurationMap, boolean acceptOnlyFicamProviders)
+        private void addConfigurations(Map<? extends AuthenticationConfigurationFactory, List<Map<String, Object>>> configurationMap)
         {
             configurationMap.entrySet().stream()
-                .filter(e->(!acceptOnlyFicamProviders || e.getKey().isFicamApproved()))
                 .map(e->getConfigurations(e.getKey(), e.getValue()))
                 .flatMap(Collection::stream)
                 .sorted(AUTHENTICATION_CONFIGURATION_COMPARATOR)
@@ -106,13 +113,13 @@ public class AuthenticationConfigurationCache
         private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR = Comparator.<AuthenticationConfiguration>comparingInt(AuthenticationConfiguration::getSortOrder).thenComparingInt(AuthenticationConfiguration::getRowId);
 
         // Translate a provider's maps into ConfigurationSettings and then ask the provider to convert these into AuthenticationConfigurations
-        private List<AuthenticationConfiguration> getConfigurations(AuthenticationProvider provider, List<Map<String, Object>> list)
+        private List<AuthenticationConfiguration> getConfigurations(AuthenticationConfigurationFactory factory, List<Map<String, Object>> list)
         {
             List<ConfigurationSettings> settings = list.stream()
                 .map(ConfigurationSettings::new)
                 .collect(Collectors.toList());
 
-            return provider.getAuthenticationConfigurations(settings);
+            return factory.getAuthenticationConfigurations(settings);
         }
 
         private void addConfiguration(AuthenticationConfiguration<?> configuration)

@@ -337,7 +337,7 @@
                 if (configuration.getAuthenticationProvider().isPermanent())
                     out.print("&nbsp;");
                 else
-                    out.print(link("delete", new ActionURL(LoginController.DeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()))
+                    out.print(link("delete", new ActionURL(LoginController.OldDeleteConfigurationAction.class, ContainerManager.getRoot()).addParameter("configuration", configuration.getRowId()))
                         .usePost("Are you sure you want to delete the \"" + configuration.getDescription() + "\" authentication configuration?"));
                 out.print("</td>");
             }

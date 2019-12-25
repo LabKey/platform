@@ -2599,7 +2599,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteConfigurationAction extends FormHandlerAction<DeleteConfigurationForm>
+    public class OldDeleteConfigurationAction extends FormHandlerAction<DeleteConfigurationForm>
     {
         @Override
         public void validateCommand(DeleteConfigurationForm form, Errors errors)
@@ -2617,6 +2617,17 @@ public class LoginController extends SpringActionController
         public ActionURL getSuccessURL(DeleteConfigurationForm form)
         {
             return getUrls().getOldConfigureURL();
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
+    {
+        @Override
+        public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.deleteConfiguration(form.getConfiguration());
+            return true;
         }
     }
 

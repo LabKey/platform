@@ -70,8 +70,6 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
             ExpireAccountProvider.class
     );
 
-    List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations);
-
     @Nullable ActionURL getConfigurationLink();
 
     default @Nullable ActionURL getSaveLink()
@@ -161,23 +159,8 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
             .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
     }
 
-    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider<AC>
+    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        // Providers that need to do special batch-wide processing can override this method
-        @Override
-        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
-        {
-            return configurations.stream()
-                .map(this::getAuthenticationConfiguration)
-                .collect(Collectors.toList());
-        }
-
-        // Most providers need to override this method to translate a single ConfigurationSettings into an AuthenticationConfiguration
-        default AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
-        {
-            throw new IllegalStateException("Shouldn't invoke this method for " + getName());
-        }
-
         default void logout(HttpServletRequest request)
         {
         }
@@ -185,22 +168,15 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
         void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
-    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        // This override allows LdapAuthenticationProvider to invoke the default implementation in PrimaryAuthenticationProvider
-        @Override
-        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
-        {
-            return PrimaryAuthenticationProvider.super.getAuthenticationConfigurations(configurations);
-        }
-
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
 
         @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active);
 
         @Override
-        default void migrateOldConfiguration(boolean active, User user) throws Throwable
+        default void migrateOldConfiguration(boolean active, User user)
         {
             AuthenticationConfigureForm form = getFormFromOldConfiguration(active);
 
@@ -271,23 +247,8 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
-    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider<AC>
+    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        // Providers that need to do special batch-wide processing can override this method
-        @Override
-        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
-        {
-            return configurations.stream()
-                .map(this::getAuthenticationConfiguration)
-                .collect(Collectors.toList());
-        }
-
-        // Most providers need to override this method to translate a single ConfigurationSettings into an AuthenticationConfiguration
-        default AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
-        {
-            throw new IllegalStateException("Shouldn't invoke this method for " + getName());
-        }
-
         /**
          *  Initiate secondary authentication process for the specified user. Candidate has been authenticated via one of the primary providers,
          *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
