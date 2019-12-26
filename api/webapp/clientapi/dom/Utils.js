@@ -53,10 +53,10 @@ LABKEY.Utils = new function(impl, $) {
     };
 
     var displayModalAlert = function(title, msg) {
-       displayModal(title, msg, undefined);
+       displayModal(title, msg, undefined, true);
     };
 
-    var displayModal = function(title, msg, fn, args) {
+    var displayModal = function(title, msg, fn, args, disableBackdrop) {
         var modal = $('#lk-utils-modal');
 
         if (modal.length === 0) {
@@ -84,8 +84,14 @@ LABKEY.Utils = new function(impl, $) {
          );
 
         modal.find('.modal-content').html(html.join(''));
-        if (fn && typeof fn === 'function')
+        if (fn && typeof fn === 'function') {
             fn.apply(this, args);
+        }
+
+        // prevent the modal from being closed by clicking outside the dialog
+        if (disableBackdrop) {
+            modal.modal({backdrop: 'static'});
+        }
 
         modal.modal('show');
     };
@@ -160,8 +166,8 @@ LABKEY.Utils = new function(impl, $) {
     /**
      * Documentation specified in core/Utils.js -- search for "@name modal"
      */
-    impl.modal = function(title, msg, fn, args) {
-      displayModal(title, msg, fn, args);
+    impl.modal = function(title, msg, fn, args, disableBackdrop) {
+      displayModal(title, msg, fn, args, disableBackdrop);
     };
 
     /**
