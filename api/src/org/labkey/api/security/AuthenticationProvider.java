@@ -30,6 +30,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
@@ -55,7 +56,7 @@ import java.util.stream.Collectors;
  * Date: Oct 10, 2007
  * Time: 6:49:05 PM
  */
-public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?>>
+public interface AuthenticationProvider
 {
     // All the AuthenticationProvider interfaces. This list is used by AuthenticationProviderCache to filter collections of providers.
     List<Class<? extends AuthenticationProvider>> ALL_PROVIDER_INTERFACES = Arrays.asList(
@@ -159,7 +160,7 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
             .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
     }
 
-    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration<?>> extends AuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
+    interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
         default void logout(HttpServletRequest request)
         {
@@ -173,12 +174,12 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
 
-        @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active);
+        @Nullable AuthenticationConfigureForm<AC> getFormFromOldConfiguration(boolean active);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user)
         {
-            AuthenticationConfigureForm form = getFormFromOldConfiguration(active);
+            AuthenticationConfigureForm<AC> form = getFormFromOldConfiguration(active);
 
             if (null != form)
             {
@@ -188,9 +189,9 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
         }
     }
 
-    interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
+    interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SSOConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
+        @Nullable SSOConfigureForm<AC> getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user) throws Throwable
@@ -203,7 +204,7 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-            SSOConfigureForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SSOConfigureForm<AC> form = getFormFromOldConfiguration(active, !logos.isEmpty());
 
             if (null != form)
             {
@@ -212,7 +213,7 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
 
                 if (!logos.isEmpty())
                 {
-                    SSOAuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
+                    SSOAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
 
                     List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
                     svc.addAttachments(configuration, attachmentFiles, user);
@@ -247,7 +248,7 @@ public interface AuthenticationProvider<AC extends AuthenticationConfiguration<?
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
-    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
+    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
         /**
          *  Initiate secondary authentication process for the specified user. Candidate has been authenticated via one of the primary providers,

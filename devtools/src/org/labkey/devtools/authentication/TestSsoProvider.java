@@ -27,7 +27,7 @@ import org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm
 /**
  * Created by adam on 6/5/2016.
  */
-public class TestSsoProvider implements SSOAuthenticationProvider
+public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfiguration>
 {
     public static final String NAME = "TestSSO";
     static final String SET_KEY = "TestSsoAuthenticationProperties";

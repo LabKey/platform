@@ -26,8 +26,6 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
                 LoginFormAuthenticationConfiguration.class,
                 SSOAuthenticationConfiguration.class,
             SecondaryAuthenticationConfiguration.class
-
-            // TODO: More to come?
     );
 
     int getRowId();

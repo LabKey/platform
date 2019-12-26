@@ -67,7 +67,7 @@ public class AuthenticationConfigurationCache
                 new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations()) // Don't bother sorting since we're grouping by provider
                     .mapStream()
                     .filter(m->{
-                        AuthenticationProvider<?> provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, (String)m.get("Provider"));
+                        AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, (String)m.get("Provider"));
                         return (null != provider && (!acceptOnlyFicamProviders || provider.isFicamApproved()));
                     })
                     .collect(Collectors.groupingBy(this::getAuthenticationConfigurationFactory));
@@ -92,7 +92,7 @@ public class AuthenticationConfigurationCache
         private @NotNull AuthenticationConfigurationFactory<?> getAuthenticationConfigurationFactory(Map<String, Object> map)
         {
             String providerName = (String)map.get("Provider");
-            AuthenticationProvider<?> provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, providerName);
+            AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, providerName);
             if (provider instanceof AuthenticationConfigurationFactory)
                 return (AuthenticationConfigurationFactory<?>)provider;
 
