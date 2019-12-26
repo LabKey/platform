@@ -516,7 +516,7 @@ public class SecurityPolicy implements HasPermission
     }
 
     @NotNull
-    protected Set<Role> getContextualRoles(UserPrincipal principal)
+    protected Set<Role> getContextualRoles(@NotNull UserPrincipal principal)
     {
         return principal.getContextualRoles(this);
     }

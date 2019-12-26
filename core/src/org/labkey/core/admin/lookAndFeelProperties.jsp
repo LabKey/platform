@@ -88,7 +88,7 @@
             {
                 %><option value="" <%=selected(themeNameInherited)%>>Site Default (<%=h(siteThemeName)%>)</option><%
             }
-            for (String name : Arrays.asList("Harvest","Leaf","Madison","Mono","Ocean","Overcast","Seattle"))
+            for (String name : Arrays.asList("Harvest","Leaf","Madison","Mono","Ocean","Overcast","Seattle","Sky"))
             {
                 %><option value="<%=h(name)%>" <%=selected(!themeNameInherited && name.equalsIgnoreCase(themeName))%>><%=h(name)%></option><%
             }

@@ -89,6 +89,7 @@ public class PageConfig
     private ActionURL _rssUrl = null;
     private String _rssTitle = null;
     private boolean _includeLoginLink = true;
+    private boolean _includeSearch = true;
     private int _minimumWidth = 400;
     private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<>();
     private TrueFalse _showHeader = TrueFalse.Default;
@@ -222,6 +223,16 @@ public class PageConfig
     public void setIncludeLoginLink(boolean includeLoginLink)
     {
         _includeLoginLink = includeLoginLink;
+    }
+
+    public boolean shouldIncludeSearch()
+    {
+        return _includeSearch;
+    }
+
+    public void setIncludeSearch(boolean includeSearch)
+    {
+        _includeSearch = includeSearch;
     }
 
     public int getMinimumWidth()

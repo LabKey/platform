@@ -48,7 +48,7 @@ public class RemapCache
         // fetched on demand
         TableInfo _table;
 
-        public Key(SchemaKey schemaKey, String queryName, User user, Container container, ContainerFilter.Type containerFilterType)
+        private Key(SchemaKey schemaKey, String queryName, User user, Container container, ContainerFilter.Type containerFilterType)
         {
             _schemaKey = schemaKey;
             _queryName = queryName;
@@ -58,14 +58,24 @@ public class RemapCache
             _table = null;
         }
 
-        public Key(SchemaKey schemaKey, String queryName, User user, Container container, ContainerFilter.Type containerFilterType,
-                   @NotNull TableInfo lookupTable)
+        private Key(@NotNull TableInfo lookupTable)
         {
-            _schemaKey = schemaKey;
+            UserSchema schema = lookupTable.getUserSchema();
+            User user = schema.getUser();
+            Container c = schema.getContainer();
+
+            ContainerFilter.Type filterType = ContainerFilter.Type.CurrentPlusProjectAndShared;
+            if (lookupTable.getContainerFilter() != null)
+                filterType = lookupTable.getContainerFilter().getType();
+
+            SchemaKey schemaName = lookupTable.getUserSchema().getSchemaPath();
+            String queryName = Objects.toString(lookupTable.getPublicName(), lookupTable.getName());
+
+            _schemaKey = schema.getSchemaPath();
             _queryName = queryName;
             _user = user;
-            _container = container;
-            _containerFilterType = containerFilterType;
+            _container = c;
+            _containerFilterType = filterType;
             _table = lookupTable;
         }
 
@@ -116,9 +126,9 @@ public class RemapCache
         return new Key(schemaName, queryName, user, c, filterType);
     }
 
-    private Key key(SchemaKey schemaName, String queryName, User user, Container c, ContainerFilter.Type filterType, @NotNull TableInfo table)
+    private Key key(@NotNull TableInfo table)
     {
-        return new Key(schemaName, queryName, user, c, filterType, table);
+        return new Key(table);
     }
 
     private SimpleTranslator.RemapPostConvert remapper(Key key, Map<Key, SimpleTranslator.RemapPostConvert> remapCache)
@@ -149,13 +159,9 @@ public class RemapCache
     /**
      * Convert the string value to the target table's PK value by using the table's unique indices.
      */
-    public <V> V remap(TableInfo lookupTable, User user, Container c, ContainerFilter.Type filterType, String value)
+    public <V> V remap(TableInfo lookupTable, String value)
     {
-        SchemaKey schemaName = lookupTable.getUserSchema().getSchemaPath();
-        String queryName = Objects.toString(lookupTable.getPublicName(), lookupTable.getName());
-        Key key = key(schemaName, queryName, user, c, filterType, lookupTable);
-
-        return remap(key(schemaName, queryName, user, c, filterType), value);
+        return remap(key(lookupTable), value);
     }
 
 }

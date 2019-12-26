@@ -1789,6 +1789,7 @@ public class PageFlowUtil
 
             // TODO: This needs to be refactored to allow themes by convention
             if (!"seattle".equalsIgnoreCase(themeName) &&
+                    !"sky".equalsIgnoreCase(themeName) &&
                     !"overcast".equalsIgnoreCase(themeName) &&
                     !"harvest".equalsIgnoreCase(themeName) &&
                     !"leaf".equalsIgnoreCase(themeName) &&

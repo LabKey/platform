@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.exp.Lsid;
@@ -26,7 +27,9 @@ import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -71,15 +74,15 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
 
             if ("ExperimentRun".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion());
             }
             else if ("ProtocolApplication".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Sample".equals(prefix) || "Material".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Data".equals(prefix))
             {
@@ -87,7 +90,7 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
             }
             else if (suffix != null && SUFFIX_PATTERN.matcher(suffix).matches())
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion());
             }
 
             return lsid.toString();
@@ -106,15 +109,15 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
             }
             if ("ExperimentRun".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":ExperimentRun.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}", lsid.getObjectId(), lsid.getVersion());
             }
             else if ("ProtocolApplication".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("${RunLSIDBase}", lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Sample".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion(), null);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Material".equals(prefix))
             {
@@ -124,7 +127,7 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion(), null);
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
             else if ("Data".equals(prefix))
@@ -135,7 +138,7 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion(), null);
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarFileId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
             else
@@ -146,7 +149,7 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion(), null);
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion());
                 }
             }
         }
@@ -170,7 +173,7 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
         {
             index++;
         }
-        return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + lsid.getNamespacePrefix() + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "" + suffix.substring(index), lsid.getObjectId(), lsid.getVersion(), null);
+        return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + lsid.getNamespacePrefix() + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "" + suffix.substring(index), lsid.getObjectId(), lsid.getVersion());
 
     }
 
@@ -183,7 +186,15 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
     {
         private final LSIDRelativizer _relativizer;
 
-        private Map<String, String> _lsids = new HashMap<>();
+        private Map<String, String> _originalToRelative = new HashMap<>();
+
+        // Maintain a separate set of values so we can quickly determine if one is already in use instead of having
+        // to traverse the whole map. See issue 39260
+        private Set<String> _relativized = new HashSet<>();
+
+        // Also keep track of the next suffix to append for a given LSID prefix so we don't have to run through the full
+        // sequence of values we already scanned the last time. See issue 39260
+        private Map<String, Integer> _nextExportVersion = new HashMap<>();
 
         private int _nextDataId = 1;
         private int _nextSampleId = 1;
@@ -232,51 +243,44 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
 
         private String getExistingLSID(String originalLSID)
         {
-            return _lsids.get(originalLSID);
+            return _originalToRelative.get(originalLSID);
         }
 
         private void putLSID(String originalLSID, String relativizedLSID)
         {
-            assert !_lsids.containsKey(originalLSID);
-            _lsids.put(originalLSID, relativizedLSID);
+            assert !_originalToRelative.containsKey(originalLSID);
+            // Maintain collections in both directions, as we need efficient lookups for both types of LSIDs. See issue 39260
+            _originalToRelative.put(originalLSID, relativizedLSID);
+            _relativized.add(relativizedLSID);
         }
 
-        private String uniquifyRelativizedLSID(String prefix, String objectId, String version, Integer exportVersion)
+        private String uniquifyRelativizedLSID(String prefix, String objectId, String version)
         {
-            String candidate;
-            Integer newExportVersion = exportVersion;
-            do
-            {
-                candidate = getNewLSIDCandidate(prefix, objectId, version, newExportVersion);
-                newExportVersion = newExportVersion != null ? newExportVersion + 1 : 1;
-            } while(_lsids.containsValue(candidate));
+            version = StringUtils.trimToNull(version);
 
-            return candidate;
-        }
-
-        private String getNewLSIDCandidate(String prefix, String objectId, String version, Integer exportVersion)
-        {
             StringBuilder sb = new StringBuilder(prefix);
             sb.append(":");
             sb.append(Lsid.encodePart(objectId).replace("%23", "#"));
-            if (version != null && !(version.length() == 0))
+            if (version != null)
             {
                 sb.append(":");
                 sb.append(Lsid.encodePart(version));
-
-                if (exportVersion != null)
-                {
-                    sb.append("-Export");
-                    sb.append(exportVersion.toString());
-                }
             }
-            else if (exportVersion != null)
+            String lsidWithoutUniquifier = sb.toString();
+
+            int exportVersion = _nextExportVersion.getOrDefault(lsidWithoutUniquifier, 0);
+            String candidate;
+            do
             {
-                sb.append(":Export");
-                sb.append(exportVersion.toString());
+                candidate = exportVersion == 0 ? lsidWithoutUniquifier :
+                        lsidWithoutUniquifier + (version == null ? ":" : "-") + "Export" + exportVersion;
+                exportVersion++;
             }
+            while (_relativized.contains(candidate));
 
-            return sb.toString();
+            _nextExportVersion.put(lsidWithoutUniquifier, exportVersion);
+
+            return candidate;
         }
 
         public int getNextDataId()
@@ -302,6 +306,20 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testUniquificationPerf()
+        {
+            long startTime = System.currentTimeMillis();
+            RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
+            for (int i = 0; i < 1_000_000; i++)
+            {
+                set.relativize("urn:lsid:localhost:Protocol.Folder-" + i + ":MS2.PreSearch");
+            }
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            // This takes ~6 seconds on a dev machine as of test creation in December 2019
+            assertTrue("One minute timeout exceeded for generating LSIDs, time elapsed in milliseconds : " + elapsedTime, elapsedTime < 60_000);
+        }
+
         @Test
         public void testOverlappingLSIDs()
         {
@@ -330,6 +348,14 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
         {
             RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":AssayDomain-Run.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":WithPercent#%25IDs", set.relativize("urn:lsid:labkey.com:AssayDomain-Run.Folder-18698:WithPercent#%25IDs"));
+        }
+
+        @Test
+        public void testAutoFileLSID()
+        {
+            RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
+            assertEquals(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, set.relativize("urn:lsid:labkey.com:Data.Folder-18698:File1.txt"));
+            assertEquals(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, set.relativize("urn:lsid:labkey.com:Data.Folder-18698:File2.txt"));
         }
     }
 }

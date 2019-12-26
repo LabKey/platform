@@ -290,7 +290,7 @@ public class SecurityApiActions
                 user = currentUser;
 
             if (null == user)
-                throw new IllegalArgumentException("No user found that matches specified userId or email address");
+                throw new IllegalArgumentException("No user found that matches specified userId or email address.");
 
             //if user is not current user, current user must have admin perms in container
             if (!user.equals(currentUser) && !container.hasPermission(currentUser, AdminPermission.class))
@@ -774,9 +774,9 @@ public class SecurityApiActions
                 {
                     // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
                     if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission");
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission.");
                     if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission");
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission.");
                 }
             }
 
