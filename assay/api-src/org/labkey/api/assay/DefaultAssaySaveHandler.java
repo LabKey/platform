@@ -40,9 +40,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -217,25 +219,42 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     private List<Map<String, Object>> convertRunData(JSONArray dataArray, Container container, ExpProtocol protocol)
     {
         Domain domain = _provider.getResultsDomain(protocol);
-        Map<String, DomainProperty> propertyMap = domain.getProperties().stream()
-                .collect(Collectors.toMap(DomainProperty::getName, e -> e));
+        Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
+        for (DomainProperty prop : domain.getProperties())
+            propertyMap.put(prop.getName(), prop);
+        List<Map<String, Object>> dataRows = new ArrayList<>();
 
-        List<Map<String, Object>> dataRows = dataArray.toMapList();
-        for (Map<String, Object> row : dataRows)
+        for (Map<String, Object> row : dataArray.toMapList())
         {
+            Map<String, Object> dataRow = new HashMap<>();
             for (Map.Entry<String, Object> entry : row.entrySet())
             {
                 DomainProperty prop = propertyMap.get(entry.getKey());
-                if (prop != null && prop.isMvEnabled())
+                if (prop != null)
                 {
-                    String mvIndicatorName = entry.getKey() + MvColumn.MV_INDICATOR_SUFFIX;
-                    if (row.containsKey(mvIndicatorName))
+                    if (prop.isMvEnabled())
                     {
-                        MvFieldWrapper mvFieldWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container), entry.getValue(), String.valueOf(row.get(mvIndicatorName)));
-                        row.put(entry.getKey(), mvFieldWrapper);
+                        String mvIndicatorName = entry.getKey() + MvColumn.MV_INDICATOR_SUFFIX;
+                        if (row.containsKey(mvIndicatorName))
+                        {
+                            MvFieldWrapper mvFieldWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container), entry.getValue(), String.valueOf(row.get(mvIndicatorName)));
+                            dataRow.put(entry.getKey(), mvFieldWrapper);
+                        }
+                        else if (MvUtil.isValidMvIndicator(entry.getValue().toString(), container))
+                        {
+                            MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container));
+                            mvWrapper.setMvIndicator(entry.getValue() != null ? entry.getValue().toString() : null);
+
+                            dataRow.put(entry.getKey(), mvWrapper);
+                        }
+                        else
+                            dataRow.put(entry.getKey(), entry.getValue());
                     }
+                    else
+                        dataRow.put(entry.getKey(), entry.getValue());
                 }
             }
+            dataRows.add(dataRow);
         }
         return dataRows;
     }
