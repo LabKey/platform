@@ -16,8 +16,6 @@
 
 package org.labkey.experiment;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,7 +27,9 @@ import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -186,9 +186,12 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
     {
         private final LSIDRelativizer _relativizer;
 
-        // Use a bi-directional map to make it efficient to check if a value exists in the map
-        // (not just if a key exists). See issue 39260
-        private BiMap<String, String> _originalToRelative = HashBiMap.create();
+        private Map<String, String> _originalToRelative = new HashMap<>();
+
+        // Maintain a separate set of values so we can quickly determine if one is already in use instead of having
+        // to traverse the whole map. See issue 39260
+        private Set<String> _relativized = new HashSet<>();
+
         // Also keep track of the next suffix to append for a given LSID prefix so we don't have to run through the full
         // sequence of values we already scanned the last time. See issue 39260
         private Map<String, Integer> _nextExportVersion = new HashMap<>();
@@ -246,8 +249,9 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
         private void putLSID(String originalLSID, String relativizedLSID)
         {
             assert !_originalToRelative.containsKey(originalLSID);
-            // Maintain maps in both directions, as we need efficient lookups for both types of LSIDs. See issue 39260
+            // Maintain collections in both directions, as we need efficient lookups for both types of LSIDs. See issue 39260
             _originalToRelative.put(originalLSID, relativizedLSID);
+            _relativized.add(relativizedLSID);
         }
 
         private String uniquifyRelativizedLSID(String prefix, String objectId, String version)
@@ -272,7 +276,7 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
                         lsidWithoutUniquifier + (version == null ? ":" : "-") + "Export" + exportVersion;
                 exportVersion++;
             }
-            while (_originalToRelative.containsValue(candidate));
+            while (_relativized.contains(candidate));
 
             _nextExportVersion.put(lsidWithoutUniquifier, exportVersion);
 
@@ -344,6 +348,14 @@ public enum LSIDRelativizer implements EnumHasHtmlString<LSIDRelativizer>
         {
             RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
             assertEquals("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":AssayDomain-Run.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":WithPercent#%25IDs", set.relativize("urn:lsid:labkey.com:AssayDomain-Run.Folder-18698:WithPercent#%25IDs"));
+        }
+
+        @Test
+        public void testAutoFileLSID()
+        {
+            RelativizedLSIDs set = new RelativizedLSIDs(FOLDER_RELATIVE);
+            assertEquals(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, set.relativize("urn:lsid:labkey.com:Data.Folder-18698:File1.txt"));
+            assertEquals(AutoFileLSIDReplacer.AUTO_FILE_LSID_SUBSTITUTION, set.relativize("urn:lsid:labkey.com:Data.Folder-18698:File2.txt"));
         }
     }
 }

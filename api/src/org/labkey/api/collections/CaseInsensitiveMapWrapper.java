@@ -16,12 +16,18 @@
 
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.AbstractSet;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implements Serializable
 {
@@ -81,6 +87,82 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         return ret;
     }
 
+    @Override
+    public final Set<String> keySet()
+    {
+        return new KeySet(super.keySet());
+    }
+
+    /**
+     * Make sure our key set is case-insensitive as well by using the same normalization approach that the map itself
+     * uses. See issue 38946.
+     */
+    private final class KeySet extends AbstractSet<String>
+    {
+        private Set<String> _nativeKeySet;
+        private KeySet(Set<String> nativeKeySet)
+        {
+            _nativeKeySet = nativeKeySet;
+        }
+
+        @Override
+        public int size()
+        {
+            return _nativeKeySet.size();
+        }
+
+        @Override
+        public boolean contains(Object o)
+        {
+            return _nativeKeySet.contains(normalizeKey(o));
+        }
+
+        @NotNull
+        @Override
+        public Iterator<String> iterator()
+        {
+            return _nativeKeySet.iterator();
+        }
+
+        @NotNull
+        @Override
+        public Object[] toArray()
+        {
+            return _nativeKeySet.toArray();
+        }
+
+        @NotNull
+        @Override
+        public <T> T[] toArray(@NotNull T[] a)
+        {
+            return _nativeKeySet.toArray(a);
+        }
+
+        @Override
+        public boolean add(String s)
+        {
+            return _nativeKeySet.add(s);
+        }
+
+        @Override
+        public boolean remove(Object o)
+        {
+            return _nativeKeySet.remove(normalizeKey(o));
+        }
+
+        @Override
+        public boolean retainAll(@NotNull Collection<?> c)
+        {
+            return false;
+        }
+
+        @Override
+        public void clear()
+        {
+            _nativeKeySet.clear();
+        }
+    }
+
     public V remove(Object key)
     {
         return _map.remove(normalizeKey(key));
@@ -129,6 +211,32 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
             Assert.assertEquals("Map should contain key", "realValue", m.get("REALKEY"));
             Assert.assertEquals("Map should contain key", "realValue", m.get("realkey"));
             Assert.assertEquals("Map should contain null key", "nullValue", m.get(null));
+        }
+
+        @Test
+        public void testKeySet()
+        {
+            Map<String, String> m = new CaseInsensitiveHashMap<>();
+            m.put("test", "value");
+            m.put("Test", "value");
+            m.put("TEST2", "value");
+            m.put("TEST3", "value");
+            m.remove("test3");
+
+            Assert.assertEquals("Key set is wrong size", 2, m.keySet().size());
+
+            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().contains("test"));
+            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().contains("TEST"));
+            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().contains("Test"));
+
+            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().containsAll(Arrays.asList("Test", "test2")));
+            Assert.assertTrue("Key set should be case-insensitive too", m.keySet().containsAll(Arrays.asList("test", "TEST2")));
+
+            Assert.assertTrue("Key set should be able to remove elements", m.keySet().remove("TEST"));
+
+            Assert.assertFalse("Key set should have removed element", m.keySet().contains("test"));
+            Assert.assertFalse("Key set should have removed element", m.keySet().contains("TEST"));
+            Assert.assertFalse("Key set should have removed element", m.keySet().contains("Test"));
         }
     }
 }

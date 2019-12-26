@@ -244,7 +244,6 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                             event.setProtocolLsid(run.getProtocol().getLSID());
                             event.setRunLsid(run.getLSID());
                             event.setProtocolRun(ExperimentAuditProvider.getKey3(run.getProtocol(), run));
-                            event.setProtocolLsid(run.getLSID());
 
                             switch (action)
                             {
