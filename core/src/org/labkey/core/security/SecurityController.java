@@ -69,6 +69,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
@@ -1375,9 +1376,10 @@ public class SecurityController extends SpringActionController
                 }
                 else if (userToClone != null)
                 {
-                    clonePermissions(userToClone, email);
                     if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
-                        errors.addError(new FormattedError("Permissions from " + userToClone.getEmail() + " cloned, but " + email + " was not assigned to the site administrators group.  Only site administrators can add users to the site administrators group."));
+                        errors.addError(new FormattedError(userToClone.getEmail() + " cannot be cloned.  Only site administrators can clone users with site administration permissions."));
+                    else
+                        clonePermissions(userToClone, email);
                 }
                 if (user != null)
                     form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail())));
@@ -1404,7 +1406,7 @@ public class SecurityController extends SpringActionController
 
                         if (group != null)
                         {
-                            if (!group.isAdministrators() || getUser().hasSiteAdminPermission())
+                            if (getUser().hasSiteAdminPermission() || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
                             {
                                 try
                                 {
@@ -1433,7 +1435,10 @@ public class SecurityController extends SpringActionController
                     if (!roles.isEmpty())
                     {
                         for (Role role : roles)
-                            policy.addRoleAssignment(user, role);
+                        {
+                            if (getUser().hasSiteAdminPermission() || !role.getPermissions().contains(SiteAdminPermission.class))
+                                policy.addRoleAssignment(user, role);
+                        }
 
                         SecurityPolicyManager.savePolicy(policy);
                     }
