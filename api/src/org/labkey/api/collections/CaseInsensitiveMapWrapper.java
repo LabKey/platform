@@ -88,7 +88,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
     }
 
     @Override
-    public Set<String> keySet()
+    public final Set<String> keySet()
     {
         return new KeySet(super.keySet());
     }
@@ -97,7 +97,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
      * Make sure our key set is case-insensitive as well by using the same normalization approach that the map itself
      * uses. See issue 38946.
      */
-    private class KeySet extends AbstractSet<String>
+    private final class KeySet extends AbstractSet<String>
     {
         private Set<String> _nativeKeySet;
         private KeySet(Set<String> nativeKeySet)
