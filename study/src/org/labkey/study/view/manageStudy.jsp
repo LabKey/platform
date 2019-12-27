@@ -57,6 +57,15 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.model.SpecimenEventDomainKind" %>
+<%@ page import="org.labkey.study.StudySchema" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.exp.property.Domain" %>
+<%@ page import="org.labkey.api.exp.property.PropertyService" %>
+<%@ page import="org.labkey.api.exp.property.DomainKind" %>
+<%@ page import="org.labkey.api.exp.OntologyManager" %>
+<%@ page import="org.labkey.api.exp.DomainDescriptor" %>
+<%@ page import="org.labkey.study.query.SpecimenTablesProvider" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -317,6 +326,33 @@
 <%
         if (!study.hasSourceStudy() && !study.isSnapshotStudy())
         {
+            SpecimenTablesProvider stp = new SpecimenTablesProvider(c, user, null);
+            Domain domainEvent = stp.getDomain("specimenevent",false);
+            Domain domainVial = stp.getDomain("vial",false);
+            Domain domainSpecimen = stp.getDomain("specimen",false);
+
+            ActionURL specimenEventUrl = null;
+            ActionURL vialUrl = null;
+            ActionURL specimenUrl = null;
+
+            if (domainEvent != null)
+            {
+                specimenEventUrl = domainEvent.getDomainKind().urlEditDefinition(domainEvent, getViewContext());
+                specimenEventUrl.addReturnURL(getViewContext().getActionURL());
+            }
+
+            if (domainVial != null)
+            {
+                vialUrl = domainVial.getDomainKind().urlEditDefinition(domainVial, getViewContext());
+                vialUrl.addReturnURL(getViewContext().getActionURL());
+            }
+
+            if (domainSpecimen != null)
+            {
+                specimenUrl = domainSpecimen.getDomainKind().urlEditDefinition(domainSpecimen, getViewContext());
+                specimenUrl.addReturnURL(getViewContext().getActionURL());
+            }
+
 %>
             <labkey:panel title="Specimen Repository Settings">
                 <table class="lk-fields-table">
@@ -326,9 +362,19 @@
                         <td><%=link("Change Repository Type", new ActionURL(SpecimenController.ShowManageRepositorySettingsAction.class, c))%></td>
                     </tr>
                     <tr>
-                        <td class="lk-study-prop-label">Specimen Properties</td>
-                        <td class="lk-study-prop-desc">Customize specimen properties for this repository</td>
-                        <td><%=link("Edit specimen properties", new ActionURL(SpecimenController.DesignerAction.class, c))%></td>
+                        <td class="lk-study-prop-label">Specimen Fields</td>
+                        <td class="lk-study-prop-desc">Customize specimen fields for this repository</td>
+                        <td><%=link("Edit Specimen fields", specimenUrl)%></td>
+                    </tr>
+                    <tr>
+                        <td class="lk-study-prop-label">SpecimenEvent Fields</td>
+                        <td class="lk-study-prop-desc">Customize specimen event fields for this repository</td>
+                        <td><%=link("Edit SpecimenEvent fields", specimenEventUrl)%></td>
+                    </tr>
+                    <tr>
+                        <td class="lk-study-prop-label">Vial Fields</td>
+                        <td class="lk-study-prop-desc">Customize vial fields for this repository</td>
+                        <td><%=link("Edit Vial fields", vialUrl)%></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Display and Behavior</td>

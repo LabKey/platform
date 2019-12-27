@@ -18,8 +18,12 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -140,5 +144,11 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template)
     {
         return null != template ? template.getExtraSpecimenProperties() : Collections.emptySet();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 }

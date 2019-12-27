@@ -19,8 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
@@ -145,5 +149,11 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template)
     {
         return null != template ? template.getExtraVialProperties() : Collections.emptySet();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 }
