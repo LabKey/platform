@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -188,7 +189,7 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
         }
 
         Set<String> vialFields = new HashSet<>();
-        List<GWTPropertyDescriptor> optionalVialFields = new ArrayList<>();
+        List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
         for (GWTPropertyDescriptor prop : update.getFields())
         {
             if (null != prop.getName())
@@ -200,7 +201,7 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
 
                 if (!prop.isRequired())
                 {
-                    optionalVialFields.add(prop);
+                    optionalVialFields.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
                     if (prop.getName().contains(" "))
                         errors.add("Name '" + prop.getName() + "' should not contain spaces.");
                     else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
@@ -212,6 +213,15 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
         if (errors.size() > 0)
         {
             exception = getValidationException(errors);
+        }
+        else
+        {
+            List<List<String>> results = checkRollups(null, optionalVialFields, null, container, user);
+
+            if (!results.get(0).isEmpty())
+            {
+                exception = getValidationException(results.get(0));
+            }
         }
         return exception;
     }

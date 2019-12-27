@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -25,23 +26,31 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.query.SpecimenTablesProvider;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
@@ -169,4 +178,104 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         exception.addError(new SimpleValidationError(errorString));
         return exception;
     }
+
+    protected List<List<String>> checkRollups(
+            List<PropertyDescriptor> eventProps,            // all of these are nonBase properties
+            List<PropertyDescriptor> vialProps,             // all of these are nonBase properties
+            List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
+            Container container,
+            User user)
+    {
+        // Resulting list has errors, followed by a null String followed by warnings
+        List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
+        Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        Domain vialDomain = specimenTablesProvider.getDomain("vial", false);
+        Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false);
+
+        if (null == eventProps)
+        {
+            eventProps = getPropertyDescriptorsForDomain(eventDomain, container);
+
+        }
+
+        if (null == vialProps)
+        {
+            vialProps = getPropertyDescriptorsForDomain(vialDomain, container);
+        }
+
+        if (null == specimenProps)
+        {
+            specimenProps = getPropertyDescriptorsForDomain(specimenDomain, container);
+        }
+
+        if (null != eventDomain)
+        {   // Consider that rollups can come from base properties
+            for (DomainProperty domainProperty : eventDomain.getBaseProperties())
+                eventProps.add(domainProperty.getPropertyDescriptor());
+        }
+        CaseInsensitiveHashSet eventFieldNamesDisallowedForRollups = SpecimenImporter.getEventFieldNamesDisallowedForRollups();
+        Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>>> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);     // includes rollups with type mismatches
+        for (PropertyDescriptor prop : vialProps)
+        {
+            Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>> eventPair = vialToEventNameMap.get(prop.getName().toLowerCase());
+            if (null != eventPair)
+            {
+                String eventFieldName = eventPair.first;
+                if (eventFieldNamesDisallowedForRollups.contains(eventFieldName))
+                    errors.add("You may not rollup from SpecimenEvent field '" + eventFieldName + "'.");
+                else if (!eventPair.second.isTypeConstraintMet())
+                    errors.add("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+            }
+            else
+                warnings.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
+        }
+
+        if (null != vialDomain)
+        {   // Consider that rollups can come from base properties
+            for (DomainProperty domainProperty : vialDomain.getBaseProperties())
+                vialProps.add(domainProperty.getPropertyDescriptor());
+        }
+        CaseInsensitiveHashSet vialFieldNamesDisallowedForRollups = SpecimenImporter.getVialFieldNamesDisallowedForRollups();
+        Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>>> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);     // includes rollups with type mismatches
+        for (PropertyDescriptor prop : specimenProps)
+        {
+            Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>> vialPair = specimenToVialNameMap.get(prop.getName().toLowerCase());
+            if (null != vialPair)
+            {
+                String vialFieldName = vialPair.first;
+                if (vialFieldNamesDisallowedForRollups.contains(vialFieldName))
+                    errors.add("You may not rollup from Vial field '" + vialFieldName + "'.");
+                else if (!vialPair.second.isTypeConstraintMet())
+                    errors.add("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+            }
+            else
+                warnings.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
+        }
+
+        List<List<String>> result = new ArrayList<>();
+        result.add(errors);
+        result.add(warnings);
+        return result;
+    }
+
+    private List<PropertyDescriptor> getPropertyDescriptorsForDomain(Domain domain, Container container)
+    {
+        List<PropertyDescriptor> pds = new ArrayList<>();
+        for (DomainProperty prop : domain.getProperties())
+        {
+            if (null != prop.getName())
+            {
+                if(!prop.isRequired())
+                {
+                    pds.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
+                }
+            }
+        }
+        return pds;
+    }
+
+
 }

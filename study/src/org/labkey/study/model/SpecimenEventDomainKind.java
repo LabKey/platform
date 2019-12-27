@@ -22,6 +22,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -238,10 +240,12 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         final List<String> errors = new ArrayList<>();
         ValidationException validationException = new ValidationException();
 
+        List<PropertyDescriptor> optionalEventProps = new ArrayList<>();
         for (GWTPropertyDescriptor prop : update.getFields())
         {
             if (!prop.isRequired())
             {
+                optionalEventProps.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
                 if (prop.getName().contains(" "))
                     errors.add("Name '" + prop.getName() + "' should not contain spaces.");
                 else if (COLUMN.equalsIgnoreCase(prop.getName()))
@@ -252,6 +256,15 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         if (errors.size() > 0)
         {
             validationException = getValidationException(errors);
+        }
+        else
+        {
+            List<List<String>> results = checkRollups(optionalEventProps, null, null, container, user);
+
+            if (!results.get(0).isEmpty())
+            {
+                validationException = getValidationException(results.get(0));
+            }
         }
         return validationException;
     }
