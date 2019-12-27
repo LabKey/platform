@@ -2056,6 +2056,7 @@ public class SecurityApiActions
                 if (null == user)
                     throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
 
+                boolean isNew = msg != null;
                 if (msg == null)
                     msg = PageFlowUtil.filter(email) + " was already a registered system user.";
 
@@ -2077,7 +2078,8 @@ public class SecurityApiActions
                 responses.add(Map.of(
                     "userId", user.getUserId(),
                     "email", user.getEmail(),
-                    "message", msg
+                    "message", msg,
+                    "isNew", isNew
                 ));
             }
 
