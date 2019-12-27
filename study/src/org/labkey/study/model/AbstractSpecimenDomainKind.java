@@ -28,6 +28,8 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.view.ActionURL;
@@ -39,10 +41,14 @@ import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
 {
+    protected static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Specimen
+    protected static final String COLUMN = "Column";                       // Reserved field name for Vial, Specimen and Event
+
     abstract protected String getNamespacePrefix();
     abstract public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template);
     public AbstractSpecimenDomainKind()
@@ -148,5 +154,19 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         DbSchema studySchema = StudySchema.getInstance().getSchema();
         TableType xmlTable = studySchema.getTableXmlMap().get(getMetaDataTableName());
         ti.loadTablePropertiesFromXml(xmlTable, true);
+    }
+
+    protected ValidationException getValidationException(List<String> errors)
+    {
+        ValidationException exception = new ValidationException();
+        String sep = "";
+        String errorString = "";
+        for (String error : errors)
+        {
+            errorString += sep + error;
+            sep = "\n";
+        }
+        exception.addError(new SimpleValidationError(errorString));
+        return exception;
     }
 }

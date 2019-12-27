@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -23,12 +24,17 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.query.SpecimenTablesProvider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -222,5 +228,31 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+    }
+
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    {
+        super.updateDomain(original, update, container, user);
+
+        final List<String> errors = new ArrayList<>();
+        ValidationException validationException = new ValidationException();
+
+        for (GWTPropertyDescriptor prop : update.getFields())
+        {
+            if (!prop.isRequired())
+            {
+                if (prop.getName().contains(" "))
+                    errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                else if (COLUMN.equalsIgnoreCase(prop.getName()))
+                    errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the SpecimenEvent table.");
+            }
+        }
+
+        if (errors.size() > 0)
+        {
+            validationException = getValidationException(errors);
+        }
+        return validationException;
     }
 }

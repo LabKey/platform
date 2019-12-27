@@ -15,18 +15,28 @@
  */
 package org.labkey.study.model;
 
+import com.google.gwt.user.client.Window;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.query.SpecimenTablesProvider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -155,5 +165,54 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+    }
+
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    {
+        super.updateDomain(original, update, container, user);
+
+        final List<String> errors = new ArrayList<>();
+        ValidationException exception = new ValidationException();
+        SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
+        Domain domainSpecimen = stp.getDomain("specimen",false);
+
+        // Check for the same name in Specimen and Vial
+        Set<String> specimenFields = new HashSet<>();
+        for (DomainProperty prop : domainSpecimen.getProperties())
+        {
+            if (null != prop.getName())
+            {
+                specimenFields.add(prop.getName().toLowerCase());
+            }
+        }
+
+        Set<String> vialFields = new HashSet<>();
+        List<GWTPropertyDescriptor> optionalVialFields = new ArrayList<>();
+        for (GWTPropertyDescriptor prop : update.getFields())
+        {
+            if (null != prop.getName())
+            {
+                if (!prop.isRequired() && specimenFields.contains(prop.getName().toLowerCase()))
+                    errors.add("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName());
+                else
+                    vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+
+                if (!prop.isRequired())
+                {
+                    optionalVialFields.add(prop);
+                    if (prop.getName().contains(" "))
+                        errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                    else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
+                        errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the Vial table.");
+                }
+            }
+        }
+
+        if (errors.size() > 0)
+        {
+            exception = getValidationException(errors);
+        }
+        return exception;
     }
 }
