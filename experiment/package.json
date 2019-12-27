@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.6.5-fb-documentationLinks.3"
+    "@labkey/components": "0.6.5-fb-documentationLinks.4"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
