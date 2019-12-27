@@ -5891,55 +5891,6 @@ public class SpecimenController extends BaseStudyController
             ((SpecimenDetailTable)tableInfo).changeRequestableColumn();
     }
 
-
-    public static class DesignerForm extends ReturnUrlForm
-    {
-    }
-
-
-    @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleViewAction<DesignerForm>
-    {
-        private DesignerForm _form;
-
-        @Override
-        public ModelAndView getView(DesignerForm form, BindException errors)
-        {
-            _form = form;
-            Map<String, String> properties = new HashMap<>();
-
-            if (form.getReturnUrl() != null)
-            {
-                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
-            }
-
-            // hack for 4404 : Lookup picker performance is terrible when there are many containers
-            ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-            return new StudyGWTView(new StudyApplication.SpecimenDesigner(), properties);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("manageSpecimens#editProperties");
-            _appendManageStudy(root);
-            root.addChild("Specimen Properties");
-            return root;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new SpecimenServiceImpl(getViewContext());
-        }
-    }
-
-
     @RequiresSiteAdmin
     public class PivotAction extends SimpleViewAction<Object>
     {
