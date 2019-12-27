@@ -88,6 +88,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -244,16 +245,18 @@ public class AuthenticationManager
         }
     }
 
-    public static void reorderConfigurations(User user, String name, Collection<Integer> rowIds)
+    public static void reorderConfigurations(User user, String name, int[] rowIds)
     {
-        if (!rowIds.isEmpty())
+        if (rowIds.length != 0)
         {
             TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
             MutableInt count = new MutableInt();
-            rowIds.forEach(id->{
-                count.increment();
-                Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Need to pass in mutable map
-            });
+            Arrays.stream(rowIds)
+                .filter(id->id > 0)
+                .forEach(id->{
+                    count.increment();
+                    Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Table.update() requires mutable map
+                });
             AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " configurations were reordered");
             event.setChanges("reordered");
             AuditLogService.get().addEvent(user, event);

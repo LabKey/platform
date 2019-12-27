@@ -2435,10 +2435,9 @@ public class LoginController extends SpringActionController
                 AUTO_CREATE_ACCOUNTS_KEY, form.isAutoCreateAccounts()
             ));
 
-            // TODO: get arrays/collections of rowIds from form and pass into these methods
-            // Note from Rosaline: rowId collections will only be posted if they are dirty
-            AuthenticationManager.reorderConfigurations(getUser(), "LDAP", Collections.emptyList());
-            AuthenticationManager.reorderConfigurations(getUser(), "SSO", Collections.emptyList());
+            // Note from Rosaline: rowId arrays will be posted only if they are dirty
+            AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getLoginFormAuth());
+            AuthenticationManager.reorderConfigurations(getUser(), "SSO", form.getSingleSignOnAuth());
 
             return new ApiSimpleResponse("success", true);
         }
@@ -2449,12 +2448,15 @@ public class LoginController extends SpringActionController
         private boolean _selfRegistration;
         private boolean _selfServiceEmailChanges;
         private boolean _autoCreateAccounts;
+        private int[] _loginFormAuth;
+        private int[] _singleSignOnAuth;
 
         public boolean isSelfRegistration()
         {
             return _selfRegistration;
         }
 
+        @SuppressWarnings("unused")
         public void setSelfRegistration(boolean selfRegistration)
         {
             _selfRegistration = selfRegistration;
@@ -2465,6 +2467,7 @@ public class LoginController extends SpringActionController
             return _selfServiceEmailChanges;
         }
 
+        @SuppressWarnings("unused")
         public void setSelfServiceEmailChanges(boolean selfServiceEmailChanges)
         {
             _selfServiceEmailChanges = selfServiceEmailChanges;
@@ -2475,9 +2478,32 @@ public class LoginController extends SpringActionController
             return _autoCreateAccounts;
         }
 
+        @SuppressWarnings("unused")
         public void setAutoCreateAccounts(boolean autoCreateAccounts)
         {
             _autoCreateAccounts = autoCreateAccounts;
+        }
+
+        public int[] getLoginFormAuth()
+        {
+            return _loginFormAuth;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLoginFormAuth(int[] loginFormAuth)
+        {
+            _loginFormAuth = loginFormAuth;
+        }
+
+        public int[] getSingleSignOnAuth()
+        {
+            return _singleSignOnAuth;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSingleSignOnAuth(int[] singleSignOnAuth)
+        {
+            _singleSignOnAuth = singleSignOnAuth;
         }
     }
 
