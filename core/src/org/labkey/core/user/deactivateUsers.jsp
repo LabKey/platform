@@ -29,7 +29,7 @@
     ActionURL urlPost = getViewContext().cloneActionURL();
     urlPost.deleteParameters();
 %>
-<p>Are sure you want to <b><%=bean.isActivate() ? "re-activate" : "deactivate"%></b>
+<p>Are sure you want to <b><%=bean.isActivate() ? "reactivate" : "deactivate"%></b>
     the following <%=bean.getUsers().size() > 1 ? "users" : "user"%>?</p>
     <ul>
     <%
@@ -47,14 +47,14 @@
             %><input type="hidden" name="userId" value="<%=user.getUserId()%>"/><%
         }
     %>
-    <%= button(bean.isActivate() ? "Re-activate" : "Deactivate").submit(true) %>
+    <%= button(bean.isActivate() ? "Reactivate" : "Deactivate").submit(true) %>
     <%= button("Cancel").href(bean.getRedirUrl()) %>
 </labkey:form>
 <% if (bean.isActivate()) { %>
-<p><b>Note:</b> Re-activated users will be able to login normally, and all their previous
+<p><b>Note:</b> Reactivated users will be able to login normally, and all their previous
     group memberships will be preserved.</p>
 <% } else { %>
 <p><b>Note:</b> Deactivated users will no longer be able to login. However,
 their information will be preserved for display purposes, and their group memberships
-will be preserved in case they are re-activated at a later time.</p>
+will be preserved in case they are reactivated at a later time.</p>
 <% } %>

@@ -322,7 +322,7 @@ public class UserController extends SpringActionController
             deactivate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(deactivate);
 
-            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Re-Activate");
+            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
             activate.setRequiresSelection(true);
             activate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(activate);
@@ -496,7 +496,7 @@ public class UserController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            String title = _active ? "Re-activate Users" : "Deactivate Users";
+            String title = _active ? "Reactivate Users" : "Deactivate Users";
             return root.addChild(title);
         }
     }
@@ -1503,7 +1503,7 @@ public class UserController extends SpringActionController
                     ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                     deactivateUrl.addParameter("userId", _detailsUserId);
                     deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
-                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
+                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
 
                     ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
                     deleteUrl.addParameter("userId", _detailsUserId);

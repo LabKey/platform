@@ -834,7 +834,7 @@ public class SecurityController extends SpringActionController
                             if (!user.isActive())
                                 errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
                                         + "' to this group because that user account is currently deactivated." +
-                                        " To re-activate this account, contact your system administrator.");
+                                        " To reactivate this account, contact your system administrator.");
                             else
                                 addUsers.add(user);
                         }

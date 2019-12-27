@@ -80,7 +80,7 @@ This action cannot be undone.</p>
     instead of deleting them.
     Deactivated users may not login, but their information will be preserved
     for display purposes, and their group memberships will be preserved in case
-    they are re-activated at a later time.</p>
+    they are reactivated at a later time.</p>
     <p><%= button(bean.getUsers().size() > 1 ? "Deactivate Users" : "Deactivate User").submit(true) %></p>
 </labkey:form>
 <% } %>
