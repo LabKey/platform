@@ -7,7 +7,7 @@ import GlobalAuthSettings from '../components/GlobalAuthSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { Ajax, ActionURL, Security } from '@labkey/api';
 
-import "./authenticationConfiguration.scss";
+import './authenticationConfiguration.scss';
 
 // Todo, meta:
 // Finalize TS, Immutable
@@ -28,7 +28,7 @@ interface State {
     dirty?: boolean
 }
 
-export class App extends PureComponent<Props, State> {
+export class App extends PureComponent<Props, any> {
     constructor(props) {
         super(props);
         this.state = {
@@ -38,6 +38,7 @@ export class App extends PureComponent<Props, State> {
             globalAuthSettings: null,
             canEdit: false,
             primary: null,
+            dirtinessData: null,
             dirty: false,
         };
     }
@@ -56,32 +57,38 @@ export class App extends PureComponent<Props, State> {
             },
             success: function(result){
                 const response = JSON.parse(result.response);
-                this.setState({...response});
-                console.log({...response});
+                const dirtinessData = {
+                    globalAuthSettings: response.globalAuthSettings,
+                    loginFormAuth: response.loginFormAuth,
+                    singleSignOnAuth: response.singleSignOnAuth
+                };
+                this.setState({...response, dirtinessData}, () => {console.log(this.state)});
             }
         })
     };
 
-    savePls = () => {
-        Ajax.request({
-            url: ActionURL.buildURL("login", "setAuthenticationParameter"),
-            method : 'POST',
-            params: {parameter: "SelfRegistration", enabled:"true"},
-            scope: this,
-            failure: function(error){
-                console.log("fail: ", error);
-            },
-            success: function(result){
-                console.log("success: ", result);
-                this.state({...result});
-                console.log(this.state);
+    // For GlobalAuthSettings
+
+    checkGlobalAuthBox = (id: string) => {
+        const oldState = this.state.globalAuthSettings[id];
+        this.setState(
+            (prevState) => ({
+                ...prevState,
+                globalAuthSettings: {
+                    ...prevState.globalAuthSettings,
+                    [id]: !oldState
+                }
+            }),
+            () => {
+                this.checkIfDirty(this.state.globalAuthSettings, this.state.dirtinessData.globalAuthSettings);
             }
-        })
+        );
     };
 
     checkIfDirty = (obj1, obj2) => {
         const dirty = !this.isEquivalent(obj1, obj2);
-
+        console.log(obj1, " : ", obj2);
+        console.log(dirty);
         this.setState(() => ({ dirty }));
     };
 
@@ -90,6 +97,7 @@ export class App extends PureComponent<Props, State> {
         const bProps = Object.keys(b);
 
         if (aProps.length != bProps.length) {
+            console.log("blip");
             return false;
         }
 
@@ -105,17 +113,56 @@ export class App extends PureComponent<Props, State> {
         // return aProps.some((key) => {
         //     return a[key] !== b[key];
         // });
+        return true;
     };
 
+
+
+
     saveChanges = () => {
-        console.log(this.state);
+        let form = new FormData();
+        Object.keys(this.state.globalAuthSettings).map(
+            (item) => {
+                form.append(item, this.state.globalAuthSettings[item]);
+            }
+        );
+
+        if (this.draggableIsDirty("singleSignOnAuth")){
+            form.append("singleSignOnAuth", this.getAuthConfigConfigurationArray(this.state.singleSignOnAuth).toString());
+        }
+        if (this.draggableIsDirty("loginFormAuth")){
+            form.append("loginFormAuth", this.getAuthConfigConfigurationArray(this.state.loginFormAuth).toString());
+        }
+
+        Ajax.request({
+            url: ActionURL.buildURL("login", "SaveSettings"),
+            method : 'POST',
+            form,
+            scope: this,
+            failure: function(error){
+                console.log("fail: ", error);
+            },
+            success: function(result){
+                console.log("success: ", result);
+            }
+        })
+
+    };
+
+    draggableIsDirty = (stateSection) => {
+        const newOrdering = this.getAuthConfigConfigurationArray(this.state[stateSection]);
+        const oldOrdering = this.getAuthConfigConfigurationArray(this.state.dirtinessData[stateSection]);
+        return !this.isEquivalent(newOrdering, oldOrdering);
     };
 
     getAuthConfigConfigurationArray = (stateSection) => {
-        const authObjsArray = this.state[stateSection];
-        let authArray = authObjsArray.map((auth : any) => { return auth.configuration });
+        let authArray = stateSection.map((auth : any) => { return auth.configuration });
         console.log(authArray);
+        return authArray;
     };
+
+
+    // For AuthConfigMasterPanel
 
     onDragEnd = (result) => {
         if (!result.destination) {
@@ -133,7 +180,12 @@ export class App extends PureComponent<Props, State> {
         this.setState(() => ({
             [stateSection]: items
         })
-        , () => console.log(this.state)
+        , () => {
+            console.log(this.state); // for testing
+
+            const dirty = this.draggableIsDirty(stateSection);
+            this.setState(() => ({ dirty }));
+            }
         )
     };
 
@@ -199,7 +251,6 @@ export class App extends PureComponent<Props, State> {
     updateAuthRowsAfterSave = (config, stateSection) => {
         const configObj = JSON.parse(config);
         const configId = configObj.configuration.configuration;
-        console.log("bro ", configObj);
 
         const prevState = this.state[stateSection];
         const staleAuthIndex = prevState.findIndex((element) => element.configuration == configId);
@@ -207,22 +258,22 @@ export class App extends PureComponent<Props, State> {
         const newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
         newState[staleAuthIndex] = configObj.configuration;
 
-        console.log(newState);
-        // console.log("removed ", staleAuthRemovedState);
         this.setState({[stateSection]:newState});
     };
 
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
         const {globalAuthSettings, ...restProps} = this.state;
+        let hideAutoCreateAccounts = (this.state.loginFormAuth && this.state.loginFormAuth.length == 1) && (this.state.singleSignOnAuth && this.state.singleSignOnAuth.length == 0);
 
         return(
             <div style={{minWidth:"1100px"}}>
                 {this.state.globalAuthSettings &&
                     <GlobalAuthSettings
                         {...globalAuthSettings}
-                        checkDirty = {this.checkIfDirty}
                         canEdit={this.state.canEdit}
+                        checkGlobalAuthBox = {this.checkGlobalAuthBox}
+                        // hideAutoCreateAccounts={hideAutoCreateAccounts}
                     />
                 }
 

@@ -18,6 +18,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             enabled: this.props.enabled,
             description: this.props.description,
             errorMessage: "",
+            auth_header_logo: "",
+            auth_login_page_logo: "",
         };
     }
 
@@ -97,8 +99,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     onFileChange = (attachment, logoType) => {
+        console.log("I am changing the value of the state", logoType);
         this.setState(() => ({[logoType]: attachment.first()})
-            // , () => console.log("asdfadsfhuiIUUHI ", this.state)
+            , () => console.log("New state: ", this.state)
         );
     };
 
@@ -183,7 +186,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <br/>
 
-                    {this.props.provider == "CAS" &&
+                    {(this.props.type.sso)  &&
                         <SSOFields
                             headerLogoUrl={this.props.headerLogoUrl}
                             loginLogoUrl={this.props.loginLogoUrl}
@@ -230,9 +233,11 @@ class TextInput extends PureComponent<any, any> {
                     {this.props.caption}
                 </span>
 
-                <LabelHelpTip title={'Tip'} body={() => {
-                    return (<div> {this.props.description} </div>)
-                }}/>
+                {this.props.description &&
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {this.props.description} </div>)
+                    }}/>
+                }
 
                 <FormControl
                     name={this.props.name}
@@ -266,9 +271,12 @@ class CheckBoxInput extends PureComponent<any, any> {
                     {this.props.caption}
                 </span>
 
-                <LabelHelpTip title={'Tip'} body={() => {
-                    return (<div> {this.props.description} </div>)
-                }}/>
+                { this.props.description &&
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {this.props.description} </div>)
+                    }}/>
+                }
+
 
                 <span style={{float:"right", marginRight: "285px"}}>
                     <FACheckBox

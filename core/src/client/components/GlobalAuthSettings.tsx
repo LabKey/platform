@@ -27,8 +27,6 @@ interface State {
     SelfRegistration: boolean;
     SelfServiceEmailChanges: boolean;
     AutoCreateAccounts: boolean;
-    what: any;
-    // globalAuthSettings: any
 }
 
 export default class GlobalAuthSettings extends PureComponent<any, any> {
@@ -39,49 +37,40 @@ export default class GlobalAuthSettings extends PureComponent<any, any> {
         };
     }
 
-    // todo: use immutable?
-    checkGlobalAuthBox = (id: string) => {
-        const oldState = this.state[id];
-        this.setState(
-            () => ({
-                [id]: !oldState,
-            }),
-            () => this.props.checkDirty(this.state, this.props)
-        );
-    };
+    componentDidMount() {
+        if (this.props.hideAutoCreateAccounts){
+            this.setState({AutoCreateAccounts : null});
+        }
+    }
 
-    saveGlobalAuthConfigs = (parameter, enabled) => {
-        Ajax.request({
-            url: ActionURL.buildURL('login', 'setAuthenticationParameter'),
-            method: 'POST',
-            params: { parameter, enabled },
-            scope: this,
-            failure: function(error) {
-                console.log('fail: ', error); // fill out error
-            },
-            success: function(result) {
-                console.log('success: ', result);
-            },
-        });
-    };
+    // checkGlobalAuthBox = (id: string) => {
+    //     const oldState = this.state[id];
+    //     this.setState(
+    //         () => ({
+    //             [id]: !oldState,
+    //         }),
+    //         () => this.props.checkDirty(this.state, this.props)
+    //     );
+    // };
 
     render() {
         const rowTexts = ROW_TEXTS.map(text => (
+            !(this.state[text.id] == null)
+            ?
             <div className="bottom-margin" key={text.id}>
                 <FACheckBox
                     key={text.id}
-                    checked={this.state[text.id]}
+                    checked={this.props[text.id]}
                     onClick={
                         this.props.canEdit
-                            ? () => {
-                                  this.checkGlobalAuthBox(text.id);
-                              }
+                            ? () => { this.props.checkGlobalAuthBox(text.id) }
                             : () => {}
-                    } // empty function might be bad style, here?
+                    }
                 />
 
                 <span style={{ marginLeft: '15px' }}>{text.text}</span>
             </div>
+            : ""
         ));
 
         return (
@@ -98,15 +87,6 @@ export default class GlobalAuthSettings extends PureComponent<any, any> {
 
                     {rowTexts}
 
-                    {/* For testing, to delete */}
-                    {/* <Button*/}
-                    {/*    style={{marginLeft: "2em"}}*/}
-                    {/*    className={'labkey-button'}*/}
-                    {/*    onClick={() => {console.log(this.props)}}*/}
-                    {/* >*/}
-                    {/*    Save and Finish*/}
-                    {/* </Button>*/}
-                    {/* <br/>*/}
                 </Panel.Body>
             </Panel>
         );

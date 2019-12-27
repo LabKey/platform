@@ -2436,6 +2436,7 @@ public class LoginController extends SpringActionController
             ));
 
             // TODO: get arrays/collections of rowIds from form and pass into these methods
+            // Note from Rosaline: rowId collections will only be posted if they are dirty
             AuthenticationManager.reorderConfigurations(getUser(), "LDAP", Collections.emptyList());
             AuthenticationManager.reorderConfigurations(getUser(), "SSO", Collections.emptyList());
 

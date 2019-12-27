@@ -2,15 +2,15 @@ import React, { PureComponent } from 'react';
 
 import { Panel, DropdownButton, MenuItem, Tab, Tabs} from 'react-bootstrap';
 
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faInfoCircle} from "@fortawesome/free-solid-svg-icons";
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faInfoCircle} from '@fortawesome/free-solid-svg-icons';
 
 import { LabelHelpTip } from '@labkey/components';
 
-import DragAndDropPane from "./DragAndDropPane";
-import EditableAuthRow from "./EditableAuthRow";
-import SimpleAuthRow from "./SimpleAuthRow";
-import DynamicConfigurationModal from "./DynamicConfigurationModal";
+import DragAndDropPane from './DragAndDropPane';
+import EditableAuthRow from './EditableAuthRow';
+import SimpleAuthRow from './SimpleAuthRow';
+import DynamicConfigurationModal from './DynamicConfigurationModal';
 
 // todo:
 // add new configurations is not in order
@@ -43,13 +43,13 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
-            useWhichDropdown: "Primary",
+            useWhichDropdown: 'Primary',
             modalOpen: false,
         };
     }
 
     useWhichDropdown = (key) => {
-        const primaryOrSecondary = ((key == 1) ? "Primary" : "Secondary");
+        const primaryOrSecondary = ((key == 1) ? 'Primary' : 'Secondary');
         this.setState({ useWhichDropdown: primaryOrSecondary })
     };
 
@@ -62,13 +62,13 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
     render(){
         const {primary, secondary, singleSignOnAuth, loginFormAuth} = this.props;
 
-        const SSOTipText = "Single Sign On Authentications (SSOs) allow the use of one set of login credentials that are authenticated by the third party service provider (e.g. Google or Github).";
+        const SSOTipText = 'Single Sign On Authentications (SSOs) allow the use of one set of login credentials that are authenticated by the third party service provider (e.g. Google or Github).';
         const loginFormTipText = "Authentications in this group make use of LabKey's login form. During login, LabKey will attempt validation in the order that the configurations below are listed.";
-        const authenticationDocsLink = "https://www.labkey.org/Documentation/wiki-page.view?name=authenticationModule&_docid=wiki%3A32d70b80-ed56-1034-b734-fe851e088836";
+        const authenticationDocsLink = 'https://www.labkey.org/Documentation/wiki-page.view?name=authenticationModule&_docid=wiki%3A32d70b80-ed56-1034-b734-fe851e088836';
 
         const addNewPrimaryDropdown = primary &&
             Object.keys(primary).map((authOption) => (
-                // <MenuItem key={authOption} onClick={() => console.log("uh")}>
+                // <MenuItem key={authOption} onClick={() => console.log('uh')}>
                 <MenuItem key={authOption} href={primary[authOption].configLink}>
                     {authOption} : {primary[authOption].description}
                 </MenuItem>
@@ -79,7 +79,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                 ?
                 <div>
                     <DragAndDropPane
-                        stateSection="loginFormAuth"
+                        stateSection='loginFormAuth'
                         rowInfo={loginFormAuth.slice(0, -1)}
                         primary={primary}
                         onDragEnd={this.props.onDragEnd}
@@ -92,7 +92,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         handle={null}
                         description={loginFormAuth.slice(-1)[0].description}
                         provider={loginFormAuth.slice(-1)[0].provider}
-                        enabled={(loginFormAuth.slice(-1)[0].enabled) ? "Enabled" : "Disabled"}
+                        enabled={(loginFormAuth.slice(-1)[0].enabled) ? 'Enabled' : 'Disabled'}
                         // url={(loginFormAuth.slice(-1)[0].url)}
                     />
                 </div>
@@ -101,7 +101,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
         const primaryTab_SSO =
             (singleSignOnAuth && this.props.canEdit)
                 ? <DragAndDropPane
-                    stateSection="singleSignOnAuth"
+                    stateSection='singleSignOnAuth'
                     rowInfo={singleSignOnAuth}
                     primary={primary}
                     onDragEnd={this.props.onDragEnd}
@@ -118,12 +118,12 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                     <EditableAuthRow
                         id={index.toString()}
                         rowId={index.toString()}
-                        authName={""}
-                        url={item.description.slice(0,34) + "..."} // fix this guy up
+                        authName={''}
+                        url={item.description.slice(0,34) + '...'} // fix this guy up
                         enabled={item.enabled}
                         description={item.provider}
                         handlePrimaryToggle={this.props.handlePrimaryToggle}
-                        stateSection="secondaryAuth"
+                        stateSection='secondaryAuth'
                         noHandleIcon={true}
                         key={index}
                     />
@@ -132,39 +132,39 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
         return(
             <Panel>
-                <Panel.Heading> <span className="boldText">Authentication Configurations </span> </Panel.Heading>
+                <Panel.Heading> <span className='boldText'>Authentication Configurations </span> </Panel.Heading>
                 <Panel.Body>
-                    <DropdownButton id="dropdown-basic-button" title={"Add New " + this.state.useWhichDropdown}>
+                    <DropdownButton id='dropdown-basic-button' title={'Add New ' + this.state.useWhichDropdown}>
 
                         {this.props.canEdit &&
-                            ((this.state.useWhichDropdown == "Primary")
+                            ((this.state.useWhichDropdown == 'Primary')
                             ? addNewPrimaryDropdown
-                            : "Secondary (in progress)")
+                            : 'Secondary (in progress)')
                         }
 
                     </DropdownButton>
 
-                    <a style={{float: "right"}} href={authenticationDocsLink} > Get help with authentication </a>
+                    <a style={{float: 'right'}} href={authenticationDocsLink} > Get help with authentication </a>
 
                     <hr/>
 
-                    <span className="boldText"> Labkey Login Form Authentications </span>
+                    <span className='boldText'> Labkey Login Form Authentications </span>
                     <LabelHelpTip title={'Tip'} body={() => {
                         return (<div> {loginFormTipText} </div>)
                     }}/>
 
                     <br/><br/>
 
-                    <Tabs defaultActiveKey={1} id="tab-panel" onSelect={(key) => {this.useWhichDropdown(key)}}>
-                        <Tab eventKey={1} title="Primary" >
-                            <div className="auth-tab">
+                    <Tabs defaultActiveKey={1} id='tab-panel' onSelect={(key) => {this.useWhichDropdown(key)}}>
+                        <Tab eventKey={1} title='Primary' >
+                            <div className='auth-tab'>
                                 {primaryTab_LoginForm}
                             </div>
 
                             <div>
                                 <hr/>
 
-                                <span className="boldText"> Single Sign On Authentications </span>
+                                <span className='boldText'> Single Sign On Authentications </span>
 
                                 <LabelHelpTip title={'Tip'} body={() => {
                                     return (<div> {SSOTipText} </div>)
@@ -173,9 +173,9 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                                 {primaryTab_SSO}
                             </div>
                         </Tab>
-                        <Tab eventKey={2} title="Secondary">
+                        <Tab eventKey={2} title='Secondary'>
 
-                            <div className={"auth-tab"}>
+                            <div className={'auth-tab'}>
                                 {secondaryTab}
                             </div>
 
@@ -186,7 +186,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                 {this.state.modalOpen &&
                     <DynamicConfigurationModal
                             type={this.props.modalType}
-                            closeModal={() => {this.onToggleModal("modalOpen")}}
+                            closeModal={() => {this.onToggleModal('modalOpen')}}
 
                     />
                 }
@@ -206,7 +206,7 @@ class ViewOnlyAuthConfigRows extends PureComponent<any, any> {
                     <SimpleAuthRow
                         description={item.description}
                         name={item.provider}
-                        enabled={item.enabled ? "Enabled" : "Disabled"}
+                        enabled={item.enabled ? 'Enabled' : 'Disabled'}
                         editIcon={moreInfoIcon}
                     />
                 ))}
