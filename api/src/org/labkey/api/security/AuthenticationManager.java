@@ -247,7 +247,7 @@ public class AuthenticationManager
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
     {
-        if (rowIds.length != 0)
+        if (null != rowIds && rowIds.length != 0)
         {
             TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
             MutableInt count = new MutableInt();
