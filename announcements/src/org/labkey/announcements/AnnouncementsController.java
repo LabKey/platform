@@ -1484,6 +1484,20 @@ public class AnnouncementsController extends SpringActionController
         return result;
     }
 
+    @RequiresLogin
+    public class GetUserEmailPreferenceAction extends ReadOnlyApiAction<EmailOptionsForm>
+    {
+        @Override
+        public Object execute(EmailOptionsForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("success", true);
+            response.put("emailOption", getEmailOptionIncludingInherited(getContainer(), getUser(), form.getSrcIdentifier()));
+
+            return response;
+        }
+    }
 
     @RequiresLogin
     public class EmailPreferencesAction extends FormViewAction<EmailOptionsForm>
