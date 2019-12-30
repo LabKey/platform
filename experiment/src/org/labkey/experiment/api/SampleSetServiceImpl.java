@@ -179,7 +179,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return ExperimentServiceImpl.get().getExpSchema();
     }
 
-
+    @Override
     public void indexSampleSet(ExpSampleSet sampleSet)
     {
         SearchService ss = SearchService.get();
@@ -267,7 +267,7 @@ public class SampleSetServiceImpl implements SampleSetService
         sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-        Map<String, Object>[] queryResults = new SqlSelector(getExpSchema(), sql).getMapArray();
+        Collection<Map<String, Object>> queryResults = new SqlSelector(getExpSchema(), sql).getMapCollection();
         Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
 
         Map<String, ExpSampleSet> result = new LinkedHashMap<>();
@@ -416,11 +416,13 @@ public class SampleSetServiceImpl implements SampleSetService
         return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
     }
 
+    @Override
     public String getDefaultSampleSetLsid()
     {
         return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
+    @Override
     public String getDefaultSampleSetMaterialLsidPrefix()
     {
         return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
@@ -550,9 +552,9 @@ public class SampleSetServiceImpl implements SampleSetService
         SearchService ss = SearchService.get();
         if (null != ss)
         {
-            try (Timing t = MiniProfiler.step("search docs"))
+            try (Timing ignored = MiniProfiler.step("search docs"))
             {
-                    ss.deleteResource(source.getDocumentId());
+                ss.deleteResource(source.getDocumentId());
             }
         }
 
@@ -685,7 +687,7 @@ public class SampleSetServiceImpl implements SampleSetService
         source.setLSID(lsid.toString());
         source.setName(name);
         source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
+        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         source.setContainer(c);
@@ -745,8 +747,7 @@ public class SampleSetServiceImpl implements SampleSetService
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(importAliases);
-            return json;
+            return mapper.writeValueAsString(importAliases);
         }
         catch (JsonProcessingException e)
         {
