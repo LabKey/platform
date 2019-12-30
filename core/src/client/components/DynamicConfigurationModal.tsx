@@ -106,7 +106,16 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     dynamicallyCreateFields = (fields) => {
-        return fields.map((field, index) => {
+        let stopPoint = fields.length;
+        for (let i = 0; i < fields.length; i++) {
+            if ("dictateFieldVisibility" in fields[i]) {
+                stopPoint = i + 1;
+                break;
+            }
+        }
+
+        // return fields.map((field, index) => {
+        return fields.slice(0, stopPoint).map((field, index) => {
             switch (field.type) {
                 case "input":
                     return (
@@ -198,7 +207,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     <hr/>
 
                     <div style={{float: "right"}}>
-                        <a href={""} style={{marginRight: "10px"}}> {"More about " + this.props.provider + " authentication"} </a>
+                        <a href={this.props.modalType.helpLink} style={{marginRight: "10px"}}> {"More about " + this.props.provider + " authentication"} </a>
                         <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}>Apply</Button>
                     </div>
 

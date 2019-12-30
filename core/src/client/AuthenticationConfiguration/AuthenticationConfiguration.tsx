@@ -131,7 +131,7 @@ export class App extends PureComponent<Props, any> {
             form.append("singleSignOnAuth", this.getAuthConfigConfigurationArray(this.state.singleSignOnAuth).toString());
         }
         if (this.draggableIsDirty("loginFormAuth")){
-            form.append("loginFormAuth", this.getAuthConfigConfigurationArray(this.state.loginFormAuth).toString());
+            form.append("loginFormAuth", this.getAuthConfigConfigurationArray(this.state.loginFormAuth).slice(0,-1).toString());
         }
 
         Ajax.request({
@@ -144,6 +144,7 @@ export class App extends PureComponent<Props, any> {
             },
             success: function(result){
                 console.log("success: ", result);
+                window.location.href = ActionURL.buildURL("admin", "showAdmin" ) // For reviewer: is this the best way to navigate after success?
             }
         })
 
