@@ -2568,6 +2568,7 @@ public class QueryServiceImpl implements QueryService
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = allColumns.stream()
+                .map(col -> col instanceof WrappedColumn ? ((WrappedColumn)col).getWrappedColumn() : col)
                 .map(ColumnInfo::getFieldKey)
                 .collect(Collectors.toSet());
         SQLFragment getfromsql = table.getFromSQL(tableAlias, fieldKeySet);
