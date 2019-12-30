@@ -320,8 +320,9 @@ groupByLoop:
                             }
                         }
                     }
-                    // wrap this 'global' relation to capture the FROM Alias
-                    relation = new QueryWithWrapper(queryTableWith, alias);
+                    // wrap this 'global' relation to capture the FROM alias (setAlias() is called below)
+                    relation = new QueryWithWrapper(queryTableWith);
+                    relation.setAlias(alias);       // legal alias is created below with makeRelationName()
                 }
             }
 
@@ -2419,24 +2420,15 @@ groupByLoop:
     // unlike TableInfo we expect the QueryRelation to know it's own Alias (mistake?)
     private static class QueryWithWrapper extends QueryRelationWrapper<QueryWith.QueryTableWith>
     {
-        final String _alias;
-
-        QueryWithWrapper(QueryWith.QueryTableWith wrapped, String alias)
+        QueryWithWrapper(QueryWith.QueryTableWith wrapped)
         {
             super(wrapped);
-            _alias = alias;
-        }
-
-        @Override
-        public String getAlias()
-        {
-            return _alias;
         }
 
         @Override
         public SQLFragment getFromSql()
         {
-            return _wrapped.getFromSql(_alias);
+            return _wrapped.getFromSql(getAlias());
         }
     }
 }

@@ -87,7 +87,7 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
     @Override
     public void setAlias(String alias)
     {
-        _wrapped.setAlias(alias);
+        super.setAlias(alias);
     }
 
     @Override
@@ -202,7 +202,7 @@ public class QueryRelationWrapper<R extends QueryRelation> extends QueryRelation
     @Override
     public String getAlias()
     {
-        return _wrapped.getAlias();
+        return super.getAlias();
     }
 
     @Override
