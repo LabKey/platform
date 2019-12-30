@@ -23,8 +23,6 @@ import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
-import com.google.gwt.event.logical.shared.SelectionEvent;
-import com.google.gwt.event.logical.shared.SelectionHandler;
 import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.IncrementalCommand;
 import com.google.gwt.user.client.Window;
@@ -32,12 +30,10 @@ import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.ScrollPanel;
-import com.sencha.gxt.cell.core.client.form.ComboBoxCell;
-import com.sencha.gxt.data.shared.StringLabelProvider;
-import com.sencha.gxt.widget.core.client.form.Field;
-import com.sencha.gxt.widget.core.client.form.SimpleComboBox;
-import com.sencha.gxt.widget.core.client.form.TextField;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.Widget;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.ImageButton;
@@ -56,9 +52,8 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
 {
     private TemplateView _view;
     private String _type;
-    private static final String NEW_GROUP_DEFAULT_TEXT = "Enter Group Name";
 
-    private Field _newGroupField;
+    private String _newGroupFieldValue;
     private ImageButton _createButton;
     private ImageButton _multiCreateButton;
 
@@ -99,7 +94,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
                     // we might want to remove this capability (create wellgroup using keyboard ENTER), the later
                     // versions of GWT don't allow access to the raw value and the current behavior is components
                     // don't update their value until a blur event
-                    _view.createWellGroup(String.valueOf(_newGroupField.getValue()), _type);
+                    _view.createWellGroup(_newGroupFieldValue, _type);
                 }
             }
         };
@@ -114,59 +109,13 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             }
         };
 
-        // if the group type is furnishing any default group names, populate them into a combo box
-        // else just use a text field
-        Map<String, List<String>> typeToGroupMap = _view.getPlate().getTypesToDefaultGroups();
-
-        if (!typeToGroupMap.containsKey(_type))
-        {
-            final TextField textField = new TextField();
-
-            textField.setEmptyText(NEW_GROUP_DEFAULT_TEXT);
-            textField.enableEvents();
-            textField.addKeyDownHandler(fieldKeyDownListener);
-            textField.addKeyUpHandler(fieldKeyUpListener);
-
-            _newGroupField = textField;
-        }
-        else
-        {
-            List<String> defaults = typeToGroupMap.get(_type);
-
-            final SimpleComboBox selector = new SimpleComboBox(new StringLabelProvider());
-
-            selector.setEmptyText(NEW_GROUP_DEFAULT_TEXT);
-            selector.enableEvents();
-            selector.setTriggerAction(ComboBoxCell.TriggerAction.ALL);
-            selector.addKeyDownHandler(fieldKeyDownListener);
-            selector.addKeyUpHandler(fieldKeyUpListener);
-            selector.addSelectionHandler(new SelectionHandler()
-            {
-                @Override
-                public void onSelection(SelectionEvent event)
-                {
-                    String value = String.valueOf(event.getSelectedItem());
-
-                    boolean enable = (value.length() > 0);
-
-                    _createButton.setEnabled(enable);
-                    _multiCreateButton.setEnabled(enable);
-                }
-            });
-
-            for (String name : defaults)
-                selector.add(name);
-
-            _newGroupField = selector;
-        }
-
         _createButton = new ImageButton("Create");
         _createButton.setEnabled(false);
         _createButton.addClickHandler(new ClickHandler()
         {
             public void onClick(ClickEvent event)
             {
-                _view.createWellGroup(String.valueOf(_newGroupField.getValue()), _type);
+                _view.createWellGroup(_newGroupFieldValue, _type);
             }
         });
 
@@ -175,9 +124,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         {
             public void onClick(ClickEvent event)
             {
-                String defaultBaseName = String.valueOf(_newGroupField.getValue());
-                if (NEW_GROUP_DEFAULT_TEXT.equals(defaultBaseName))
-                    defaultBaseName = "";
+                String defaultBaseName = _newGroupFieldValue;
 
                 MultiCreatePopupPanel multiCreatePanel = new MultiCreatePopupPanel(_view, defaultBaseName, _type);
                 multiCreatePanel.center();
@@ -185,8 +132,53 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             }
         });
 
+        // if the group type is furnishing any default group names, populate them into a combo box
+        // else just use a text field
+        Map<String, List<String>> typeToGroupMap = _view.getPlate().getTypesToDefaultGroups();
+        Widget newGroupField;
+
+        if (!typeToGroupMap.containsKey(_type))
+        {
+            final TextBox textField = new TextBox();
+
+            textField.addKeyDownHandler(fieldKeyDownListener);
+            textField.addKeyUpHandler(fieldKeyUpListener);
+            textField.addChangeHandler(changeEvent -> {
+                TextBox source = (TextBox) changeEvent.getSource();
+                _newGroupFieldValue = source.getValue();
+            });
+
+            newGroupField = textField;
+        }
+        else
+        {
+            List<String> defaults = typeToGroupMap.get(_type);
+            final ListBox selector = new ListBox();
+
+            selector.addKeyDownHandler(fieldKeyDownListener);
+            selector.addKeyUpHandler(fieldKeyUpListener);
+            selector.addChangeHandler(changeEvent -> {
+                ListBox source = (ListBox)changeEvent.getSource();
+                _newGroupFieldValue = source.getSelectedValue();
+
+                boolean enable = (_newGroupFieldValue.length() > 0);
+
+                _createButton.setEnabled(enable);
+                _multiCreateButton.setEnabled(enable);
+            });
+
+            for (String name : defaults)
+                selector.addItem(name);
+
+            selector.setItemSelected(0, true);
+            _newGroupFieldValue = defaults.get(0);
+            _createButton.setEnabled(true);
+
+            newGroupField = selector;
+        }
+
         groupList.setWidget(groupList.getRowCount(), 0, new Label("New:"));
-        groupList.setWidget(groupList.getRowCount() - 1, 1, _newGroupField);
+        groupList.setWidget(groupList.getRowCount() - 1, 1, newGroupField);
         groupList.setWidget(groupList.getRowCount() - 1, 2, _createButton);
         groupList.setWidget(groupList.getRowCount() - 1, 3, _multiCreateButton);
     }
