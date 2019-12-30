@@ -127,7 +127,7 @@ class ErrorView extends HttpView
                 if (getViewContext().getUser().isGuest())
                 {
                     ActionURL url = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(getViewContext().getContainer(), null);
-                    out.println("<p>You are not currently logged in. You may need to <a href=\"" + url + "\">log in</a> to gain the necessary permissions.</a>");
+                    out.println("<p>You are not currently logged in. You may need to <a href=\"" + url + "\">log in</a> to gain the necessary permissions.</a></p>");
                 }
                 LookAndFeelProperties props = LookAndFeelProperties.getInstance(contextContainer);
                 if (!StringUtils.isBlank(props.getSupportEmail()))

@@ -43,7 +43,7 @@ public class UnauthorizedException extends RuntimeException implements SkipMothe
 
     public UnauthorizedException(String message)
     {
-        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation"));
+        super(StringUtils.defaultIfEmpty(message, "User does not have permission to perform this operation."));
     }
 
     public void setType(Type type)
