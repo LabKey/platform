@@ -965,7 +965,7 @@ public class AnnouncementManager
             super(NAME, DEFAULT_SUBJECT, loadBody(), DEFAULT_DESCRIPTION, ContentType.HTML);
             setEditableScopes(EmailTemplate.Scope.SiteOrFolder);
 
-            _replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.Plain)
+            _replacements.add(new ReplacementParam<>("createdByUser", String.class, "User that generated the message", ContentType.HTML)
             {
                 @Override
                 public String getValue(Container c)

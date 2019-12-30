@@ -579,19 +579,26 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 }
                                 else
                                 {
+                                    Object key = row.get(pk.toString());
                                     if (survey.isNew())
                                     {
                                         if (!row.isEmpty())
                                         {
                                             // update the survey instance with the key for the answers so that existing answers can
                                             // be updated.
-                                            Object key = row.get(pk.toString());
                                             survey.setResponsesPk(String.valueOf(key));
                                         }
 
                                         // set the initial status to Pending
                                         if (!form.isSubmitted())
                                             survey.setStatus(SurveyStatus.Pending.name());
+                                    }
+                                    else if (key != null)
+                                    {
+                                        // issue 39291 : can't assume that the response PK never changes, for example
+                                        // datatset lsids are not stable
+                                        if (!String.valueOf(key).equals(survey.getResponsesPk()))
+                                            survey.setResponsesPk(String.valueOf(key));
                                     }
 
                                     survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);
