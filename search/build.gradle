@@ -1,4 +1,4 @@
-ext.luceneVersion="8.3.1"
+ext.luceneVersion="8.4.0"
 ext.mime4jVersion="0.8.1"
 
 dependencies {
