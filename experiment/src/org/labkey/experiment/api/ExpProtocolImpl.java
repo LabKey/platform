@@ -237,6 +237,17 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         return ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class));
     }
 
+
+    public void setEntityId(String entityId)
+    {
+        _object.setEntityId(entityId);
+    }
+
+    public String getEntityId()
+    {
+        return _object.entityId;
+    }
+
     public static List<ExpProtocolImpl> fromProtocols(List<Protocol> protocols)
     {
         List<ExpProtocolImpl> result = new ArrayList<>(protocols.size());

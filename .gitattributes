@@ -1743,6 +1743,7 @@ api/webapp/clientapi/dom/Query.js -text
 api/webapp/clientapi/dom/Security.js -text
 api/webapp/clientapi/dom/Utils.js -text
 api/webapp/clientapi/dom/WebPart.js -text
+api/webapp/clientapi/dom/WebSocket.js -text
 api/webapp/clientapi/ext3.lib.xml -text
 api/webapp/clientapi/ext3/EditorGridPanel.js -text
 api/webapp/clientapi/ext3/ExtendedJsonReader.js -text

@@ -44,7 +44,7 @@ LABKEY.experiment.confirmDelete = function(schemaName, queryName, selectionKey, 
                     text += (numCannotDelete === 1 ? " it has ": " they have ") + dependencyText + "."
                 }
                 if (numCannotDelete > 0) {
-                    text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets') + "'>more info</a>)";
+                    text += "&nbsp;(<a target='_blank' href='" + LABKEY.Utils.getHelpTopicHref('viewSampleSets#delete') + "'>more info</a>)";
                 }
                 if (numCanDelete > 0) {
                     text += " <br/><br/><b>Deletion cannot be undone.</b>  Do you want to proceed?";

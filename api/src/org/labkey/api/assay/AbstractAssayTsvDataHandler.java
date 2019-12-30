@@ -913,7 +913,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     Object remapped = cache.remap(lookupTable, (String)o);
                     if (remapped == null)
                     {
-                        errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': " + o, pd.getName()));
+                        errors.add(new PropertyValidationError("Failed to convert '" + pd.getName() + "': Could not translate value: " + o, pd.getName()));
                     }
                     else if (o != remapped)
                     {
