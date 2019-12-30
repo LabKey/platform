@@ -86,6 +86,9 @@ public interface ExpProtocol extends ExpObject
     List<? extends ExpProtocol> getChildProtocols();
     List<? extends ExpExperiment> getBatches();
 
+    void setEntityId(String entityId);
+    String getEntityId();
+
     enum ApplicationType
     {
         ExperimentRun,
