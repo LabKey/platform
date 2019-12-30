@@ -320,6 +320,8 @@ groupByLoop:
                             }
                         }
                     }
+                    // wrap this 'global' relation to capture the FROM Alias
+                    relation = new QueryWithWrapper(queryTableWith, alias);
                 }
             }
 
@@ -2411,5 +2413,30 @@ groupByLoop:
     {
         QuerySelect clone = this.clone();
         return clone;
+    }
+
+    // A CTE can be used more than once in FROM, but we can't have two FROM entries point to same QueryRelation, because
+    // unlike TableInfo we expect the QueryRelation to know it's own Alias (mistake?)
+    private static class QueryWithWrapper extends QueryRelationWrapper<QueryWith.QueryTableWith>
+    {
+        final String _alias;
+
+        QueryWithWrapper(QueryWith.QueryTableWith wrapped, String alias)
+        {
+            super(wrapped);
+            _alias = alias;
+        }
+
+        @Override
+        public String getAlias()
+        {
+            return _alias;
+        }
+
+        @Override
+        public SQLFragment getFromSql()
+        {
+            return _wrapped.getFromSql(_alias);
+        }
     }
 }
