@@ -127,7 +127,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(")");
         var ret = new ExprColumn(this, name, sql, JdbcType.INTEGER);
 
-        // TODO add ContainerFitler to ExperimentLookupForeignKey() constructor
+        // TODO add ContainerFilter to ExperimentLookupForeignKey() constructor
         ret.setFk(new ExpSchema.ExperimentLookupForeignKey("RowId")
         {
             @Override
