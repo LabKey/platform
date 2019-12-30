@@ -48,8 +48,11 @@ LABKEY.WebSocket = new function ()
                     }, 1000);
                 }
             }
-            else if (evt.code === 1001 || evt.code === 1006) {
-                // 1001 sent when server is shutdown normally (or on page reload in FireFox?)
+            else if (evt.code === 1001 && evt.reason && evt.reason !== "") {
+                // 1001 sent when server is shutdown normally (AND on page reload in FireFox, but that one doesn't have a reason)
+                setTimeout(showDisconnectedMessage, 1000);
+            }
+            else if (evt.code === 1006) {
                 // 1006 abnormal close (e.g, server process died)
                 setTimeout(showDisconnectedMessage, 1000);
             }
