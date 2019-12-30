@@ -34,15 +34,9 @@
     String projectDefaultRoot = "";
 
     File siteRoot = FileContentService.get().getSiteDefaultRoot();
-    if (siteRoot != null)
-    {
-        File projRoot = new File(siteRoot, getContainer().getProject().getName());
-        if (projRoot != null)
-        {
-            // Show the user the path that we'd point to if using the default location
-            projectDefaultRoot = projRoot.getAbsolutePath();
-        }
-    }
+    File projRoot = new File(siteRoot, getContainer().getProject().getName());
+    // Show the user the path that we'd point to if using the default location
+    projectDefaultRoot = projRoot.getAbsolutePath();
 
     boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
@@ -127,13 +121,9 @@
                 items: [{
                     html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view') + '" target="_blank">Properties</a></li>'
                 },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId: 'resources'}) + '" target="_blank">Resources</a></li>'
+                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'resources.view') + '" target="_blank">Resources</a></li>'
                 },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId: 'menubar'}) + '" target="_blank">Menu Bar</a></li>'
-                },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId: 'files'}) + '" target="_blank">Folder Settings</a></li>'
-                },{
-                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('security', 'project.view') + '" target="_blank">Configure Permissions</a></li>'
+                    html: '<li><a href="'+LABKEY.ActionURL.buildURL('security', 'project.view') + '" target="_blank">Permissions</a></li>'
                 }]
             }],
             buttons: [{
@@ -154,7 +144,6 @@
                 f.submit();
             }
         });
-
     });
 </script>
 
