@@ -348,7 +348,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     }
 
     /**
-     * @return the number of result rows loaded for the given design, or null if not implemented
+     * @return the number of result rows loaded for the given designs, or null if not implemented
      * @param protocols all protocols for this assay provider
      */
     default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
