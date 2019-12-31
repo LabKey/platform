@@ -193,14 +193,12 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         String domainName = "RunVocabularyProperties";
         String description = "Additional property set for Runs.";
 
-        String prop1Name = "Lab name";
-        String rangeURI1 = "string";
-        String prop1Value = "Ocean";
-        PropertyDescriptor pd1 = new PropertyDescriptor(prop1Name, rangeURI1);
+        String propNameLab = "Lab name";
+        String propValueLab = "Ocean";
+        PropertyDescriptor pd1 = new PropertyDescriptor(propNameLab, "string");
 
-        String prop2Name = "Location";
-        String rangeURI2 = "int";
-        PropertyDescriptor pd2 = new PropertyDescriptor(prop2Name, rangeURI2);
+        String propNameLocation = "Location";
+        PropertyDescriptor pd2 = new PropertyDescriptor(propNameLocation, "int");
         pd2.setLookup("lists", listName, getCurrentContainer());
 
         List<PropertyDescriptor> fields = new ArrayList<>();
@@ -216,7 +214,7 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         Run run = new Run();
         run.setName("ViewSupportRun");
-        run.setProperties(Map.of(vocabDomainPropURI1, prop1Value, vocabDomainPropURI2, listRow1RowId));
+        run.setProperties(Map.of(vocabDomainPropURI1, propValueLab, vocabDomainPropURI2, listRow1RowId));
 
         SaveAssayRunsCommand saveAssayRunsCommand = new SaveAssayRunsCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(run));
         SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(false), getProjectName());
@@ -228,15 +226,18 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         CustomizeView runsTableCustomizeView = runsTable.openCustomizeGrid();
         runsTableCustomizeView.showHiddenItems();
         runsTableCustomizeView.addColumn("Properties");
-        runsTableCustomizeView.addColumn(domainProperty + "/" + prop1Name);
-        runsTableCustomizeView.addColumn(domainProperty + "/" + prop2Name);
+        runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLab);
+        runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLocation);
         runsTableCustomizeView.applyCustomView();
 
-        String propertiesValue = prop1Name + " " + prop2Name + "\n" +
-                prop1Value + " " + labLocation;
+        String propertiesValue = propNameLab + " " + propNameLocation + "\n" +
+                propValueLab + " " + labLocation;
         List<String> rowData = runsTable.getRowDataAsText(0);
 
         Assert.assertTrue("Run does not contain properties property value.", rowData.contains(propertiesValue));
+
+        Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0), propValueLab);
+        Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
     }
 
     private void createListForVocabPropertyLookup(String listName)
