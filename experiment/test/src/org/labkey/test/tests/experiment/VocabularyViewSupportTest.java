@@ -7,6 +7,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.assay.Run;
+import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
+import org.labkey.remoteapi.assay.SaveAssayRunsCommand;
+import org.labkey.remoteapi.assay.SaveAssayRunsResponse;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.DomainResponse;
 import org.labkey.remoteapi.domain.GetDomainCommand;
@@ -16,6 +20,7 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.util.DataRegionTable;
@@ -70,16 +75,10 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
     @Test
     public void testSampleSetViewSupport() throws IOException, CommandException
     {
-        log("Create a list for vocabulary property lookup");
-        ListHelper.ListColumn[] columns = new ListHelper.ListColumn[] {
-                new ListHelper.ListColumn("name", "Name", ListHelper.ListColumnType.String, "")
-        };
-
         String listName = "Locations";
         String cityName = "Torrance";
 
-        _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
-        clickButton("Done");
+        createListForVocabPropertyLookup(listName);
         clickAndWait(Locator.linkWithText(listName));
         _listHelper.insertNewRow(Map.of("name", cityName));
 
@@ -110,13 +109,7 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         fields.add(pd2);
         fields.add(pd3);
 
-        CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
-        domainCommand.getDomainDesign().setFields(fields);
-        domainCommand.getDomainDesign().setDescription(description);
-
-        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
-        domainResponse = getDomainCommand.execute(createDefaultConnection(false), getProjectName());
+        DomainResponse domainResponse = createDomain(domainKind, domainName, description, fields);
         int domainId = domainResponse.getDomain().getDomainId().intValue();
 
         log("Create a sampleset");
@@ -182,6 +175,91 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         Assert.assertTrue("Row data does not contain year property value.", rowData.contains(String.valueOf(prop2Value)));
         Assert.assertTrue("Row data does not contain list property value.", rowData.contains(cityName));
         Assert.assertTrue("Row data does not contain properties property value.", rowData.contains(propertiesValue));
+    }
+
+    @Test
+    public void testAssayViewSupport() throws IOException, CommandException
+    {
+        String listName = "Lab Locations";
+        String labLocation = "West wing";
+
+        createListForVocabPropertyLookup(listName);
+        clickAndWait(Locator.linkWithText(listName));
+        _listHelper.insertNewRow(Map.of("name", labLocation));
+        int listRow1RowId = 1;
+
+        log("Create a vocabulary - one string prop, one lookup to a list");
+        String domainKind = "Vocabulary";
+        String domainName = "RunVocabularyProperties";
+        String description = "Additional property set for Runs.";
+
+        String propNameLab = "Lab name";
+        String propValueLab = "Ocean";
+        PropertyDescriptor pd1 = new PropertyDescriptor(propNameLab, "string");
+
+        String propNameLocation = "Location";
+        PropertyDescriptor pd2 = new PropertyDescriptor(propNameLocation, "int");
+        pd2.setLookup("lists", listName, getCurrentContainer());
+
+        List<PropertyDescriptor> fields = new ArrayList<>();
+        fields.add(pd1);
+        fields.add(pd2);
+
+        DomainResponse domainResponse = createDomain(domainKind, domainName, description, fields);
+        int domainId = domainResponse.getDomain().getDomainId().intValue();
+        String domainProperty = domainName + domainId;
+
+        String vocabDomainPropURI1 = domainResponse.getDomain().getFields().get(0).getPropertyURI();
+        String vocabDomainPropURI2 = domainResponse.getDomain().getFields().get(1).getPropertyURI();
+
+        Run run = new Run();
+        run.setName("ViewSupportRun");
+        run.setProperties(Map.of(vocabDomainPropURI1, propValueLab, vocabDomainPropURI2, listRow1RowId));
+
+        SaveAssayRunsCommand saveAssayRunsCommand = new SaveAssayRunsCommand(SaveAssayBatchCommand.SAMPLE_DERIVATION_PROTOCOL, List.of(run));
+        SaveAssayRunsResponse saveAssayRunsResponse = saveAssayRunsCommand.execute(createDefaultConnection(false), getProjectName());
+
+        log("Go to runs grid");
+        goToProjectHome();
+        goToSchemaBrowser();
+        DataRegionTable runsTable = viewQueryData("exp","Runs");
+        CustomizeView runsTableCustomizeView = runsTable.openCustomizeGrid();
+        runsTableCustomizeView.showHiddenItems();
+        runsTableCustomizeView.addColumn("Properties");
+        runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLab);
+        runsTableCustomizeView.addColumn(domainProperty + "/" + propNameLocation);
+        runsTableCustomizeView.applyCustomView();
+
+        String propertiesValue = propNameLab + " " + propNameLocation + "\n" +
+                propValueLab + " " + labLocation;
+        List<String> rowData = runsTable.getRowDataAsText(0);
+
+        Assert.assertTrue("Run does not contain properties property value.", rowData.contains(propertiesValue));
+
+        Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0), propValueLab);
+        Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
+    }
+
+    private void createListForVocabPropertyLookup(String listName)
+    {
+        log("Create a list for vocabulary property lookup");
+        ListHelper.ListColumn[] columns = new ListHelper.ListColumn[] {
+                new ListHelper.ListColumn("name", "Name", ListHelper.ListColumnType.String, "")
+        };
+
+        _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
+        clickButton("Done");
+    }
+
+    private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
+    {
+        CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
+        domainCommand.getDomainDesign().setFields(fields);
+        domainCommand.getDomainDesign().setDescription(description);
+
+        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
+        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
+        return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
     }
 
 }
