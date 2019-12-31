@@ -201,6 +201,12 @@ public class QueryProfiler
                 if (listenersEnvironment == null)
                 {
                     listenerEnvironment = null;
+                    // To avoid getting this warning, the codepath should invoke
+                    // QueryProfiler.getInstance().ensureListenerEnvironment() before executing its DB call. We try
+                    // to do this in a few centralized chokepoints. While there's no harm in doing it more widely,
+                    // most codepaths shouldn't need to worry about this. You may also be able to refactor code
+                    // to go through an existing codepath that already handles this, such as
+                    // QueryService.get().getSelectSQL() when building up a SQLFragment that will run against the DB
                     LOG.warn("No DatabaseQueryListener environment available", new Exception());
                 }
                 else
