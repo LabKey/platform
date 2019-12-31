@@ -71,7 +71,7 @@ public class UsageMetricsServiceImpl implements UsageMetricsService
                                 .filter(moduleMetrics::containsKey)
                                 .collect(Collectors.toSet());
                         if (duplicateKeys.isEmpty())
-                            moduleMetrics.putAll(provider.getUsageMetrics());
+                            moduleMetrics.putAll(providerMetrics);
                         else
                         {
                             String message = (moduleName + " module has duplicate metric names registered by multiple UsageMetricProviders. Duplicate names: " + duplicateKeys);
