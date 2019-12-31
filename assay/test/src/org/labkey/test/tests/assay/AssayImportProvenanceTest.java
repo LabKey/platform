@@ -77,7 +77,7 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
         populateAssay(assayName, runName, runData);
 
         String inputLsid = getInputLsid();
-        String outputLsid = getResultRowLsid(assayName, runName);
+        String outputLsid = getResultRowLsid();
         verifyProvenance(inputLsid, outputLsid);
     }
 
@@ -123,7 +123,6 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
 
     private String getInputLsid() throws IOException, CommandException
     {
-        Connection cn = createDefaultConnection(false);
         SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Materials");
         selectCmd.setColumns(List.of("LSID"));
         SelectRowsResponse selResp = selectCmd.execute(cn, getProjectName());
@@ -131,17 +130,13 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
         return materialsRow.get("LSID").toString();
     }
 
-    private String getResultRowLsid(String assayName, String runName)
+    private String getResultRowLsid() throws IOException, CommandException
     {
-        goToProjectHome(getProjectName());
-        clickAndWait(Locator.linkWithText(assayName));
-        clickAndWait(Locator.linkWithText(runName));
-        DataRegionTable assayResults = new DataRegionTable("Data", this);
-        CustomizeView assayResultsCustomView = assayResults.openCustomizeGrid();
-        assayResultsCustomView.addColumn("LSID");
-        assayResultsCustomView.applyCustomView();
-
-        return assayResults.getColumnDataAsText("LSID").get(0);
+        SelectRowsCommand cmd = new SelectRowsCommand("assay.General.Provenance Assay", "Data");
+        cmd.setColumns(List.of("LSID"));
+        SelectRowsResponse response = cmd.execute(cn, getProjectName());
+        Map<String, Object> resultRow = response.getRows().get(0);
+        return resultRow.get("LSID").toString();
     }
 
     private void verifyProvenance(String inputLsid, String outputLsid) throws MalformedURLException
