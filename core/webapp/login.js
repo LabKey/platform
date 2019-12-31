@@ -39,7 +39,7 @@
                 termsOfUseType: document.getElementById('termsOfUseType').value,
                 returnUrl: returnUrlElement && returnUrlElement.value ? returnUrlElement.value : LABKEY.ActionURL.getParameter("returnUrl"),
                 skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
-                urlHash: document.getElementById('urlhash')
+                urlhash: document.getElementById('urlhash').value
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
                 if (response && response.returnUrl) {
@@ -66,7 +66,7 @@
                 termsOfUseType: document.getElementById('termsOfUseType').value,
                 returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
                 skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
-                urlHash: document.getElementById('urlhash')
+                urlhash: document.getElementById('urlhash').value
             },
             success: function () {
                 window.location = LABKEY.ActionURL.getParameter("returnUrl")
@@ -88,7 +88,7 @@
                 params: {
                     returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
                     skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
-                    urlHash: document.getElementById('urlhash')
+                    urlhash: document.getElementById('urlhash').value
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {
@@ -124,7 +124,7 @@
                 params: {
                     returnUrl: LABKEY.ActionURL.getParameter("returnUrl"),
                     skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
-                    urlHash: document.getElementById('urlhash')
+                    urlhash: document.getElementById('urlhash').value
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function (response)
                 {

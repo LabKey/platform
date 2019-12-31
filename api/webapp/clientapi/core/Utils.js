@@ -1096,6 +1096,7 @@ LABKEY.Utils = new function()
  * @param fn {function} This will be called with the provided argument list {args} after the modal is shown. You can generate content in
  * the modal via the following empty div: &lt;div id="modal-fn-body">&lt;/div>
  * @param args {array} Array of arguments to be applied to the function when it is called.
+ * @param disableBackdrop {boolean} True to disable closing the modal on background click.
  *
  * @example &lt;script type="text/javascript"&gt;
  *

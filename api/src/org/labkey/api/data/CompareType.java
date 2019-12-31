@@ -1391,9 +1391,9 @@ public abstract class CompareType
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                     {
-                        return new Parameter.TypedValue(null, JdbcType.DOUBLE);
+                        return new Parameter.TypedValue(null, type == JdbcType.REAL ? JdbcType.REAL : JdbcType.DOUBLE);
                     }
-                    return Double.valueOf(stringValue);
+                    return type == JdbcType.REAL ? Float.valueOf(stringValue) : Double.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
