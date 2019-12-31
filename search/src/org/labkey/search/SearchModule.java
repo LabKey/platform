@@ -46,7 +46,6 @@ import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -97,7 +96,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Collections.singletonList(new SearchWebPartFactory()));
+        return Collections.singletonList(new SearchWebPartFactory());
     }
 
     

@@ -41,6 +41,11 @@ public class WrappedColumn extends ExprColumn
         _col = col;
     }
 
+    public ColumnInfo getWrappedColumn()
+    {
+        return _col;
+    }
+
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
