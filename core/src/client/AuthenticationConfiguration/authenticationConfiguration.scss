@@ -107,6 +107,18 @@
   font-weight: bold;
 }
 
+// database auth modal section ----------------------------
+
+.dbAuthRowHeights {
+  height: 40px;
+}
+
+.dbAuthMoveRight {
+  float: right;
+}
+
+// file attachment section ----------------------------
+
 .fileAttachmentLabel {
   width: 130px;
   //background-color: blue;
@@ -126,6 +138,31 @@
 
 .fileAttachmentImage {
   float: left;
+  margin-left: 60px;
+  display: flex;
+}
+
+.fileAttachmentImageDisplay {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  width:100px;
+  height:94px;
+}
+
+.nullImage {
+  margin-left: 7px;
+}
+
+.fileAttachmentDeleteImage {
+  align-self: flex-start;
+  margin-left: 2px;
+}
+
+.fileAttachmentNoImageText {
+  font-size: smaller;
+  color: #DCDCDC;
+  margin-left: 5px;
 }
 
 .dynamicFieldSpread {
@@ -135,6 +172,11 @@
 .editModalErrorMessage {
   float: right;
   color: #d9534f;
+}
+
+.testButton {
+  display: flex;
+  justify-content: flex-end;
 }
 
 

@@ -6,7 +6,7 @@ import FACheckBox from "./FACheckBox";
 
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
+import {LabelHelpTip, FileAttachmentForm, ChangePasswordModal} from '@labkey/components';
 import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
 import SSOFields from "./SSOFields";
@@ -20,6 +20,10 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             errorMessage: "",
             auth_header_logo: "",
             auth_login_page_logo: "",
+            deletedLogos: [],
+            // expandableFieldsStopPoint: this.props.type.settingsFields.length,
+            // expandableFieldsStopPoint: 6,
+            // expandableFieldsOpen: true,
         };
     }
 
@@ -83,8 +87,18 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         this.setState(() => ({
             [name]: value
         }));
-
         // console.log(name, " ", value);
+    };
+
+    handleDeleteLogo = (value) => {
+        const arr = this.state.deletedLogos;
+        arr.push(value);
+
+        this.setState(() => ({
+                deletedLogos: arr
+            }),
+            () => {console.log(this.state.deletedLogos)}
+        );
     };
 
     checkCheckBox = (name) => {
@@ -94,7 +108,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         })
             // , () => this.props.checkDirty(this.state, this.props)
         );
-
         // console.log(oldState, name);
     };
 
@@ -105,7 +118,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
     };
 
-    dynamicallyCreateFields = (fields) => {
+    dynamicallyCreateFields = (fields, expandableOpen) => {
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
             if ("dictateFieldVisibility" in fields[i]) {
@@ -114,8 +127,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             }
         }
 
-        // return fields.map((field, index) => {
-        return fields.slice(0, stopPoint).map((field, index) => {
+        const fieldsToCreate = expandableOpen ? fields : fields.slice(0, stopPoint);
+
+        return fieldsToCreate.map((field, index) => {
             switch (field.type) {
                 case "input":
                     return (
@@ -128,6 +142,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     );
                 case "checkbox":
+
+
                     return (
                         <CheckBoxInput
                             key={index}
@@ -147,6 +163,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // let type = this.props.type.settingsFields;
         // (this.props.type && console.log(this.props.type.settingsFields));
         // console.log(this.props);
+        let queryString = {"server": this.state.servers, "principal": this.state.principalTemplate, "sasl":this.state.SASL};
 
         return (
             <Modal show={true} onHide={() => {}} >
@@ -191,7 +208,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     </div>
 
 
-                    {this.props.type && this.dynamicallyCreateFields(this.props.type.settingsFields)}
+                    {this.props.type && this.dynamicallyCreateFields(this.props.type.settingsFields, this.state.search)}
 
                     <br/>
 
@@ -200,8 +217,22 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             headerLogoUrl={this.props.headerLogoUrl}
                             loginLogoUrl={this.props.loginLogoUrl}
                             onFileChange={this.onFileChange}
+                            handleDeleteLogo={this.handleDeleteLogo}
                         />
                     }
+
+                    <div className="testButton">
+                        {this.props.modalType.testLink &&
+                            <Button className={'labkey-button'} onClick={() =>
+                                window.open(
+                                    ActionURL.getBaseURL(true) + this.props.modalType.testLink + ActionURL.queryString(queryString)
+                                )}
+                            >
+                                Test
+                            </Button>
+                        }
+                    </div>
+
                     <div className="editModalErrorMessage"> {this.state.errorMessage} </div>
 
                     <hr/>
@@ -236,6 +267,7 @@ interface TextInputProps {
 
 class TextInput extends PureComponent<any, any> {
     render() {
+        const type = (this.props.name == "password") ? "password" : "text";
         return(
             <div style={{height: "40px"}}>
                 <span style={{marginRight:"7px"}}>
@@ -250,7 +282,7 @@ class TextInput extends PureComponent<any, any> {
 
                 <FormControl
                     name={this.props.name}
-                    type="text"
+                    type={type}
                     value={this.props.value}
                     onChange={(e) => this.props.handleChange(e)}
 
@@ -291,7 +323,7 @@ class CheckBoxInput extends PureComponent<any, any> {
                     <FACheckBox
                         rowText={this.props.caption}
                         checked={this.props.value}
-                        onClick={() => {this.props.checkCheckBox(this.props.name)}}
+                        onClick={() => {this.props.checkCheckBox(this.props.name);}}
                     />
                 </span>
             </div>

@@ -60,7 +60,7 @@ export default class SimpleAuthRow extends PureComponent<any, State> {
                             <Col xs={1} />
 
                             <Col xs={2} className="domain-row-base-fields">
-                                <Col xs={7}>{this.props.enabled}</Col>
+                                <Col xs={7} >{this.props.enabled}</Col>
 
                                 <Col xs={1}>{this.props.delete}</Col>
 

@@ -26,10 +26,6 @@ export default class DragAndDropPane extends PureComponent<any> {
         // console.log("state: ", this.state)
     };
 
-
-
-
-
     render() {
         // this.forTestingFunc();
         const primary = this.props.primary;

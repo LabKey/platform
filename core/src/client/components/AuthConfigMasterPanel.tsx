@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react';
 import { Panel, DropdownButton, MenuItem, Tab, Tabs} from 'react-bootstrap';
 
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faInfoCircle} from '@fortawesome/free-solid-svg-icons';
+import {faInfoCircle, faPencilAlt} from '@fortawesome/free-solid-svg-icons';
 
 import { LabelHelpTip } from '@labkey/components';
 
@@ -11,6 +11,7 @@ import DragAndDropPane from './DragAndDropPane';
 import EditableAuthRow from './EditableAuthRow';
 import SimpleAuthRow from './SimpleAuthRow';
 import DynamicConfigurationModal from './DynamicConfigurationModal';
+import DatabaseConfigurationModal from "./DatabaseConfigurationModal";
 
 // todo:
 // add new configurations is not in order
@@ -68,11 +69,18 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
         const addNewPrimaryDropdown = primary &&
             Object.keys(primary).map((authOption) => (
-                // <MenuItem key={authOption} onClick={() => console.log('uh')}>
                 <MenuItem key={authOption} href={primary[authOption].configLink}>
                     {authOption} : {primary[authOption].description}
                 </MenuItem>
             ));
+
+        const editIcon =
+            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
+                <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
+            </div>;
+
+        const databaseModal =
+            <DatabaseConfigurationModal/>;
 
         const primaryTab_LoginForm =
             (loginFormAuth && this.props.canEdit)
@@ -93,6 +101,8 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         description={loginFormAuth.slice(-1)[0].description}
                         provider={loginFormAuth.slice(-1)[0].provider}
                         enabled={(loginFormAuth.slice(-1)[0].enabled) ? 'Enabled' : 'Disabled'}
+                        editIcon = {editIcon}
+                        // modal = {databaseModal}
                         // url={(loginFormAuth.slice(-1)[0].url)}
                     />
                 </div>
@@ -182,14 +192,6 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         </Tab>
                     </Tabs>
                 </Panel.Body>
-
-                {this.state.modalOpen &&
-                    <DynamicConfigurationModal
-                            type={this.props.modalType}
-                            closeModal={() => {this.onToggleModal('modalOpen')}}
-
-                    />
-                }
             </Panel>
         )
     }

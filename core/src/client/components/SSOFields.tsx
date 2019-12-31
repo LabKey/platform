@@ -3,7 +3,7 @@ import {FileAttachmentForm, importData} from "@labkey/components";
 import {ActionURL} from "@labkey/api";
 
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faImage} from "@fortawesome/free-solid-svg-icons";
+import {faImage, faTimesCircle} from "@fortawesome/free-solid-svg-icons";
 
 export default class SSOFields extends PureComponent<any, any> {
     render() {
@@ -14,6 +14,7 @@ export default class SSOFields extends PureComponent<any, any> {
                         text="Page Header Logo"
                         imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
                         onFileChange={this.props.onFileChange}
+                        handleDeleteLogo={this.props.handleDeleteLogo}
                         fileTitle='auth_header_logo'
                     />
                 </div>
@@ -25,6 +26,7 @@ export default class SSOFields extends PureComponent<any, any> {
                         text="Login Page Logo"
                         imageUrl={ActionURL.getBaseURL(true) + this.props.loginLogoUrl}
                         onFileChange={this.props.onFileChange}
+                        handleDeleteLogo={this.props.handleDeleteLogo}
                         fileTitle='auth_login_page_logo'
                     />
                 </div>
@@ -42,6 +44,12 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
     }
 
     render() {
+        const noImageSelectedDisplay =
+            <div className="nullImage">
+                <FontAwesomeIcon icon={faImage} color={"#DCDCDC"} size={"6x"}/>
+                <div className="fileAttachmentNoImageText">None selected</div>
+            </div>;
+
         return(
             <>
                 <div className="fileAttachmentLabel">
@@ -50,12 +58,23 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
 
                 <div className="fileAttachmentImage">
                     {this.state.imageUrl ?
-                        <img
+                        <>
+                            <img
+                            className="fileAttachmentImageDisplay"
                             src={this.state.imageUrl}
                             onError={() => {this.setState({imageUrl: null})}}
                             alt="Sign in"
-                        />
-                        : <FontAwesomeIcon icon={faImage} color={"#DCDCDC"} size={"6x"}/>
+                            />
+                            <FontAwesomeIcon className="fileAttachmentDeleteImage"
+                                             icon={faTimesCircle}
+                                             color={"#d9534f"}
+                                             onClick={() => {
+                                                this.setState({imageUrl: null});
+                                                this.props.handleDeleteLogo(this.props.fileTitle);
+                                             }}
+                            />
+                        </>
+                        : noImageSelectedDisplay
                     }
                 </div>
 
@@ -67,7 +86,7 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                         allowDirectories={false}
                         acceptedFormats={".jpeg,.png,.gif,.tif"}
                         showAcceptedFormats={false}
-                        onFileChange={(attachment) => {console.log('I am firing onFileChange from', this.props.fileTitle); this.props.onFileChange(attachment, this.props.fileTitle)}}
+                        onFileChange={(attachment) => {this.props.onFileChange(attachment, this.props.fileTitle)}}
                     />
                 </div>
             </>

@@ -268,7 +268,7 @@ export class App extends PureComponent<Props, any> {
         let hideAutoCreateAccounts = (this.state.loginFormAuth && this.state.loginFormAuth.length == 1) && (this.state.singleSignOnAuth && this.state.singleSignOnAuth.length == 0);
 
         return(
-            <div style={{minWidth:"1100px"}}>
+            <div style={{minWidth:"1150px"}}>
                 {this.state.globalAuthSettings &&
                     <GlobalAuthSettings
                         {...globalAuthSettings}
