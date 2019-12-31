@@ -32,7 +32,6 @@ public class QueryWith
 {
     final private Map<String, WithInfo> _withRelations = new LinkedCaseInsensitiveMap<>();
     final private Query _query;
-    final private SQLFragment _withSql = new SQLFragment();
 
     public QueryWith(@NotNull Query query, @NotNull QWith qwith)
     {
@@ -163,15 +162,21 @@ public class QueryWith
         @Override
         public SQLFragment getFromSql()
         {
+            return getFromSql(getAlias());
+        }
+
+        // see QuerySelect.QueryWithWrapper
+        public SQLFragment getFromSql(String alias)
+        {
             // Reference to With
             _generateSelectSQL = true;
-            SQLFragment sql = new SQLFragment("(SELECT * FROM ")
-                    .append(_cteToken).append(") ")
-                    .append(getAlias());
+            SQLFragment sql = new SQLFragment()
+                    .append(_cteToken).append(" ")
+                    .append(alias);
 
             if (!_parsingWith)
                 sql.prepend(getQueryWithSql(_cteKey));
-            
+
             return sql;
         }
 
