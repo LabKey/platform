@@ -5,6 +5,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.Connection;
+import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -12,10 +16,10 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.pages.ReactAssayDesignerPage;
-import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -26,6 +30,7 @@ import java.util.Map;
 public class AssayImportProvenanceTest extends BaseWebDriverTest
 {
     private static final String PROVENANCE_DATA_FILE = "AssayImportProvenanceRun.xls";
+    private Connection cn;
 
     @BeforeClass
     public static void setupProject()
@@ -37,6 +42,7 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
     @Before
     public void preTest()
     {
+        cn = createDefaultConnection(false);
         goToProjectHome();
     }
 
@@ -60,7 +66,7 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
     }
 
     @Test
-    public void testProvenanceOnAssayImport() throws MalformedURLException
+    public void testProvenanceOnAssayImport() throws IOException, CommandException
     {
         String runData = "participantID\tprov:objectInputs" + "\n" +
                 "P100\t" + uploadFile(PROVENANCE_DATA_FILE);
@@ -75,19 +81,16 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
         verifyProvenance(inputLsid, outputLsid);
     }
 
-    private String uploadFile(String fileName)
+    private String uploadFile(String fileName) throws IOException, CommandException
     {
         goToModule("FileContent");
         File datFile = TestFileUtils.getSampleData(PROVENANCE_DATA_FILE);
         _fileBrowserHelper.uploadFile(datFile);
-        goToSchemaBrowser();
-        DataRegionTable dataTable = viewQueryData("exp", "Data");
-        CustomizeView dataTableCustomizeView = dataTable.openCustomizeGrid();
-        dataTableCustomizeView.showHiddenItems();
-        dataTableCustomizeView.addColumn("LSID");
-        dataTableCustomizeView.applyCustomView();
-        Map<String, String> dataTableRow = dataTable.getRowDataAsMap(0);
-        return dataTableRow.get("LSID");
+        SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Data");
+        selectCmd.setColumns(List.of("LSID"));
+        SelectRowsResponse selResp = selectCmd.execute(cn, getProjectName());
+        Map<String, Object> dataTableRow = selResp.getRows().get(0);
+        return dataTableRow.get("LSID").toString();
     }
 
     private void createSimpleAssay(String assayName)
@@ -118,16 +121,14 @@ public class AssayImportProvenanceTest extends BaseWebDriverTest
         clickAndWait(Locator.lkButton("Save and Finish"));
     }
 
-    private String getInputLsid()
+    private String getInputLsid() throws IOException, CommandException
     {
-        goToSchemaBrowser();
-        DataRegionTable materials = viewQueryData("exp", "Materials");
-        CustomizeView materialsCustomizeView = materials.openCustomizeGrid();
-        materialsCustomizeView.showHiddenItems();
-        materialsCustomizeView.addColumn("LSID");
-        materialsCustomizeView.applyCustomView();
-        Map<String, String> materialsRow = materials.getRowDataAsMap(0);
-        return materialsRow.get("LSID");
+        Connection cn = createDefaultConnection(false);
+        SelectRowsCommand selectCmd = new SelectRowsCommand("exp", "Materials");
+        selectCmd.setColumns(List.of("LSID"));
+        SelectRowsResponse selResp = selectCmd.execute(cn, getProjectName());
+        Map<String, Object> materialsRow = selResp.getRows().get(0);
+        return materialsRow.get("LSID").toString();
     }
 
     private String getResultRowLsid(String assayName, String runName)
