@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
@@ -237,7 +238,6 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     {
         super.updateDomain(original, update, container, user);
 
-        final List<String> errors = new ArrayList<>();
         ValidationException validationException = new ValidationException();
 
         List<PropertyDescriptor> optionalEventProps = new ArrayList<>();
@@ -247,25 +247,19 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             {
                 optionalEventProps.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
                 if (prop.getName().contains(" "))
-                    errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                    validationException.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
                 else if (COLUMN.equalsIgnoreCase(prop.getName()))
-                    errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the SpecimenEvent table.");
+                    validationException.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the SpecimenEvent table."));
             }
         }
 
-        if (errors.size() > 0)
-        {
-            validationException = getValidationException(errors);
-        }
-        else
-        {
-            List<List<String>> results = checkRollups(optionalEventProps, null, null, container, user);
+        SpecimenDomainRollupErrorsAndWarning results = checkRollups(optionalEventProps, null, null, container, user);
 
-            if (!results.get(0).isEmpty())
-            {
-                validationException = getValidationException(results.get(0));
-            }
+        if (!results.getErrors().isEmpty())
+        {
+            validationException = getValidationException(results.getErrors());
         }
+
         return validationException;
     }
 }

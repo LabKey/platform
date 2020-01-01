@@ -179,7 +179,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         return exception;
     }
 
-    protected List<List<String>> checkRollups(
+    protected SpecimenDomainRollupErrorsAndWarning checkRollups(
             List<PropertyDescriptor> eventProps,            // all of these are nonBase properties
             List<PropertyDescriptor> vialProps,             // all of these are nonBase properties
             List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
@@ -195,18 +195,18 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         Domain vialDomain = specimenTablesProvider.getDomain("vial", false);
         Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false);
 
-        if (null == eventProps)
+        if (null == eventProps && null != eventDomain)
         {
             eventProps = getPropertyDescriptorsForDomain(eventDomain, container);
 
         }
 
-        if (null == vialProps)
+        if (null == vialProps && null != vialDomain)
         {
             vialProps = getPropertyDescriptorsForDomain(vialDomain, container);
         }
 
-        if (null == specimenProps)
+        if (null == specimenProps && null != specimenDomain)
         {
             specimenProps = getPropertyDescriptorsForDomain(specimenDomain, container);
         }
@@ -218,19 +218,23 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         }
         CaseInsensitiveHashSet eventFieldNamesDisallowedForRollups = SpecimenImporter.getEventFieldNamesDisallowedForRollups();
         Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>>> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);     // includes rollups with type mismatches
-        for (PropertyDescriptor prop : vialProps)
+
+        if (null != vialProps)
         {
-            Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>> eventPair = vialToEventNameMap.get(prop.getName().toLowerCase());
-            if (null != eventPair)
+            for (PropertyDescriptor prop : vialProps)
             {
-                String eventFieldName = eventPair.first;
-                if (eventFieldNamesDisallowedForRollups.contains(eventFieldName))
-                    errors.add("You may not rollup from SpecimenEvent field '" + eventFieldName + "'.");
-                else if (!eventPair.second.isTypeConstraintMet())
-                    errors.add("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+                Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>> eventPair = vialToEventNameMap.get(prop.getName().toLowerCase());
+                if (null != eventPair)
+                {
+                    String eventFieldName = eventPair.first;
+                    if (eventFieldNamesDisallowedForRollups.contains(eventFieldName))
+                        errors.add("You may not rollup from SpecimenEvent field '" + eventFieldName + "'.");
+                    else if (!eventPair.second.isTypeConstraintMet())
+                        errors.add("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+                }
+                else
+                    warnings.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
             }
-            else
-                warnings.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
         }
 
         if (null != vialDomain)
@@ -240,24 +244,28 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         }
         CaseInsensitiveHashSet vialFieldNamesDisallowedForRollups = SpecimenImporter.getVialFieldNamesDisallowedForRollups();
         Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>>> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);     // includes rollups with type mismatches
-        for (PropertyDescriptor prop : specimenProps)
+
+        if (null != specimenProps)
         {
-            Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>> vialPair = specimenToVialNameMap.get(prop.getName().toLowerCase());
-            if (null != vialPair)
+            for (PropertyDescriptor prop : specimenProps)
             {
-                String vialFieldName = vialPair.first;
-                if (vialFieldNamesDisallowedForRollups.contains(vialFieldName))
-                    errors.add("You may not rollup from Vial field '" + vialFieldName + "'.");
-                else if (!vialPair.second.isTypeConstraintMet())
-                    errors.add("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+                Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>> vialPair = specimenToVialNameMap.get(prop.getName().toLowerCase());
+                if (null != vialPair)
+                {
+                    String vialFieldName = vialPair.first;
+                    if (vialFieldNamesDisallowedForRollups.contains(vialFieldName))
+                        errors.add("You may not rollup from Vial field '" + vialFieldName + "'.");
+                    else if (!vialPair.second.isTypeConstraintMet())
+                        errors.add("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+                }
+                else
+                    warnings.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
             }
-            else
-                warnings.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
         }
 
-        List<List<String>> result = new ArrayList<>();
-        result.add(errors);
-        result.add(warnings);
+        SpecimenDomainRollupErrorsAndWarning result = new SpecimenDomainRollupErrorsAndWarning();
+        result.setErrors(errors);
+        result.setWarnings(warnings);
         return result;
     }
 
@@ -277,5 +285,30 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         return pds;
     }
 
+    protected class SpecimenDomainRollupErrorsAndWarning
+    {
+        List<String> errors;
+        List<String> warnings;
+
+        public List<String> getErrors()
+        {
+            return errors;
+        }
+
+        public void setErrors(List<String> errors)
+        {
+            this.errors = errors;
+        }
+
+        public List<String> getWarnings()
+        {
+            return warnings;
+        }
+
+        public void setWarnings(List<String> warnings)
+        {
+            this.warnings = warnings;
+        }
+    }
 
 }

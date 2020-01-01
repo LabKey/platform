@@ -180,49 +180,43 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
 
         // Check for the same name in Specimen and Vial
         Set<String> specimenFields = new HashSet<>();
-        for (DomainProperty prop : domainSpecimen.getProperties())
+        if (null != domainSpecimen)
         {
-            if (null != prop.getName())
+            for (DomainProperty prop : domainSpecimen.getProperties())
             {
-                specimenFields.add(prop.getName().toLowerCase());
+                if (null != prop.getName())
+                {
+                    specimenFields.add(prop.getName().toLowerCase());
+                }
             }
         }
 
-        Set<String> vialFields = new HashSet<>();
         List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
         for (GWTPropertyDescriptor prop : update.getFields())
         {
             if (null != prop.getName())
             {
                 if (!prop.isRequired() && specimenFields.contains(prop.getName().toLowerCase()))
-                    errors.add("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName());
-                else
-                    vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+                    exception.addError(new SimpleValidationError("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName()));
 
                 if (!prop.isRequired())
                 {
                     optionalVialFields.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
                     if (prop.getName().contains(" "))
-                        errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                        exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
                     else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
-                        errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the Vial table.");
+                        exception.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the Vial table."));
                 }
             }
         }
 
-        if (errors.size() > 0)
-        {
-            exception = getValidationException(errors);
-        }
-        else
-        {
-            List<List<String>> results = checkRollups(null, optionalVialFields, null, container, user);
+        SpecimenDomainRollupErrorsAndWarning results = checkRollups(null, optionalVialFields, null, container, user);
 
-            if (!results.get(0).isEmpty())
-            {
-                exception = getValidationException(results.get(0));
-            }
+        if (!results.getErrors().isEmpty())
+        {
+            exception = getValidationException(results.getErrors());
         }
+
         return exception;
     }
 }

@@ -169,53 +169,46 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     {
         super.updateDomain(original, update, container, user);
 
-        final List<String> errors = new ArrayList<>();
         ValidationException exception = new ValidationException();
         SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
         Domain domainVial = stp.getDomain("vial",false);
 
         // Check for the same name in Specimen and Vial
         Set<String> vialFields = new HashSet<>();
-        domainVial.getProperties().forEach(prop -> {
-            if (null != prop.getName())
-            {
-                vialFields.add(prop.getName().toLowerCase());
-            }
-        });
+        if (null != domainVial)
+        {
+            domainVial.getProperties().forEach(prop -> {
+                if (null != prop.getName())
+                {
+                    vialFields.add(prop.getName().toLowerCase());
+                }
+            });
+        }
 
-        Set<String> specimenFields = new HashSet<>();
         List<PropertyDescriptor> optionalSpecimenProps = new ArrayList<>();
-        update.getFields().forEach(prop -> {
+        for (GWTPropertyDescriptor prop : update.getFields())
+        {
             if (null != prop.getName())
             {
                 if (!prop.isRequired() && vialFields.contains(prop.getName().toLowerCase()))
-                    errors.add("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName());
-                else
-                    specimenFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+                    exception.addError(new SimpleValidationError("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName()));
 
                 if (!prop.isRequired())
                 {
                     optionalSpecimenProps.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
                     if (prop.getName().contains(" "))
-                        errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                        exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
                     else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
-                        errors.add("Field name '" + prop.getName() + "' is reserved and may not be used in the Specimen table.");
+                        exception.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the Specimen table."));
                 }
             }
-        });
-
-        if (errors.size() > 0)
-        {
-            exception = getValidationException(errors);
         }
-        else
-        {
-            List<List<String>> results = checkRollups(null, null, optionalSpecimenProps, container, user);
 
-            if (!results.get(0).isEmpty())
-            {
-                exception = getValidationException(results.get(0));
-            }
+        SpecimenDomainRollupErrorsAndWarning results = checkRollups(null, null, optionalSpecimenProps, container, user);
+
+        if (!results.getErrors().isEmpty())
+        {
+                exception = getValidationException(results.getErrors());
         }
 
         return exception;
