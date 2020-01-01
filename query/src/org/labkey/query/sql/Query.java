@@ -1693,7 +1693,11 @@ public class Query
                 "                              INNER JOIN folderTree p ON c.parent = p.entityId \n" +
                 "  ) \n" +
                 "  SELECT * \n" +
-                "  FROM folderTree", -1, -1)
+                "  FROM folderTree", -1, -1),
+        new SqlTest("WITH UserCTE AS (SELECT 1001 as UserId) \n" +
+                "SELECT U1.UserId Expr1, U2.UserId Expr2\n" +
+                "FROM UserCTE AS U1, UserCTE AS U2 \n" +
+                "WHERE U1.UserId = U2.UserId", 2, 1)
     };
 
 

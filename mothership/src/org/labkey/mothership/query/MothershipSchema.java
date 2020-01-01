@@ -297,25 +297,7 @@ public class MothershipSchema extends UserSchema
         currentVersion.append(STR_TABLE_ALIAS);
         currentVersion.append(".ServerInstallationId)");
         ExprColumn currentVersionColumn = new ExprColumn(result, "MostRecentSession", currentVersion, JdbcType.INTEGER);
-        currentVersionColumn.setFk(new LookupForeignKey("ServerSessionID")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return createServerSessionTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return SERVER_SESSIONS_TABLE_NAME;
-            }
-        });
+        currentVersionColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSIONS_TABLE_NAME).build());
         result.addColumn(currentVersionColumn);
 
         List<FieldKey> defaultCols = new ArrayList<>();
@@ -446,25 +428,7 @@ public class MothershipSchema extends UserSchema
         var stackTraceIdColumn = result.getMutableColumn("ExceptionStackTraceId");
         stackTraceIdColumn.setLabel("Exception");
         stackTraceIdColumn.setURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), "exceptionStackTraceId", FieldKey.fromParts("ExceptionStackTraceId")));
-        stackTraceIdColumn.setFk(new LookupForeignKey("ExceptionStackTraceId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return createExceptionStackTraceTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return EXCEPTION_STACK_TRACE_TABLE_NAME;
-            }
-        });
+        stackTraceIdColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(EXCEPTION_STACK_TRACE_TABLE_NAME).build());
 
         result.getMutableColumn("PageflowName").setLabel("Controller");
         result.getMutableColumn("PageflowAction").setLabel("Action");
@@ -473,26 +437,7 @@ public class MothershipSchema extends UserSchema
         result.getMutableColumn("ServerSessionId").setLabel("Session");
         result.getMutableColumn("ServerSessionId").setFormat("'#'0");
         result.getMutableColumn("ServerSessionId").setExcelFormatString("0");
-        LookupForeignKey fk = new LookupForeignKey("ServerSessionId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return createServerSessionTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return SERVER_SESSIONS_TABLE_NAME;
-            }
-        };
-        fk.setPrefixColumnCaption(false);
+        ForeignKey fk = new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSIONS_TABLE_NAME).build();
         result.getMutableColumn("ServerSessionId").setFk(fk);
 
         List<FieldKey> defaultCols = new ArrayList<>();
