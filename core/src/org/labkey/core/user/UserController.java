@@ -436,7 +436,7 @@ public class UserController extends SpringActionController
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (isValidUserToUpdate(userId))
+                    if (isValidUserToUpdate(userId, getUser()))
                         bean.addUser(UserManager.getUser(userId));
                 }
             }
@@ -449,7 +449,7 @@ public class UserController extends SpringActionController
 
                 for (Integer id : userIds)
                 {
-                    if (isValidUserToUpdate(id))
+                    if (isValidUserToUpdate(id, getUser()))
                         bean.addUser(UserManager.getUser(id));
                 }
             }
@@ -469,20 +469,10 @@ public class UserController extends SpringActionController
             User curUser = getUser();
             for (Integer userId : form.getUserId())
             {
-                if (isValidUserToUpdate(userId))
+                if (isValidUserToUpdate(userId, curUser))
                     UserManager.setUserActive(curUser, userId, _active);
             }
             return true;
-        }
-
-        private boolean isValidUserToUpdate(Integer formUserId)
-        {
-            User curUser = getUser();
-            User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
-
-            return null != formUser
-                && formUserId != curUser.getUserId() // don't let a user activate/deactivate themselves
-                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
         }
 
         @Override
@@ -516,6 +506,72 @@ public class UserController extends SpringActionController
         public ActivateUsersAction()
         {
             super(true);
+        }
+    }
+
+    private boolean isValidUserToUpdate(Integer formUserId, User currentUser)
+    {
+        User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
+
+        return null != formUser
+                && formUserId != currentUser.getUserId() // don't let a user activate/deactivate themselves
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
+    }
+
+    @RequiresPermission(UserManagementPermission.class)
+    public class UpdateUserActiveStateAction extends MutatingApiAction<UpdateUserActiveStateForm>
+    {
+        private List<Integer> validUserIds = new ArrayList<>();
+        private List<Integer> invalidUserIds = new ArrayList<>();
+
+        @Override
+        public void validateForm(UpdateUserActiveStateForm form, Errors errors)
+        {
+            if (form.getUserId() == null || form.getUserId().length == 0)
+            {
+                errors.reject(ERROR_MSG, "UserId parameter must be provided.");
+            }
+            else
+            {
+                for (Integer userId : form.getUserId())
+                {
+                    if (isValidUserToUpdate(userId, getUser()))
+                        validUserIds.add(userId);
+                    else
+                        invalidUserIds.add(userId);
+                }
+
+                if (invalidUserIds.size() > 0)
+                    errors.reject(ERROR_MSG, "Invalid user id(s) provided: " + StringUtils.join(invalidUserIds, ", ") + ".");
+            }
+        }
+
+        @Override
+        public Object execute(UpdateUserActiveStateForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            for (Integer userId : validUserIds)
+                UserManager.setUserActive(getUser(), userId, form.isActivate());
+
+            response.put("success", true);
+            response.put("activate", form.isActivate());
+            response.put("userIds", validUserIds);
+            return response;
+        }
+    }
+
+    public static class UpdateUserActiveStateForm extends UserIdForm
+    {
+        private boolean activate;
+
+        public boolean isActivate()
+        {
+            return activate;
+        }
+
+        public void setActivate(boolean activate)
+        {
+            this.activate = activate;
         }
     }
 
