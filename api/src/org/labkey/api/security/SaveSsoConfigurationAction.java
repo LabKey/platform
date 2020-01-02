@@ -77,12 +77,12 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
     // Returns true if a logo is deleted
     public boolean deleteLogos(F form, SSOAuthenticationConfiguration<?> configuration)
     {
-        String[] deletedLogos = form.getDeletedLogos();
+        String deletedLogos = form.getDeletedLogos();
 
         if (null == deletedLogos)
             return false;
 
-        for (String logoName : deletedLogos)
+        for (String logoName : deletedLogos.split(","))
             AttachmentService.get().deleteAttachment(configuration, logoName, getUser());
 
         return true;
@@ -98,7 +98,7 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
     public static abstract class SaveSsoConfigurationForm<AC extends SSOAuthenticationConfiguration<?>> extends AuthenticationConfigureForm<AC>
     {
         private boolean _autoRedirect = false;
-        private String[] _deletedLogos;
+        private String _deletedLogos;  // If non-null, this is a comma-separated list of logo names
 
         @Override
         public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
@@ -120,13 +120,13 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
             _autoRedirect = autoRedirect;
         }
 
-        public String[] getDeletedLogos()
+        public String getDeletedLogos()
         {
             return _deletedLogos;
         }
 
         @SuppressWarnings("unused")
-        public void setDeletedLogos(String[] deletedLogos)
+        public void setDeletedLogos(String deletedLogos)
         {
             _deletedLogos = deletedLogos;
         }

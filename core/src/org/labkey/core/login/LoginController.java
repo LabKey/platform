@@ -103,8 +103,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -2668,6 +2668,7 @@ public class LoginController extends SpringActionController
         return url;
     }
 
+    // TODO: Switch to MutatingApiAction
 
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureDbLoginAction extends FormViewAction<Config>
@@ -2700,6 +2701,22 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            Map<String, Object> map = Map.of(
+                "currentSettings", Map.of(
+                    "passwordRule", DbLoginManager.getPasswordRule(),
+                    "expiration", DbLoginManager.getPasswordExpiration()
+                    ),
+                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHTML))
+            );
+            return new ApiSimpleResponse(map);
+        }
+    }
 
     @SuppressWarnings("unused")
     @RequiresNoPermission

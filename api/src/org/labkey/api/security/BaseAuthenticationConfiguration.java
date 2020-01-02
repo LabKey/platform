@@ -16,14 +16,14 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     private final String _entityId;
     private final Integer _sortOrder;
 
-    public BaseAuthenticationConfiguration(AP provider, Map<String, Object> props)
+    public BaseAuthenticationConfiguration(AP provider, Map<String, Object> standardSettings)
     {
-        _rowId = (Integer)props.get("RowId");
-        _entityId = (String)props.get("EntityId");
         _provider = provider;
-        _description = (String)props.get("Description");
-        _enabled = (Boolean)props.get("Enabled");
-        _sortOrder = (Integer)props.get("SortOrder");
+        _rowId = (Integer)standardSettings.get("RowId");
+        _entityId = (String)standardSettings.get("EntityId");
+        _description = (String)standardSettings.get("Description");
+        _enabled = (Boolean)standardSettings.get("Enabled");
+        _sortOrder = (Integer)standardSettings.get("SortOrder");
     }
 
     @Override
