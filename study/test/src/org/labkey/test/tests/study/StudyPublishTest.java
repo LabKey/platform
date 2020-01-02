@@ -1053,7 +1053,7 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setSpecimenFieldsPhi(String[] phiFields)
     {
         goToManageStudy();
-        clickAndWait(Locator.linkContainingText("Edit specimen properties"));
+        clickAndWait(Locator.linkContainingText("Edit Specimen Event fields"));
 
         PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("SpecimenEvent").waitFor();
         List<String> fields = new ArrayList<>();
