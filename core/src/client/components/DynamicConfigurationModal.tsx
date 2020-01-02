@@ -21,15 +21,18 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             auth_header_logo: "",
             auth_login_page_logo: "",
             deletedLogos: [],
-            // expandableFieldsStopPoint: this.props.type.settingsFields.length,
-            // expandableFieldsStopPoint: 6,
-            // expandableFieldsOpen: true,
         };
     }
 
     componentDidMount = () => {
         let fieldValues = {};
-        this.props.type.settingsFields.forEach((field) => {
+
+        // dummy code to prevent secondaries from breaking modal
+        if (!this.props.modalType){
+            return false;
+        }
+
+        this.props.modalType.settingsFields.forEach((field) => {
                 fieldValues[field.name] = (field.name in this.props ? this.props[field.name] : field.defaultValue);
             }
         );
@@ -154,15 +157,14 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     );
                 default:
-                    return <div> Error: invalid field type received. </div>;
+                    return <div> Error: Invalid field type received. </div>;
             }
         })
     };
 
     render() {
-        // let type = this.props.type.settingsFields;
-        // (this.props.type && console.log(this.props.type.settingsFields));
         // console.log(this.props);
+        let {modalType, closeModal} = this.props;
         let queryString = {"server": this.state.servers, "principal": this.state.principalTemplate, "sasl":this.state.SASL};
 
         return (
@@ -174,7 +176,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             size='sm'
                             icon={faTimes}
                             style={{float: "right", marginTop: "5px"}}
-                            onClick={this.props.closeModal}
+                            onClick={closeModal}
                         />
                     </Modal.Title>
                 </Modal.Header>
@@ -208,11 +210,11 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     </div>
 
 
-                    {this.props.type && this.dynamicallyCreateFields(this.props.type.settingsFields, this.state.search)}
+                    {modalType && this.dynamicallyCreateFields(modalType.settingsFields, this.state.search)}
 
                     <br/>
 
-                    {(this.props.type.sso)  &&
+                    {(modalType && modalType.sso)  &&
                         <SSOFields
                             headerLogoUrl={this.props.headerLogoUrl}
                             loginLogoUrl={this.props.loginLogoUrl}
@@ -222,10 +224,10 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     }
 
                     <div className="testButton">
-                        {this.props.modalType.testLink &&
+                        {modalType.testLink &&
                             <Button className={'labkey-button'} onClick={() =>
                                 window.open(
-                                    ActionURL.getBaseURL(true) + this.props.modalType.testLink + ActionURL.queryString(queryString)
+                                    ActionURL.getBaseURL(true) + modalType.testLink + ActionURL.queryString(queryString)
                                 )}
                             >
                                 Test
@@ -238,13 +240,19 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     <hr/>
 
                     <div style={{float: "right"}}>
-                        <a href={this.props.modalType.helpLink} style={{marginRight: "10px"}}> {"More about " + this.props.provider + " authentication"} </a>
+
+                        <a target="_blank"
+                           href={modalType.helpLink}
+                           style={{marginRight: "10px"}}>
+                                {"More about " + this.props.provider + " authentication"}
+                        </a>
+
                         <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}>Apply</Button>
                     </div>
 
                     <Button
                         className={'labkey-button'}
-                        onClick={this.props.closeModal}
+                        onClick={closeModal}
                         style={{marginLeft: '10px'}}
                     >
                         Cancel

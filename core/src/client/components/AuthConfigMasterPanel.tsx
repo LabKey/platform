@@ -10,8 +10,7 @@ import { LabelHelpTip } from '@labkey/components';
 import DragAndDropPane from './DragAndDropPane';
 import EditableAuthRow from './EditableAuthRow';
 import SimpleAuthRow from './SimpleAuthRow';
-import DynamicConfigurationModal from './DynamicConfigurationModal';
-import DatabaseConfigurationModal from "./DatabaseConfigurationModal";
+import AuthRow from './AuthRow';
 
 // todo:
 // add new configurations is not in order
@@ -32,7 +31,7 @@ interface State {
 }
 interface Props {
     primary: Object
-    singleSignOnAuth: Array<Object>
+    ssoConfigurations: Array<Object>
     loginFormAuth: Array<loginFormAuthObject>
     secondary: any
     onDragEnd: any
@@ -61,16 +60,23 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
     };
 
     render(){
-        const {primary, secondary, singleSignOnAuth, loginFormAuth} = this.props;
+        const {primaryProviders, secondaryProviders, ssoConfigurations, formConfigurations} = this.props;
 
         const SSOTipText = 'Single Sign On Authentications (SSOs) allow the use of one set of login credentials that are authenticated by the third party service provider (e.g. Google or Github).';
         const loginFormTipText = "Authentications in this group make use of LabKey's login form. During login, LabKey will attempt validation in the order that the configurations below are listed.";
         const authenticationDocsLink = 'https://www.labkey.org/Documentation/wiki-page.view?name=authenticationModule&_docid=wiki%3A32d70b80-ed56-1034-b734-fe851e088836';
 
-        const addNewPrimaryDropdown = primary &&
-            Object.keys(primary).map((authOption) => (
-                <MenuItem key={authOption} href={primary[authOption].configLink}>
-                    {authOption} : {primary[authOption].description}
+        const addNewPrimaryDropdown = primaryProviders &&
+            Object.keys(primaryProviders).map((authOption) => (
+                <MenuItem key={authOption} href={primaryProviders[authOption].configLink}>
+                    {authOption} : {primaryProviders[authOption].description}
+                </MenuItem>
+            ));
+
+        const addNewSecondaryDropdown = secondaryProviders &&
+            Object.keys(secondaryProviders).map((authOption) => (
+                <MenuItem key={authOption} href={secondaryProviders[authOption].configLink}>
+                    {secondaryProviders[authOption].description}
                 </MenuItem>
             ));
 
@@ -79,66 +85,74 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>;
 
-        const databaseModal =
-            <DatabaseConfigurationModal/>;
+        const dbAuth = (formConfigurations && formConfigurations.slice(-1)[0]);
 
         const primaryTab_LoginForm =
-            (loginFormAuth && this.props.canEdit)
+            (formConfigurations && this.props.canEdit)
                 ?
                 <div>
                     <DragAndDropPane
-                        stateSection='loginFormAuth'
-                        rowInfo={loginFormAuth.slice(0, -1)}
-                        primary={primary}
+                        stateSection='formConfigurations'
+                        rowInfo={formConfigurations.slice(0, -1)}
+                        primaryProviders={primaryProviders}
                         onDragEnd={this.props.onDragEnd}
                         handlePrimaryToggle={this.props.handlePrimaryToggle}
                         deleteAction={this.props.deleteAction}
                         updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                     />
 
-                    <SimpleAuthRow
-                        handle={null}
-                        description={loginFormAuth.slice(-1)[0].description}
-                        provider={loginFormAuth.slice(-1)[0].provider}
-                        enabled={(loginFormAuth.slice(-1)[0].enabled) ? 'Enabled' : 'Disabled'}
-                        editIcon = {editIcon}
-                        // modal = {databaseModal}
-                        // url={(loginFormAuth.slice(-1)[0].url)}
+                    <AuthRow
+                        canEdit={true}
+                        draggable={false}
+                        field1={dbAuth.description}
+                        field3={dbAuth.provider}
+                        enabled={dbAuth.enabled}
                     />
                 </div>
-                : <ViewOnlyAuthConfigRows data={this.props.loginFormAuth}/>;
+                : <ViewOnlyAuthConfigRows data={this.props.formConfigurations}/>;
 
         const primaryTab_SSO =
-            (singleSignOnAuth && this.props.canEdit)
+            (ssoConfigurations && this.props.canEdit)
                 ? <DragAndDropPane
-                    stateSection='singleSignOnAuth'
-                    rowInfo={singleSignOnAuth}
-                    primary={primary}
+                    stateSection='ssoConfigurations'
+                    rowInfo={ssoConfigurations}
+                    primaryProviders={primaryProviders}
                     onDragEnd={this.props.onDragEnd}
                     handlePrimaryToggle={this.props.handlePrimaryToggle}
                     deleteAction={this.props.deleteAction}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />
-                : <ViewOnlyAuthConfigRows data={singleSignOnAuth}/>;
+                : <ViewOnlyAuthConfigRows data={ssoConfigurations}/>;
 
         const secondaryTab =
-            (secondary && this.props.canEdit)
-                ?
-                secondary.map((item, index) => (
-                    <EditableAuthRow
-                        id={index.toString()}
-                        rowId={index.toString()}
-                        authName={''}
-                        url={item.description.slice(0,34) + '...'} // fix this guy up
-                        enabled={item.enabled}
-                        description={item.provider}
-                        handlePrimaryToggle={this.props.handlePrimaryToggle}
-                        stateSection='secondaryAuth'
-                        noHandleIcon={true}
+            (secondaryProviders && this.props.canEdit) ?
+                secondaryProviders.map((item, index) => (
+                    <AuthRow
                         key={index}
+                        canEdit={true}
+                        draggable={false}
+                        modalType={false} // to be changed once duo stuff comes in
+                        field1={item.name}
+                        field2={item.description.slice(0,34) + "..."}
+                        enabled={item.enabled}
+                        handlePrimaryToggle={this.props.handlePrimaryToggle}
+                        stateSection='secondaryProviders'
                     />
                 ))
-                : <ViewOnlyAuthConfigRows data={secondary}/>;
+                : <ViewOnlyAuthConfigRows data={secondaryProviders}/>;
+
+        const secondaryTab1 =
+            (secondaryProviders && this.props.canEdit)
+                ? <DragAndDropPane
+                    stateSection='secondaryProviders'
+                    rowInfo={secondaryProviders}
+                    primaryProviders={primaryProviders}
+                    onDragEnd={this.props.onDragEnd}
+                    handlePrimaryToggle={this.props.handlePrimaryToggle}
+                    deleteAction={this.props.deleteAction}
+                    updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
+                />
+                : <ViewOnlyAuthConfigRows data={ssoConfigurations}/>;
 
         return(
             <Panel>
@@ -149,7 +163,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         {this.props.canEdit &&
                             ((this.state.useWhichDropdown == 'Primary')
                             ? addNewPrimaryDropdown
-                            : 'Secondary (in progress)')
+                            : addNewSecondaryDropdown)
                         }
 
                     </DropdownButton>

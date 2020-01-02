@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react';
 import {Button, Alert} from 'react-bootstrap';
 import {Map, List, fromJS} from 'immutable';
 
-import GlobalAuthSettings from '../components/GlobalAuthSettings';
+import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { Ajax, ActionURL, Security } from '@labkey/api';
 
@@ -19,25 +19,25 @@ import './authenticationConfiguration.scss';
 interface Props {} // Q: Is this how you specify no props?
 
 interface State {
-    singleSignOnAuth?: Array<Object>
-    loginFormAuth?: any
-    secondaryAuth?: any
-    globalAuthSettings?: Object
+    ssoConfigurations?: Array<Object>
+    formConfigurations?: any
+    secondaryProviders?: any
+    globalSettings?: Object
     canEdit?: boolean
     primary?: Object
     dirty?: boolean
 }
 
-export class App extends PureComponent<Props, any> {
+export class App extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
-            singleSignOnAuth: null,
-            loginFormAuth: null,
-            secondaryAuth: null,
-            globalAuthSettings: null,
+            ssoConfigurations: null,
+            formConfigurations: null,
+            secondaryProviders: null,
+            globalSettings: null,
             canEdit: false,
-            primary: null,
+            primaryProviders: null,
             dirtinessData: null,
             dirty: false,
         };
@@ -58,29 +58,29 @@ export class App extends PureComponent<Props, any> {
             success: function(result){
                 const response = JSON.parse(result.response);
                 const dirtinessData = {
-                    globalAuthSettings: response.globalAuthSettings,
-                    loginFormAuth: response.loginFormAuth,
-                    singleSignOnAuth: response.singleSignOnAuth
+                    globalSettings: response.globalSettings,
+                    formConfigurations: response.formConfigurations,
+                    ssoConfigurations: response.ssoConfigurations
                 };
                 this.setState({...response, dirtinessData}, () => {console.log(this.state)});
             }
         })
     };
 
-    // For GlobalAuthSettings
+    // For globalSettings
 
     checkGlobalAuthBox = (id: string) => {
-        const oldState = this.state.globalAuthSettings[id];
+        const oldState = this.state.globalSettings[id];
         this.setState(
             (prevState) => ({
                 ...prevState,
-                globalAuthSettings: {
-                    ...prevState.globalAuthSettings,
+                globalSettings: {
+                    ...prevState.globalSettings,
                     [id]: !oldState
                 }
             }),
             () => {
-                this.checkIfDirty(this.state.globalAuthSettings, this.state.dirtinessData.globalAuthSettings);
+                this.checkIfDirty(this.state.globalSettings, this.state.dirtinessData.globalSettings);
             }
         );
     };
@@ -121,17 +121,17 @@ export class App extends PureComponent<Props, any> {
 
     saveChanges = () => {
         let form = new FormData();
-        Object.keys(this.state.globalAuthSettings).map(
+        Object.keys(this.state.globalSettings).map(
             (item) => {
-                form.append(item, this.state.globalAuthSettings[item]);
+                form.append(item, this.state.globalSettings[item]);
             }
         );
 
-        if (this.draggableIsDirty("singleSignOnAuth")){
-            form.append("singleSignOnAuth", this.getAuthConfigConfigurationArray(this.state.singleSignOnAuth).toString());
+        if (this.draggableIsDirty("ssoConfigurations")){
+            form.append("ssoConfigurations", this.getAuthConfigConfigurationArray(this.state.ssoConfigurations).toString());
         }
-        if (this.draggableIsDirty("loginFormAuth")){
-            form.append("loginFormAuth", this.getAuthConfigConfigurationArray(this.state.loginFormAuth).slice(0,-1).toString());
+        if (this.draggableIsDirty("formConfigurations")){
+            form.append("formConfigurations", this.getAuthConfigConfigurationArray(this.state.formConfigurations).slice(0,-1).toString());
         }
 
         Ajax.request({
@@ -247,8 +247,6 @@ export class App extends PureComponent<Props, any> {
         )
     };
 
-
-
     updateAuthRowsAfterSave = (config, stateSection) => {
         const configObj = JSON.parse(config);
         const configId = configObj.configuration.configuration;
@@ -264,14 +262,14 @@ export class App extends PureComponent<Props, any> {
 
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
-        const {globalAuthSettings, ...restProps} = this.state;
-        let hideAutoCreateAccounts = (this.state.loginFormAuth && this.state.loginFormAuth.length == 1) && (this.state.singleSignOnAuth && this.state.singleSignOnAuth.length == 0);
+        const {globalSettings, ...restProps} = this.state;
+        let hideAutoCreateAccounts = (this.state.formConfigurations && this.state.formConfigurations.length == 1) && (this.state.ssoConfigurations && this.state.ssoConfigurations.length == 0);
 
         return(
             <div style={{minWidth:"1150px"}}>
-                {this.state.globalAuthSettings &&
-                    <GlobalAuthSettings
-                        {...globalAuthSettings}
+                {this.state.globalSettings &&
+                    <GlobalSettings
+                        {...globalSettings}
                         canEdit={this.state.canEdit}
                         checkGlobalAuthBox = {this.checkGlobalAuthBox}
                         // hideAutoCreateAccounts={hideAutoCreateAccounts}

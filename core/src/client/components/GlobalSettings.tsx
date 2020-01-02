@@ -29,7 +29,7 @@ interface State {
     AutoCreateAccounts: boolean;
 }
 
-export default class GlobalAuthSettings extends PureComponent<any, any> {
+export default class GlobalSettings extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {

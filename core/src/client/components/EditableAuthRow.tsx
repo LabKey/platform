@@ -5,6 +5,7 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import SimpleAuthRow from "./SimpleAuthRow";
 import DynamicConfigurationModal from "./DynamicConfigurationModal";
+import DatabaseConfigurationModal from "./DatabaseConfigurationModal";
 
 // Todo:
 // don't use the style to round the corners
@@ -73,10 +74,12 @@ export default class EditableAuthRow extends PureComponent<any, State> {
         const dynamicModal = (this.state.modalOpen &&
                 <DynamicConfigurationModal
                     {...this.props}
-                    type={this.props.modalType}
                     closeModal={() => {this.onToggleModal("modalOpen")}}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />);
+
+        const databaseModal =
+            <DatabaseConfigurationModal/>;
 
         return(
             <div

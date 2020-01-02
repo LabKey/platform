@@ -2781,14 +2781,13 @@ public class LoginController extends SpringActionController
                 .collect(JSONArray.collector());
 
             ApiSimpleResponse res = new ApiSimpleResponse();
-            res.put("globalAuthSettings", globalSettings);
+            res.put("globalSettings", globalSettings);
             res.put("canEdit", getContainer().hasPermission(getUser(), AdminOperationsPermission.class));
 
-            res.put("primary", primaryProviders);
-            res.put("singleSignOnAuth", ssoConfigurations);
-            res.put("loginFormAuth", formConfigurations);
-
-            res.put("secondaryAuth", secondaryProviders);
+            res.put("primaryProviders", primaryProviders);
+            res.put("ssoConfigurations", ssoConfigurations);
+            res.put("formConfigurations", formConfigurations);
+            res.put("secondaryProviders", secondaryProviders);
             res.put("secondaryConfigurations", secondaryConfigurations);
 
             return res;

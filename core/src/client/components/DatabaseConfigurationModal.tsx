@@ -2,17 +2,51 @@ import React, { PureComponent } from 'react';
 import {Button, ButtonGroup, DropdownButton, FormControl, MenuItem, Modal, Panel} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimes} from "@fortawesome/free-solid-svg-icons";
+import {ActionURL, Ajax} from "@labkey/api";
+
 
 export default class DatabaseConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
-
+            passwordStrength: "Weak",
+            passwordExpiry: "Never"
         };
     }
 
+    handleDropdownChange = (val) => {
+        this.setState({ passwordExpiry: val });
+    };
+
+    selectRadio = (e) => {
+        const passwordStrength = e.target.value;
+        this.setState({passwordStrength});
+    };
+
+    saveChanges = () => {
+        const form = {
+            strength: this.state.passwordStrength,
+            expiration: this.state.passwordExpiry
+        };
+        console.log(this.state);
+
+        Ajax.request({
+            url: ActionURL.buildURL("login", "ConfigureDbLogin"),
+            method : 'POST',
+            jsonData: form,
+            scope: this,
+            failure: function(error){
+                console.log("fail: ", error);
+            },
+            success: function(result){
+                console.log("success: ", result);
+            }
+        })
+    };
 
     render () {
+        const {passwordStrength} = this.state;
+
         return (
             <Modal show={true} onHide={() => {}} >
                 <Modal.Header>
@@ -50,9 +84,13 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
 
                         <span className="dbAuthMoveRight">
-                            <ButtonGroup>
-                                <Button>Weak</Button>
-                                <Button>Strong</Button>
+                            <ButtonGroup onClick={this.selectRadio}>
+                                <Button data-key='1' value="Weak" active={passwordStrength == "Weak"}>
+                                    Weak
+                                </Button>
+                                <Button data-key='2' value="Strong" active={passwordStrength == "Strong"}>
+                                    Strong
+                                </Button>
                             </ButtonGroup>
                         </span>
                     </div>
@@ -63,12 +101,13 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
 
                         <span className="dbAuthMoveRight">
-                            <DropdownButton id='dropdown-basic-button' title="Never">
+                            <DropdownButton id='dropdown-basic-button' title="Never" onSelect={this.handleDropdownChange}>
 
-                                <MenuItem eventKey="1">Never</MenuItem>
-                                <MenuItem eventKey="2">Every three months</MenuItem>
-                                <MenuItem eventKey="3">Every six months</MenuItem>
-                                <MenuItem eventKey="4">Every twelve months</MenuItem>
+                                <MenuItem eventKey="Never">Never</MenuItem>
+                                <MenuItem eventKey="FiveSeconds">Every five seconds — for testing purposes only</MenuItem>
+                                <MenuItem eventKey="ThreeMonths">Every three months</MenuItem>
+                                <MenuItem eventKey="SixMonths">Every six months</MenuItem>
+                                <MenuItem eventKey="OneYear">Every twelve months</MenuItem>
 
                             </DropdownButton>
                         </span>
@@ -78,12 +117,12 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
 
                     <div style={{float: "right"}}>
                         <a href={""} style={{marginRight: "10px"}}> {"More about authentication"} </a>
-                        <Button className={'labkey-button primary'} onClick={() => {}}>Apply</Button>
+                        <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>
                     </div>
 
                     <Button
                         className={'labkey-button'}
-                        onClick={() => {}}
+                        onClick={this.props.closeModal}
                         style={{marginLeft: '10px'}}
                     >
                         Cancel
