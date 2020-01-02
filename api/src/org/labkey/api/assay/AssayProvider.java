@@ -301,7 +301,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /**
      * Return a SQL pattern that can be used to match a protocol's LSID to this AssayProvider.
      * The pattern must match a protocol's LSID in the same manner as
-     * {@link #getPriority(org.labkey.api.exp.api.ExpProtocol)}.
+     * {@link Handler#getPriority(Object)}.
      */
     @Nullable String getProtocolPattern();
 
@@ -346,4 +346,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     {
         return new XarCallbacks(){};
     }
+
+    /**
+     * @return the number of result rows loaded for the given designs, or null if not implemented
+     * @param protocols all protocols for this assay provider
+     */
+    default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
 }
