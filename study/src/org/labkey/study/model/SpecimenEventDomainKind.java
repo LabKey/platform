@@ -236,8 +236,6 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
-        super.updateDomain(original, update, container, user);
-
         ValidationException validationException = new ValidationException();
 
         List<PropertyDescriptor> optionalEventProps = new ArrayList<>();
@@ -260,6 +258,13 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             validationException = getValidationException(results.getErrors());
         }
 
-        return validationException;
+        if (validationException.hasErrors())
+        {
+            return validationException;
+        }
+        else
+        {
+            return super.updateDomain(original, update, container, user);
+        }
     }
 }

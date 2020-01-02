@@ -171,9 +171,6 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
-        super.updateDomain(original, update, container, user);
-
-        final List<String> errors = new ArrayList<>();
         ValidationException exception = new ValidationException();
         SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
         Domain domainSpecimen = stp.getDomain("specimen",false);
@@ -217,6 +214,13 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
             exception = getValidationException(results.getErrors());
         }
 
-        return exception;
+        if (exception.hasErrors())
+        {
+            return exception;
+        }
+        else
+        {
+            return super.updateDomain(original, update, container, user);
+        }
     }
 }
