@@ -2389,13 +2389,7 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
-//            VBox result = new VBox();
-//            result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration"));
-//            return result;
-
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), "AuthenticationConfiguration");
-
-//            return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
         }
 
         @Override
@@ -2424,7 +2418,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
     {
         @Override
@@ -2628,6 +2622,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     @RequiresPermission(AdminOperationsPermission.class)
     public class OldDeleteConfigurationAction extends FormHandlerAction<DeleteConfigurationForm>
     {
@@ -2704,7 +2699,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
     {
         @Override
@@ -2743,7 +2738,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
     {
         @Override
@@ -2763,7 +2758,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
-    public static class WhoAmIAction extends ReadOnlyApiAction
+    public class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2780,7 +2775,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public static class InitialMountAction extends ReadOnlyApiAction
+    public class InitialMountAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2989,9 +2984,14 @@ public class LoginController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
+                controller.new DeleteConfigurationAction(),
+                controller.new GetDbLoginPropertiesAction(),
+                controller.new InitialMountAction(),
+                controller.new MigrateAuthenticationConfigurationsAction(),
+                controller.new SaveDbLoginPropertiesAction(),
+                controller.new SaveSettingsAction(),
                 controller.new SetAuthenticationParameterAction(),
-                controller.new SetProviderEnabledAction(),
-                controller.new MigrateAuthenticationConfigurationsAction()
+                controller.new SetProviderEnabledAction()
             );
 
             // @AdminConsoleAction
