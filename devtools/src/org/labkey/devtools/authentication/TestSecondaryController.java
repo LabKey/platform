@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -175,6 +176,7 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     @AdminConsoleAction
     public class ConfigureAction extends AuthenticationConfigureAction<TestSecondaryConfigurationForm, TestSecondaryConfiguration>
     {

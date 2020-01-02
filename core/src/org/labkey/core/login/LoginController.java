@@ -32,6 +32,7 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -2405,8 +2406,8 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     @AdminConsoleAction(AdminOperationsPermission.class)
-    @Deprecated // Remove once new UI is implemented and tested
     public class OldConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
@@ -2507,6 +2508,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
     {
@@ -2529,6 +2531,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     public static class AuthParameterForm
     {
         private String _parameter;
@@ -2555,7 +2558,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @Deprecated
+    @RemoveIn20_1
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetProviderEnabledAction extends FormHandlerAction<ProviderForm>
     {
@@ -2581,7 +2584,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @Deprecated
+    @RemoveIn20_1
     public static class ProviderForm
     {
         private String _provider;
@@ -2668,8 +2671,8 @@ public class LoginController extends SpringActionController
         return url;
     }
 
-    // TODO: Switch to MutatingApiAction
 
+    @RemoveIn20_1
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureDbLoginAction extends FormViewAction<Config>
     {
@@ -2702,6 +2705,45 @@ public class LoginController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
+    public class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
+    {
+        @Override
+        public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
+        {
+            DbLoginManager.saveProperties(form);
+            return true;
+        }
+    }
+
+    public static class SaveDbLoginPropertiesForm
+    {
+        private String _strength;
+        private String _expiration;
+
+        public String getStrength()
+        {
+            return _strength;
+        }
+
+        @SuppressWarnings("unused")
+        public void setStrength(String strength)
+        {
+            _strength = strength;
+        }
+
+        public String getExpiration()
+        {
+            return _expiration;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExpiration(String expiration)
+        {
+            _expiration = expiration;
+        }
+    }
+
+    @AdminConsoleAction(AdminOperationsPermission.class)
     public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
     {
         @Override
@@ -2709,10 +2751,11 @@ public class LoginController extends SpringActionController
         {
             Map<String, Object> map = Map.of(
                 "currentSettings", Map.of(
-                    "passwordRule", DbLoginManager.getPasswordRule(),
+                    "strength", DbLoginManager.getPasswordRule(),
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
-                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHTML))
+                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHTML)),
+                "helpLink", new HelpTopic("configDbLogin").getHelpTopicHref()
             );
             return new ApiSimpleResponse(map);
         }
@@ -2811,6 +2854,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     public static class Config extends ReturnUrlForm
     {
         public final PasswordRule currentRule = DbLoginManager.getPasswordRule();
@@ -2855,6 +2899,7 @@ public class LoginController extends SpringActionController
     }
 
 
+    @RemoveIn20_1
     public static class AuthLogoBean
     {
         public final @Nullable SSOAuthenticationConfiguration configuration;

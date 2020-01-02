@@ -17,6 +17,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.util.Pair;
@@ -52,18 +53,18 @@ public interface LoginUrls extends UrlProvider
     NavTree appendAuthenticationNavTrail(NavTree root);
 
 
-    @Deprecated
+    @RemoveIn20_1
     ActionURL getEnableConfigParameterURL(String name);
-    @Deprecated
+    @RemoveIn20_1
     ActionURL getDisableConfigParameterURL(String name);
-    @Deprecated
+    @RemoveIn20_1
     ActionURL getEnableProviderURL(AuthenticationProvider provider);
-    @Deprecated
+    @RemoveIn20_1
     ActionURL getDisableProviderURL(AuthenticationProvider provider);
-    @Deprecated
+    @RemoveIn20_1
     ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors);
-    @Deprecated
+    @RemoveIn20_1
     ActionURL getOldConfigureURL();
-    @Deprecated
+    @RemoveIn20_1
     NavTree appendOldAuthenticationNavTrail(NavTree root);
 }
