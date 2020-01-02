@@ -63,7 +63,9 @@ LABKEY.WebSocket = new function ()
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("login", "whoami.api"),
                         success: LABKEY.Utils.getCallbackWrapper(function(response) {
-                            if (LABKEY.user.id !== response.id) {
+                            // If the user was previously a guest, don't warn them about session expiration as they
+                            // just logged in. See issue 39337
+                            if (LABKEY.user.id !== response.id && !LABKEY.user.isGuest) {
                                 displayModal("Session Expired", 'Your session has expired. Please reload the page to continue.');
                             }
                         }),
