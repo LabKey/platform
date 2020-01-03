@@ -138,4 +138,9 @@ public interface ExpProtocol extends ExpObject
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    default String getDocumentId()
+    {
+        return String.join(":",getContainer().getId(), "assay", String.valueOf(getRowId()));
+    }
 }

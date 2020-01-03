@@ -47,7 +47,7 @@ public class GetAssayRunAction extends ReadOnlyApiAction<GetAssayRunAction.LoadA
         if (run == null)
             throw new NotFoundException("Run not found: " + runId);
 
-        if (run.getContainer().equals(getContainer()))
+        if (!run.getContainer().equals(getContainer()))
             throw new NotFoundException("Run not found in folder: " + runId);
 
         return run;
@@ -59,7 +59,7 @@ public class GetAssayRunAction extends ReadOnlyApiAction<GetAssayRunAction.LoadA
         if (run == null)
             throw new NotFoundException("Run not found: " + lsid);
 
-        if (run.getContainer().equals(getContainer()))
+        if (!run.getContainer().equals(getContainer()))
             throw new NotFoundException("Run not found in folder: " + lsid);
 
         return run;
