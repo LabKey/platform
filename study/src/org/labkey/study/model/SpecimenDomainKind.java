@@ -170,6 +170,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         ValidationException exception = new ValidationException();
         SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
         Domain domainVial = stp.getDomain("vial",false);
+        Domain domainSpecimen = stp.getDomain("specimen",false);
 
         // Check for the same name in Specimen and Vial
         Set<String> vialFields = new HashSet<>();
@@ -191,12 +192,13 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
                 if (!prop.isRequired() && vialFields.contains(prop.getName().toLowerCase()))
                     exception.addError(new SimpleValidationError("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName()));
 
-                if (!prop.isRequired())
+                if (!prop.isRequired() && !getMandatoryPropertyNames(domainSpecimen).contains(prop.getName()))
                 {
-                    optionalSpecimenProps.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
+                    optionalSpecimenProps.add(getPropFromGwtProp(prop));
+
                     if (prop.getName().contains(" "))
                         exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
-                    else if (COMMENTS.equalsIgnoreCase(prop.getName()) || COLUMN.equalsIgnoreCase(prop.getName()))
+                    else if (getReservedPropertyNames(domainSpecimen).contains(prop.getName()))
                         exception.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the Specimen table."));
                 }
             }
@@ -218,5 +220,14 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
             return super.updateDomain(original, update, container, user);
         }
 
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        Set<String> names = new HashSet<>();
+        names.add(COMMENTS);
+        names.add(COLUMN);
+        return names;
     }
 }

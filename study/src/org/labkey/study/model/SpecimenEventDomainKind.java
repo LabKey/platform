@@ -238,15 +238,18 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     {
         ValidationException validationException = new ValidationException();
 
+        SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
+        Domain domainEvent = stp.getDomain("specimenevent", false);
+
         List<PropertyDescriptor> optionalEventProps = new ArrayList<>();
         for (GWTPropertyDescriptor prop : update.getFields())
         {
-            if (!prop.isRequired())
+            if (!prop.isRequired() && !getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
             {
-                optionalEventProps.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
+                optionalEventProps.add(getPropFromGwtProp(prop));
                 if (prop.getName().contains(" "))
                     validationException.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
-                else if (COLUMN.equalsIgnoreCase(prop.getName()))
+                else if (getReservedPropertyNames(domainEvent).contains(prop.getName()))
                     validationException.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the SpecimenEvent table."));
             }
         }
@@ -266,5 +269,13 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         {
             return super.updateDomain(original, update, container, user);
         }
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        Set<String> names = new HashSet<>();
+        names.add(COLUMN);
+        return names;
     }
 }

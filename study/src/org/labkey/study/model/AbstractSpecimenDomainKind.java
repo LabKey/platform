@@ -285,7 +285,16 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         return pds;
     }
 
-    protected class SpecimenDomainRollupErrorsAndWarning
+    protected PropertyDescriptor getPropFromGwtProp(GWTPropertyDescriptor gwtProp)
+    {
+        PropertyDescriptor pd = new PropertyDescriptor();
+        pd.setRangeURI(gwtProp.getRangeURI());
+        pd.setConceptURI(gwtProp.getConceptURI());
+        pd.setName(gwtProp.getName());
+        return pd;
+    }
+
+    protected static class SpecimenDomainRollupErrorsAndWarning
     {
         List<String> errors;
         List<String> warnings;
