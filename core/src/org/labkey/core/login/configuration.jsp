@@ -66,7 +66,7 @@
             if (btn.getNavTree().hasChildren())
                 btn.render(new RenderContext(getViewContext()), out);
         }
-        appendConfigurations(out, PrimaryAuthenticationConfiguration.class, canEdit);
+        appendConfigurations(out, PrimaryAuthenticationConfiguration.class, canEdit, false);
     %>
 </labkey:panel>
 
@@ -88,9 +88,7 @@
                     if (btn.getNavTree().hasChildren())
                         btn.render(new RenderContext(getViewContext()), out);
                 }
-                appendConfigurations(out, SecondaryAuthenticationConfiguration.class, canEdit);
-                out.write("<br/>");
-                appendSecondaryProviders(out, secondary, urls, canEdit);
+                appendConfigurations(out, SecondaryAuthenticationConfiguration.class, canEdit, true);
             %>
         </labkey:panel>
 <%
@@ -220,84 +218,10 @@
 <%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
 
 <%!
-    private void appendSecondaryProviders(JspWriter out, Collection<? extends AuthenticationProvider> providers, LoginUrls urls, boolean canEdit) throws IOException
-    {
-        out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
-
-        out.print("<tr>\n" +
-                "    <td class=\"labkey-column-header\">Name</td>\n" +
-                "    <td class=\"labkey-column-header\">Status</td>\n" +
-                "    <td class=\"labkey-column-header\">Configuration</td>\n" +
-                "    <td class=\"labkey-column-header\">Description</td>\n" +
-                "</tr>");
-
-        int rowIndex = 0;
-        for (AuthenticationProvider authProvider : providers)
-        {
-            out.print("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
-            out.print(PageFlowUtil.filter(authProvider.getName()));
-            out.print("</td>");
-
-            if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
-                out.print("<td style='opacity:0.5;'>");
-            else
-                out.print("<td>");
-
-            if (authProvider.isPermanent())
-            {
-                out.print("&nbsp;");
-            }
-            else
-            {
-                if (AuthenticationManager.isActive(authProvider))
-                {
-                    if (canEdit)
-                        out.print(link("disable", urls.getDisableProviderURL(authProvider)).usePost());
-                    else
-                        out.print("<div class=\"labkey-disabled-text-link labkey-enabled-option\">Enabled</div>");
-                }
-                else if (AuthenticationManager.isAcceptOnlyFicamProviders() && !authProvider.isFicamApproved())
-                {
-                      out.print("Not Available");
-                      out.print(helpPopup("Not Available",
-                              authProvider.getName() + " cannot be enabled because it is not FICAM approved. Please go to the Compliance Settings page to disable this control " + helpLink("complianceSettings#3rd", "(more info)") + ".",
-                              true, 500));
-                }
-                else
-                {
-                    if (canEdit)
-                        out.print(link("enable", urls.getEnableProviderURL(authProvider)).usePost());
-                    else
-                        out.print("<div class=\"labkey-disabled-text-link\">Disabled</div>");
-                }
-            }
-            out.print("</td>");
-
-            ActionURL url = authProvider.getConfigurationLink();
-
-            out.print("<td>");
-            if (null == url)
-                out.print("&nbsp;");
-            else
-                out.print(link(canEdit ? "configure" : "view configuration", url));
-            out.print("</td>");
-
-            out.print("<td>");
-            out.print(authProvider.getDescription());
-            out.print("</td>");
-
-            out.print("</tr>\n");
-
-            rowIndex++;
-        }
-
-        out.print("</table>");
-    }
-
-    private <AC extends AuthenticationConfiguration<?>> void appendConfigurations(JspWriter out, Class<AC> clazz, boolean canEdit) throws IOException
+    private <AC extends AuthenticationConfiguration<?>> void appendConfigurations(JspWriter out, Class<AC> clazz, boolean canEdit, boolean alwaysIncludeDelete) throws IOException
     {
         Collection<AC> configurations = AuthenticationConfigurationCache.getConfigurations(clazz);
-        boolean includeDeleteColumn = canEdit && configurations.size() > 1;  // Don't show "delete" column if database auth is the only configuration
+        boolean includeDeleteColumn = canEdit && (configurations.size() > 1 || alwaysIncludeDelete);  // Don't show "delete" column if primary auth & database auth is the only configuration
         out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
         out.print("<tr>\n" +

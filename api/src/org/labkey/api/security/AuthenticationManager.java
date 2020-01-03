@@ -1190,12 +1190,6 @@ public class AuthenticationManager
     }
 
 
-    public static Collection<SecondaryAuthenticationProvider> getActiveSecondaryProviders()
-    {
-        return AuthenticationProviderCache.getActiveProviders(SecondaryAuthenticationProvider.class);
-    }
-
-
     // This is like LoginForm... but doesn't contain any credentials
     public static class LoginReturnProperties
     {
@@ -1262,18 +1256,6 @@ public class AuthenticationManager
     public static @Nullable PrimaryAuthenticationResult getPrimaryAuthenticationResult(HttpSession session)
     {
         return (PrimaryAuthenticationResult)session.getAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class));
-    }
-
-
-    public static void setSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz, User user)
-    {
-        session.setAttribute(getAuthenticationProcessSessionKey(clazz), user);
-    }
-
-
-    public static @Nullable User getSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz)
-    {
-        return (User)session.getAttribute(getAuthenticationProcessSessionKey(clazz));
     }
 
 
@@ -1376,29 +1358,6 @@ public class AuthenticationManager
         }
 
         List<AuthenticationValidator> validators = new LinkedList<>();
-
-        for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
-        {
-            User secondaryAuthUser = getSecondaryAuthenticationUser(session, provider.getClass());
-
-            if (null == secondaryAuthUser)
-            {
-                if (provider.bypass())
-                {
-                    _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
-                    setSecondaryAuthenticationUser(session, provider.getClass(), primaryAuthUser);
-                    continue;
-                }
-
-                return new AuthenticationResult(provider.getRedirectURL(primaryAuthUser, c));
-            }
-
-            // Validate that secondary auth user matches primary auth user
-            if (!secondaryAuthUser.equals(primaryAuthUser))
-                throw new IllegalStateException("Wrong user");
-
-            // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
-        }
 
         for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
         {

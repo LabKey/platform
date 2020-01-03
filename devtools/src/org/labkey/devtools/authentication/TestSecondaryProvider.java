@@ -17,11 +17,11 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
-import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryConfigurationForm;
 
 import static org.labkey.devtools.authentication.TestSecondaryController.getConfigureURL;
 
@@ -33,12 +33,6 @@ import static org.labkey.devtools.authentication.TestSecondaryController.getConf
 public class TestSecondaryProvider implements SecondaryAuthenticationProvider<TestSecondaryConfiguration>
 {
     public static final String NAME = "TestSecondary";
-
-    @Override
-    public ActionURL getRedirectURL(User candidate, Container c)
-    {
-        return TestSecondaryController.getTestSecondaryURL(c);
-    }
 
     @Override
     public TestSecondaryConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
@@ -77,5 +71,11 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     public boolean bypass()
     {
         return false;
+    }
+
+    @Override
+    public @Nullable AuthenticationConfigureForm<TestSecondaryConfiguration> getFormFromOldConfiguration(boolean active)
+    {
+        return active ? new TestSecondaryConfigurationForm() : null;
     }
 }

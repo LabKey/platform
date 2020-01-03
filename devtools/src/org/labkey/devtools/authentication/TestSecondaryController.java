@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationConfigureAction;
 import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationManager;
@@ -55,11 +56,6 @@ public class TestSecondaryController extends SpringActionController
     public TestSecondaryController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    public static ActionURL getTestSecondaryURL(Container c)
-    {
-        return new ActionURL(TestSecondaryAction.class, c);
     }
 
     public static ActionURL getTestSecondaryURL(Container c, int rowId)
@@ -147,14 +143,10 @@ public class TestSecondaryController extends SpringActionController
 
                 if (null != user)
                 {
-                    if (-1 == form.getConfiguration())
-                    {
-                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);
-                    }
-                    else
-                    {
-                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), form.getConfiguration(), user);
-                    }
+                    TestSecondaryConfiguration configuration = AuthenticationConfigurationCache.getActiveConfiguration(TestSecondaryConfiguration.class, form.getConfiguration());
+
+                    if (null != configuration)
+                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), configuration.getRowId(), user);
                 }
 
                 return true;

@@ -250,12 +250,18 @@ public interface AuthenticationProvider
 
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        /**
-         *  Initiate secondary authentication process for the specified user. Candidate has been authenticated via one of the primary providers,
-         *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
-         */
-        @Deprecated // Moved to SecondaryAuthenticationConfiguration. TODO: Remove
-        ActionURL getRedirectURL(User candidate, Container c);
+        @Nullable AuthenticationConfigureForm<AC> getFormFromOldConfiguration(boolean active);
+
+        default void migrateOldConfiguration(boolean active, User user)
+        {
+            AuthenticationConfigureForm<AC> form = getFormFromOldConfiguration(active);
+
+            if (null != form)
+            {
+                form.setEnabled(active);
+                AuthenticationConfigureAction.saveForm(form, user);
+            }
+        }
 
         /**
          * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
