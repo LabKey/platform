@@ -203,8 +203,10 @@
 <h3>Your request has been successfully submitted.</h3>
 <%
     }
+    %>
+<table class="labkey-request-warnings">
+<%
     if (!SpecimenService.get().getRequestCustomizer().hideRequestWarnings()) { %>
-        <table class="labkey-request-warnings">
     <%
         boolean multipleSites = bean.getProvidingLocations().length > 1;
         if (bean.hasMissingSpecimens() || multipleSites)
