@@ -1060,10 +1060,9 @@ public class StudyPublishTest extends StudyPHIExportTest
         List<String> fields = new ArrayList<>(Arrays.asList(phiFields));
         for (String field : fields)
         {
-            designerPage.fieldsPanel().getField(field).clickAdvancedSettings().setPHILevel(PropertiesEditor.PhiSelectType.PHI);
+            designerPage.fieldsPanel().getField(field).setPHILevel(PropertiesEditor.PhiSelectType.PHI);
         }
        designerPage.clickFinish();
-        waitForText("Save successful.");
     }
 
     private void setUnshiftedDateField(String dataset, String fieldName)
