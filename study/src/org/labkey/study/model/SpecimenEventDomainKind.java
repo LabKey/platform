@@ -19,10 +19,8 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
@@ -256,10 +254,15 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
 
         if (!results.getErrors().isEmpty())
         {
-            validationException = getValidationException(results.getErrors());
+            validationException = addErrorsToValidationException(results.getErrors(), validationException);
         }
 
-        if (validationException.hasErrors())
+        if (!results.getWarnings().isEmpty())
+        {
+            validationException = addWarningsToValidationException(results.getWarnings(), validationException);
+        }
+
+        if (validationException.hasErrors() || validationException.hasWarnings())
         {
             return validationException;
         }

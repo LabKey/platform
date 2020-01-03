@@ -21,6 +21,7 @@ package org.labkey.api.query;
 * Time: 10:42:11 AM
 */
 
+import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
 /**
@@ -65,10 +66,10 @@ public class PropertyValidationError extends SimpleValidationError
     }
 
     @Override
-    public ObjectError getObjectError()
+    public void addToBindException(BindException errors, String errorCode)
     {
         String[] codes = {String.valueOf(_propertyId)};
-        return new ObjectError(_property, codes, null, getMessage());
+        ObjectError error = new ObjectError(_property, codes, null, getMessage());
+        errors.addError(error);
     }
-
 }

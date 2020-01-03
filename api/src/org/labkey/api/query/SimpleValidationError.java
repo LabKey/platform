@@ -26,6 +26,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class SimpleValidationError implements ValidationError
 {
@@ -34,7 +35,6 @@ public class SimpleValidationError implements ValidationError
     
     public SimpleValidationError(@NotNull String message)
     {
-        assert null != message: "Null message passed to SimpleValidationError!";
         _message = message;
         _cause = null;
     }
@@ -45,23 +45,16 @@ public class SimpleValidationError implements ValidationError
         _cause = x;
     }
 
+    @Override
     public String getMessage()
     {
         return _message;
     }
 
-    @Override
-    public ObjectError getObjectError()
-    {
-        return null;
-    }
-
-
     public Throwable getCause()
     {
         return _cause;
     }
-
 
     @Override
     public String toString()
@@ -77,9 +70,7 @@ public class SimpleValidationError implements ValidationError
 
         SimpleValidationError that = (SimpleValidationError) o;
 
-        if (_message != null ? !_message.equals(that._message) : that._message != null) return false;
-
-        return true;
+        return Objects.equals(_message, that._message);
     }
 
     @Override
@@ -88,15 +79,9 @@ public class SimpleValidationError implements ValidationError
         return _message != null ? _message.hashCode() : 0;
     }
 
+    @Override
     public void addToBindException(BindException errors, String errorCode)
     {
-        if (null != this.getObjectError())
-        {
-            errors.addError(this.getObjectError());
-        }
-        else
-        {
-            errors.reject(errorCode, this.getMessage());
-        }
+        errors.reject(errorCode, this.getMessage());
     }
 }

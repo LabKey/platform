@@ -165,28 +165,37 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         ti.loadTablePropertiesFromXml(xmlTable, true);
     }
 
-    protected ValidationException getValidationException(List<String> errors)
+    protected ValidationException addErrorsToValidationException(List<String> errors, ValidationException exception)
     {
-        ValidationException exception = new ValidationException();
-        String sep = "";
-        String errorString = "";
-        for (String error : errors)
-        {
-            errorString += sep + error;
-            sep = "\n";
-        }
-        exception.addError(new SimpleValidationError(errorString));
+        exception.addError(new SimpleValidationError(getMessageString(errors)));
         return exception;
     }
 
+    protected ValidationException addWarningsToValidationException(List<String> warnings, ValidationException exception)
+    {
+        exception.addWarning(getMessageString(warnings));
+        return exception;
+    }
+
+    private String getMessageString(List<String> messages)
+    {
+        String sep = "";
+        String msgString = "";
+        for (String msg : messages)
+        {
+            msgString += sep + msg;
+            sep = "\n";
+        }
+        return msgString;
+    }
+
     protected SpecimenDomainRollupErrorsAndWarning checkRollups(
-            List<PropertyDescriptor> eventProps,            // all of these are nonBase properties
-            List<PropertyDescriptor> vialProps,             // all of these are nonBase properties
-            List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
+            @Nullable List<PropertyDescriptor> eventProps,            // all of these are nonBase properties
+            @Nullable List<PropertyDescriptor> vialProps,             // all of these are nonBase properties
+            @Nullable List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
             Container container,
             User user)
     {
-        // Resulting list has errors, followed by a null String followed by warnings
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
 

@@ -15,13 +15,11 @@
  */
 package org.labkey.study.model;
 
-import com.google.gwt.user.client.Window;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
@@ -210,7 +208,12 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
 
         if (!results.getErrors().isEmpty())
         {
-            exception = getValidationException(results.getErrors());
+            exception = addErrorsToValidationException(results.getErrors(), exception);
+        }
+
+        if (!results.getWarnings().isEmpty())
+        {
+            exception = addWarningsToValidationException(results.getWarnings(), exception);
         }
 
         if (exception.hasErrors())

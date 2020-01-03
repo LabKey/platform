@@ -20,11 +20,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
@@ -206,10 +204,15 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 
         if (!results.getErrors().isEmpty())
         {
-                exception = getValidationException(results.getErrors());
+            exception = addErrorsToValidationException(results.getErrors(), exception);
         }
 
-        if (exception.hasErrors())
+        if (!results.getWarnings().isEmpty())
+        {
+            exception = addWarningsToValidationException(results.getWarnings(), exception);
+        }
+
+        if (exception.hasErrors() || exception.hasWarnings())
         {
             return exception;
         }
@@ -217,7 +220,6 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         {
             return super.updateDomain(original, update, container, user);
         }
-
     }
 
     @Override

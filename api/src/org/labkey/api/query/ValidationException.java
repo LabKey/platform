@@ -58,6 +58,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     private Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<>();
     private List<SimpleValidationError> _globalErrors = new ArrayList<>();
+    private List<SimpleValidationWarning> _warnings = new ArrayList<>();
 
     private String _schemaName;
     private String _queryName;
@@ -255,10 +256,10 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
             List<String> messages = null;
             if (value instanceof List)
-                messages = (List<String>)value;
+                messages = (List<String>) value;
             else if (value instanceof Object[])
             {
-                Object[] values = (Object[])value;
+                Object[] values = (Object[]) value;
                 messages = new ArrayList<>(values.length);
                 for (Object v : values)
                     messages.add(String.valueOf(v));
@@ -281,12 +282,18 @@ public class ValidationException extends Exception implements Iterable<Validatio
     public ValidationException addError(ValidationError error)
     {
         if (error instanceof PropertyValidationError)
-            addFieldError((PropertyValidationError)error);
+            addFieldError((PropertyValidationError) error);
         else if (error instanceof SimpleValidationError)
-            addGlobalError((SimpleValidationError)error);
+            addGlobalError((SimpleValidationError) error);
         else
             throw new IllegalArgumentException();
 
+        return this;
+    }
+
+    public ValidationException addWarning(String warning)
+    {
+        _warnings.add(new SimpleValidationWarning(warning, SEVERITY.WARN.toString()));
         return this;
     }
 
@@ -353,6 +360,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
     {
         List<String> result = new ArrayList<>();
         result.addAll(getGlobalErrorStrings());
+
         for (String field : getFields())
         {
             result.addAll(getFieldErrors(field));
@@ -513,6 +521,11 @@ public class ValidationException extends Exception implements Iterable<Validatio
         return false;
     }
 
+    public boolean hasWarnings()
+    {
+        return _warnings.size() > 0;
+    }
+
     public Set<String> getFields()
     {
         return _fieldErrors.keySet();
@@ -524,13 +537,25 @@ public class ValidationException extends Exception implements Iterable<Validatio
      */
     public List<ValidationError> getErrors()
     {
-        List<ValidationError> errors = new ArrayList<ValidationError>(_globalErrors);
+        List<ValidationError> errors = new ArrayList<>(_globalErrors);
 
         for (List<PropertyValidationError> list : _fieldErrors.values())
+        {
             for (ValidationError error : list)
+            {
                 errors.add(error);
+            }
+        }
+
+        if (hasWarnings())
+            errors.addAll(_warnings);
 
         return errors;
+    }
+
+    public List<SimpleValidationWarning> getWarnings()
+    {
+        return _warnings;
     }
 
     @Override
