@@ -514,18 +514,18 @@ public class UserController extends SpringActionController
         User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
 
         return null != formUser
-                && formUserId != currentUser.getUserId() // don't let a user activate/deactivate themselves
-                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
+                && formUserId != currentUser.getUserId() // don't let a user activate/deactivate/delete themselves
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
     }
 
     @RequiresPermission(UserManagementPermission.class)
-    public class UpdateUserActiveStateAction extends MutatingApiAction<UpdateUserActiveStateForm>
+    public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
     {
         private List<Integer> validUserIds = new ArrayList<>();
         private List<Integer> invalidUserIds = new ArrayList<>();
 
         @Override
-        public void validateForm(UpdateUserActiveStateForm form, Errors errors)
+        public void validateForm(UpdateUserStateForm form, Errors errors)
         {
             if (form.getUserId() == null || form.getUserId().length == 0)
             {
@@ -547,22 +547,29 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public Object execute(UpdateUserActiveStateForm form, BindException errors) throws Exception
+        public Object execute(UpdateUserStateForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             for (Integer userId : validUserIds)
-                UserManager.setUserActive(getUser(), userId, form.isActivate());
+            {
+                if (form.isDelete())
+                    UserManager.deleteUser(userId);
+                else
+                    UserManager.setUserActive(getUser(), userId, form.isActivate());
+            }
 
             response.put("success", true);
+            response.put("delete", form.isDelete());
             response.put("activate", form.isActivate());
             response.put("userIds", validUserIds);
             return response;
         }
     }
 
-    public static class UpdateUserActiveStateForm extends UserIdForm
+    public static class UpdateUserStateForm extends UserIdForm
     {
         private boolean activate;
+        private boolean delete;
 
         public boolean isActivate()
         {
@@ -572,6 +579,16 @@ public class UserController extends SpringActionController
         public void setActivate(boolean activate)
         {
             this.activate = activate;
+        }
+
+        public boolean isDelete()
+        {
+            return delete;
+        }
+
+        public void setDelete(boolean delete)
+        {
+            this.delete = delete;
         }
     }
 
@@ -593,7 +610,7 @@ public class UserController extends SpringActionController
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (isValidUserToDelete(userId))
+                    if (isValidUserToUpdate(userId, getUser()))
                         bean.addUser(UserManager.getUser(userId));
                 }
             }
@@ -606,7 +623,7 @@ public class UserController extends SpringActionController
 
                 for (Integer id : userIds)
                 {
-                    if (isValidUserToDelete(id))
+                    if (isValidUserToUpdate(id, getUser()))
                         bean.addUser(UserManager.getUser(id));
                 }
             }
@@ -624,23 +641,12 @@ public class UserController extends SpringActionController
                 return false;
 
             User curUser = getUser();
-
             for (Integer userId : form.getUserId())
             {
-                if (null != userId && userId != curUser.getUserId())
+                if (isValidUserToUpdate(userId, curUser))
                     UserManager.deleteUser(userId);
             }
             return true;
-        }
-
-        private boolean isValidUserToDelete(Integer formUserId)
-        {
-            User curUser = getUser();
-            User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
-
-            return null != formUser
-                && formUserId != curUser.getUserId() // don't let a user delete themselves
-                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin delete a site admin
         }
 
         @Override
