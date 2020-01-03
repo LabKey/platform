@@ -3692,11 +3692,10 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append(" WHERE (ChildProtocolId IN (").append(protocolIds).append(")");
         sql.append(" OR ParentProtocolId IN (").append(protocolIds).append(") );");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
+        List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
-
             for (ExperimentListener listener : _listeners)
             {
                 listener.beforeProtocolsDeleted(c, user, expProtocols);
@@ -3794,6 +3793,8 @@ public class ExperimentServiceImpl implements ExperimentService
 
             transaction.commit();
         }
+
+        AssayService.get().unindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
     private void deleteProtocolInputs(Container c, String protocolIdsInClause)
@@ -5238,9 +5239,9 @@ public class ExperimentServiceImpl implements ExperimentService
     // using ensureTransaction().
     public Protocol saveProtocol(User user, Protocol protocol, boolean saveProperties)
     {
+        Protocol result;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            Protocol result;
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
@@ -5293,11 +5294,30 @@ public class ExperimentServiceImpl implements ExperimentService
             }
 
             transaction.commit();
-            return result;
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+
+        indexAssay(result);
+
+        return result;
+    }
+
+    private void indexAssay(Protocol protocol)
+    {
+        if (null == protocol)
+            return;
+
+        AssayService assayService = AssayService.get();
+        SearchService ss = SearchService.get();
+
+        if (assayService != null && ss != null)
+        {
+            SearchService.IndexTask task = ss.defaultTask();
+            Runnable runEnumerate = () -> assayService.indexAssay(task, protocol.getContainer(), new ExpProtocolImpl(protocol));
+            task.addRunnable(runEnumerate, SearchService.PRIORITY.item);
         }
     }
 

@@ -87,7 +87,7 @@ public class InputForeignKey extends LookupForeignKey
     {
         if (_materialInputs == null)
         {
-            _materialInputs = ExperimentService.get().getSampleSetsForRoles(_schema.getContainer(), _filter, _type);
+            _materialInputs = SampleSetService.get().getSampleSetsForRoles(_schema.getContainer(), _filter, _type);
         }
         return _materialInputs;
     }

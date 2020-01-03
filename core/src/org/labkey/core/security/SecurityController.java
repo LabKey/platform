@@ -563,9 +563,6 @@ public class SecurityController extends SpringActionController
         private boolean sendEmail;
         private boolean confirmed;
         private String mailPrefix;
-        // flag to indicate whether this modification was made via the 'quick ui'
-        // if so, we'll redirect to a different page when we're done.
-        private boolean quickUI;  // TODO: Delete. Seems to be unused.
 
         public boolean isConfirmed()
         {
@@ -615,16 +612,6 @@ public class SecurityController extends SpringActionController
         public void setMailPrefix(String messagePrefix)
         {
             this.mailPrefix = messagePrefix;
-        }
-
-        public boolean isQuickUI()
-        {
-            return quickUI;
-        }
-
-        public void setQuickUI(boolean quickUI)
-        {
-            this.quickUI = quickUI;
         }
     }
 
@@ -711,8 +698,6 @@ public class SecurityController extends SpringActionController
             // 1 - Global admins group cannot be empty
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
-
-            assert !form.isQuickUI() : "isQuickUI() is NYI";  // TODO: Remove... unless quick UI is actually used
 
             Container container = getContainer();
 
@@ -849,10 +834,6 @@ public class SecurityController extends SpringActionController
             }
 
             _successURL = new ActionURL(GroupAction.class, getContainer()).addParameter("id", _group.getUserId());
-
-//  TODO: Delete this and renderContainerPermissions() -- unused
-//            if (form.isQuickUI())
-//                return renderContainerPermissions(_group, errors, messages, false);
 
             return !errors.hasErrors();
         }
@@ -1132,7 +1113,6 @@ public class SecurityController extends SpringActionController
                             group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
                     break;
             }
-
         }
 
         public boolean handlePost(Object o, BindException errors)
