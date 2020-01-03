@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -153,4 +154,18 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addColumn(Column.Type);
         addColumn(Column.ActionSequence).setHidden(true);
     }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        // Issue 39301: if there are no material inputs and you try to filter on a paticular material input
+        // the filter is ignored and you get an unfiltered view unless we can provide a Material column.
+        if ("Material".equalsIgnoreCase(name) && result == null)
+        {
+            ExpSchema expSchema = new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
+            return createMaterialInputColumn(name, expSchema.getSamplesSchema(), null, "Material");
+        }
+        return result;
+     }
 }
