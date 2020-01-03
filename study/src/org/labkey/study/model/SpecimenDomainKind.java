@@ -192,14 +192,12 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
                 if (!prop.isRequired() && vialFields.contains(prop.getName().toLowerCase()))
                     exception.addError(new SimpleValidationError("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName()));
 
-                if (!prop.isRequired() && !getMandatoryPropertyNames(domainSpecimen).contains(prop.getName()))
+                if (!getMandatoryPropertyNames(domainSpecimen).contains(prop.getName()))
                 {
                     optionalSpecimenProps.add(getPropFromGwtProp(prop));
 
                     if (prop.getName().contains(" "))
                         exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
-                    else if (getReservedPropertyNames(domainSpecimen).contains(prop.getName()))
-                        exception.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the Specimen table."));
                 }
             }
         }

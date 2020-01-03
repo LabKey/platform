@@ -197,13 +197,11 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
                 if (!prop.isRequired() && specimenFields.contains(prop.getName().toLowerCase()))
                     exception.addError(new SimpleValidationError("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName()));
 
-                if (!prop.isRequired() && !getMandatoryPropertyNames(domainVial).contains(prop.getName()))
+                if (!getMandatoryPropertyNames(domainVial).contains(prop.getName()))
                 {
                     optionalVialFields.add(getPropFromGwtProp(prop));
                     if (prop.getName().contains(" "))
                         exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
-                    else if (getReservedPropertyNames(domainVial).contains(prop.getName()))
-                        exception.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the Vial table."));
                 }
             }
         }

@@ -244,13 +244,11 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
         List<PropertyDescriptor> optionalEventProps = new ArrayList<>();
         for (GWTPropertyDescriptor prop : update.getFields())
         {
-            if (!prop.isRequired() && !getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
+            if (!getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
             {
                 optionalEventProps.add(getPropFromGwtProp(prop));
                 if (prop.getName().contains(" "))
                     validationException.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
-                else if (getReservedPropertyNames(domainEvent).contains(prop.getName()))
-                    validationException.addError(new SimpleValidationError("Field name '" + prop.getName() + "' is reserved and may not be used in the SpecimenEvent table."));
             }
         }
 
