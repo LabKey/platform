@@ -17,10 +17,12 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationConfigureForm;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
+import org.labkey.devtools.authentication.TestSecondaryController.SaveConfigurationAction;
 import org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryConfigurationForm;
 
 import static org.labkey.devtools.authentication.TestSecondaryController.getConfigureURL;
@@ -51,6 +53,12 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
     {
         return getConfigureURL(rowId);
+    }
+
+    @Override
+    public @Nullable ActionURL getSaveLink()
+    {
+        return new ActionURL(SaveConfigurationAction.class, ContainerManager.getRoot());
     }
 
     @NotNull

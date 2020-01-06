@@ -19,6 +19,7 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -71,6 +72,7 @@ public interface AuthenticationProvider
             ExpireAccountProvider.class
     );
 
+    @RemoveIn20_1
     @Nullable ActionURL getConfigurationLink();
 
     default @Nullable ActionURL getSaveLink()
@@ -90,6 +92,7 @@ public interface AuthenticationProvider
         return null;
     }
 
+    @RemoveIn20_1
     default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
     {
         return getConfigurationLink();
@@ -99,7 +102,7 @@ public interface AuthenticationProvider
      * Returns a JSONArray of the field descriptors for the required provider-specific settings. JSON metadata is a small
      * subset of our standard column metadata (e.g., what getQueryDetails.api returns).
      *
-     * @return A JSONArray of field descriptors or null if this provider doesn't want a settings page
+     * @return A JSONArray of field descriptors or null if this provider doesn't have any custom fields
      */
     default @NotNull JSONArray getSettingsFields()
     {

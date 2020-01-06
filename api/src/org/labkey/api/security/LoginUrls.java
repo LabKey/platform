@@ -52,15 +52,10 @@ public interface LoginUrls extends UrlProvider
 
     NavTree appendAuthenticationNavTrail(NavTree root);
 
-
     @RemoveIn20_1
     ActionURL getEnableConfigParameterURL(String name);
     @RemoveIn20_1
     ActionURL getDisableConfigParameterURL(String name);
-    @RemoveIn20_1
-    ActionURL getEnableProviderURL(AuthenticationProvider provider);
-    @RemoveIn20_1
-    ActionURL getDisableProviderURL(AuthenticationProvider provider);
     @RemoveIn20_1
     ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors);
     @RemoveIn20_1

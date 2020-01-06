@@ -422,42 +422,6 @@ public class AuthenticationManager
     }
 
 
-    public static void enableProvider(String name, User user)
-    {
-        AuthenticationProvider provider = getProvider(name);
-        Set<String> activeNames = getActiveProviders().stream()
-            .map(AuthenticationProvider::getName)
-            .collect(Collectors.toSet());
-
-        if (!activeNames.contains(name))
-        {
-            try
-            {
-                activeNames.add(name);
-                saveActiveProviders(activeNames);
-                addProviderAuditEvent(user, name, "enabled");
-            }
-            catch (Exception e)
-            {
-                _log.error("Can't initialize provider " + provider.getName(), e);
-            }
-        }
-    }
-
-    public static void disableProvider(String name, User user)
-    {
-        Set<String> activeNames = getActiveProviders().stream()
-            .map(AuthenticationProvider::getName)
-            .collect(Collectors.toSet());
-
-        if (activeNames.contains(name))
-        {
-            activeNames.remove(name);
-            saveActiveProviders(activeNames);
-            addProviderAuditEvent(user, name, "disabled");
-        }
-    }
-
     public static void deleteConfiguration(int rowId)
     {
         // Delete any logos attached to the configuration
@@ -472,13 +436,6 @@ public class AuthenticationManager
     private static void addConfigurationAuditEvent(User user, String name, String action)
     {
         AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " setting was " + action);
-        event.setChanges(action);
-        AuditLogService.get().addEvent(user, event);
-    }
-
-    private static void addProviderAuditEvent(User user, String name, String action)
-    {
-        AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " provider was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
     }
@@ -572,29 +529,6 @@ public class AuthenticationManager
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
-
-    private static void saveActiveProviders(Set<String> activeNames)
-    {
-        StringBuilder sb = new StringBuilder();
-        String sep = "";
-
-        for (String name : activeNames)
-        {
-            sb.append(sep);
-            sb.append(name);
-            sep = PROP_SEPARATOR;
-        }
-
-        String providers = String.join(PROP_SEPARATOR, activeNames);
-
-        assert providers.equals(sb.toString());
-
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(PROVIDERS_KEY, sb.toString());
-        props.save();
-        AuthenticationProviderCache.clear();
-        AuthenticationConfigurationCache.clear();
-    }
 
     // Provider names stored in properties; they're not necessarily all valid providers
     public static Set<String> getActiveProviderNamesFromProperties()

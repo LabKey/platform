@@ -31,7 +31,9 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -198,6 +200,7 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     public static class TestSecondaryConfigurationForm extends AuthenticationConfigureForm<TestSecondaryConfiguration>
     {
         public TestSecondaryConfigurationForm()
@@ -220,5 +223,23 @@ public class TestSecondaryController extends SpringActionController
             url.addParameter("configuration", configuration);
 
         return url;
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class SaveConfigurationAction extends org.labkey.api.security.SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
+    {
+        @Override
+        public void validate(TestSecondarySaveConfigurationForm form, Errors errors)
+        {
+        }
+    }
+
+    public static class TestSecondarySaveConfigurationForm extends AuthenticationConfigureForm<TestSecondaryConfiguration>
+    {
+        @Override
+        public String getProvider()
+        {
+            return TestSsoProvider.NAME;
+        }
     }
 }

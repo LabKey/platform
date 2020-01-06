@@ -299,26 +299,6 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getEnableProviderURL(AuthenticationProvider provider)
-        {
-            return getProviderEnabledActionURL(provider, true);
-        }
-
-        @Override
-        public ActionURL getDisableProviderURL(AuthenticationProvider provider)
-        {
-            return getProviderEnabledActionURL(provider, false);
-        }
-
-        private ActionURL getProviderEnabledActionURL(AuthenticationProvider provider, boolean enabled)
-        {
-            ActionURL url = new ActionURL(SetProviderEnabledAction.class, ContainerManager.getRoot());
-            url.addParameter("provider", provider.getName());
-            url.addParameter("enabled", enabled);
-            return url;
-        }
-
-        @Override
         public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
@@ -2552,61 +2532,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RemoveIn20_1
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class SetProviderEnabledAction extends FormHandlerAction<ProviderForm>
-    {
-        @Override
-        public void validateCommand(ProviderForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(ProviderForm form, BindException errors) throws Exception
-        {
-            if (form.isEnabled())
-                AuthenticationManager.enableProvider(form.getProvider(), getUser());
-            else
-                AuthenticationManager.disableProvider(form.getProvider(), getUser());
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ProviderForm form)
-        {
-            return getUrls().getOldConfigureURL();
-        }
-    }
-
-    @RemoveIn20_1
-    public static class ProviderForm
-    {
-        private String _provider;
-        private boolean _enabled;
-
-        public String getProvider()
-        {
-            return _provider;
-        }
-
-        @SuppressWarnings("unused")
-        public void setProvider(String provider)
-        {
-            _provider = provider;
-        }
-
-        public boolean isEnabled()
-        {
-            return _enabled;
-        }
-
-        @SuppressWarnings("unused")
-        public void setEnabled(boolean enabled)
-        {
-            _enabled = enabled;
-        }
-    }
-
     public static class DeleteConfigurationForm
     {
         private int _configuration;
@@ -2791,18 +2716,8 @@ public class LoginController extends SpringActionController
                 .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
                 .filter(ap->!ap.isPermanent())
                 .collect(Collectors.toMap(AuthenticationProvider::getName, ap->{
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("description", ap.getDescription());
-                    m.put("helpLink", new HelpTopic(ap.getHelpTopic()));
-                    m.put("configLink", ap.getConfigurationLink());
-                    ActionURL saveLink = ap.getSaveLink();
-                    if (null != saveLink)
-                        m.put("saveLink", saveLink);
-                    ActionURL testLink = ap.getTestLink();
-                    if (null != testLink)
-                        m.put("testLink", testLink);
+                    Map<String, Object> m = getProviderMap(ap);
                     m.put("sso", ap instanceof SSOAuthenticationProvider);
-                    m.put("settingsFields", ap.getSettingsFields());
                     return m;
                 }));
 
@@ -2816,7 +2731,7 @@ public class LoginController extends SpringActionController
                 .map(AuthenticationManager::getConfigurationMap)
                 .collect(JSONArray.collector());
 
-            // Secondary providers
+            // Old secondaryProviders config -- TODO: Delete
             JSONArray secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
                 .map(sp->{
                     Map<String, Object> m = new HashMap<>();
@@ -2826,9 +2741,14 @@ public class LoginController extends SpringActionController
                     m.put("enabled", AuthenticationManager.isActive(sp));
                     m.put("configureUrl", sp.getConfigurationLink());
                     m.put("description", sp.getDescription());
+                    m.put("settingsFields", sp.getSettingsFields());
                     return m;
                 })
                 .collect(JSONArray.collector());
+
+            // Secondary providers
+            Map<String, Object> secondaryProviders2 = AuthenticationManager.getAllSecondaryProviders().stream()
+                .collect(Collectors.toMap(AuthenticationProvider::getName, this::getProviderMap));
 
             // Secondary configurations
             JSONArray secondaryConfigurations = AuthenticationConfigurationCache.getConfigurations(SecondaryAuthenticationConfiguration.class).stream()
@@ -2842,10 +2762,28 @@ public class LoginController extends SpringActionController
             res.put("primaryProviders", primaryProviders);
             res.put("ssoConfigurations", ssoConfigurations);
             res.put("formConfigurations", formConfigurations);
+
             res.put("secondaryProviders", secondaryProviders);
+            res.put("secondaryProviders2", secondaryProviders2);
             res.put("secondaryConfigurations", secondaryConfigurations);
 
             return res;
+        }
+
+        private Map<String, Object> getProviderMap(AuthenticationProvider ap)
+        {
+            Map<String, Object> m = new HashMap<>();
+            m.put("description", ap.getDescription());
+            m.put("helpLink", new HelpTopic(ap.getHelpTopic()));
+            m.put("configLink", ap.getConfigurationLink());
+            ActionURL saveLink = ap.getSaveLink();
+            if (null != saveLink)
+                m.put("saveLink", saveLink);
+            ActionURL testLink = ap.getTestLink();
+            if (null != testLink)
+                m.put("testLink", testLink);
+            m.put("settingsFields", ap.getSettingsFields());
+            return m;
         }
     }
 
@@ -2990,8 +2928,7 @@ public class LoginController extends SpringActionController
                 controller.new MigrateAuthenticationConfigurationsAction(),
                 controller.new SaveDbLoginPropertiesAction(),
                 controller.new SaveSettingsAction(),
-                controller.new SetAuthenticationParameterAction(),
-                controller.new SetProviderEnabledAction()
+                controller.new SetAuthenticationParameterAction()
             );
 
             // @AdminConsoleAction
