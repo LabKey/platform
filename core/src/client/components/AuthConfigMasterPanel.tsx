@@ -11,6 +11,7 @@ import DragAndDropPane from './DragAndDropPane';
 import EditableAuthRow from './EditableAuthRow';
 import SimpleAuthRow from './SimpleAuthRow';
 import AuthRow from './AuthRow';
+import DynamicConfigurationModal from "./DynamicConfigurationModal";
 
 // todo:
 // add new configurations is not in order
@@ -44,7 +45,9 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
         super(props);
         this.state = {
             useWhichDropdown: 'Primary',
-            modalOpen: false,
+            primaryModalOpen: false,
+            secondaryModalOpen: false,
+            addModalType: null,
         };
     }
 
@@ -60,7 +63,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
     };
 
     render(){
-        const {primaryProviders, secondaryProviders, ssoConfigurations, formConfigurations} = this.props;
+        const {primaryProviders, secondaryProviders, ssoConfigurations, formConfigurations, secondaryConfigurations} = this.props;
 
         const SSOTipText = 'Single Sign On Authentications (SSOs) allow the use of one set of login credentials that are authenticated by the third party service provider (e.g. Google or Github).';
         const loginFormTipText = "Authentications in this group make use of LabKey's login form. During login, LabKey will attempt validation in the order that the configurations below are listed.";
@@ -68,22 +71,18 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
         const addNewPrimaryDropdown = primaryProviders &&
             Object.keys(primaryProviders).map((authOption) => (
-                <MenuItem key={authOption} href={primaryProviders[authOption].configLink}>
+                <MenuItem key={authOption} onClick={() => this.setState({primaryModalOpen: true, addModalType:authOption})}>
                     {authOption} : {primaryProviders[authOption].description}
                 </MenuItem>
             ));
 
         const addNewSecondaryDropdown = secondaryProviders &&
             Object.keys(secondaryProviders).map((authOption) => (
-                <MenuItem key={authOption} href={secondaryProviders[authOption].configLink}>
+                <MenuItem key={authOption} onClick={() => this.setState({secondaryModalOpen: true, addModalType:authOption})}>
                     {secondaryProviders[authOption].description}
                 </MenuItem>
             ));
 
-        const editIcon =
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
-                <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
-            </div>;
 
         const dbAuth = (formConfigurations && formConfigurations.slice(-1)[0]);
 
@@ -95,10 +94,12 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         stateSection='formConfigurations'
                         rowInfo={formConfigurations.slice(0, -1)}
                         primaryProviders={primaryProviders}
+                        isDragDisabled={this.props.isDragDisabled}
                         onDragEnd={this.props.onDragEnd}
                         handlePrimaryToggle={this.props.handlePrimaryToggle}
                         deleteAction={this.props.deleteAction}
                         updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
+                        toggleSomeModalOpen={this.props.toggleSomeModalOpen}
                     />
 
                     <AuthRow
@@ -117,42 +118,30 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                     stateSection='ssoConfigurations'
                     rowInfo={ssoConfigurations}
                     primaryProviders={primaryProviders}
+                    isDragDisabled={this.props.isDragDisabled}
                     onDragEnd={this.props.onDragEnd}
                     handlePrimaryToggle={this.props.handlePrimaryToggle}
                     deleteAction={this.props.deleteAction}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
+                    toggleSomeModalOpen={this.props.toggleSomeModalOpen}
                 />
                 : <ViewOnlyAuthConfigRows data={ssoConfigurations}/>;
+
 
         const secondaryTab =
-            (secondaryProviders && this.props.canEdit) ?
-                secondaryProviders.map((item, index) => (
-                    <AuthRow
-                        key={index}
-                        canEdit={true}
-                        draggable={false}
-                        modalType={false} // to be changed once duo stuff comes in
-                        field1={item.name}
-                        field2={item.description.slice(0,34) + "..."}
-                        enabled={item.enabled}
-                        handlePrimaryToggle={this.props.handlePrimaryToggle}
-                        stateSection='secondaryProviders'
-                    />
-                ))
-                : <ViewOnlyAuthConfigRows data={secondaryProviders}/>;
-
-        const secondaryTab1 =
-            (secondaryProviders && this.props.canEdit)
+            (secondaryConfigurations && this.props.canEdit)
                 ? <DragAndDropPane
-                    stateSection='secondaryProviders'
-                    rowInfo={secondaryProviders}
+                    stateSection='secondaryConfigurations'
+                    rowInfo={secondaryConfigurations}
                     primaryProviders={primaryProviders}
+                    isDragDisabled={this.props.isDragDisabled}
                     onDragEnd={this.props.onDragEnd}
                     handlePrimaryToggle={this.props.handlePrimaryToggle}
                     deleteAction={this.props.deleteAction}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
+                    toggleSomeModalOpen={this.props.toggleSomeModalOpen}
                 />
-                : <ViewOnlyAuthConfigRows data={ssoConfigurations}/>;
+                : <ViewOnlyAuthConfigRows data={secondaryConfigurations}/>;
 
         return(
             <Panel>
@@ -172,10 +161,30 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
                     <hr/>
 
-                    <span className='boldText'> Labkey Login Form Authentications </span>
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {loginFormTipText} </div>)
-                    }}/>
+                    { (this.state.useWhichDropdown == 'Primary') ?
+                        <>
+                            <span className='boldText'> Labkey Login Form Authentications </span>
+                            <LabelHelpTip title={'Tip'} body={() => {
+                                return (<div> {loginFormTipText} </div>)
+                            }}/>
+                        </>
+                        : <span className='boldText'> Labkey Secondary Authentications </span>
+                    }
+                    { (this.state.primaryModalOpen || this.state.secondaryModalOpen) &&
+                        <DynamicConfigurationModal
+                            modalType={this.state.primaryModalOpen
+                                ? this.props.primaryProviders[this.state.addModalType]
+                                : this.props.secondaryProviders[this.state.addModalType]
+                            }
+
+                            title={"New " + this.state.addModalType + " Authentication"}
+                            closeModal={() => {
+                                this.onToggleModal("primaryModalOpen");
+                                this.props.toggleSomeModalOpen(false);
+                            }}
+                        />
+                    }
+
 
                     <br/><br/>
 

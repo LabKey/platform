@@ -9,29 +9,50 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
     constructor(props) {
         super(props);
         this.state = {
-            passwordStrength: "Weak",
-            passwordExpiry: "Never"
+            passwordRules: {
+                Weak: "",
+                Strong: ""
+            }
         };
     }
 
-    handleDropdownChange = (val) => {
-        this.setState({ passwordExpiry: val });
+    componentDidMount = () => {
+        Ajax.request({
+            url: ActionURL.buildURL("login", "getDbLoginProperties"),
+            method : 'GET',
+            scope: this,
+            failure: function(error){
+                console.log("fail: ", error);
+            },
+            success: function(result){
+                const response = JSON.parse(result.response);
+                this.setState({...response}, () => {console.log(this.state)});
+            }
+        })
     };
 
-    selectRadio = (e) => {
-        const passwordStrength = e.target.value;
-        this.setState({passwordStrength});
+    handleChange = (event) => {
+        const {name, value} = event.target;
+        this.setState((prevState) => ({
+            ...prevState,
+            currentSettings: {
+                ...prevState.currentSettings,
+                [name]: value
+            }
+        }));
     };
 
     saveChanges = () => {
+        const {expiration, strength} = this.state.currentSettings;
+
         const form = {
-            strength: this.state.passwordStrength,
-            expiration: this.state.passwordExpiry
+            strength: strength,
+            expiration: expiration
         };
         console.log(this.state);
 
         Ajax.request({
-            url: ActionURL.buildURL("login", "ConfigureDbLogin"),
+            url: ActionURL.buildURL("login", "SaveDbLoginProperties"),
             method : 'POST',
             jsonData: form,
             scope: this,
@@ -40,12 +61,14 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
             },
             success: function(result){
                 console.log("success: ", result);
+                this.props.closeModal();
             }
         })
     };
 
     render () {
-        const {passwordStrength} = this.state;
+        const passwordStrength = (this.state.currentSettings && this.state.currentSettings.strength);
+        const expiration = (this.state.currentSettings && this.state.currentSettings.expiration);
 
         return (
             <Modal show={true} onHide={() => {}} >
@@ -64,19 +87,16 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                 <Modal.Body>
                     <strong> Weak </strong>
                     <div>
-                        Passwords must be six non-whitespace characters or more and must not match your email address.
+                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
                     </div>
+
+                    <br/>
 
                     <strong> Strong </strong>
                     <div>
-                    Passwords follow these rules:
+                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
                     </div>
-                    <ul>
-                        <li>Must be eight characters or more.</li>
-                        <li>{"Must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @)."}</li>
-                        <li>Must not contain a sequence of three or more characters from your email address, display name, first name, or last name.</li>
-                        <li>Must not match any of your 10 previously used passwords.</li>
-                    </ul>
+
 
                     <div className="dbAuthRowHeights">
                         <span>
@@ -84,11 +104,11 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
 
                         <span className="dbAuthMoveRight">
-                            <ButtonGroup onClick={this.selectRadio}>
-                                <Button data-key='1' value="Weak" active={passwordStrength == "Weak"}>
+                            <ButtonGroup onClick={this.handleChange}>
+                                <Button data-key='1' value="Weak" name="strength" active={passwordStrength == "Weak"}>
                                     Weak
                                 </Button>
-                                <Button data-key='2' value="Strong" active={passwordStrength == "Strong"}>
+                                <Button data-key='2' value="Strong" name="strength" active={passwordStrength == "Strong"}>
                                     Strong
                                 </Button>
                             </ButtonGroup>
@@ -101,22 +121,26 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
 
                         <span className="dbAuthMoveRight">
-                            <DropdownButton id='dropdown-basic-button' title="Never" onSelect={this.handleDropdownChange}>
-
-                                <MenuItem eventKey="Never">Never</MenuItem>
-                                <MenuItem eventKey="FiveSeconds">Every five seconds — for testing purposes only</MenuItem>
-                                <MenuItem eventKey="ThreeMonths">Every three months</MenuItem>
-                                <MenuItem eventKey="SixMonths">Every six months</MenuItem>
-                                <MenuItem eventKey="OneYear">Every twelve months</MenuItem>
-
-                            </DropdownButton>
+                            <FormControl
+                                componentClass="select"
+                                name="expiration"
+                                placeholder="select"
+                                onChange={this.handleChange}
+                                value={expiration}
+                            >
+                                <option value="Never">Never</option>
+                                <option value="FiveSeconds">Every five seconds — for testing</option>
+                                <option value="ThreeMonths">Every three months</option>
+                                <option value="SixMonths">Every six months</option>
+                                <option value="OneYear">Every twelve months</option>
+                            </FormControl>
                         </span>
                     </div>
 
                     <hr/>
 
                     <div style={{float: "right"}}>
-                        <a href={""} style={{marginRight: "10px"}}> {"More about authentication"} </a>
+                        <a target="_blank" href={this.state.helpLink} style={{marginRight: "10px"}}> {"More about authentication"} </a>
                         <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>
                     </div>
 

@@ -40,6 +40,8 @@ export class App extends PureComponent<any, any> {
             primaryProviders: null,
             dirtinessData: null,
             dirty: false,
+            someModalOpen: false,
+            authCount: null,
         };
     }
 
@@ -57,14 +59,21 @@ export class App extends PureComponent<any, any> {
             },
             success: function(result){
                 const response = JSON.parse(result.response);
+                const formConfigurations = response.formConfigurations;
+                const ssoConfigurations = response.ssoConfigurations;
                 const dirtinessData = {
                     globalSettings: response.globalSettings,
-                    formConfigurations: response.formConfigurations,
-                    ssoConfigurations: response.ssoConfigurations
+                    formConfigurations: formConfigurations,
+                    ssoConfigurations: ssoConfigurations
                 };
-                this.setState({...response, dirtinessData}, () => {console.log(this.state)});
+                const authCount = formConfigurations.length + ssoConfigurations.length;
+                this.setState({...response, dirtinessData, authCount}, () => {console.log(this.state)});
             }
         })
+    };
+
+    toggleSomeModalOpen = (someModalOpen) => {
+        this.setState({someModalOpen});
     };
 
     // For globalSettings
@@ -115,9 +124,6 @@ export class App extends PureComponent<any, any> {
         // });
         return true;
     };
-
-
-
 
     saveChanges = () => {
         let form = new FormData();
@@ -240,8 +246,10 @@ export class App extends PureComponent<any, any> {
                 failure: function(error){
                     console.log("fail: ", error);
                 },
-                success: function(){
+                success: function() {
                     console.log("success");
+                    const authCount = this.state.authCount - 1;
+                    this.setState({authCount});
                 }
             })}
         )
@@ -263,7 +271,6 @@ export class App extends PureComponent<any, any> {
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
         const {globalSettings, ...restProps} = this.state;
-        let hideAutoCreateAccounts = (this.state.formConfigurations && this.state.formConfigurations.length == 1) && (this.state.ssoConfigurations && this.state.ssoConfigurations.length == 0);
 
         return(
             <div style={{minWidth:"1150px"}}>
@@ -272,7 +279,7 @@ export class App extends PureComponent<any, any> {
                         {...globalSettings}
                         canEdit={this.state.canEdit}
                         checkGlobalAuthBox = {this.checkGlobalAuthBox}
-                        // hideAutoCreateAccounts={hideAutoCreateAccounts}
+                        authCount={this.state.authCount}
                     />
                 }
 
@@ -282,6 +289,8 @@ export class App extends PureComponent<any, any> {
                     handlePrimaryToggle={this.handlePrimaryToggle}
                     deleteAction={this.deleteAction}
                     updateAuthRowsAfterSave={this.updateAuthRowsAfterSave}
+                    toggleSomeModalOpen={this.toggleSomeModalOpen}
+                    isDragDisabled={this.state.someModalOpen}
                 />
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}

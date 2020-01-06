@@ -50,6 +50,13 @@ export default class EditableAuthRow extends PureComponent<any, State> {
         this.props.deleteAction(this.props.configuration, this.props.stateSection);
     };
 
+    setHighlight = (isHighlighted) => {
+        if (this.state.modalOpen) {
+            return;
+        }
+        this.setState({highlight: isHighlighted});
+    };
+
     render(){
         const enabled =
             <ReactBootstrapToggle
@@ -67,24 +74,27 @@ export default class EditableAuthRow extends PureComponent<any, State> {
             </div>;
 
         const editIcon =
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
+            <div className={"clickable"}
+                 style={{marginTop: "5px"}}
+                 onClick={() => {this.onToggleModal("modalOpen"); this.props.toggleSomeModalOpen(true)}}
+            >
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>;
 
         const dynamicModal = (this.state.modalOpen &&
                 <DynamicConfigurationModal
                     {...this.props}
-                    closeModal={() => {this.onToggleModal("modalOpen")}}
+                    closeModal={() => {
+                        this.onToggleModal("modalOpen");
+                        this.props.toggleSomeModalOpen(false);
+                    }}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />);
 
-        const databaseModal =
-            <DatabaseConfigurationModal/>;
-
         return(
             <div
-                onMouseOver={() => {this.setState({highlight: true})}}
-                onMouseOut={() => {this.setState({highlight: false})}}
+                onMouseOver={() => {this.setHighlight(true)}}
+                onMouseOut={() => {this.setHighlight(false)}}
             >
                 <SimpleAuthRow
                     handle = {this.props.noHandleIcon ? null : <LightupHandle highlight={this.state.highlight}/>}

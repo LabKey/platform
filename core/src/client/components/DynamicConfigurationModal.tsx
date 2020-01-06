@@ -46,9 +46,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
     saveEditedModal = () => {
         const baseUrl = ActionURL.getBaseURL(true);
-        const saveUrl = baseUrl + this.props.modalType.saveLink;
-
-        // console.log("pre-save state ", this.state);
+        let saveUrl = this.props.title
+            ? baseUrl + this.props.modalType.configLink
+            : baseUrl + this.props.modalType.saveLink;
 
         let form = new FormData();
         form.append("configuration", this.props.configuration);
@@ -66,13 +66,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             failure: function(error){
                 console.log("fail: ", error.response);
                 const errorObj = JSON.parse(error.response);
-                const errorMessage = errorObj.exception
+                const errorMessage = errorObj.exception;
                 console.log("unfortunate state: ", errorObj.exception);
                 // const errorMessage = error.response.fail
                 this.setState(() => ({errorMessage}));
             },
             success: function(result){
-                // console.log("success", result.response);
+                console.log("success", result.response);
                 this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
                 this.props.closeModal();
             }
@@ -99,8 +99,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
         this.setState(() => ({
                 deletedLogos: arr
-            }),
-            () => {console.log(this.state.deletedLogos)}
+            })
+            // , () => {console.log(this.state.deletedLogos)}
         );
     };
 
@@ -115,9 +115,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     onFileChange = (attachment, logoType) => {
-        console.log("I am changing the value of the state", logoType);
         this.setState(() => ({[logoType]: attachment.first()})
-            , () => console.log("New state: ", this.state)
+            // , () => console.log("New state: ", this.state)
         );
     };
 
@@ -141,12 +140,11 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
+                            type={"text"}
                             {...field}
                         />
                     );
                 case "checkbox":
-
-
                     return (
                         <CheckBoxInput
                             key={index}
@@ -156,6 +154,29 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             {...field}
                         />
                     );
+                case "password":
+                    return (
+                        <TextInput
+                            key={index}
+                            className={"bottom-margin"}
+                            handleChange={this.handleChange}
+                            value={this.state[field.name]}
+                            type={"password"}
+                            {...field}
+                        />
+                    );
+
+                case "textarea":
+                    return (
+                        <TextArea
+                            key={index}
+                            className={"bottom-margin"}
+                            handleChange={this.handleChange}
+                            value={this.state[field.name]}
+                            {...field}
+                        />
+                    );
+
                 default:
                     return <div> Error: Invalid field type received. </div>;
             }
@@ -166,12 +187,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // console.log(this.props);
         let {modalType, closeModal} = this.props;
         let queryString = {"server": this.state.servers, "principal": this.state.principalTemplate, "sasl":this.state.SASL};
+        let modalTitle = (this.props.title) ? this.props.title : this.props.description;
 
         return (
             <Modal show={true} onHide={() => {}} >
                 <Modal.Header>
                     <Modal.Title>
-                        {"Configure " + this.props.description}
+                        {"Configure " + modalTitle}
                         <FontAwesomeIcon
                             size='sm'
                             icon={faTimes}
@@ -275,7 +297,6 @@ interface TextInputProps {
 
 class TextInput extends PureComponent<any, any> {
     render() {
-        const type = (this.props.name == "password") ? "password" : "text";
         return(
             <div style={{height: "40px"}}>
                 <span style={{marginRight:"7px"}}>
@@ -290,14 +311,11 @@ class TextInput extends PureComponent<any, any> {
 
                 <FormControl
                     name={this.props.name}
-                    type={type}
+                    type={this.props.type}
                     value={this.props.value}
                     onChange={(e) => this.props.handleChange(e)}
-
-                    // placeholder="Enter text"
                     style ={{borderRadius: "5px", float: "right", width: "300px"}}
                 />
-
                 <br/>
             </div>
         );
@@ -332,6 +350,32 @@ class CheckBoxInput extends PureComponent<any, any> {
                         rowText={this.props.caption}
                         checked={this.props.value}
                         onClick={() => {this.props.checkCheckBox(this.props.name);}}
+                    />
+                </span>
+            </div>
+        );
+    }
+}
+
+class TextArea extends PureComponent<any, any> {
+    render() {
+        return(
+            <div className="dynamicFieldSpread">
+                <span style={{height:"40px", marginRight:"7px"}}>
+                    {this.props.caption}
+                </span>
+
+                { this.props.description &&
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {this.props.description} </div>)
+                    }}/>
+                }
+
+                <span style={{float:"right", marginRight: "285px"}}>
+                    <FormControl
+                        componentClass="textarea"
+                        placeholder="textarea"
+                        value={this.props.value}
                     />
                 </span>
             </div>

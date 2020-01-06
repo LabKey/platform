@@ -5,7 +5,7 @@ import { Ajax, ActionURL } from '@labkey/api';
 
 import FACheckBox from './FACheckBox';
 
-const ROW_TEXTS = [
+let ROW_TEXTS = [
     { id: 'SelfRegistration', text: 'Allow self sign up' },
     { id: 'SelfServiceEmailChanges', text: 'Allow users to edit their own email addresses' },
     { id: 'AutoCreateAccounts', text: 'Auto-create authenticated users' },
@@ -43,20 +43,13 @@ export default class GlobalSettings extends PureComponent<any, any> {
         }
     }
 
-    // checkGlobalAuthBox = (id: string) => {
-    //     const oldState = this.state[id];
-    //     this.setState(
-    //         () => ({
-    //             [id]: !oldState,
-    //         }),
-    //         () => this.props.checkDirty(this.state, this.props)
-    //     );
-    // };
-
     render() {
-        const rowTexts = ROW_TEXTS.map(text => (
-            !(this.state[text.id] == null)
-            ?
+        let rowTexts = ROW_TEXTS;
+        if (this.props.authCount == 1){
+            rowTexts = ROW_TEXTS.slice(0,-1);
+        }
+
+        const rowTextComponents = rowTexts.map(text => (
             <div className="bottom-margin" key={text.id}>
                 <FACheckBox
                     key={text.id}
@@ -70,7 +63,6 @@ export default class GlobalSettings extends PureComponent<any, any> {
 
                 <span style={{ marginLeft: '15px' }}>{text.text}</span>
             </div>
-            : ""
         ));
 
         return (
@@ -85,7 +77,7 @@ export default class GlobalSettings extends PureComponent<any, any> {
                     <br />
                     <br />
 
-                    {rowTexts}
+                    {rowTextComponents}
 
                 </Panel.Body>
             </Panel>
