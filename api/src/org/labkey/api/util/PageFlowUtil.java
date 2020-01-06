@@ -2096,10 +2096,10 @@ public class PageFlowUtil
         if (null != project)
         {
             JSONObject projectProps = new JSONObject();
-
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
+            projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }
 
