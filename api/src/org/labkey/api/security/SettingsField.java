@@ -10,7 +10,7 @@ public class SettingsField extends HashMap<String, Object>
     {
         checkbox,
         input,
-        option,
+        options,
         password,
         textarea  // textarea that allows paste or file upload (e.g., SAML settings)
     }
