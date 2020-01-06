@@ -31,10 +31,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.security.DesignAssayPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -192,7 +190,7 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     {
         DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), container);
         dd = dd.edit().setDescription(domain.getDescription()).build();
-        OntologyManager.updateDomainDescriptor(dd);
+        OntologyManager.ensureDomainDescriptor(dd);
 
         return PropertyService.get().getDomain(container, dd.getDomainURI());
     }

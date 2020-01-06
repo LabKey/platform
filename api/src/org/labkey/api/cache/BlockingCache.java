@@ -18,10 +18,12 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.util.Filter;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +42,11 @@ public class BlockingCache<K, V> implements Cache<K, V>
     protected final Cache<K, Wrapper<V>> _cache;
     protected final CacheLoader<K, V> _loader;
     protected CacheTimeChooser<K> _cacheTimeChooser;
+    /**
+     * Milliseconds to wait if some other thread is loading the cache before timing out.
+     * Note that we will NOT timeout the thread that is doing the load, but this can still help reduce deadlocks
+     */
+    protected final long _timeout;
 
     public static final Object UNINITIALIZED = new Object() {public String toString() { return "UNINITIALIZED";}};
 
@@ -49,11 +56,16 @@ public class BlockingCache<K, V> implements Cache<K, V>
         this(cache, null);
     }
 
-
     public BlockingCache(Cache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
+    {
+        this(cache, loader, TimeUnit.MINUTES.toMillis(5));
+    }
+
+    public BlockingCache(Cache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader, long timeout)
     {
         _cache = cache;
         _loader = loader;
+        _timeout = timeout;
     }
 
 
@@ -114,12 +126,25 @@ public class BlockingCache<K, V> implements Cache<K, V>
             if (isValid(w, key, argument, loader))
                 return w.getValue();
 
+            long startTime = -1;
             while (w.isLoading())
             {
+                if (_timeout > 0)
+                {
+                    long now = System.currentTimeMillis();
+                    if (startTime < 0)
+                    {
+                        startTime = now;
+                    }
+                    else if (now - startTime > _timeout)
+                    {
+                        throw new RuntimeException("Cache timeout for " + getTrackingCache().getDebugName() + ". " + (now - startTime) + "ms elapsed, exceeding timeout of " + _timeout + "ms");
+                    }
+                }
                 try
                 {
-                    w.getLockObject().wait(TimeUnit.MINUTES.toMillis(1));
-                    break;
+                    long waitTime = _timeout > 0 && _timeout < TimeUnit.MINUTES.toMillis(1) ? TimeUnit.SECONDS.toMillis(1) : TimeUnit.MINUTES.toMillis(1);
+                    w.getLockObject().wait(waitTime);
                 }
                 catch (InterruptedException x)
                 {/* */}
@@ -248,23 +273,25 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
     public static class BlockingCacheTest extends Assert
     {
-        @Test
-        public void testBlockingGet()
+        private Cache<Integer, Wrapper<Integer>> _cache;
+        private Map<Integer, Wrapper<Integer>> _map = new HashMap<>();
+
+        @Before
+        public void setUp()
         {
-            final HashMap<Integer, Wrapper<Integer>> map = new HashMap<>();
-            Cache<Integer, Wrapper<Integer>> cache = new Cache<Integer, Wrapper<Integer>>()
+            _cache = new Cache<>()
             {
                 @Override public void put(Integer key, Wrapper<Integer> value)
                 {
-                    map.put(key, value);
+                    _map.put(key, value);
                 }
                 @Override public void put(Integer key, Wrapper<Integer> value, long timeToLive)
                 {
-                    map.put(key, value);
+                    _map.put(key, value);
                 }
                 @Override public Wrapper<Integer> get(Integer key)
                 {
-                    return map.get(key);
+                    return _map.get(key);
                 }
                 @Override public Wrapper<Integer> get(Integer key, @Nullable Object arg, CacheLoader<Integer, Wrapper<Integer>> loader) { throw new UnsupportedOperationException(); }
                 @Override public void remove(Integer key) { throw new UnsupportedOperationException(); }
@@ -274,13 +301,23 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 @Override public void close() { throw new UnsupportedOperationException(); }
                 @Override public TrackingCache getTrackingCache() { throw new UnsupportedOperationException(); }
             };
-            final AtomicInteger calls = new AtomicInteger();
-            CacheLoader<Integer, Integer> loader = (key, argument) -> {
+
+        }
+
+        private CacheLoader<Integer, Integer> createLoader(final AtomicInteger calls, final int sleepTime)
+        {
+            return (key, argument) -> {
                 calls.incrementAndGet();
-                try {Thread.sleep(1000);}catch(InterruptedException x){/* */}
+                try {Thread.sleep(sleepTime);}catch(InterruptedException x){/* */}
                 return key*key;
             };
-            final BlockingCache<Integer,Integer> bc = new BlockingCache<>(cache,loader);
+        }
+
+        @Test
+        public void testBlockingGet()
+        {
+            final AtomicInteger calls = new AtomicInteger();
+            final BlockingCache<Integer,Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 1000));
             final Object start = new Object();
             Runnable r = () -> {
                 Random r1 = new Random();
@@ -291,17 +328,49 @@ public class BlockingCache<K, V> implements Cache<K, V>
                     bc.get(Math.abs(k % 5));
                 }
             };
-            Thread[] threads = new Thread[10];
-            for (int i=0 ; i<10 ; i++)
+            createAndStartThreads(r, start, 10);
+            assertEquals(5, calls.get());
+            assertEquals(5, _map.size());
+        }
+
+        @NotNull
+        private void createAndStartThreads(Runnable r, Object start, int count)
+        {
+            Thread[] threads = new Thread[count];
+            for (int i=0 ; i < threads.length ; i++)
                 threads[i] = new Thread(r);
-            for (int i=0 ; i<10 ; i++)
-                threads[i].start();
+            for (Thread thread : threads)
+                thread.start();
             Thread.yield();
             synchronized (start) { start.notifyAll(); }
-            for (int i=0 ; i<10 ; i++)
-                try { threads[i].join(); } catch (InterruptedException x) {}
-            assertEquals(5, calls.get());
-            assertEquals(5, map.size());
+            for (Thread thread : threads)
+                try { thread.join(); } catch (InterruptedException x) {}
+        }
+
+        @Test
+        public void testTimeout()
+        {
+            final AtomicInteger calls = new AtomicInteger();
+            final BlockingCache<Integer, Integer> bc = new BlockingCache<>(_cache, createLoader(calls, 5000), 1000);
+
+            final AtomicInteger timeouts = new AtomicInteger();
+            final Object start = new Object();
+            Runnable r = () -> {
+                synchronized (start) { try{start.wait(1000);}catch(InterruptedException x){/* */} }
+                try
+                {
+                    bc.get(1000);
+                }
+                catch (RuntimeException e)
+                {
+                    timeouts.incrementAndGet();
+                }
+            };
+
+            createAndStartThreads(r, start, 10);
+
+            assertEquals(1, calls.get());
+            assertEquals(9, timeouts.get());
         }
     }
 }

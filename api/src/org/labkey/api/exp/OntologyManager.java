@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
@@ -1725,8 +1724,9 @@ public class OntologyManager
         return ensureDomainDescriptor(dd);
     }
 
+    /** Inserts or updates the domain as appropriate */
     @NotNull
-    private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
+    public static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
     {
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
         String ddInContainerId = ddIn.getContainer().getId();
@@ -1735,7 +1735,7 @@ public class OntologyManager
         {
             try
             {
-                Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
                 // We may have a cached miss that we need to clear
                 uncache(dd);
                 return getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
@@ -1756,7 +1756,7 @@ public class OntologyManager
             // if the descriptor differs by container only and the requested descriptor is in the project fldr
             if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
             {
-                dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
+                dd = ensureDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
             }
             return dd;
         }
@@ -1777,7 +1777,7 @@ public class OntologyManager
 
         if (fUpdateIfExists)
         {
-            dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
+            dd = ensureDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
             if (fMajorDifference)
                 _log.debug(errmsg);
         }
@@ -2434,14 +2434,6 @@ public class OntologyManager
         return pd;
     }
 
-
-    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
-    {
-        assert dd.getDomainId() != 0;
-        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        uncache(dd);
-        return dd;
-    }
 
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject) throws ValidationException
     {

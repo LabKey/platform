@@ -154,7 +154,7 @@ public class StorageProvisioner
                     .setStorageSchemaName(kind.getStorageSchemaName())
                     .build();
 
-            OntologyManager.updateDomainDescriptor(editDD);
+            OntologyManager.ensureDomainDescriptor(editDD);
 
             kind.invalidate(domain);
 

@@ -2747,9 +2747,6 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(APIQueryForm form, BindException errors)
         {
-            // Issue 12233: add implicit maxRows=100k when using client API
-            HttpServletRequest request = getViewContext().getRequest();
-
             QueryView view = form.getQueryView();
 
             view.setShowPagination(form.isIncludeTotalCount());

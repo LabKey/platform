@@ -22,6 +22,7 @@ import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -201,6 +202,7 @@ public class ApiModule extends CodeOnlyModule
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
             AtomicDatabaseInteger.TestCase.class,
+            BlockingCache.BlockingCacheTest.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,

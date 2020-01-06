@@ -4041,7 +4041,7 @@ public class StudyManager
                     .setDomainURI(newURI)
                     .setName(def.getName()) // Name may have changed too; it's part of URI
                     .build();
-            OntologyManager.updateDomainDescriptor(dd);
+            OntologyManager.ensureDomainDescriptor(dd);
 
             // since the descriptor has changed, ensure the domain is up to date
             def.refreshDomain();
