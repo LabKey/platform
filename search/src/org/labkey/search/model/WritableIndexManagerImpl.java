@@ -145,6 +145,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 IndexWriter iw = getIndexWriter();
                 iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
+                _manager.maybeRefresh();
             }
         }
         catch (IndexManagerClosedException x)
@@ -179,6 +180,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 IndexWriter w = getIndexWriter();
                 w.deleteDocuments(query);
+                _manager.maybeRefresh();
             }
         }
         catch (AlreadyClosedException e)
