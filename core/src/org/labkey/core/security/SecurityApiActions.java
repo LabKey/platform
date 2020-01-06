@@ -70,6 +70,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
@@ -2057,8 +2058,7 @@ public class SecurityApiActions
                     throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
 
                 boolean isNew = msg != null;
-                if (msg == null)
-                    msg = PageFlowUtil.filter(email) + " was already a registered system user.";
+                HtmlString htmlMsg = msg == null ? HtmlString.of(email + " was already a registered system user.") : HtmlString.unsafe(msg);
 
                 // Allow tests to create users that immediately register as having "logged in"
                 if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
@@ -2073,12 +2073,12 @@ public class SecurityApiActions
                 {
                     response.put("userId", user.getUserId());
                     response.put("email", user.getEmail());
-                    response.put("message", msg);
+                    response.put("message", htmlMsg);
                 }
                 responses.add(Map.of(
                     "userId", user.getUserId(),
                     "email", user.getEmail(),
-                    "message", msg,
+                    "message", htmlMsg,
                     "isNew", isNew
                 ));
             }
