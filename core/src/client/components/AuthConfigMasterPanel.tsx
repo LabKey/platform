@@ -62,6 +62,22 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
         }));
     };
 
+    determineStateSection = (addModalType) => {
+        let authType;
+        if (addModalType in this.props.primaryProviders) {
+            let authInfo = this.props.primaryProviders[addModalType];
+
+            if (authInfo.sso) {
+                authType = "ssoConfigurations";
+            } else {
+                authType = "formConfigurations";
+            }
+        } else {
+            authType = "secondaryConfigurations";
+        }
+        return authType;
+    };
+
     render(){
         const {primaryProviders, secondaryProviders, ssoConfigurations, formConfigurations, secondaryConfigurations} = this.props;
 
@@ -79,7 +95,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
         const addNewSecondaryDropdown = secondaryProviders &&
             Object.keys(secondaryProviders).map((authOption) => (
                 <MenuItem key={authOption} onClick={() => this.setState({secondaryModalOpen: true, addModalType:authOption})}>
-                    {secondaryProviders[authOption].description}
+                    {authOption} : {secondaryProviders[authOption].description}
                 </MenuItem>
             ));
 
@@ -133,7 +149,8 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                 ? <DragAndDropPane
                     stateSection='secondaryConfigurations'
                     rowInfo={secondaryConfigurations}
-                    primaryProviders={primaryProviders}
+                    // primaryProviders={primaryProviders}
+                    secondaryProviders={secondaryProviders}
                     isDragDisabled={this.props.isDragDisabled}
                     onDragEnd={this.props.onDragEnd}
                     handlePrimaryToggle={this.props.handlePrimaryToggle}
@@ -145,9 +162,9 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
         return(
             <Panel>
-                <Panel.Heading> <span className='boldText'>Authentication Configurations </span> </Panel.Heading>
+                <Panel.Heading> <span className='boldText'> Configurations </span> </Panel.Heading>
                 <Panel.Body>
-                    <DropdownButton id='dropdown-basic-button' title={'Add New ' + this.state.useWhichDropdown}>
+                    <DropdownButton id='dropdown-basic-button' title={'Add New ' + this.state.useWhichDropdown + ' Configuration'}>
 
                         {this.props.canEdit &&
                             ((this.state.useWhichDropdown == 'Primary')
@@ -163,12 +180,12 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
                     { (this.state.useWhichDropdown == 'Primary') ?
                         <>
-                            <span className='boldText'> Labkey Login Form Authentications </span>
+                            <span className='boldText'> Login Form Configurations </span>
                             <LabelHelpTip title={'Tip'} body={() => {
                                 return (<div> {loginFormTipText} </div>)
                             }}/>
                         </>
-                        : <span className='boldText'> Labkey Secondary Authentications </span>
+                        : <span className='boldText'> Secondary Configurations </span>
                     }
                     { (this.state.primaryModalOpen || this.state.secondaryModalOpen) &&
                         <DynamicConfigurationModal
@@ -176,15 +193,17 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                                 ? this.props.primaryProviders[this.state.addModalType]
                                 : this.props.secondaryProviders[this.state.addModalType]
                             }
-
+                            stateSection={this.determineStateSection(this.state.addModalType)}
+                            description={this.state.addModalType + " Configuration"}
+                            enabled={true}
                             title={"New " + this.state.addModalType + " Authentication"}
+                            updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                             closeModal={() => {
-                                this.onToggleModal("primaryModalOpen");
+                                this.onToggleModal(this.state.primaryModalOpen ? "primaryModalOpen" : "secondaryModalOpen");
                                 this.props.toggleSomeModalOpen(false);
                             }}
                         />
                     }
-
 
                     <br/><br/>
 
@@ -197,7 +216,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                             <div>
                                 <hr/>
 
-                                <span className='boldText'> Single Sign On Authentications </span>
+                                <span className='boldText'> Single Sign On Configurations </span>
 
                                 <LabelHelpTip title={'Tip'} body={() => {
                                     return (<div> {SSOTipText} </div>)

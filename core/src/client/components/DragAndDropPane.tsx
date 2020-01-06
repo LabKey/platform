@@ -27,7 +27,8 @@ export default class DragAndDropPane extends PureComponent<any> {
 
     render() {
         // this.forTestingFunc();
-        const primaryProviders = this.props.primaryProviders;
+        const {primaryProviders, secondaryProviders} = this.props;
+        const providers = (primaryProviders) ? primaryProviders : secondaryProviders;
         // console.log("PROPS ", this.props.rowInfo);
 
         let DragAndDropAuthRows =
@@ -42,7 +43,7 @@ export default class DragAndDropPane extends PureComponent<any> {
                             <EditableAuthRow
                                 index={index.toString()}
                                 {...item}
-                                modalType={(primaryProviders) && {...primaryProviders[item.provider]}}
+                                modalType={(providers) && {...providers[item.provider]}}
                                 handlePrimaryToggle={this.props.handlePrimaryToggle}
                                 stateSection={this.props.stateSection}
                                 deleteAction={this.props.deleteAction}

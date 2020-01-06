@@ -68,7 +68,7 @@ export default class GlobalSettings extends PureComponent<any, any> {
         return (
             <Panel>
                 <Panel.Heading>
-                    <span className="boldText">Global Authentication Configurations</span>
+                    <span className="boldText">Global Settings</span>
                 </Panel.Heading>
 
                 <Panel.Body>

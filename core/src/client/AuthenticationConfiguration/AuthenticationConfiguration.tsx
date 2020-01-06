@@ -134,10 +134,10 @@ export class App extends PureComponent<any, any> {
         );
 
         if (this.draggableIsDirty("ssoConfigurations")){
-            form.append("ssoConfigurations", this.getAuthConfigConfigurationArray(this.state.ssoConfigurations).toString());
+            form.append("ssoConfigurations", this.getAuthConfigArray(this.state.ssoConfigurations).toString());
         }
         if (this.draggableIsDirty("formConfigurations")){
-            form.append("formConfigurations", this.getAuthConfigConfigurationArray(this.state.formConfigurations).slice(0,-1).toString());
+            form.append("formConfigurations", this.getAuthConfigArray(this.state.formConfigurations).slice(0,-1).toString());
         }
 
         Ajax.request({
@@ -157,12 +157,24 @@ export class App extends PureComponent<any, any> {
     };
 
     draggableIsDirty = (stateSection) => {
-        const newOrdering = this.getAuthConfigConfigurationArray(this.state[stateSection]);
-        const oldOrdering = this.getAuthConfigConfigurationArray(this.state.dirtinessData[stateSection]);
+        const stateSections = ["formConfigurations", "ssoConfigurations", "secondaryConfigurations"];
+
+        // const isDirty = stateSections.reduce((accum, currentVal) => {
+        //     const newOrdering = this.getAuthConfigArray(this.state[currentVal]);
+        //     const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[currentVal]);
+        //     return (accum || !this.isEquivalent(newOrdering, oldOrdering));
+        //     }
+        // );
+
+        // console.log("the truth:", isDirty);
+
+
+        const newOrdering = this.getAuthConfigArray(this.state[stateSection]);
+        const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[stateSection]);
         return !this.isEquivalent(newOrdering, oldOrdering);
     };
 
-    getAuthConfigConfigurationArray = (stateSection) => {
+    getAuthConfigArray = (stateSection) => {
         let authArray = stateSection.map((auth : any) => { return auth.configuration });
         console.log(authArray);
         return authArray;
@@ -262,8 +274,16 @@ export class App extends PureComponent<any, any> {
         const prevState = this.state[stateSection];
         const staleAuthIndex = prevState.findIndex((element) => element.configuration == configId);
 
-        const newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
-        newState[staleAuthIndex] = configObj.configuration;
+        let newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
+        if (staleAuthIndex == -1) {
+            if (stateSection == "formConfigurations") {
+                newState = [...newState.slice(0, -1), configObj.configuration, ...newState.slice(-1)]
+            } else {
+                newState.push(configObj.configuration);
+            }
+        } else {
+            newState[staleAuthIndex] = configObj.configuration;
+        }
 
         this.setState({[stateSection]:newState});
     };

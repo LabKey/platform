@@ -46,17 +46,22 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
     saveEditedModal = () => {
         const baseUrl = ActionURL.getBaseURL(true);
-        let saveUrl = this.props.title
-            ? baseUrl + this.props.modalType.configLink
-            : baseUrl + this.props.modalType.saveLink;
+        let saveUrl = baseUrl + this.props.modalType.saveLink;
+        if (this.props.stateSection == "secondaryConfigurations") {
+            saveUrl = baseUrl + this.props.modalType.configLink;
+        }
 
         let form = new FormData();
-        form.append("configuration", this.props.configuration);
+        if (this.props.configuration) {
+            form.append("configuration", this.props.configuration);
+        }
         Object.keys(this.state).map(
             (item) => {
                 form.append(item, this.state[item]);
             }
         );
+
+        console.log("I am posting to: ", saveUrl, '\n', "With the form: ", this.state);
 
         Ajax.request({
             url: saveUrl,
@@ -72,7 +77,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 this.setState(() => ({errorMessage}));
             },
             success: function(result){
-                console.log("success", result.response);
+                console.log("saveEditedModal Success", result);
                 this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
                 this.props.closeModal();
             }

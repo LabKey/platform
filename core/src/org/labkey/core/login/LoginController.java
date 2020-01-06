@@ -2763,8 +2763,8 @@ public class LoginController extends SpringActionController
             res.put("ssoConfigurations", ssoConfigurations);
             res.put("formConfigurations", formConfigurations);
 
-            res.put("secondaryProviders", secondaryProviders);
-            res.put("secondaryProviders2", secondaryProviders2);
+//            res.put("secondaryProviders", secondaryProviders);
+            res.put("secondaryProviders", secondaryProviders2);
             res.put("secondaryConfigurations", secondaryConfigurations);
 
             return res;
