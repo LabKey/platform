@@ -1990,7 +1990,7 @@ public class CoreController extends SpringActionController
                     ClientDependency cd = ClientDependency.fromPath(library);
 
                     // only allow libs
-                    if (ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
+                    if (cd != null && ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
                     {
                         Set<String> dependencies = cd.getCssPaths(getContainer());
                         dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
