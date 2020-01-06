@@ -111,6 +111,12 @@ configurations {
     // and the org.json module as well because they get in the way of our own JSON object implementations from server/api
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
     all*.exclude group: "org.json", module: "json"
+
+    creditable {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+
 }
 
 // declared separately to include the gwtsrc directory
@@ -130,6 +136,7 @@ sourceSets {
 
 
 dependencies {
+  BuildUtils.addLabKeyDependency(project: project, config: "creditable", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), depProjectConfig: "toBeCredited")
   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle))
   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
   compile project.tasks.schemasCompile.outputs.files
