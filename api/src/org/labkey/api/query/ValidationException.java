@@ -58,7 +58,6 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     private Map<String, List<PropertyValidationError>> _fieldErrors = new LinkedHashMap<>();
     private List<SimpleValidationError> _globalErrors = new ArrayList<>();
-    private List<SimpleValidationWarning> _warnings = new ArrayList<>();
 
     private String _schemaName;
     private String _queryName;
@@ -291,12 +290,6 @@ public class ValidationException extends Exception implements Iterable<Validatio
         return this;
     }
 
-    public ValidationException addWarning(String warning)
-    {
-        _warnings.add(new SimpleValidationWarning(warning, SEVERITY.WARN.toString()));
-        return this;
-    }
-
     private ValidationException addFieldError(PropertyValidationError error)
     {
         String field = error.getProperty();
@@ -521,11 +514,6 @@ public class ValidationException extends Exception implements Iterable<Validatio
         return false;
     }
 
-    public boolean hasWarnings()
-    {
-        return _warnings.size() > 0;
-    }
-
     public Set<String> getFields()
     {
         return _fieldErrors.keySet();
@@ -547,15 +535,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
             }
         }
 
-        if (hasWarnings())
-            errors.addAll(_warnings);
-
         return errors;
-    }
-
-    public List<SimpleValidationWarning> getWarnings()
-    {
-        return _warnings;
     }
 
     @Override

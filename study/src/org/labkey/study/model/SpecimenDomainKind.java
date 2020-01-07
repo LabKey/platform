@@ -200,19 +200,9 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
             }
         }
 
-        SpecimenDomainRollupErrorsAndWarning results = checkRollups(null, null, optionalSpecimenProps, container, user);
+        exception = checkRollups(null, null, optionalSpecimenProps, container, user, exception);
 
-        if (!results.getErrors().isEmpty())
-        {
-            exception = addErrorsToValidationException(results.getErrors(), exception);
-        }
-
-        if (!results.getWarnings().isEmpty())
-        {
-            exception = addWarningsToValidationException(results.getWarnings(), exception);
-        }
-
-        if (exception.hasErrors() || exception.hasWarnings())
+        if (exception.hasErrors())
         {
             return exception;
         }

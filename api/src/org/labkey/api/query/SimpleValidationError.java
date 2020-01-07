@@ -32,17 +32,27 @@ public class SimpleValidationError implements ValidationError
 {
     private final String _message;
     private final Throwable _cause;
-    
+    private final ValidationException.SEVERITY _severity;
+
     public SimpleValidationError(@NotNull String message)
     {
         _message = message;
         _cause = null;
+        _severity = ValidationException.SEVERITY.ERROR;
+    }
+
+    public SimpleValidationError(@NotNull String message, @NotNull ValidationException.SEVERITY severity)
+    {
+        _message = message;
+        _cause = null;
+        _severity = severity;
     }
 
     public SimpleValidationError(SQLException x)
     {
         _message = x.getMessage();
         _cause = x;
+        _severity = null;
     }
 
     @Override
@@ -82,6 +92,30 @@ public class SimpleValidationError implements ValidationError
     @Override
     public void addToBindException(BindException errors, String errorCode)
     {
-        errors.reject(errorCode, this.getMessage());
+        if (ValidationException.SEVERITY.WARN.equals(this._severity))
+        {
+            String[] codes = {String.valueOf(this._severity)};
+            Warning warning = new Warning("Warning", codes, null, getMessage());
+            errors.addError(warning);
+        }
+        else
+        {
+            errors.reject(errorCode, this.getMessage());
+        }
+    }
+
+    public static class Warning extends ObjectError
+    {
+        private String _severity;
+
+        public String getSeverity()
+        {
+            return getCodes()[0];
+        }
+
+        public Warning(String objectName, String[] codes, Object[] arguments, String defaultMessage)
+        {
+            super(objectName, codes, arguments, defaultMessage);
+        }
     }
 }

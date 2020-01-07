@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -434,6 +435,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
             {
                 FieldError ferror = (FieldError) error;
                 key = ferror.getField();
+            }
+
+            if (error instanceof SimpleValidationError.Warning)
+            {
+                SimpleValidationError.Warning warning = (SimpleValidationError.Warning) error;
+                propertyId = warning.getSeverity();
             }
 
             JSONObject jsonError = new JSONObject();

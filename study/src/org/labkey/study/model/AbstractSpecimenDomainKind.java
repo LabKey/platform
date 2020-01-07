@@ -165,18 +165,6 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         ti.loadTablePropertiesFromXml(xmlTable, true);
     }
 
-    protected ValidationException addErrorsToValidationException(List<String> errors, ValidationException exception)
-    {
-        exception.addError(new SimpleValidationError(getMessageString(errors)));
-        return exception;
-    }
-
-    protected ValidationException addWarningsToValidationException(List<String> warnings, ValidationException exception)
-    {
-        exception.addWarning(getMessageString(warnings));
-        return exception;
-    }
-
     private String getMessageString(List<String> messages)
     {
         String sep = "";
@@ -189,16 +177,14 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         return msgString;
     }
 
-    protected SpecimenDomainRollupErrorsAndWarning checkRollups(
+    protected ValidationException checkRollups(
             @Nullable List<PropertyDescriptor> eventProps,            // all of these are nonBase properties
             @Nullable List<PropertyDescriptor> vialProps,             // all of these are nonBase properties
             @Nullable List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
             Container container,
-            User user)
+            User user,
+            ValidationException exception)
     {
-        List<String> errors = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
-
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
         Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
         Domain vialDomain = specimenTablesProvider.getDomain("vial", false);
@@ -237,12 +223,12 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                 {
                     String eventFieldName = eventPair.first;
                     if (eventFieldNamesDisallowedForRollups.contains(eventFieldName))
-                        errors.add("You may not rollup from SpecimenEvent field '" + eventFieldName + "'.");
+                        exception.addError(new SimpleValidationError("You may not rollup from SpecimenEvent field '" + eventFieldName + "'."));
                     else if (!eventPair.second.isTypeConstraintMet())
-                        errors.add("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+                        exception.addError(new SimpleValidationError("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
                 else
-                    warnings.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
+                    exception.addError(new SimpleValidationError("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.", ValidationException.SEVERITY.WARN));
             }
         }
 
@@ -263,19 +249,16 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                 {
                     String vialFieldName = vialPair.first;
                     if (vialFieldNamesDisallowedForRollups.contains(vialFieldName))
-                        errors.add("You may not rollup from Vial field '" + vialFieldName + "'.");
+                        exception.addError(new SimpleValidationError("You may not rollup from Vial field '" + vialFieldName + "'."));
                     else if (!vialPair.second.isTypeConstraintMet())
-                        errors.add("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+                        exception.addError(new SimpleValidationError("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
                 else
-                    warnings.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
+                    exception.addError(new SimpleValidationError("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.", ValidationException.SEVERITY.WARN));
             }
         }
 
-        SpecimenDomainRollupErrorsAndWarning result = new SpecimenDomainRollupErrorsAndWarning();
-        result.setErrors(errors);
-        result.setWarnings(warnings);
-        return result;
+        return exception;
     }
 
     private List<PropertyDescriptor> getPropertyDescriptorsForDomain(Domain domain, Container container)
@@ -302,31 +285,4 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         pd.setName(gwtProp.getName());
         return pd;
     }
-
-    protected static class SpecimenDomainRollupErrorsAndWarning
-    {
-        List<String> errors;
-        List<String> warnings;
-
-        public List<String> getErrors()
-        {
-            return errors;
-        }
-
-        public void setErrors(List<String> errors)
-        {
-            this.errors = errors;
-        }
-
-        public List<String> getWarnings()
-        {
-            return warnings;
-        }
-
-        public void setWarnings(List<String> warnings)
-        {
-            this.warnings = warnings;
-        }
-    }
-
 }

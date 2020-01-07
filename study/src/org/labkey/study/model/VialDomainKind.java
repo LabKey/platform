@@ -204,17 +204,7 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
             }
         }
 
-        SpecimenDomainRollupErrorsAndWarning results = checkRollups(null, optionalVialFields, null, container, user);
-
-        if (!results.getErrors().isEmpty())
-        {
-            exception = addErrorsToValidationException(results.getErrors(), exception);
-        }
-
-        if (!results.getWarnings().isEmpty())
-        {
-            exception = addWarningsToValidationException(results.getWarnings(), exception);
-        }
+        exception = checkRollups(null, optionalVialFields, null, container, user, exception);
 
         if (exception.hasErrors())
         {
