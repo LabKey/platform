@@ -2742,6 +2742,7 @@ public class LoginController extends SpringActionController
             ApiSimpleResponse res = new ApiSimpleResponse();
             res.put("globalSettings", globalSettings);
             res.put("canEdit", getContainer().hasPermission(getUser(), AdminOperationsPermission.class));
+            res.put("helpLink", new HelpTopic("authenticationModule"));
 
             res.put("primaryProviders", primaryProviders);
             res.put("ssoConfigurations", ssoConfigurations);

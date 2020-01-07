@@ -79,9 +79,9 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
     render(){
         const {primaryProviders, secondaryProviders, ssoConfigurations, formConfigurations, secondaryConfigurations} = this.props;
 
-        const SSOTipText = 'Single Sign On Authentications (SSOs) allow the use of one set of login credentials that are authenticated by the third party service provider (e.g. Google or Github).';
-        const loginFormTipText = "Authentications in this group make use of LabKey's login form. During login, LabKey will attempt validation in the order that the configurations below are listed.";
-        const authenticationDocsLink = 'https://www.labkey.org/Documentation/wiki-page.view?name=authenticationModule&_docid=wiki%3A32d70b80-ed56-1034-b734-fe851e088836';
+        const SSOTipText = 'These configurations let LabKey users authenticate against an external service such as a SAML identify provider or a CAS server. LabKey will render SSO logos in the header and on the login page in the order that the configurations are listed below.';
+        const loginFormTipText = "These configurations make use of LabKey's login page to collect credentials and authenticate against either hashed credentials stored in the LabKey database or external LDAP servers. LabKey will attempt authenticating against each configuration in the order they are listed below.";
+        const authenticationDocsLink = 'https://www.labkey.org/Documentation/wiki-page.view?name=authenticationModule'; // TODO: replace this with "helpLink" coming from initialMount props
 
         const addNewPrimaryDropdown = primaryProviders &&
             Object.keys(primaryProviders).map((authOption) => (
