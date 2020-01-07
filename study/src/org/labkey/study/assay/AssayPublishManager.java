@@ -261,6 +261,7 @@ public class AssayPublishManager implements AssayPublishService
         boolean schemaChanged = false;
         DatasetDefinition dataset = null;
         List<Map<String, Object>> convertedDataMaps;
+        List<String> lsids;
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -324,6 +325,88 @@ public class AssayPublishManager implements AssayPublishService
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
             convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+
+            // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
+            // in 'ensurePropertyDescriptors'.
+            if (schemaChanged)
+                StudyManager.getInstance().uncache(dataset);
+            dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
+            Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
+            QCState defaultQCState = null;
+            if (defaultQCStateId != null)
+                defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+
+            // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
+            // IllegalStateException in ContainerManager.ensureContainer.
+            lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            // If provenance module is not present, do nothing
+            ProvenanceService pvs = ProvenanceService.get();
+
+            if (null != pvs)
+            {
+                // Create a new experiment run using the "Study Publish" Protocol
+                ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
+                ExpProtocol studyPublishProtocol = null;
+
+                try
+                {
+                    studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
+
+                    run.setProtocol(studyPublishProtocol);
+                    ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
+                    PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
+                    run.setFilePathRoot(pipeRoot.getRootPath());
+
+                    run = ExperimentService.get().saveSimpleExperimentRun(run,
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            info, LOG, false);
+                }
+                catch (ExperimentException e)
+                {
+                    errors.add("StudyPublishRun can not be created.");
+                    LOG.error(e);
+                }
+
+                if (!errors.isEmpty())
+                    return null;
+
+                // Add Provenance details
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+
+                if (provider != null && dataset != null && dataset.getDomain() != null)
+                {
+                    Set<Pair<String, String>> lsidPairs = new HashSet<>();
+
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsids, CompareType.IN);
+
+                    String domainName = dataset.getDomain().getName();
+                    Collection<Map<String, Object>> resultRowsMap = new TableSelector(dataset.getDomainKind().getTableInfo(user, targetContainer, domainName), filter, null).getMapCollection();
+                    Set<String> resultRowLsids = new LinkedHashSet<>();
+
+                    for (Map<String, Object> resultRow : resultRowsMap)
+                    {
+                        String resultRowLsid = resultRow.get("assayResultLsid").toString();
+                        String datasetLsid = resultRow.get("lsid").toString();
+                        lsidPairs.add(Pair.of(resultRowLsid, datasetLsid));
+                        resultRowLsids.add(resultRowLsid);
+                    }
+
+                    // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
+                    pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
+
+                    // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
+                    pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
+
+                    // Call syncRunEdges
+                    ExperimentService.get().syncRunEdges(run);
+                }
+
+            }
+
             transaction.commit();
         }
         catch (ChangePropertyDescriptorException e)
@@ -331,19 +414,7 @@ public class AssayPublishManager implements AssayPublishService
             throw new UnexpectedException(e);
         }
 
-        // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
-        // in 'ensurePropertyDescriptors'.
-        if (schemaChanged)
-            StudyManager.getInstance().uncache(dataset);
-        dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
-        Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
-        QCState defaultQCState = null;
-        if (defaultQCStateId != null)
-            defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-        // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
-        // IllegalStateException in ContainerManager.ensureContainer.
-        List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
         if (lsids.size() > 0 && protocol != null)
         {
             for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -359,91 +430,6 @@ public class AssayPublishManager implements AssayPublishService
 
                 AuditLogService.get().addEvent(user, event);
             }
-        }
-
-        // If provenance module is not present, do nothing
-        boolean isProvenanceModulePresent = targetContainer.getActiveModules().contains(ModuleLoader.getInstance().getModule("Provenance"));
-
-        if (isProvenanceModulePresent)
-        {
-            // Create a new experiment run using the "Study Publish" Protocol
-            ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
-            ExpProtocol studyPublishProtocol = null;
-
-            try
-            {
-                studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
-
-                run.setProtocol(studyPublishProtocol);
-                ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
-                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-                run.setFilePathRoot(pipeRoot.getRootPath());
-
-                run = ExperimentService.get().saveSimpleExperimentRun(run,
-                        Collections.emptyMap(),
-                        Collections.emptyMap(),
-                        Collections.emptyMap(),
-                        Collections.emptyMap(),
-                        Collections.emptyMap(),
-                        info, LOG, false);
-            }
-            catch (ExperimentException e)
-            {
-                LOG.error(e);
-            }
-
-            // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-
-            if (provider != null)
-            {
-                List<Object> resultRowIds = new ArrayList<>();
-                for (Map<String, Object> resultRow : dataMaps)
-                {
-                    resultRowIds.add(resultRow.get("RowId"));
-                }
-
-                AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
-                TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
-                if (assayDataTable != null)
-                {
-                    ColumnInfo lsidCol = assayDataTable.getColumn("LSID");
-                    if (lsidCol == null)
-                        throw new IllegalStateException("Assay results table expected to have LSID column.");
-
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), resultRowIds, CompareType.IN);
-                    Collection<Map<String, Object>> resultRowsMap = new TableSelector(assayDataTable, Set.of(lsidCol), filter, null).getMapCollection();
-                    Set<String> resultRowLsids = new LinkedHashSet<>();
-
-                    for (Map<String, Object> resultRow : resultRowsMap)
-                    {
-                        resultRowLsids.add(resultRow.get("LSID").toString());
-                    }
-
-                    ProvenanceService pvs = ProvenanceService.get();
-
-                    if (null != pvs)
-                    {
-                        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
-
-                        // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
-                        Set<Pair<String, String>> lsidPairs = new HashSet<>();
-                        List<String> resultRowlsidsList = new ArrayList<>(resultRowLsids);
-                        if (lsids.size() == resultRowLsids.size())
-                        {
-                            for (var i=0; i<lsids.size(); i++)
-                            {
-                                lsidPairs.add(Pair.of(resultRowlsidsList.get(i), lsids.get(i)));
-                            }
-                            pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
-                        }
-
-                        // Call syncRunEdges
-                        ExperimentService.get().syncRunEdges(run);
-                    }
-                }
-            }
-
         }
 
         //Make sure that the study is updated with the correct timepoints.

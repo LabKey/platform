@@ -63,4 +63,9 @@ public interface ProvenanceService
      * Get protocol applications for the lsid
      */
     Set<Integer> getProtocolApplications(String lsid);
+
+    /**
+     * Get lsids for protocol applications
+     */
+    Set<String> getLSIDs(Integer protocolAppId);
 }

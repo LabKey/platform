@@ -2569,8 +2569,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
     {
-        Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetLSIDs(u, this);
-
         // The subset of recalled rows from the “StudyPublish” run should be removed from the input provenance and mapping provenance.
         Map<ExpRun, List<String>> selectedLsidsRunMap = new HashMap<>();
         Map<ExpRun, List<String>> allLsidsRunMap = new HashMap<>();
@@ -2589,39 +2587,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                         selectedLsids.add(lsid);
                         selectedLsidsRunMap.put(run, selectedLsids);
                     }
-                    else
-                    {
-                        List<String> selectedLsids = new ArrayList<>();
-                        selectedLsids.add(lsid);
-                        selectedLsidsRunMap.put(run, selectedLsids);
-                    }
+                    selectedLsidsRunMap.computeIfAbsent(run, k -> {
+                        List<String> lsidList = new ArrayList<>();
+                        lsidList.add(lsid);
+                        return lsidList;
+                    });
                 });
             }
 
         });
 
-        // get runs for all lsids
-        allDatasetLsids.forEach(lsid -> {
-            Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
-
-            if (!protocolApplications.isEmpty())
-            {
-                protocolApplications.forEach(protocolApp -> {
-                    ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
-                    if (null != allLsidsRunMap.get(run))
-                    {
-                        List<String> alllsids = allLsidsRunMap.get(run);
-                        alllsids.add(lsid);
-                        allLsidsRunMap.put(run, alllsids);
-                    }
-                    else
-                    {
-                        List<String> alllsids = new ArrayList<>();
-                        alllsids.add(lsid);
-                        allLsidsRunMap.put(run, alllsids);
-                    }
-                });
-            }
+        // get all lsids for the runs of selected lsids
+        selectedLsidsRunMap.forEach((expRun, lsidList) -> {
+            Set<String> allRunLsids = new HashSet<>(pvs.getLSIDs(expRun.getInputProtocolApplication().getObjectId()));
+            allRunLsids.addAll(pvs.getLSIDs(expRun.getOutputProtocolApplication().getObjectId()));
+            allLsidsRunMap.put(expRun, new ArrayList<>(allRunLsids));
         });
 
         lsids.forEach(lsid -> {

@@ -2926,7 +2926,6 @@ public class StudyController extends BaseStudyController
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
 
             Collection<String> allLsids;
-            Collection<String> allDatasetLsids = StudyManager.getInstance().getDatasetLSIDs(getUser(), def);
             if (!form.isDeleteAllData())
             {
                 allLsids = DataRegionSelection.getSelected(getViewContext(), true);
