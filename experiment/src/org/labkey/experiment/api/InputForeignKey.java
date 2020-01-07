@@ -46,7 +46,7 @@ public class InputForeignKey extends LookupForeignKey
         _filter = filter == null ? ContainerFilter.Type.Current.create(schema.getUser()) : filter;
     }
 
-
+    @Override
     public TableInfo getLookupTableInfo()
     {
         // TODO ContainerFilter
@@ -66,6 +66,7 @@ public class InputForeignKey extends LookupForeignKey
         return ret;
     }
 
+    @Override
     protected ColumnInfo getPkColumn(TableInfo table)
     {
         assert table instanceof ExpProtocolApplicationTable;
@@ -86,7 +87,7 @@ public class InputForeignKey extends LookupForeignKey
     {
         if (_materialInputs == null)
         {
-            _materialInputs = ExperimentService.get().getSampleSetsForRoles(_schema.getContainer(), _filter, _type);
+            _materialInputs = SampleSetService.get().getSampleSetsForRoles(_schema.getContainer(), _filter, _type);
         }
         return _materialInputs;
     }

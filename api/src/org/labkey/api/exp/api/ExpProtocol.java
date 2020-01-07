@@ -86,6 +86,9 @@ public interface ExpProtocol extends ExpObject
     List<? extends ExpProtocol> getChildProtocols();
     List<? extends ExpExperiment> getBatches();
 
+    void setEntityId(String entityId);
+    String getEntityId();
+
     enum ApplicationType
     {
         ExperimentRun,
@@ -135,4 +138,9 @@ public interface ExpProtocol extends ExpObject
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
+    default String getDocumentId()
+    {
+        return String.join(":",getContainer().getId(), "assay", String.valueOf(getRowId()));
+    }
 }
