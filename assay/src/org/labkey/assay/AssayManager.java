@@ -599,55 +599,69 @@ public class AssayManager implements AssayService
         List<ExpProtocol> protocols = getAssayProtocols(c);
 
         for (ExpProtocol protocol : protocols)
+            indexAssay(task, c, protocol);
+    }
+
+    public void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol)
+    {
+        AssayProvider provider = getProvider(protocol);
+
+        if (null == provider)
+            return;
+
+        String name = protocol.getName();
+        String instrument = protocol.getInstrument();
+        String description = protocol.getDescription();
+        String comment = protocol.getComment();
+        User createdBy = protocol.getCreatedBy();
+        Date created = protocol.getCreated();
+        User modifiedBy = protocol.getModifiedBy();
+        Date modified = protocol.getModified();
+
+        ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
+        assayBeginURL.setExtraPath(c.getId());
+        String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
+        String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
+        Map<String, Object> m = new HashMap<>();
+        m.put(SearchService.PROPERTY.title.toString(), name);
+        m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
+        m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
+
+        String docId = protocol.getDocumentId();
+
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
+
+        if (!runs.isEmpty())
         {
-            AssayProvider provider = getProvider(protocol);
+            StringBuilder runKeywords = new StringBuilder();
 
-            if (null == provider)
-                continue;
-
-            String name = protocol.getName();
-            String instrument = protocol.getInstrument();
-            String description = protocol.getDescription();
-            String comment = protocol.getComment();
-            User createdBy = protocol.getCreatedBy();
-            Date created = protocol.getCreated();
-            User modifiedBy = protocol.getModifiedBy();
-            Date modified = protocol.getModified();
-
-            ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
-            assayBeginURL.setExtraPath(c.getId());
-            String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-            String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
-            Map<String, Object> m = new HashMap<>();
-            m.put(SearchService.PROPERTY.title.toString(), name);
-            m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
-            m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
-
-            String docId = c.getId() + ":assay: " + protocol.getRowId();
-
-            List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
-
-            if (!runs.isEmpty())
+            for (ExpRun run : runs)
             {
-                StringBuilder runKeywords = new StringBuilder();
+                runKeywords.append(" ");
+                runKeywords.append(run.getName());
 
-                for (ExpRun run : runs)
+                if (null != run.getComments())
                 {
                     runKeywords.append(" ");
-                    runKeywords.append(run.getName());
-
-                    if (null != run.getComments())
-                    {
-                        runKeywords.append(" ");
-                        runKeywords.append(run.getComments());
-                    }
+                    runKeywords.append(run.getComments());
                 }
-
-                body += runKeywords.toString();
             }
-            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
-            task.addResource(r, SearchService.PRIORITY.item);
+
+            body += runKeywords.toString();
         }
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
+        task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+    @Override
+    public void unindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        for (ExpProtocol protocol : expProtocols)
+            ss.deleteResource(protocol.getDocumentId());
     }
 
     @Override

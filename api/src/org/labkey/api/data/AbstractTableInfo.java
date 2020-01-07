@@ -924,7 +924,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean safeAddColumn(BaseColumnInfo column)
     {
         checkLocked();
-        if (getColumn(column.getName()) != null)
+        if (getColumn(column.getName(), false) != null)
             return false;
         addColumn(column);
         return true;
