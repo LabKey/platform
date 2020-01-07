@@ -2713,7 +2713,6 @@ public class LoginController extends SpringActionController
 
             // Primary providers
             Map<String, Object> primaryProviders = AuthenticationManager.getAllPrimaryProviders().stream()
-                .filter(ap->null != ap.getConfigurationLink())  // this goes, instead filter on whether field descriptions are null
                 .filter(ap->!ap.isPermanent())
                 .collect(Collectors.toMap(AuthenticationProvider::getName, ap->{
                     Map<String, Object> m = getProviderMap(ap);
@@ -2731,23 +2730,8 @@ public class LoginController extends SpringActionController
                 .map(AuthenticationManager::getConfigurationMap)
                 .collect(JSONArray.collector());
 
-            // Old secondaryProviders config -- TODO: Delete
-            JSONArray secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
-                .map(sp->{
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("name", sp.getName());
-                    m.put("ficamOK", (AuthenticationManager.isAcceptOnlyFicamProviders() && !sp.isFicamApproved()));
-                    m.put("isPermanent", sp.isPermanent());
-                    m.put("enabled", AuthenticationManager.isActive(sp));
-                    m.put("configureUrl", sp.getConfigurationLink());
-                    m.put("description", sp.getDescription());
-                    m.put("settingsFields", sp.getSettingsFields());
-                    return m;
-                })
-                .collect(JSONArray.collector());
-
             // Secondary providers
-            Map<String, Object> secondaryProviders2 = AuthenticationManager.getAllSecondaryProviders().stream()
+            Map<String, Object> secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
                 .collect(Collectors.toMap(AuthenticationProvider::getName, this::getProviderMap));
 
             // Secondary configurations
@@ -2763,8 +2747,7 @@ public class LoginController extends SpringActionController
             res.put("ssoConfigurations", ssoConfigurations);
             res.put("formConfigurations", formConfigurations);
 
-//            res.put("secondaryProviders", secondaryProviders);
-            res.put("secondaryProviders", secondaryProviders2);
+            res.put("secondaryProviders", secondaryProviders);
             res.put("secondaryConfigurations", secondaryConfigurations);
 
             return res;
@@ -2775,7 +2758,6 @@ public class LoginController extends SpringActionController
             Map<String, Object> m = new HashMap<>();
             m.put("description", ap.getDescription());
             m.put("helpLink", new HelpTopic(ap.getHelpTopic()));
-            m.put("configLink", ap.getConfigurationLink());
             ActionURL saveLink = ap.getSaveLink();
             if (null != saveLink)
                 m.put("saveLink", saveLink);
