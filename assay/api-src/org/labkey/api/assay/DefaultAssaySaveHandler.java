@@ -226,7 +226,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
         for (Map<String, Object> row : dataArray.toMapList())
         {
-            Map<String, Object> dataRow = new HashMap<>();
+            Map<String, Object> dataRow = new CaseInsensitiveHashMap<>();
             for (Map.Entry<String, Object> entry : row.entrySet())
             {
                 DomainProperty prop = propertyMap.get(entry.getKey());
