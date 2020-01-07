@@ -2903,7 +2903,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
 
         hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
-            return geom.yAes.getValue(d);
+            return (d.label !== undefined ? d.label + '\n' : '')
+                + (d.subLabel !== undefined ? 'Subcategory: ' + d.subLabel + '\n' : '')
+                + 'Value: ' + geom.yAes.getValue(d);
         };
 
         xOffsetFn = function(d) {
