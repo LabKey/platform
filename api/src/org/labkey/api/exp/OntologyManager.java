@@ -1748,7 +1748,7 @@ public class OntologyManager
             }
         }
 
-        dd = Table.update(null, getTinfoDomainDescriptor(), ddIn, ddIn.getDomainId());
+        dd = Table.update(null, getTinfoDomainDescriptor(), ddIn, dd.getDomainId());
         uncache(dd);
 
         return dd;
