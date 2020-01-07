@@ -72,9 +72,6 @@ public interface AuthenticationProvider
             ExpireAccountProvider.class
     );
 
-    @RemoveIn20_1
-    @Nullable ActionURL getConfigurationLink();
-
     default @Nullable ActionURL getSaveLink()
     {
         return null;
@@ -91,6 +88,9 @@ public interface AuthenticationProvider
     {
         return null;
     }
+
+    @RemoveIn20_1
+    @Nullable ActionURL getConfigurationLink();
 
     @RemoveIn20_1
     default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)

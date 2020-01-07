@@ -1471,7 +1471,6 @@ public class AuthenticationManager
         map.put("description", configuration.getDescription());
         map.put("details", configuration.getDetails());
         map.put("enabled", configuration.isEnabled());
-        map.put("url", configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId())); // TODO: Remove once settings modals are used universally
         map.put("configuration", configuration.getRowId());
         map.putAll(configuration.getCustomProperties());
 
