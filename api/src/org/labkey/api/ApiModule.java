@@ -102,12 +102,11 @@ public class ApiModule extends CodeOnlyModule
         AttachmentService.get().registerAttachmentType(AvatarType.get());
         AttachmentService.get().registerAttachmentType(SecureDocumentType.get());
 
-        // Replace the default JspFactory with a custom factory that injects our own JspWriter implementation
         if (AppProps.getInstance().isDevMode())
         {
-            LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
-            JspFactory.setDefaultFactory(factory);
-            ContextListener.addShutdownListener(factory);
+            // Avoid doing this on pipeline remote servers to avoid the need for a dependency on the JSP API JAR.
+            // See issue 39242
+            LabKeyJspFactory.register();
         }
     }
 

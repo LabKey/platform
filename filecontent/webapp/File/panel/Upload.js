@@ -655,11 +655,17 @@ Ext4.define('File.panel.Upload', {
                 return;
             }
 
+            var lastModifiedParam = '';
+            var file = this.fileField.getEl().down('input[type=file]').dom.files[0];
+            if (file && file.lastModified) {
+                lastModifiedParam = '&X-LABKEY-Last-Modified=' + file.lastModified;
+            }
+
             this.doPost = function(overwrite) {
                 var options = {
                     method:'POST',
                     form : form,
-                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF,
+                    url : this.fileSystem.getURI(cwd) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F') + "&X-LABKEY-CSRF=" + LABKEY.CSRF + lastModifiedParam,
                     name : name,
                     success : function(f, action, message) {
 
