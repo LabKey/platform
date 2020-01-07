@@ -1729,7 +1729,6 @@ public class OntologyManager
     public static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
     {
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
-        String ddInContainerId = ddIn.getContainer().getId();
 
         if (null == dd)
         {
@@ -1749,45 +1748,8 @@ public class OntologyManager
             }
         }
 
-        List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
-
-        if (colDiffs.size() == 0)
-        {
-            // if the descriptor differs by container only and the requested descriptor is in the project fldr
-            if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
-            {
-                dd = ensureDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            }
-            return dd;
-        }
-
-        // you are allowed to update if you are coming from the project root, or if  you are in the container
-        // in which the descriptor was created
-        boolean fUpdateIfExists = false;
-        if (ddInContainerId.equals(dd.getContainer().getId()) || ddInContainerId.equals(ddIn.getProject().getId()))
-            fUpdateIfExists = true;
-
-        boolean fMajorDifference = false;
-        if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-            fMajorDifference = true;
-
-        String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
-                "\n\t Descriptor In: " + ddIn +
-                "\n\t Descriptor Found: " + dd;
-
-        if (fUpdateIfExists)
-        {
-            dd = ensureDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            if (fMajorDifference)
-                _log.debug(errmsg);
-        }
-        else
-        {
-            if (fMajorDifference)
-                _log.error(errmsg);
-            else
-                _log.debug(errmsg);
-        }
+        dd = Table.update(null, getTinfoDomainDescriptor(), ddIn, ddIn.getDomainId());
+        uncache(dd);
 
         return dd;
     }
