@@ -27,7 +27,6 @@ interface loginFormAuthObject {
     url: string
 }
 interface State {
-    useWhichDropdown: string
     modalOpen: boolean
 }
 interface Props {
@@ -36,7 +35,6 @@ interface Props {
     loginFormAuth: Array<loginFormAuthObject>
     secondary: any
     onDragEnd: any
-    handlePrimaryToggle: any
     canEdit: boolean
 }
 
@@ -44,16 +42,16 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
     constructor(props) {
         super(props);
         this.state = {
-            useWhichDropdown: 'Primary',
+            useWhichTab: 'Primary',
             primaryModalOpen: false,
             secondaryModalOpen: false,
             addModalType: null,
         };
     }
 
-    useWhichDropdown = (key) => {
+    useWhichTab = (key) => {
         const primaryOrSecondary = ((key == 1) ? 'Primary' : 'Secondary');
-        this.setState({ useWhichDropdown: primaryOrSecondary })
+        this.setState({ useWhichTab: primaryOrSecondary })
     };
 
     onToggleModal = (toggled) => {
@@ -112,7 +110,6 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         primaryProviders={primaryProviders}
                         isDragDisabled={this.props.isDragDisabled}
                         onDragEnd={this.props.onDragEnd}
-                        handlePrimaryToggle={this.props.handlePrimaryToggle}
                         deleteAction={this.props.deleteAction}
                         updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                         toggleSomeModalOpen={this.props.toggleSomeModalOpen}
@@ -136,7 +133,6 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                     primaryProviders={primaryProviders}
                     isDragDisabled={this.props.isDragDisabled}
                     onDragEnd={this.props.onDragEnd}
-                    handlePrimaryToggle={this.props.handlePrimaryToggle}
                     deleteAction={this.props.deleteAction}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                     toggleSomeModalOpen={this.props.toggleSomeModalOpen}
@@ -153,7 +149,6 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                     secondaryProviders={secondaryProviders}
                     isDragDisabled={this.props.isDragDisabled}
                     onDragEnd={this.props.onDragEnd}
-                    handlePrimaryToggle={this.props.handlePrimaryToggle}
                     deleteAction={this.props.deleteAction}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                     toggleSomeModalOpen={this.props.toggleSomeModalOpen}
@@ -164,21 +159,9 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
             <Panel>
                 <Panel.Heading> <span className='boldText'> Configurations </span> </Panel.Heading>
                 <Panel.Body>
-                    <DropdownButton id='dropdown-basic-button' title={'Add New ' + this.state.useWhichDropdown + ' Configuration'}>
-
-                        {this.props.canEdit &&
-                            ((this.state.useWhichDropdown == 'Primary')
-                            ? addNewPrimaryDropdown
-                            : addNewSecondaryDropdown)
-                        }
-
-                    </DropdownButton>
-
                     <a style={{float: 'right'}} href={authenticationDocsLink} > Get help with authentication </a>
 
-                    <hr/>
-
-                    { (this.state.useWhichDropdown == 'Primary') ?
+                    { (this.state.useWhichTab == 'Primary') ?
                         <>
                             <span className='boldText'> Login Form Configurations </span>
                             <LabelHelpTip title={'Tip'} body={() => {
@@ -207,9 +190,15 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
                     <br/><br/>
 
-                    <Tabs defaultActiveKey={1} id='tab-panel' onSelect={(key) => {this.useWhichDropdown(key)}}>
+                    <Tabs defaultActiveKey={1} id='tab-panel' onSelect={(key) => {this.useWhichTab(key)}}>
                         <Tab eventKey={1} title='Primary' >
                             <div className='auth-tab'>
+                                <DropdownButton id='dropdown-basic-button' title={'Add New Primary Configuration'}>
+                                    {this.props.canEdit && addNewPrimaryDropdown}
+                                </DropdownButton>
+
+                                <br/><br/>
+
                                 {primaryTab_LoginForm}
                             </div>
 
@@ -228,6 +217,12 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         <Tab eventKey={2} title='Secondary'>
 
                             <div className={'auth-tab'}>
+                                <DropdownButton id='dropdown-basic-button' title={'Add New Secondary Configuration'}>
+                                    {this.props.canEdit && addNewSecondaryDropdown}
+                                </DropdownButton>
+
+                                <br/><br/>
+
                                 {secondaryTab}
                             </div>
 

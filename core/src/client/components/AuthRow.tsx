@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import {Button, ButtonGroup, Col, DropdownButton, FormControl, MenuItem, Modal, Panel} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faPencilAlt, faInfoCircle, faTimesCircle, faGripVertical} from "@fortawesome/free-solid-svg-icons";
+import {faPencilAlt, faInfoCircle, faTimesCircle, faGripVertical, faCircle} from "@fortawesome/free-solid-svg-icons";
 import DynamicConfigurationModal from "./DynamicConfigurationModal";
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 import DatabaseConfigurationModal from "./DatabaseConfigurationModal";
@@ -42,17 +42,9 @@ export default class AuthRow extends PureComponent<any, any> {
             <LightupHandle highlight={this.state.highlight}/>
             : null;
 
-        const enabledText = (enabled) ? "Enabled" : "Disabled";
-        const enabledField = (canEdit && !isDatabaseAuth) ?
-            <ReactBootstrapToggle
-                onClick={() => this.onToggleClicked()}
-                on="Enabled"
-                off="Disabled"
-                onstyle={"primary"}
-                active={enabled}
-                style={{width: "90px", height: "28px"}}
-            />
-            : enabledText;
+        const enabledField = (this.props.enabled)
+            ? <> <FontAwesomeIcon icon={faCircle} color={"#75B666"} /> &nbsp; Enabled </>
+            : <> <FontAwesomeIcon icon={faCircle} color={"#999999"} /> &nbsp; Disabled </>;
 
         const deleteIcon = (canEdit) ?
             <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onDeleteClick()}>

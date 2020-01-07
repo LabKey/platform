@@ -44,7 +44,6 @@ export default class DragAndDropPane extends PureComponent<any> {
                                 index={index.toString()}
                                 {...item}
                                 modalType={(providers) && {...providers[item.provider]}}
-                                handlePrimaryToggle={this.props.handlePrimaryToggle}
                                 stateSection={this.props.stateSection}
                                 deleteAction={this.props.deleteAction}
                                 updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}

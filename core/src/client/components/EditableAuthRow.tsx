@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faGripVertical, faPencilAlt, faTimesCircle} from "@fortawesome/free-solid-svg-icons";
+import {faGripVertical, faPencilAlt, faTimesCircle, faCircle} from "@fortawesome/free-solid-svg-icons";
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import SimpleAuthRow from "./SimpleAuthRow";
@@ -18,7 +18,6 @@ interface Props {
     authName: string
     enabled: boolean
     description: string
-    handlePrimaryToggle: any
     stateSection: String
     noHandleIcon?: boolean
 }
@@ -42,10 +41,6 @@ export default class EditableAuthRow extends PureComponent<any, State> {
         }));
     };
 
-    onToggleClicked = () => {
-        this.props.handlePrimaryToggle(this.props.enabled, this.props.index, this.props.stateSection);
-    };
-
     onDeleteClicked = () => {
         this.props.deleteAction(this.props.configuration, this.props.stateSection);
     };
@@ -58,15 +53,9 @@ export default class EditableAuthRow extends PureComponent<any, State> {
     };
 
     render(){
-        const enabled =
-            <ReactBootstrapToggle
-                onClick={() => this.onToggleClicked()}
-                on="Enabled"
-                off="Disabled"
-                onstyle={"primary"}
-                active={this.props.enabled}
-                style={{width: "90px", height: "28px"}}
-            />;
+        const enabled = (this.props.enabled)
+            ? <> <FontAwesomeIcon icon={faCircle} color={"#75B666"} /> &nbsp; Enabled </>
+            : <> <FontAwesomeIcon icon={faCircle} color={"#999999"} /> &nbsp; Disabled </>;
 
         const deleteIcon =
             <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onDeleteClicked()}>

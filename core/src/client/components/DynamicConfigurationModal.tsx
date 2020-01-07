@@ -10,6 +10,8 @@ import {LabelHelpTip, FileAttachmentForm, ChangePasswordModal} from '@labkey/com
 import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
 import SSOFields from "./SSOFields";
+import {save} from "@labkey/api/dist/labkey/Domain";
+import SimpleAuthRow from "./SimpleAuthRow";
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
@@ -47,11 +49,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     saveEditedModal = () => {
         const baseUrl = ActionURL.getBaseURL(true);
         let saveUrl = baseUrl + this.props.modalType.saveLink;
-        if (this.props.stateSection == "secondaryConfigurations") {
-            saveUrl = baseUrl + this.props.modalType.configLink;
-        }
-
         let form = new FormData();
+
         if (this.props.configuration) {
             form.append("configuration", this.props.configuration);
         }
@@ -178,6 +177,18 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
+                            {...field}
+                        />
+                    );
+
+                case "options":
+                    return(
+                        <Option
+                            key={index}
+                            className={"bottom-margin"}
+                            handleChange={this.handleChange}
+                            value={this.state[field.name]}
+                            options={field.options}
                             {...field}
                         />
                     );
@@ -382,6 +393,41 @@ class TextArea extends PureComponent<any, any> {
                         placeholder="textarea"
                         value={this.props.value}
                     />
+                </span>
+            </div>
+        );
+    }
+}
+
+class Option extends PureComponent<any, any> {
+    render() {
+        const {options} = this.props;
+
+        console.log("props", this.props, "\n");
+
+        return(
+            <div className="dynamicFieldSpread">
+                <span style={{height:"40px", marginRight:"7px"}}>
+                    {this.props.caption}
+                </span>
+
+                { this.props.description &&
+                <LabelHelpTip title={'Tip'} body={() => {
+                    return (<div> {this.props.description} </div>)
+                }}/>
+                }
+
+                <span style={{float:"right", marginRight: "160px"}}>
+                    <FormControl
+                        componentClass="select"
+                        name={this.props.name}
+                        onChange={this.props.handleChange}
+                        value={this.props.value}
+                    >
+                        {options && Object.keys(options).map((item) => (
+                            <option value={item} key={item} > {options[item]} </option>
+                        ))}
+                    </FormControl>
                 </span>
             </div>
         );

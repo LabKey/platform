@@ -59,12 +59,12 @@ export class App extends PureComponent<any, any> {
             },
             success: function(result){
                 const response = JSON.parse(result.response);
-                const formConfigurations = response.formConfigurations;
-                const ssoConfigurations = response.ssoConfigurations;
+                const {formConfigurations, ssoConfigurations, secondaryConfigurations} = response;
                 const dirtinessData = {
                     globalSettings: response.globalSettings,
                     formConfigurations: formConfigurations,
-                    ssoConfigurations: ssoConfigurations
+                    ssoConfigurations: ssoConfigurations,
+                    secondaryConfigurations: secondaryConfigurations,
                 };
                 const authCount = formConfigurations.length + ssoConfigurations.length;
                 this.setState({...response, dirtinessData, authCount}, () => {console.log(this.state)});
@@ -133,10 +133,10 @@ export class App extends PureComponent<any, any> {
             }
         );
 
-        if (this.draggableIsDirty("ssoConfigurations")){
+        if (this.draggableIsDirty()){
             form.append("ssoConfigurations", this.getAuthConfigArray(this.state.ssoConfigurations).toString());
         }
-        if (this.draggableIsDirty("formConfigurations")){
+        if (this.draggableIsDirty()){
             form.append("formConfigurations", this.getAuthConfigArray(this.state.formConfigurations).slice(0,-1).toString());
         }
 
@@ -156,30 +156,21 @@ export class App extends PureComponent<any, any> {
 
     };
 
-    draggableIsDirty = (stateSection) => {
+    draggableIsDirty = () => {
         const stateSections = ["formConfigurations", "ssoConfigurations", "secondaryConfigurations"];
 
-        // const isDirty = stateSections.reduce((accum, currentVal) => {
-        //     const newOrdering = this.getAuthConfigArray(this.state[currentVal]);
-        //     const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[currentVal]);
-        //     return (accum || !this.isEquivalent(newOrdering, oldOrdering));
-        //     }
-        // );
-
-        // console.log("the truth:", isDirty);
-
-
-        const newOrdering = this.getAuthConfigArray(this.state[stateSection]);
-        const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[stateSection]);
-        return !this.isEquivalent(newOrdering, oldOrdering);
+        // check if any draggable section is dirty
+        return stateSections.reduce((accum : boolean, currentVal) => {
+            const newOrdering = this.getAuthConfigArray(this.state[currentVal]);
+            const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[currentVal]);
+            return (accum || !this.isEquivalent(newOrdering, oldOrdering));
+            }, false
+        );
     };
 
     getAuthConfigArray = (stateSection) => {
-        let authArray = stateSection.map((auth : any) => { return auth.configuration });
-        console.log(authArray);
-        return authArray;
+        return stateSection.map((auth : any) => { return auth.configuration });
     };
-
 
     // For AuthConfigMasterPanel
 
@@ -202,7 +193,7 @@ export class App extends PureComponent<any, any> {
         , () => {
             console.log(this.state); // for testing
 
-            const dirty = this.draggableIsDirty(stateSection);
+            const dirty = this.draggableIsDirty();
             this.setState(() => ({ dirty }));
             }
         )
@@ -306,7 +297,6 @@ export class App extends PureComponent<any, any> {
                 <AuthConfigMasterPanel
                     {...restProps}
                     onDragEnd={this.onDragEnd}
-                    handlePrimaryToggle={this.handlePrimaryToggle}
                     deleteAction={this.deleteAction}
                     updateAuthRowsAfterSave={this.updateAuthRowsAfterSave}
                     toggleSomeModalOpen={this.toggleSomeModalOpen}
