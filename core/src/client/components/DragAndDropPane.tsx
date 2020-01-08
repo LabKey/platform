@@ -23,7 +23,7 @@ export default class DragAndDropPane extends PureComponent<any> {
         const {onDragEnd, toggleSomeModalOpen, ...otherActionFunctions} = this.props.actionFunctions;
         const providers = (primaryProviders) ? primaryProviders : secondaryProviders;
 
-        console.log("PROPS of DND", this.props);
+        // console.log("PROPS of DND", this.props);
 
         let DragAndDropAuthRows =
             this.props.rowInfo.map((item, index) => ( // make this into a own variable
