@@ -20,7 +20,7 @@ export default class DragAndDropPane extends PureComponent<any> {
 
     render() {
         const {primaryProviders, secondaryProviders} = this.props;
-        const {onDragEnd, toggleSomeModalOpen, ...otherActionFunctions} = this.props.actionFunctions;
+        const {onDragEnd, ...otherActionFunctions} = this.props.actionFunctions;
         const providers = (primaryProviders) ? primaryProviders : secondaryProviders;
 
         // console.log("PROPS of DND", this.props);
@@ -60,25 +60,6 @@ export default class DragAndDropPane extends PureComponent<any> {
                     )}
                 </Droppable>
             </DragDropContext>
-        )
-    }
-}
-
-
-interface HandleProps {
-    highlight: boolean
-}
-interface HandleState { }
-
-class LightupHandle extends PureComponent<HandleProps, HandleState> {
-    render(){
-        const HIGHLIGHT_BLUE = '#2980B9';
-        const NOT_HIGHLIGHT_GRAY = '#999999';
-
-        return(
-            <div>
-                <FontAwesomeIcon size='lg' color={(this.props.highlight) ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY} icon={faGripVertical}/>
-            </div>
         )
     }
 }

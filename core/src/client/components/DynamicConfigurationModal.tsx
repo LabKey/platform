@@ -208,7 +208,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
     render() {
         // console.log(this.props);
-        let {modalType, closeModal} = this.props;
+        let {modalType, closeModal, canEdit} = this.props;
         let queryString = {"server": this.state.servers, "principal": this.state.principalTemplate, "sasl":this.state.SASL};
         let modalTitle = (this.props.title) ? this.props.title : this.props.description;
 
@@ -235,6 +235,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         onstyle={"primary"}
                         active={this.state.enabled}
                         style={{width: "90px", height: "28px", float: "right"}}
+                        disabled={!canEdit}
                     />
 
                     <hr/>
@@ -244,7 +245,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     <div style={{height: "40px"}}>
                         Description *
 
-                        {this.props.canEdit ?
+                        {canEdit ?
                             <FormControl
                                 name="description"
                                 type="text"
@@ -268,6 +269,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             loginLogoUrl={this.props.loginLogoUrl}
                             onFileChange={this.onFileChange}
                             handleDeleteLogo={this.handleDeleteLogo}
+                            canEdit={canEdit}
                         />
                     }
 
@@ -295,7 +297,10 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                                 {"More about " + this.props.provider + " authentication"}
                         </a>
 
-                        <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}>Apply</Button>
+                        {canEdit
+                            ? <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}>Apply</Button>
+                            : null
+                        }
                     </div>
 
                     <Button
@@ -303,7 +308,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         onClick={closeModal}
                         style={{marginLeft: '10px'}}
                     >
-                        Cancel
+                        {canEdit ? "Cancel" : "Close"}
                     </Button>
 
                 </Modal.Body>
@@ -379,6 +384,7 @@ class CheckBoxInput extends PureComponent<any, any> {
                         <FACheckBox
                             rowText={this.props.caption}
                             checked={this.props.value}
+                            canEdit={true}
                             onClick={() => {this.props.checkCheckBox(this.props.name);}}
                         />
                     :

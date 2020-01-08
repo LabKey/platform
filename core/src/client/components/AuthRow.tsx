@@ -22,7 +22,8 @@ export default class AuthRow extends PureComponent<any, any> {
 
     onToggleModal = (toggled) => {
         this.setState(() => ({
-            [toggled]: !this.state[toggled]
+            [toggled]: !this.state[toggled],
+            highlight: false
         }));
     };
 
@@ -38,8 +39,8 @@ export default class AuthRow extends PureComponent<any, any> {
     };
 
     render () {
-        const {canEdit, enabled, draggable, field3 } = this.props;
-        const isDatabaseAuth = (field3 == "Database");
+        const {canEdit, enabled, draggable, provider, toggleSomeModalOpen} = this.props;
+        const isDatabaseAuth = (provider == "Database");
 
         const handle = (draggable && canEdit) ?
             <LightupHandle highlight={this.state.highlight}/>
@@ -55,8 +56,8 @@ export default class AuthRow extends PureComponent<any, any> {
             </div>
             : null;
 
-        const editOrViewIcon = (canEdit) ? // shape this up, should sometimes be view-only
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
+        const editOrViewIcon = (canEdit) ? // shape this up, has repeated code
+            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => {this.onToggleModal("modalOpen"); toggleSomeModalOpen(true)}}>
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>
             :
@@ -68,13 +69,14 @@ export default class AuthRow extends PureComponent<any, any> {
                 <DynamicConfigurationModal
                     {...this.props}
                     type={this.props.modalType}
-                    closeModal={() => {this.onToggleModal("modalOpen")}}
+                    closeModal={() => {this.onToggleModal("modalOpen"); toggleSomeModalOpen(false)}}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />);
 
         const databaseModal =
             <DatabaseConfigurationModal
-                closeModal={() => {this.onToggleModal("modalOpen")}}
+                closeModal={() => {this.onToggleModal("modalOpen"); toggleSomeModalOpen(false)}}
+                canEdit={canEdit}
             />;
 
         const modal = (this.state.modalOpen &&
@@ -87,7 +89,6 @@ export default class AuthRow extends PureComponent<any, any> {
                     className="domain-field-row domain-row-border-default"
                     onMouseOver={() => {this.setHighlight(true)}}
                     onMouseOut={() => {this.setHighlight(false)}}
-                    // style={{backgroundColor: "grey"}}
                 >
                     <div className="domain-row-container row">
                         <div className="domain-row-handle">{handle}</div>
@@ -100,7 +101,7 @@ export default class AuthRow extends PureComponent<any, any> {
                                 <Col xs={4} className="down">
                                     {this.props.details}
                                 </Col>
-                                <Col xs={1} className="down">
+                                <Col xs={3} className="down">
                                     {this.props.provider}
                                 </Col>
                             </Col>
@@ -108,7 +109,7 @@ export default class AuthRow extends PureComponent<any, any> {
                             <Col xs={1} />
 
                             <Col xs={2} className="domain-row-base-fields">
-                                <Col xs={7} >{enabledField}</Col>
+                                <Col xs={7} className="down">{enabledField}</Col>
 
                                 <Col xs={1}>{deleteIcon}</Col>
 

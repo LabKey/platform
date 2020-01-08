@@ -48,12 +48,14 @@ export default class GlobalSettings extends PureComponent<any, any> {
         if (this.props.authCount == 1){
             rowTexts = ROW_TEXTS.slice(0,-1);
         }
+        const {canEdit} = this.props;
 
         const rowTextComponents = rowTexts.map(text => (
             <div className="bottom-margin" key={text.id}>
                 <FACheckBox
                     key={text.id}
                     checked={this.props[text.id]}
+                    canEdit={this.props.canEdit}
                     onClick={
                         this.props.canEdit
                             ? () => { this.props.checkGlobalAuthBox(text.id) }
