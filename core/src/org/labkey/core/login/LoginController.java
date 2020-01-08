@@ -61,6 +61,7 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -2699,7 +2700,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(AdminReadPermission.class)
     public class InitialMountAction extends ReadOnlyApiAction
     {
         @Override

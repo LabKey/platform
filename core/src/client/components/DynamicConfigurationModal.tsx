@@ -11,7 +11,6 @@ import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
 import SSOFields from "./SSOFields";
 import {save} from "@labkey/api/dist/labkey/Domain";
-import SimpleAuthRow from "./SimpleAuthRow";
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
@@ -145,6 +144,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             type={"text"}
+                            canEdit={this.props.canEdit}
                             {...field}
                         />
                     );
@@ -155,10 +155,14 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             className={"bottom-margin"}
                             checkCheckBox={this.checkCheckBox}
                             value={this.state[field.name]}
+                            canEdit={this.props.canEdit}
                             {...field}
                         />
                     );
                 case "password":
+                    if (!this.props.canEdit){
+                        return;
+                    }
                     return (
                         <TextInput
                             key={index}
@@ -166,6 +170,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             type={"password"}
+                            canEdit={this.props.canEdit}
                             {...field}
                         />
                     );
@@ -177,6 +182,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
+                            canEdit={this.props.canEdit}
                             {...field}
                         />
                     );
@@ -189,6 +195,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             options={field.options}
+                            canEdit={this.props.canEdit}
                             {...field}
                         />
                     );
@@ -235,16 +242,19 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     <br/><br/>
 
                     <div style={{height: "40px"}}>
-                        Description:
+                        Description *
 
-                        <FormControl
-                            name="description"
-                            type="text"
-                            value={this.state.description}
-                            onChange={(e) => this.handleChange(e)}
-                            placeholder="Enter text"
-                            style ={{borderRadius: "5px", float: "right", width: "300px"}}
-                        />
+                        {this.props.canEdit ?
+                            <FormControl
+                                name="description"
+                                type="text"
+                                value={this.state.description}
+                                onChange={(e) => this.handleChange(e)}
+                                placeholder="Enter text"
+                                style ={{borderRadius: "5px", float: "right", width: "300px"}}
+                            />
+                            : <span style ={{borderRadius: "5px", float: "right", width: "300px"}}> {this.state.description} </span>
+                        }
                     </div>
 
 
@@ -315,8 +325,8 @@ class TextInput extends PureComponent<any, any> {
     render() {
         return(
             <div style={{height: "40px"}}>
-                <span style={{marginRight:"7px"}}>
-                    {this.props.caption}
+                <span className="dynamicFieldLabel">
+                    {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
                 {this.props.description &&
@@ -325,13 +335,16 @@ class TextInput extends PureComponent<any, any> {
                     }}/>
                 }
 
-                <FormControl
-                    name={this.props.name}
-                    type={this.props.type}
-                    value={this.props.value}
-                    onChange={(e) => this.props.handleChange(e)}
-                    style ={{borderRadius: "5px", float: "right", width: "300px"}}
-                />
+                {this.props.canEdit ?
+                    <FormControl
+                        name={this.props.name}
+                        type={this.props.type}
+                        value={this.props.value}
+                        onChange={(e) => this.props.handleChange(e)}
+                        style ={{borderRadius: "5px", float: "right", width: "300px"}}
+                    />
+                    : <span style ={{borderRadius: "5px", float: "right", width: "300px"}}> {this.props.value} </span>
+                }
                 <br/>
             </div>
         );
@@ -350,8 +363,8 @@ class CheckBoxInput extends PureComponent<any, any> {
     render() {
         return(
             <div className="dynamicFieldSpread">
-                <span style={{height:"40px", marginRight:"7px"}}>
-                    {this.props.caption}
+                <span className="dynamicFieldLabel">
+                    {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
                 { this.props.description &&
@@ -362,23 +375,32 @@ class CheckBoxInput extends PureComponent<any, any> {
 
 
                 <span style={{float:"right", marginRight: "285px"}}>
-                    <FACheckBox
-                        rowText={this.props.caption}
-                        checked={this.props.value}
-                        onClick={() => {this.props.checkCheckBox(this.props.name);}}
-                    />
+                    {this.props.canEdit ?
+                        <FACheckBox
+                            rowText={this.props.caption}
+                            checked={this.props.value}
+                            onClick={() => {this.props.checkCheckBox(this.props.name);}}
+                        />
+                    :
+                        <FACheckBox
+                            rowText={this.props.caption}
+                            checked={this.props.value}
+                            canEdit={false}
+                        />
+                    }
                 </span>
             </div>
         );
     }
 }
 
+// todo: add 'canEdit' option
 class TextArea extends PureComponent<any, any> {
     render() {
         return(
             <div className="dynamicFieldSpread">
-                <span style={{height:"40px", marginRight:"7px"}}>
-                    {this.props.caption}
+                <span className="dynamicFieldLabel">
+                    {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
                 { this.props.description &&
@@ -402,33 +424,34 @@ class TextArea extends PureComponent<any, any> {
 class Option extends PureComponent<any, any> {
     render() {
         const {options} = this.props;
-
-        console.log("props", this.props, "\n");
-
         return(
             <div className="dynamicFieldSpread">
-                <span style={{height:"40px", marginRight:"7px"}}>
-                    {this.props.caption}
+                <span className="dynamicFieldLabel">
+                    {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
                 { this.props.description &&
-                <LabelHelpTip title={'Tip'} body={() => {
-                    return (<div> {this.props.description} </div>)
-                }}/>
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {this.props.description} </div>)
+                    }}/>
                 }
 
-                <span style={{float:"right", marginRight: "160px"}}>
-                    <FormControl
-                        componentClass="select"
-                        name={this.props.name}
-                        onChange={this.props.handleChange}
-                        value={this.props.value}
-                    >
-                        {options && Object.keys(options).map((item) => (
-                            <option value={item} key={item} > {options[item]} </option>
-                        ))}
-                    </FormControl>
-                </span>
+
+                    { this.props.canEdit ?
+                        <span style={{float:"right", marginRight: "160px"}}>
+                            <FormControl
+                                componentClass="select"
+                                name={this.props.name}
+                                onChange={this.props.handleChange}
+                                value={this.props.value}
+                            >
+                                {options && Object.keys(options).map((item) => (
+                                    <option value={item} key={item} > {options[item]} </option>
+                                ))}
+                            </FormControl>
+                        </span>
+                        : <span style ={{float: "right", width: "300px"}}> {this.props.value} </span>
+                    }
             </div>
         );
     }

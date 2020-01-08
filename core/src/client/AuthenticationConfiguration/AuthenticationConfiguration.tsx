@@ -96,8 +96,6 @@ export class App extends PureComponent<any, any> {
 
     checkIfDirty = (obj1, obj2) => {
         const dirty = !this.isEquivalent(obj1, obj2);
-        console.log(obj1, " : ", obj2);
-        console.log(dirty);
         this.setState(() => ({ dirty }));
     };
 
@@ -106,7 +104,6 @@ export class App extends PureComponent<any, any> {
         const bProps = Object.keys(b);
 
         if (aProps.length != bProps.length) {
-            console.log("blip");
             return false;
         }
 
@@ -133,12 +130,18 @@ export class App extends PureComponent<any, any> {
             }
         );
 
-        if (this.draggableIsDirty()){
-            form.append("ssoConfigurations", this.getAuthConfigArray(this.state.ssoConfigurations).toString());
-        }
-        if (this.draggableIsDirty()){
-            form.append("formConfigurations", this.getAuthConfigArray(this.state.formConfigurations).slice(0,-1).toString());
-        }
+        const dirtyStateSections = this.draggableIsDirty();
+        dirtyStateSections.map((stateSection) => {
+            if (stateSection == "formConfigurations"){
+                // remove database config
+                form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString());
+                console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString())
+            } else {
+                form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).toString());
+                console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).toString())
+
+            }
+        });
 
         Ajax.request({
             url: ActionURL.buildURL("login", "SaveSettings"),
@@ -150,22 +153,19 @@ export class App extends PureComponent<any, any> {
             },
             success: function(result){
                 console.log("success: ", result);
-                window.location.href = ActionURL.buildURL("admin", "showAdmin" ) // For reviewer: is this the best way to navigate after success?
+                // window.location.href = ActionURL.buildURL("admin", "showAdmin" )
             }
         })
-
     };
 
     draggableIsDirty = () => {
         const stateSections = ["formConfigurations", "ssoConfigurations", "secondaryConfigurations"];
 
-        // check if any draggable section is dirty
-        return stateSections.reduce((accum : boolean, currentVal) => {
-            const newOrdering = this.getAuthConfigArray(this.state[currentVal]);
-            const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[currentVal]);
-            return (accum || !this.isEquivalent(newOrdering, oldOrdering));
-            }, false
-        );
+        return stateSections.filter((stateSection) => {
+            const newOrdering = this.getAuthConfigArray(this.state[stateSection]);
+            const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[stateSection]);
+            return !this.isEquivalent(newOrdering, oldOrdering);
+        });
     };
 
     getAuthConfigArray = (stateSection) => {
@@ -191,9 +191,9 @@ export class App extends PureComponent<any, any> {
             [stateSection]: items
         })
         , () => {
-            console.log(this.state); // for testing
+            console.log("full state", this.state); // for testing
 
-            const dirty = this.draggableIsDirty();
+            const dirty = this.draggableIsDirty().length > 0;
             this.setState(() => ({ dirty }));
             }
         )
@@ -282,6 +282,13 @@ export class App extends PureComponent<any, any> {
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
         const {globalSettings, ...restProps} = this.state;
+        // const {globalSettings, canEdit, ...restProps} = this.state; //for testing
+        const actionFunctions = {
+            "onDragEnd": this.onDragEnd,
+            "deleteAction": this.deleteAction,
+            "updateAuthRowsAfterSave": this.updateAuthRowsAfterSave,
+            "toggleSomeModalOpen": this.toggleSomeModalOpen
+        };
 
         return(
             <div style={{minWidth:"1150px"}}>
@@ -296,11 +303,9 @@ export class App extends PureComponent<any, any> {
 
                 <AuthConfigMasterPanel
                     {...restProps}
-                    onDragEnd={this.onDragEnd}
-                    deleteAction={this.deleteAction}
-                    updateAuthRowsAfterSave={this.updateAuthRowsAfterSave}
-                    toggleSomeModalOpen={this.toggleSomeModalOpen}
+                    // canEdit={false}
                     isDragDisabled={this.state.someModalOpen}
+                    actionFunctions={actionFunctions}
                 />
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}

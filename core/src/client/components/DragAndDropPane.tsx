@@ -1,10 +1,9 @@
 import React, { PureComponent } from 'react';
-import SimpleAuthRow from "./SimpleAuthRow";
-import EditableAuthRow from "./EditableAuthRow";
 
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGripVertical} from "@fortawesome/free-solid-svg-icons";
+import AuthRow from "./AuthRow";
 
 interface Props {
     className: string
@@ -19,17 +18,12 @@ export default class DragAndDropPane extends PureComponent<any> {
         super(props);
     }
 
-    forTestingFunc = () => {
-        const configs = this.props.rowInfo;
-        console.log("your props: ", this.props.primaryProviders["CAS"]);
-        // console.log("state: ", this.state)
-    };
-
     render() {
-        // this.forTestingFunc();
         const {primaryProviders, secondaryProviders} = this.props;
+        const {onDragEnd, toggleSomeModalOpen, ...otherActionFunctions} = this.props.actionFunctions;
         const providers = (primaryProviders) ? primaryProviders : secondaryProviders;
-        // console.log("PROPS ", this.props.rowInfo);
+
+        console.log("PROPS of DND", this.props);
 
         let DragAndDropAuthRows =
             this.props.rowInfo.map((item, index) => ( // make this into a own variable
@@ -40,14 +34,15 @@ export default class DragAndDropPane extends PureComponent<any> {
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                         >
-                            <EditableAuthRow
+
+                            <AuthRow
                                 index={index.toString()}
-                                {...item}
+                                {...item} // contains data of an individual auth config
+                                {...otherActionFunctions} // contains authRow-level functions
+                                canEdit = {this.props.canEdit}
+                                draggable={true}
                                 modalType={(providers) && {...providers[item.provider]}}
                                 stateSection={this.props.stateSection}
-                                deleteAction={this.props.deleteAction}
-                                updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
-                                toggleSomeModalOpen={this.props.toggleSomeModalOpen}
                             />
                         </div>
                     )}
@@ -55,7 +50,7 @@ export default class DragAndDropPane extends PureComponent<any> {
             ));
 
         return (
-            <DragDropContext onDragEnd={this.props.onDragEnd}>
+            <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId={this.props.stateSection}>
                     {(provided) => ( //consider doing a function render row tightly coupled in there
                         <div ref={provided.innerRef} {...provided.droppableProps}>
