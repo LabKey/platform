@@ -69,6 +69,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
@@ -1277,11 +1278,13 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(UserManagementPermission.class)
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
+        @Override
         public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors)
         {
             return new JspView<Object>("/org/labkey/core/security/addUsers.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
@@ -1290,8 +1293,10 @@ public class SecurityController extends SpringActionController
             return root;
         }
 
+        @Override
         public void validateCommand(AddUsersForm form, Errors errors) {}
 
+        @Override
         public boolean handlePost(AddUsersForm form, BindException errors) throws Exception
         {
             String[] rawEmails = form.getNewUsers() == null ? null : form.getNewUsers().split("\n");
@@ -1351,7 +1356,10 @@ public class SecurityController extends SpringActionController
                 }
                 else if (userToClone != null)
                 {
-                    clonePermissions(userToClone, email);
+                    if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
+                        errors.addError(new FormattedError(userToClone.getEmail() + " cannot be cloned.  Only site administrators can clone users with site administration permissions."));
+                    else
+                        clonePermissions(userToClone, email);
                 }
                 if (user != null)
                     form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail())));
@@ -1378,13 +1386,16 @@ public class SecurityController extends SpringActionController
 
                         if (group != null)
                         {
-                            try
+                            if (getUser().hasSiteAdminPermission() || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
                             {
-                                SecurityManager.addMember(group, user);
-                            }
-                            catch (InvalidGroupMembershipException e)
-                            {
-                                // Best effort... fail quietly
+                                try
+                                {
+                                    SecurityManager.addMember(group, user);
+                                }
+                                catch (InvalidGroupMembershipException e)
+                                {
+                                    // Best effort... fail quietly
+                                }
                             }
                         }
                     }
@@ -1404,7 +1415,10 @@ public class SecurityController extends SpringActionController
                     if (!roles.isEmpty())
                     {
                         for (Role role : roles)
-                            policy.addRoleAssignment(user, role);
+                        {
+                            if (getUser().hasSiteAdminPermission() || !role.getPermissions().contains(SiteAdminPermission.class))
+                                policy.addRoleAssignment(user, role);
+                        }
 
                         SecurityPolicyManager.savePolicy(policy);
                     }
@@ -1412,6 +1426,7 @@ public class SecurityController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(AddUsersForm addUsersForm)
         {
             throw new UnsupportedOperationException();
