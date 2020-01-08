@@ -20,10 +20,6 @@ export default class AuthRow extends PureComponent<any, any> {
         };
     }
 
-    onToggleClicked = () => {
-        this.props.handlePrimaryToggle(this.props.enabled, this.props.index, this.props.stateSection);
-    };
-
     onToggleModal = (toggled) => {
         this.setState(() => ({
             [toggled]: !this.state[toggled]
@@ -34,11 +30,18 @@ export default class AuthRow extends PureComponent<any, any> {
         this.props.deleteAction(this.props.configuration, this.props.stateSection);
     };
 
+    setHighlight = (isHighlighted) => {
+        if (this.state.modalOpen) {
+            return;
+        }
+        this.setState({highlight: isHighlighted});
+    };
+
     render () {
         const {canEdit, enabled, draggable, field3 } = this.props;
         const isDatabaseAuth = (field3 == "Database");
 
-        const handle = (draggable) ?
+        const handle = (draggable && canEdit) ?
             <LightupHandle highlight={this.state.highlight}/>
             : null;
 
@@ -52,13 +55,13 @@ export default class AuthRow extends PureComponent<any, any> {
             </div>
             : null;
 
-        const editIcon = (canEdit) ? // shape this up
+        const editOrViewIcon = (canEdit) ? // shape this up, should sometimes be view-only
             <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>
             :
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onToggleModal("modalOpen")}>
-                <FontAwesomeIcon size='1x' icon={faInfoCircle}/>
+            <div className={"clickable"} style={{marginTop: "5px"}} onClick={() => this.onToggleModal("modalOpen")}>
+                <FontAwesomeIcon size='1x' icon={faInfoCircle} color={"#999999"}/>
             </div>;
 
         const dynamicModal = (this.state.modalOpen &&
@@ -68,6 +71,7 @@ export default class AuthRow extends PureComponent<any, any> {
                     closeModal={() => {this.onToggleModal("modalOpen")}}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />);
+
         const databaseModal =
             <DatabaseConfigurationModal
                 closeModal={() => {this.onToggleModal("modalOpen")}}
@@ -81,22 +85,23 @@ export default class AuthRow extends PureComponent<any, any> {
             <div style={{ paddingBottom: '20px' }}>
                 <div
                     className="domain-field-row domain-row-border-default"
-                    onMouseOver={() => {this.setState({ color: true });}}
-                    onMouseOut={() => {this.setState({ color: false });}}
+                    onMouseOver={() => {this.setHighlight(true)}}
+                    onMouseOut={() => {this.setHighlight(false)}}
+                    // style={{backgroundColor: "grey"}}
                 >
                     <div className="domain-row-container row">
-                        <div className="domain-row-handle">{this.props.handle}</div>
+                        <div className="domain-row-handle">{handle}</div>
 
                         <div className="domain-row-main">
                             <Col xs={9} className="domain-row-base-fields">
                                 <Col xs={4} className="down">
-                                    {this.props.field1}
+                                    {this.props.description}
                                 </Col>
                                 <Col xs={4} className="down">
-                                    {this.props.field2}
+                                    {this.props.details}
                                 </Col>
                                 <Col xs={1} className="down">
-                                    {this.props.field3}
+                                    {this.props.provider}
                                 </Col>
                             </Col>
 
@@ -107,7 +112,7 @@ export default class AuthRow extends PureComponent<any, any> {
 
                                 <Col xs={1}>{deleteIcon}</Col>
 
-                                <Col xs={3}>{editIcon}</Col>
+                                <Col xs={3}>{editOrViewIcon}</Col>
                             </Col>
 
                             {modal}
