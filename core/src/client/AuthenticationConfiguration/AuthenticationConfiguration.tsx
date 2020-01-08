@@ -207,30 +207,6 @@ export class App extends PureComponent<any, any> {
         return result;
     };
 
-    // rough
-    handlePrimaryToggle = (toggle, configuration, stateSection) => {
-        const l = List(this.state[stateSection]);
-        const l2 = l.setIn([configuration, 'enabled'], !toggle);
-        const thing = l2.toArray();
-        console.log(" toggle: ", toggle, "\n", "id: ", configuration, "\n", "stateSection: ", stateSection);
-        console.log(thing);
-        this.setState(() => ({
-            [stateSection]: thing
-        }));
-
-        // const prevConfig = this.state[stateSection][id];
-        // const newConfig = {...prevConfig, enabled: !toggle };
-        // console.log(newConfig);
-
-        // this.setState( (prevState) => ({
-        //     ...prevState,
-        //     [stateSection]: {
-        //         ...prevState[stateSection],
-        //         [id]: newConfig
-        //     }
-        // }), () => console.log(this.state));
-    };
-
     deleteAction = (configuration, stateSection) => {
         const prevState = this.state[stateSection];
         const newState = prevState.filter((auth) => {
@@ -276,7 +252,11 @@ export class App extends PureComponent<any, any> {
             newState[staleAuthIndex] = configObj.configuration;
         }
 
-        this.setState({[stateSection]:newState});
+        // Update our dirtiness information with added modal, since dirtiness should only track reordering
+        let dirtinessData = this.state.dirtinessData;
+        dirtinessData[stateSection] = newState;
+
+        this.setState({[stateSection]:newState, dirtinessData});
     };
 
     render() {
@@ -291,7 +271,7 @@ export class App extends PureComponent<any, any> {
         };
 
         return(
-            <div style={{minWidth:"1150px"}}>
+            <div style={{minWidth:"1200px"}}>
                 {this.state.globalSettings &&
                     <GlobalSettings
                         {...globalSettings}

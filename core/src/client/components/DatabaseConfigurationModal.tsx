@@ -67,8 +67,16 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
     };
 
     render () {
+        const {canEdit} = this.props;
         const passwordStrength = (this.state.currentSettings && this.state.currentSettings.strength);
         const expiration = (this.state.currentSettings && this.state.currentSettings.expiration);
+        const optionsMap = {
+            Never: "Never",
+            FiveSeconds:"Every five seconds — for testing",
+            ThreeMonths:"Every three months",
+            SixMonths:"Every six months",
+            OneYear:"Every twelve months"
+        };
 
         return (
             <Modal show={true} onHide={() => {}} >
@@ -105,10 +113,10 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
 
                         <span className="dbAuthMoveRight">
                             <ButtonGroup onClick={this.handleChange}>
-                                <Button data-key='1' value="Weak" name="strength" active={passwordStrength == "Weak"}>
+                                <Button data-key='1' value="Weak" name="strength" active={passwordStrength == "Weak"} disabled={!canEdit}>
                                     Weak
                                 </Button>
-                                <Button data-key='2' value="Strong" name="strength" active={passwordStrength == "Strong"}>
+                                <Button data-key='2' value="Strong" name="strength" active={passwordStrength == "Strong"} disabled={!canEdit}>
                                     Strong
                                 </Button>
                             </ButtonGroup>
@@ -121,19 +129,24 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
 
                         <span className="dbAuthMoveRight">
-                            <FormControl
-                                componentClass="select"
-                                name="expiration"
-                                placeholder="select"
-                                onChange={this.handleChange}
-                                value={expiration}
-                            >
-                                <option value="Never">Never</option>
-                                <option value="FiveSeconds">Every five seconds — for testing</option>
-                                <option value="ThreeMonths">Every three months</option>
-                                <option value="SixMonths">Every six months</option>
-                                <option value="OneYear">Every twelve months</option>
-                            </FormControl>
+                            {canEdit ?
+                                <FormControl
+                                    componentClass="select"
+                                    name="expiration"
+                                    placeholder="select"
+                                    onChange={this.handleChange}
+                                    value={expiration}
+                                    >
+                                    <option value="Never">Never</option>
+                                    <option value="FiveSeconds">Every five seconds — for testing</option>
+                                    <option value="ThreeMonths">Every three months</option>
+                                    <option value="SixMonths">Every six months</option>
+                                    <option value="OneYear">Every twelve months</option>
+                                </FormControl>
+                                : optionsMap[expiration]
+                            }
+
+
                         </span>
                     </div>
 
@@ -141,7 +154,7 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
 
                     <div style={{float: "right"}}>
                         <a target="_blank" href={this.state.helpLink} style={{marginRight: "10px"}}> {"More about authentication"} </a>
-                        <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>
+                        {canEdit && <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>}
                     </div>
 
                     <Button
@@ -149,7 +162,7 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         onClick={this.props.closeModal}
                         style={{marginLeft: '10px'}}
                     >
-                        Cancel
+                        {canEdit ? "Cancel" : "Close"}
                     </Button>
                 </Modal.Body>
 

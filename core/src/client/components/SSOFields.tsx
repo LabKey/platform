@@ -16,6 +16,7 @@ export default class SSOFields extends PureComponent<any, any> {
                         onFileChange={this.props.onFileChange}
                         handleDeleteLogo={this.props.handleDeleteLogo}
                         fileTitle='auth_header_logo'
+                        canEdit={this.props.canEdit}
                     />
                 </div>
 
@@ -28,6 +29,7 @@ export default class SSOFields extends PureComponent<any, any> {
                         onFileChange={this.props.onFileChange}
                         handleDeleteLogo={this.props.handleDeleteLogo}
                         fileTitle='auth_login_page_logo'
+                        canEdit={this.props.canEdit}
                     />
                 </div>
             </div>
@@ -50,45 +52,56 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                 <div className="fileAttachmentNoImageText">None selected</div>
             </div>;
 
+        const img =
+            <img
+                className="fileAttachmentImageDisplay"
+                src={this.state.imageUrl}
+                onError={() => {this.setState({imageUrl: null})}}
+                alt="Sign in"
+            />;
+
         return(
             <>
                 <div className="fileAttachmentLabel">
                     {this.props.text}
                 </div>
 
-                <div className="fileAttachmentImage">
-                    {this.state.imageUrl ?
-                        <>
-                            <img
-                            className="fileAttachmentImageDisplay"
-                            src={this.state.imageUrl}
-                            onError={() => {this.setState({imageUrl: null})}}
-                            alt="Sign in"
-                            />
-                            <FontAwesomeIcon className="fileAttachmentDeleteImage"
-                                             icon={faTimesCircle}
-                                             color={"#d9534f"}
-                                             onClick={() => {
-                                                this.setState({imageUrl: null});
-                                                this.props.handleDeleteLogo(this.props.fileTitle);
-                                             }}
-                            />
-                        </>
-                        : noImageSelectedDisplay
-                    }
-                </div>
+                { this.props.canEdit ?
+                    <>
+                        <div className="fileAttachmentImage">
+                            {this.state.imageUrl ?
+                                <>
+                                    {img}
+                                    <FontAwesomeIcon className="fileAttachmentDeleteImage"
+                                                     icon={faTimesCircle}
+                                                     color={"#d9534f"}
+                                                     onClick={() => {
+                                                        this.setState({imageUrl: null});
+                                                        this.props.handleDeleteLogo(this.props.fileTitle);
+                                                     }}
+                                    />
+                                </>
+                                : noImageSelectedDisplay
+                            }
+                        </div>
 
-                <div className="fileAttachmentComponent">
-                    <FileAttachmentForm
-                        key={this.props.text}
-                        showLabel={false}
-                        allowMultiple={false}
-                        allowDirectories={false}
-                        acceptedFormats={".jpeg,.png,.gif,.tif"}
-                        showAcceptedFormats={false}
-                        onFileChange={(attachment) => {this.props.onFileChange(attachment, this.props.fileTitle)}}
-                    />
-                </div>
+
+                        <div className="fileAttachmentComponent">
+                            <FileAttachmentForm
+                                key={this.props.text}
+                                showLabel={false}
+                                allowMultiple={false}
+                                allowDirectories={false}
+                                acceptedFormats={".jpeg,.png,.gif,.tif"}
+                                showAcceptedFormats={false}
+                                onFileChange={(attachment) => {
+                                    this.props.onFileChange(attachment, this.props.fileTitle)
+                                }}
+                            />
+                        </div>
+                    </>
+                    : <div className="viewOnlyFloatRight"> {img} </div>
+                }
             </>
         );
     }
