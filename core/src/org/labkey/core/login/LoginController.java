@@ -2412,8 +2412,9 @@ public class LoginController extends SpringActionController
             ));
 
             // Note from Rosaline: rowId arrays will be posted only if they are dirty
-            AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getLoginFormAuth());
-            AuthenticationManager.reorderConfigurations(getUser(), "SSO", form.getSingleSignOnAuth());
+            AuthenticationManager.reorderConfigurations(getUser(), "LDAP", form.getFormConfigurations());
+            AuthenticationManager.reorderConfigurations(getUser(), "SSO", form.getSsoConfigurations());
+            AuthenticationManager.reorderConfigurations(getUser(), "Secondary", form.getSecondaryConfigurations());
 
             return new ApiSimpleResponse("success", true);
         }
@@ -2424,8 +2425,9 @@ public class LoginController extends SpringActionController
         private boolean _selfRegistration;
         private boolean _selfServiceEmailChanges;
         private boolean _autoCreateAccounts;
-        private int[] _loginFormAuth;
-        private int[] _singleSignOnAuth;
+        private int[] _formConfigurations;
+        private int[] _ssoConfigurations;
+        private int[] _secondaryConfigurations;
 
         public boolean isSelfRegistration()
         {
@@ -2460,26 +2462,37 @@ public class LoginController extends SpringActionController
             _autoCreateAccounts = autoCreateAccounts;
         }
 
-        public int[] getLoginFormAuth()
+        public int[] getFormConfigurations()
         {
-            return _loginFormAuth;
+            return _formConfigurations;
         }
 
         @SuppressWarnings("unused")
-        public void setLoginFormAuth(int[] loginFormAuth)
+        public void setFormConfigurations(int[] formConfigurations)
         {
-            _loginFormAuth = loginFormAuth;
+            _formConfigurations = formConfigurations;
         }
 
-        public int[] getSingleSignOnAuth()
+        public int[] getSsoConfigurations()
         {
-            return _singleSignOnAuth;
+            return _ssoConfigurations;
         }
 
         @SuppressWarnings("unused")
-        public void setSingleSignOnAuth(int[] singleSignOnAuth)
+        public void setSsoConfigurations(int[] ssoConfigurations)
         {
-            _singleSignOnAuth = singleSignOnAuth;
+            _ssoConfigurations = ssoConfigurations;
+        }
+
+        public int[] getSecondaryConfigurations()
+        {
+            return _secondaryConfigurations;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSecondaryConfigurations(int[] secondaryConfigurations)
+        {
+            _secondaryConfigurations = secondaryConfigurations;
         }
     }
 

@@ -239,7 +239,7 @@ public class TestSecondaryController extends SpringActionController
         @Override
         public String getProvider()
         {
-            return TestSsoProvider.NAME;
+            return TestSecondaryProvider.NAME;
         }
     }
 }
