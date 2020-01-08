@@ -3708,7 +3708,6 @@ public class StudyManager
 
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
         DataIteratorContext context = new DataIteratorContext();
-        context.setSelectIds(true);
         context.setInsertOption(forUpdate ? QueryUpdateService.InsertOption.INSERT : QueryUpdateService.InsertOption.IMPORT);
         context.setConfigParameters(options);
 

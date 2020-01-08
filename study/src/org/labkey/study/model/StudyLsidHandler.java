@@ -17,6 +17,7 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -28,9 +29,13 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
@@ -81,40 +86,20 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
 
         if (type.equalsIgnoreCase("Data"))
         {
-                Container c = getContainer(lsid);
-                Set<? extends StudyImpl> allStudies = StudyManager.getInstance().getAllStudies(c);
-                DatasetDefinition targetDataset = null;
-                for (StudyImpl study : allStudies)
-                {
-                    List<DatasetDefinition> datasetDefinitions = study.getDatasets();
-                    for (DatasetDefinition datasetDefinition : datasetDefinitions)
-                    {
-                        List<String> datasetLsids = StudyManager.getInstance().getDatasetLSIDs(User.getSearchUser(), datasetDefinition);
-                        if (datasetLsids.contains(lsid.toString()))
-                        {
-                            for (String datasetLsid : datasetLsids)
-                            {
-                                if (lsid.toString().equals(datasetLsid))
-                                {
-                                    targetDataset = datasetDefinition;
-                                }
-                            }
-                        }
-                    }
-                }
+            int containerId = Integer.parseInt(studyNamespace.substring(i+1));
+            Container container = ContainerManager.getForRowId(containerId);
+            int datasetId = Integer.parseInt(lsid.getObjectId().split("\\.")[0]);
 
-                if (null != targetDataset)
-                {
-                    Map<String, Object> datasetRow = targetDataset.getDatasetRow(User.getSearchUser(), lsid.toString());
+            StudyService studyService = StudyService.get();
+            if (null != studyService)
+            {
+                String datasetName = studyService.getDataset(container, datasetId).getName();
 
-                    BigDecimal sequenceNum = (BigDecimal) datasetRow.get("SequenceNum");
-                    String ptid = (String) datasetRow.get("ParticipantId");
-                    ActionURL url = new ActionURL(StudyController.DatasetAction.class, c);
-                    url.addParameter(DatasetDefinition.DATASETKEY, String.valueOf(targetDataset.getDatasetId()));
-                    url.addParameter(VisitImpl.SEQUENCEKEY, String.valueOf(sequenceNum));
-                    url.addParameter("StudyData.participantId~eq", ptid);
-                    return url;
-                }
+                ActionURL queryURL = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(container, "study", datasetName);
+                queryURL.addFilter("query", FieldKey.fromParts("lsid"), CompareType.EQUAL, lsid.toString());
+                return queryURL;
+            }
+
         }
         return null;
     }

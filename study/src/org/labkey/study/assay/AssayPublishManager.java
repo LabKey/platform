@@ -336,8 +336,6 @@ public class AssayPublishManager implements AssayPublishService
             if (defaultQCStateId != null)
                 defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-            // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
-            // IllegalStateException in ContainerManager.ensureContainer.
             lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
             // If provenance module is not present, do nothing
             ProvenanceService pvs = ProvenanceService.get();

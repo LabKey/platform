@@ -2581,17 +2581,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             {
                 protocolApplications.forEach(protocolApp -> {
                     ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
-                    if (null != selectedLsidsRunMap.get(run))
-                    {
-                        List<String> selectedLsids = selectedLsidsRunMap.get(run);
-                        selectedLsids.add(lsid);
-                        selectedLsidsRunMap.put(run, selectedLsids);
-                    }
-                    selectedLsidsRunMap.computeIfAbsent(run, k -> {
-                        List<String> lsidList = new ArrayList<>();
-                        lsidList.add(lsid);
-                        return lsidList;
-                    });
+                    selectedLsidsRunMap.computeIfAbsent(run, k -> new ArrayList<>()).add(lsid);
                 });
             }
 
