@@ -33,6 +33,7 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -827,43 +828,30 @@ public class FileContentController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleViewAction<ReturnUrlForm>
+    public class DesignerAction extends SimpleRedirectAction<Object>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors)
+        public URLHelper getRedirectURL(Object form)
         {
+            ActionURL successUrl = null;
             FileContentService svc = FileContentService.get();
-            String uri = svc.getDomainURI(getContainer());
-            // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            if (null != svc)
             {
-                OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+                String domainURI = svc.getDomainURI(getContainer());
+                Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
+
+                if (domain != null)
+                {
+                    successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                    if (null != successUrl)
+                    {
+                        successUrl.addReturnURL(new ActionURL(FileContentController.BeginAction.class, getContainer()));
+                    }
+                }
+
             }
-            Map<String, String> properties = new HashMap<>();
 
-            properties.put("typeURI", uri);
-            properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
-            properties.put(ActionURL.Param.cancelUrl.name(), form.getReturnUrl());
-
-            return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("propertyFields");
-            return root.addChild("File Properties Designer");
-        }
-    }
-
-    // GWT Action
-    @RequiresPermission(AdminPermission.class)
-    public class FilePropertiesServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new FilePropertiesServiceImpl(getViewContext());
+            return successUrl;
         }
     }
 
@@ -1713,7 +1701,6 @@ public class FileContentController extends SpringActionController
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
                 controller.new DesignerAction(),
-                controller.new FilePropertiesServiceAction(),
                 controller.new ResetFileOptionsAction(),
                 controller.new SetDefaultEmailPrefAction(),
                 controller.new ShowFilesHistoryAction()
