@@ -34,6 +34,7 @@ import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -93,11 +94,16 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
             StudyService studyService = StudyService.get();
             if (null != studyService)
             {
-                String datasetName = studyService.getDataset(container, datasetId).getName();
+                Dataset dataset = studyService.getDataset(container, datasetId);
 
-                ActionURL queryURL = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(container, "study", datasetName);
-                queryURL.addFilter("query", FieldKey.fromParts("lsid"), CompareType.EQUAL, lsid.toString());
-                return queryURL;
+                if (null != dataset)
+                {
+                    String datasetName = dataset.getName();
+
+                    ActionURL queryURL = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(container, "study", datasetName);
+                    queryURL.addFilter("query", FieldKey.fromParts("lsid"), CompareType.EQUAL, lsid.toString());
+                    return queryURL;
+                }
             }
 
         }
