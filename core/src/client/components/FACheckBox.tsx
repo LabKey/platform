@@ -21,11 +21,11 @@ export default class FACheckBox extends PureComponent<any> {
             <FontAwesomeIcon size="lg" icon={faSquare} color="#adadad" />
         );
 
-        const classNames = (this.props.canEdit) ? "noHighlight clickable" : "noHighlight";
+        const classNames = (this.props.canEdit) ? "noHighlight clickable " : "noHighlight ";
 
         return (
             <>
-                <span className={classNames} onClick={() => this.props.onClick()}>
+                <span className={classNames + this.props.name} onClick={() => this.props.onClick()}>
                     {checkedOrNot}
                 </span>
             </>

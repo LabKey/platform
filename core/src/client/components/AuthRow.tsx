@@ -95,13 +95,13 @@ export default class AuthRow extends PureComponent<any, any> {
 
                         <div className="domain-row-main">
                             <Col xs={9} className="domain-row-base-fields">
-                                <Col xs={4} className="down">
+                                <Col xs={4} className="description down">
                                     {this.props.description}
                                 </Col>
-                                <Col xs={4} className="down">
+                                <Col xs={4} className="details down">
                                     {this.props.details}
                                 </Col>
-                                <Col xs={3} className="down">
+                                <Col xs={3} className="provider down">
                                     {this.props.provider}
                                 </Col>
                             </Col>
@@ -109,11 +109,11 @@ export default class AuthRow extends PureComponent<any, any> {
                             <Col xs={1} />
 
                             <Col xs={2} className="domain-row-base-fields">
-                                <Col xs={7} className="down">{enabledField}</Col>
+                                <Col xs={7} className="enabled down">{enabledField}</Col>
 
-                                <Col xs={1}>{deleteIcon}</Col>
+                                <Col xs={1} className="delete">{deleteIcon}</Col>
 
-                                <Col xs={3}>{editOrViewIcon}</Col>
+                                <Col xs={3} className="editOrView">{editOrViewIcon}</Col>
                             </Col>
 
                             {modal}

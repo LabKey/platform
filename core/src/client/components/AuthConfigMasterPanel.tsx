@@ -115,6 +115,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         description={dbAuth.description}
                         provider={dbAuth.provider}
                         enabled={dbAuth.enabled}
+                        toggleSomeModalOpen={this.props.actionFunctions.toggleSomeModalOpen}
                     />
                 </div>
                 : <ViewOnlyAuthConfigRows
@@ -185,7 +186,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                         <Tab eventKey={1} title='Primary' >
                             <div className='auth-tab'>
                                 {this.props.canEdit &&
-                                    <DropdownButton id='dropdown-basic-button' title={'Add New Primary Configuration'}>
+                                    <DropdownButton id='primary-configurations-dropdown' title={'Add New Primary Configuration'}>
                                         {addNewPrimaryDropdown}
                                     </DropdownButton>
                                 }
@@ -218,7 +219,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
                             <div className={'auth-tab'}>
                                 {this.props.canEdit &&
-                                    <DropdownButton id='dropdown-basic-button' title={'Add New Secondary Configuration'}>
+                                    <DropdownButton id='secondary-configurations-dropdown' title={'Add New Secondary Configuration'}>
                                         {addNewSecondaryDropdown}
                                     </DropdownButton>
                                 }
