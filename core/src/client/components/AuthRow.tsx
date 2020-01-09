@@ -28,7 +28,10 @@ export default class AuthRow extends PureComponent<any, any> {
     };
 
     onDeleteClick = () => {
-        this.props.deleteAction(this.props.configuration, this.props.stateSection);
+        const response = confirm("Are you sure you want to delete " + this.props.description + " authentication configuration?");
+        if (response) {
+            this.props.deleteAction(this.props.configuration, this.props.stateSection);
+        }
     };
 
     setHighlight = (isHighlighted) => {
@@ -50,18 +53,18 @@ export default class AuthRow extends PureComponent<any, any> {
             ? <> <FontAwesomeIcon icon={faCircle} color={"#75B666"} /> &nbsp; Enabled </>
             : <> <FontAwesomeIcon icon={faCircle} color={"#999999"} /> &nbsp; Disabled </>;
 
-        const deleteIcon = (canEdit) ?
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => this.onDeleteClick()}>
+        const deleteIcon = (canEdit && !isDatabaseAuth) ?
+            <div className={"clickable"} onClick={() => this.onDeleteClick()}>
                 <FontAwesomeIcon icon={faTimesCircle} color={"#d9534f"} />
             </div>
             : null;
 
         const editOrViewIcon = (canEdit) ? // shape this up, has repeated code
-            <div className={"clickable"} style={{marginTop: "5px"}}  onClick={() => {this.onToggleModal("modalOpen"); toggleSomeModalOpen(true)}}>
+            <div className={"clickable"} onClick={() => {this.onToggleModal("modalOpen"); toggleSomeModalOpen(true)}}>
                 <FontAwesomeIcon size='1x' icon={faPencilAlt}/>
             </div>
             :
-            <div className={"clickable"} style={{marginTop: "5px"}} onClick={() => this.onToggleModal("modalOpen")}>
+            <div className={"clickable"} onClick={() => this.onToggleModal("modalOpen")}>
                 <FontAwesomeIcon size='1x' icon={faInfoCircle} color={"#999999"}/>
             </div>;
 
@@ -69,7 +72,7 @@ export default class AuthRow extends PureComponent<any, any> {
                 <DynamicConfigurationModal
                     {...this.props}
                     type={this.props.modalType}
-                    closeModal={() => {this.onToggleModal("modalOpen"); toggleSomeModalOpen(false)}}
+                    closeModal={() => {this.onToggleModal("modalOpen"); (canEdit && toggleSomeModalOpen(false))}}
                     updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
                 />);
 
@@ -84,24 +87,24 @@ export default class AuthRow extends PureComponent<any, any> {
         );
 
         return (
-            <div style={{ paddingBottom: '20px' }}>
+            <div className="row-container">
                 <div
-                    className="domain-field-row domain-row-border-default"
+                    className="auth-row"
                     onMouseOver={() => {this.setHighlight(true)}}
                     onMouseOut={() => {this.setHighlight(false)}}
                 >
-                    <div className="domain-row-container row">
+                    <div className="domain-row-container">
                         <div className="domain-row-handle">{handle}</div>
 
                         <div className="domain-row-main">
                             <Col xs={9} className="domain-row-base-fields">
-                                <Col xs={4} className="description down">
+                                <Col xs={4} className="description auth-row__field">
                                     {this.props.description}
                                 </Col>
-                                <Col xs={4} className="details down">
+                                <Col xs={4} className="details auth-row__field">
                                     {this.props.details}
                                 </Col>
-                                <Col xs={3} className="provider down">
+                                <Col xs={3} className="provider auth-row__field">
                                     {this.props.provider}
                                 </Col>
                             </Col>
@@ -109,11 +112,11 @@ export default class AuthRow extends PureComponent<any, any> {
                             <Col xs={1} />
 
                             <Col xs={2} className="domain-row-base-fields">
-                                <Col xs={7} className="enabled down">{enabledField}</Col>
+                                <Col xs={7} className="enabled auth-row__field">{enabledField}</Col>
 
-                                <Col xs={1} className="delete">{deleteIcon}</Col>
+                                <Col xs={1} className="delete auth-row__field">{deleteIcon}</Col>
 
-                                <Col xs={3} className="editOrView">{editOrViewIcon}</Col>
+                                <Col xs={3} className="editOrView auth-row__field">{editOrViewIcon}</Col>
                             </Col>
 
                             {modal}

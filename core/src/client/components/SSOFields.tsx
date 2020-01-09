@@ -100,7 +100,7 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                             />
                         </div>
                     </>
-                    : <div className="viewOnlyFloatRight"> {img} </div>
+                    : <div className="viewOnlyFloatRight"> {this.state.imageUrl ? img : noImageSelectedDisplay} </div>
                 }
             </>
         );

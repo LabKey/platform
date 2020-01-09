@@ -1,6 +1,12 @@
 @import "../../../node_modules/react-bootstrap-toggle/dist/bootstrap2-toggle";
 
-.noHighlight {
+// todo: rename
+
+.bold-text {
+  font-weight: bold;
+}
+
+.no-highlight {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -9,76 +15,71 @@
   user-select: none;
 }
 
-// from platform/experiment/resources/web/experiment/gen/domainDesigner.css
-// todo: import instead
-// check if styling is duplicate
-
-.domain-field-row {
-  border: 1px solid;
-  border-radius: 2px;
-  //padding-bottom: 20px;
-  background-color: white;
-  outline: none;
+.clickable {
+  cursor:pointer;
 }
 
-.domain-row-border-default {
-  border-color: #CCC;
-  box-shadow: inset 0 1px 3px 2px #F3F3F4;
+// ---------------
+
+.parentPanel {
+  min-width: 1200px;
 }
 
-.domain-row-handle {
-  padding-left: 8px;
-  border-width: 0 1px 1px 0;
-  border-style: solid;
-  border-color: #CCC;
-  display: table-cell;
-  width: 30px;
-  vertical-align: middle;
-  background-color: #F3F3F4;
-}
-
-.domain-row-main {
-  height: 50px;
-}
-
-.domain-row-container {
-  display: table;
-  width: 100%;
-}
-
-//.domain-field-row .row {
-//  margin-right: 0;
-//  margin-left: 0;
-//}
-
-.domain-field-row {
-  //border: 1px solid;
-  border-radius: 2px;
-  background-color: white;
-  outline: none;
-  margin: 0px;
-}
-
-.domain-row-base-fields {
-  padding: 0;
-  margin: 0;
-  top: 50%;
-  -ms-transform: translateY(-50%);
-  transform: translateY(-50%);
-}
-
-// todo: rename
-
-.auth-tab{
-  margin-top: 14px;
-}
-
-.left-margin{
+.parent-panel__cancel-button {
   margin-left: 10px;
 }
 
-.bottom-margin{
+.global-settings__title-text {
+  margin-bottom: 16px;
+}
+
+.global-settings__text-row {
   margin-bottom: 14px;
+}
+
+.global-settings__text {
+  margin-left: 14px;
+}
+
+.configurations__auth-tab-login-form{
+  margin-top: 14px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+.configurations__help-link {
+  float: right;
+}
+
+.configurations__dropdown {
+  margin-bottom: 17px;
+  display: block;
+}
+
+.configurations__config-section-title {
+  margin-bottom: 18px;
+}
+
+// ---
+
+.row-container {
+  padding-bottom: 20px;
+}
+
+.auth-row {
+  border: 1px solid #CCC;
+  margin: 0px;
+  box-shadow: inset 0 1px 3px 2px #F3F3F4;
+}
+
+.auth-row__field {
+  margin-top: 5px;
+}
+
+
+
+.left-margin{
+  margin-left: 10px;
 }
 
 .globalAuthConfig-textInput{
@@ -95,17 +96,7 @@
   align-items: center;
 }
 
-.down{
-  margin-top: 5px;
-}
 
-.clickable {
-  cursor:pointer;
-}
-
-.boldText {
-  font-weight: bold;
-}
 
 // database auth modal section ----------------------------
 
@@ -173,25 +164,29 @@
   margin-left: 5px;
 }
 
-.dynamicFieldSpread {
-  height: 30px;
-}
 
-.dynamicFieldLabel {
-  height: 40px;
-  marginRight: 7px;
-}
-
-.editModalErrorMessage {
-  float: right;
-  color: #d9534f;
-}
-
-.testButton {
+.modal__test-button {
   display: flex;
   justify-content: flex-end;
 }
 
+.modal__error-message {
+  float: right;
+  color: #d9534f;
+}
+
+.modal__field-label {
+  height: 40px;
+  margin-right: 7px;
+}
+
+.modal__field {
+  height: 30px;
+}
+
+.modal__close-icon {
+
+}
 
 // oh, my god, the toggle
 // grabbed from sampleManagement/resources/web/sampleManagement/gen/sampleManagement-styles.css

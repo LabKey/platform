@@ -140,7 +140,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     return (
                         <TextInput
                             key={index}
-                            className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             type={"text"}
@@ -152,7 +151,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     return (
                         <CheckBoxInput
                             key={index}
-                            className={"bottom-margin"}
                             checkCheckBox={this.checkCheckBox}
                             value={this.state[field.name]}
                             canEdit={this.props.canEdit}
@@ -166,7 +164,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     return (
                         <TextInput
                             key={index}
-                            className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             type={"password"}
@@ -179,7 +176,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     return (
                         <TextArea
                             key={index}
-                            className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             canEdit={this.props.canEdit}
@@ -191,7 +187,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     return(
                         <Option
                             key={index}
-                            className={"bottom-margin"}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             options={field.options}
@@ -227,7 +222,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 </Modal.Header>
 
                 <Modal.Body>
-                    <span className="boldText"> Configuration Status </span>
+                    <span className="bold-text"> Configuration Status </span>
                     <ReactBootstrapToggle
                         onClick={this.onToggle}
                         on="Enabled"
@@ -239,7 +234,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     />
 
                     <hr/>
-                    <span className="boldText"> Settings </span>
+                    <span className="bold-text"> Settings </span>
                     <br/><br/>
 
                     <div style={{height: "40px"}}>
@@ -273,7 +268,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     }
 
-                    <div className="testButton">
+                    <div className="modal__test-button">
                         {modalType.testLink &&
                             <Button className={'labkey-button'} onClick={() =>
                                 window.open(
@@ -285,7 +280,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         }
                     </div>
 
-                    <div className="editModalErrorMessage"> {this.state.errorMessage} </div>
+                    <div className="modal__error-message"> {this.state.errorMessage} </div>
 
                     <hr/>
 
@@ -330,7 +325,7 @@ class TextInput extends PureComponent<any, any> {
     render() {
         return(
             <div style={{height: "40px"}}>
-                <span className="dynamicFieldLabel">
+                <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
@@ -367,8 +362,8 @@ interface CheckBoxInputProps {
 class CheckBoxInput extends PureComponent<any, any> {
     render() {
         return(
-            <div className="dynamicFieldSpread">
-                <span className="dynamicFieldLabel">
+            <div className="modal__field">
+                <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
@@ -405,8 +400,8 @@ class CheckBoxInput extends PureComponent<any, any> {
 class TextArea extends PureComponent<any, any> {
     render() {
         return(
-            <div className="dynamicFieldSpread">
-                <span className="dynamicFieldLabel">
+            <div className="modal__field">
+                <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 
@@ -433,8 +428,8 @@ class Option extends PureComponent<any, any> {
     render() {
         const {options} = this.props;
         return(
-            <div className="dynamicFieldSpread">
-                <span className="dynamicFieldLabel">
+            <div className="modal__field">
+                <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
 

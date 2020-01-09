@@ -51,7 +51,7 @@ export default class GlobalSettings extends PureComponent<any, any> {
         const {canEdit} = this.props;
 
         const rowTextComponents = rowTexts.map(text => (
-            <div className="bottom-margin" key={text.id}>
+            <div className="global-settings__text-row" key={text.id}>
                 <FACheckBox
                     key={text.id}
                     checked={this.props[text.id]}
@@ -63,21 +63,18 @@ export default class GlobalSettings extends PureComponent<any, any> {
                     }
                 />
 
-                <span style={{ marginLeft: '15px' }}>{text.text}</span>
+                <span className="global-settings__text"> {text.text} </span>
             </div>
         ));
 
         return (
             <Panel>
                 <Panel.Heading>
-                    <span className="boldText">Global Settings</span>
+                    <span className="bold-text">Global Settings</span>
                 </Panel.Heading>
 
                 <Panel.Body>
-                    <span className="boldText"> Sign up and email options</span>
-
-                    <br />
-                    <br />
+                    <div className="bold-text global-settings__title-text"> Sign up and email options</div>
 
                     {rowTextComponents}
 
