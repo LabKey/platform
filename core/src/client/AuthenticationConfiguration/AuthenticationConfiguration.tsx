@@ -124,6 +124,7 @@ export class App extends PureComponent<any, any> {
 
     saveChanges = () => {
         let form = new FormData();
+
         Object.keys(this.state.globalSettings).map(
             (item) => {
                 form.append(item, this.state.globalSettings[item]);
@@ -131,17 +132,18 @@ export class App extends PureComponent<any, any> {
         );
 
         const dirtyStateSections = this.draggableIsDirty();
-        dirtyStateSections.map((stateSection) => {
-            if (stateSection == "formConfigurations"){
-                // remove database config
-                form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString());
-                console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString())
-            } else {
-                form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).toString());
-                console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).toString())
-
-            }
-        });
+        if (dirtyStateSections.length !== 0) {
+            dirtyStateSections.map((stateSection) => {
+                if (stateSection == "formConfigurations"){
+                    // remove database config
+                    form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString());
+                    // console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString())
+                } else {
+                    form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).toString());
+                    // console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).toString())
+                }
+            });
+        }
 
         Ajax.request({
             url: ActionURL.buildURL("login", "SaveSettings"),
@@ -153,7 +155,7 @@ export class App extends PureComponent<any, any> {
             },
             success: function(result){
                 console.log("success: ", result);
-                // window.location.href = ActionURL.buildURL("admin", "showAdmin" )
+                window.location.href = ActionURL.buildURL("admin", "showAdmin" )
             }
         })
     };

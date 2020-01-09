@@ -378,10 +378,10 @@ class CheckBoxInput extends PureComponent<any, any> {
                     }}/>
                 }
 
-
                 <span style={{float:"right", marginRight: "285px"}}>
                     {this.props.canEdit ?
                         <FACheckBox
+                            name={this.props.name}
                             rowText={this.props.caption}
                             checked={this.props.value}
                             canEdit={true}
@@ -389,6 +389,7 @@ class CheckBoxInput extends PureComponent<any, any> {
                         />
                     :
                         <FACheckBox
+                            name={this.props.name}
                             rowText={this.props.caption}
                             checked={this.props.value}
                             canEdit={false}
@@ -417,6 +418,7 @@ class TextArea extends PureComponent<any, any> {
 
                 <span style={{float:"right", marginRight: "285px"}}>
                     <FormControl
+                        id={this.props.name}
                         componentClass="textarea"
                         placeholder="textarea"
                         value={this.props.value}
