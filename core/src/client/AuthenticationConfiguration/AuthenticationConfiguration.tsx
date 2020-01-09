@@ -273,11 +273,12 @@ export class App extends PureComponent<any, any> {
         };
 
         return(
-            <div style={{minWidth:"1200px"}}>
+            <div className="parentPanel">
                 {this.state.globalSettings &&
                     <GlobalSettings
                         {...globalSettings}
                         canEdit={this.state.canEdit}
+                        // canEdit={false}
                         checkGlobalAuthBox = {this.checkGlobalAuthBox}
                         authCount={this.state.authCount}
                     />
@@ -300,9 +301,8 @@ export class App extends PureComponent<any, any> {
                 </Button>
 
                 <Button
-                    className={'labkey-button'}
+                    className={'labkey-button parent-panel__cancel-button'}
                     onClick={() => {window.location.href = ActionURL.buildURL("admin", "showAdmin" )}}
-                    style={{marginLeft: '10px'}}
                 >
                     Cancel
                 </Button>

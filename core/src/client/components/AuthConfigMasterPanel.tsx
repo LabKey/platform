@@ -157,9 +157,9 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
         const {updateAuthRowsAfterSave, toggleSomeModalOpen} = this.props.actionFunctions;
         return(
             <Panel>
-                <Panel.Heading> <span className='boldText'> Configurations </span> </Panel.Heading>
+                <Panel.Heading> <span className='bold-text'> Configurations </span> </Panel.Heading>
                 <Panel.Body>
-                    <a style={{float: 'right'}} href={authenticationDocsLink} > Get help with authentication </a>
+                    <a className="configurations__help-link" href={authenticationDocsLink} > Get help with authentication </a>
 
                     { (this.state.primaryModalOpen || this.state.secondaryModalOpen) &&
                         <DynamicConfigurationModal
@@ -184,50 +184,48 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
 
                     <Tabs defaultActiveKey={1} id='tab-panel' onSelect={(key) => {this.useWhichTab(key)}}>
                         <Tab eventKey={1} title='Primary' >
-                            <div className='auth-tab'>
+                            <div className='configurations__auth-tab-login-form'>
                                 {this.props.canEdit &&
-                                    <DropdownButton id='primary-configurations-dropdown' title={'Add New Primary Configuration'}>
-                                        {addNewPrimaryDropdown}
-                                    </DropdownButton>
+                                    <div className="configurations__dropdown">
+                                        <DropdownButton id='primary-configurations-dropdown' title={'Add New Primary Configuration'}>
+                                            {addNewPrimaryDropdown}
+                                        </DropdownButton>
+                                    </div>
                                 }
 
-                                <br/><br/>
+                                <div className="configurations__config-section-title">
+                                    <span className='bold-text'> Login Form Configurations </span>
+                                    <LabelHelpTip title={'Tip'} body={() => {
+                                        return (<div> {loginFormTipText} </div>)
+                                    }}/>
+                                </div>
 
-                                <span className='boldText'> Login Form Configurations </span>
-                                <LabelHelpTip title={'Tip'} body={() => {
-                                    return (<div> {loginFormTipText} </div>)
-                                }}/>
-
-                                <br/><br/>
 
                                 {primaryTab_LoginForm}
                             </div>
 
                             <div>
-                                <hr/>
-
-                                <span className='boldText'> Single Sign On Configurations </span>
-
-                                <LabelHelpTip title={'Tip'} body={() => {
-                                    return (<div> {SSOTipText} </div>)
-                                }}/> <br/><br/>
+                                <div className="configurations__config-section-title">
+                                    <span className='bold-text'> Single Sign On Configurations </span>
+                                    <LabelHelpTip title={'Tip'} body={() => {
+                                        return (<div> {SSOTipText} </div>)
+                                    }}/>
+                                </div>
 
                                 {primaryTab_SSO}
                             </div>
                         </Tab>
                         <Tab eventKey={2} title='Secondary'>
 
-                            <div className={'auth-tab'}>
-                                {this.props.canEdit &&
+                            {this.props.canEdit &&
+                                <div className="configurations__dropdown">
                                     <DropdownButton id='secondary-configurations-dropdown' title={'Add New Secondary Configuration'}>
                                         {addNewSecondaryDropdown}
                                     </DropdownButton>
-                                }
+                                </div>
+                            }
 
-                                <br/><br/>
-
-                                {secondaryTab}
-                            </div>
+                            {secondaryTab}
 
                         </Tab>
                     </Tabs>
