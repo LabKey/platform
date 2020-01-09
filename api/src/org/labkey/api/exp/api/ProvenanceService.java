@@ -58,4 +58,14 @@ public interface ProvenanceService
      * Delete provenance for a assay result row.
      */
     void deleteObjectProvenance(int objectId);
+
+    /**
+     * Get protocol applications for the lsid
+     */
+    Set<Integer> getProtocolApplications(String lsid);
+
+    /**
+     * Get lsids for protocol applications
+     */
+    Set<String> getLSIDs(Integer protocolAppId);
 }
