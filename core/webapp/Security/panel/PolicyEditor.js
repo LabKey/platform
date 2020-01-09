@@ -140,11 +140,15 @@ Ext4.define('Security.panel.PolicyEditor', {
             this.policy = policy;
             // we'd still like to get the inherited policy
             if (this.resource.parentId && this.resource.parentId != this.cache.rootId)
-                Security.util.Policy.getPolicy({resourceId:this.resource.parentId, containerPath:this.resource.parentId, successCallback:this.setInheritedPolicy,
-                    errorCallback: function(errorInfo, response){
-                        if (response.status != 401)
-                            LABKEY.Utils.alert("Error", "Error getting parent policy: " + errorInfo.exception);
-                    }, scope:this});
+                Security.util.Policy.getPolicy({
+                    resourceId:this.resource.parentId,
+                    containerPath:this.resource.parentId,
+                    successCallback:this.setInheritedPolicy,
+                    errorCallback: function(errorInfo, response) {
+                        console.error(errorInfo, response);
+                    },
+                    scope:this
+                });
         }
 
         // check after the policy has been set
