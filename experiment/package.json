@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.8.0"
+    "@labkey/components": "0.10.0-fb-omit-6633.0"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
