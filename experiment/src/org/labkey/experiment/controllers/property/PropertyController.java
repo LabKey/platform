@@ -53,7 +53,6 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
@@ -120,7 +119,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -423,8 +421,10 @@ public class PropertyController extends SpringActionController
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
+            boolean includeWarnings = form.includeWarnings();
+
             ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            updateErrors.setBindExceptionErrors(errors, ERROR_MSG);
+            updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
 
             Domain domain = PropertyService.get().getDomain(getContainer(), newDomain.getDomainURI());
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -469,6 +469,7 @@ public class PropertyController extends SpringActionController
         private String schemaName;
         private String queryName;
         private Integer domainId;
+        private boolean includeWarnings;
 
         public Integer getDomainId()
         {
@@ -608,6 +609,16 @@ public class PropertyController extends SpringActionController
         public void setContainerPath(String containerPath)
         {
             this.containerPath = containerPath;
+        }
+
+        public boolean includeWarnings()
+        {
+            return includeWarnings;
+        }
+
+        public void setIncludeWarnings(boolean includeWarnings)
+        {
+            this.includeWarnings = includeWarnings;
         }
     }
 

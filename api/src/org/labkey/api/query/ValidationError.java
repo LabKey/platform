@@ -29,5 +29,5 @@ public interface ValidationError
 {
     String getMessage();
 
-    void addToBindException(BindException be, String errorCode);
+    void addToBindException(BindException be, String errorCode, boolean includeWarnings);
 }

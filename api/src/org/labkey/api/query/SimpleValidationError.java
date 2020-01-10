@@ -23,7 +23,7 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.validation.BindException;
-import org.springframework.validation.ObjectError;
+import org.springframework.validation.FieldError;
 
 import java.sql.SQLException;
 import java.util.Objects;
@@ -33,19 +33,22 @@ public class SimpleValidationError implements ValidationError
     private final String _message;
     private final Throwable _cause;
     private final ValidationException.SEVERITY _severity;
+    private final String _fieldName;
 
     public SimpleValidationError(@NotNull String message)
     {
         _message = message;
         _cause = null;
         _severity = ValidationException.SEVERITY.ERROR;
+        _fieldName = null;
     }
 
-    public SimpleValidationError(@NotNull String message, @NotNull ValidationException.SEVERITY severity)
+    public SimpleValidationError(@NotNull String message, @NotNull String fieldName, @NotNull ValidationException.SEVERITY severity)
     {
         _message = message;
         _cause = null;
         _severity = severity;
+        _fieldName = fieldName;
     }
 
     public SimpleValidationError(SQLException x)
@@ -53,6 +56,7 @@ public class SimpleValidationError implements ValidationError
         _message = x.getMessage();
         _cause = x;
         _severity = null;
+        _fieldName = null;
     }
 
     @Override
@@ -90,13 +94,16 @@ public class SimpleValidationError implements ValidationError
     }
 
     @Override
-    public void addToBindException(BindException errors, String errorCode)
+    public void addToBindException(BindException errors, String errorCode, boolean includeWarnings)
     {
+        // Only bind warnings when there is a request from client
         if (ValidationException.SEVERITY.WARN.equals(this._severity))
         {
-            String[] codes = {String.valueOf(this._severity)};
-            Warning warning = new Warning("Warning", codes, null, getMessage());
-            errors.addError(warning);
+            if (includeWarnings)
+            {
+                Warning warning = new Warning("Warning", this._fieldName, getMessage());
+                errors.addError(warning);
+            }
         }
         else
         {
@@ -104,18 +111,17 @@ public class SimpleValidationError implements ValidationError
         }
     }
 
-    public static class Warning extends ObjectError
+    public static class Warning extends FieldError
     {
-        private String _severity;
+        public Warning(String objectName, String field, String defaultMessage)
+        {
+            super(objectName, field, defaultMessage);
+        }
 
         public String getSeverity()
         {
-            return getCodes()[0];
+            return ValidationException.SEVERITY.WARN.toString();
         }
 
-        public Warning(String objectName, String[] codes, Object[] arguments, String defaultMessage)
-        {
-            super(objectName, codes, arguments, defaultMessage);
-        }
     }
 }

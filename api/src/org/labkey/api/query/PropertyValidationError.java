@@ -66,7 +66,7 @@ public class PropertyValidationError extends SimpleValidationError
     }
 
     @Override
-    public void addToBindException(BindException errors, String errorCode)
+    public void addToBindException(BindException errors, String errorCode, boolean includeWarnings)
     {
         String[] codes = {String.valueOf(_propertyId)};
         ObjectError error = new ObjectError(_property, codes, null, getMessage());

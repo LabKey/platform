@@ -68,9 +68,14 @@ public class ValidationException extends Exception implements Iterable<Validatio
 
     public void setBindExceptionErrors(BindException errors, String errorCode)
     {
+        setBindExceptionErrors(errors, errorCode, false);
+    }
+
+    public void setBindExceptionErrors(BindException errors, String errorCode, boolean includeWarnings)
+    {
         for (ValidationError ve : this.getErrors())
         {
-            ve.addToBindException(errors, errorCode);
+            ve.addToBindException(errors, errorCode, includeWarnings);
         }
     }
 
