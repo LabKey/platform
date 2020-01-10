@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.10.0-fb-smUserEmailContent.0"
+    "@labkey/components": "0.10.0-fb-smUserEmailContent.1"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
