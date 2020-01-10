@@ -31,6 +31,7 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -69,6 +70,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -365,9 +367,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         // There isn't a container column directly on this table so do a special filter
         if (getContainer() != null)
         {
-            FieldKey containerColumn = FieldKey.fromParts("Run", "Folder");
+            FieldKey containerColumn = FieldKey.fromParts("Container");
             clearConditions(containerColumn);
-            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)"), getContainer()), containerColumn);
+            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), getContainer()), containerColumn);
         }
     }
 
@@ -376,15 +378,28 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     public SQLFragment getFromSQL(String alias)
     {
         SQLFragment result = new SQLFragment();
-        result.append("(SELECT innerResults.*, innerData.RunId AS " );
-        result.append(RUN_ID_ALIAS);
+        result.append("(SELECT innerResults.*, innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container" );
         result.append(" FROM\n");
-        result.append(super.getFromSQL("innerResults"));
+        result.append(getFromTable().getFromSQL("innerResults"));
         result.append("\nINNER JOIN ");
         result.append(ExperimentService.get().getTinfoData(), "innerData");
-        result.append(" ON (innerData.RowId = innerResults.DataId)) ");
-        result.append(alias);
+        result.append(" ON (innerData.RowId = innerResults.DataId) ");
+        var filter = getFilter();
+        var where = filter.getSQLFragment(_rootTable.getSqlDialect());
+        if (!where.isEmpty())
+        {
+            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+            SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+            result.append("\n").append(filterFrag);
+        }
+        result.append(") ").append(alias);
         return result;
+    }
+
+    @Override
+    public SQLFragment getFromSQL(String alias, boolean skipTransform)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override
