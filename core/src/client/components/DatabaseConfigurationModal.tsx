@@ -86,32 +86,32 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         <FontAwesomeIcon
                             size='sm'
                             icon={faTimes}
-                            style={{float: "right", marginTop: "5px"}}
+                            className="modal__close-icon"
                             onClick={this.props.closeModal}
                         />
                     </Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
-                    <strong> Weak </strong>
+                    <div className="bold-text"> Weak </div>
                     <div>
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
                     </div>
 
                     <br/>
 
-                    <strong> Strong </strong>
+                    <div className="bold-text"> Strong </div>
                     <div>
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
                     </div>
 
 
-                    <div className="dbAuthRowHeights">
+                    <div className="database-modal__field-row">
                         <span>
                             Password Strength:
                         </span>
 
-                        <span className="dbAuthMoveRight">
+                        <span className="database-modal__field">
                             <ButtonGroup onClick={this.handleChange}>
                                 <Button data-key='1' value="Weak" name="strength" active={passwordStrength == "Weak"} disabled={!canEdit}>
                                     Weak
@@ -123,12 +123,12 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
                     </div>
 
-                    <div className="dbAuthRowHeights">
+                    <div className="database-modal__field-row">
                         <span>
                             Password Expiration:
                         </span>
 
-                        <span className="dbAuthMoveRight">
+                        <span className="database-modal__field">
                             {canEdit ?
                                 <FormControl
                                     componentClass="select"
@@ -150,22 +150,20 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         </span>
                     </div>
 
-                    <hr/>
+                    <div className="database-modal__bottom">
+                        <div className="modal__bottom-buttons">
+                            <a target="_blank" href={this.state.helpLink} className="modal__help-link"> {"More about authentication"} </a>
+                            {canEdit && <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>}
+                        </div>
 
-                    <div style={{float: "right"}}>
-                        <a target="_blank" href={this.state.helpLink} style={{marginRight: "10px"}}> {"More about authentication"} </a>
-                        {canEdit && <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>}
+                        <Button
+                            className={'labkey-button modal__save-button'}
+                            onClick={this.props.closeModal}
+                        >
+                            {canEdit ? "Cancel" : "Close"}
+                        </Button>
                     </div>
-
-                    <Button
-                        className={'labkey-button'}
-                        onClick={this.props.closeModal}
-                        style={{marginLeft: '10px'}}
-                    >
-                        {canEdit ? "Cancel" : "Close"}
-                    </Button>
                 </Modal.Body>
-
             </Modal>
         );
     }

@@ -9,11 +9,14 @@ import { faSquare } from '@fortawesome/free-regular-svg-icons';
 // figure out TS typing for a function (the onclick)
 
 interface Props {
-    checked: boolean;
-    onClick: any;
+    key?: string;
+    checked?: boolean;
+    canEdit?: boolean;
+    onClick?: Function;
+    name?: string;
 }
 
-export default class FACheckBox extends PureComponent<any> {
+export default class FACheckBox extends PureComponent<Props> {
     render() {
         const checkedOrNot = this.props.checked ? (
             <FontAwesomeIcon size="lg" icon={faCheckSquare} color="#0073BB" />

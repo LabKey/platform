@@ -1,19 +1,19 @@
 import React, { PureComponent } from 'react';
 
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faGripVertical} from "@fortawesome/free-solid-svg-icons";
 import AuthRow from "./AuthRow";
 
 interface Props {
-    className: string
-    rowInfo: Array<any> // Temp until final shape of rowInfo decided
-    onDragEnd: any
-    handlePrimaryToggle: any
-    stateSection: string
+    stateSection?: string;
+    rowInfo?: Array<AuthConfig>;
+    primaryProviders?: Object;
+    secondaryProviders?: Object;
+    canEdit?: boolean;
+    isDragDisabled?: boolean;
+    actionFunctions?: { [key: string]: Function; }
 }
 
-export default class DragAndDropPane extends PureComponent<any> {
+export default class DragAndDropPane extends PureComponent<Props> {
     constructor(props){
         super(props);
     }

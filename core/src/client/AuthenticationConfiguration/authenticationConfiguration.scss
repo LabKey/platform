@@ -1,7 +1,5 @@
 @import "../../../node_modules/react-bootstrap-toggle/dist/bootstrap2-toggle";
 
-// todo: rename
-
 .bold-text {
   font-weight: bold;
 }
@@ -19,9 +17,7 @@
   cursor:pointer;
 }
 
-// ---------------
-
-.parentPanel {
+.parent-panel {
   min-width: 1200px;
 }
 
@@ -60,8 +56,6 @@
   margin-bottom: 18px;
 }
 
-// ---
-
 .row-container {
   padding-bottom: 20px;
 }
@@ -76,12 +70,6 @@
   margin-top: 5px;
 }
 
-
-
-.left-margin{
-  margin-left: 10px;
-}
-
 .globalAuthConfig-textInput{
   width: 15em;
 }
@@ -90,50 +78,36 @@
   margin-left: 29px;
 }
 
-// fixing row
-.col-v-centered {
-  display: flex;
-  align-items: center;
+.database-modal__field-row {
+  height: 50px;
 }
 
-
-
-// database auth modal section ----------------------------
-
-.dbAuthRowHeights {
-  height: 40px;
-}
-
-.dbAuthMoveRight {
+.database-modal__field {
   float: right;
 }
 
-// file attachment section ----------------------------
+.database-modal__bottom {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
 
-.fileAttachmentLabel {
+.sso-fields__label {
   width: 130px;
-  //background-color: blue;
 }
 
-.fileAttachmentRow {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.fileAttachmentComponent {
+.sso-fields__file-attachment {
   width: 300px;
   margin-left: auto;
   margin-right: 0;
 }
 
-.fileAttachmentImage {
+.sso-fields__image-holder {
   float: left;
   margin-left: 60px;
   display: flex;
 }
 
-.fileAttachmentImageDisplay {
+.sso-fields__image {
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 5px;
@@ -141,38 +115,39 @@
   height:94px;
 }
 
-.nullImage {
+.sso-fields__null-image {
   margin-left: 7px;
 }
 
-.fileAttachmentDeleteImage {
+.sso-fields__delete-img {
   align-self: flex-start;
   margin-left: 2px;
 }
 
-.viewOnlyFloatRight {
-  //float: right;
-  //marginRight: 285px;
-  //height: 200px;
+.sso-fields__image-holder--view-only {
   margin-left: 265px;
-  //margin-right: 0;
 }
 
-.fileAttachmentNoImageText {
+.sso-fields__null-image__text {
   font-size: smaller;
   color: #DCDCDC;
   margin-left: 5px;
 }
 
+.sso-fields__spacer {
+  height: 12px;
+}
 
 .modal__test-button {
   display: flex;
   justify-content: flex-end;
+  margin-bottom: 2px;
 }
 
 .modal__error-message {
   float: right;
   color: #d9534f;
+  //margin-right: 55px;
 }
 
 .modal__field-label {
@@ -185,7 +160,60 @@
 }
 
 .modal__close-icon {
+  float: right;
+  margin-top: 5px;
+}
 
+.modal__enable-toggle {
+  width: 90px;
+  height: 28px;
+  float: right;
+}
+
+.modal__description-title {
+  height: 40px;
+}
+
+.modal__settings-text {
+  margin-bottom: 17px;
+}
+
+.modal__text-input {
+  height: 40px;
+}
+
+.modal__input {
+  float: right;
+  margin-right: 285px;
+}
+
+.modal__option-input {
+  float: right;
+  margin-right: 160px;
+}
+
+.modal__bottom {
+  border-top: 1px solid #eee;
+  padding-top: 11px;
+  margin-top: 19px;
+}
+
+.modal__bottom-buttons {
+  float: right;
+}
+
+.modal__help-link {
+  margin-right: 10px;
+}
+
+.modal__save-button {
+  margin-left: 10px;
+}
+
+.modal__top {
+  border-bottom: 1px solid #eee;
+  height: 40px;
+  margin-bottom: 16px;
 }
 
 // oh, my god, the toggle
@@ -202,7 +230,6 @@
   touch-action: manipulation;
   cursor: pointer;
   background-image: none;
-  //border: 1px solid transparent;
   padding: 6px 12px;
   font-size: 14px;
   line-height: 1.42857;

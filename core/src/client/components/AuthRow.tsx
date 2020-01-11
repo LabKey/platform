@@ -1,17 +1,28 @@
 import React, { PureComponent } from 'react';
-import {Button, ButtonGroup, Col, DropdownButton, FormControl, MenuItem, Modal, Panel} from "react-bootstrap";
+
+import {Col} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faPencilAlt, faInfoCircle, faTimesCircle, faGripVertical, faCircle} from "@fortawesome/free-solid-svg-icons";
+
 import DynamicConfigurationModal from "./DynamicConfigurationModal";
-import ReactBootstrapToggle from 'react-bootstrap-toggle';
 import DatabaseConfigurationModal from "./DatabaseConfigurationModal";
 
-interface Props {
-    canEdit: boolean
-    enabled: boolean
-    draggable: boolean
+interface Props extends AuthConfig{
+    index?: string;
+    modalType?: Object;
+    stateSection?: string;
+    canEdit?: boolean;
+    draggable?: boolean;
+    deleteAction?: Function;
+    toggleSomeModalOpen?: Function;
+    updateAuthRowsAfterSave?: Function;
 }
-export default class AuthRow extends PureComponent<any, any> {
+interface State {
+    color?: boolean;
+    modalOpen?: boolean;
+    highlight?: boolean;
+}
+export default class AuthRow extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -20,7 +31,7 @@ export default class AuthRow extends PureComponent<any, any> {
         };
     }
 
-    onToggleModal = (toggled) => {
+    onToggleModal = (toggled: string) => {
         this.setState(() => ({
             [toggled]: !this.state[toggled],
             highlight: false

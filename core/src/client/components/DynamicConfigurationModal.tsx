@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import {Button, FormControl, Modal} from "react-bootstrap";
+import {Button, ButtonGroup, FormControl, Modal} from "react-bootstrap";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faTimes} from "@fortawesome/free-solid-svg-icons";
 import FACheckBox from "./FACheckBox";
@@ -10,7 +10,6 @@ import {LabelHelpTip, FileAttachmentForm, ChangePasswordModal} from '@labkey/com
 import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
 import SSOFields from "./SSOFields";
-import {save} from "@labkey/api/dist/labkey/Domain";
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
@@ -45,7 +44,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         );
     };
 
-    saveEditedModal = () => {
+    saveEditedModal = () : void => {
         const baseUrl = ActionURL.getBaseURL(true);
         let saveUrl = baseUrl + this.props.modalType.saveLink;
         let form = new FormData();
@@ -83,47 +82,35 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     onToggle = () => {
-        this.setState({ enabled: !this.state.enabled }
-        // , () => console.log(this.state.enabled)
-        );
+        this.setState({enabled: !this.state.enabled});
     };
 
-    handleChange = (event) => {
+    handleChange = (event) : void => {
         const {name, value} = event.target;
         this.setState(() => ({
             [name]: value
         }));
-        // console.log(name, " ", value);
     };
 
-    handleDeleteLogo = (value) => {
+    handleDeleteLogo = (value: string) => {
         const arr = this.state.deletedLogos;
         arr.push(value);
 
-        this.setState(() => ({
-                deletedLogos: arr
-            })
-            // , () => {console.log(this.state.deletedLogos)}
-        );
+        this.setState(() => ({deletedLogos: arr}));
     };
 
-    checkCheckBox = (name) => {
+    checkCheckBox = (name: string) => {
         const oldState = this.state[name];
         this.setState(() => ({
             [name]: !oldState
-        })
-            // , () => this.props.checkDirty(this.state, this.props)
-        );
-        // console.log(oldState, name);
+        }));
     };
 
-    onFileChange = (attachment, logoType) => {
-        this.setState(() => ({[logoType]: attachment.first()})
-            // , () => console.log("New state: ", this.state)
-        );
+    onFileChange = (attachment, logoType: string) => {
+        this.setState(() => ({[logoType]: attachment.first()}));
     };
 
-    dynamicallyCreateFields = (fields, expandableOpen) => {
+    dynamicallyCreateFields = (fields: Array<AuthConfigField>, expandableOpen) => {
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
             if ("dictateFieldVisibility" in fields[i]) {
@@ -205,7 +192,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         // console.log(this.props);
         let {modalType, closeModal, canEdit} = this.props;
         let queryString = {"server": this.state.servers, "principal": this.state.principalTemplate, "sasl":this.state.SASL};
-        let modalTitle = (this.props.title) ? this.props.title : this.props.description;
+        let isAddNewConfig = (this.props.title);
+        let modalTitle = (isAddNewConfig) ? this.props.title : this.props.description;
+        let finalizeButtonText = (isAddNewConfig) ? "Finish" : "Apply";
 
         return (
             <Modal show={true} onHide={() => {}} >
@@ -215,29 +204,29 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         <FontAwesomeIcon
                             size='sm'
                             icon={faTimes}
-                            style={{float: "right", marginTop: "5px"}}
+                            className="modal__close-icon"
                             onClick={closeModal}
                         />
                     </Modal.Title>
                 </Modal.Header>
 
                 <Modal.Body>
-                    <span className="bold-text"> Configuration Status </span>
-                    <ReactBootstrapToggle
-                        onClick={this.onToggle}
-                        on="Enabled"
-                        off="Disabled"
-                        onstyle={"primary"}
-                        active={this.state.enabled}
-                        style={{width: "90px", height: "28px", float: "right"}}
-                        disabled={!canEdit}
-                    />
+                    <div className="modal__top">
+                        <span className="bold-text"> Configuration Status </span>
+                        <ReactBootstrapToggle
+                            onClick={this.onToggle}
+                            on="Enabled"
+                            off="Disabled"
+                            onstyle={"primary"}
+                            active={this.state.enabled}
+                            className="modal__enable-toggle"
+                            disabled={!canEdit}
+                        />
+                    </div>
 
-                    <hr/>
-                    <span className="bold-text"> Settings </span>
-                    <br/><br/>
+                    <div className="bold-text modal__settings-text"> Settings </div>
 
-                    <div style={{height: "40px"}}>
+                    <div className="modal__description-title">
                         Description *
 
                         {canEdit ?
@@ -256,7 +245,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     {modalType && this.dynamicallyCreateFields(modalType.settingsFields, this.state.search)}
 
-                    <br/>
+                    {/*<TextAreaOrFileUpload/>*/}
 
                     {(modalType && modalType.sso)  &&
                         <SSOFields
@@ -282,29 +271,29 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <div className="modal__error-message"> {this.state.errorMessage} </div>
 
-                    <hr/>
-
-                    <div style={{float: "right"}}>
-
-                        <a target="_blank"
-                           href={modalType.helpLink}
-                           style={{marginRight: "10px"}}>
-                                {"More about " + this.props.provider + " authentication"}
-                        </a>
-
-                        {canEdit
-                            ? <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}>Apply</Button>
-                            : null
-                        }
+                    <div className="modal__bottom">
+                        <div className="modal__bottom-buttons">
+    
+                            <a target="_blank"
+                               href={modalType.helpLink}
+                               className="modal__help-link"
+                            >
+                                    {"More about " + this.props.provider + " authentication"}
+                            </a>
+    
+                            {canEdit
+                                ? <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}> {finalizeButtonText} </Button>
+                                : null
+                            }
+                        </div>
+    
+                        <Button
+                            className={'labkey-button modal__save-button'}
+                            onClick={closeModal}
+                        >
+                            {canEdit ? "Cancel" : "Close"}
+                        </Button>
                     </div>
-
-                    <Button
-                        className={'labkey-button'}
-                        onClick={closeModal}
-                        style={{marginLeft: '10px'}}
-                    >
-                        {canEdit ? "Cancel" : "Close"}
-                    </Button>
 
                 </Modal.Body>
             </Modal>
@@ -324,7 +313,7 @@ interface TextInputProps {
 class TextInput extends PureComponent<any, any> {
     render() {
         return(
-            <div style={{height: "40px"}}>
+            <div className="modal__text-input">
                 <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
@@ -345,7 +334,6 @@ class TextInput extends PureComponent<any, any> {
                     />
                     : <span style ={{borderRadius: "5px", float: "right", width: "300px"}}> {this.props.value} </span>
                 }
-                <br/>
             </div>
         );
     }
@@ -373,11 +361,10 @@ class CheckBoxInput extends PureComponent<any, any> {
                     }}/>
                 }
 
-                <span style={{float:"right", marginRight: "285px"}}>
+                <span className="modal__input">
                     {this.props.canEdit ?
                         <FACheckBox
                             name={this.props.name}
-                            rowText={this.props.caption}
                             checked={this.props.value}
                             canEdit={true}
                             onClick={() => {this.props.checkCheckBox(this.props.name);}}
@@ -385,7 +372,6 @@ class CheckBoxInput extends PureComponent<any, any> {
                     :
                         <FACheckBox
                             name={this.props.name}
-                            rowText={this.props.caption}
                             checked={this.props.value}
                             canEdit={false}
                         />
@@ -411,12 +397,13 @@ class TextArea extends PureComponent<any, any> {
                     }}/>
                 }
 
-                <span style={{float:"right", marginRight: "285px"}}>
+                <span className="modal__input">
                     <FormControl
                         id={this.props.name}
                         componentClass="textarea"
                         placeholder="textarea"
                         value={this.props.value}
+                        style={{borderRadius: "5px"}}
                     />
                 </span>
             </div>
@@ -441,7 +428,7 @@ class Option extends PureComponent<any, any> {
 
 
                     { this.props.canEdit ?
-                        <span style={{float:"right", marginRight: "160px"}}>
+                        <span className="modal__option-input">
                             <FormControl
                                 componentClass="select"
                                 name={this.props.name}
@@ -455,6 +442,88 @@ class Option extends PureComponent<any, any> {
                         </span>
                         : <span style ={{float: "right", width: "300px"}}> {this.props.value} </span>
                     }
+            </div>
+        );
+    }
+}
+
+class TextAreaOrFileUpload extends PureComponent<any, any> {
+    constructor(props) {
+        super(props);
+        this.state = {
+            whichField: null
+        };
+    }
+
+    handleChange = (event) => {
+        const {name, value} = event.target;
+        this.setState((prevState) => ({
+            ...prevState,
+            currentSettings: {
+                ...prevState.currentSettings,
+                [name]: value
+            }
+        }));
+    };
+
+    render() {
+        const canEdit = true;
+
+        const caption = "Caption";
+        const required = false;
+        const description = "description";
+
+        const name = "something";
+        const value = "bruh";
+
+        return(
+            <div>
+                <br/><br/><br/>
+                <span className="modal__field-label">
+                    {caption} {required ? "*" : null}
+                </span>
+
+                { description &&
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {description} </div>)
+                    }}/>
+                }
+
+                <span style={{float: "right", marginRight:"145px"}}>
+                    <ButtonGroup onClick={this.handleChange} bsSize="xsmall">
+                        <Button data-key='1' value="Weak" name="strength" active={null} disabled={!canEdit}>
+                            Copy/Paste
+                        </Button>
+                        <Button data-key='2' value="Strong" name="strength" active={null} disabled={!canEdit}>
+                            File Upload
+                        </Button>
+                    </ButtonGroup>
+                </span>
+
+
+                <FormControl
+                    id={name}
+                    componentClass="textarea"
+                    placeholder="textarea"
+                    value={value}
+                    style={{borderRadius: "5px", width:"270px", height:"85px", marginLeft:"270px", marginTop:"20px"}}
+                />
+
+                <div style={{width: "270px", height:"70px", marginLeft:"270px"}}>
+                    <FileAttachmentForm
+                        key={this.props.text}
+                        showLabel={false}
+                        allowMultiple={false}
+                        allowDirectories={false}
+                        acceptedFormats={".jpeg,.png,.gif,.tif"}
+                        showAcceptedFormats={false}
+                        onFileChange={(attachment) => {
+                            this.props.onFileChange(attachment, this.props.fileTitle)
+                        }}
+                    />
+                </div>
+
+                <br/><br/><br/>
             </div>
         );
     }

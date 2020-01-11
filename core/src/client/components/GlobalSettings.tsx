@@ -1,7 +1,6 @@
 import React, { PureComponent } from 'react';
 
 import { Panel } from 'react-bootstrap';
-import { Ajax, ActionURL } from '@labkey/api';
 
 import FACheckBox from './FACheckBox';
 
@@ -11,36 +10,31 @@ let ROW_TEXTS = [
     { id: 'AutoCreateAccounts', text: 'Auto-create authenticated users' },
 ];
 
-// Todo:
-// Interface
-// use Immutable in handleCheckbox
-// move render const into a const folder?
-// might be a better way to do the rowTexts thing you're doing
-// hook up default email domain
 interface Props {
-    checkGlobalAuthBox: any;
-    // autoCreateAuthUsers: boolean
-    selfSignUp: boolean;
-    userEmailEdit: boolean;
+    SelfRegistration?: boolean;
+    SelfServiceEmailChanges?: boolean;
+    AutoCreateAccounts?: boolean;
+
+    canEdit?: boolean;
+    checkGlobalAuthBox?: Function;
+    authCount?: number;
 }
 interface State {
-    SelfRegistration: boolean;
-    SelfServiceEmailChanges: boolean;
-    AutoCreateAccounts: boolean;
+    SelfRegistration?: boolean;
+    SelfServiceEmailChanges?: boolean;
+    AutoCreateAccounts?: boolean | null;
+
+    canEdit?: boolean;
+    checkGlobalAuthBox?: Function;
+    authCount?: number;
 }
 
-export default class GlobalSettings extends PureComponent<any, any> {
+export default class GlobalSettings extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
             ...this.props,
         };
-    }
-
-    componentDidMount() {
-        if (this.props.hideAutoCreateAccounts){
-            this.setState({AutoCreateAccounts : null});
-        }
     }
 
     render() {

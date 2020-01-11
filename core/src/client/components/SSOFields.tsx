@@ -1,5 +1,5 @@
 import React, {PureComponent} from "react";
-import {FileAttachmentForm, importData} from "@labkey/components";
+import {FileAttachmentForm} from "@labkey/components";
 import {ActionURL} from "@labkey/api";
 
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
@@ -8,30 +8,26 @@ import {faImage, faTimesCircle} from "@fortawesome/free-solid-svg-icons";
 export default class SSOFields extends PureComponent<any, any> {
     render() {
         return(
-            <div >
-                <div className="">
-                    <ImageAndFileAttachmentForm
-                        text="Page Header Logo"
-                        imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
-                        onFileChange={this.props.onFileChange}
-                        handleDeleteLogo={this.props.handleDeleteLogo}
-                        fileTitle='auth_header_logo'
-                        canEdit={this.props.canEdit}
-                    />
-                </div>
+            <div>
+                <ImageAndFileAttachmentForm
+                    text="Page Header Logo"
+                    imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
+                    onFileChange={this.props.onFileChange}
+                    handleDeleteLogo={this.props.handleDeleteLogo}
+                    fileTitle='auth_header_logo'
+                    canEdit={this.props.canEdit}
+                />
 
-                <br/>
+                <div className="sso-fields__spacer"/>
 
-                <div className="">
-                    <ImageAndFileAttachmentForm
+                 <ImageAndFileAttachmentForm
                         text="Login Page Logo"
                         imageUrl={ActionURL.getBaseURL(true) + this.props.loginLogoUrl}
                         onFileChange={this.props.onFileChange}
                         handleDeleteLogo={this.props.handleDeleteLogo}
                         fileTitle='auth_login_page_logo'
                         canEdit={this.props.canEdit}
-                    />
-                </div>
+                 />
             </div>
         );
     }
@@ -47,14 +43,14 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
 
     render() {
         const noImageSelectedDisplay =
-            <div className="nullImage">
+            <div className="sso-fields__null-image">
                 <FontAwesomeIcon icon={faImage} color={"#DCDCDC"} size={"6x"}/>
-                <div className="fileAttachmentNoImageText">None selected</div>
+                <div className="sso-fields__null-image__text">None selected</div>
             </div>;
 
         const img =
             <img
-                className="fileAttachmentImageDisplay"
+                className="sso-fields__image"
                 src={this.state.imageUrl}
                 onError={() => {this.setState({imageUrl: null})}}
                 alt="Sign in"
@@ -62,17 +58,17 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
 
         return(
             <>
-                <div className="fileAttachmentLabel">
+                <div className="sso-fields__label">
                     {this.props.text}
                 </div>
 
                 { this.props.canEdit ?
                     <>
-                        <div className="fileAttachmentImage">
+                        <div className="sso-fields__image-holder">
                             {this.state.imageUrl ?
                                 <>
                                     {img}
-                                    <FontAwesomeIcon className="fileAttachmentDeleteImage"
+                                    <FontAwesomeIcon className="sso-fields__delete-img"
                                                      icon={faTimesCircle}
                                                      color={"#d9534f"}
                                                      onClick={() => {
@@ -86,7 +82,7 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                         </div>
 
 
-                        <div className="fileAttachmentComponent">
+                        <div className="sso-fields__file-attachment" id={this.props.fileTitle}>
                             <FileAttachmentForm
                                 key={this.props.text}
                                 showLabel={false}
@@ -100,7 +96,7 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                             />
                         </div>
                     </>
-                    : <div className="viewOnlyFloatRight"> {this.state.imageUrl ? img : noImageSelectedDisplay} </div>
+                    : <div className="sso-fields__image-holder--view-only"> {this.state.imageUrl ? img : noImageSelectedDisplay} </div>
                 }
             </>
         );
