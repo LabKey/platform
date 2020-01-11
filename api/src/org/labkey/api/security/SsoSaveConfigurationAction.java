@@ -9,6 +9,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
+import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
@@ -19,7 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationAction.SaveSsoConfigurationForm<AC>, AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationAction<F, AC>
+public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationForm<AC>, AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationAction<F, AC>
 {
     @Override
     public void save(F form, @Nullable User user, BindException errors)
@@ -95,7 +96,7 @@ public abstract class SaveSsoConfigurationAction<F extends SaveSsoConfigurationA
         return AuthenticationManager.getSsoConfigurationMap(configuration);
     }
 
-    public static abstract class SaveSsoConfigurationForm<AC extends SSOAuthenticationConfiguration<?>> extends AuthenticationConfigureForm<AC>
+    public static abstract class SsoSaveConfigurationForm<AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationForm<AC>
     {
         private boolean _autoRedirect = false;
         private String _deletedLogos;  // If non-null, this is a comma-separated list of logo names

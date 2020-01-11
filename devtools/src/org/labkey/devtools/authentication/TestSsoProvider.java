@@ -21,7 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
-import org.labkey.devtools.authentication.TestSsoController.SaveConfigurationAction;
+import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationAction;
 import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationForm;
 
 /**
@@ -54,7 +54,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     @Override
     public @NotNull ActionURL getSaveLink()
     {
-        return new ActionURL(SaveConfigurationAction.class, ContainerManager.getRoot());
+        return new ActionURL(TestSsoSaveConfigurationAction.class, ContainerManager.getRoot());
     }
 
     @NotNull

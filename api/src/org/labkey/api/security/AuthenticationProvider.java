@@ -36,7 +36,7 @@ import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConf
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.SaveSsoConfigurationAction.SaveSsoConfigurationForm;
+import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.WriteableAppProps;
@@ -133,7 +133,7 @@ public interface AuthenticationProvider
     }
 
     // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends AuthenticationConfigureForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
+    default <FORM extends SaveConfigurationForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
     {
         Map<String, String> map = getPropertyMap(categories);
 
@@ -182,7 +182,7 @@ public interface AuthenticationProvider
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
 
-        @Nullable AuthenticationConfigureForm<AC> getFormFromOldConfiguration(boolean active);
+        @Nullable SaveConfigurationForm<AC> getFormFromOldConfiguration(boolean active);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user)
@@ -193,7 +193,7 @@ public interface AuthenticationProvider
 
     interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SaveSsoConfigurationForm<AC> getFormFromOldConfiguration(boolean active, boolean hasLogos);
+        @Nullable SsoSaveConfigurationForm<AC> getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user) throws Throwable
@@ -206,7 +206,7 @@ public interface AuthenticationProvider
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-            SaveSsoConfigurationForm<AC> form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SsoSaveConfigurationForm<AC> form = getFormFromOldConfiguration(active, !logos.isEmpty());
             SaveConfigurationAction.saveOldProperties(form, user);
 
             if (null != form && !logos.isEmpty())
@@ -247,7 +247,7 @@ public interface AuthenticationProvider
 
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable AuthenticationConfigureForm<AC> getFormFromOldConfiguration(boolean active);
+        @Nullable SaveConfigurationForm<AC> getFormFromOldConfiguration(boolean active);
 
         default void migrateOldConfiguration(boolean active, User user)
         {

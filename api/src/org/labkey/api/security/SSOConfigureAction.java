@@ -92,7 +92,8 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
         return true;
     }
 
-    public static abstract class SSOConfigureForm<AC extends SSOAuthenticationConfiguration<?>> extends AuthenticationConfigureForm<AC>
+    @RemoveIn20_1
+    public static abstract class SSOConfigureForm<AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationForm<AC>
     {
         private boolean _autoRedirect = false;
         private String[] _deletedLogos;

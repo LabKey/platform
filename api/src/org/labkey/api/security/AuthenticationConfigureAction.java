@@ -14,7 +14,7 @@ import org.springframework.web.servlet.ModelAndView;
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 @RemoveIn20_1
-public abstract class AuthenticationConfigureAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration<?>> extends FormViewAction<F>
+public abstract class AuthenticationConfigureAction<F extends SaveConfigurationForm<AC>, AC extends AuthenticationConfiguration<?>> extends FormViewAction<F>
 {
     protected @Nullable AC _configuration = null;
 

@@ -21,11 +21,12 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationConfigurationCache;
-import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SaveConfigurationAction;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.URLHelper;
@@ -164,7 +165,7 @@ public class TestSecondaryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveConfigurationAction extends org.labkey.api.security.SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
+    public class TestSecondarySaveConfigurationAction extends SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
     {
         @Override
         public void validate(TestSecondarySaveConfigurationForm form, Errors errors)
@@ -172,7 +173,7 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
-    public static class TestSecondarySaveConfigurationForm extends AuthenticationConfigureForm<TestSecondaryConfiguration>
+    public static class TestSecondarySaveConfigurationForm extends SaveConfigurationForm<TestSecondaryConfiguration>
     {
         @Override
         public String getProvider()

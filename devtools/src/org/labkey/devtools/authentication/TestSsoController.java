@@ -32,7 +32,8 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SSOConfigureAction;
 import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
-import org.labkey.api.security.SaveSsoConfigurationAction;
+import org.labkey.api.security.SsoSaveConfigurationAction;
+import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -106,6 +107,7 @@ public class TestSsoController extends SpringActionController
         }
     }
 
+    @RemoveIn20_1
     public static class TestSsoConfigureForm extends SSOConfigureForm<TestSsoConfiguration>
     {
         public TestSsoConfigureForm()
@@ -151,7 +153,7 @@ public class TestSsoController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveConfigurationAction extends SaveSsoConfigurationAction<TestSsoSaveConfigurationForm, TestSsoConfiguration>
+    public class TestSsoSaveConfigurationAction extends SsoSaveConfigurationAction<TestSsoSaveConfigurationForm, TestSsoConfiguration>
     {
         @Override
         public void validate(TestSsoSaveConfigurationForm form, Errors errors)
@@ -159,7 +161,7 @@ public class TestSsoController extends SpringActionController
         }
     }
 
-    public static class TestSsoSaveConfigurationForm extends SaveSsoConfigurationAction.SaveSsoConfigurationForm<TestSsoConfiguration>
+    public static class TestSsoSaveConfigurationForm extends SsoSaveConfigurationForm<TestSsoConfiguration>
     {
         @Override
         public String getProvider()
