@@ -18,6 +18,7 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
 {
     protected @Nullable AC _configuration = null;
 
+    // TODO: Consider removing this -- _configuration is never used (??)
     private void initializeConfiguration(F form)
     {
         Integer rowId = form.getConfiguration();
