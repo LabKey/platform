@@ -23,9 +23,7 @@ import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationPro
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSecondaryController.SaveConfigurationAction;
-import org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryConfigurationForm;
-
-import static org.labkey.devtools.authentication.TestSecondaryController.getConfigureURL;
+import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationForm;
 
 /**
  * User: adam
@@ -40,19 +38,6 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     public TestSecondaryConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
         return new TestSecondaryConfiguration(this, cs.getStandardSettings());
-    }
-
-    @Nullable
-    @Override
-    public ActionURL getConfigurationLink()
-    {
-        return getConfigurationLink(null);
-    }
-
-    @Override
-    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
-    {
-        return getConfigureURL(rowId);
     }
 
     @Override
@@ -84,6 +69,6 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     @Override
     public @Nullable AuthenticationConfigureForm<TestSecondaryConfiguration> getFormFromOldConfiguration(boolean active)
     {
-        return active ? new TestSecondaryConfigurationForm() : null;
+        return active ? new TestSecondarySaveConfigurationForm() : null;
     }
 }

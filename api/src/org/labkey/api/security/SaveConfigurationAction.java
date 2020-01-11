@@ -63,6 +63,11 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
 
     public void save(F form, @Nullable User user, BindException errors)
     {
+        saveForm(form, user);
+    }
+
+    public static <F extends AuthenticationConfigureForm<?>> void saveForm(F form, @Nullable User user)
+    {
         if (null == form.getRowId())
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
@@ -85,5 +90,16 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
     {
         AC configuration = getFromCache(rowId);
         return AuthenticationManager.getConfigurationMap(configuration);
+    }
+
+    // Remove after we no longer upgrade from 20.1
+    public static void saveOldProperties(@Nullable AuthenticationConfigureForm<?> form, @Nullable User user)
+    {
+        if (null != form)
+        {
+            form.setEnabled(true);
+            form.setDescription(form.getProvider() + " Configuration");
+            saveForm(form, user);
+        }
     }
 }

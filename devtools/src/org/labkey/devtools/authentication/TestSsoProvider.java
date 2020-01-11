@@ -22,7 +22,7 @@ import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSsoController.SaveConfigurationAction;
-import org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm;
+import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationForm;
 
 /**
  * Created by adam on 6/5/2016.
@@ -74,8 +74,8 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     // TODO: Remove this once we stop upgrading from 19.3
 
     @Override
-    public @Nullable TestSsoConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
+    public @Nullable TestSsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
     {
-        return active || hasLogos ? new TestSsoConfigureForm() : null;
+        return active || hasLogos ? new TestSsoSaveConfigurationForm() : null;
     }
 }

@@ -36,7 +36,7 @@ import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConf
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
+import org.labkey.api.security.SaveSsoConfigurationAction.SaveSsoConfigurationForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.WriteableAppProps;
@@ -90,7 +90,10 @@ public interface AuthenticationProvider
     }
 
     @RemoveIn20_1
-    @Nullable ActionURL getConfigurationLink();
+    default @Nullable ActionURL getConfigurationLink()
+    {
+        return null;
+    }
 
     @RemoveIn20_1
     default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
@@ -138,7 +141,9 @@ public interface AuthenticationProvider
         {
             ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(clazz);
             FORM form = factory.fromMap(map);
-            AuthenticationConfigureAction.saveForm(form, null);
+            if (null == form.getDescription())
+                form.setDescription(form.getProvider() + " Configuration");
+            SaveConfigurationAction.saveForm(form, null);
         }
     }
 
@@ -182,19 +187,13 @@ public interface AuthenticationProvider
         @Override
         default void migrateOldConfiguration(boolean active, User user)
         {
-            AuthenticationConfigureForm<AC> form = getFormFromOldConfiguration(active);
-
-            if (null != form)
-            {
-                form.setEnabled(active);
-                AuthenticationConfigureAction.saveForm(form, user);
-            }
+            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
         }
     }
 
     interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SSOConfigureForm<AC> getFormFromOldConfiguration(boolean active, boolean hasLogos);
+        @Nullable SaveSsoConfigurationForm<AC> getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user) throws Throwable
@@ -207,25 +206,20 @@ public interface AuthenticationProvider
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-            SSOConfigureForm<AC> form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SaveSsoConfigurationForm<AC> form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SaveConfigurationAction.saveOldProperties(form, user);
 
-            if (null != form)
+            if (null != form && !logos.isEmpty())
             {
-                form.setEnabled(active);
-                AuthenticationConfigureAction.saveForm(form, user);
+                SSOAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
 
-                if (!logos.isEmpty())
-                {
-                    SSOAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
+                List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
+                svc.addAttachments(configuration, attachmentFiles, user);
+                for (AuthLogoType alt : AuthLogoType.values())
+                    svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
 
-                    List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
-                    svc.addAttachments(configuration, attachmentFiles, user);
-                    for (AuthLogoType alt : AuthLogoType.values())
-                        svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
-
-                    AttachmentCache.clearAuthLogoCache();
-                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-                }
+                AttachmentCache.clearAuthLogoCache();
+                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             }
         }
     }
@@ -257,13 +251,7 @@ public interface AuthenticationProvider
 
         default void migrateOldConfiguration(boolean active, User user)
         {
-            AuthenticationConfigureForm<AC> form = getFormFromOldConfiguration(active);
-
-            if (null != form)
-            {
-                form.setEnabled(active);
-                AuthenticationConfigureAction.saveForm(form, user);
-            }
+            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
         }
 
         /**

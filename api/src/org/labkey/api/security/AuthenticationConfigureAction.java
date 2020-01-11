@@ -3,6 +3,7 @@ package org.labkey.api.security;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Table;
 import org.labkey.api.view.NotFoundException;
@@ -12,7 +13,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
-public abstract class AuthenticationConfigureAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration> extends FormViewAction<F>
+@RemoveIn20_1
+public abstract class AuthenticationConfigureAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration<?>> extends FormViewAction<F>
 {
     protected @Nullable AC _configuration = null;
 
@@ -65,21 +67,17 @@ public abstract class AuthenticationConfigureAction<F extends AuthenticationConf
     @Override
     public boolean handlePost(F form, BindException errors)
     {
-        saveForm(form, getUser());
-        return true;
-    }
-
-    public static void saveForm(AuthenticationConfigureForm form, @Nullable User user)
-    {
         if (null == form.getRowId())
         {
-            Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
+            Table.insert(getUser(), CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
         }
         else
         {
-            Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
+            Table.update(getUser(), CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
         }
 
         AuthenticationConfigurationCache.clear();
+
+        return true;
     }
 }

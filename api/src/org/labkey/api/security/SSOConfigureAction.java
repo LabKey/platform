@@ -2,6 +2,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
@@ -18,7 +19,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigureForm<AC>, AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureAction<F, AC>
+@RemoveIn20_1
+public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigureForm<AC>, AC extends SSOAuthenticationConfiguration<?>> extends AuthenticationConfigureAction<F, AC>
 {
     @Override
     public boolean handlePost(F form, BindException errors)
@@ -29,7 +31,7 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
 
     protected boolean handleLogos(F form, BindException errors)
     {
-        SSOAuthenticationConfiguration configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
+        SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
         Map<String, MultipartFile> fileMap = getFileMap();
         boolean changedLogos = deleteLogos(form, configuration);
 
@@ -57,7 +59,7 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
     }
 
     // Returns true if a new logo is saved
-    private boolean handleLogo(SSOAuthenticationConfiguration configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
+    private boolean handleLogo(SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
     {
         if (null == configuration)
             throw new NotFoundException("Configuration not found");
@@ -77,7 +79,7 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
     }
 
     // Returns true if a logo is deleted
-    public boolean deleteLogos(F form, SSOAuthenticationConfiguration configuration)
+    public boolean deleteLogos(F form, SSOAuthenticationConfiguration<?> configuration)
     {
         String[] deletedLogos = form.getDeletedLogos();
 
@@ -90,7 +92,7 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
         return true;
     }
 
-    public static abstract class SSOConfigureForm<AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureForm<AC>
+    public static abstract class SSOConfigureForm<AC extends SSOAuthenticationConfiguration<?>> extends AuthenticationConfigureForm<AC>
     {
         private boolean _autoRedirect = false;
         private String[] _deletedLogos;

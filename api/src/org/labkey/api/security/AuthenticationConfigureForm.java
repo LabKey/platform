@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.annotations.RemoveIn20_1;
 
-@RemoveIn20_1 // Going forward, no need to extend ReturnUrlForm
+@RemoveIn20_1 // Going forward, no need to extend ReturnUrlForm. Rename this to SaveConfigurationForm.
 public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfiguration> extends ReturnUrlForm
 {
     private Integer _configuration;
