@@ -17,21 +17,36 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
 * User: adam
@@ -40,22 +55,27 @@ import java.sql.SQLException;
 */
 public class StudyLsidHandler implements LsidManager.LsidHandler
 {
-    public ExpObject getObject(Lsid lsid)
+    public Identifiable getObject(Lsid lsid)
     {
-        throw new UnsupportedOperationException();
+        OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+        if (oo == null)
+            return null;
+
+        return new IdentifiableBase(oo);
     }
 
     public Container getContainer(Lsid lsid)
     {
-        throw new UnsupportedOperationException();
+        OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+        if (oo == null)
+            return null;
+
+        return oo.getContainer();
     }
 
     @Nullable
     public ActionURL getDisplayURL(Lsid lsid)
     {
-        // TODO fix getDisplayUrl
-        if (true) throw new RuntimeException("not integrated with hard tables");
-
         String fullNamespace = lsid.getNamespace();
         if (!fullNamespace.startsWith("Study."))
             return null;
@@ -67,52 +87,26 @@ public class StudyLsidHandler implements LsidManager.LsidHandler
 
         if (type.equalsIgnoreCase("Data"))
         {
-            try
+            int containerId = Integer.parseInt(studyNamespace.substring(i+1));
+            Container container = ContainerManager.getForRowId(containerId);
+            int datasetId = Integer.parseInt(lsid.getObjectId().split("\\.")[0]);
+
+            StudyService studyService = StudyService.get();
+            if (null != studyService)
             {
-                ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(),
-                        "SELECT Container, DatasetId, SequenceNum, ParticipantId FROM " + /*StudySchema.getInstance().getTableInfoStudyData(null) +*/ " WHERE LSID=?",
-                        lsid.toString()).getResultSet();
-                if (!rs.next())
-                    return null;
-                String containerId = rs.getString(1);
-                int datasetId = rs.getInt(2);
-                double sequenceNum = rs.getDouble(3);
-                String ptid = rs.getString(4);
-                Container c = ContainerManager.getForId(containerId);
-                ActionURL url = new ActionURL(StudyController.DatasetAction.class, c);
-                url.addParameter(DatasetDefinition.DATASETKEY, String.valueOf(datasetId));
-                url.addParameter(VisitImpl.SEQUENCEKEY, String.valueOf(sequenceNum));
-                url.addParameter("StudyData.participantId~eq", ptid);
-                return url;
+                Dataset dataset = studyService.getDataset(container, datasetId);
+
+                if (null != dataset)
+                {
+                    String datasetName = dataset.getName();
+
+                    ActionURL queryURL = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(container, "study", datasetName);
+                    queryURL.addFilter("query", FieldKey.fromParts("lsid"), CompareType.EQUAL, lsid.toString());
+                    return queryURL;
+                }
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+
         }
-/*
-        if (type.equalsIgnoreCase("Participant"))
-        {
-            try
-            {
-                ResultSet rs = Table.executeQuery(StudySchema.getInstance().getSchema(),
-                        "SELECT Container, ParticipantId FROM " + StudySchema.getInstance().getTableInfoParticipant() + " WHERE IndividualLSID=?",
-                        new Object[] {lsid.toString()});
-                if (!rs.next())
-                    return null;
-                String containerId = rs.getString(1);
-                String ptid = rs.getString(2);
-                Container c = ContainerManager.getForId(containerId);
-                ActionURL url = new ActionURL("Study", "participant", c);
-                url.addParameter("Participant.participantId~eq", ptid);
-                return url.getURIString();
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-        }
-*/
         return null;
     }
 

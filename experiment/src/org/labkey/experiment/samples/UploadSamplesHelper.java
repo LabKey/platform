@@ -323,7 +323,13 @@ public abstract class UploadSamplesHelper
                     if (sample != null)
                         parentMaterials.put(sample, sampleRole(sample));
                     else
-                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
+                    {
+                        String message = "Sample input '" + parentValue + "'";
+                        if (parts.length > 1)
+                            message += " in SampleSet '" + parts[1] + "'";
+                        message += " not found";
+                        throw new ValidationException(message);
+                    }
                 }
             }
             if (parts.length == 2)

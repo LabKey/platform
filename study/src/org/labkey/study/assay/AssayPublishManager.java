@@ -26,6 +26,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -38,13 +39,17 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.QCState;
@@ -81,6 +86,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.PublishController;
@@ -96,11 +102,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,6 +124,9 @@ public class AssayPublishManager implements AssayPublishService
 {
     private static final int MIN_ASSAY_ID = 5000;
     private static final Logger LOG = Logger.getLogger(AssayPublishManager.class);
+
+    private static final String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
+    private static final String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
 
     public synchronized static AssayPublishManager getInstance()
     {
@@ -250,6 +261,7 @@ public class AssayPublishManager implements AssayPublishService
         boolean schemaChanged = false;
         DatasetDefinition dataset = null;
         List<Map<String, Object>> convertedDataMaps;
+        List<String> lsids;
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -313,6 +325,86 @@ public class AssayPublishManager implements AssayPublishService
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
             convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+
+            // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
+            // in 'ensurePropertyDescriptors'.
+            if (schemaChanged)
+                StudyManager.getInstance().uncache(dataset);
+            dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
+            Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
+            QCState defaultQCState = null;
+            if (defaultQCStateId != null)
+                defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+
+            lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+            // If provenance module is not present, do nothing
+            ProvenanceService pvs = ProvenanceService.get();
+
+            if (null != pvs)
+            {
+                // Create a new experiment run using the "Study Publish" Protocol
+                ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
+                ExpProtocol studyPublishProtocol = null;
+
+                try
+                {
+                    studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
+
+                    run.setProtocol(studyPublishProtocol);
+                    ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
+                    PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
+                    run.setFilePathRoot(pipeRoot.getRootPath());
+
+                    run = ExperimentService.get().saveSimpleExperimentRun(run,
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            Collections.emptyMap(),
+                            info, LOG, false);
+                }
+                catch (ExperimentException e)
+                {
+                    errors.add("StudyPublishRun can not be created.");
+                    LOG.error(e);
+                }
+
+                if (!errors.isEmpty())
+                    return null;
+
+                // Add Provenance details
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+
+                if (provider != null && dataset != null && dataset.getDomain() != null)
+                {
+                    Set<Pair<String, String>> lsidPairs = new HashSet<>();
+
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsids, CompareType.IN);
+
+                    String domainName = dataset.getDomain().getName();
+                    Collection<Map<String, Object>> resultRowsMap = new TableSelector(dataset.getDomainKind().getTableInfo(user, targetContainer, domainName), filter, null).getMapCollection();
+                    Set<String> resultRowLsids = new LinkedHashSet<>();
+
+                    for (Map<String, Object> resultRow : resultRowsMap)
+                    {
+                        String resultRowLsid = resultRow.get("assayResultLsid").toString();
+                        String datasetLsid = resultRow.get("lsid").toString();
+                        lsidPairs.add(Pair.of(resultRowLsid, datasetLsid));
+                        resultRowLsids.add(resultRowLsid);
+                    }
+
+                    // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
+                    pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
+
+                    // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
+                    pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
+
+                    // Call syncRunEdges
+                    ExperimentService.get().syncRunEdges(run);
+                }
+
+            }
+
             transaction.commit();
         }
         catch (ChangePropertyDescriptorException e)
@@ -320,19 +412,7 @@ public class AssayPublishManager implements AssayPublishService
             throw new UnexpectedException(e);
         }
 
-        // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
-        // in 'ensurePropertyDescriptors'.
-        if (schemaChanged)
-            StudyManager.getInstance().uncache(dataset);
-        dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
-        Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
-        QCState defaultQCState = null;
-        if (defaultQCStateId != null)
-            defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-        // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
-        // IllegalStateException in ContainerManager.ensureContainer.
-        List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
         if (lsids.size() > 0 && protocol != null)
         {
             for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
@@ -349,6 +429,7 @@ public class AssayPublishManager implements AssayPublishService
                 AuditLogService.get().addEvent(user, event);
             }
         }
+
         //Make sure that the study is updated with the correct timepoints.
         StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
@@ -939,5 +1020,19 @@ public class AssayPublishManager implements AssayPublishService
             }
         }
         return null;
+    }
+
+    public ExpProtocol ensureStudyPublishProtocol(User user, Container container) throws ExperimentException
+    {
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(STUDY_PUBLISH_PROTOCOL_LSID);
+        if (protocol == null)
+        {
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, STUDY_PUBLISH_PROTOCOL_NAME);
+            baseProtocol.setLSID(STUDY_PUBLISH_PROTOCOL_LSID);
+            baseProtocol.setMaxInputMaterialPerInstance(0);
+            baseProtocol.setProtocolDescription("Simple protocol for publishing study using copy to study.");
+            return ExperimentService.get().insertSimpleProtocol(baseProtocol, user);
+        }
+        return protocol;
     }
 }
