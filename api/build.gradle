@@ -136,8 +136,7 @@ sourceSets {
 
 
 dependencies {
-    BuildUtils.addLabKeyDependency(project: project, config: "creditable", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), depProjectConfig: "toBeCredited")
-    // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory when the remoteapi project is not present
+    // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
     // and so the dependencies are included in the dependencies.txt file.
     BuildUtils.addLabKeyDependency(project: project, config: "labkey", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), transitive: true, depProjectConfig: "default")
     BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
@@ -167,22 +166,5 @@ dependencies {
 
     jspImplementation files(project.tasks.jar)
     jspImplementation apache, jackson, spring
-}
-
-// Copy remoteapi (i.e., labkey-client-api-XX.X.jar) and its dependencies to api/lib
-if (project.findProject(BuildUtils.getRemoteApiProjectPath(gradle)) != null)
-{
-    project.evaluationDependsOn(BuildUtils.getRemoteApiProjectPath(gradle))
-
-    project.task("copyRemoteApiJars",
-        type: Copy,
-        {CopySpec copy ->
-          copy.from project.project(BuildUtils.getRemoteApiProjectPath(gradle)).tasks.jar
-          copy.from project.project(BuildUtils.getRemoteApiProjectPath(gradle)).configurations.default
-          copy.into "${project.file(project.labkey.explodedModuleLibDir)}"
-          copy.include '*.jar'
-        }
-    )
-    project.tasks.module.dependsOn(project.tasks.copyRemoteApiJars)
 }
 
