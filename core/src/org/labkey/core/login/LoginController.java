@@ -2921,7 +2921,6 @@ public class LoginController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new DeleteConfigurationAction(),
                 controller.new GetDbLoginPropertiesAction(),
-                controller.new InitialMountAction(),
                 controller.new MigrateAuthenticationConfigurationsAction(),
                 controller.new SaveDbLoginPropertiesAction(),
                 controller.new SaveSettingsAction(),
@@ -2931,7 +2930,8 @@ public class LoginController extends SpringActionController
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
                 controller.new ConfigureAction(),
-                controller.new ConfigureDbLoginAction()
+                controller.new ConfigureDbLoginAction(),
+                controller.new InitialMountAction()
             );
         }
     }

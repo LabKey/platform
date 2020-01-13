@@ -15,26 +15,20 @@
  */
 package org.labkey.devtools.authentication;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.AllowedDuringUpgrade;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationConfigurationCache;
-import org.labkey.api.security.AuthenticationConfigureAction;
-import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SaveConfigurationAction;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -170,63 +164,8 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
-    @RemoveIn20_1
-    @AdminConsoleAction
-    public class ConfigureAction extends AuthenticationConfigureAction<TestSecondaryConfigurationForm, TestSecondaryConfiguration>
-    {
-        @Override
-        public ModelAndView getConfigureView(TestSecondaryConfigurationForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/devtools/authentication/testSecondaryConfigure.jsp", form, errors);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("authenticationModule");
-            PageFlowUtil.urlProvider(LoginUrls.class).appendOldAuthenticationNavTrail(root).addChild("Configure " + TestSecondaryProvider.NAME + " Authentication");
-            return root;
-        }
-
-        @Override
-        protected void validateForm(TestSecondaryConfigurationForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public ActionURL getSuccessURL(TestSecondaryConfigurationForm form)
-        {
-            return getConfigureURL(form.getRowId());  // Redirect to same action -- reload props from database
-        }
-    }
-
-    @RemoveIn20_1
-    public static class TestSecondaryConfigurationForm extends AuthenticationConfigureForm<TestSecondaryConfiguration>
-    {
-        public TestSecondaryConfigurationForm()
-        {
-            setDescription("TestSecondary Configuration");
-        }
-
-        @Override
-        public String getProvider()
-        {
-            return TestSecondaryProvider.NAME;
-        }
-    }
-
-    public static ActionURL getConfigureURL(@Nullable Integer configuration)
-    {
-        ActionURL url = new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
-
-        if (null != configuration)
-            url.addParameter("configuration", configuration);
-
-        return url;
-    }
-
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveConfigurationAction extends org.labkey.api.security.SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
+    public class TestSecondarySaveConfigurationAction extends SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
     {
         @Override
         public void validate(TestSecondarySaveConfigurationForm form, Errors errors)
@@ -234,7 +173,7 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
-    public static class TestSecondarySaveConfigurationForm extends AuthenticationConfigureForm<TestSecondaryConfiguration>
+    public static class TestSecondarySaveConfigurationForm extends SaveConfigurationForm<TestSecondaryConfiguration>
     {
         @Override
         public String getProvider()

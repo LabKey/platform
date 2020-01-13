@@ -1,5 +1,3 @@
-<%@ page import="org.labkey.devtools.authentication.TestSecondaryController" %>
-<%@ page import="org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryForm" %>
 <%
 /*
  * Copyright (c) 2016-2019 LabKey Corporation
@@ -17,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%

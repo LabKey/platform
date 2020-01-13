@@ -2,41 +2,33 @@ import React, { PureComponent } from 'react';
 
 import { Panel, DropdownButton, MenuItem, Tab, Tabs} from 'react-bootstrap';
 
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faInfoCircle, faPencilAlt} from '@fortawesome/free-solid-svg-icons';
-
 import { LabelHelpTip } from '@labkey/components';
 
 import DragAndDropPane from './DragAndDropPane';
 import AuthRow from './AuthRow';
 import DynamicConfigurationModal from "./DynamicConfigurationModal";
 
-// todo:
-// add new configurations is not in order
-// lol fix the 'get help with auth' href
-// put in loading wheel
 
-interface loginFormAuthObject {
-    deleteUrl: string
-    description: string
-    enabled: boolean
-    id: string
-    name: string
-    url: string
-}
-interface State {
-    modalOpen: boolean
-}
 interface Props {
-    primary: Object
-    ssoConfigurations: Array<Object>
-    loginFormAuth: Array<loginFormAuthObject>
-    secondary: any
-    onDragEnd: any
-    canEdit: boolean
+    formConfigurations?: Array<AuthConfig>;
+    ssoConfigurations?: Array<AuthConfig>;
+    secondaryConfigurations?: Array<AuthConfig>;
+    primaryProviders?: Object;
+    secondaryProviders?: Object;
+    helpLink?: string;
+    canEdit?: boolean;
+    isDragDisabled?: boolean;
+    actionFunctions?: { [key: string]: Function; };
 }
 
-export default class AuthConfigMasterPanel extends PureComponent<any, any> {
+interface State {
+    useWhichTab?: string;
+    primaryModalOpen?: boolean;
+    secondaryModalOpen?: boolean;
+    addModalType?: string | null;
+}
+
+export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -47,18 +39,18 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
         };
     }
 
-    useWhichTab = (key) => {
+    useWhichTab = (key: number) : void => {
         const primaryOrSecondary = ((key == 1) ? 'Primary' : 'Secondary');
         this.setState({ useWhichTab: primaryOrSecondary })
     };
 
-    onToggleModal = (toggled) => {
+    onToggleModal = (toggled: string) : void => {
         this.setState(() => ({
             [toggled]: !this.state[toggled]
         }));
     };
 
-    determineStateSection = (addModalType) => {
+    determineStateSection = (addModalType: string) : string => {
         let authType;
         if (addModalType in this.props.primaryProviders) {
             let authInfo = this.props.primaryProviders[addModalType];
@@ -95,7 +87,7 @@ export default class AuthConfigMasterPanel extends PureComponent<any, any> {
                 </MenuItem>
             ));
 
-        const dbAuth = (formConfigurations && formConfigurations.slice(-1)[0]);
+        const dbAuth : AuthConfig = (formConfigurations && formConfigurations.slice(-1)[0]);
 
         const primaryTab_LoginForm =
             (formConfigurations && canEdit) ?

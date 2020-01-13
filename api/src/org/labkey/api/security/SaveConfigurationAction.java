@@ -14,10 +14,11 @@ import java.util.Map;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
-public abstract class SaveConfigurationAction<F extends AuthenticationConfigureForm<AC>, AC extends AuthenticationConfiguration<?>> extends MutatingApiAction<F>
+public abstract class SaveConfigurationAction<F extends SaveConfigurationForm<AC>, AC extends AuthenticationConfiguration<?>> extends MutatingApiAction<F>
 {
     protected @Nullable AC _configuration = null;
 
+    // TODO: Consider removing this -- _configuration is never used (??)
     private void initializeConfiguration(F form)
     {
         Integer rowId = form.getConfiguration();
@@ -63,6 +64,11 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
 
     public void save(F form, @Nullable User user, BindException errors)
     {
+        saveForm(form, user);
+    }
+
+    public static <F extends SaveConfigurationForm<?>> void saveForm(F form, @Nullable User user)
+    {
         if (null == form.getRowId())
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
@@ -85,5 +91,16 @@ public abstract class SaveConfigurationAction<F extends AuthenticationConfigureF
     {
         AC configuration = getFromCache(rowId);
         return AuthenticationManager.getConfigurationMap(configuration);
+    }
+
+    // Remove after we no longer upgrade from 20.1
+    public static void saveOldProperties(@Nullable SaveConfigurationForm<?> form, @Nullable User user)
+    {
+        if (null != form)
+        {
+            form.setEnabled(true);
+            form.setDescription(form.getProvider() + " Configuration");
+            saveForm(form, user);
+        }
     }
 }

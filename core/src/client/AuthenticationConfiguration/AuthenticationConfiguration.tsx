@@ -1,43 +1,42 @@
 import React, { PureComponent } from 'react';
 
 import {Button, Alert} from 'react-bootstrap';
-import {Map, List, fromJS} from 'immutable';
 
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
-import { Ajax, ActionURL, Security } from '@labkey/api';
+import { Ajax, ActionURL } from '@labkey/api';
 
 import './authenticationConfiguration.scss';
-
-// Todo, meta:
-// Finalize TS, Immutable
-
-// Todo:
-// Display error component upon ajax fail
-// Q: How to specify specific component as TS type in a props interface
 
 interface Props {} // Q: Is this how you specify no props?
 
 interface State {
-    ssoConfigurations?: Array<Object>
-    formConfigurations?: any
-    secondaryProviders?: any
-    globalSettings?: Object
-    canEdit?: boolean
-    primary?: Object
-    dirty?: boolean
+    formConfigurations?: Array<AuthConfig>;
+    ssoConfigurations?: Array<AuthConfig>;
+    secondaryConfigurations?: Array<AuthConfig>;
+    primaryProviders?: Object;
+    secondaryProviders?: Object;
+    globalSettings?: Object;
+    helpLink?: string;
+    canEdit?: boolean;
+    dirtinessData?: any // todo
+    dirty?: boolean;
+    someModalOpen?: boolean;
+    authCount?: number;
 }
 
-export class App extends PureComponent<any, any> {
+export class App extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
-            ssoConfigurations: null,
             formConfigurations: null,
+            ssoConfigurations: null,
+            secondaryConfigurations: null,
+            primaryProviders: null,
             secondaryProviders: null,
             globalSettings: null,
+            helpLink: null,
             canEdit: false,
-            primaryProviders: null,
             dirtinessData: null,
             dirty: false,
             someModalOpen: false,
@@ -49,7 +48,7 @@ export class App extends PureComponent<any, any> {
         this.loadInitialConfigData();
     }
 
-    loadInitialConfigData = () => {
+    loadInitialConfigData = () : void => {
         Ajax.request({
             url: ActionURL.buildURL("login", "InitialMount"),
             method : 'GET',
@@ -72,13 +71,13 @@ export class App extends PureComponent<any, any> {
         })
     };
 
-    toggleSomeModalOpen = (someModalOpen) => {
+    toggleSomeModalOpen = (someModalOpen: boolean) : void => {
         this.setState({someModalOpen});
     };
 
     // For globalSettings
 
-    checkGlobalAuthBox = (id: string) => {
+    checkGlobalAuthBox = (id: string) : void => {
         const oldState = this.state.globalSettings[id];
         this.setState(
             (prevState) => ({
@@ -94,12 +93,12 @@ export class App extends PureComponent<any, any> {
         );
     };
 
-    checkIfDirty = (obj1, obj2) => {
+    checkIfDirty = (obj1: any, obj2: any): void => {
         const dirty = !this.isEquivalent(obj1, obj2);
         this.setState(() => ({ dirty }));
     };
 
-    isEquivalent = (a, b) => {
+    isEquivalent = (a: any, b: any): boolean => {
         const aProps = Object.keys(a);
         const bProps = Object.keys(b);
 
@@ -122,7 +121,7 @@ export class App extends PureComponent<any, any> {
         return true;
     };
 
-    saveChanges = () => {
+    saveChanges = () : void => {
         let form = new FormData();
 
         Object.keys(this.state.globalSettings).map(
@@ -160,7 +159,7 @@ export class App extends PureComponent<any, any> {
         })
     };
 
-    draggableIsDirty = () => {
+    draggableIsDirty = () : Array<string> => {
         const stateSections = ["formConfigurations", "ssoConfigurations", "secondaryConfigurations"];
 
         return stateSections.filter((stateSection) => {
@@ -170,13 +169,15 @@ export class App extends PureComponent<any, any> {
         });
     };
 
-    getAuthConfigArray = (stateSection) => {
+    getAuthConfigArray = (stateSection: Array<AuthConfig>) : Array<AuthConfig> => {
         return stateSection.map((auth : any) => { return auth.configuration });
     };
 
     // For AuthConfigMasterPanel
 
-    onDragEnd = (result) => {
+    onDragEnd = (result) : void => {
+        console.log("RESULT", result);
+
         if (!result.destination) {
             return;
         }
@@ -201,7 +202,7 @@ export class App extends PureComponent<any, any> {
         )
     };
 
-    reorder = (list, startIndex, endIndex) => {
+    reorder = (list, startIndex: number, endIndex: number) => {
         const result = Array.from(list);
         const [removed] = result.splice(startIndex, 1);
         result.splice(endIndex, 0, removed);
@@ -209,7 +210,7 @@ export class App extends PureComponent<any, any> {
         return result;
     };
 
-    deleteAction = (configuration, stateSection) => {
+    deleteAction = (configuration: number, stateSection: string) : void => {
         const prevState = this.state[stateSection];
         const newState = prevState.filter((auth) => {
             return auth.configuration !== configuration;
@@ -236,7 +237,7 @@ export class App extends PureComponent<any, any> {
         )
     };
 
-    updateAuthRowsAfterSave = (config, stateSection) => {
+    updateAuthRowsAfterSave = (config: string, stateSection: string) : void => {
         const configObj = JSON.parse(config);
         const configId = configObj.configuration.configuration;
 
@@ -263,7 +264,7 @@ export class App extends PureComponent<any, any> {
 
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
-        const {globalSettings, ...restProps} = this.state;
+        const {globalSettings, dirtinessData, dirty, authCount, someModalOpen, ...restProps} = this.state;
         // const {globalSettings, canEdit, ...restProps} = this.state; //for testing
         const actionFunctions = {
             "onDragEnd": this.onDragEnd,
@@ -273,7 +274,7 @@ export class App extends PureComponent<any, any> {
         };
 
         return(
-            <div className="parentPanel">
+            <div className="parent-panel">
                 {this.state.globalSettings &&
                     <GlobalSettings
                         {...globalSettings}

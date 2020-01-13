@@ -18,14 +18,12 @@ package org.labkey.devtools.authentication;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
-import org.labkey.devtools.authentication.TestSecondaryController.SaveConfigurationAction;
-import org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryConfigurationForm;
-
-import static org.labkey.devtools.authentication.TestSecondaryController.getConfigureURL;
+import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationAction;
+import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationForm;
 
 /**
  * User: adam
@@ -42,23 +40,10 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
         return new TestSecondaryConfiguration(this, cs.getStandardSettings());
     }
 
-    @Nullable
-    @Override
-    public ActionURL getConfigurationLink()
-    {
-        return getConfigurationLink(null);
-    }
-
-    @Override
-    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
-    {
-        return getConfigureURL(rowId);
-    }
-
     @Override
     public @Nullable ActionURL getSaveLink()
     {
-        return new ActionURL(SaveConfigurationAction.class, ContainerManager.getRoot());
+        return new ActionURL(TestSecondarySaveConfigurationAction.class, ContainerManager.getRoot());
     }
 
     @NotNull
@@ -82,8 +67,8 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     }
 
     @Override
-    public @Nullable AuthenticationConfigureForm<TestSecondaryConfiguration> getFormFromOldConfiguration(boolean active)
+    public @Nullable SaveConfigurationForm<TestSecondaryConfiguration> getFormFromOldConfiguration(boolean active)
     {
-        return active ? new TestSecondaryConfigurationForm() : null;
+        return active ? new TestSecondarySaveConfigurationForm() : null;
     }
 }

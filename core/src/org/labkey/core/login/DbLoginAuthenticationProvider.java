@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -132,7 +132,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     @Override
-    public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
+    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
     {
         return null;  // We don't migrate the database login configuration
     }

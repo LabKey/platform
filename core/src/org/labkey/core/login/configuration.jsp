@@ -21,15 +21,12 @@
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfiguration" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration" %>
-<%@ page import="org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration" %>
 <%@ page import="org.labkey.api.security.AuthenticationConfigurationCache" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider" %>
-<%@ page import="org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.LoginUrls" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="java.io.IOException" %>
@@ -39,7 +36,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Collection<PrimaryAuthenticationProvider> primary = AuthenticationManager.getAllPrimaryProviders();
-    Collection<SecondaryAuthenticationProvider> secondary = AuthenticationManager.getAllSecondaryProviders();
     boolean isExternalProviderEnabled = AuthenticationManager.isExternalConfigurationEnabled();
     boolean canEdit = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 
@@ -69,31 +65,6 @@
         appendConfigurations(out, PrimaryAuthenticationConfiguration.class, canEdit, false);
     %>
 </labkey:panel>
-
-<%
-    if (!secondary.isEmpty())
-    {
-%>
-        <labkey:panel title="Secondary authentication configurations">
-            <%
-                if (canEdit)
-                {
-                    MenuButton btn = new MenuButton("Add...");
-                    secondary.stream()
-                        .filter(ap->null != ap.getConfigurationLink())
-                        .filter(ap->!ap.isPermanent())
-                        .sorted(Comparator.comparing(AuthenticationProvider::getName))
-                        .forEach(ap->btn.addMenuItem(ap.getName() + " - " + ap.getDescription(), ap.getConfigurationLink()));
-
-                    if (btn.getNavTree().hasChildren())
-                        btn.render(new RenderContext(getViewContext()), out);
-                }
-                appendConfigurations(out, SecondaryAuthenticationConfiguration.class, canEdit, true);
-            %>
-        </labkey:panel>
-<%
-    }
-%>
 
 <labkey:panel title="Other options">
 <table class="labkey-data-region-legacy labkey-show-borders">
