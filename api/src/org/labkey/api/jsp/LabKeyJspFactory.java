@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp;
 
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ShutdownListener;
 
 import javax.servlet.Servlet;
@@ -33,6 +34,14 @@ public class LabKeyJspFactory extends JspFactory implements ShutdownListener
     public LabKeyJspFactory(JspFactory factory)
     {
         _factory = factory;
+    }
+
+    /** Replace the default JspFactory with a custom factory that injects our own JspWriter implementation */
+    public static void register()
+    {
+        LabKeyJspFactory factory = new LabKeyJspFactory(JspFactory.getDefaultFactory());
+        JspFactory.setDefaultFactory(factory);
+        ContextListener.addShutdownListener(factory);
     }
 
     @Override

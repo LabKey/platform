@@ -165,7 +165,6 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             {
                 termsApproved.remove(project);
             }
-
         }
     }
 

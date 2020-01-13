@@ -34,6 +34,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -412,6 +413,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     {
                         ExprColumn wrappedColumn = wrapAssayColumn(columnInfo);
                         addColumn(wrappedColumn);
+                    }
+
+                    // add assay result lsid column to dataset table here
+                    if (columnInfo.getName().equals("LSID"))
+                    {
+                        var column = new AliasedColumn(this, "AssayResultLsid", columnInfo);
+                        addColumn(column);
                     }
                 }
             }
