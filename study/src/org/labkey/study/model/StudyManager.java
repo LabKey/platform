@@ -60,8 +60,12 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
@@ -2731,6 +2735,20 @@ public class StudyManager
         return dataset.deleteRows(cutoff);
     }
 
+    private Collection<String> getDatasetProvenanceLsids(DatasetDefinition ds)
+    {
+        String datasetTableName = ds.getStorageTableInfo().getName();
+
+        SQLFragment sql = new SQLFragment("SELECT ds.lsid FROM ");
+        sql.append("studydataset.").append(datasetTableName).append(" ds ");
+        sql.append(" INNER JOIN exp.Object o ON (ds.lsid = o.objecturi) ");
+        sql.append("WHERE EXISTS (");
+        sql.append(" SELECT prov.protocolApplicationId FROM provenance.protocolapplicationobjectmap prov ");
+        sql.append(" WHERE o.objectid = prov.fromobjectid or o.objectid = prov.toobjectid )");
+
+        return  new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(String.class);
+    }
+
     /**
      * delete a dataset definition along with associated type, data, visitmap entries
      * @param performStudyResync whether or not to kick off our normal bookkeeping. If the whole study is being deleted,
@@ -2742,6 +2760,33 @@ public class StudyManager
 
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
+
+        // When the dataset is deleted, the provenance rows should be cleaned up
+        ProvenanceService pvs = ProvenanceService.get();
+        if (null != pvs)
+        {
+            Collection<String> allDatasetLsids = getDatasetProvenanceLsids(ds);
+
+            allDatasetLsids.forEach(lsid -> {
+                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+
+                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+                if (null != expObject)
+                {
+                    pvs.deleteObjectProvenance(expObject.getObjectId());
+                }
+
+                if (!protocolApplications.isEmpty())
+                {
+                    ExperimentService expService = ExperimentService.get();
+                    protocolApplications.forEach(protocolApp -> {
+                        ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
+                        expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
+                    });
+                }
+
+            });
+        }
 
         deleteDatasetType(study, user, ds);
         try {
