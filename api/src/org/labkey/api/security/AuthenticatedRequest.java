@@ -571,7 +571,8 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                     sb.setLength(sb.length()-1);
                     _logGuestSession(_ip, "Due to server load, guest session was forced to expire: " + _ip + "?" + sb.toString());
                 }
-                s.setMaxInactiveInterval(0);
+                // Tomcat treats values <= 0 as making the session immortal. See issue 39366
+                s.setMaxInactiveInterval(1);
             }
             catch (IllegalStateException x)
             {
