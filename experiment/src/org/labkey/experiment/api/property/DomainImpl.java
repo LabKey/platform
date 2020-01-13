@@ -156,14 +156,10 @@ public class DomainImpl implements Domain
         return _dd.getContainer();
     }
 
-    private DomainKind _kind = null;
-
     @Override
     public synchronized DomainKind getDomainKind()
     {
-        if (null == _kind)
-            _kind = PropertyService.get().getDomainKind(getTypeURI());
-        return _kind;
+        return _dd.getDomainKind();
     }
 
     @Override
