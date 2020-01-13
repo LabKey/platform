@@ -27,7 +27,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.11.0-fb-sizeLimits.9"
+    "@labkey/components": "0.11.0-fb-sizeLimits.10"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
