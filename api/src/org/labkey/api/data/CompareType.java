@@ -190,11 +190,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) > 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
         }
     };
 
@@ -224,11 +224,12 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) < 0;
+
+            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
         }
     };
 
@@ -258,11 +259,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) >= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) >= 0;
         }
     };
 
@@ -292,11 +293,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) <= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) <= 0;
         }
     };
 
@@ -1214,6 +1215,22 @@ public abstract class CompareType
         {
             return getCompareType().meetsCriteria(col, value, getParamVals());
         }
+    }
+
+    // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+    // Widen numeric types before calling compareTo to avoid ClassCastException comparing Long to Integer
+    private static int compareTo(@NotNull Comparable a, @NotNull Comparable b)
+    {
+        if (a.getClass() == b.getClass())
+            return a.compareTo(b);
+
+        if (a instanceof Number && b instanceof Number)
+        {
+            // widen and compare both numbers as doubles
+            return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        }
+
+        return ((Comparable)a).compareTo(b);
     }
 
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
@@ -2136,6 +2153,11 @@ public abstract class CompareType
             assertTrue(clause.meetsCriteria(userPd, user.getUserId()));
             assertFalse(clause.meetsCriteria(createdByDisplayCol, user.getUserId()));
             assertTrue(clause.meetsCriteria(createdByDisplayCol, user.getDisplayName(user)));
+
+            // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+            // call meetsCriteria with a Long value against an Integer column type
+            SimpleFilter.FilterClause gtClause = CompareType.GT.createFilterClause(createdByCol.getFieldKey(), "1000");
+            assertTrue(gtClause.meetsCriteria(createdByCol, 1001L));
         }
 
     }
