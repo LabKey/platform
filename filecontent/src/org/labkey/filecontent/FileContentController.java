@@ -27,7 +27,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -68,7 +67,6 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
@@ -100,7 +98,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -828,28 +825,33 @@ public class FileContentController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleRedirectAction<Object>
+    public class DesignerAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
-        public URLHelper getRedirectURL(Object form)
+        public URLHelper getRedirectURL(ReturnUrlForm form)
         {
             ActionURL successUrl = null;
             FileContentService svc = FileContentService.get();
             if (null != svc)
             {
                 String domainURI = svc.getDomainURI(getContainer());
-                Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
 
+                // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
+                try (var ignore = SpringActionController.ignoreSqlUpdates())
+                {
+                    OntologyManager.ensureDomainDescriptor(domainURI, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+                }
+
+                Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
                 if (domain != null)
                 {
                     successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
-                    if (null != successUrl)
-                    {
-                        successUrl.addReturnURL(new ActionURL(FileContentController.BeginAction.class, getContainer()));
-                    }
+                    form.propagateReturnURL(successUrl);
                 }
-
             }
+
+            if (successUrl == null)
+                throw new NotFoundException("Unable to find file properties domain.");
 
             return successUrl;
         }

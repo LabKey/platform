@@ -105,6 +105,12 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
+
+    @Override
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
         return new DefaultValueType[] { DefaultValueType.FIXED_EDITABLE, DefaultValueType.FIXED_NON_EDITABLE };
