@@ -277,8 +277,7 @@ public class DataRegionSelection
         view.getSettings().setShowRows(ShowRows.ALL);
         view.getSettings().setOffset(Table.NO_OFFSET);
 
-        // remove unnecessary columns and force the pk column(s) into the default list of columns
-        rgn.clearColumns();
+        // force the pk column(s) into the default list of columns
         List<String> colNames = rgn.getRecordSelectorValueColumns();
         if (colNames == null)
             colNames = table.getPkColumnNames();
@@ -340,8 +339,7 @@ public class DataRegionSelection
         view.getSettings().setShowRows(ShowRows.ALL);
         view.getSettings().setOffset(Table.NO_OFFSET);
 
-        // remove unnecessary columns and force the pk column(s) into the default list of columns
-        rgn.clearColumns();
+        // force the pk column(s) into the default list of columns
         List<String> colNames = rgn.getRecordSelectorValueColumns();
         if (colNames == null)
             colNames = table.getPkColumnNames();
