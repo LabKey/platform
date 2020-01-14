@@ -9,6 +9,7 @@ public class SettingsField extends HashMap<String, Object>
     public enum FieldType
     {
         checkbox,
+        fixedHtml,
         input,
         options,
         password,
