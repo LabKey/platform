@@ -3,11 +3,24 @@ import React, { PureComponent } from 'react';
 import { Panel } from 'react-bootstrap';
 
 import FACheckBox from './FACheckBox';
+import {LabelHelpTip} from "@labkey/components";
 
 let ROW_TEXTS = [
-    { id: 'SelfRegistration', text: 'Allow self sign up' },
-    { id: 'SelfServiceEmailChanges', text: 'Allow users to edit their own email addresses' },
-    { id: 'AutoCreateAccounts', text: 'Auto-create authenticated users' },
+    {
+        id: 'SelfRegistration',
+        text: 'Allow self sign up',
+        tip: "Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.",
+    },
+    {
+        id: 'SelfServiceEmailChanges',
+        text: 'Allow users to edit their own email addresses',
+        tip: "Users can change their own email address if their password is managed by LabKey Server.",
+    },
+    {
+        id: 'AutoCreateAccounts',
+        text: 'Auto-create authenticated users',
+        tip: 'Accounts are created automatically when new users authenticate via LDAP or SSO.',
+    }
 ];
 
 interface Props {
@@ -57,7 +70,12 @@ export default class GlobalSettings extends PureComponent<Props, State> {
                     }
                 />
 
-                <span className="global-settings__text"> {text.text} </span>
+                <span className="global-settings__text">
+                    {text.text}
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {text.tip} </div>)
+                    }}/>
+                </span>
             </div>
         ));
 

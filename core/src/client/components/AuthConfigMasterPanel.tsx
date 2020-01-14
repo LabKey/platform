@@ -176,7 +176,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
 
                     <Tabs defaultActiveKey={1} id='tab-panel' onSelect={(key) => {this.useWhichTab(key)}}>
                         <Tab eventKey={1} title='Primary' >
-                            <div className='configurations__auth-tab-login-form'>
+                            <div className='configurations__auth-tab'>
                                 {this.props.canEdit &&
                                     <div className="configurations__dropdown">
                                         <DropdownButton id='primary-configurations-dropdown' title={'Add New Primary Configuration'}>
@@ -191,7 +191,6 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                                         return (<div> {loginFormTipText} </div>)
                                     }}/>
                                 </div>
-
 
                                 {primaryTab_LoginForm}
                             </div>
@@ -208,16 +207,18 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                             </div>
                         </Tab>
                         <Tab eventKey={2} title='Secondary'>
+                            <div className='configurations__auth-tab'>
 
-                            {this.props.canEdit &&
-                                <div className="configurations__dropdown">
-                                    <DropdownButton id='secondary-configurations-dropdown' title={'Add New Secondary Configuration'}>
-                                        {addNewSecondaryDropdown}
-                                    </DropdownButton>
-                                </div>
-                            }
+                                {this.props.canEdit &&
+                                    <div className="configurations__dropdown">
+                                        <DropdownButton id='secondary-configurations-dropdown' title={'Add New Secondary Configuration'}>
+                                            {addNewSecondaryDropdown}
+                                        </DropdownButton>
+                                    </div>
+                                }
 
-                            {secondaryTab}
+                                {secondaryTab}
+                            </div>
 
                         </Tab>
                     </Tabs>

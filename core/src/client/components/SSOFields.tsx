@@ -16,6 +16,7 @@ export default class SSOFields extends PureComponent<any, any> {
                     handleDeleteLogo={this.props.handleDeleteLogo}
                     fileTitle='auth_header_logo'
                     canEdit={this.props.canEdit}
+                    index={1}
                 />
 
                 <div className="sso-fields__spacer"/>
@@ -27,6 +28,7 @@ export default class SSOFields extends PureComponent<any, any> {
                         handleDeleteLogo={this.props.handleDeleteLogo}
                         fileTitle='auth_login_page_logo'
                         canEdit={this.props.canEdit}
+                        index={2}
                  />
             </div>
         );
@@ -50,7 +52,7 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
 
         const img =
             <img
-                className="sso-fields__image"
+                className={(this.props.fileTitle == "auth_header_logo") ? "sso-fields__image__header-logo" : "sso-fields__image__page-logo"}
                 src={this.state.imageUrl}
                 onError={() => {this.setState({imageUrl: null})}}
                 alt="Sign in"
@@ -66,9 +68,11 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                     <>
                         <div className="sso-fields__image-holder">
                             {this.state.imageUrl ?
-                                <>
-                                    {img}
-                                    <FontAwesomeIcon className="sso-fields__delete-img"
+                                <div>
+                                    <div>
+                                        {img}
+                                    </div>
+                                    <FontAwesomeIcon className={(this.props.fileTitle == "auth_header_logo") ? "sso-fields__delete-img--header-logo" : "sso-fields__delete-img--page-logo"}
                                                      icon={faTimesCircle}
                                                      color={"#d9534f"}
                                                      onClick={() => {
@@ -76,9 +80,10 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                                                         this.props.handleDeleteLogo(this.props.fileTitle);
                                                      }}
                                     />
-                                </>
+                                </div>
                                 : noImageSelectedDisplay
                             }
+
                         </div>
 
 
