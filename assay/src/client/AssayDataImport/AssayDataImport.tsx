@@ -366,7 +366,7 @@ export class App extends React.Component<Props, State> {
                         <AssayPropertiesPanel
                             asPanel={false}
                             model={protocolModel}
-                            basePropertiesOnly={true}
+                            appPropertiesOnly={true}
                             onChange={this.onAssayPropertiesChange}
                         >
                             <p>

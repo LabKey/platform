@@ -1994,6 +1994,7 @@ public class SecurityApiActions
         private String _email; // supports a semicolon list of email addresses
         private boolean _sendEmail = true;
         private boolean _skipFirstLogin = false;
+        private String _optionalMessage;
 
         public String getEmail()
         {
@@ -2024,6 +2025,16 @@ public class SecurityApiActions
         {
             _skipFirstLogin = skipFirstLogin;
         }
+
+        public String getOptionalMessage()
+        {
+            return _optionalMessage;
+        }
+
+        public void setOptionalMessage(String optionalMessage)
+        {
+            _optionalMessage = optionalMessage;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -2052,7 +2063,7 @@ public class SecurityApiActions
 
             for (ValidEmail email : validEmails)
             {
-                String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
+                String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), form.getOptionalMessage());
                 User user = UserManager.getUser(email);
                 if (null == user)
                     throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");

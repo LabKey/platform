@@ -21,6 +21,8 @@ import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -56,6 +58,9 @@ public final class DomainDescriptor
     private final Container _project;
     private final int _titlePropertyId;
     private final TemplateInfo _templateInfo;
+
+    /* DomainDescriptors are cached, but DomainImpl is not, so cache DomainKind here on DomainDescriptor */
+    private DomainKind _domainKind;
 
     // for StorageProvisioner (currently assuming labkey scope)
     private final String _storageTableName;
@@ -142,6 +147,13 @@ public final class DomainDescriptor
             _titlePropertyId = 0;
 
         _templateInfo = null;
+    }
+
+    public synchronized DomainKind getDomainKind()
+    {
+        if (null == _domainKind)
+            _domainKind = PropertyService.get().getDomainKind(_domainURI);
+        return _domainKind;
     }
 
     public DomainDescriptor.Builder edit()
