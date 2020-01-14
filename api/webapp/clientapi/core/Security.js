@@ -1509,6 +1509,7 @@ LABKEY.Security = new function()
          * @param config A configuration object with the following properties:
          * @param {String} config.email The new user's email address, or a semicolon separated list of email addresses.
          * @param {Boolean} config.sendEmail Set to false to stop the server from sending a welcome email to the user.
+         * @param {String} config.optionalMessage An optional message to include in the new user registration email.
          * @param {Function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -1533,7 +1534,8 @@ LABKEY.Security = new function()
         {
             var params = {
                 email: config.email,
-                sendEmail: config.sendEmail
+                sendEmail: config.sendEmail,
+                optionalMessage: config.optionalMessage
             };
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "createNewUser", config.containerPath),
