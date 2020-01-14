@@ -40,6 +40,9 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -114,6 +117,24 @@ public class CollectionUtils
         }
 
         return null;
+    }
+
+    /**
+     * Returns a Collector that builds a LinkedHashMap, for cases where caller wants a map that preserves stream order.
+     * https://stackoverflow.com/questions/29090277/how-do-i-keep-the-iteration-order-of-a-list-when-using-collections-tomap-on-a
+     */
+    public static <T, K, U> Collector<T, ?, Map<K,U>> toLinkedMap(
+        Function<? super T, ? extends K> keyMapper,
+        Function<? super T, ? extends U> valueMapper)
+    {
+        return Collectors.toMap(
+            keyMapper,
+            valueMapper,
+            (u, v) -> {
+                throw new IllegalStateException(String.format("Duplicate key %s", u));
+            },
+            LinkedHashMap::new
+        );
     }
 
     public static class TestCase extends Assert

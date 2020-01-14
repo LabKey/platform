@@ -33,6 +33,7 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -107,6 +108,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -2720,9 +2722,10 @@ public class LoginController extends SpringActionController
             );
 
             // Primary providers
-            Map<String, Object> primaryProviders = AuthenticationManager.getAllPrimaryProviders().stream()
+            Map<String, Map<String, Object>> primaryProviders = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(ap->!ap.isPermanent())
-                .collect(Collectors.toMap(AuthenticationProvider::getName, ap->{
+                .sorted(Comparator.comparing(AuthenticationProvider::getName))
+                .collect(CollectionUtils.toLinkedMap(AuthenticationProvider::getName, ap->{
                     Map<String, Object> m = getProviderMap(ap);
                     m.put("sso", ap instanceof SSOAuthenticationProvider);
                     return m;
@@ -2739,8 +2742,9 @@ public class LoginController extends SpringActionController
                 .collect(JSONArray.collector());
 
             // Secondary providers
-            Map<String, Object> secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
-                .collect(Collectors.toMap(AuthenticationProvider::getName, this::getProviderMap));
+            Map<String, Map<String, Object>> secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
+                .sorted(Comparator.comparing(AuthenticationProvider::getName))
+                .collect(CollectionUtils.toLinkedMap(AuthenticationProvider::getName, this::getProviderMap));
 
             // Secondary configurations
             JSONArray secondaryConfigurations = AuthenticationConfigurationCache.getConfigurations(SecondaryAuthenticationConfiguration.class).stream()
