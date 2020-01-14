@@ -300,7 +300,7 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile)
+        public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
             url.addParameter("configuration", configuration.getRowId());
@@ -323,11 +323,10 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors)
         {
-            SSOAuthenticationConfiguration configuration = null != rowId ? AuthenticationManager.getSSOConfiguration(rowId) : null;
+            SSOAuthenticationConfiguration<?> configuration = null != rowId ? AuthenticationManager.getSSOConfiguration(rowId) : null;
             return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(configuration, reshow, formatInTable), errors);
         }
     }
-
 
     private static LoginUrlsImpl getUrls()
     {
@@ -399,7 +398,6 @@ public class LoginController extends SpringActionController
 
         return false;
     }
-
 
     public static boolean deauthenticate(User user, ViewContext context)
     {
@@ -577,7 +575,6 @@ public class LoginController extends SpringActionController
             _provider = provider;
         }
     }
-
 
     @RequiresNoPermission
     @ActionNames("login, showLogin")
@@ -1179,7 +1176,6 @@ public class LoginController extends SpringActionController
         return email;
     }
 
-
     @RequiresNoPermission
     @IgnoresTermsOfUse
     public class AgreeToTermsAction extends FormViewAction<AgreeToTermsForm>
@@ -1244,7 +1240,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-
     private class AgreeToTermsView extends JspView<AgreeToTermsBean>
     {
         private AgreeToTermsView(AgreeToTermsForm form, BindException errors)
@@ -1253,7 +1248,6 @@ public class LoginController extends SpringActionController
             setFrame(FrameType.NONE);
         }
     }
-
 
     public class AgreeToTermsBean
     {

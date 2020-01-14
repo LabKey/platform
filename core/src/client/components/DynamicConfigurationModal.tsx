@@ -21,6 +21,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
             auth_header_logo: "",
             auth_login_page_logo: "",
             deletedLogos: [],
+            emptyRequiredFields: null,
         };
     }
 
@@ -49,6 +50,10 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         let saveUrl = baseUrl + this.props.modalType.saveLink;
         let form = new FormData();
 
+        if (this.areRequiredFieldsEmpty()) {
+            return;
+        }
+
         if (this.props.configuration) {
             form.append("configuration", this.props.configuration);
         }
@@ -57,8 +62,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 form.append(item, this.state[item]);
             }
         );
-
-        console.log("I am posting to: ", saveUrl, '\n', "With the form: ", this.state);
 
         Ajax.request({
             url: saveUrl,
@@ -79,6 +82,26 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 this.props.closeModal();
             }
         })
+    };
+
+    areRequiredFieldsEmpty = () => {
+        const requiredFields = this.props.modalType.settingsFields.reduce((accum, current) => {
+            if (current.required) {
+                accum.push(current.name)
+            }
+            return accum;
+        }, ["description"]);
+
+        const emptyRequiredFields = requiredFields.filter((name) =>
+            this.state[name] == ""
+        );
+
+        if (emptyRequiredFields.length > 0){
+            this.setState({emptyRequiredFields}, () => (console.log("dfiuas", this.state)));
+            return true;
+        } else {
+            return false;
+        }
     };
 
     onToggle = () => {
@@ -131,6 +154,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             value={this.state[field.name]}
                             type={"text"}
                             canEdit={this.props.canEdit}
+                            emptyRequiredFields={this.state.emptyRequiredFields}
                             {...field}
                         />
                     );
@@ -166,6 +190,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
                             canEdit={this.props.canEdit}
+                            emptyRequiredFields={this.state.emptyRequiredFields}
                             {...field}
                         />
                     );
@@ -226,8 +251,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <div className="bold-text modal__settings-text"> Settings </div>
 
-                    <div className="modal__description-title">
+                    <div className="modal__text-input">
                         Description *
+
+                        {(this.state.emptyRequiredFields && this.state.emptyRequiredFields.includes("description")) &&
+                            <div className={"modal__tiny-error"}> This field is required </div>
+                        }
+
 
                         {canEdit ?
                             <FormControl
@@ -244,8 +274,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
 
                     {modalType && this.dynamicallyCreateFields(modalType.settingsFields, this.state.search)}
-
-                    {/*<TextAreaOrFileUpload/>*/}
 
                     {(modalType && modalType.sso)  &&
                         <SSOFields
@@ -312,10 +340,15 @@ interface TextInputProps {
 
 class TextInput extends PureComponent<any, any> {
     render() {
+        const fieldIsRequiredAndEmpty = (this.props.emptyRequiredFields && this.props.emptyRequiredFields.includes(this.props.name));
+        console.log(this.props.emptyRequiredFields);
+
         return(
             <div className="modal__text-input">
                 <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
+
+
                 </span>
 
                 {this.props.description &&
@@ -324,14 +357,20 @@ class TextInput extends PureComponent<any, any> {
                     }}/>
                 }
 
+                {(fieldIsRequiredAndEmpty) &&
+                    <div className={"modal__tiny-error"}> This field is required </div>
+                }
+
                 {this.props.canEdit ?
-                    <FormControl
-                        name={this.props.name}
-                        type={this.props.type}
-                        value={this.props.value}
-                        onChange={(e) => this.props.handleChange(e)}
-                        style ={{borderRadius: "5px", float: "right", width: "300px"}}
-                    />
+
+                        <FormControl
+                            name={this.props.name}
+                            type={this.props.type}
+                            value={this.props.value}
+                            onChange={(e) => this.props.handleChange(e)}
+                            style ={{borderRadius: "5px", float: "right", width: "300px"}}
+                            // className="modal__text-input"
+                        />
                     : <span style ={{borderRadius: "5px", float: "right", width: "300px"}}> {this.props.value} </span>
                 }
             </div>
@@ -386,7 +425,7 @@ class CheckBoxInput extends PureComponent<any, any> {
 class TextArea extends PureComponent<any, any> {
     render() {
         return(
-            <div className="modal__field">
+            <div className="modal__textarea-field">
                 <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
@@ -397,15 +436,23 @@ class TextArea extends PureComponent<any, any> {
                     }}/>
                 }
 
-                <span className="modal__input">
-                    <FormControl
-                        id={this.props.name}
-                        componentClass="textarea"
-                        placeholder="textarea"
-                        value={this.props.value}
-                        style={{borderRadius: "5px"}}
-                    />
-                </span>
+                {this.props.canEdit ?
+                    <div className="modal__textarea-input">
+                        <FormControl
+                            id={this.props.name}
+                            name={this.props.name}
+                            componentClass="textarea"
+                            onChange={(e) => this.props.handleChange(e)}
+                            value={this.props.value}
+                            className="modal__textarea"
+                        />
+                    </div>
+                    :
+                    <div className="modal__textarea-input">
+                        {this.props.value}
+                    </div>
+                }
+
             </div>
         );
     }
@@ -415,7 +462,7 @@ class Option extends PureComponent<any, any> {
     render() {
         const {options} = this.props;
         return(
-            <div className="modal__field">
+            <div className="modal__option-field">
                 <span className="modal__field-label">
                     {this.props.caption} {this.props.required ? "*" : null}
                 </span>
@@ -428,7 +475,7 @@ class Option extends PureComponent<any, any> {
 
 
                     { this.props.canEdit ?
-                        <span className="modal__option-input">
+                        <div className="modal__option-input">
                             <FormControl
                                 componentClass="select"
                                 name={this.props.name}
@@ -439,7 +486,7 @@ class Option extends PureComponent<any, any> {
                                     <option value={item} key={item} > {options[item]} </option>
                                 ))}
                             </FormControl>
-                        </span>
+                        </div>
                         : <span style ={{float: "right", width: "300px"}}> {this.props.value} </span>
                     }
             </div>
@@ -447,23 +494,26 @@ class Option extends PureComponent<any, any> {
     }
 }
 
-class TextAreaOrFileUpload extends PureComponent<any, any> {
+class TextAreaOrFileUpload extends PureComponent<any, any> { //todo: you'll probably want unique names on these
     constructor(props) {
         super(props);
         this.state = {
-            whichField: null
+            whichField: "copyPaste"
         };
     }
 
     handleChange = (event) => {
         const {name, value} = event.target;
-        this.setState((prevState) => ({
-            ...prevState,
-            currentSettings: {
-                ...prevState.currentSettings,
-                [name]: value
-            }
-        }));
+        console.log(name, value);
+        this.setState({[name]: value});
+
+        // this.setState((prevState) => ({
+        //     ...prevState,
+        //     currentSettings: {
+        //         ...prevState.currentSettings,
+        //         [name]: value
+        //     }
+        // }));
     };
 
     render() {
@@ -478,7 +528,6 @@ class TextAreaOrFileUpload extends PureComponent<any, any> {
 
         return(
             <div>
-                <br/><br/><br/>
                 <span className="modal__field-label">
                     {caption} {required ? "*" : null}
                 </span>
@@ -491,39 +540,41 @@ class TextAreaOrFileUpload extends PureComponent<any, any> {
 
                 <span style={{float: "right", marginRight:"145px"}}>
                     <ButtonGroup onClick={this.handleChange} bsSize="xsmall">
-                        <Button data-key='1' value="Weak" name="strength" active={null} disabled={!canEdit}>
+                        <Button data-key='1' value="copyPaste" name="whichField" active={this.state.whichField == "copyPaste"} disabled={!canEdit}>
                             Copy/Paste
                         </Button>
-                        <Button data-key='2' value="Strong" name="strength" active={null} disabled={!canEdit}>
+                        <Button data-key='2' value="fileUpload" name="whichField" active={this.state.whichField == "fileUpload"} disabled={!canEdit}>
                             File Upload
                         </Button>
                     </ButtonGroup>
                 </span>
 
+                <br/><br/>
 
-                <FormControl
-                    id={name}
-                    componentClass="textarea"
-                    placeholder="textarea"
-                    value={value}
-                    style={{borderRadius: "5px", width:"270px", height:"85px", marginLeft:"270px", marginTop:"20px"}}
-                />
-
-                <div style={{width: "270px", height:"70px", marginLeft:"270px"}}>
-                    <FileAttachmentForm
-                        key={this.props.text}
-                        showLabel={false}
-                        allowMultiple={false}
-                        allowDirectories={false}
-                        acceptedFormats={".jpeg,.png,.gif,.tif"}
-                        showAcceptedFormats={false}
-                        onFileChange={(attachment) => {
-                            this.props.onFileChange(attachment, this.props.fileTitle)
-                        }}
+                {(this.state.whichField == "copyPaste") ?
+                    <FormControl
+                        id={name}
+                        componentClass="textarea"
+                        placeholder="textarea"
+                        value={value}
+                        style={{borderRadius: "5px", width:"270px", height:"85px", marginLeft:"270px"}}
                     />
-                </div>
-
-                <br/><br/><br/>
+                :
+                    <div style={{width: "270px", height:"70px", marginLeft:"270px"}}>
+                        <FileAttachmentForm
+                            key={this.props.text}
+                            showLabel={false}
+                            allowMultiple={false}
+                            allowDirectories={false}
+                            acceptedFormats={".jpeg,.png,.gif,.tif"}
+                            showAcceptedFormats={false}
+                            onFileChange={(attachment) => {
+                                this.props.onFileChange(attachment, this.props.fileTitle)
+                            }}
+                        />
+                    </div>
+                }
+                <br/> <br/>
             </div>
         );
     }

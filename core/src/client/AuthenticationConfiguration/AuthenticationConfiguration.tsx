@@ -46,6 +46,11 @@ export class App extends PureComponent<Props, State> {
 
     componentDidMount() {
         this.loadInitialConfigData();
+        window.addEventListener('beforeunload', this.handleLeavePage);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('beforeunload', this.handleLeavePage);
     }
 
     loadInitialConfigData = () : void => {
@@ -69,6 +74,13 @@ export class App extends PureComponent<Props, State> {
                 this.setState({...response, dirtinessData, authCount}, () => {console.log(this.state)});
             }
         })
+    };
+
+    handleLeavePage = (e) => {
+        if (this.state.dirty) {
+            e.preventDefault();
+            e.returnValue = "Unsaved changes.";
+        }
     };
 
     toggleSomeModalOpen = (someModalOpen: boolean) : void => {
@@ -263,7 +275,7 @@ export class App extends PureComponent<Props, State> {
     };
 
     render() {
-        const alertText = "You have unsaved changes to your authentication configurations. Hit \"Save and Finish\" to apply these changes.";
+        const alertText = "You have unsaved changes to your authentication configurations. Click \"Save and Finish\" to apply these changes.";
         const {globalSettings, dirtinessData, dirty, authCount, someModalOpen, ...restProps} = this.state;
         // const {globalSettings, canEdit, ...restProps} = this.state; //for testing
         const actionFunctions = {
@@ -295,7 +307,7 @@ export class App extends PureComponent<Props, State> {
                 {this.state.dirty && <Alert> {alertText} </Alert>}
 
                 <Button
-                    className={'labkey-button primary'}
+                    className={'labkey-button primary parent-panel__save-button'}
                     onClick={this.saveChanges}
                 >
                     Save and Finish

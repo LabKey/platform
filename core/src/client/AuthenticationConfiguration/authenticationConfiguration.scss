@@ -21,6 +21,10 @@
   min-width: 1200px;
 }
 
+.parent-panel__save-button {
+  text-transform: none;
+}
+
 .parent-panel__cancel-button {
   margin-left: 10px;
 }
@@ -37,7 +41,7 @@
   margin-left: 14px;
 }
 
-.configurations__auth-tab-login-form{
+.configurations__auth-tab{
   margin-top: 14px;
   border-bottom: 1px solid #eee;
   margin-bottom: 16px;
@@ -103,25 +107,54 @@
 
 .sso-fields__image-holder {
   float: left;
-  margin-left: 60px;
+  width: 255px;
+  height: 95px;
   display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.sso-fields__image {
+.sso-field__image-border {
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 5px;
-  width:100px;
-  height:94px;
+}
+
+.sso-fields__image__header-logo {
+  max-height: 26px;
+  width: auto;
+
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+}
+
+.sso-fields__image__page-logo {
+  max-height: 44px;
+  width: auto;
+
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
 }
 
 .sso-fields__null-image {
   margin-left: 7px;
 }
 
-.sso-fields__delete-img {
-  align-self: flex-start;
-  margin-left: 2px;
+.sso-fields__delete-img--page-logo {
+  position: relative;
+  bottom: 54px;
+  left: 52px;
+  //margin-left: 2px;
+}
+
+.sso-fields__delete-img--header-logo {
+  position: relative;
+  bottom: 40px;
+  left: 30px;
+  //margin-left: 2px;
 }
 
 .sso-fields__image-holder--view-only {
@@ -150,13 +183,26 @@
   //margin-right: 55px;
 }
 
-.modal__field-label {
-  height: 40px;
-  margin-right: 7px;
+body{
+  margin: 0;
+  padding: 0;
 }
 
-.modal__field {
-  height: 30px;
+.modal__tiny-error {
+  color: red;
+  font-size: 10px;
+  position: absolute;
+  left: 480px;
+  top: -15px;
+  //bottom: 10px;
+}
+
+.modal__tiny-error--description {
+  color: red;
+  font-size: 10px;
+  position: absolute;
+  left: 480px;
+  top: -15px;
 }
 
 .modal__close-icon {
@@ -178,8 +224,26 @@
   margin-bottom: 17px;
 }
 
-.modal__text-input {
+.modal__field-label {
   height: 40px;
+  margin-right: 7px;
+}
+
+.modal__field {
+  height: 30px;
+}
+
+.modal__textarea-field {
+  height: 55px;
+}
+
+.modal__option-field {
+  height: 38px;
+}
+
+.modal__text-input {
+  height: 45px;
+  position: relative;
 }
 
 .modal__input {
@@ -189,7 +253,19 @@
 
 .modal__option-input {
   float: right;
-  margin-right: 160px;
+  margin-right: 150px;
+  width: 150px;
+}
+
+.modal__textarea-input {
+  width: 300px;
+  float: right;
+  overflow: scroll;
+}
+
+.modal__textarea {
+  resize: none;
+  border-radius: 5px;
 }
 
 .modal__bottom {
