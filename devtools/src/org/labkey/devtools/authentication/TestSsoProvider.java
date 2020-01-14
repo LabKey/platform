@@ -38,19 +38,6 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
         return new TestSsoConfiguration(this, cs.getStandardSettings());
     }
 
-    @Nullable
-    @Override
-    public ActionURL getConfigurationLink()
-    {
-        return getConfigurationLink(null);
-    }
-
-    @Override
-    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
-    {
-        return TestSsoController.getConfigureURL(rowId);
-    }
-
     @Override
     public @NotNull ActionURL getSaveLink()
     {
