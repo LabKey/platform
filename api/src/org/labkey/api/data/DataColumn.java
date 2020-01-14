@@ -163,10 +163,6 @@ public class DataColumn extends DisplayColumn
     }
 
 
-    /** PERFPROBLEM are we computing analyticsprovider and clientdependencies for APIs when we don't have to??? */
-
-
-
     protected ColumnInfo getDisplayField(@NotNull ColumnInfo col, boolean withLookups)
     {
         if (!withLookups)
