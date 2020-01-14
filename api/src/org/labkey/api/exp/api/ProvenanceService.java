@@ -2,6 +2,7 @@ package org.labkey.api.exp.api;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
@@ -53,6 +54,11 @@ public interface ProvenanceService
      * Delete provenance for all protocol applications within the run.
      */
     void deleteRunProvenance(int runId);
+
+    /**
+     * Delete provenance for assay result rows.
+     */
+    void deleteAssayResultProvenance(SQLFragment sqlFragment, Container container);
 
     /**
      * Delete provenance for a assay result row.
