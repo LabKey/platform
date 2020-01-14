@@ -368,7 +368,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         ProvenanceService pvs = ProvenanceService.get();
                         if (null != pvs)
                         {
-                            pvs.deleteAssayResultProvenance(assayResultLsidSql, run.getContainer());
+                            pvs.deleteAssayResultProvenance(assayResultLsidSql);
                         }
 
                         OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
