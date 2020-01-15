@@ -241,6 +241,11 @@ body{
   height: 38px;
 }
 
+.modal__fixed-html-field {
+  height: 80px;
+  margin-top: 10px;
+}
+
 .modal__text-input {
   height: 45px;
   position: relative;
@@ -261,6 +266,11 @@ body{
   width: 300px;
   float: right;
   overflow: scroll;
+}
+
+.modal__fixed-html-text {
+  float: right;
+  width: 300px;
 }
 
 .modal__textarea {
