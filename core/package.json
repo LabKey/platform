@@ -29,29 +29,6 @@
         "NODE_ENV": "test"
       }
     },
-    "jest": {
-      "globals": {
-        "LABKEY": {}
-      },
-      "moduleFileExtensions": [
-        "js",
-        "ts",
-        "tsx"
-      ],
-      "moduleDirectories": [
-        "node_modules"
-      ],
-      "setupFilesAfterEnv": [
-        "./test/setup.ts"
-      ],
-      "testPathIgnorePatterns": [
-        "/node_modules/",
-        "./test/globals.js"
-      ],
-      "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-      "preset": "ts-jest",
-      "testMatch": null
-    },
     "build-themes:dev": {
       "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
@@ -76,6 +53,33 @@
         "NODE_ENV": "development"
       }
     }
+  },
+  "jest": {
+    "globals": {
+      "LABKEY": {
+        "container": {
+          "formats": {
+            "dateFormat": "yyyy-MM-dd"
+          }
+        }
+      }
+    },
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "moduleDirectories": [
+      "node_modules"
+    ],
+    "setupFilesAfterEnv": [
+      "./test/setup.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/"
+    ],
+    "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
+    "preset": "ts-jest"
   },
   "dependencies": {
     "@fortawesome/free-regular-svg-icons": "5.11.2",

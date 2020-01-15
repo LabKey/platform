@@ -7,7 +7,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "types": [] // don't implicitly include any @types, only those included via import
+    "types": ["jest"]
   },
   "exclude": [
     "node_modules",
