@@ -797,10 +797,10 @@ public abstract class CompareType
         @Override
         public List<FieldKey> getFieldKeys()
         {
-            return this.getQueryColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toList());
+            return this.getQueryColumns(null).stream().map(ColumnInfo::getFieldKey).collect(Collectors.toList());
         }
 
-        private List<ColumnInfo> getQueryColumns()
+        private List<ColumnInfo> getQueryColumns(@Nullable Integer paramNum)
         {
             if (_selectColumns == null)
                 return Collections.emptyList();
@@ -814,7 +814,7 @@ public abstract class CompareType
                         continue;
 
                     // If the search term parsed as a number, include a test for the primary key column
-                    if (column.isKeyField() && column.getJdbcType().isNumeric())
+                    if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
                     {
                         _queryColumns.add(column);
                     }
@@ -869,7 +869,7 @@ public abstract class CompareType
             SQLFragment sql = new SQLFragment();
             String sep = "";
 
-            for (ColumnInfo column : this.getQueryColumns())
+            for (ColumnInfo column : this.getQueryColumns(paramNum))
             {
                 if (column == null)
                     continue;

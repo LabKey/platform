@@ -328,17 +328,14 @@ public class DataRegionSelection
         ActionURL url = view.getSettings().getSortFilterURL();
 
         Sort sort = rc.buildSort(table, url, rgn.getName());
-        SimpleFilter filter = rc.buildFilter(table, rc.getColumnInfos(rgn.getDisplayColumns()), url, rgn.getName(), -1, 0, sort);
+        SimpleFilter filter = rc.buildFilter(table, rc.getColumnInfos(rgn.getDisplayColumns()), url, rgn.getName(), Table.ALL_ROWS, 0, sort);
 
-        // remove unnecessary columns for performance purposes
+        // Issue 36600: remove unnecessary columns for performance purposes
         rgn.clearColumns();
-        // then add back the columns needed by the filters, if any
-        if (null != QueryService.get())
-        {
-            Collection<ColumnInfo> columns = QueryService.get().ensureRequiredColumns(table, selectorColumns, filter, sort, null);
-            rgn.addColumns(selectorColumns);
-            rgn.addColumns(columns);
-        }
+        // Issue 39011: then add back the columns needed by the filters, if any
+        Collection<ColumnInfo> filterColumns = QueryService.get().ensureRequiredColumns(table, selectorColumns, filter, sort, null);
+        rgn.addColumns(selectorColumns);
+        rgn.addColumns(filterColumns);
         return selectorColNames;
     }
 
