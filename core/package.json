@@ -34,9 +34,9 @@
         "LABKEY": {}
       },
       "moduleFileExtensions": [
+        "js",
         "ts",
-        "tsx",
-        "js"
+        "tsx"
       ],
       "moduleDirectories": [
         "node_modules"
@@ -48,11 +48,9 @@
         "/node_modules/",
         "./test/globals.js"
       ],
-      "preset": "ts-jest",
       "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-      "transform": {
-        "^.+\\.tsx?$": "ts-jest"
-      }
+      "preset": "ts-jest",
+      "testMatch": null
     },
     "build-themes:dev": {
       "command": "node build.js && node webpack/themes/buildThemes.js",
@@ -97,15 +95,21 @@
     "@babel/preset-react": "7.0.0",
     "@hot-loader/react-dom": "16.9.0",
     "@labkey/eslint-config-base": "0.0.5",
+    "@types/enzyme": "3.9.3",
+    "@types/enzyme-adapter-react-16": "1.0.5",
     "@types/jest": "24.0.18",
+    "@types/jsdom": "12.2.3",
     "@types/react": "16.9.17",
     "@typescript-eslint/eslint-plugin": "2.12.0",
     "@typescript-eslint/parser": "2.12.0",
     "babel-jest": "24.9.0",
-    "babel-loader": "^8.0.6",
+    "babel-loader": "8.0.6",
     "better-npm-run": "0.1.1",
     "bootstrap-sass": "3.4.1",
     "css-loader": "3.2.0",
+    "enzyme": "3.10.0",
+    "enzyme-adapter-react-16": "1.14.0",
+    "enzyme-to-json": "^3.4.3",
     "eslint": "6.7.2",
     "eslint-config-prettier": "6.7.0",
     "eslint-plugin-import": "2.19.1",
@@ -116,7 +120,9 @@
     "font-awesome": "4.7.0",
     "fs-extra": "8.1.0",
     "html-webpack-plugin": "3.2.0",
+    "imports-loader": "0.8.0",
     "jest": "24.9.0",
+    "jsdom": "15.1.1",
     "mini-css-extract-plugin": "0.8.0",
     "mixin-deep": "2.0.1",
     "node-sass": "4.12.0",
@@ -124,6 +130,7 @@
     "postcss-loader": "3.0.0",
     "prettier": "1.19.1",
     "react-hot-loader": "4.12.17",
+    "react-test-renderer": "16.8.6",
     "rimraf": "3.0.0",
     "sass-loader": "7.1.0",
     "ts-jest": "24.0.2",
