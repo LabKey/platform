@@ -6,7 +6,7 @@ import FACheckBox from "./FACheckBox";
 
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import {LabelHelpTip, FileAttachmentForm, ChangePasswordModal} from '@labkey/components';
+import {LabelHelpTip, FileAttachmentForm} from '@labkey/components';
 import "@labkey/components/dist/components.css"
 import {ActionURL, Ajax} from "@labkey/api";
 import SSOFields from "./SSOFields";
@@ -27,11 +27,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
     componentDidMount = () => {
         let fieldValues = {};
-
-        // dummy code to prevent secondaries from breaking modal
-        if (!this.props.modalType){
-            return false;
-        }
 
         this.props.modalType.settingsFields.forEach((field) => {
                 fieldValues[field.name] = (field.name in this.props ? this.props[field.name] : field.defaultValue);
@@ -207,6 +202,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     );
 
+                case "fixedHtml":
+                    return(
+                        <FixedHtml
+                            key={index}
+                            {...field}
+                        />
+                    );
                 default:
                     return <div> Error: Invalid field type received. </div>;
             }
@@ -575,6 +577,22 @@ class TextAreaOrFileUpload extends PureComponent<any, any> { //todo: you'll prob
                     </div>
                 }
                 <br/> <br/>
+            </div>
+        );
+    }
+}
+
+class FixedHtml extends PureComponent<any, any> {
+    render() {
+        return (
+            <div className="modal__fixed-html-field">
+                <span className="modal__field-label">
+                    {this.props.caption}
+                </span>
+
+                <div className="modal__fixed-html-text">
+                    <div dangerouslySetInnerHTML={{ __html: this.props.html }} />
+                </div>
             </div>
         );
     }
