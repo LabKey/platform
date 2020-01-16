@@ -29,5 +29,7 @@ public interface ValidationError
 {
     String getMessage();
 
+     ValidationException.SEVERITY getSeverity();
+
     void addToBindException(BindException be, String errorCode, boolean includeWarnings);
 }

@@ -163,7 +163,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
         ValidationException exception = new ValidationException();
         SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
@@ -200,7 +200,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
             }
         }
 
-        exception = checkRollups(null, null, optionalSpecimenProps, container, user, exception);
+        exception = checkRollups(null, null, optionalSpecimenProps, container, user, exception, includeWarnings);
 
         if (exception.hasErrors())
         {
@@ -208,7 +208,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         }
         else
         {
-            return super.updateDomain(original, update, container, user);
+            return super.updateDomain(original, update, container, user, includeWarnings);
         }
     }
 

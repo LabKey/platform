@@ -183,7 +183,8 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
             @Nullable List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
             Container container,
             User user,
-            ValidationException exception)
+            ValidationException exception,
+            boolean addWarnings)
     {
         SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(container, user, null);
         Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
@@ -227,7 +228,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                     else if (!eventPair.second.isTypeConstraintMet())
                         exception.addError(new SimpleValidationError("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
-                else
+                else if (addWarnings)
                     exception.addError(new SimpleValidationError("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.", prop.getName(), ValidationException.SEVERITY.WARN));
             }
         }
@@ -253,7 +254,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                     else if (!vialPair.second.isTypeConstraintMet())
                         exception.addError(new SimpleValidationError("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
-                else
+                else if (addWarnings)
                     exception.addError(new SimpleValidationError("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.", prop.getName(), ValidationException.SEVERITY.WARN));
             }
         }

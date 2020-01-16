@@ -71,6 +71,12 @@ public class SimpleValidationError implements ValidationError
     }
 
     @Override
+    public ValidationException.SEVERITY getSeverity()
+    {
+        return _severity;
+    }
+
+    @Override
     public String toString()
     {
         return getMessage();

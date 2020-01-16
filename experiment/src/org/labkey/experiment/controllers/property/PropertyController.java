@@ -65,6 +65,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -422,9 +423,18 @@ public class PropertyController extends SpringActionController
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
             boolean includeWarnings = form.includeWarnings();
+            boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser(), includeWarnings);
+
+            for (ValidationError ve : updateErrors.getErrors())
+            {
+                if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
+                    hasErrors = true;
+            }
+
+            if (hasErrors || includeWarnings)
+                updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
 
             Domain domain = PropertyService.get().getDomain(getContainer(), newDomain.getDomainURI());
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -981,7 +991,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                             Container container, User user)
+                                             Container container, User user, boolean includeWarnings)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -994,7 +1004,7 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        return kind.updateDomain(original, update, container, user);
+        return kind.updateDomain(original, update, container, user, includeWarnings);
     }
 
     private static void deleteDomain(String schemaName, String queryName, Container container, User user)
