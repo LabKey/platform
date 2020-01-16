@@ -233,6 +233,12 @@ body{
   height: 30px;
 }
 
+.modal__text-input-field {
+  border-radius: 5px;
+  float: right;
+  width: 300px;
+}
+
 .modal__textarea-field {
   height: 55px;
 }
@@ -242,7 +248,7 @@ body{
 }
 
 .modal__compact-file-upload-field {
-  height: 50px;
+  height: 55px;
 }
 
 .modal__fixed-html-field {
@@ -262,6 +268,7 @@ body{
 
 .modal__compact-file-upload-input {
   float: right;
+  width: 300px;
 }
 
 .modal__option-input {

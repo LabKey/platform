@@ -910,7 +910,7 @@ public class LoginController extends SpringActionController
     }
 
     // Generic message that we display to users for most success and failure situations, to avoid revealing whether an account exists or not, #33907
-    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server then you will receive an email message with password reset instructions.";
+    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server, you will receive an email message with password reset instructions.";
 
     private Pair<Boolean, String> resetPasswordResponse(User user, @Nullable String failureEmailMessage, @Nullable String failureLogMessage)
     {

@@ -228,6 +228,9 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
     }
 }
 
+interface ViewOnlyAuthConfigRows_Props {
+
+}
 class ViewOnlyAuthConfigRows extends PureComponent<any, any> {
     render(){
         const {primaryProviders, secondaryProviders, data} = this.props;

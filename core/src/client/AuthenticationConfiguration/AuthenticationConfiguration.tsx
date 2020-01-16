@@ -8,8 +8,6 @@ import { Ajax, ActionURL } from '@labkey/api';
 
 import './authenticationConfiguration.scss';
 
-interface Props {} // Q: Is this how you specify no props?
-
 interface State {
     formConfigurations?: Array<AuthConfig>;
     ssoConfigurations?: Array<AuthConfig>;
@@ -25,7 +23,7 @@ interface State {
     authCount?: number;
 }
 
-export class App extends PureComponent<Props, State> {
+export class App extends PureComponent<{}, State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -71,7 +69,7 @@ export class App extends PureComponent<Props, State> {
                     secondaryConfigurations: secondaryConfigurations,
                 };
                 const authCount = formConfigurations.length + ssoConfigurations.length;
-                this.setState({...response, dirtinessData, authCount}, () => {console.log(this.state)});
+                this.setState({...response, dirtinessData, authCount});
             }
         })
     };
@@ -148,10 +146,8 @@ export class App extends PureComponent<Props, State> {
                 if (stateSection == "formConfigurations"){
                     // remove database config
                     form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString());
-                    // console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).slice(0,-1).toString())
                 } else {
                     form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).toString());
-                    // console.log("appending ", stateSection, ":", this.getAuthConfigArray(this.state[stateSection]).toString())
                 }
             });
         }
@@ -185,11 +181,7 @@ export class App extends PureComponent<Props, State> {
         return stateSection.map((auth : any) => { return auth.configuration });
     };
 
-    // For AuthConfigMasterPanel
-
     onDragEnd = (result) : void => {
-        console.log("RESULT", result);
-
         if (!result.destination) {
             return;
         }
@@ -206,8 +198,6 @@ export class App extends PureComponent<Props, State> {
             [stateSection]: items
         })
         , () => {
-            console.log("full state", this.state); // for testing
-
             const dirty = this.draggableIsDirty().length > 0;
             this.setState(() => ({ dirty }));
             }
@@ -277,7 +267,6 @@ export class App extends PureComponent<Props, State> {
     render() {
         const alertText = "You have unsaved changes to your authentication configurations. Click \"Save and Finish\" to apply these changes.";
         const {globalSettings, dirtinessData, dirty, authCount, someModalOpen, ...restProps} = this.state;
-        // const {globalSettings, canEdit, ...restProps} = this.state; //for testing
         const actionFunctions = {
             "onDragEnd": this.onDragEnd,
             "deleteAction": this.deleteAction,
@@ -291,7 +280,6 @@ export class App extends PureComponent<Props, State> {
                     <GlobalSettings
                         {...globalSettings}
                         canEdit={this.state.canEdit}
-                        // canEdit={false}
                         checkGlobalAuthBox = {this.checkGlobalAuthBox}
                         authCount={this.state.authCount}
                     />
@@ -299,7 +287,6 @@ export class App extends PureComponent<Props, State> {
 
                 <AuthConfigMasterPanel
                     {...restProps}
-                    // canEdit={false}
                     isDragDisabled={this.state.someModalOpen}
                     actionFunctions={actionFunctions}
                 />
