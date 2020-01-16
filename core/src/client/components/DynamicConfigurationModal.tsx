@@ -55,6 +55,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         Object.keys(this.state).map(
             (item) => {
                 form.append(item, this.state[item]);
+                console.log("adding", item, this.state[item]);
             }
         );
 
@@ -128,8 +129,6 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         this.setState(() => ({[logoType]: attachment.first()}));
     };
 
-
-
     dynamicallyCreateFields = (fields: Array<AuthConfigField>, expandableOpen) => {
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
@@ -184,7 +183,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                     return (
                         <SmallFileUpload
                             key={index}
+                            index={index}
                             canEdit={this.props.canEdit}
+                            onFileChange={this.onFileChange}
                             {...field}
                         />
                     );
@@ -267,9 +268,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                                 value={this.state.description}
                                 onChange={(e) => this.handleChange(e)}
                                 placeholder="Enter text"
-                                style ={{borderRadius: "5px", float: "right", width: "300px"}}
+                                className="modal__text-input-field"
                             />
-                            : <span style ={{borderRadius: "5px", float: "right", width: "300px"}}> {this.state.description} </span>
+                            : <span className="modal__text-input-field"> {this.state.description} </span>
                         }
                     </div>
 
@@ -369,10 +370,9 @@ class TextInput extends PureComponent<any, any> {
                             type={this.props.type}
                             value={this.props.value}
                             onChange={(e) => this.props.handleChange(e)}
-                            style ={{borderRadius: "5px", float: "right", width: "300px"}}
-                            // className="modal__text-input"
+                            className="modal__text-input-field"
                         />
-                    : <span style ={{borderRadius: "5px", float: "right", width: "300px"}}> {this.props.value} </span>
+                    : <span className="modal__text-input-field"> {this.props.value} </span>
                 }
             </div>
         );
@@ -422,43 +422,6 @@ class CheckBoxInput extends PureComponent<any, any> {
     }
 }
 
-// todo: add 'canEdit' option
-class TextArea extends PureComponent<any, any> {
-    render() {
-        return(
-            <div className="modal__textarea-field">
-                <span className="modal__field-label">
-                    {this.props.caption} {this.props.required ? "*" : null}
-                </span>
-
-                { this.props.description &&
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {this.props.description} </div>)
-                    }}/>
-                }
-
-                {this.props.canEdit ?
-                    <div className="modal__textarea-input">
-                        <FormControl
-                            id={this.props.name}
-                            name={this.props.name}
-                            componentClass="textarea"
-                            onChange={(e) => this.props.handleChange(e)}
-                            value={this.props.value}
-                            className="modal__textarea"
-                        />
-                    </div>
-                    :
-                    <div className="modal__textarea-input">
-                        {this.props.value}
-                    </div>
-                }
-
-            </div>
-        );
-    }
-}
-
 class Option extends PureComponent<any, any> {
     render() {
         const {options} = this.props;
@@ -495,92 +458,6 @@ class Option extends PureComponent<any, any> {
     }
 }
 
-class TextAreaOrFileUpload extends PureComponent<any, any> { //todo: you'll probably want unique names on these
-    constructor(props) {
-        super(props);
-        this.state = {
-            whichField: "copyPaste"
-        };
-    }
-
-    handleChange = (event) => {
-        const {name, value} = event.target;
-        console.log(name, value);
-        this.setState({[name]: value});
-
-        // this.setState((prevState) => ({
-        //     ...prevState,
-        //     currentSettings: {
-        //         ...prevState.currentSettings,
-        //         [name]: value
-        //     }
-        // }));
-    };
-
-    render() {
-        const canEdit = true;
-
-        const caption = "Caption";
-        const required = false;
-        const description = "description";
-
-        const name = "something";
-        const value = "bruh";
-
-        return(
-            <div>
-                <span className="modal__field-label">
-                    {caption} {required ? "*" : null}
-                </span>
-
-                { description &&
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {description} </div>)
-                    }}/>
-                }
-
-                <span style={{float: "right", marginRight:"145px"}}>
-                    <ButtonGroup onClick={this.handleChange} bsSize="xsmall">
-                        <Button data-key='1' value="copyPaste" name="whichField" active={this.state.whichField == "copyPaste"} disabled={!canEdit}>
-                            Copy/Paste
-                        </Button>
-                        <Button data-key='2' value="fileUpload" name="whichField" active={this.state.whichField == "fileUpload"} disabled={!canEdit}>
-                            File Upload
-                        </Button>
-                    </ButtonGroup>
-                </span>
-
-                <br/><br/>
-
-                {(this.state.whichField == "copyPaste") ?
-                    <FormControl
-                        id={name}
-                        componentClass="textarea"
-                        placeholder="textarea"
-                        value={value}
-                        style={{borderRadius: "5px", width:"270px", height:"85px", marginLeft:"270px"}}
-                    />
-                :
-                    <div style={{width: "270px", height:"70px", marginLeft:"270px"}}>
-                        <FileAttachmentForm
-                            key={this.props.text}
-                            showLabel={false}
-                            allowMultiple={false}
-                            allowDirectories={false}
-                            acceptedFormats={".jpeg,.png,.gif,.tif"}
-                            showAcceptedFormats={false}
-                            onFileChange={(attachment) => {
-                                this.props.onFileChange(attachment, this.props.fileTitle)
-                            }}
-                        />
-                    </div>
-                }
-                <br/> <br/>
-            </div>
-        );
-    }
-}
-
 class FixedHtml extends PureComponent<any, any> {
     render() {
         return (
@@ -598,9 +475,6 @@ class FixedHtml extends PureComponent<any, any> {
 }
 
 class SmallFileUpload extends PureComponent<any, any> {
-
-
-
     render() {
         return (
             <div className="modal__compact-file-upload-field">
@@ -615,31 +489,20 @@ class SmallFileUpload extends PureComponent<any, any> {
                 }
 
                 <div className="modal__compact-file-upload-input">
-                    <input
-                        type="file"
-                        className="file-upload--input" // Hides file input
-                        name={this.props.name}
-                        id={`${this.props.name}-fileUpload`}
-                        multiple={false}
-                        onChange={() => {}}
+                    <FileAttachmentForm
+                        key={this.props.text}
+                        index={this.props.index}
+                        showLabel={false}
+                        allowMultiple={false}
+                        allowDirectories={false}
+                        acceptedFormats={".txt,.doc,.docx"}
+                        showAcceptedFormats={false}
+                        onFileChange={(attachment) => {
+                            this.props.onFileChange(attachment, this.props.name)
+                        }}
+                        compact={true}
                     />
-
-                    {/* We render a label here so click and drag events propagate to the input above */}
-                    <label
-                        className={"file-upload--compact-label modal__file-upload--compact"}
-                        htmlFor={""}
-                        onDrop={() => {}}
-                        onDragEnter={() => {}}
-                        onDragOver={() => {}}
-                        onDragLeave={() => {}}
-                    >
-                        <i className="fa fa-cloud-upload" aria-hidden="true"/>
-                        &nbsp;
-                        <span>Select file or drag and drop here</span>
-                        <span className="file-upload--error-message">{null}</span>
-                    </label>
                 </div>
-
             </div>
         );
     }

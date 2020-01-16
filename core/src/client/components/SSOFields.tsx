@@ -90,6 +90,7 @@ class ImageAndFileAttachmentForm extends PureComponent<any, any>{
                         <div className="sso-fields__file-attachment" id={this.props.fileTitle}>
                             <FileAttachmentForm
                                 key={this.props.text}
+                                index={this.props.index}
                                 showLabel={false}
                                 allowMultiple={false}
                                 allowDirectories={false}

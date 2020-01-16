@@ -27,12 +27,12 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -67,7 +67,6 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
@@ -99,7 +98,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -827,43 +825,35 @@ public class FileContentController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleViewAction<ReturnUrlForm>
+    public class DesignerAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors)
+        public URLHelper getRedirectURL(ReturnUrlForm form)
         {
+            ActionURL successUrl = null;
             FileContentService svc = FileContentService.get();
-            String uri = svc.getDomainURI(getContainer());
-            // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            if (null != svc)
             {
-                OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+                String domainURI = svc.getDomainURI(getContainer());
+
+                // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
+                try (var ignore = SpringActionController.ignoreSqlUpdates())
+                {
+                    OntologyManager.ensureDomainDescriptor(domainURI, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+                }
+
+                Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                if (domain != null)
+                {
+                    successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                    form.propagateReturnURL(successUrl);
+                }
             }
-            Map<String, String> properties = new HashMap<>();
 
-            properties.put("typeURI", uri);
-            properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
-            properties.put(ActionURL.Param.cancelUrl.name(), form.getReturnUrl());
+            if (successUrl == null)
+                throw new NotFoundException("Unable to find file properties domain.");
 
-            return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("propertyFields");
-            return root.addChild("File Properties Designer");
-        }
-    }
-
-    // GWT Action
-    @RequiresPermission(AdminPermission.class)
-    public class FilePropertiesServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new FilePropertiesServiceImpl(getViewContext());
+            return successUrl;
         }
     }
 
@@ -1713,7 +1703,6 @@ public class FileContentController extends SpringActionController
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
                 controller.new DesignerAction(),
-                controller.new FilePropertiesServiceAction(),
                 controller.new ResetFileOptionsAction(),
                 controller.new SetDefaultEmailPrefAction(),
                 controller.new ShowFilesHistoryAction()
