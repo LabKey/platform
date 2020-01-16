@@ -3526,6 +3526,7 @@ public class ExperimentController extends SpringActionController
         sampleSet.put("importAliases", ss.getImportAliasMap());
         sampleSet.put("lsid", ss.getLSID());
         sampleSet.put("rowId", ss.getRowId());
+        sampleSet.put("domainId", ss.getDomain().getTypeId());
 
         return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
     }
