@@ -29,26 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -199,30 +180,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -3492,8 +3450,9 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
-            form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
-            return new ApiSimpleResponse("success", true);
+            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
+            form.updateSampleSet(getContainer(), getUser(), sampleSet);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3534,7 +3493,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
             ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return new ApiSimpleResponse("success", true);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3553,16 +3512,22 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleSetImpl ss = form.getSampleSet(getContainer());
 
-            Map<String,Object> sampleSet = new HashMap<>();
-            sampleSet.put("name", ss.getName());
-            sampleSet.put("nameExpression", ss.getNameExpression());
-            sampleSet.put("description", ss.getDescription());
-            sampleSet.put("importAliases", ss.getImportAliasMap());
-            sampleSet.put("lsid", ss.getLSID());
-            sampleSet.put("rowId", ss.getRowId());
-
-            return new ApiSimpleResponse(Collections.singletonMap("sampleSet", sampleSet));
+            return getSampleSetApiResponse(ss);
         }
+    }
+
+    @NotNull
+    private static Object getSampleSetApiResponse(ExpSampleSet ss) throws IOException
+    {
+        Map<String,Object> sampleSet = new HashMap<>();
+        sampleSet.put("name", ss.getName());
+        sampleSet.put("nameExpression", ss.getNameExpression());
+        sampleSet.put("description", ss.getDescription());
+        sampleSet.put("importAliases", ss.getImportAliasMap());
+        sampleSet.put("lsid", ss.getLSID());
+        sampleSet.put("rowId", ss.getRowId());
+
+        return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
     }
 
     private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
