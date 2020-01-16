@@ -128,6 +128,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         this.setState(() => ({[logoType]: attachment.first()}));
     };
 
+
+
     dynamicallyCreateFields = (fields: Array<AuthConfigField>, expandableOpen) => {
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
@@ -180,12 +182,9 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                 case "textarea":
                     return (
-                        <TextArea
+                        <SmallFileUpload
                             key={index}
-                            handleChange={this.handleChange}
-                            value={this.state[field.name]}
                             canEdit={this.props.canEdit}
-                            emptyRequiredFields={this.state.emptyRequiredFields}
                             {...field}
                         />
                     );
@@ -593,6 +592,54 @@ class FixedHtml extends PureComponent<any, any> {
                 <div className="modal__fixed-html-text">
                     <div dangerouslySetInnerHTML={{ __html: this.props.html }} />
                 </div>
+            </div>
+        );
+    }
+}
+
+class SmallFileUpload extends PureComponent<any, any> {
+
+
+
+    render() {
+        return (
+            <div className="modal__compact-file-upload-field">
+                <span className="modal__field-label">
+                    {this.props.caption} {this.props.required ? "*" : null}
+                </span>
+
+                { this.props.description &&
+                    <LabelHelpTip title={'Tip'} body={() => {
+                        return (<div> {this.props.description} </div>)
+                    }}/>
+                }
+
+                <div className="modal__compact-file-upload-input">
+                    <input
+                        type="file"
+                        className="file-upload--input" // Hides file input
+                        name={this.props.name}
+                        id={`${this.props.name}-fileUpload`}
+                        multiple={false}
+                        onChange={() => {}}
+                    />
+
+                    {/* We render a label here so click and drag events propagate to the input above */}
+                    <label
+                        className={"file-upload--compact-label modal__file-upload--compact"}
+                        htmlFor={""}
+                        onDrop={() => {}}
+                        onDragEnter={() => {}}
+                        onDragOver={() => {}}
+                        onDragLeave={() => {}}
+                    >
+                        <i className="fa fa-cloud-upload" aria-hidden="true"/>
+                        &nbsp;
+                        <span>Select file or drag and drop here</span>
+                        <span className="file-upload--error-message">{null}</span>
+                    </label>
+                </div>
+
             </div>
         );
     }
