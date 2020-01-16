@@ -241,6 +241,10 @@ body{
   height: 38px;
 }
 
+.modal__compact-file-upload-field {
+  height: 50px;
+}
+
 .modal__fixed-html-field {
   height: 80px;
   margin-top: 10px;
@@ -254,6 +258,10 @@ body{
 .modal__input {
   float: right;
   margin-right: 285px;
+}
+
+.modal__compact-file-upload-input {
+  float: right;
 }
 
 .modal__option-input {
@@ -300,6 +308,11 @@ body{
   border-bottom: 1px solid #eee;
   height: 40px;
   margin-bottom: 16px;
+}
+
+.modal__file-upload--compact {
+  width: 300px;
+
 }
 
 // oh, my god, the toggle
