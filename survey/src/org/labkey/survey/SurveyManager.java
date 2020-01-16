@@ -32,7 +32,6 @@ import org.labkey.api.collections.MultiValuedMapCollectors;
 import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;

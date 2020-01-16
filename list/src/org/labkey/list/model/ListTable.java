@@ -22,11 +22,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.StatementUtils;
@@ -97,7 +97,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
         assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
 
-        BaseColumnInfo colKey = null;
+        MutableColumnInfo colKey = null;
 
         // We can have a ListDef that has been saved before the domain has been saved (urg)
         if (!domain.getProperties().isEmpty())
@@ -119,7 +119,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
                     if (null != pd)
                     {
-                        colKey.setName(pd.getName());
+                        colKey.setFieldKey(new FieldKey(null,pd.getName()));
                         colKey.setLabel(pd.getLabel());
                         if (null != pd.getLookupQuery() || null != pd.getConceptURI())
                             colKey.setFk(PdLookupForeignKey.create(schema, pd));
@@ -158,23 +158,23 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                         UserIdQueryForeignKey.initColumn(schema, c, true);
                         if (name.equalsIgnoreCase("CreatedBy"))
                         {
-                            c.setName("CreatedBy");
+                            c.setFieldKey(new FieldKey(null,"CreatedBy"));
                             c.setLabel("Created By");
                         }
                         else
                         {
-                            c.setName("ModifiedBy");
+                            c.setFieldKey(new FieldKey(null,"ModifiedBy"));
                             c.setLabel("Modified By");
                         }
                     }
                     else if (name.equalsIgnoreCase("modified"))
                     {
-                        c.setName("Modified");
+                        c.setFieldKey(new FieldKey(null,"Modified"));
                         c.setLabel("Modified");
                     }
                     else
                     {
-                        c.setName("Created");
+                        c.setFieldKey(new FieldKey(null,"Created"));
                         c.setLabel("Created");
                     }
                     c.setUserEditable(false);
@@ -221,7 +221,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
 
                     if (null != pd)
                     {
-                        col.setName(pd.getName());
+                        col.setFieldKey(new FieldKey(null,pd.getName()));
                         PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"));
 
                         if (pd.isMvEnabled())
@@ -240,7 +240,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                             mvColumn.setMvIndicatorColumn(true);
 
                             var rawValueCol = new AliasedColumn(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX, col);
-                            rawValueCol.setDisplayColumnFactory(BaseColumnInfo.DEFAULT_FACTORY);
+                            rawValueCol.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
                             rawValueCol.setLabel(col.getLabel() + " Raw Value");
                             rawValueCol.setUserEditable(false);
                             rawValueCol.setHidden(true);
@@ -285,7 +285,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         else
         {
             var entityId = wrapColumn(colEntityId);
-            entityId.setName("EntityId");
+            entityId.setFieldKey(new FieldKey(null,"EntityId"));
             entityId.setLabel("Entity Id");
             entityId.setHidden(true);
             entityId.setUserEditable(false);
@@ -377,7 +377,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
      * For logging, replace the provisioned table name with the nicer name
      */
     @Override
-    public BaseColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         var col = super.wrapColumn(underlyingColumn);
         col.getColumnLogging().setOriginalTableName(getName());
@@ -388,7 +388,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
      * For logging, replace the provisioned table name with the nicer name
      */
     @Override
-    public BaseColumnInfo addWrapColumn(ColumnInfo column)
+    public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         var col = super.addWrapColumn(column);
         col.getColumnLogging().setOriginalTableName(getName());

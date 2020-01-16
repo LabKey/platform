@@ -446,7 +446,7 @@ public class CoreQuerySchema extends UserSchema
 
     private void addGroupsColumn(UsersTable users)
     {
-        BaseColumnInfo groupsCol;
+        MutableColumnInfo groupsCol;
         if (users.isCanSeeDetails())
         {
             groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));

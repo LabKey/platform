@@ -23,25 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RemapCache;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -103,6 +85,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public ExpRunTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, new ExpRunImpl(new ExperimentRun()), cf);
+        Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
     }
 
     @Override
@@ -233,7 +216,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -401,7 +384,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
-    public BaseColumnInfo addDataInputColumn(String alias, String role)
+    public MutableColumnInfo addDataInputColumn(String alias, String role)
     {
         checkLocked();
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
@@ -424,7 +407,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     }
 
     @Override
-    public BaseColumnInfo addDataCountColumn(String alias, String roleName)
+    public MutableColumnInfo addDataCountColumn(String alias, String roleName)
     {
         checkLocked();
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.DataInput.DataId) FROM exp.DataInput " +
@@ -468,21 +451,21 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return ret;
     }
 
-    public BaseColumnInfo createDataInputsColumn(String alias)
+    public MutableColumnInfo createDataInputsColumn(String alias)
     {
         var col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRun);
         col.setDescription("Contains multi-value lookup to each data inputs produced by this run");
         return col;
     }
 
-    public BaseColumnInfo createDataOutputsColumn(String alias)
+    public MutableColumnInfo createDataOutputsColumn(String alias)
     {
         var col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRunOutput);
         col.setDescription("Contains multi-value lookup to each data outputs produced by this run");
         return col;
     }
 
-    protected BaseColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
+    protected MutableColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
     {
         final String dataIdName = type == ExpProtocol.ApplicationType.ExperimentRun ? "InputDataId" : "OutputDataId";
 

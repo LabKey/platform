@@ -25,25 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedDisplayColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -134,7 +116,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {

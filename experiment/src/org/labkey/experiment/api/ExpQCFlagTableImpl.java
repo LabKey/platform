@@ -22,9 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -64,7 +64,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {

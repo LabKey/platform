@@ -70,7 +70,7 @@ import java.util.Set;
  *
  * TODO consider also a MutableColumnInfo interface
  */
-public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements ColumnInfo
+public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
     private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
@@ -242,6 +242,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setFieldKey(FieldKey key)
     {
         checkLocked();
@@ -275,6 +276,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setAlias(String alias)
     {
         checkLocked();
@@ -293,9 +295,18 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
-        _sqlTypeName = ((BaseColumnInfo)col)._sqlTypeName;
-        _jdbcType = ((BaseColumnInfo)col)._jdbcType;
-        _propertyType = ((BaseColumnInfo)col)._propertyType;
+        if (col instanceof BaseColumnInfo)
+        {
+            _sqlTypeName = ((BaseColumnInfo) col)._sqlTypeName;
+            _jdbcType = ((BaseColumnInfo) col)._jdbcType;
+            _propertyType = ((BaseColumnInfo) col)._propertyType;
+        }
+        else
+        {
+            _sqlTypeName = col.getSqlTypeName();
+            _jdbcType = col.getJdbcType();
+            _propertyType = col.getPropertyType();
+        }
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -312,10 +323,15 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     public void setExtraAttributesFrom(ColumnInfo col)
     {
         checkLocked();
-        if (((BaseColumnInfo)col)._label != null)
-            setLabel(col.getLabel());
-        if (((BaseColumnInfo)col)._shortLabel != null)
-            setShortLabel(col.getShortLabel());
+        if (col instanceof BaseColumnInfo)
+        {
+            setExtraAttributesFrom((BaseColumnInfo) col);
+            return;
+        }
+
+        setLabel(col.getLabelValue());
+        // TODO if (col.isShortLabelSet())
+        setShortLabel(col.getShortLabel());
         setJdbcDefaultValue(col.getJdbcDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
@@ -328,14 +344,18 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         // Don't call the getter, because if it hasn't been explicitly set we want to
         // fetch the value lazily so we don't have to traverse FKs to get the display
         // field at this point.
-        setInputLength(((BaseColumnInfo)col)._inputLength);
-        setInputType(((BaseColumnInfo)col)._inputType);
+        // TODO if (col.isInputLengthSet())
+        setInputLength(col.getInputLength());
+        // TODO if (col.isInputTypeSet())
+        setInputType(col.getInputType());
 
         setInputRows(col.getInputRows());
         if (!isKeyField() && !col.isNullable())
             setNullable(col.isNullable());
-        setRequired(((BaseColumnInfo)col)._required);
-        setReadOnly(((BaseColumnInfo)col)._isReadOnly);
+        // TODO if (col.isRequiredSet())
+        setRequired(col.isRequired());
+        // TODO if (col.isReadOnlySet())
+        setReadOnly(col.isReadOnly());
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
         setWidth(col.getWidth());
@@ -359,8 +379,81 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
         // hide the fact that these values can be null internally. It's important to preserve the notion
         // of unset values on the new columninfo.
-        _measure = ((BaseColumnInfo)col)._measure;
-        _dimension = ((BaseColumnInfo)col)._dimension;
+        // TODO if (col.isMeasureSet())
+        _measure = col.isMeasure();
+        _dimension = col.isDimension();
+
+        setRecommendedVariable(col.isRecommendedVariable());
+        setDefaultScale(col.getDefaultScale());
+        setMvColumnName(col.getMvColumnName());
+        setRawValueColumn(col.isRawValueColumn());
+        setMvIndicatorColumn(col.isMvIndicatorColumn());
+        setFacetingBehaviorType(col.getFacetingBehaviorType());
+        setExcludeFromShifting(col.isExcludeFromShifting());
+        setPHI(col.getPHI());
+        setShouldLog(col.isShouldLog());
+
+        setCrosstabColumnDimension(col.getCrosstabColumnDimension());
+        setCrosstabColumnMember(col.getCrosstabColumnMember());
+
+        setCalculated(col.isCalculated());
+    }
+
+    /*
+     * copy "non-core" attributes, e.g. leave key and type information alone
+     */
+    public void setExtraAttributesFrom(BaseColumnInfo col)
+    {
+        checkLocked();
+        if (col._label != null)
+            setLabel(col.getLabel());
+        if (col._shortLabel != null)
+            setShortLabel(col.getShortLabel());
+        setJdbcDefaultValue(col.getJdbcDefaultValue());
+        setDescription(col.getDescription());
+        if (col.isFormatStringSet())
+            setFormat(col.getFormat());
+        if (col.getExcelFormatString() != null)
+            setExcelFormatString(col.getExcelFormatString());
+        if (col.getTsvFormatString() != null)
+            setTsvFormatString(col.getTsvFormatString());
+        setTextExpression(col.getTextExpression());
+        // Don't call the getter, because if it hasn't been explicitly set we want to
+        // fetch the value lazily so we don't have to traverse FKs to get the display
+        // field at this point.
+        setInputLength(col._inputLength);
+        setInputType(col._inputType);
+
+        setInputRows(col.getInputRows());
+        if (!isKeyField() && !col.isNullable())
+            setNullable(col.isNullable());
+        setRequired(col._required);
+        setReadOnly(col._isReadOnly);
+        setDisplayColumnFactory(col.getDisplayColumnFactory());
+        setTextAlign(col.getTextAlign());
+        setWidth(col.getWidth());
+        setFk(col.getFk());
+        setPropertyURI(col.getPropertyURI());
+        setSortFieldKeys(col.getSortFieldKeys());
+        if (col.getConceptURI() != null)
+            setConceptURI(col.getConceptURI());
+        if (col.getRangeURI() != null)
+            setRangeURI(col.getRangeURI());
+        setIsUnselectable(col.isUnselectable());
+        setDefaultValueType(col.getDefaultValueType());
+        setDefaultValue(col.getDefaultValue());
+        setImportAliasesSet(col.getImportAliasSet());
+        setShownInDetailsView(col.isShownInDetailsView());
+        setShownInInsertView(col.isShownInInsertView());
+        setShownInUpdateView(col.isShownInUpdateView());
+        setConditionalFormats(col.getConditionalFormats());
+        setValidators(col.getValidators());
+
+        // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
+        // hide the fact that these values can be null internally. It's important to preserve the notion
+        // of unset values on the new columninfo.
+        _measure = col._measure;
+        _dimension = col._dimension;
 
         setRecommendedVariable(col.isRecommendedVariable());
         setDefaultScale(col.getDefaultScale());
@@ -429,6 +522,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setMetaDataName(String metaDataName)
     {
         checkLocked();
@@ -470,18 +564,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _propertyURI;
     }
 
+    @Override
     public void setPropertyURI(String propertyURI)
     {
         checkLocked();
         _propertyURI = propertyURI;
     }
 
+    @Override
     public void setConceptURI(String conceptURI)
     {
         checkLocked();
         _conceptURI = conceptURI;
     }
 
+    @Override
     public void setRangeURI(String rangeURI)
     {
         checkLocked();
@@ -539,6 +636,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return isStringType() || isDateTimeType() || isBooleanType() ? "left" : "right";
     }
 
+    @Override
     public void setTextAlign(String textAlign)
     {
         checkLocked();
@@ -551,6 +649,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _jdbcDefaultValue;
     }
 
+    @Override
     public void setJdbcDefaultValue(String jdbcDefaultValue)
     {
         checkLocked();
@@ -563,6 +662,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _defaultValue;
     }
 
+    @Override
     public void setDefaultValue(Object defaultValue)
     {
         checkLocked();
@@ -680,12 +780,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return java.util.Date.class.isAssignableFrom(getJdbcType().cls) || isNumericType();
     }
 
+    @Override
     public void setDisplayField(ColumnInfo field)
     {
         checkLocked();
         _displayField = field;
     }
 
+    @Override
     public void setWidth(String width)
     {
         checkLocked();
@@ -717,6 +819,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setUserEditable(boolean editable)
     {
         checkLocked();
@@ -724,6 +827,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setDisplayColumnFactory(DisplayColumnFactory factory)
     {
         checkLocked();
@@ -742,6 +846,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _shouldLog;
     }
 
+    @Override
     public void setShouldLog(boolean shouldLog)
     {
         checkLocked();
@@ -849,6 +954,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _isAutoIncrement;
     }
 
+    @Override
     public void setAutoIncrement(boolean autoIncrement)
     {
         checkLocked();
@@ -861,6 +967,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _isReadOnly || _isAutoIncrement || isVersionColumn();
     }
 
+    @Override
     public void setReadOnly(boolean readOnly)
     {
         checkLocked();
@@ -870,21 +977,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     @Override
     public StringExpression getEffectiveURL()
     {
-        StringExpression result = super.getURL();
-        if (result != null)
-            return result;
-        ForeignKey fk = getFk();
-        if (fk == null)
-            return null;
-
-        try
-        {
-            return fk.getURL(this);
-        }
-        catch (QueryParseException qpe)
-        {
-            return null;
-        }
+        return ColumnInfo.getEffectiveURL(this);
     }
 
     @Override
@@ -1169,17 +1262,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         }
     }
 
-    private void setSortFieldKeysFromXml(String xml)
-    {
-        List<FieldKey> keys = new ArrayList<>();
-        for (String key : xml.split(","))
-        {
-            keys.add(FieldKey.fromString(key));
-        }
-
-        setSortFieldKeys(keys);
-    }
-
     public static String labelFromName(String name)
     {
         if (name == null)
@@ -1306,48 +1388,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
             return booleanFromString(o.toString());
     }
 
-
     public String toString()
     {
-        StringBuilder sb = new StringBuilder(64);
-
-        sb.append("  ");
-        sb.append(StringUtils.rightPad(getName(), 25));
-        sb.append(" ");
-
-        String typeName = getSqlTypeName();
-        sb.append(typeName);
-
-        //UNDONE: Not supporting fixed decimal
-        if ("VARCHAR".equalsIgnoreCase(typeName) || "CHAR".equalsIgnoreCase(typeName))
-        {
-            sb.append("(");
-            sb.append(_scale);
-            sb.append(") ");
-        }
-        else
-            sb.append(" ");
-
-        //SQL Server specific
-        if (_isAutoIncrement)
-            sb.append("IDENTITY ");
-
-        sb.append(_nullable ? "NULL" : "NOT NULL");
-
-        if (null != _defaultValue)
-        {
-            sb.append(" DEFAULT ");
-            if ("CURRENT_TIMESTAMP".equals(_defaultValue))
-                sb.append(_defaultValue);
-            else
-            {
-                sb.append("'");
-                sb.append(_defaultValue);
-                sb.append("'");
-            }
-        }
-
-        return sb.toString();
+        return ColumnInfo.toString(this);
     }
 
     // UNDONE: Do we still need DomainProperty for this?
@@ -1756,6 +1799,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+
+    @Override
     public void setSqlTypeName(String sqlTypeName)
     {
         checkLocked();
@@ -1769,12 +1814,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _sortFieldKeys;
     }
 
+    @Override
     public void setSortFieldKeys(List<FieldKey> sortFieldKeys)
     {
         checkLocked();
         _sortFieldKeys = sortFieldKeys;
     }
 
+    @Override
     public void setJdbcType(JdbcType type)
     {
         checkLocked();
@@ -1813,18 +1860,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _fk;
     }
 
+    @Override
     public void clearFk()
     {
         checkLocked();
         _fk = null;
     }
 
+    @Override
     public void setFk(@Nullable ForeignKey fk)
     {
         checkLocked();
         _fk = fk;
     }
 
+    @Override
     public void setFk(@NotNull Builder<ForeignKey> b)
     {
         checkLocked();
@@ -1848,6 +1898,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setKeyField(boolean keyField)
     {
         checkLocked();
@@ -1866,6 +1917,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _mvColumnName;
     }
 
+    @Override
     public void setMvColumnName(FieldKey mvColumnName)
     {
         checkLocked();
@@ -1878,6 +1930,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _isMvIndicatorColumn;
     }
 
+    @Override
     public void setMvIndicatorColumn(boolean mvIndicatorColumn)
     {
         checkLocked();
@@ -1890,6 +1943,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _isRawValueColumn;
     }
 
+    @Override
     public void setRawValueColumn(boolean rawColumn)
     {
         checkLocked();
@@ -1906,6 +1960,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _isUnselectable;
     }
 
+    @Override
     public void setIsUnselectable(boolean b)
     {
         checkLocked();
@@ -1920,6 +1975,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
 
+    @Override
     public void setParentTable(TableInfo parentTable)
     {
         checkLocked();
@@ -1977,6 +2033,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _defaultValueType;
     }
 
+    @Override
     public void setDefaultValueType(DefaultValueType defaultValueType)
     {
         checkLocked();
@@ -1996,6 +2053,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _conditionalFormats;
     }
 
+    @Override
     public void setConditionalFormats(@NotNull List<ConditionalFormat> formats)
     {
         checkLocked();
@@ -2010,6 +2068,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _validators;
     }
 
+    @Override
     public void setValidators(List<? extends IPropertyValidator> validators)
     {
         checkLocked();
@@ -2095,6 +2154,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         setDisplayColumnFactory(remapped);
     }
 
+    @Override
     public void checkLocked()
     {
         if (_locked)
@@ -2103,6 +2163,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
 
     boolean _locked;
 
+    @Override
     public void setLocked(boolean b)
     {
         if (_locked && !b)
@@ -2110,6 +2171,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         _locked = b;
     }
 
+    @Override
     public boolean isLocked()
     {
         return _locked;
@@ -2121,6 +2183,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return _calculated;
     }
 
+    @Override
     public void setCalculated(boolean calculated)
     {
         checkLocked();
@@ -2136,6 +2199,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return false;
     }
 
+    @Override
     public void setColumnLogging(ColumnLogging columnLogging)
     {
         checkLocked();

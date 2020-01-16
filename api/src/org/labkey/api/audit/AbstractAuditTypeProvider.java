@@ -21,7 +21,6 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -31,6 +30,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -324,8 +324,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
     protected void appendValueMapColumns(AbstractTableInfo table)
     {
-        BaseColumnInfo oldCol = table.getMutableColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
-        BaseColumnInfo newCol = table.getMutableColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
+        MutableColumnInfo oldCol = table.getMutableColumn(FieldKey.fromString(OLD_RECORD_PROP_NAME));
+        MutableColumnInfo newCol = table.getMutableColumn(FieldKey.fromString(NEW_RECORD_PROP_NAME));
 
         if(oldCol != null)
         {
