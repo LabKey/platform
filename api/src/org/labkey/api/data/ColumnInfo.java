@@ -158,10 +158,12 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     Object getDefaultValue();
 
+    // TODO return a FieldKey instead of a ColumnInfo
     @Nullable ColumnInfo getDisplayField();
 
-    @Nullable List<ColumnInfo> getSortFields();
+//    @Nullable List<ColumnInfo> getSortFields();
 
+    // TODO return a FieldKey instead of a ColumnInfo
     ColumnInfo getFilterField();
 
     boolean isNoWrap();

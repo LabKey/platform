@@ -2635,12 +2635,12 @@ public class QueryServiceImpl implements QueryService
 		{
 			if (usePrimaryKey && !column.isKeyField())
 				continue;
-			List<ColumnInfo> sortFields = column.getSortFields();
+			List<FieldKey> sortFields = column.getSortFieldKeys();
 			if (sortFields != null)
 			{
-                for (ColumnInfo sortField : sortFields)
+                for (FieldKey sortField : sortFields)
                 {
-                    sort.appendSortColumn(sortField.getFieldKey(), column.getSortDirection(), false);
+                    sort.appendSortColumn(sortField, column.getSortDirection(), false);
                 }
 				return;
 			}

@@ -10,7 +10,6 @@ import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
 
@@ -150,13 +149,6 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    @Nullable
-    public List<ColumnInfo> getSortFields()
-    {
-        return delegate.getSortFields();
-    }
-
-    @Override
     public ColumnInfo getFilterField()
     {
         return delegate.getFilterField();
@@ -282,7 +274,18 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     @Override
     public DisplayColumn getRenderer()
     {
-        return delegate.getRenderer();
+        // TODO duplicate code BaseColumnInfo
+        // TODO this assumes that displayField has been appropriately wrapped as well as 'this'
+        ColumnInfo displayField = getDisplayField();
+        if (displayField == null || displayField == this)
+        {
+            return getDisplayColumnFactory().createRenderer(this);
+        }
+        else
+        {
+            assert displayField.getParentTable() == getParentTable();
+            return displayField.getRenderer();
+        }
     }
 
     @Override

@@ -27,6 +27,8 @@ public class WrappedColumnInfo
 
     /* create a delegating columnInfo wrapper, the returned columnInfo is Mutable, but if you want to set a LOT of properties
      * use wrapCopy() instead (e.g. for PropertyColumn.copyAttributes())
+     *
+     * NOTE: BaseColumnInfo.copyAttribtuesFrom() does not copy displayField/filterField, here we drop it if the parentTables don't match
      */
     public static MutableColumnInfo wrapDelegating(TableInfo parent_, FieldKey fieldKey_, ColumnInfo delegate_, String label_, String alias_)
     {
@@ -71,6 +73,20 @@ public class WrappedColumnInfo
             public boolean isAliasSet()
             {
                 return null != alias;
+            }
+
+            @Override
+            public @Nullable ColumnInfo getDisplayField()
+            {
+                // don't return displayField if it's from a different table, that would probably be wrong...
+                return parent == delegate.getParentTable() ? delegate.getDisplayField() : null;
+            }
+
+            @Override
+            public ColumnInfo getFilterField()
+            {
+                // don't return filterField if it's from a different table, that would probably be wrong...
+                return parent == delegate.getParentTable() ? delegate.getFilterField() : null;
             }
         };
         return new MutableColumnInfoWrapper(inner);
@@ -667,19 +683,7 @@ public class WrappedColumnInfo
                     return factory;
                 }
 
-                @Override
-                public DisplayColumn getRenderer()
-                {
-                    ColumnInfo displayField = getDisplayField();
-                    if (displayField == null || displayField == this || displayField == delegate)
-                    {
-                        return getDisplayColumnFactory().createRenderer(this);
-                    }
-                    else
-                    {
-                        return displayField.getRenderer();
-                    }
-                }
+                // see also AbstractWrappedColumnInfo.getRenderer()
             };
         }
 
