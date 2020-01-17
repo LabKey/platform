@@ -300,6 +300,7 @@ LABKEY.Domain.create({
          * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
          * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
+         *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
          */
         save : function(config)
         {

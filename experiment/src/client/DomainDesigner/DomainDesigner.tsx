@@ -98,7 +98,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     submitHandler = (navigate : boolean) => {
         const { domain, submitting, includeWarnings } = this.state;
 
-        console.log("domain, ", domain);
         if (submitting) {
             return;
         }
@@ -144,7 +143,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     confirmWarningAndNavigate = () => {
-        console.log("saving despite warnings");
         this.setState(() => ({
             includeWarnings : false,
             showWarnings : false,
@@ -152,7 +150,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         }), () => {this.submitHandler(true)});
     };
 
-    setShowWarnings = () => {
+    onSubmitWarningsCancel = () => {
         this.setState(() => ({
             showWarnings : false,
             submitting : false
@@ -226,7 +224,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 msg={<>{question}{warnings}</>}
                 confirmVariant='success'
                 onConfirm={this.confirmWarningAndNavigate}
-                onCancel={this.setShowWarnings}
+                onCancel={this.onSubmitWarningsCancel}
                 cancelButtonText='No, edit and resolve issues'
                 confirmButtonText='Yes, save changes'
             />

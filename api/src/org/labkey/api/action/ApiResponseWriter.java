@@ -430,7 +430,7 @@ public abstract class ApiResponseWriter implements AutoCloseable
             String msg = error.getDefaultMessage();
             String key = error.getObjectName();
             String propertyId = (null != error.getCodes() && error.getCodes().length > 0 ? error.getCodes()[0] : key);
-            String severity = "Error";
+            String severity = ValidationException.SEVERITY.ERROR.toString();
 
             if (error instanceof FieldError)
             {
@@ -438,12 +438,12 @@ public abstract class ApiResponseWriter implements AutoCloseable
                 key = ferror.getField();
             }
 
-            if (error instanceof SimpleValidationError.Warning)
+            if (error instanceof SimpleValidationError.FieldWarning)
             {
-                SimpleValidationError.Warning warning = (SimpleValidationError.Warning) error;
-                severity = warning.getSeverity();
-                key = warning.getField();
-                propertyId = warning.getObjectName();
+                SimpleValidationError.FieldWarning fieldWarning = (SimpleValidationError.FieldWarning) error;
+                severity = fieldWarning.getSeverity();
+                key = fieldWarning.getField();
+                propertyId = fieldWarning.getObjectName();
             }
 
             JSONObject jsonError = new JSONObject();

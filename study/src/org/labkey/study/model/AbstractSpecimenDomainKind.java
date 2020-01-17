@@ -267,12 +267,9 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         List<PropertyDescriptor> pds = new ArrayList<>();
         for (DomainProperty prop : domain.getProperties())
         {
-            if (null != prop.getName())
+            if (null != prop.getName() && !getMandatoryPropertyNames(domain).contains(prop.getName()))
             {
-                if(!prop.isRequired())
-                {
-                    pds.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
-                }
+                pds.add(OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), container));
             }
         }
         return pds;

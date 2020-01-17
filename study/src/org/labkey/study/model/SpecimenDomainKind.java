@@ -187,15 +187,18 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         {
             if (null != prop.getName())
             {
-                if (!prop.isRequired() && vialFields.contains(prop.getName().toLowerCase()))
-                    exception.addError(new SimpleValidationError("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName()));
-
                 if (!getMandatoryPropertyNames(domainSpecimen).contains(prop.getName()))
                 {
-                    optionalSpecimenProps.add(getPropFromGwtProp(prop));
+                    if (vialFields.contains(prop.getName().toLowerCase()))
+                    {
+                        exception.addError(new SimpleValidationError("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName()));
+                    }
 
+                    optionalSpecimenProps.add(getPropFromGwtProp(prop));
                     if (prop.getName().contains(" "))
+                    {
                         exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
+                    }
                 }
             }
         }

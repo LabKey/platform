@@ -90,7 +90,7 @@ public class SimpleValidationError implements ValidationError
 
         SimpleValidationError that = (SimpleValidationError) o;
 
-        return Objects.equals(_message, that._message);
+        return Objects.equals(_message, that._message) && Objects.equals(_severity, that._severity);
     }
 
     @Override
@@ -107,8 +107,8 @@ public class SimpleValidationError implements ValidationError
         {
             if (includeWarnings)
             {
-                Warning warning = new Warning("Warning", this._fieldName, getMessage());
-                errors.addError(warning);
+                FieldWarning fieldWarning = new FieldWarning("FieldWarning", this._fieldName, getMessage());
+                errors.addError(fieldWarning);
             }
         }
         else
@@ -117,9 +117,9 @@ public class SimpleValidationError implements ValidationError
         }
     }
 
-    public static class Warning extends FieldError
+    public static class FieldWarning extends FieldError
     {
-        public Warning(String objectName, String field, String defaultMessage)
+        public FieldWarning(String objectName, String field, String defaultMessage)
         {
             super(objectName, field, defaultMessage);
         }
