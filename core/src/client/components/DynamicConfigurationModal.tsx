@@ -1,15 +1,17 @@
 import React, { PureComponent } from 'react';
-import {Button, ButtonGroup, FormControl, Modal} from "react-bootstrap";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faTimes} from "@fortawesome/free-solid-svg-icons";
-import FACheckBox from "./FACheckBox";
+import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+
+import { FACheckBox } from './FACheckBox';
 
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
-import {LabelHelpTip, FileAttachmentForm} from '@labkey/components';
-import "@labkey/components/dist/components.css"
-import {ActionURL, Ajax} from "@labkey/api";
-import SSOFields from "./SSOFields";
+import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
+import '@labkey/components/dist/components.css';
+import { ActionURL, Ajax } from '@labkey/api';
+
+import SSOFields from './SSOFields';
 
 export default class DynamicConfigurationModal extends PureComponent<any, any> {
     constructor(props) {
@@ -17,83 +19,74 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         this.state = {
             enabled: this.props.enabled,
             description: this.props.description,
-            errorMessage: "",
-            auth_header_logo: "",
-            auth_login_page_logo: "",
+            errorMessage: '',
+            auth_header_logo: '',
+            auth_login_page_logo: '',
             deletedLogos: [],
             emptyRequiredFields: null,
         };
     }
 
     componentDidMount = () => {
-        let fieldValues = {};
+        const fieldValues = {};
 
-        this.props.modalType.settingsFields.forEach((field) => {
-                fieldValues[field.name] = (field.name in this.props ? this.props[field.name] : field.defaultValue);
-            }
-        );
+        this.props.modalType.settingsFields.forEach(field => {
+            fieldValues[field.name] = field.name in this.props ? this.props[field.name] : field.defaultValue;
+        });
 
         this.setState(() => ({
-            ...fieldValues
-        })
-            ,() => {console.log("Props ", this.props, "\n", "State ", this.state)} //for testing
-        );
+            ...fieldValues,
+        }));
     };
 
-    saveEditedModal = () : void => {
+    saveEditedModal = (): void => {
         const baseUrl = ActionURL.getBaseURL(true);
-        let saveUrl = baseUrl + this.props.modalType.saveLink;
-        let form = new FormData();
+        const saveUrl = baseUrl + this.props.modalType.saveLink;
+        const form = new FormData();
 
         if (this.areRequiredFieldsEmpty()) {
             return;
         }
 
         if (this.props.configuration) {
-            form.append("configuration", this.props.configuration);
+            form.append('configuration', this.props.configuration);
         }
-        Object.keys(this.state).map(
-            (item) => {
-                form.append(item, this.state[item]);
-                console.log("adding", item, this.state[item]);
-            }
-        );
+        Object.keys(this.state).map(item => {
+            form.append(item, this.state[item]);
+        });
 
         Ajax.request({
             url: saveUrl,
-            method : 'POST',
+            method: 'POST',
             form,
             scope: this,
-            failure: function(error){
-                console.log("fail: ", error.response);
+            failure: function(error) {
                 const errorObj = JSON.parse(error.response);
                 const errorMessage = errorObj.exception;
-                console.log("unfortunate state: ", errorObj.exception);
-                // const errorMessage = error.response.fail
-                this.setState(() => ({errorMessage}));
+                this.setState(() => ({ errorMessage }));
             },
-            success: function(result){
-                console.log("saveEditedModal Success", result);
+            success: function(result) {
                 this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
                 this.props.closeModal();
-            }
-        })
+            },
+        });
     };
 
     areRequiredFieldsEmpty = () => {
-        const requiredFields = this.props.modalType.settingsFields.reduce((accum, current) => {
-            if (current.required) {
-                accum.push(current.name)
-            }
-            return accum;
-        }, ["description"]);
-
-        const emptyRequiredFields = requiredFields.filter((name) =>
-            this.state[name] == ""
+        const requiredFields = this.props.modalType.settingsFields.reduce(
+            (accum, current) => {
+                if (current.required) {
+                    accum.push(current.name);
+                }
+                return accum;
+            },
+            ['description']
         );
 
-        if (emptyRequiredFields.length > 0){
-            this.setState({emptyRequiredFields}, () => (console.log("dfiuas", this.state)));
+        const emptyRequiredFields = requiredFields.filter(name => this.state[name] == '');
+
+        if (emptyRequiredFields.length > 0) {
+            this.setState({ emptyRequiredFields });
             return true;
         } else {
             return false;
@@ -101,13 +94,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     };
 
     onToggle = () => {
-        this.setState({enabled: !this.state.enabled});
+        this.setState({ enabled: !this.state.enabled });
     };
 
-    handleChange = (event) : void => {
-        const {name, value} = event.target;
+    handleChange = (event): void => {
+        const { name, value } = event.target;
         this.setState(() => ({
-            [name]: value
+            [name]: value,
         }));
     };
 
@@ -115,24 +108,24 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         const arr = this.state.deletedLogos;
         arr.push(value);
 
-        this.setState(() => ({deletedLogos: arr}));
+        this.setState(() => ({ deletedLogos: arr }));
     };
 
     checkCheckBox = (name: string) => {
         const oldState = this.state[name];
         this.setState(() => ({
-            [name]: !oldState
+            [name]: !oldState,
         }));
     };
 
     onFileChange = (attachment, logoType: string) => {
-        this.setState(() => ({[logoType]: attachment.first()}));
+        this.setState(() => ({ [logoType]: attachment.first() }));
     };
 
-    dynamicallyCreateFields = (fields: Array<AuthConfigField>, expandableOpen) => {
+    dynamicallyCreateFields = (fields: AuthConfigField[], expandableOpen) => {
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
-            if ("dictateFieldVisibility" in fields[i]) {
+            if ('dictateFieldVisibility' in fields[i]) {
                 stopPoint = i + 1;
                 break;
             }
@@ -142,19 +135,19 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
         return fieldsToCreate.map((field, index) => {
             switch (field.type) {
-                case "input":
+                case 'input':
                     return (
                         <TextInput
                             key={index}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
-                            type={"text"}
+                            type="text"
                             canEdit={this.props.canEdit}
                             emptyRequiredFields={this.state.emptyRequiredFields}
                             {...field}
                         />
                     );
-                case "checkbox":
+                case 'checkbox':
                     return (
                         <CheckBoxInput
                             key={index}
@@ -164,8 +157,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             {...field}
                         />
                     );
-                case "password":
-                    if (!this.props.canEdit){
+                case 'password':
+                    if (!this.props.canEdit) {
                         return;
                     }
                     return (
@@ -173,13 +166,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             key={index}
                             handleChange={this.handleChange}
                             value={this.state[field.name]}
-                            type={"password"}
+                            type="password"
                             canEdit={this.props.canEdit}
                             {...field}
                         />
                     );
 
-                case "textarea":
+                case 'textarea':
                     return (
                         <SmallFileUpload
                             key={index}
@@ -190,8 +183,8 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     );
 
-                case "options":
-                    return(
+                case 'options':
+                    return (
                         <Option
                             key={index}
                             handleChange={this.handleChange}
@@ -202,38 +195,31 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                         />
                     );
 
-                case "fixedHtml":
-                    return(
-                        <FixedHtml
-                            key={index}
-                            {...field}
-                        />
-                    );
+                case 'fixedHtml':
+                    return <FixedHtml key={index} {...field} />;
                 default:
                     return <div> Error: Invalid field type received. </div>;
             }
-        })
+        });
     };
 
     render() {
-        // console.log(this.props);
-        let {modalType, closeModal, canEdit} = this.props;
-        let queryString = {"server": this.state.servers, "principal": this.state.principalTemplate, "sasl":this.state.SASL};
-        let isAddNewConfig = (this.props.title);
-        let modalTitle = (isAddNewConfig) ? this.props.title : this.props.description;
-        let finalizeButtonText = (isAddNewConfig) ? "Finish" : "Apply";
+        const { modalType, closeModal, canEdit } = this.props;
+        const queryString = {
+            server: this.state.servers,
+            principal: this.state.principalTemplate,
+            sasl: this.state.SASL,
+        };
+        const isAddNewConfig = this.props.title;
+        const modalTitle = isAddNewConfig ? this.props.title : this.props.description;
+        const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
 
         return (
-            <Modal show={true} onHide={() => {}} >
+            <Modal show={true} onHide={() => {}}>
                 <Modal.Header>
                     <Modal.Title>
-                        {"Configure " + modalTitle}
-                        <FontAwesomeIcon
-                            size='sm'
-                            icon={faTimes}
-                            className="modal__close-icon"
-                            onClick={closeModal}
-                        />
+                        {'Configure ' + modalTitle}
+                        <FontAwesomeIcon size="sm" icon={faTimes} className="modal__close-icon" onClick={closeModal} />
                     </Modal.Title>
                 </Modal.Header>
 
@@ -244,7 +230,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             onClick={this.onToggle}
                             on="Enabled"
                             off="Disabled"
-                            onstyle={"primary"}
+                            onstyle="primary"
                             active={this.state.enabled}
                             className="modal__enable-toggle"
                             disabled={!canEdit}
@@ -255,29 +241,26 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <div className="modal__text-input">
                         Description *
-
-                        {(this.state.emptyRequiredFields && this.state.emptyRequiredFields.includes("description")) &&
-                            <div className={"modal__tiny-error"}> This field is required </div>
-                        }
-
-
-                        {canEdit ?
+                        {this.state.emptyRequiredFields && this.state.emptyRequiredFields.includes('description') && (
+                            <div className="modal__tiny-error"> This field is required </div>
+                        )}
+                        {canEdit ? (
                             <FormControl
                                 name="description"
                                 type="text"
                                 value={this.state.description}
-                                onChange={(e) => this.handleChange(e)}
+                                onChange={e => this.handleChange(e)}
                                 placeholder="Enter text"
                                 className="modal__text-input-field"
                             />
-                            : <span className="modal__text-input-field"> {this.state.description} </span>
-                        }
+                        ) : (
+                            <span className="modal__text-input-field"> {this.state.description} </span>
+                        )}
                     </div>
-
 
                     {modalType && this.dynamicallyCreateFields(modalType.settingsFields, this.state.search)}
 
-                    {(modalType && modalType.sso)  &&
+                    {modalType && modalType.sso && (
                         <SSOFields
                             headerLogoUrl={this.props.headerLogoUrl}
                             loginLogoUrl={this.props.loginLogoUrl}
@@ -285,137 +268,134 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                             handleDeleteLogo={this.handleDeleteLogo}
                             canEdit={canEdit}
                         />
-                    }
+                    )}
 
                     <div className="modal__test-button">
-                        {modalType.testLink &&
-                            <Button className={'labkey-button'} onClick={() =>
-                                window.open(
-                                    ActionURL.getBaseURL(true) + modalType.testLink + ActionURL.queryString(queryString)
-                                )}
-                            >
+                        {modalType.testLink && (
+                            <Button
+                                className="labkey-button"
+                                onClick={() =>
+                                    window.open(
+                                        ActionURL.getBaseURL(true) +
+                                            modalType.testLink +
+                                            ActionURL.queryString(queryString)
+                                    )
+                                }>
                                 Test
                             </Button>
-                        }
+                        )}
                     </div>
 
                     <div className="modal__error-message"> {this.state.errorMessage} </div>
 
                     <div className="modal__bottom">
                         <div className="modal__bottom-buttons">
-    
-                            <a target="_blank"
-                               href={modalType.helpLink}
-                               className="modal__help-link"
-                            >
-                                    {"More about " + this.props.provider + " authentication"}
+                            <a target="_blank" href={modalType.helpLink} className="modal__help-link">
+                                {'More about ' + this.props.provider + ' authentication'}
                             </a>
-    
-                            {canEdit
-                                ? <Button className={'labkey-button primary'} onClick={() => this.saveEditedModal()}> {finalizeButtonText} </Button>
-                                : null
-                            }
+
+                            {canEdit ? (
+                                <Button className="labkey-button primary" onClick={() => this.saveEditedModal()}>
+                                    {' '}
+                                    {finalizeButtonText}{' '}
+                                </Button>
+                            ) : null}
                         </div>
-    
-                        <Button
-                            className={'labkey-button modal__save-button'}
-                            onClick={closeModal}
-                        >
-                            {canEdit ? "Cancel" : "Close"}
+
+                        <Button className="labkey-button modal__save-button" onClick={closeModal}>
+                            {canEdit ? 'Cancel' : 'Close'}
                         </Button>
                     </div>
-
                 </Modal.Body>
             </Modal>
         );
     }
 }
 
-
 interface TextInputProps {
-    "defaultValue": any
-    "name": string
-    "caption": string
-    "description": string
-    "required": boolean
+    defaultValue: any;
+    name: string;
+    caption: string;
+    description: string;
+    required: boolean;
 }
 
 class TextInput extends PureComponent<any, any> {
     render() {
-        const fieldIsRequiredAndEmpty = (this.props.emptyRequiredFields && this.props.emptyRequiredFields.includes(this.props.name));
-        console.log(this.props.emptyRequiredFields);
+        const fieldIsRequiredAndEmpty =
+            this.props.emptyRequiredFields && this.props.emptyRequiredFields.includes(this.props.name);
 
-        return(
+        return (
             <div className="modal__text-input">
                 <span className="modal__field-label">
-                    {this.props.caption} {this.props.required ? "*" : null}
-
-
+                    {this.props.caption} {this.props.required ? '*' : null}
                 </span>
 
-                {this.props.description &&
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {this.props.description} </div>)
-                    }}/>
-                }
+                {this.props.description && (
+                    <LabelHelpTip
+                        title="Tip"
+                        body={() => {
+                            return <div> {this.props.description} </div>;
+                        }}
+                    />
+                )}
 
-                {(fieldIsRequiredAndEmpty) &&
-                    <div className={"modal__tiny-error"}> This field is required </div>
-                }
+                {fieldIsRequiredAndEmpty && <div className="modal__tiny-error"> This field is required </div>}
 
-                {this.props.canEdit ?
-
-                        <FormControl
-                            name={this.props.name}
-                            type={this.props.type}
-                            value={this.props.value}
-                            onChange={(e) => this.props.handleChange(e)}
-                            className="modal__text-input-field"
-                        />
-                    : <span className="modal__text-input-field"> {this.props.value} </span>
-                }
+                {this.props.canEdit ? (
+                    <FormControl
+                        name={this.props.name}
+                        type={this.props.type}
+                        value={this.props.value}
+                        onChange={e => this.props.handleChange(e)}
+                        className="modal__text-input-field"
+                    />
+                ) : (
+                    <span className="modal__text-input-field"> {this.props.value} </span>
+                )}
             </div>
         );
     }
 }
 
 interface CheckBoxInputProps {
-    "defaultValue": any
-    "name": string
-    "caption": string
-    "description": string
-    "required": boolean
+    defaultValue: any;
+    name: string;
+    caption: string;
+    description: string;
+    required: boolean;
 }
 
 class CheckBoxInput extends PureComponent<any, any> {
     render() {
-        return(
+        return (
             <div className="modal__field">
                 <span className="modal__field-label">
-                    {this.props.caption} {this.props.required ? "*" : null}
+                    {this.props.caption} {this.props.required ? '*' : null}
                 </span>
 
-                { this.props.description &&
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {this.props.description} </div>)
-                    }}/>
-                }
+                {this.props.description && (
+                    <LabelHelpTip
+                        title="Tip"
+                        body={() => {
+                            return <div> {this.props.description} </div>;
+                        }}
+                    />
+                )}
 
                 <span className="modal__input">
-                    {this.props.canEdit ?
+                    {this.props.canEdit ? (
                         <FACheckBox
                             name={this.props.name}
                             checked={this.props.value}
                             canEdit={true}
-                            onClick={() => {this.props.checkCheckBox(this.props.name);}}
+                            onClick={() => {
+                                this.props.checkCheckBox(this.props.name);
+                            }}
                         />
-                    :
-                        <FACheckBox
-                            name={this.props.name}
-                            checked={this.props.value}
-                            canEdit={false}
-                        />
-                    }
+                    ) : (
+                        <FACheckBox name={this.props.name} checked={this.props.value} canEdit={false} />
+                    )}
                 </span>
             </div>
         );
@@ -424,35 +404,41 @@ class CheckBoxInput extends PureComponent<any, any> {
 
 class Option extends PureComponent<any, any> {
     render() {
-        const {options} = this.props;
-        return(
+        const { options } = this.props;
+        return (
             <div className="modal__option-field">
                 <span className="modal__field-label">
-                    {this.props.caption} {this.props.required ? "*" : null}
+                    {this.props.caption} {this.props.required ? '*' : null}
                 </span>
 
-                { this.props.description &&
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {this.props.description} </div>)
-                    }}/>
-                }
+                {this.props.description && (
+                    <LabelHelpTip
+                        title="Tip"
+                        body={() => {
+                            return <div> {this.props.description} </div>;
+                        }}
+                    />
+                )}
 
-
-                    { this.props.canEdit ?
-                        <div className="modal__option-input">
-                            <FormControl
-                                componentClass="select"
-                                name={this.props.name}
-                                onChange={this.props.handleChange}
-                                value={this.props.value}
-                            >
-                                {options && Object.keys(options).map((item) => (
-                                    <option value={item} key={item} > {options[item]} </option>
+                {this.props.canEdit ? (
+                    <div className="modal__option-input">
+                        <FormControl
+                            componentClass="select"
+                            name={this.props.name}
+                            onChange={this.props.handleChange}
+                            value={this.props.value}>
+                            {options &&
+                                Object.keys(options).map(item => (
+                                    <option value={item} key={item}>
+                                        {' '}
+                                        {options[item]}{' '}
+                                    </option>
                                 ))}
-                            </FormControl>
-                        </div>
-                        : <span style ={{float: "right", width: "300px"}}> {this.props.value} </span>
-                    }
+                        </FormControl>
+                    </div>
+                ) : (
+                    <span style={{ float: 'right', width: '300px' }}> {this.props.value} </span>
+                )}
             </div>
         );
     }
@@ -462,9 +448,7 @@ class FixedHtml extends PureComponent<any, any> {
     render() {
         return (
             <div className="modal__fixed-html-field">
-                <span className="modal__field-label">
-                    {this.props.caption}
-                </span>
+                <span className="modal__field-label">{this.props.caption}</span>
 
                 <div className="modal__fixed-html-text">
                     <div dangerouslySetInnerHTML={{ __html: this.props.html }} />
@@ -479,14 +463,17 @@ class SmallFileUpload extends PureComponent<any, any> {
         return (
             <div className="modal__compact-file-upload-field">
                 <span className="modal__field-label">
-                    {this.props.caption} {this.props.required ? "*" : null}
+                    {this.props.caption} {this.props.required ? '*' : null}
                 </span>
 
-                { this.props.description &&
-                    <LabelHelpTip title={'Tip'} body={() => {
-                        return (<div> {this.props.description} </div>)
-                    }}/>
-                }
+                {this.props.description && (
+                    <LabelHelpTip
+                        title="Tip"
+                        body={() => {
+                            return <div> {this.props.description} </div>;
+                        }}
+                    />
+                )}
 
                 <div className="modal__compact-file-upload-input">
                     <FileAttachmentForm
@@ -495,10 +482,10 @@ class SmallFileUpload extends PureComponent<any, any> {
                         showLabel={false}
                         allowMultiple={false}
                         allowDirectories={false}
-                        acceptedFormats={".txt,.doc,.docx"}
+                        acceptedFormats=".txt,.doc,.docx"
                         showAcceptedFormats={false}
-                        onFileChange={(attachment) => {
-                            this.props.onFileChange(attachment, this.props.name)
+                        onFileChange={attachment => {
+                            this.props.onFileChange(attachment, this.props.name);
                         }}
                         compact={true}
                     />

@@ -1,93 +1,104 @@
 import React, { PureComponent } from 'react';
-import {Button, ButtonGroup, DropdownButton, FormControl, MenuItem, Modal, Panel} from "react-bootstrap";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faTimes} from "@fortawesome/free-solid-svg-icons";
-import {ActionURL, Ajax} from "@labkey/api";
+import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { ActionURL, Ajax } from '@labkey/api';
 
 
-export default class DatabaseConfigurationModal extends PureComponent<any, any> {
+interface Props extends AuthConfig {
+    closeModal: Function;
+    canEdit: boolean;
+}
+
+interface State {
+    passwordRules: Record<string, string>;
+    helpLink: string;
+    currentSettings: Record<string, string>;
+}
+
+export default class DatabaseConfigurationModal extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
             passwordRules: {
-                Weak: "",
-                Strong: ""
-            }
+                Weak: '',
+                Strong: '',
+            },
+            helpLink: null,
+            currentSettings: {strength: "", expiration: ""}
         };
     }
 
-    componentDidMount = () => {
+    componentDidMount = (): void => {
         Ajax.request({
-            url: ActionURL.buildURL("login", "getDbLoginProperties"),
-            method : 'GET',
+            url: ActionURL.buildURL('login', 'getDbLoginProperties'),
+            method: 'GET',
             scope: this,
-            failure: function(error){
-                console.log("fail: ", error);
+            failure: function(error) {
+                alert('Error: ' + error);
             },
-            success: function(result){
+            success: function(result) {
                 const response = JSON.parse(result.response);
-                this.setState({...response}, () => {console.log(this.state)});
-            }
-        })
+                this.setState({ ...response });
+            },
+        });
     };
 
-    handleChange = (event) => {
-        const {name, value} = event.target;
-        this.setState((prevState) => ({
+    handleChange = event => {
+        const { name, value } = event.target;
+        this.setState(prevState => ({
             ...prevState,
             currentSettings: {
                 ...prevState.currentSettings,
-                [name]: value
-            }
+                [name]: value,
+            },
         }));
     };
 
-    saveChanges = () => {
-        const {expiration, strength} = this.state.currentSettings;
+    saveChanges = (): void => {
+        const { expiration, strength } = this.state.currentSettings;
 
         const form = {
-            strength: strength,
-            expiration: expiration
+            strength,
+            expiration,
         };
-        console.log(this.state);
 
         Ajax.request({
-            url: ActionURL.buildURL("login", "SaveDbLoginProperties"),
-            method : 'POST',
+            url: ActionURL.buildURL('login', 'SaveDbLoginProperties'),
+            method: 'POST',
             jsonData: form,
             scope: this,
-            failure: function(error){
-                console.log("fail: ", error);
+            failure: function(error) {
+                alert('Error: ' + error);
             },
-            success: function(result){
-                console.log("success: ", result);
+            success: function(result) {
                 this.props.closeModal();
-            }
-        })
+            },
+        });
     };
 
-    render () {
-        const {canEdit} = this.props;
-        const passwordStrength = (this.state.currentSettings && this.state.currentSettings.strength);
-        const expiration = (this.state.currentSettings && this.state.currentSettings.expiration);
+    render() {
+        const { canEdit } = this.props;
+        const passwordStrength = this.state.currentSettings && this.state.currentSettings.strength;
+        const expiration = this.state.currentSettings && this.state.currentSettings.expiration;
         const optionsMap = {
-            Never: "Never",
-            FiveSeconds:"Every five seconds — for testing",
-            ThreeMonths:"Every three months",
-            SixMonths:"Every six months",
-            OneYear:"Every twelve months"
+            Never: 'Never',
+            FiveSeconds: 'Every five seconds — for testing',
+            ThreeMonths: 'Every three months',
+            SixMonths: 'Every six months',
+            OneYear: 'Every twelve months',
         };
 
         return (
-            <Modal show={true} onHide={() => {}} >
+            <Modal show={true} onHide={() => {}}>
                 <Modal.Header>
                     <Modal.Title>
-                        {"Configure Database Authentication"}
+                        Configure Database Authentication
                         <FontAwesomeIcon
-                            size='sm'
+                            size="sm"
                             icon={faTimes}
                             className="modal__close-icon"
-                            onClick={this.props.closeModal}
+                            onClick={() => this.props.closeModal}
                         />
                     </Modal.Title>
                 </Modal.Header>
@@ -98,25 +109,32 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
                     </div>
 
-                    <br/>
+                    <br />
 
                     <div className="bold-text"> Strong </div>
                     <div>
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
                     </div>
 
-
                     <div className="database-modal__field-row">
-                        <span>
-                            Password Strength:
-                        </span>
+                        <span>Password Strength:</span>
 
                         <span className="database-modal__field">
                             <ButtonGroup onClick={this.handleChange}>
-                                <Button data-key='1' value="Weak" name="strength" active={passwordStrength == "Weak"} disabled={!canEdit}>
+                                <Button
+                                    data-key="1"
+                                    value="Weak"
+                                    name="strength"
+                                    active={passwordStrength == 'Weak'}
+                                    disabled={!canEdit}>
                                     Weak
                                 </Button>
-                                <Button data-key='2' value="Strong" name="strength" active={passwordStrength == "Strong"} disabled={!canEdit}>
+                                <Button
+                                    data-key="2"
+                                    value="Strong"
+                                    name="strength"
+                                    active={passwordStrength == 'Strong'}
+                                    disabled={!canEdit}>
                                     Strong
                                 </Button>
                             </ButtonGroup>
@@ -124,43 +142,42 @@ export default class DatabaseConfigurationModal extends PureComponent<any, any> 
                     </div>
 
                     <div className="database-modal__field-row">
-                        <span>
-                            Password Expiration:
-                        </span>
+                        <span>Password Expiration:</span>
 
                         <span className="database-modal__field">
-                            {canEdit ?
+                            {canEdit ? (
                                 <FormControl
                                     componentClass="select"
                                     name="expiration"
                                     placeholder="select"
                                     onChange={this.handleChange}
-                                    value={expiration}
-                                    >
+                                    value={expiration}>
                                     <option value="Never">Never</option>
                                     <option value="FiveSeconds">Every five seconds — for testing</option>
                                     <option value="ThreeMonths">Every three months</option>
                                     <option value="SixMonths">Every six months</option>
                                     <option value="OneYear">Every twelve months</option>
                                 </FormControl>
-                                : optionsMap[expiration]
-                            }
-
-
+                            ) : (
+                                optionsMap[expiration]
+                            )}
                         </span>
                     </div>
 
                     <div className="database-modal__bottom">
                         <div className="modal__bottom-buttons">
-                            <a target="_blank" href={this.state.helpLink} className="modal__help-link"> {"More about authentication"} </a>
-                            {canEdit && <Button className={'labkey-button primary'} onClick={this.saveChanges}>Apply</Button>}
+                            <a target="_blank" href={this.state.helpLink} className="modal__help-link">
+                                {'More about authentication'}
+                            </a>
+                            {canEdit && (
+                                <Button className="labkey-button primary" onClick={this.saveChanges}>
+                                    Apply
+                                </Button>
+                            )}
                         </div>
 
-                        <Button
-                            className={'labkey-button modal__save-button'}
-                            onClick={this.props.closeModal}
-                        >
-                            {canEdit ? "Cancel" : "Close"}
+                        <Button className="labkey-button modal__save-button" onClick={this.props.closeModal}>
+                            {canEdit ? 'Cancel' : 'Close'}
                         </Button>
                     </div>
                 </Modal.Body>
