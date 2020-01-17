@@ -104,18 +104,6 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                 </Modal.Header>
 
                 <Modal.Body>
-                    <div className="bold-text"> Weak </div>
-                    <div>
-                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
-                    </div>
-
-                    <br />
-
-                    <div className="bold-text"> Strong </div>
-                    <div>
-                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
-                    </div>
-
                     <div className="database-modal__field-row">
                         <span>Password Strength:</span>
 
@@ -141,7 +129,19 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         </span>
                     </div>
 
+                    <div className="bold-text"> Weak </div>
+                    <div>
+                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
+                    </div>
 
+                    <br />
+
+                    <div className="bold-text"> Strong </div>
+                    <div>
+                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
+                    </div>
+
+                    <br/>
 
                     <div className="database-modal__field-row">
                         <span>Password Expiration:</span>

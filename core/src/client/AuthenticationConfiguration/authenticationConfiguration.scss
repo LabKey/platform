@@ -19,6 +19,7 @@
 
 .parent-panel {
   min-width: 1200px;
+  padding-bottom: 40px;
 }
 
 .parent-panel__save-button {
@@ -192,17 +193,8 @@ body{
   color: red;
   font-size: 10px;
   position: absolute;
-  left: 480px;
-  top: -15px;
-  //bottom: 10px;
-}
-
-.modal__tiny-error--description {
-  color: red;
-  font-size: 10px;
-  position: absolute;
-  left: 480px;
-  top: -15px;
+  left: 270px;
+  top: 30px;
 }
 
 .modal__close-icon {
@@ -237,6 +229,10 @@ body{
   border-radius: 5px;
   float: right;
   width: 300px;
+}
+
+.modal__text-input-field--error {
+  border:1px solid #FF0004;
 }
 
 .modal__textarea-field {

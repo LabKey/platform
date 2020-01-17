@@ -124,7 +124,7 @@ class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, 
                                 showLabel={false}
                                 allowMultiple={false}
                                 allowDirectories={false}
-                                acceptedFormats=".jpeg,.png,.gif,.tif"
+                                acceptedFormats=".jpg,.jpeg,.png,.gif,.tif"
                                 showAcceptedFormats={false}
                                 onFileChange={attachment => {
                                     this.props.onFileChange(attachment, this.props.fileTitle);

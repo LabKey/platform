@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
+import { Button, ButtonGroup, FormControl, Modal, FormGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
@@ -239,24 +239,16 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                     <div className="bold-text modal__settings-text"> Settings </div>
 
-                    <div className="modal__text-input">
-                        Description *
-                        {this.state.emptyRequiredFields && this.state.emptyRequiredFields.includes('description') && (
-                            <div className="modal__tiny-error"> This field is required </div>
-                        )}
-                        {canEdit ? (
-                            <FormControl
-                                name="description"
-                                type="text"
-                                value={this.state.description}
-                                onChange={e => this.handleChange(e)}
-                                placeholder="Enter text"
-                                className="modal__text-input-field"
-                            />
-                        ) : (
-                            <span className="modal__text-input-field"> {this.state.description} </span>
-                        )}
-                    </div>
+                    <TextInput
+                        handleChange={this.handleChange}
+                        value={this.state.description}
+                        type="text"
+                        canEdit={this.props.canEdit}
+                        emptyRequiredFields={this.state.emptyRequiredFields}
+                        required={true}
+                        name={"description"}
+                        caption={"Description"}
+                    />
 
                     {modalType && this.dynamicallyCreateFields(modalType.settingsFields, this.state.search)}
 
@@ -348,7 +340,7 @@ class TextInput extends PureComponent<any, any> {
                         type={this.props.type}
                         value={this.props.value}
                         onChange={e => this.props.handleChange(e)}
-                        className="modal__text-input-field"
+                        className={"modal__text-input-field" + (fieldIsRequiredAndEmpty ? " modal__text-input-field--error" : "")}
                     />
                 ) : (
                     <span className="modal__text-input-field"> {this.props.value} </span>

@@ -75,7 +75,7 @@ export default class AuthRow extends PureComponent<Props, State> {
         const deleteIcon =
             canEdit && !isDatabaseAuth ? (
                 <div className="clickable" onClick={() => this.onDeleteClick()}>
-                    <FontAwesomeIcon icon={faTimesCircle} color="#d9534f" />
+                    <FontAwesomeIcon icon={faTimesCircle} color={this.state.highlight ? "#d9534f" : "#999999"} />
                 </div>
             ) : null;
 
@@ -86,7 +86,7 @@ export default class AuthRow extends PureComponent<Props, State> {
                     this.onToggleModal('modalOpen');
                     toggleSomeModalOpen(true);
                 }}>
-                <FontAwesomeIcon size="1x" icon={faPencilAlt} />
+                <FontAwesomeIcon size="1x" icon={faPencilAlt} color={this.state.highlight ? "#0176AC" : "#999999"} />
             </div>
         ) : (
             <div className="clickable" onClick={() => this.onToggleModal('modalOpen')}>
