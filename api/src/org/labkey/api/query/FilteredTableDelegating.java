@@ -44,7 +44,7 @@ public class FilteredTableDelegating<SchemaType extends UserSchema> extends Filt
 
     /* Wrap a column that comes from inner table tableAlias (may or may not be getRealTable()) */
     @Override
-    public MutableColumnInfo wrapColumnFromJoinedTable(String name, ColumnInfo underlyingColumn, String tableAlias)
+    public MutableColumnInfo wrapColumnFromJoinedTable(String name, ColumnInfo underlyingColumn)
     {
         String alias = getAliasManager().decideAlias(name);
         String label = null;
@@ -65,7 +65,7 @@ public class FilteredTableDelegating<SchemaType extends UserSchema> extends Filt
     public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
-        return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
+        return wrapColumnFromJoinedTable(alias, underlyingColumn);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class FilteredTableDelegating<SchemaType extends UserSchema> extends Filt
     public MutableColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
-        var ret = wrapColumnFromJoinedTable(name, column, ExprColumn.STR_TABLE_ALIAS);
+        var ret = wrapColumnFromJoinedTable(name, column);
         propagateKeyField(column, ret);
         addColumn(ret);
         return ret;

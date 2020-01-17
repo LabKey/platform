@@ -76,6 +76,8 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
 
     void setIsUnselectable(boolean b);
 
+    // As a rule try to set the parent table at construction time, if you're calling setParentTable(), it's probably not quite right
+    @Deprecated
     void setParentTable(TableInfo parentTable);
 
     void setDefaultValueType(DefaultValueType defaultValueType);

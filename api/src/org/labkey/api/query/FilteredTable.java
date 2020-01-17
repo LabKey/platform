@@ -289,15 +289,15 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
-    public MutableColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
+    public MutableColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
     {
-        return wrapExprColumnFromJoinedTable(alias, underlyingColumn, tableAlias);
+        return copyColumnFromJoinedTable(alias, underlyingColumn);
     }
 
     // identical to wrapColumnFromJoinedTable, but see FilteredTableDelegating where this is != wrapColumnFromJoinedTable */
-    public ExprColumn wrapExprColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
+    public MutableColumnInfo copyColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
     {
-        var ret = WrappedColumnInfo.wrapAsExprColumn(this, tableAlias, new FieldKey(null,alias), underlyingColumn, null, null);
+        var ret = WrappedColumnInfo.wrapAsCopy(this, new FieldKey(null,alias), underlyingColumn, null, null);
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
         {
             ret.setKeyField(false);
@@ -313,7 +313,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
-        return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
+        return wrapColumnFromJoinedTable(alias, underlyingColumn);
     }
 
     public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)

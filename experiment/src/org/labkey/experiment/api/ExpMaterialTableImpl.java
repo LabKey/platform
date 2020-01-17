@@ -554,7 +554,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
-            var propColumn = wrapExprColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn, ExprColumn.STR_TABLE_ALIAS);
+            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn);
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),

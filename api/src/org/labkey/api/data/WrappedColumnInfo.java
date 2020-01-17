@@ -1,6 +1,5 @@
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -10,12 +9,11 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class WrappedColumnInfo
@@ -97,10 +95,22 @@ public class WrappedColumnInfo
      * Instead of delegating all getters(), use an ExprColumn, this is useful when you want to set a LOT of properties
      * e.g. PropertyColumn.copyAttributes()
      */
-    public static ExprColumn wrapAsExprColumn(TableInfo parent, String tableAlias, FieldKey fieldKey, ColumnInfo sourceColumnInfo, String label, String alias)
+    public static BaseColumnInfo wrapAsCopy(TableInfo parent, FieldKey fieldKey, ColumnInfo sourceColumnInfo, String label, String alias)
     {
-        tableAlias = StringUtils.defaultString(tableAlias, ExprColumn.STR_TABLE_ALIAS);
-        ExprColumn ret = new ExprColumn(parent, fieldKey, sourceColumnInfo.getValueSql(tableAlias), sourceColumnInfo.getJdbcType());
+        var ret = new BaseColumnInfo(fieldKey, parent, sourceColumnInfo.getJdbcType())
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                return sourceColumnInfo.getValueSql(tableAlias);
+            }
+
+            @Override
+            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+            {
+                sourceColumnInfo.declareJoins(parentAlias, map);
+            }
+        };
         ret.copyAttributesFrom(sourceColumnInfo);
         ret.copyURLFrom(sourceColumnInfo, null, null);
         ret.setLabel(label);  // The alias should be used to generate the default label, not whatever was in underlyingColumn; name might be set later (e.g., meta data override)
@@ -151,12 +161,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setSortDirection(Sort.SortDirection sortDirection_)
+        public void setSortDirection(Sort.SortDirection sortDirection)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final Sort.SortDirection sortDirection = sortDirection_;
                 @Override
                 public Sort.SortDirection getSortDirection()
                 {
@@ -166,13 +175,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setInputType(String inputType_)
+        public void setInputType(String inputType)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String inputType = inputType_;
-
                 @Override
                 public String getInputType()
                 {
@@ -231,13 +238,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setLabel(String label_)
+        public void setLabel(String label)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String label = label_;
-
                 @Override
                 public String getLabelValue()
                 {
@@ -254,13 +259,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setDescription(String description_)
+        public void setDescription(String description)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String description = description_;
-
                 @Override
                 public String getDescription()
                 {
@@ -270,13 +273,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setHidden(boolean hidden_)
+        public void setHidden(boolean hidden)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean hidden = hidden_;
-
                 @Override
                 public boolean isHidden()
                 {
@@ -286,13 +287,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setShownInDetailsView(boolean shownInDetailsView_)
+        public void setShownInDetailsView(boolean shownInDetailsView)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean shownInDetailsView = shownInDetailsView_;
-
                 @Override
                 public boolean isShownInDetailsView()
                 {
@@ -302,13 +301,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setShownInInsertView(boolean shownInInsertView_)
+        public void setShownInInsertView(boolean shownInInsertView)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean shownInInsertView = shownInInsertView_;
-
                 @Override
                 public boolean isShownInInsertView()
                 {
@@ -318,13 +315,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setShownInUpdateView(boolean shownInUpdateView_)
+        public void setShownInUpdateView(boolean shownInUpdateView)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean shownInUpdateView = shownInUpdateView_;
-
                 @Override
                 public boolean isShownInUpdateView()
                 {
@@ -334,13 +329,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setURL(StringExpression url_)
+        public void setURL(StringExpression url)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final StringExpression url = url_;
-
                 @Override
                 public StringExpression getURL()
                 {
@@ -385,13 +378,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setMeasure(boolean measure_)
+        public void setMeasure(boolean measure)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean measure = measure_;
-
                 @Override
                 public boolean isMeasure()
                 {
@@ -401,13 +392,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setDimension(boolean dimension_)
+        public void setDimension(boolean dimension)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean dimension = dimension_;
-
                 @Override
                 public boolean isDimension()
                 {
@@ -417,13 +406,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setNullable(boolean nullable_)
+        public void setNullable(boolean nullable)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean nullable = nullable_;
-
                 @Override
                 public boolean isNullable()
                 {
@@ -433,13 +420,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setRequired(boolean required_)
+        public void setRequired(boolean required)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean required = required_;
-
                 @Override
                 public boolean isRequired()
                 {
@@ -449,13 +434,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setImportAliasesSet(Set<String> importAliases_)
+        public void setImportAliasesSet(Set<String> importAliases)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final LinkedHashSet<String> importAliases = new LinkedHashSet<>(importAliases_);
-
                 @NotNull
                 @Override
                 public Set<String> getImportAliasSet()
@@ -473,13 +456,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setFacetingBehaviorType(FacetingBehaviorType facetingBehaviorType_)
+        public void setFacetingBehaviorType(FacetingBehaviorType facetingBehaviorType)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final FacetingBehaviorType facetingBehaviorType = facetingBehaviorType_;
-
                 @Override
                 public FacetingBehaviorType getFacetingBehaviorType()
                 {
@@ -531,13 +512,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setFieldKey(FieldKey fieldKey_)
+        public void setFieldKey(FieldKey fieldKey)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final FieldKey fieldKey = fieldKey_;
-
                 @Override
                 public FieldKey getFieldKey()
                 {
@@ -547,13 +526,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setAlias(String alias_)
+        public void setAlias(String alias)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String alias = alias_;
-
                 @Override
                 public String getAlias()
                 {
@@ -570,13 +547,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setPropertyURI(String propertyURI_)
+        public void setPropertyURI(String propertyURI)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String propertyURI = propertyURI_;
-
                 @Override
                 public String getPropertyURI()
                 {
@@ -586,13 +561,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setConceptURI(String conceptURI_)
+        public void setConceptURI(String conceptURI)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String conceptURI = conceptURI_;
-
                 @Override
                 public String getConceptURI()
                 {
@@ -609,13 +582,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setTextAlign(String textAlign_)
+        public void setTextAlign(String textAlign)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final String textAlign = textAlign_;
-
                 @Override
                 public String getTextAlign()
                 {
@@ -654,13 +625,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setUserEditable(boolean editable_)
+        public void setUserEditable(boolean editable)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean editable = editable_;
-
                 @Override
                 public boolean isUserEditable()
                 {
@@ -670,13 +639,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setDisplayColumnFactory(DisplayColumnFactory factory_)
+        public void setDisplayColumnFactory(DisplayColumnFactory factory)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final DisplayColumnFactory factory = factory_;
-
                 @Override
                 public DisplayColumnFactory getDisplayColumnFactory()
                 {
@@ -695,29 +662,25 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setAutoIncrement(boolean autoIncrement_)
+        public void setAutoIncrement(boolean autoIncrement)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean autoIncrement = autoIncrement_;
-
                 @Override
                 public boolean isAutoIncrement()
                 {
-                    return autoIncrement_;
+                    return autoIncrement;
                 }
             };
         }
 
         @Override
-        public void setReadOnly(boolean readOnly_)
+        public void setReadOnly(boolean readOnly)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean readOnly = readOnly_;
-
                 @Override
                 public boolean isReadOnly()
                 {
@@ -748,13 +711,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setJdbcType(JdbcType jdbcType_)
+        public void setJdbcType(JdbcType jdbcType)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                JdbcType jdbcType = jdbcType_;
-
                 @Override
                 public JdbcType getJdbcType()
                 {
@@ -790,12 +751,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setFk(@Nullable ForeignKey fk_)
+        public void setFk(@Nullable ForeignKey fk)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final ForeignKey fk = fk_;
                 @Override
                 public ForeignKey getFk()
                 {
@@ -817,13 +777,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setKeyField(boolean keyField_)
+        public void setKeyField(boolean keyField)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean keyField = keyField_;
-
                 @Override
                 public boolean isKeyField()
                 {
@@ -854,13 +812,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setIsUnselectable(boolean unselectable_)
+        public void setIsUnselectable(boolean unselectable)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean unselectable = unselectable_;
-
                 @Override
                 public boolean isUnselectable()
                 {
@@ -869,11 +825,19 @@ public class WrappedColumnInfo
             };
         }
 
+        @Deprecated
         @Override
         public void setParentTable(TableInfo parentTable)
         {
             checkLocked();
-            throw new UnsupportedOperationException();
+            delegate = new AbstractWrappedColumnInfo(delegate)
+            {
+                @Override
+                public TableInfo getParentTable()
+                {
+                    return parentTable;
+                }
+            };
         }
 
         @Override
@@ -898,13 +862,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setCalculated(boolean calculated_)
+        public void setCalculated(boolean calculated)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final boolean calculated = calculated_;
-
                 @Override
                 public boolean isCalculated()
                 {
@@ -914,13 +876,11 @@ public class WrappedColumnInfo
         }
 
         @Override
-        public void setColumnLogging(ColumnLogging columnLogging_)
+        public void setColumnLogging(ColumnLogging columnLogging)
         {
             checkLocked();
             delegate = new AbstractWrappedColumnInfo(delegate)
             {
-                final ColumnLogging columnLogging = columnLogging_;
-
                 @Override
                 public ColumnLogging getColumnLogging()
                 {
