@@ -16,7 +16,7 @@ interface Props {
 export default class SSOFields extends PureComponent<Props> {
     render() {
         return (
-            <div>
+            <>
                 <ImageAndFileAttachmentForm
                     text="Page Header Logo"
                     imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
@@ -27,7 +27,7 @@ export default class SSOFields extends PureComponent<Props> {
                     index={1}
                 />
 
-                <div className="sso-fields__spacer" />
+                <div className="sso-fields__spacer"/>
 
                 <ImageAndFileAttachmentForm
                     text="Login Page Logo"
@@ -38,7 +38,7 @@ export default class SSOFields extends PureComponent<Props> {
                     canEdit={this.props.canEdit}
                     index={2}
                 />
-            </div>
+            </>
         );
     }
 }
@@ -89,7 +89,7 @@ class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, 
         );
 
         return (
-            <>
+            <div className={this.props.fileTitle + "_landing"}>
                 <div className="sso-fields__label">{this.props.text}</div>
 
                 {this.props.canEdit ? (
@@ -137,7 +137,7 @@ class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, 
                         {this.state.imageUrl ? img : noImageSelectedDisplay}
                     </div>
                 )}
-            </>
+            </div>
         );
     }
 }

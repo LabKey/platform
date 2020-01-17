@@ -98,7 +98,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                             size="sm"
                             icon={faTimes}
                             className="modal__close-icon"
-                            onClick={() => this.props.closeModal}
+                            onClick={() => this.props.closeModal()}
                         />
                     </Modal.Title>
                 </Modal.Header>
@@ -140,6 +140,8 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                             </ButtonGroup>
                         </span>
                     </div>
+
+
 
                     <div className="database-modal__field-row">
                         <span>Password Expiration:</span>
