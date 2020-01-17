@@ -214,21 +214,21 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
-        console.log("Bad Domain - ", badDomain);
         let errors = badDomain.domainException.errors;
+        let question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
         let warnings = errors.map((error) => {
             return <div> {error.message} </div>
         });
 
         return (
             <ConfirmModal
-                title='Warnings'
-                msg={warnings}
+                title='Save without resolving issues?'
+                msg={<>{question}{warnings}</>}
                 confirmVariant='success'
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.setShowWarnings}
-                cancelButtonText='No, Resolve Changes'
-                confirmButtonText='Yes, Save Changes'
+                cancelButtonText='No, edit and resolve issues'
+                confirmButtonText='Yes, save changes'
             />
         )
     }
