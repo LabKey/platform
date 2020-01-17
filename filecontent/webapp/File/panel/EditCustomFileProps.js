@@ -263,7 +263,8 @@ Ext4.define('File.panel.EditCustomFileProps', {
         if (json) {
             if (json.errors) {
                 for (var i=0; i < json.errors.length; i++) {
-                    errorMsg += '<span class="labkey-error">' + json.errors[i].message + '</span>';
+                    var error = json.errors[i];
+                    errorMsg += '<div class="labkey-error">' + (error.message || error.exception) + '</div>';
                 }
             }
             else if (json.exception) {
@@ -281,11 +282,6 @@ Ext4.define('File.panel.EditCustomFileProps', {
         }
         else {
             Ext4.Msg.alert('Error', errorMsg);
-        }
-
-        var win = Ext4.getCmp(this.winId);
-        if (win) {
-            win.close();
         }
     },
 
