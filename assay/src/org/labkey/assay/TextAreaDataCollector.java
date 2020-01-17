@@ -56,7 +56,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
 
     public String getDescription(ContextType context)
     {
-        return "Paste in a tab-separated set of values";
+        return "Paste in a tab-separated set of values (including column headers)";
     }
 
     @NotNull

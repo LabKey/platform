@@ -106,17 +106,17 @@ public class DateUtil
     }
 
 
-    // disallow date overflow arithmetic
-    private static Calendar newCalendarStrict(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, int ms)
+    // when strict=true, disallow date overflow arithmetic
+    private static Calendar newCalendar(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, int ms, boolean strict)
     {
         Calendar cal = new _Calendar(tz, _localeDefault, year, mon, mday, hour, min, sec, ms);
-        if (cal.get(Calendar.YEAR) != year ||
-            cal.get(Calendar.MONTH) != mon ||
-            cal.get(Calendar.DAY_OF_MONTH) != mday ||
-            cal.get(Calendar.HOUR_OF_DAY) != hour ||
-            cal.get(Calendar.MINUTE) != min ||
-            cal.get(Calendar.SECOND) != sec ||
-            cal.get(Calendar.MILLISECOND) != ms)
+        if (strict && (cal.get(Calendar.YEAR) != year ||
+                cal.get(Calendar.MONTH) != mon ||
+                cal.get(Calendar.DAY_OF_MONTH) != mday ||
+                cal.get(Calendar.HOUR_OF_DAY) != hour ||
+                cal.get(Calendar.MINUTE) != min ||
+                cal.get(Calendar.SECOND) != sec ||
+                cal.get(Calendar.MILLISECOND) != ms))
             throw new IllegalArgumentException();
         return cal;
     }
@@ -321,13 +321,13 @@ public class DateUtil
     }
 
 
-    private static long parseDateTimeUS(String s, DateTimeOption option)
+    private static long parseDateTimeUS(String s, DateTimeOption option, boolean strict)
     {
-        return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY);
+        return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY,  strict);
     }
 
 
-    private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md)
+    private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md, boolean strict)
     {
         Month month = null; // set if month is specified using name
         int year = -1;
@@ -427,7 +427,7 @@ validNum:       {
                         tz = null;
                         break validNum;
                     }
-                    if (digits > 3 || n >= 70 || ((prevc == '/' || prevc == '-' || prevc == '.') && mon >= 0 && mday >= 0 && year < 0))
+                    if (digits > 3 || (n >= 70 && prevc != ':') || ((prevc == '/' || prevc == '-' || prevc == '.') && mon >= 0 && mday >= 0 && year < 0))
                     {
                         if (year >= 0)
                             throw new ConversionException(s);
@@ -658,7 +658,7 @@ validNum:       {
 
         if (option == DateTimeOption.TimeOnly)
         {
-            if (hour >= 24 || min >= 60 || sec >= 60 || nanos >= 1_000_000_000)
+            if (strict && (hour >= 24 || min >= 60 || sec >= 60 || nanos >= 1_000_000_000))
                 throw new ConversionException(s);
 
             return (hour * 60*60*1000L) + (min * 60*1000L) + (sec * 1000L) + ms;
@@ -693,7 +693,7 @@ validNum:       {
 
         try
         {
-            Calendar cal = newCalendarStrict(tz, year, mon, mday, hour, min, sec, ms);
+            Calendar cal = newCalendar(tz, year, mon, mday, hour, min, sec, ms, strict);
 
             return cal.getTimeInMillis();
         }
@@ -812,7 +812,7 @@ validNum:       {
                 PipelineJobService.get().getLocationType() != PipelineJobService.LocationType.WebServer;
         if (isNotRunningOnWebServer)
         {
-            return parseDateTime(s, MonthDayOption.MONTH_DAY);
+            return parseDateTime(s, MonthDayOption.MONTH_DAY, true);
         }
 
         return parseDateTime(ContainerManager.getRoot(), s);
@@ -829,11 +829,16 @@ validNum:       {
     }
 
 
-    private static long parseDateTime(String s, MonthDayOption md)
+    public static long parseDateTime(String s, MonthDayOption md)
+    {
+        return parseDateTime(s, md, true);
+    }
+
+    public static long parseDateTime(String s, MonthDayOption md, boolean strict)
     {
         try
         {
-            return parseDateTimeEN(s, DateTimeOption.DateTime, md);
+            return parseDateTimeEN(s, DateTimeOption.DateTime, md, strict);
         }
         catch (ConversionException ignored) {}
 
@@ -871,7 +876,7 @@ validNum:       {
 
         try
         {
-            return parseDateTimeEN(s, DateTimeOption.DateOnly, md);
+            return parseDateTimeEN(s, DateTimeOption.DateOnly, md, true);
         }
         catch (ConversionException e)
         {
@@ -926,7 +931,12 @@ validNum:       {
 
     public static long parseTime(String s)
     {
-        return parseDateTimeUS(s, DateTimeOption.TimeOnly);
+        return parseDateTimeUS(s, DateTimeOption.TimeOnly, true);
+    }
+
+    public static long parseTime(String s, boolean strict)
+    {
+        return parseDateTimeUS(s, DateTimeOption.TimeOnly, strict);
     }
 
 
@@ -1518,6 +1528,12 @@ Parse:
             // invalid fractional seconds > 59
             assertIllegalDateTime("03-FEB-2001 04:05:06:60");
             assertIllegalDateTime("03-FEB-2001 04:05:06:61");
+            assertIllegalDateTime("03-FEB-2001 04:05:06:91");
+            // invalid fractional seconds > 59, but allowed to overflow when strict=false
+            assertEquals(datetimeExpected+1000, DateUtil.parseDateTime("03-FEB-2001 4:05:06:60", MonthDayOption.MONTH_DAY, false));
+            assertEquals(datetimeExpected+1017, DateUtil.parseDateTime("03-FEB-2001 4:05:06:61", MonthDayOption.MONTH_DAY, false));
+            assertEquals(datetimeExpected+1517, DateUtil.parseDateTime("03-FEB-2001 4:05:06:91", MonthDayOption.MONTH_DAY, false));
+
 
             // Test parseXMLDate() handling of time and date time values
 //            assertEquals(Timestamp.valueOf("2018-08-01 23:51:26.551").getTime(), parseDateTime("2018-08-02T06:51:26.551Z"));
@@ -1595,10 +1611,10 @@ Parse:
             assertEquals(parseDateTime("2014-07-31 15:00 PDT"), parseDateTime("Fri Aug 01 00:00:00 CEST 2014"));
 
             // check that parseDateTimeUS handles ISO
-            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime));
-            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime));
-            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime));
-            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime));
+            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
+            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime, true));
+            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime, true));
+            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
 
             assertIllegalDateTime("20131113_Guide Set plate 1.xls");
         }
@@ -1711,10 +1727,10 @@ Parse:
             assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001", MonthDayOption.DAY_MONTH));
 
             // check that parseDateTimeUS handles ISO
-            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03 04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
-            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03T04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
-            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03 04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
-            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03T04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH));
+            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03 04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeLocal, parseDateTimeEN("2001-02-03T04:05:06", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03 04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
+            assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03T04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
         }
 
 
@@ -1856,6 +1872,11 @@ Parse:
             // invalid fractional seconds > 59
             assertIllegalTime("4:05:06:60");
             assertIllegalTime("4:05:06:61");
+            assertIllegalTime("4:05:06:91");
+            // invalid fractional seconds > 59, but allowed to overflow when strict=false
+            assertEquals(timeSecExpected+1000, parseTime("4:05:06:60", false));
+            assertEquals(timeSecExpected+1017, parseTime("4:05:06:61", false));
+            assertEquals(timeSecExpected+1517, parseTime("4:05:06:91", false));
 
             assertIllegalTime("2/3/2001 4:05:06");
             assertIllegalTime("4/05:06");
