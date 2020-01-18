@@ -19,20 +19,27 @@ import org.apache.commons.lang3.SystemUtils;
 import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.util.ConfigurationException;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @JavaRuntimeVersion
 public enum JavaVersion
 {
-    JAVA_12(true, true),
-    JAVA_13(false, true),
-    JAVA_14(false, false),
-    JAVA_15(false, false),
-    JAVA_FUTURE(false, false);
+    JAVA_12(12, true, true),
+    JAVA_13(13, false, true),
+    JAVA_14(14, false, false),
+    JAVA_15(15, false, false),
+    JAVA_FUTURE(Integer.MAX_VALUE, false, false);
 
+    private final int _version;
     private final boolean _deprecated;
     private final boolean _tested;
 
-    JavaVersion(boolean deprecated, boolean tested)
+    JavaVersion(int version, boolean deprecated, boolean tested)
     {
+        _version = version;
         _deprecated = deprecated;
         _tested = tested;
     }
@@ -47,6 +54,15 @@ public enum JavaVersion
         return _tested;
     }
 
+    private final static Map<Integer, JavaVersion> VERSION_MAP = Arrays.stream(values())
+        .collect(Collectors.toMap(jv->jv._version, jv->jv));
+
+    private final static int MAX_KNOWN_VERSION = Arrays.stream(values())
+        .filter(v->JAVA_FUTURE != v)
+        .map(v->v._version)
+        .max(Comparator.naturalOrder())
+        .orElseThrow();
+
     public static JavaVersion get()
     {
         // Determine current Java specification version, normalized to an int (e.g., 8, 9, 10, 11, 12, 13...). Commons lang
@@ -56,17 +72,19 @@ public enum JavaVersion
 
         int version = Integer.parseInt("1".equals(versionArray[0]) ? versionArray[1] : versionArray[0]);
 
-        switch (version)
+        if (version > MAX_KNOWN_VERSION)
         {
-            case 12: return JAVA_12;
-            case 13: return JAVA_13;
-            case 14: return JAVA_14;
+            return JAVA_FUTURE;
         }
+        else
+        {
+            JavaVersion jv = VERSION_MAP.get(version);
 
-        if (version < 12)
-            throw new ConfigurationException("Unsupported Java runtime version: " + SystemUtils.JAVA_VERSION + ". LabKey Server requires Java 12 or Java 13. We recommend installing " + getRecommendedJavaVersion() + ".");
+            if (null != jv)
+                return jv;
 
-        return JAVA_FUTURE;
+            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". LabKey Server requires Java 12 or Java 13. We recommend installing " + getRecommendedJavaVersion() + ".");
+        }
     }
 
     // Version information to display in administrator warnings
