@@ -16,6 +16,8 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.util.ConfigurationException;
 
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @JavaRuntimeVersion
 public enum JavaVersion
 {
+    JAVA_UNSUPPORTED(-1, true, false),
     JAVA_12(12, true, true),
     JAVA_13(13, false, true),
     JAVA_14(14, false, false),
@@ -65,13 +68,23 @@ public enum JavaVersion
 
     public static JavaVersion get()
     {
-        // Determine current Java specification version, normalized to an int (e.g., 8, 9, 10, 11, 12, 13...). Commons lang
+        // Determine current Java specification version, normalized to an int (e.g., 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16...). Commons lang
         // methods like SystemUtils.isJavaVersionAtLeast() aren't an option because that library isn't released often enough
         // to keep up with the Java rapid release cadence.
         String[] versionArray = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");
 
         int version = Integer.parseInt("1".equals(versionArray[0]) ? versionArray[1] : versionArray[0]);
 
+        JavaVersion jv = get(version);
+
+        if (JAVA_UNSUPPORTED == jv)
+            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". LabKey Server requires Java 12 or Java 13. We recommend installing " + getRecommendedJavaVersion() + ".");
+
+        return jv;
+    }
+
+    private static JavaVersion get(int version)
+    {
         if (version > MAX_KNOWN_VERSION)
         {
             return JAVA_FUTURE;
@@ -79,11 +92,7 @@ public enum JavaVersion
         else
         {
             JavaVersion jv = VERSION_MAP.get(version);
-
-            if (null != jv)
-                return jv;
-
-            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". LabKey Server requires Java 12 or Java 13. We recommend installing " + getRecommendedJavaVersion() + ".");
+            return null != jv ? jv : JAVA_UNSUPPORTED;
         }
     }
 
@@ -96,5 +105,38 @@ public enum JavaVersion
     public static String getRecommendedJavaVersion()
     {
         return "Oracle OpenJDK 13";
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            // Good
+            test(12, JAVA_12);
+            test(13, JAVA_13);
+            test(14, JAVA_14);
+            test(15, JAVA_15);
+
+            // Future
+            test(16, JAVA_FUTURE);
+            test(17, JAVA_FUTURE);
+            test(18, JAVA_FUTURE);
+            test(19, JAVA_FUTURE);
+
+            // Bad
+            test(11, JAVA_UNSUPPORTED);
+            test(10, JAVA_UNSUPPORTED);
+            test(9, JAVA_UNSUPPORTED);
+            test(8, JAVA_UNSUPPORTED);
+            test(7, JAVA_UNSUPPORTED);
+            test(6, JAVA_UNSUPPORTED);
+            test(5, JAVA_UNSUPPORTED);
+        }
+
+        private void test(int version, JavaVersion expectedVersion)
+        {
+            Assert.assertEquals(get(version), expectedVersion);
+        }
     }
 }
