@@ -192,7 +192,7 @@
     private <AC extends AuthenticationConfiguration<?>> void appendConfigurations(JspWriter out, Class<AC> clazz, boolean canEdit, boolean alwaysIncludeDelete) throws IOException
     {
         Collection<AC> configurations = AuthenticationConfigurationCache.getConfigurations(clazz);
-        boolean includeDeleteColumn = canEdit && (configurations.size() > 1 || alwaysIncludeDelete);  // Don't show "delete" column if primary auth & database auth is the only configuration
+        boolean includeDeleteColumn = canEdit && configurations.size() > 1;  // Don't show "delete" column if database auth is the only configuration
         out.print("<table class=\"labkey-data-region-legacy labkey-show-borders\">");
 
         out.print("<tr>\n" +
@@ -205,6 +205,10 @@
         int rowIndex = 0;
         for (AC configuration : configurations)
         {
+            ActionURL url = configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId());
+            if (null == url)
+                continue;
+
             out.print("<tr class=\"" + (rowIndex % 2 == 1 ? "labkey-row" : "labkey-alternate-row") + "\"><td>");
             out.print(h(configuration.getDescription()));
             out.print("</td>");
@@ -217,13 +221,8 @@
             out.print("<span class=\"" + (configuration.isEnabled() ? "fa fa-check-square" : "fa fa-square-o") + "\"></span>");
             out.print("</td>");
 
-            ActionURL url = configuration.getAuthenticationProvider().getConfigurationLink(configuration.getRowId());
-
             out.print("<td>");
-            if (null == url)
-                out.print("&nbsp;");
-            else
-                out.print(link(canEdit ? "edit" : "view", url));
+            out.print(link(canEdit ? "edit" : "view", url));
             out.print("</td>");
 
             if (includeDeleteColumn)

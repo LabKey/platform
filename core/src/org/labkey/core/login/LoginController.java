@@ -33,7 +33,7 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.annotations.RemoveIn20_1;
-import org.labkey.api.collections.CollectionUtils;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -2725,7 +2725,7 @@ public class LoginController extends SpringActionController
             Map<String, Map<String, Object>> primaryProviders = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(ap->!ap.isPermanent())
                 .sorted(Comparator.comparing(AuthenticationProvider::getName))
-                .collect(CollectionUtils.toLinkedMap(AuthenticationProvider::getName, ap->{
+                .collect(LabKeyCollectors.toLinkedMap(AuthenticationProvider::getName, ap->{
                     Map<String, Object> m = getProviderMap(ap);
                     m.put("sso", ap instanceof SSOAuthenticationProvider);
                     return m;
@@ -2734,22 +2734,22 @@ public class LoginController extends SpringActionController
             // SSO configurations
             JSONArray ssoConfigurations = AuthenticationConfigurationCache.getConfigurations(SSOAuthenticationConfiguration.class).stream()
                 .map(AuthenticationManager::getSsoConfigurationMap)
-                .collect(JSONArray.collector());
+                .collect(LabKeyCollectors.toJSONArray());
 
             // Login form configurations
             JSONArray formConfigurations = AuthenticationConfigurationCache.getConfigurations(LoginFormAuthenticationConfiguration.class).stream()
                 .map(AuthenticationManager::getConfigurationMap)
-                .collect(JSONArray.collector());
+                .collect(LabKeyCollectors.toJSONArray());
 
             // Secondary providers
             Map<String, Map<String, Object>> secondaryProviders = AuthenticationManager.getAllSecondaryProviders().stream()
                 .sorted(Comparator.comparing(AuthenticationProvider::getName))
-                .collect(CollectionUtils.toLinkedMap(AuthenticationProvider::getName, this::getProviderMap));
+                .collect(LabKeyCollectors.toLinkedMap(AuthenticationProvider::getName, this::getProviderMap));
 
             // Secondary configurations
             JSONArray secondaryConfigurations = AuthenticationConfigurationCache.getConfigurations(SecondaryAuthenticationConfiguration.class).stream()
                 .map(AuthenticationManager::getConfigurationMap)
-                .collect(JSONArray.collector());
+                .collect(LabKeyCollectors.toJSONArray());
 
             ApiSimpleResponse res = new ApiSimpleResponse();
             res.put("globalSettings", globalSettings);
