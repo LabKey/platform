@@ -24,7 +24,7 @@ import org.labkey.api.util.ConfigurationException;
  */
 public enum TomcatVersion
 {
-    TOMCAT_7_0(false, "getMaxActive", "Connector", "keystoreFile", "keystorePass", "keystoreType"),
+    TOMCAT_7_0(true, "getMaxActive", "Connector", "keystoreFile", "keystorePass", "keystoreType"),
     TOMCAT_8_5(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword", "certificateKeystoreType"),
     TOMCAT_9_0(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword" , "certificateKeystoreType");
 

@@ -22,9 +22,10 @@ import org.labkey.api.util.ConfigurationException;
 @JavaRuntimeVersion
 public enum JavaVersion
 {
-    JAVA_12(false, true),
+    JAVA_12(true, true),
     JAVA_13(false, true),
     JAVA_14(false, false),
+    JAVA_15(false, false),
     JAVA_FUTURE(false, false);
 
     private final boolean _deprecated;
