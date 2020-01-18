@@ -49,6 +49,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -247,6 +248,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.class,
             TabLoader.TabLoaderTestCase.class,
             TempTableInClauseGenerator.TestCase.class,
+            TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WorkbookContainerType.TestCase.class

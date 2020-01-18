@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.annotations.JavaRuntimeVersion;
@@ -83,7 +84,7 @@ public enum JavaVersion
         return jv;
     }
 
-    private static JavaVersion get(int version)
+    private static @NotNull JavaVersion get(int version)
     {
         if (version > MAX_KNOWN_VERSION)
         {
