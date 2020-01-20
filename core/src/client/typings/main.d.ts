@@ -27,5 +27,27 @@ interface AuthConfigField {
     description: string;
     type: string;
     required: boolean;
-    options?: Object;
+    options?: Record<string, string>;
+}
+
+interface AuthConfigProvider {
+    helpLink: string;
+    saveLink: string;
+    settingsFields: AuthConfigField[];
+    description: string;
+    sso: boolean;
+    testLink?: string;
+}
+
+interface InputFieldProps {
+    defaultValue?: any;
+    name: string;
+    caption: string;
+    description?: string;
+    required: boolean;
+    canEdit: boolean;
+    type: string;
+    value?: string;
+    handleChange?: Function;
+    key?: number;
 }

@@ -12,7 +12,7 @@ interface Props {
     name?: string;
 }
 
-export class FACheckBox extends PureComponent<Props> {
+export default class FACheckBox extends PureComponent<Props> {
     render() {
         const checkedOrNot = this.props.checked ? (
             <FontAwesomeIcon size="lg" icon={faCheckSquare} color="#0073BB" />

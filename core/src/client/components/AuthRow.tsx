@@ -9,7 +9,7 @@ import DatabaseConfigurationModal from './DatabaseConfigurationModal';
 
 interface Props extends AuthConfig {
     index?: string;
-    modalType?: Record<string, any>;
+    modalType?: AuthConfigProvider;
     stateSection?: string;
     canEdit?: boolean;
     draggable?: boolean;
