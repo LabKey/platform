@@ -1649,6 +1649,14 @@ public class QueryController extends SpringActionController
      *     For example, this can be used to add a fake column that is only supported during the import process.
      *     </dd>
      *
+     *     <dt>includeColumn</dt>
+     *     <dd>List of column names to exclude.
+     *     </dd>
+     *
+     *     <dt>exportAlias.columns</dt>
+     *     <dd>Use alternative column name in excel: exportAlias.originalColumnName=aliasColumnName
+     *     </dd>
+     *
      *     <dt>captionType</dt>
      *     <dd>determines which column property is used in the header.  either Label or Name</dd>
      * </dl>
@@ -1674,13 +1682,15 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getFilenamePrefix());
+            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumns(), form.getFilenamePrefix());
         }
     }
 
     public static class ExportQueryForm extends QueryForm
     {
         protected ColumnHeaderType _headerType = null; // QueryView will provide a default header type if the user doesn't select one
+        FieldKey[] excludeColumn;
+        Map<String, String> renameColumns = null;
 
         public ColumnHeaderType getHeaderType()
         {
@@ -1691,6 +1701,44 @@ public class QueryController extends SpringActionController
         {
             _headerType = headerType;
         }
+
+        public List<FieldKey> getExcludeColumns()
+        {
+            if (excludeColumn == null || excludeColumn.length == 0)
+                return Collections.emptyList();
+            return Arrays.asList(excludeColumn);
+        }
+
+        public FieldKey[] getExcludeColumn()
+        {
+            return this.excludeColumn;
+        }
+
+        public void setExcludeColumn(FieldKey[] excludeColumn)
+        {
+            this.excludeColumn = excludeColumn;
+        }
+
+        public Map<String, String> getRenameColumns()
+        {
+            if (renameColumns != null)
+                return renameColumns;
+
+            renameColumns = new HashMap<>();
+            final String renameParamPrefix = "exportAlias.";
+            PropertyValue[] pvs = getInitParameters().getPropertyValues();
+            for (PropertyValue pv : pvs)
+            {
+                String paramName = pv.getName();
+                if (!paramName.startsWith(renameParamPrefix) || pv.getValue() == null)
+                    continue;
+
+                renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
+            }
+
+            return renameColumns;
+        }
+
     }
 
     public static class ExportRowsTsvForm extends ExportQueryForm

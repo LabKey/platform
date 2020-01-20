@@ -36,6 +36,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
@@ -412,6 +413,23 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (loader != null && _target != null)
                 loader.setKnownColumns(_target.getColumns());
 
+            if (loader != null && getRenamedColumns() != null)
+            {
+                ColumnDescriptor[]  columnDescriptors = loader.getColumns();
+                Map<String, String> renamedColumns = getRenamedColumns();
+                for (ColumnDescriptor columnDescriptor : columnDescriptors)
+                {
+                    for (String originalColName : renamedColumns.keySet())
+                    {
+                        if (originalColName.equalsIgnoreCase(columnDescriptor.getColumnName()))
+                        {
+                            columnDescriptor.name = renamedColumns.get(originalColName);
+                            break;
+                        }
+                    }
+                }
+            }
+
             int rowCount = importData(loader, file, originalName, ve);
 
             if (ve.hasErrors())
@@ -432,6 +450,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
                 dataFile.delete();
         }
+    }
+
+    protected Map<String, String> getRenamedColumns()
+    {
+        return null;
     }
 
     protected JSONObject createSuccessResponse(int rowCount)
