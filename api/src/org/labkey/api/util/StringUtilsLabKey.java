@@ -68,7 +68,17 @@ public class StringUtilsLabKey
         int i = 0;
 
         while (first.charAt(i) == last.charAt(i))
+        {
             i++;
+            if (i == first.length())
+            {
+                return first;
+            }
+            if (i == last.length())
+            {
+                return last;
+            }
+        }
 
         return first.substring(0, i);
     }
@@ -324,6 +334,7 @@ public class StringUtilsLabKey
             assertEquals("abcdefghijklmnopqrstuvwxyz", findCommonPrefix(Arrays.asList("abcdefghijklmnopqrstuvwxyz")));
             assertEquals("abc", findCommonPrefix(Arrays.asList("abcdefghijklmnop", "abcxyz", "abcdefg")));
             assertEquals("xyz", findCommonPrefix(Arrays.asList("xyzabc", "xyzasdfj", "xyzafjf", "xyzpqr")));
+            assertEquals("foo", findCommonPrefix(Arrays.asList("foo", "foo2")));
         }
 
         @Test
