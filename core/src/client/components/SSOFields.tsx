@@ -89,7 +89,7 @@ class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, 
         );
 
         return (
-            <div className={this.props.fileTitle + "_landing"}>
+            <div className={"sso-logo-pane-container"}>
                 <div className="sso-fields__label">{this.props.text}</div>
 
                 {this.props.canEdit ? (
@@ -100,9 +100,10 @@ class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, 
                                     <div>{img}</div>
                                     <FontAwesomeIcon
                                         className={
-                                            this.props.fileTitle == 'auth_header_logo'
+                                            (this.props.fileTitle == 'auth_header_logo'
                                                 ? 'sso-fields__delete-img--header-logo'
-                                                : 'sso-fields__delete-img--page-logo'
+                                                : 'sso-fields__delete-img--page-logo')
+                                            + ' sso-fields__delete-img'
                                         }
                                         icon={faTimesCircle}
                                         color="#d9534f"

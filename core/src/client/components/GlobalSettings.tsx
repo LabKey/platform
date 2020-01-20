@@ -4,14 +4,13 @@ import { Panel } from 'react-bootstrap';
 
 import { LabelHelpTip } from '@labkey/components';
 
-import { FACheckBox } from './FACheckBox';
+import FACheckBox from './FACheckBox';
 
 const ROW_TEXTS = [
     {
         id: 'SelfRegistration',
         text: 'Allow self sign up',
-        tip:
-            'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
+        tip: 'Users are able to register for accounts when using database authentication. Use caution when enabling this if you have enabled sending email to non-users.',
     },
     {
         id: 'SelfServiceEmailChanges',

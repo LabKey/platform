@@ -1,9 +1,9 @@
 import React, { PureComponent } from 'react';
-import { Button, ButtonGroup, FormControl, Modal, FormGroup } from 'react-bootstrap';
+import { Button, FormControl, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
-import { FACheckBox } from './FACheckBox';
+import FACheckBox from './FACheckBox';
 
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
@@ -13,7 +13,37 @@ import { ActionURL, Ajax } from '@labkey/api';
 
 import SSOFields from './SSOFields';
 
-export default class DynamicConfigurationModal extends PureComponent<any, any> {
+interface Props {
+    modalType?: AuthConfigProvider;
+    stateSection?: string;
+    description?: string;
+    enabled?: boolean;
+    canEdit?: boolean;
+    title?: string;
+    provider?: string;
+    updateAuthRowsAfterSave?: Function;
+    closeModal?: Function;
+    configuration?: number;
+    headerLogoUrl?: string;
+    loginLogoUrl?: string;
+    type?: AuthConfigProvider;
+}
+
+interface State {
+    enabled?: boolean;
+    description?: string;
+    errorMessage?: string;
+    auth_header_logo?: string;
+    auth_login_page_logo?: string;
+    deletedLogos?: string[];
+    emptyRequiredFields?: null | string[];
+    servers?: string;
+    principalTemplate?: string;
+    SASL?: string;
+    search?: boolean;
+}
+
+export default class DynamicConfigurationModal extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -49,7 +79,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
         }
 
         if (this.props.configuration) {
-            form.append('configuration', this.props.configuration);
+            form.append('configuration', (this.props.configuration).toString());
         }
         Object.keys(this.state).map(item => {
             form.append(item, this.state[item]);
@@ -219,7 +249,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
                 <Modal.Header>
                     <Modal.Title>
                         {'Configure ' + modalTitle}
-                        <FontAwesomeIcon size="sm" icon={faTimes} className="modal__close-icon" onClick={closeModal} />
+                        <FontAwesomeIcon size="sm" icon={faTimes} className="modal__close-icon" onClick={() => closeModal()} />
                     </Modal.Title>
                 </Modal.Header>
 
@@ -288,8 +318,7 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
 
                             {canEdit ? (
                                 <Button className="labkey-button primary" onClick={() => this.saveEditedModal()}>
-                                    {' '}
-                                    {finalizeButtonText}{' '}
+                                    {finalizeButtonText}
                                 </Button>
                             ) : null}
                         </div>
@@ -304,15 +333,13 @@ export default class DynamicConfigurationModal extends PureComponent<any, any> {
     }
 }
 
-interface TextInputProps {
-    defaultValue: any;
-    name: string;
-    caption: string;
-    description: string;
-    required: boolean;
+// To Reviewer: Using this gives me the error 'TS2339: Property 'includes' does not exist on type 'string[]'.'
+// I tried adding 'es7' and then 'es2017' to my 'lib' in tsconfig.json, as stackoverflow suggested, to no avail
+interface TextInputProps extends InputFieldProps {
+    emptyRequiredFields?: string[] | null;
 }
 
-class TextInput extends PureComponent<any, any> {
+class TextInput extends PureComponent<any> {
     render() {
         const fieldIsRequiredAndEmpty =
             this.props.emptyRequiredFields && this.props.emptyRequiredFields.includes(this.props.name);
@@ -350,15 +377,12 @@ class TextInput extends PureComponent<any, any> {
     }
 }
 
-interface CheckBoxInputProps {
-    defaultValue: any;
-    name: string;
-    caption: string;
-    description: string;
-    required: boolean;
+interface CheckBoxInputProps extends InputFieldProps {
+    checked?: boolean;
+    checkCheckBox?: Function;
 }
 
-class CheckBoxInput extends PureComponent<any, any> {
+class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
     render() {
         return (
             <div className="modal__field">
@@ -379,14 +403,14 @@ class CheckBoxInput extends PureComponent<any, any> {
                     {this.props.canEdit ? (
                         <FACheckBox
                             name={this.props.name}
-                            checked={this.props.value}
+                            checked={this.props.value == 'true'}
                             canEdit={true}
                             onClick={() => {
                                 this.props.checkCheckBox(this.props.name);
                             }}
                         />
                     ) : (
-                        <FACheckBox name={this.props.name} checked={this.props.value} canEdit={false} />
+                        <FACheckBox name={this.props.name} checked={this.props.value == 'true'} canEdit={false} />
                     )}
                 </span>
             </div>
@@ -394,7 +418,11 @@ class CheckBoxInput extends PureComponent<any, any> {
     }
 }
 
-class Option extends PureComponent<any, any> {
+interface OptionInputProps extends InputFieldProps {
+    options: Record<string, string>;
+}
+
+class Option extends PureComponent<OptionInputProps> {
     render() {
         const { options } = this.props;
         return (
@@ -429,14 +457,20 @@ class Option extends PureComponent<any, any> {
                         </FormControl>
                     </div>
                 ) : (
-                    <span style={{ float: 'right', width: '300px' }}> {this.props.value} </span>
+                    <span className="modal__fixed-html-text"> {this.props.value} </span>
                 )}
             </div>
         );
     }
 }
 
-class FixedHtml extends PureComponent<any, any> {
+interface FixedHtmlProps {
+    caption: string;
+    html?: string;
+    key: number;
+}
+
+class FixedHtml extends PureComponent<FixedHtmlProps> {
     render() {
         return (
             <div className="modal__fixed-html-field">
@@ -450,7 +484,13 @@ class FixedHtml extends PureComponent<any, any> {
     }
 }
 
-class SmallFileUpload extends PureComponent<any, any> {
+interface SmallFileInputProps extends InputFieldProps {
+    text?: string;
+    index: number;
+    onFileChange: Function;
+}
+
+class SmallFileUpload extends PureComponent<SmallFileInputProps, any> {
     render() {
         return (
             <div className="modal__compact-file-upload-field">
