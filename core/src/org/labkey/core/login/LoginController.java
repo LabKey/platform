@@ -2587,7 +2587,7 @@ public class LoginController extends SpringActionController
         public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
         {
             AuthenticationManager.deleteConfiguration(form.getConfiguration());
-            return true;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -2641,7 +2641,7 @@ public class LoginController extends SpringActionController
         public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
         {
             DbLoginManager.saveProperties(form);
-            return true;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
