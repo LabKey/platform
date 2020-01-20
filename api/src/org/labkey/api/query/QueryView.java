@@ -2469,7 +2469,7 @@ public class QueryView extends WebPartView<Object>
         return getExcelTemplateWriter(fieldKeys, docType);
     }
 
-    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType)
+    protected List<DisplayColumn> getExcelTemplateDisplayColumns(List<FieldKey> fieldKeys)
     {
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
@@ -2502,6 +2502,14 @@ public class QueryView extends WebPartView<Object>
 
         // Need to remove special MV columns
         displayColumns.removeIf(col -> col.getColumnInfo() instanceof RawValueColumn);
+
+        return displayColumns;
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType)
+    {
+        List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
+
         return new ExcelWriter(null, displayColumns, docType);
     }
 
