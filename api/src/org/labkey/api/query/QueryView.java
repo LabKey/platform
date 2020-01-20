@@ -2422,17 +2422,14 @@ public class QueryView extends WebPartView<Object>
                 return;
 
             int row = getCurrentRow() - 1;
-            for (String originalColName : _renameColumns.keySet())
+            for (int col = 0; col < visibleColumns.size(); col++)
             {
-                for (int col = 0; col < visibleColumns.size(); col++)
+                String originalColName = visibleColumns.get(col).getName();
+                if (_renameColumns.containsKey(originalColName))
                 {
-                    if (originalColName.equalsIgnoreCase(visibleColumns.get(col).getName()))
-                    {
-                        Cell cell = sheet.getRow(row).getCell(col);
-                        if (cell != null)
-                            cell.setCellValue(_renameColumns.get(originalColName));
-                        break;
-                    }
+                    Cell cell = sheet.getRow(row).getCell(col);
+                    if (cell != null)
+                        cell.setCellValue(_renameColumns.get(originalColName));
                 }
             }
         }

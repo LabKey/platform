@@ -3963,7 +3963,7 @@ public class ExperimentController extends SpringActionController
         protected Map<String, String> getRenamedColumns()
         {
             final String renameParamPrefix = "importAlias.";
-            Map<String, String> renameColumns = new HashMap<>();
+            Map<String, String> renameColumns = new CaseInsensitiveHashMap<>();
             PropertyValue[] pvs = _form.getInitParameters().getPropertyValues();
             for (PropertyValue pv : pvs)
             {

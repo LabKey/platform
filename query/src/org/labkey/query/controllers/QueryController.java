@@ -1649,7 +1649,7 @@ public class QueryController extends SpringActionController
      *     For example, this can be used to add a fake column that is only supported during the import process.
      *     </dd>
      *
-     *     <dt>includeColumn</dt>
+     *     <dt>excludeColumn</dt>
      *     <dd>List of column names to exclude.
      *     </dd>
      *
@@ -1709,11 +1709,6 @@ public class QueryController extends SpringActionController
             return Arrays.asList(excludeColumn);
         }
 
-        public FieldKey[] getExcludeColumn()
-        {
-            return this.excludeColumn;
-        }
-
         public void setExcludeColumn(FieldKey[] excludeColumn)
         {
             this.excludeColumn = excludeColumn;
@@ -1724,7 +1719,7 @@ public class QueryController extends SpringActionController
             if (renameColumns != null)
                 return renameColumns;
 
-            renameColumns = new HashMap<>();
+            renameColumns = new CaseInsensitiveHashMap<>();
             final String renameParamPrefix = "exportAlias.";
             PropertyValue[] pvs = getInitParameters().getPropertyValues();
             for (PropertyValue pv : pvs)
