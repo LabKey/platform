@@ -229,7 +229,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                         exception.addError(new SimpleValidationError("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
                 else if (addWarnings)
-                    exception.addError(new SimpleValidationError("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.", prop.getName(), ValidationException.SEVERITY.WARN));
+                    exception.addError(new SimpleValidationError("Your Vial field '" + prop.getName() + "', does not have a matching field in SpecimenEvent table for a vial rollup calculation.", prop.getName(), ValidationException.SEVERITY.WARN));
             }
         }
 
@@ -255,7 +255,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                         exception.addError(new SimpleValidationError("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
                 else if (addWarnings)
-                    exception.addError(new SimpleValidationError("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.", prop.getName(), ValidationException.SEVERITY.WARN));
+                    exception.addError(new SimpleValidationError("Your Specimen field '" + prop.getName() + "', does not have a matching field in Vial table for a specimen rollup calculation.", prop.getName(), ValidationException.SEVERITY.WARN));
             }
         }
 

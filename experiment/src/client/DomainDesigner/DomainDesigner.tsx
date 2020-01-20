@@ -212,16 +212,21 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
+        const rollupURI = "https://www.labkey.org/Documentation/wiki-page.view?name=specimenCustomProperties";
+
         let errors = badDomain.domainException.errors;
         let question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
         let warnings = errors.map((error) => {
             return <div> {error.message} </div>
         });
+        let suggestion = <p> {"See the following documentation page for further details: "}<br/>
+            <a href={rollupURI}> {"Specimen properties and rollup rules"}</a>
+                        </p>;
 
         return (
             <ConfirmModal
                 title='Save without resolving issues?'
-                msg={<>{question}{warnings}</>}
+                msg={<>{question}{warnings}{suggestion}</>}
                 confirmVariant='success'
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
