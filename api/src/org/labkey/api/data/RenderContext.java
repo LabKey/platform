@@ -288,7 +288,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return null == _results ? null : _results.getFieldMap();
     }
 
-    private List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
+    public List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
     {
         // collect the ColumnInfo for each DisplayColumn
         List<ColumnInfo> columnInfos = new ArrayList<>();
