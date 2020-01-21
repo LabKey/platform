@@ -2944,7 +2944,7 @@ public class ExperimentController extends SpringActionController
             }
 
             response.putIfAbsent("success", !errors.hasErrors());
-            return new ApiSimpleResponse();
+            return response;
         }
 
         protected abstract ApiSimpleResponse deleteObjects(CascadeDeleteForm form) throws Exception;
