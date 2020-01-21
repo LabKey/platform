@@ -53,7 +53,6 @@ import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
-import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
@@ -78,7 +77,6 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -152,21 +150,24 @@ public class AuthenticationManager
         }
     }
 
-    public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
-    {
-        for (RequestAuthenticationProvider provider : AuthenticationManager.getActiveProviders(RequestAuthenticationProvider.class))
-        {
-            AuthenticationResponse response = provider.authenticate(request);
-
-            if (response.isAuthenticated())
-            {
-                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, response);
-                return result.getUser();
-            }
-        }
-
-        return null;
-    }
+//    We don't register any RequestAuthenticationProvider implementations right now, so don't bother converting this code
+//    to handling configurations.
+//
+//    public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
+//    {
+//        for (RequestAuthenticationProvider provider : AuthenticationManager.getActiveProviders(RequestAuthenticationProvider.class))
+//        {
+//            AuthenticationResponse response = provider.authenticate(request);
+//
+//            if (response.isAuthenticated())
+//            {
+//                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, response);
+//                return result.getUser();
+//            }
+//        }
+//
+//        return null;
+//    }
 
     // Called unconditionally on every server startup. At some point, might want to make this bootstrap only.
     // TODO: SSO logos. Auditing of configuration property changes.
@@ -410,18 +411,6 @@ public class AuthenticationManager
     }
 
 
-    public static Collection<AuthenticationProvider> getActiveProviders()
-    {
-        return AuthenticationProviderCache.getActiveProviders(AuthenticationProvider.class);
-    }
-
-
-    public static <T extends AuthenticationProvider> Collection<T> getActiveProviders(Class<T> clazz)
-    {
-        return AuthenticationProviderCache.getActiveProviders(clazz);
-    }
-
-
     public static void deleteConfiguration(int rowId)
     {
         // Delete any logos attached to the configuration
@@ -438,20 +427,6 @@ public class AuthenticationManager
         AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " setting was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
-    }
-
-    /**
-     * @throws org.labkey.api.view.NotFoundException if there is no registered provider with the given name
-     */
-    @NotNull
-    public static AuthenticationProvider getProvider(String name)
-    {
-        AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, name);
-
-        if (null != provider)
-            return provider;
-        else
-            throw new NotFoundException("No such AuthenticationProvider available: " + name);
     }
 
     public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(@Nullable Integer key)
@@ -518,7 +493,6 @@ public class AuthenticationManager
     public static void setAcceptOnlyFicamProviders(User user, boolean enable)
     {
         setAuthConfigProperty(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
-        AuthenticationProviderCache.clear();
         AuthenticationConfigurationCache.clear();
     }
 
@@ -1098,31 +1072,15 @@ public class AuthenticationManager
         return getActiveConfigurations(AuthenticationConfiguration.class).size() > 1;
     }
 
-    public static boolean isActive(String providerName)
-    {
-        AuthenticationProvider provider = getProvider(providerName);
-
-        return isActive(provider);
-    }
-
-
-    public static boolean isActive(AuthenticationProvider authProvider)
-    {
-        return getActiveProviders().contains(authProvider);
-    }
-
-
     public static Collection<PrimaryAuthenticationProvider> getAllPrimaryProviders()
     {
         return AuthenticationProviderCache.getProviders(PrimaryAuthenticationProvider.class);
     }
 
-
     public static Collection<SecondaryAuthenticationProvider> getAllSecondaryProviders()
     {
         return AuthenticationProviderCache.getProviders(SecondaryAuthenticationProvider.class);
     }
-
 
     // This is like LoginForm... but doesn't contain any credentials
     public static class LoginReturnProperties

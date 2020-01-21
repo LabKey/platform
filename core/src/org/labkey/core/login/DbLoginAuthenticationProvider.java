@@ -193,10 +193,4 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
     }
-
-    @Override
-    public ActionURL getConfigurationLink()
-    {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
-    }
 }

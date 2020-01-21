@@ -37,7 +37,6 @@ import java.util.List;
 public interface LoginUrls extends UrlProvider
 {
     ActionURL getConfigureURL();
-    ActionURL getConfigureDbLoginURL();
     ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters);
     ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
     ActionURL getInitialUserURL();
@@ -52,10 +51,6 @@ public interface LoginUrls extends UrlProvider
 
     NavTree appendAuthenticationNavTrail(NavTree root);
 
-    @RemoveIn20_1
-    ActionURL getEnableConfigParameterURL(String name);
-    @RemoveIn20_1
-    ActionURL getDisableConfigParameterURL(String name);
     @RemoveIn20_1
     ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors);
     @RemoveIn20_1

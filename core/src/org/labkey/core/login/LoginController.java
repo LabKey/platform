@@ -184,24 +184,6 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getConfigureDbLoginURL()
-        {
-            return LoginController.getConfigureDbLoginURL(false);
-        }
-
-        @Override
-        public ActionURL getEnableConfigParameterURL(String paramName)
-        {
-            return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", true);
-        }
-
-        @Override
-        public ActionURL getDisableConfigParameterURL(String paramName)
-        {
-            return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", false);
-        }
-
-        @Override
         public ActionURL getInitialUserURL()
         {
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
@@ -2492,7 +2474,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RemoveIn20_1
+    // TODO: Turn into an API action -- tests use this as a convenience
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
     {
@@ -2515,7 +2497,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RemoveIn20_1
     public static class AuthParameterForm
     {
         private String _parameter;
@@ -2587,7 +2568,7 @@ public class LoginController extends SpringActionController
         public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
         {
             AuthenticationManager.deleteConfiguration(form.getConfiguration());
-            return true;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -2600,7 +2581,6 @@ public class LoginController extends SpringActionController
 
         return url;
     }
-
 
     @RemoveIn20_1
     @AdminConsoleAction(AdminOperationsPermission.class)
@@ -2641,7 +2621,7 @@ public class LoginController extends SpringActionController
         public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
         {
             DbLoginManager.saveProperties(form);
-            return true;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
