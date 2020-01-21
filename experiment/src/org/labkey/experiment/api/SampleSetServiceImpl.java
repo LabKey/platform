@@ -267,9 +267,6 @@ public class SampleSetServiceImpl implements SampleSetService
         sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-        Collection<Map<String, Object>> queryResults = new SqlSelector(getExpSchema(), sql).getMapCollection();
-        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
-
         Map<String, ExpSampleSet> result = new LinkedHashMap<>();
         for (Map<String, Object> queryResult : queryResults)
         {

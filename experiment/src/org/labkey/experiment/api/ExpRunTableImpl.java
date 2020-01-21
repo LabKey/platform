@@ -336,10 +336,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
+                        ContainerFilter cf = getLookupContainerFilter();
+                        UserSchema schema = getUserSchema();
+                        String key = getClass().getName() + "/RunGroups.RowId.fk/" + cf.getCacheKey(schema.getContainer());
+                        // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
+                        return schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
+                    }
+
+                    private TableInfo createLookupTableInfo()
+                    {
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
                         ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
                         result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), false));
+                        result.setLocked(true);
                         return result;
                     }
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
