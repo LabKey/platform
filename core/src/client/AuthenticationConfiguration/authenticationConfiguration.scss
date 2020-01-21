@@ -1,5 +1,10 @@
 @import "../../../node_modules/react-bootstrap-toggle/dist/bootstrap2-toggle";
 
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .bold-text {
   font-weight: bold;
 }
@@ -148,14 +153,12 @@
   position: relative;
   bottom: 54px;
   left: 54px;
-  //margin-left: 2px;
 }
 
 .sso-fields__delete-img--header-logo {
   position: relative;
   bottom: 40px;
   left: 30px;
-  //margin-left: 2px;
 }
 
 .sso-fields__image-holder--view-only {
@@ -181,12 +184,6 @@
 .modal__error-message {
   float: right;
   color: #d9534f;
-  //margin-right: 55px;
-}
-
-body{
-  margin: 0;
-  padding: 0;
 }
 
 .modal__tiny-error {
@@ -317,10 +314,6 @@ body{
   width: 300px;
 
 }
-
-// oh, my god, the toggle
-// grabbed from sampleManagement/resources/web/sampleManagement/gen/sampleManagement-styles.css
-// but minor adjustments were needed...
 
 .btn {
   display: inline-block;
@@ -500,4 +493,43 @@ fieldset[disabled] .btn-primary.focus {
 .btn-primary .badge {
   color: #2980b9;
   background-color: #fff;
+}
+
+.label-help-target {
+  width: 14px;
+  margin-left: 2px;
+}
+
+.label-help-icon {
+  height: 12px;
+  margin: 0px 2px 1px;
+  cursor: default;
+}
+
+.domain-row-container {
+  display: table;
+  width: 100%;
+}
+
+.domain-row-main {
+  height: 50px;
+}
+
+.domain-row-handle {
+  padding-left: 8px;
+  border-width: 0 1px 0 0;
+  border-style: solid;
+  border-color: #CCC;
+  display: table-cell;
+  width: 30px;
+  vertical-align: middle;
+  background-color: #F3F3F4;
+}
+
+.domain-row-base-fields {
+  padding: 0;
+  margin: 0;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
 }
