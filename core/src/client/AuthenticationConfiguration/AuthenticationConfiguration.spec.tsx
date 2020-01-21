@@ -1,8 +1,18 @@
 import React from 'react';
 import { App } from './AuthenticationConfiguration';
+import renderer from 'react-test-renderer';
+import {mount} from "enzyme";
+import AuthConfigMasterPanel from "../components/AuthConfigMasterPanel";
 
+describe("<AuthenticationConfiguration/>", () => {
 
-test('two plus two is four', () => {
-    expect(2 + 2).toBe(4);
+    test("Data lands on initial mount", () => {
+        const component =
+            <App/>;
+    });
+
+    test("Dirty fields brings up save prompt", () => {
+        const component =
+            <App/>;
+    });
 });
-

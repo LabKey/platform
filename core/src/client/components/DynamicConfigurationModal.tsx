@@ -8,7 +8,7 @@ import FACheckBox from './FACheckBox';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
-import '@labkey/components/dist/components.css';
+// import '@labkey/components/dist/components.css';
 import { ActionURL, Ajax } from '@labkey/api';
 
 import SSOFields from './SSOFields';

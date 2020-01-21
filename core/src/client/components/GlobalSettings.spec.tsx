@@ -23,7 +23,7 @@ describe("<GlobalSettings/>", () => {
         expect(wrapper.props()).toHaveProperty('SelfRegistration', false);
     });
 
-    test("An authCount of 1 eliminates the option AutoCreateAccounts", () => {
+    test("An authCount of 1 eliminates the option to auto-create authenticated users", () => {
         let props = {SelfRegistration: true, SelfServiceEmailChanges: true, AutoCreateAccounts: false };
         const component = <GlobalSettings {...props} />;
         const wrapper = mount(component);
@@ -31,9 +31,7 @@ describe("<GlobalSettings/>", () => {
         expect(wrapper.find(FACheckBox).length).toBe(3);
         wrapper.setProps({authCount: 1});
         expect(wrapper.find(FACheckBox).length).toBe(2);
-        wrapper.find(FACheckBox).first();
-
-
+        expect(wrapper.text()).not.toMatch(/Auto-create authenticated users/);
     });
 
     test("view-only mode", () => {
@@ -43,5 +41,4 @@ describe("<GlobalSettings/>", () => {
         const tree = renderer.create(component).toJSON();
         expect(tree).toMatchSnapshot();
     });
-
 });

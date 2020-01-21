@@ -6,7 +6,7 @@ import { ActionURL, Ajax } from '@labkey/api';
 
 
 interface Props extends AuthConfig {
-    closeModal: Function;
+    closeModal?: Function;
     canEdit: boolean;
 }
 

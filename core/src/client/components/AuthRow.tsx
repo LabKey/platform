@@ -10,6 +10,9 @@ import DatabaseConfigurationModal from './DatabaseConfigurationModal';
 interface Props extends AuthConfig {
     index?: string;
     modalType?: AuthConfigProvider;
+    description?: string,
+    details?: string,
+    provider?: string,
     stateSection?: string;
     canEdit?: boolean;
     draggable?: boolean;
@@ -19,7 +22,6 @@ interface Props extends AuthConfig {
 }
 
 interface State {
-    color?: boolean;
     modalOpen?: boolean;
     highlight?: boolean;
 }
@@ -28,7 +30,6 @@ export default class AuthRow extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
-            color: false,
             modalOpen: false,
         };
     }
