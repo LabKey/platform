@@ -8,7 +8,7 @@ import FACheckBox from './FACheckBox';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
-// import '@labkey/components/dist/components.css';
+import '@labkey/components/dist/components.css';
 import { ActionURL, Ajax } from '@labkey/api';
 
 import SSOFields from './SSOFields';
@@ -514,7 +514,7 @@ class SmallFileUpload extends PureComponent<SmallFileInputProps, any> {
                         showLabel={false}
                         allowMultiple={false}
                         allowDirectories={false}
-                        acceptedFormats=".txt,.doc,.docx"
+                        acceptedFormats=".txt,.pem"
                         showAcceptedFormats={false}
                         onFileChange={attachment => {
                             this.props.onFileChange(attachment, this.props.name);
