@@ -178,7 +178,6 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
     }
 
     protected ValidationException checkRollups(
-            @Nullable List<PropertyDescriptor> eventProps,            // all of these are nonBase properties
             @Nullable List<PropertyDescriptor> vialProps,             // all of these are nonBase properties
             @Nullable List<PropertyDescriptor> specimenProps,          // all of these are nonBase properties
             Container container,
@@ -191,10 +190,13 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         Domain vialDomain = specimenTablesProvider.getDomain("vial", false);
         Domain specimenDomain = specimenTablesProvider.getDomain("specimen", false);
 
-        if (null == eventProps && null != eventDomain)
+        boolean editingSpecimen = null != specimenProps;
+        boolean editingVial = null != vialProps;
+
+        List<PropertyDescriptor> eventProps = null;
+        if (null != eventDomain)
         {
             eventProps = getPropertyDescriptorsForDomain(eventDomain, container);
-
         }
 
         if (null == vialProps && null != vialDomain)
@@ -215,7 +217,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         CaseInsensitiveHashSet eventFieldNamesDisallowedForRollups = SpecimenImporter.getEventFieldNamesDisallowedForRollups();
         Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.EventVialRollup>>> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);     // includes rollups with type mismatches
 
-        if (null != vialProps)
+        if (editingVial)
         {
             for (PropertyDescriptor prop : vialProps)
             {
@@ -229,7 +231,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                         exception.addError(new SimpleValidationError("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
                 else if (addWarnings)
-                    exception.addError(new SimpleValidationError("Your Vial field '" + prop.getName() + "', does not have a matching field in SpecimenEvent table for a vial rollup calculation.", prop.getName(), ValidationException.SEVERITY.WARN));
+                    exception.addError(new SimpleValidationError("Your Vial field '" + prop.getName() + "', does not have a matching field in the SpecimenEvent table for a vial rollup calculation.", prop.getName(), ValidationException.SEVERITY.WARN));
             }
         }
 
@@ -241,7 +243,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
         CaseInsensitiveHashSet vialFieldNamesDisallowedForRollups = SpecimenImporter.getVialFieldNamesDisallowedForRollups();
         Map<String, Pair<String, SpecimenImporter.RollupInstance<SpecimenImporter.VialSpecimenRollup>>> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);     // includes rollups with type mismatches
 
-        if (null != specimenProps)
+        if (editingSpecimen)
         {
             for (PropertyDescriptor prop : specimenProps)
             {
@@ -255,7 +257,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                         exception.addError(new SimpleValidationError("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met."));
                 }
                 else if (addWarnings)
-                    exception.addError(new SimpleValidationError("Your Specimen field '" + prop.getName() + "', does not have a matching field in Vial table for a specimen rollup calculation.", prop.getName(), ValidationException.SEVERITY.WARN));
+                    exception.addError(new SimpleValidationError("Your Specimen field '" + prop.getName() + "', does not have a matching field in the Vial table for a specimen rollup calculation.", prop.getName(), ValidationException.SEVERITY.WARN));
             }
         }
 

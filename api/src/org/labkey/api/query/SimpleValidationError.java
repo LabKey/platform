@@ -107,7 +107,8 @@ public class SimpleValidationError implements ValidationError
         {
             if (includeWarnings)
             {
-                FieldWarning fieldWarning = new FieldWarning("FieldWarning", this._fieldName, getMessage());
+                // client (ui-components) distinguishes between server side warnings and client side warnings based on the below objectName passed in the constructor
+                FieldWarning fieldWarning = new FieldWarning("ServerWarning", this._fieldName, getMessage());
                 errors.addError(fieldWarning);
             }
         }

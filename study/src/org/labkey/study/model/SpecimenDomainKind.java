@@ -203,7 +203,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
             }
         }
 
-        exception = checkRollups(null, null, optionalSpecimenProps, container, user, exception, includeWarnings);
+        exception = checkRollups(null, optionalSpecimenProps, container, user, exception, includeWarnings);
 
         if (exception.hasErrors())
         {
