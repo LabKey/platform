@@ -62,37 +62,34 @@ describe("<AuthRow/>", () => {
         expect(wrapper.instance().onToggleModal).toHaveBeenCalled();
 
         expect(wrapper.state()).toHaveProperty('modalOpen', true);
-
-
-        // wrapper.setState({modalOpen});
-
     });
 
-    // test("Highlight draggable handle on hover-over", () => {
-    //     // const spy = jest.spyOn(component.prototype, 'onToggleModal');
-    //     const wrapper = shallow<AuthRow>(component);
-    //
-    //     const instance = wrapper.instance();
-    //
-    //     jest.spyOn(instance, 'onToggleModal');
-    //
-    //     // expect(wrapper.state("highlight")).toBe(false);
-    //
-    //     wrapper.simulate("mouseover");
-    //     expect(instance.onToggleModal).toHaveBeenCalled();
-    //
-    //
-    //     // expect(spy).toHaveBeenCalled();
-    //
-    //     // expect(wrapper.state("highlight")).toBe(true);
-    //     // expect(wrapper.state()).toHaveProperty('highlight', true);
-    //
-    //
-    //
-    //     wrapper.simulate("mouseleave");
-    //     // expect(wrapper.state("highlight")).toBe(false);
-    //
-    // });
+    test("Row deleted on click", () => {
+        const wrapper = shallow<AuthRow>(component);
+
+        wrapper.instance().onDeleteClick = jest.fn(() => true);
+        wrapper.update();
+
+        const editIcon = wrapper.find('.clickable').first();
+
+        editIcon.simulate('click');
+        expect(wrapper.instance().onDeleteClick).toHaveBeenCalled();
+    });
+
+    test("Highlight draggable handle on hover-over", () => {
+        const wrapper = mount<AuthRow>(component);
+        const row = wrapper.find('.auth-row');
+        const spy = jest.spyOn(wrapper.instance(), 'setHighlight');
+        wrapper.update();
+
+        row.simulate("mouseOver");
+        expect(wrapper.state("highlight")).toBe(true);
+        expect(spy).toHaveBeenCalledTimes(1);
+
+        row.simulate("mouseLeave");
+        expect(wrapper.state("highlight")).toBe(false);
+        expect(spy).toHaveBeenCalledTimes(2);
+    });
 
 
     test("Non-draggable", () => {
@@ -104,18 +101,13 @@ describe("<AuthRow/>", () => {
     });
 
     test("Editable", () => {
-        const component = (
-            <AuthRow canEdit={true}/>
-        );
-
         const tree = renderer.create(component).toJSON();
         expect(tree).toMatchSnapshot();
     });
 
     test("View-only", () => {
-        const component = (
-            <AuthRow canEdit={true}/>
-        );
+        const wrapper = shallow<AuthRow>(component);
+        wrapper.setProps({canEdit: false});
 
         const tree = renderer.create(component).toJSON();
         expect(tree).toMatchSnapshot();

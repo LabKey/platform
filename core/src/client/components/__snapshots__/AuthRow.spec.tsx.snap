@@ -6,7 +6,7 @@ exports[`<AuthRow/> Editable 1`] = `
 >
   <div
     className="auth-row"
-    onMouseOut={[Function]}
+    onMouseLeave={[Function]}
     onMouseOver={[Function]}
   >
     <div
@@ -14,7 +14,28 @@ exports[`<AuthRow/> Editable 1`] = `
     >
       <div
         className="domain-row-handle"
-      />
+      >
+        <div>
+          <svg
+            aria-hidden="true"
+            className="svg-inline--fa fa-grip-vertical fa-w-10 fa-lg "
+            color="#999999"
+            data-icon="grip-vertical"
+            data-prefix="fas"
+            focusable="false"
+            role="img"
+            style={Object {}}
+            viewBox="0 0 320 512"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M96 32H32C14.33 32 0 46.33 0 64v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zM288 32h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32z"
+              fill="currentColor"
+              style={Object {}}
+            />
+          </svg>
+        </div>
+      </div>
       <div
         className="domain-row-main"
       >
@@ -23,13 +44,19 @@ exports[`<AuthRow/> Editable 1`] = `
         >
           <div
             className="description auth-row__field col-xs-4"
-          />
+          >
+            My Configuration
+          </div>
           <div
             className="details auth-row__field col-xs-4"
-          />
+          >
+            some url
+          </div>
           <div
             className="provider auth-row__field col-xs-3"
-          />
+          >
+            a provider
+          </div>
         </div>
         <div
           className="col-xs-1"
@@ -43,7 +70,7 @@ exports[`<AuthRow/> Editable 1`] = `
             <svg
               aria-hidden="true"
               className="svg-inline--fa fa-circle fa-w-16 "
-              color="#999999"
+              color="#75B666"
               data-icon="circle"
               data-prefix="fas"
               focusable="false"
@@ -58,7 +85,7 @@ exports[`<AuthRow/> Editable 1`] = `
                 style={Object {}}
               />
             </svg>
-               Disabled
+               Enabled
           </div>
           <div
             className="delete auth-row__field col-xs-1"
@@ -127,7 +154,7 @@ exports[`<AuthRow/> Non-draggable 1`] = `
 >
   <div
     className="auth-row"
-    onMouseOut={[Function]}
+    onMouseLeave={[Function]}
     onMouseOver={[Function]}
   >
     <div
@@ -275,7 +302,7 @@ exports[`<AuthRow/> View-only 1`] = `
 >
   <div
     className="auth-row"
-    onMouseOut={[Function]}
+    onMouseLeave={[Function]}
     onMouseOver={[Function]}
   >
     <div
@@ -283,7 +310,28 @@ exports[`<AuthRow/> View-only 1`] = `
     >
       <div
         className="domain-row-handle"
-      />
+      >
+        <div>
+          <svg
+            aria-hidden="true"
+            className="svg-inline--fa fa-grip-vertical fa-w-10 fa-lg "
+            color="#999999"
+            data-icon="grip-vertical"
+            data-prefix="fas"
+            focusable="false"
+            role="img"
+            style={Object {}}
+            viewBox="0 0 320 512"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M96 32H32C14.33 32 0 46.33 0 64v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160H32c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zM288 32h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32V64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32zm0 160h-64c-17.67 0-32 14.33-32 32v64c0 17.67 14.33 32 32 32h64c17.67 0 32-14.33 32-32v-64c0-17.67-14.33-32-32-32z"
+              fill="currentColor"
+              style={Object {}}
+            />
+          </svg>
+        </div>
+      </div>
       <div
         className="domain-row-main"
       >
@@ -292,13 +340,19 @@ exports[`<AuthRow/> View-only 1`] = `
         >
           <div
             className="description auth-row__field col-xs-4"
-          />
+          >
+            My Configuration
+          </div>
           <div
             className="details auth-row__field col-xs-4"
-          />
+          >
+            some url
+          </div>
           <div
             className="provider auth-row__field col-xs-3"
-          />
+          >
+            a provider
+          </div>
         </div>
         <div
           className="col-xs-1"
@@ -312,7 +366,7 @@ exports[`<AuthRow/> View-only 1`] = `
             <svg
               aria-hidden="true"
               className="svg-inline--fa fa-circle fa-w-16 "
-              color="#999999"
+              color="#75B666"
               data-icon="circle"
               data-prefix="fas"
               focusable="false"
@@ -327,7 +381,7 @@ exports[`<AuthRow/> View-only 1`] = `
                 style={Object {}}
               />
             </svg>
-               Disabled
+               Enabled
           </div>
           <div
             className="delete auth-row__field col-xs-1"

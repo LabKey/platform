@@ -126,7 +126,7 @@ export default class AuthRow extends PureComponent<Props, State> {
                     onMouseOver={() => {
                         this.setHighlight(true);
                     }}
-                    onMouseOut={() => {
+                    onMouseLeave={() => {
                         this.setHighlight(false);
                     }}>
                     <div className="domain-row-container">

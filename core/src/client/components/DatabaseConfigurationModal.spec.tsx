@@ -1,6 +1,7 @@
 import React from 'react';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
-import renderer from 'react-test-renderer';
+import {shallow} from "enzyme";
+import EnzymeToJson from 'enzyme-to-json';
 
 describe("<DatabaseConfigurationModal/>", () => {
 
@@ -9,8 +10,8 @@ describe("<DatabaseConfigurationModal/>", () => {
             <DatabaseConfigurationModal canEdit={false}/>
         );
 
-        const tree = renderer.create(component).toJSON();
-        expect(tree).toMatchSnapshot();
+        const wrapper = shallow(component);
+        expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 
     test("Editable", () => {
@@ -18,7 +19,7 @@ describe("<DatabaseConfigurationModal/>", () => {
             <DatabaseConfigurationModal canEdit={true}/>
         );
 
-        const tree = renderer.create(component).toJSON();
-        expect(tree).toMatchSnapshot();
+        const wrapper = shallow(component);
+        expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 });

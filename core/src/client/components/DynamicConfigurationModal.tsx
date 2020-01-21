@@ -8,7 +8,7 @@ import FACheckBox from './FACheckBox';
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
-import '@labkey/components/dist/components.css';
+// import '@labkey/components/dist/components.css';
 import { ActionURL, Ajax } from '@labkey/api';
 
 import SSOFields from './SSOFields';
@@ -85,21 +85,21 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form.append(item, this.state[item]);
         });
 
-        Ajax.request({
-            url: saveUrl,
-            method: 'POST',
-            form,
-            scope: this,
-            failure: function(error) {
-                const errorObj = JSON.parse(error.response);
-                const errorMessage = errorObj.exception;
-                this.setState(() => ({ errorMessage }));
-            },
-            success: function(result) {
-                this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
-                this.props.closeModal();
-            },
-        });
+        // Ajax.request({
+        //     url: saveUrl,
+        //     method: 'POST',
+        //     form,
+        //     scope: this,
+        //     failure: function(error) {
+        //         const errorObj = JSON.parse(error.response);
+        //         const errorMessage = errorObj.exception;
+        //         this.setState(() => ({ errorMessage }));
+        //     },
+        //     success: function(result) {
+        //         this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
+        //         this.props.closeModal();
+        //     },
+        // });
     };
 
     areRequiredFieldsEmpty = () => {
@@ -112,6 +112,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             },
             ['description']
         );
+
+        // console.log("uh", requiredFields);
 
         const emptyRequiredFields = requiredFields.filter(name => this.state[name] == '');
 
@@ -142,10 +144,13 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
     };
 
     checkCheckBox = (name: string) => {
+        console.log("checkCheckBox", name);
         const oldState = this.state[name];
         this.setState(() => ({
             [name]: !oldState,
-        }));
+        })
+            , () => {console.log(this.state)}
+        );
     };
 
     onFileChange = (attachment, logoType: string) => {
@@ -243,6 +248,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         const isAddNewConfig = this.props.title;
         const modalTitle = isAddNewConfig ? this.props.title : this.props.description;
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
+
+        console.log("state", this.state, "props", this.props);
 
         return (
             <Modal show={true} onHide={() => {}}>
@@ -378,11 +385,11 @@ class TextInput extends PureComponent<any> {
 }
 
 interface CheckBoxInputProps extends InputFieldProps {
-    checked?: boolean;
+    checked?: boolean | string;
     checkCheckBox?: Function;
 }
 
-class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
+class CheckBoxInput extends PureComponent<any> {
     render() {
         return (
             <div className="modal__field">
@@ -403,7 +410,7 @@ class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
                     {this.props.canEdit ? (
                         <FACheckBox
                             name={this.props.name}
-                            checked={this.props.value == 'true'}
+                            checked={this.props.value}
                             canEdit={true}
                             onClick={() => {
                                 this.props.checkCheckBox(this.props.name);
