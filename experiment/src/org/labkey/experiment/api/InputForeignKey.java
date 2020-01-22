@@ -16,16 +16,20 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.ExpProtocolApplicationTable;
-import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.query.LookupForeignKey;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class is a foreign key which has columns for data and material inputs of various types.
@@ -35,6 +39,7 @@ public class InputForeignKey extends LookupForeignKey
     private final ExpSchema _schema;
     private final ExpProtocol.ApplicationType _type;
     private final ContainerFilter _filter;
+
     private Set<String> _dataInputs;
     private Map<String, ExpSampleSet> _materialInputs;
 
@@ -49,7 +54,12 @@ public class InputForeignKey extends LookupForeignKey
     @Override
     public TableInfo getLookupTableInfo()
     {
-        // TODO ContainerFilter
+        String key = getClass().getName() + "/" + _type.toString() + "/" + _filter.getCacheKey(_schema.getContainer());
+        return _schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
+    }
+
+    private TableInfo createLookupTableInfo()
+    {
         ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable(ExpSchema.TableType.ProtocolApplications.toString(), _schema, null);
         ret.setContainerFilter(_filter);
         SamplesSchema samplesSchema = _schema.getSamplesSchema();
@@ -63,6 +73,7 @@ public class InputForeignKey extends LookupForeignKey
             ExpSampleSet sampleSet = entry.getValue();
             ret.safeAddColumn(ret.createMaterialInputColumn(role, samplesSchema, sampleSet, role));
         }
+        ret.setLocked(true);
         return ret;
     }
 
