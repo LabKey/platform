@@ -67,17 +67,9 @@ public class StringUtilsLabKey
         String last = list.get(list.size() - 1);
         int i = 0;
 
-        while (first.charAt(i) == last.charAt(i))
+        while (i < Math.min(first.length(), last.length()) && first.charAt(i) == last.charAt(i))
         {
             i++;
-            if (i == first.length())
-            {
-                return first;
-            }
-            if (i == last.length())
-            {
-                return last;
-            }
         }
 
         return first.substring(0, i);
