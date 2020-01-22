@@ -213,7 +213,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                         />
                     );
 
-                case 'textarea':
+                case 'pem':
                     return (
                         <SmallFileUpload
                             key={index}
@@ -560,7 +560,7 @@ class SmallFileUpload extends PureComponent<any> {
                     </div>
                 ) : (
                     this.props.value && (
-                        <div className="modal__textarea-input">
+                        <div className="modal__pem-input">
                             <FontAwesomeIcon icon={faFileAlt} className="attached-file--icon" />
                         </div>
                     )

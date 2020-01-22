@@ -278,7 +278,7 @@ body {
   width: 150px;
 }
 
-.modal__textarea-input {
+.modal__pem-input {
   width: 300px;
   float: right;
   overflow: scroll;
@@ -287,11 +287,6 @@ body {
 .modal__fixed-html-text {
   float: right;
   width: 300px;
-}
-
-.modal__textarea {
-  resize: none;
-  border-radius: 5px;
 }
 
 .modal__bottom {
