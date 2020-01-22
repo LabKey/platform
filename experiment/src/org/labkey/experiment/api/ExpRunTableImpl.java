@@ -463,6 +463,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, getContainerFilter()));
         ret.setIsUnselectable(true);
+        ret.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         return ret;
     }
 
@@ -475,6 +476,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, getContainerFilter()));
         ret.setIsUnselectable(true);
+        ret.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         return ret;
     }
 
@@ -561,8 +563,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey(getContainerFilter(), "LSID"));
         addColumn(Column.RunGroups);
         addColumn(Column.RunGroupToggle);
-        addColumn(Column.Input);
-        addColumn(Column.Output);
+//        addColumn(Column.Input);
+//        addColumn(Column.Output);
         addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
 
