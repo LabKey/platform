@@ -161,13 +161,15 @@ public class AuthenticationManager
         return null;
     }
 
-    // Called unconditionally on every server startup. At some point, might want to make this bootstrap only.
+    // Called unconditionally on every server startup. Properties that are designated as "startup" will overwrite existing
+    // values. Authentication configuration properties will overwrite an existing configuration if "Description" is provided
+    // and matches an existing configuration description for the same provider; if "Description" is not provided or doesn't
+    // match an existing configuration for that provider then a new configuration will be created. See #39474.
     // TODO: SSO logos. Auditing of configuration property changes.
     public static void populateSettingsWithStartupProps()
     {
-        // Handle each provider's startup properties, only for new installs
-        if (ModuleLoader.getInstance().isNewInstall())
-            getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
+        // Handle each provider's startup properties
+        getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
         ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
