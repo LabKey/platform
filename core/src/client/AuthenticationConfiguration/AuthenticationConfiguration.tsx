@@ -219,7 +219,7 @@ export class App extends PureComponent<{}, State> {
             failure: function(error) {
                 alert('Error: ' + error);
             },
-            success: function() { // Adam will pass me a json to grab
+            success: function() {
                 const authCount = this.state.authCount - 1;
                 this.setState({ authCount, [stateSection]: newState });
             },

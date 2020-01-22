@@ -1,15 +1,14 @@
 import React, { PureComponent } from 'react';
 import { Button, FormControl, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-
-import FACheckBox from './FACheckBox';
+import { faTimes, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
-// import '@labkey/components/dist/components.css';
 import { ActionURL, Ajax } from '@labkey/api';
+
+import FACheckBox from './FACheckBox';
 
 import SSOFields from './SSOFields';
 
@@ -81,11 +80,10 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         }
 
         if (this.props.configuration) {
-            form.append('configuration', (this.props.configuration).toString());
+            form.append('configuration', this.props.configuration.toString());
         }
         Object.keys(this.state).map(item => {
             form.append(item, this.state[item]);
-            console.log(item, this.state[item]);
         });
 
         Ajax.request({
@@ -94,13 +92,11 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form,
             scope: this,
             failure: function(error) {
-                console.log("error", error);
                 const errorObj = JSON.parse(error.response);
                 const errorMessage = errorObj.exception;
                 this.setState(() => ({ errorMessage }));
             },
             success: function(result) {
-                console.log("success", result.response);
                 this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
                 this.props.closeModal();
             },
@@ -157,14 +153,14 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         const changedFiles = this.state.changedFiles;
         changedFiles.push(name);
 
-        this.setState(() => ({ [logoType]: attachment.first(), changedFiles}));
+        this.setState(() => ({ [logoType]: attachment.first(), changedFiles }));
     };
 
     onFileRemoval = (name: string) => {
         const changedFiles = this.state.changedFiles;
         changedFiles.push(name);
 
-        this.setState(() => ({ [name]:"", changedFiles }));
+        this.setState(() => ({ [name]: '', changedFiles }));
     };
 
     dynamicallyCreateFields = (fields: AuthConfigField[], expandableOpen) => {
@@ -267,7 +263,12 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                 <Modal.Header>
                     <Modal.Title>
                         {'Configure ' + modalTitle}
-                        <FontAwesomeIcon size="sm" icon={faTimes} className="modal__close-icon" onClick={() => closeModal()} />
+                        <FontAwesomeIcon
+                            size="sm"
+                            icon={faTimes}
+                            className="modal__close-icon"
+                            onClick={() => closeModal()}
+                        />
                     </Modal.Title>
                 </Modal.Header>
 
@@ -294,8 +295,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                         canEdit={this.props.canEdit}
                         emptyRequiredFields={this.state.emptyRequiredFields}
                         required={true}
-                        name={"description"}
-                        caption={"Description"}
+                        name="description"
+                        caption="Description"
                     />
 
                     {modalType && this.dynamicallyCreateFields(modalType.settingsFields, this.state.search)}
@@ -385,7 +386,10 @@ class TextInput extends PureComponent<any> {
                         type={this.props.type}
                         value={this.props.value}
                         onChange={e => this.props.handleChange(e)}
-                        className={"modal__text-input-field" + (fieldIsRequiredAndEmpty ? " modal__text-input-field--error" : "")}
+                        className={
+                            'modal__text-input-field' +
+                            (fieldIsRequiredAndEmpty ? ' modal__text-input-field--error' : '')
+                        }
                     />
                 ) : (
                     <span className="modal__text-input-field"> {this.props.value} </span>
@@ -502,12 +506,12 @@ class FixedHtml extends PureComponent<FixedHtmlProps> {
     }
 }
 
-//Same problem as TextInputProps
+// Same problem as TextInputProps
 interface SmallFileInputProps extends InputFieldProps {
     text?: string;
     index: number;
     onFileChange: Function;
-    emptyRequiredFields?: string[]
+    emptyRequiredFields?: string[];
 }
 
 class SmallFileUpload extends PureComponent<any> {
@@ -530,27 +534,37 @@ class SmallFileUpload extends PureComponent<any> {
                     />
                 )}
 
-                {fieldIsRequiredAndEmpty && <div className="modal__tiny-error--small-file-input"> This file is required </div>}
+                {fieldIsRequiredAndEmpty && (
+                    <div className="modal__tiny-error--small-file-input"> This file is required </div>
+                )}
 
-                <div className="modal__compact-file-upload-input">
-                    <FileAttachmentForm
-                        key={this.props.text}
-                        index={this.props.index}
-                        showLabel={false}
-                        allowMultiple={false}
-                        allowDirectories={false}
-                        acceptedFormats=".txt,.pem"
-                        showAcceptedFormats={false}
-                        onFileChange={attachment => {
-                            this.props.onFileChange(attachment, this.props.name);
-                        }}
-                        onFileRemoval={() => {
-                            this.props.onFileRemoval(this.props.name)
-                        }}
-                        compact={true}
-                        initialFileNames={this.props.value && [""]}
-                    />
-                </div>
+                {this.props.canEdit ? (
+                    <div className="modal__compact-file-upload-input">
+                        <FileAttachmentForm
+                            key={this.props.text}
+                            index={this.props.index}
+                            showLabel={false}
+                            allowMultiple={false}
+                            allowDirectories={false}
+                            acceptedFormats=".txt,.pem"
+                            showAcceptedFormats={false}
+                            onFileChange={attachment => {
+                                this.props.onFileChange(attachment, this.props.name);
+                            }}
+                            onFileRemoval={() => {
+                                this.props.onFileRemoval(this.props.name);
+                            }}
+                            compact={true}
+                            initialFileNames={this.props.value && ['']}
+                        />
+                    </div>
+                ) : (
+                    this.props.value && (
+                        <div className="modal__textarea-input">
+                            <FontAwesomeIcon icon={faFileAlt} className="attached-file--icon" />
+                        </div>
+                    )
+                )}
             </div>
         );
     }
