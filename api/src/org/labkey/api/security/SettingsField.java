@@ -13,7 +13,7 @@ public class SettingsField extends HashMap<String, Object>
         input,
         options,
         password,
-        textarea  // textarea that allows paste or file upload (e.g., SAML settings)
+        pem  // file picker that allows upload of a PEM file (used on SAML settings page)
     }
 
     public static SettingsField of(@NotNull String name, @NotNull FieldType type, @NotNull String caption, @NotNull String description, boolean required, Object defaultValue)
