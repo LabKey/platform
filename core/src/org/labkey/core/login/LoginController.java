@@ -2653,7 +2653,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(AdminReadPermission.class)
     public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
     {
         @Override

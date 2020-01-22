@@ -36,6 +36,7 @@ interface State {
     auth_header_logo?: string;
     auth_login_page_logo?: string;
     deletedLogos?: string[];
+    changedFiles?: string[];
     emptyRequiredFields?: null | string[];
     servers?: string;
     principalTemplate?: string;
@@ -53,6 +54,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             auth_header_logo: '',
             auth_login_page_logo: '',
             deletedLogos: [],
+            changedFiles: [],
             emptyRequiredFields: null,
         };
     }
@@ -83,6 +85,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         }
         Object.keys(this.state).map(item => {
             form.append(item, this.state[item]);
+            console.log(item, this.state[item]);
         });
 
         Ajax.request({
@@ -91,11 +94,13 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form,
             scope: this,
             failure: function(error) {
+                console.log("error", error);
                 const errorObj = JSON.parse(error.response);
                 const errorMessage = errorObj.exception;
                 this.setState(() => ({ errorMessage }));
             },
             success: function(result) {
+                console.log("success", result.response);
                 this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
                 this.props.closeModal();
             },
@@ -103,6 +108,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
     };
 
     areRequiredFieldsEmpty = () => {
+        // Array of all required fields
         const requiredFields = this.props.modalType.settingsFields.reduce(
             (accum, current) => {
                 if (current.required) {
@@ -113,10 +119,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             ['description']
         );
 
-        console.log("uh", requiredFields);
-
         const emptyRequiredFields = requiredFields.filter(name => this.state[name] == '');
-
         if (emptyRequiredFields.length > 0) {
             this.setState({ emptyRequiredFields });
             return true;
@@ -144,17 +147,24 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
     };
 
     checkCheckBox = (name: string) => {
-        console.log("checkCheckBox", name);
         const oldState = this.state[name];
         this.setState(() => ({
             [name]: !oldState,
-        })
-            , () => {console.log(this.state)}
-        );
+        }));
     };
 
     onFileChange = (attachment, logoType: string) => {
-        this.setState(() => ({ [logoType]: attachment.first() }));
+        const changedFiles = this.state.changedFiles;
+        changedFiles.push(name);
+
+        this.setState(() => ({ [logoType]: attachment.first(), changedFiles}));
+    };
+
+    onFileRemoval = (name: string) => {
+        const changedFiles = this.state.changedFiles;
+        changedFiles.push(name);
+
+        this.setState(() => ({ [name]:"", changedFiles }));
     };
 
     dynamicallyCreateFields = (fields: AuthConfigField[], expandableOpen) => {
@@ -211,9 +221,12 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                     return (
                         <SmallFileUpload
                             key={index}
-                            index={index}
-                            canEdit={this.props.canEdit}
                             onFileChange={this.onFileChange}
+                            onFileRemoval={this.onFileRemoval}
+                            value={this.state[field.name]}
+                            index={index + 2}
+                            canEdit={this.props.canEdit}
+                            emptyRequiredFields={this.state.emptyRequiredFields}
                             {...field}
                         />
                     );
@@ -248,8 +261,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         const isAddNewConfig = this.props.title;
         const modalTitle = isAddNewConfig ? this.props.title : this.props.description;
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
-
-        console.log("state", this.state, "props", this.props);
 
         return (
             <Modal show={true} onHide={() => {}}>
@@ -491,14 +502,19 @@ class FixedHtml extends PureComponent<FixedHtmlProps> {
     }
 }
 
+//Same problem as TextInputProps
 interface SmallFileInputProps extends InputFieldProps {
     text?: string;
     index: number;
     onFileChange: Function;
+    emptyRequiredFields?: string[]
 }
 
-class SmallFileUpload extends PureComponent<SmallFileInputProps, any> {
+class SmallFileUpload extends PureComponent<any> {
     render() {
+        const fieldIsRequiredAndEmpty =
+            this.props.emptyRequiredFields && this.props.emptyRequiredFields.includes(this.props.name);
+
         return (
             <div className="modal__compact-file-upload-field">
                 <span className="modal__field-label">
@@ -514,6 +530,8 @@ class SmallFileUpload extends PureComponent<SmallFileInputProps, any> {
                     />
                 )}
 
+                {fieldIsRequiredAndEmpty && <div className="modal__tiny-error--small-file-input"> This file is required </div>}
+
                 <div className="modal__compact-file-upload-input">
                     <FileAttachmentForm
                         key={this.props.text}
@@ -526,7 +544,11 @@ class SmallFileUpload extends PureComponent<SmallFileInputProps, any> {
                         onFileChange={attachment => {
                             this.props.onFileChange(attachment, this.props.name);
                         }}
+                        onFileRemoval={() => {
+                            this.props.onFileRemoval(this.props.name)
+                        }}
                         compact={true}
+                        initialFileNames={this.props.value && [""]}
                     />
                 </div>
             </div>
