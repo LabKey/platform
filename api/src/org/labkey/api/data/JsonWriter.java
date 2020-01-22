@@ -282,7 +282,7 @@ public class JsonWriter
         ForeignKey fk = columnInfo.getFk();
 
         //lookup info
-        TableInfo lookupTable = columnInfo.getFkTableInfo();
+        TableDescription lookupTable = columnInfo.getFkTableDescription();
         if (null != fk
                 && null != lookupTable
                 && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
@@ -313,7 +313,7 @@ public class JsonWriter
             else
             {
                 queryName = lookupTable.getName();
-                schemaName = lookupTable.getSchema().getName();
+                schemaName = lookupTable.getSchemaName();
             }
 
             // Duplicate info with different property names for backwards compatibility
@@ -322,27 +322,37 @@ public class JsonWriter
             lookupInfo.put("schemaName", schemaName);
             lookupInfo.put("schema", schemaName);
 
-            ColumnInfo displayColumn = fk.createLookupColumn(columnInfo, null);
-            if (displayColumn != null && displayColumn.getFieldKey() != null && displayColumn.getFieldKey().size() > columnInfo.getFieldKey().size())
+            if (!columnInfo.isUnselectable())
             {
-                lookupInfo.put("displayColumn", displayColumn.getFieldKey().getName());
-            }
-            else
-            {
-                // In this case, we likely won't be able to resolve the column when executing the query, but
-                // it's the best guess that we have
-                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+                // PERF createLookupColumn() can be very expensive
+                ColumnInfo displayColumn = fk.createLookupColumn(columnInfo, null);
+                if (displayColumn != null && displayColumn.getFieldKey() != null && displayColumn.getFieldKey().size() > columnInfo.getFieldKey().size())
+                {
+                    lookupInfo.put("displayColumn", displayColumn.getFieldKey().getName());
+                }
+                else
+                {
+                    // In this case, we likely won't be able to resolve the column when executing the query, but
+                    // it's the best guess that we have
+                    lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+                }
             }
             String key = null;
             List<String> pks = lookupTable.getPkColumnNames();
 
             //Issue 20092: the target column specified by the FK does not necessarily need to be a true PK
+            // PERF computing getLookupColumnName() can be expensive, but we only want to do this work when it is not == default pk
+            // suggest having fk.getLookupColumnName() which returns explicitly set LookupColumnName, and fk.computeLookupColumnName()
             if (fk.getLookupColumnName() != null)
             {
-                //NOTE: the XML could specify a column with different casing than the canonical name.  this could be problematic for client side JS.  \
-                ColumnInfo targetCol = lookupTable.getColumn(fk.getLookupColumnName());
-                if (targetCol != null)
-                    key = targetCol.getName();
+                key = fk.getLookupColumnName();
+                if (lookupTable instanceof TableInfo)
+                {
+                    //NOTE: the XML could specify a column with different casing than the canonical name.  this could be problematic for client side JS.  \
+                    ColumnInfo targetCol = ((TableInfo)lookupTable).getColumn(fk.getLookupColumnName());
+                    if (targetCol != null)
+                        key = targetCol.getName();
+                }
             }
 
             if (key == null)

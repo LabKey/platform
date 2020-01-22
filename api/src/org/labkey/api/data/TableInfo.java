@@ -57,9 +57,9 @@ import java.util.Set;
  * User: Matthew
  * Date: Apr 27, 2006
  */
-public interface TableInfo extends HasPermission, SchemaTreeNode
+public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
-
+    @Override
     String getName();
 
     /** Get title, falling back to the name if title is null **/
@@ -174,6 +174,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     String getVersionColumnName();
 
     /** @return the default display value for this table if it's the target of a foreign key */
+    @Override
     String getTitleColumn();
 
     boolean hasDefaultTitleColumn();
@@ -328,12 +329,21 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      */
     List<Pair<String, StringExpression>> getRawImportTemplates();
 
+    @Override
     boolean isPublic();
 
+    @Override
     String getPublicName();
 
     /** @return The public (queryable) schema name in SchemaKey encoding. */
+    @Override
     String getPublicSchemaName();
+
+    /* TODO this is called by JsonWriter, but is this actually useful? */
+    default String getSchemaName()
+    {
+        return getSchema().getName();
+    }
 
     // Most datasets do not have a container column
     boolean hasContainerColumn();

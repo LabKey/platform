@@ -563,8 +563,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey(getContainerFilter(), "LSID"));
         addColumn(Column.RunGroups);
         addColumn(Column.RunGroupToggle);
-//        addColumn(Column.Input);
-//        addColumn(Column.Output);
+        addColumn(Column.Input);
+        addColumn(Column.Output);
         addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
 

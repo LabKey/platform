@@ -711,6 +711,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         return getFk().getLookupTableInfo();
     }
 
+    @Override
+    public TableDescription getFkTableDescription()
+    {
+        if (null == getFk())
+            return null;
+        return getFk().getLookupTableDescription();
+    }
+
 
     @Override
     public boolean isUserEditable()
