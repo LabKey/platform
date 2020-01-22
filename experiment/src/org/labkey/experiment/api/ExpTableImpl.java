@@ -350,7 +350,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             if (_userSchema instanceof ExpSchema)
                 _expSchema = (ExpSchema)_userSchema;
             else
-                _expSchema = (ExpSchema)_userSchema.getDefaultSchema().getSchema("exp");
+                _expSchema = (ExpSchema)_userSchema.getDefaultSchema().getSchema(ExpSchema.SCHEMA_NAME);
         }
         return _expSchema;
     }
