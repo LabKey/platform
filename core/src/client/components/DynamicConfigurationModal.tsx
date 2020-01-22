@@ -85,21 +85,21 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form.append(item, this.state[item]);
         });
 
-        // Ajax.request({
-        //     url: saveUrl,
-        //     method: 'POST',
-        //     form,
-        //     scope: this,
-        //     failure: function(error) {
-        //         const errorObj = JSON.parse(error.response);
-        //         const errorMessage = errorObj.exception;
-        //         this.setState(() => ({ errorMessage }));
-        //     },
-        //     success: function(result) {
-        //         this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
-        //         this.props.closeModal();
-        //     },
-        // });
+        Ajax.request({
+            url: saveUrl,
+            method: 'POST',
+            form,
+            scope: this,
+            failure: function(error) {
+                const errorObj = JSON.parse(error.response);
+                const errorMessage = errorObj.exception;
+                this.setState(() => ({ errorMessage }));
+            },
+            success: function(result) {
+                this.props.updateAuthRowsAfterSave(result.response, this.props.stateSection);
+                this.props.closeModal();
+            },
+        });
     };
 
     areRequiredFieldsEmpty = () => {
@@ -113,7 +113,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             ['description']
         );
 
-        // console.log("uh", requiredFields);
+        console.log("uh", requiredFields);
 
         const emptyRequiredFields = requiredFields.filter(name => this.state[name] == '');
 
