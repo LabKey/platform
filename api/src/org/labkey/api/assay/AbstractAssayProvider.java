@@ -165,6 +165,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String EDITABLE_RESULTS_PROPERTY_SUFFIX = "EditableResults";
     public static final String BACKGROUND_UPLOAD_PROPERTY_SUFFIX = "BackgroundUpload";
     public static final String QC_ENABLED_PROPERTY_SUFFIX = "QCEnabled";
+    public static final String PLATE_METADATA_PROPERTY_SUFFIX = "PlateMetadata";
 
     // The result row LSID namespace prefix <code>_resultRowLSIDPrefix</code> should end with this constant.
     public static final String RESULT_LSID_PREFIX_PART = "AssayResultRow";
@@ -1548,5 +1549,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isQCEnabled(ExpProtocol protocol)
     {
         return supportsQC() && Boolean.TRUE.equals(getBooleanProperty(protocol, QC_ENABLED_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public boolean supportsPlateMetadata()
+    {
+        return false;
+    }
+
+    @Override
+    public void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled)
+    {
+        if (supportsPlateMetadata())
+            setBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX, metadataEnabled);
+    }
+
+    @Override
+    public boolean isPlateMetadataEnabled(ExpProtocol protocol)
+    {
+        return supportsPlateMetadata();
+//        return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
     }
 }

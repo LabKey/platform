@@ -252,6 +252,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void setQCEnabled(ExpProtocol protocol, boolean qcEnabled);
     boolean isQCEnabled(ExpProtocol protocol);
 
+    /** Does the provider support integration of plate template metadata */
+    boolean supportsPlateMetadata();
+    void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled);
+    boolean isPlateMetadataEnabled(ExpProtocol protocol);
+
     /**
      * @return the data type that this run creates for its analyzed results
      */
