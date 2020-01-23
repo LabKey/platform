@@ -164,7 +164,6 @@ class LineageForeignKey extends AbstractForeignKey
         col.setFk(lookup.getFk());
         col.setUserEditable(false);
         col.setReadOnly(true);
-        col.setIsUnselectable(true);
         col.setDisplayColumnFactory(lookup.getDisplayColumnFactory());
         return col;
     }
@@ -282,7 +281,6 @@ class LineageForeignKey extends AbstractForeignKey
             col.setFk(new ByTypeLineageForeignKey(requireNonNull(getUserSchema()), level, cacheKeyPrefix));
             col.setUserEditable(false);
             col.setReadOnly(true);
-            col.setIsUnselectable(true);
             applyDisplayColumn(col, 0, level.expType, null, null);
             addColumn(col);
         }
