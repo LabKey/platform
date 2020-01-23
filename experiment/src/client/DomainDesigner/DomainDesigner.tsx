@@ -212,7 +212,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
-        const rollupURI = "https://www.labkey.org/Documentation/wiki-page.view?name=specimenCustomProperties";
+        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
 
         let errors = badDomain.domainException.errors;
         let question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
