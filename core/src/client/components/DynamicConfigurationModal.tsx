@@ -25,7 +25,6 @@ interface Props {
     configuration?: number;
     headerLogoUrl?: string;
     loginLogoUrl?: string;
-    type?: AuthConfigProvider;
 }
 
 interface State {
@@ -249,6 +248,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
 
     render() {
         const { modalType, closeModal, canEdit } = this.props;
+        console.log("props", this.props);
+
         const queryString = {
             server: this.state.servers,
             principal: this.state.principalTemplate,
@@ -546,7 +547,7 @@ class SmallFileUpload extends PureComponent<any> {
                             showLabel={false}
                             allowMultiple={false}
                             allowDirectories={false}
-                            acceptedFormats=".txt,.pem"
+                            acceptedFormats=".txt,.pem,.crt"
                             showAcceptedFormats={false}
                             onFileChange={attachment => {
                                 this.props.onFileChange(attachment, this.props.name);

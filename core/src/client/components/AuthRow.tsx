@@ -98,7 +98,6 @@ export default class AuthRow extends PureComponent<Props, State> {
         const dynamicModal = this.state.modalOpen && (
             <DynamicConfigurationModal
                 {...this.props}
-                type={this.props.modalType}
                 closeModal={() => {
                     this.onToggleModal('modalOpen');
                     canEdit && toggleSomeModalOpen(false);

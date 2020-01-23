@@ -1,9 +1,11 @@
 import React from 'react';
 import { App } from './AuthenticationConfiguration';
 import renderer from 'react-test-renderer';
-import {mount} from "enzyme";
+import {mount, shallow} from "enzyme";
 import AuthConfigMasterPanel from "../components/AuthConfigMasterPanel";
 
+let component;
+let wrapper;
 let ssoConfigurations : [ {
     "IdPSsoUrl" : "IdP SSO URL",
     "configuration" : 95,
@@ -21,10 +23,10 @@ let ssoConfigurations : [ {
 }, {
     "provider" : "CAS",
     "configuration" : 106,
-    "headerLogoUrl" : "/labkey/auth_header_logo.image?configuration=106&revision=69",
-    "loginLogoUrl" : "/labkey/auth_login_page_logo.image?configuration=106&revision=69",
+    "headerLogoUrl" : "imageUrl1",
+    "loginLogoUrl" : "imageUrl2",
     "serverUrl" : "https://www.labkey.org/cas",
-    "description" : "CAS Configurations",
+    "description" : "CAS Configuration",
     "details" : "https://www.labkey.org/cas",
     "autoRedirect" : false,
     "enabled" : true
@@ -39,15 +41,54 @@ let ssoConfigurations : [ {
     "autoRedirect" : false,
     "enabled" : true
 } ];
+let updatedConfig = {
+        "provider" : "CAS",
+        "configuration" : 108,
+        "headerLogoUrl" : null,
+        "loginLogoUrl" : null,
+        "serverUrl" : "https://www.labkey.org/cas",
+        "description" : "CAS Configuration X",
+        "details" : "https://www.labkey.org/cas",
+        "autoRedirect" : false,
+        "enabled" : true };
 
 describe("<AuthenticationConfiguration/>", () => {
+    beforeEach(() => {
+        component = (<App/>);
+        wrapper = shallow(component);
 
-    test("Data lands on initial mount", () => {
-        const component =
-            <App/>;
+        // wrapper.instance().componentDidMount();
+
     });
 
+    test("Save button triggers", () => {
+        const instance = wrapper.instance();
+        instance.saveChanges = jest.fn(() => true);
+        wrapper.update();
+
+        let saveButton = wrapper.find(".parent-panel__save-button");
+        saveButton.simulate('click');
+        expect(instance.saveChanges).toHaveBeenCalled();
+    });
+
+
     test("Updating an auth config will change row-level display", () => {
+        // invoke updateAuthRowsAfterSave
+        wrapper.setState({ ssoConfigurations });
+
+        wrapper.instance().onDeleteClick = jest.fn(() => true);
+        wrapper.update();
+
+        // expect(spy).toHaveBeenCalledWith(108, updatedConfig);
+        // expect(spy).toHaveBeenCalled();
+    });
+
+    test("Drag-and-drop call reorders rows", () => {
+        // call re-ordering function
+
+    });
+
+    test("Drag-and-drop outside of rows doesn't reorder rows", () => {
 
     });
 

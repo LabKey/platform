@@ -1,11 +1,24 @@
 import React from 'react';
-import AuthConfigMasterPanel from './AuthConfigMasterPanel';
+import SSOFields from './SSOFields';
 import renderer from 'react-test-renderer';
 
-describe("<AuthConfigMasterPanel/>", () => {
+describe("<SSOFields/>", () => {
+
+    test("No images attached", () => {
+        const component =
+            <SSOFields
+                canEdit={true}
+                headerLogoUrl={null}
+                loginLogoUrl={null}
+            />;
+
+        const tree = renderer.create(component).toJSON();
+        expect(tree).toMatchSnapshot();
+    });
+
     test("Editable mode", () => {
         const component =
-            <AuthConfigMasterPanel
+            <SSOFields
                 canEdit={true}
             />;
 
@@ -15,7 +28,7 @@ describe("<AuthConfigMasterPanel/>", () => {
 
     test("View-only mode", () => {
         const component =
-            <AuthConfigMasterPanel
+            <SSOFields
                 canEdit={false}
             />;
 
