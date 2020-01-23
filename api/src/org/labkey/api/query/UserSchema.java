@@ -776,6 +776,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             ret = ContainerManager.getForId(String.valueOf(rowContainerVal));
         }
 
+        if (ret != null && (!ret.isWorkbook() || !ret.hasAncestor(c)))
+        {
+            return null;
+        }
+
         if (ret != null && !ret.equals(c))
         {
             verifyPermissionsForContainer(ret, c, u, ti, clazz);
