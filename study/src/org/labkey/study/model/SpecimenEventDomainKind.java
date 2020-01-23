@@ -19,14 +19,15 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
@@ -35,7 +36,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.query.SpecimenTablesProvider;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -234,27 +234,30 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
-        ValidationException validationException = new ValidationException();
-
-        SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
-        Domain domainEvent = stp.getDomain("specimenevent", false);
-
-        for (GWTPropertyDescriptor prop : update.getFields())
+        ValidationException validationException;
+        try (var transaction = DbSchema.get("Study", DbSchemaType.Module).getScope().ensureTransaction())
         {
-            if (prop.getName() != null  && !getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
+            validationException = new ValidationException();
+
+            SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
+            Domain domainEvent = stp.getDomain("specimenevent", false);
+
+            for (GWTPropertyDescriptor prop : update.getFields())
             {
-                if (prop.getName().contains(" "))
-                    validationException.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
+                if (prop.getName() != null && !getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
+                {
+                    if (prop.getName().contains(" "))
+                        validationException.addError(new PropertyValidationError("Name '" + prop.getName() + "' should not contain spaces.", prop.getName(), prop.getPropertyId()));
+                }
             }
-        }
 
-        if (validationException.hasErrors())
-        {
+            validationException.addErrors(super.updateDomain(original, update, container, user, includeWarnings));
+
+            if (!validationException.hasErrors())
+            {
+                transaction.commit();
+            }
             return validationException;
-        }
-        else
-        {
-            return super.updateDomain(original, update, container, user, includeWarnings);
         }
     }
 

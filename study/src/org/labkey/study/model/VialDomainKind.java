@@ -18,6 +18,8 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -26,7 +28,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
@@ -169,54 +171,56 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
     @Override
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
-        ValidationException exception = new ValidationException();
-        SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
-        Domain domainSpecimen = stp.getDomain("specimen",false);
-        Domain domainVial = stp.getDomain("vial",false);
-
-        // Check for the same name in Specimen and Vial
-        Set<String> specimenFields = new HashSet<>();
-        if (null != domainSpecimen)
+        ValidationException exception;
+        try (var transaction = DbSchema.get("Study", DbSchemaType.Module).getScope().ensureTransaction())
         {
-            for (DomainProperty prop : domainSpecimen.getProperties())
+            exception = new ValidationException();
+            SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
+            Domain domainSpecimen = stp.getDomain("specimen", false);
+            Domain domainVial = stp.getDomain("vial", false);
+
+            // Check for the same name in Specimen and Vial
+            Set<String> specimenFields = new HashSet<>();
+            if (null != domainSpecimen)
+            {
+                for (DomainProperty prop : domainSpecimen.getProperties())
+                {
+                    if (null != prop.getName())
+                    {
+                        specimenFields.add(prop.getName().toLowerCase());
+                    }
+                }
+            }
+
+            List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
+            for (GWTPropertyDescriptor prop : update.getFields())
             {
                 if (null != prop.getName())
                 {
-                    specimenFields.add(prop.getName().toLowerCase());
+                    if (!getMandatoryPropertyNames(domainVial).contains(prop.getName()))
+                    {
+                        if (specimenFields.contains(prop.getName().toLowerCase()))
+                        {
+                            exception.addError(new PropertyValidationError("Vial cannot have a custom field of the same name as a Specimen field.", prop.getName(), prop.getPropertyId()));
+                        }
+
+                        optionalVialFields.add(getPropFromGwtProp(prop));
+                        if (prop.getName().contains(" "))
+                        {
+                            exception.addError(new PropertyValidationError("Name '" + prop.getName() + "' should not contain spaces.", prop.getName(), prop.getPropertyId()));
+                        }
+                    }
                 }
             }
-        }
 
-        List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
-        for (GWTPropertyDescriptor prop : update.getFields())
-        {
-            if (null != prop.getName())
+            exception = checkRollups(optionalVialFields, null, container, user, exception, includeWarnings);
+            exception.addErrors(super.updateDomain(original, update, container, user, includeWarnings));
+
+            if (!exception.hasErrors())
             {
-                if (!getMandatoryPropertyNames(domainVial).contains(prop.getName()))
-                {
-                    if(specimenFields.contains(prop.getName().toLowerCase()))
-                    {
-                        exception.addError(new SimpleValidationError("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName()));
-                    }
-
-                    optionalVialFields.add(getPropFromGwtProp(prop));
-                    if (prop.getName().contains(" "))
-                    {
-                        exception.addError(new SimpleValidationError("Name '" + prop.getName() + "' should not contain spaces."));
-                    }
-                }
+                transaction.commit();
             }
-        }
-
-        exception = checkRollups(optionalVialFields, null, container, user, exception, includeWarnings);
-
-        if (exception.hasErrors())
-        {
             return exception;
-        }
-        else
-        {
-            return super.updateDomain(original, update, container, user, includeWarnings);
         }
     }
 
