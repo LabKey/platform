@@ -16,8 +16,10 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -28,6 +30,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.LookupForeignKey;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,9 +61,65 @@ public class InputForeignKey extends LookupForeignKey
         return _schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
     }
 
+    @Override
+    public String getLookupColumnName()
+    {
+        return "RowId";
+    }
+
+    @Override
+    public @Nullable TableDescription getLookupTableDescription()
+    {
+        return new TableDescription()
+        {
+            @Override
+            public boolean isPublic()
+            {
+                return false;
+            }
+
+            @Override
+            public String getPublicName()
+            {
+                return null;
+            }
+
+            @Override
+            public String getPublicSchemaName()
+            {
+                return null;
+            }
+
+            @Override
+            public String getName()
+            {
+                return "ProtocolApplications";
+            }
+
+            @Override
+            public String getSchemaName()
+            {
+                return "exp";
+            }
+
+            @Override
+            public String getTitleColumn()
+            {
+                return "LSID";
+            }
+
+            @Override
+            public List<String> getPkColumnNames()
+            {
+                return List.of("RowId");
+            }
+        };
+    }
+
     private TableInfo createLookupTableInfo()
     {
         ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable(ExpSchema.TableType.ProtocolApplications.toString(), _schema, null);
+        ((ExpProtocolApplicationTableImpl)ret).setPublic(false);
         ret.setContainerFilter(_filter);
         SamplesSchema samplesSchema = _schema.getSamplesSchema();
         for (String role : getDataInputs())
