@@ -230,7 +230,7 @@ public abstract class CompareType
                 return false;
             }
 
-            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) < 0;
         }
     };
 
