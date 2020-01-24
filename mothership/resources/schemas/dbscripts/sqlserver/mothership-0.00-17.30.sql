@@ -179,3 +179,11 @@ SET instances = x.Instances, LastReport = x.LastReport, FirstReport= x.FirstRepo
 FROM mothership.ExceptionStackTrace est JOIN
 (SELECT exceptionStackTraceId, count(exceptionReportId) Instances, max(created) LastReport, min(created) FirstReport FROM mothership.ExceptionReport GROUP BY ExceptionStackTraceId) x
 ON est.ExceptionStackTraceId = x.ExceptionStackTraceId;
+
+/* mothership-17.20-17.30.sql */
+
+ALTER TABLE mothership.exceptionreport
+    ADD ErrorCode NVARCHAR(6);
+GO
+
+CREATE NONCLUSTERED INDEX IX_ExceptionReport_ErrorCode ON mothership.exceptionreport (ErrorCode);

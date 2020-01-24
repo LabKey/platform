@@ -1186,3 +1186,14 @@ SELECT core.fn_dropifexists('list', 'exp', 'COLUMN', 'rowid');
 
 ALTER TABLE exp.list DROP COLUMN IF EXISTS FileAttachmentIndex CASCADE;
 ALTER TABLE exp.list ADD FileAttachmentIndex BOOLEAN NOT NULL DEFAULT FALSE;
+
+/* exp-17.20-17.30.sql */
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN Phi VARCHAR(20) NOT NULL DEFAULT 'NotPHI';
+UPDATE exp.PropertyDescriptor SET Phi='Limited' WHERE Protected=True;
+
+ALTER TABLE exp.PropertyDescriptor DROP COLUMN Protected;
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN RedactedText VARCHAR(450) NULL;
+
+ALTER TABLE exp.PropertyDescriptor ADD COLUMN mvIndicatorStorageColumnName VARCHAR(120);

@@ -171,3 +171,10 @@ UPDATE mothership.ExceptionStackTrace est
 SET instances = x.Instances, LastReport = x.LastReport, FirstReport= x.FirstReport
 FROM (SELECT exceptionStackTraceId, count(exceptionReportId) Instances, max(created) LastReport, min(created) FirstReport FROM mothership.ExceptionReport GROUP BY ExceptionStackTraceId) x
 WHERE est.ExceptionStackTraceId = x.ExceptionStackTraceId;
+
+/* mothership-17.20-17.30.sql */
+
+ALTER TABLE mothership.exceptionreport
+    ADD COLUMN ErrorCode VARCHAR(6);
+
+CREATE INDEX IX_ExceptionReport_ErrorCode ON mothership.exceptionreport (ErrorCode);

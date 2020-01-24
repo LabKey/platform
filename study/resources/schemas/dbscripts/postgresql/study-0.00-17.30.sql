@@ -1498,3 +1498,18 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
 ALTER TABLE study.dataset ADD COLUMN UseTimeKeyField BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE study.VisitTag ADD Category VARCHAR(200);
+
+/* study-17.20-17.30.sql */
+
+ALTER TABLE study.AssaySpecimen ADD COLUMN DataSet INTEGER;
+
+SELECT core.executeJavaUpgradeCode('moveQCStateToCore');
+
+--Drop existing indexes, if they exist
+SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum');
+SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_sequencenum');
+SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_visitrowid');
+
+--For Resync perf
+CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (container, participantid, sequencenum, ParticipantSequenceNum);
+CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);
