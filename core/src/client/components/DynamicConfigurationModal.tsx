@@ -248,8 +248,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
 
     render() {
         const { modalType, closeModal, canEdit } = this.props;
-        console.log("props", this.props);
-
+        console.log(this.props);
         const queryString = {
             server: this.state.servers,
             principal: this.state.principalTemplate,
@@ -442,7 +441,7 @@ class CheckBoxInput extends PureComponent<any> {
 }
 
 interface OptionInputProps extends InputFieldProps {
-    options: Record<string, string>;
+    options?: Record<string, string>;
 }
 
 class Option extends PureComponent<OptionInputProps> {

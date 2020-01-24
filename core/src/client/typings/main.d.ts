@@ -21,12 +21,12 @@ interface AuthConfig {
 }
 
 interface AuthConfigField {
-    defaultValue: any;
-    name: string;
+    defaultValue?: any;
+    name?: string;
     caption: string;
-    description: string;
+    description?: string;
     type: string;
-    required: boolean;
+    required?: boolean;
     options?: Record<string, string>;
 }
 
@@ -35,16 +35,16 @@ interface AuthConfigProvider {
     saveLink: string;
     settingsFields: AuthConfigField[];
     description: string;
-    sso: boolean;
+    sso?: boolean;
     testLink?: string;
 }
 
 interface InputFieldProps {
     defaultValue?: any;
-    name: string;
+    name?: string;
     caption: string;
     description?: string;
-    required: boolean;
+    required?: boolean;
     canEdit: boolean;
     type: string;
     value?: string;

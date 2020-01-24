@@ -229,8 +229,6 @@ export class App extends PureComponent<{}, State> {
     updateAuthRowsAfterSave = (config: string, stateSection: string): void => {
         const configObj = JSON.parse(config);
         const configId = configObj.configuration.configuration;
-        console.log("config", config);
-        console.log("stateSection", stateSection);
 
         const prevState = this.state[stateSection];
         const staleAuthIndex = prevState.findIndex(element => element.configuration == configId);

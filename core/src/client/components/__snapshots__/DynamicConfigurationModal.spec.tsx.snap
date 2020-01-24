@@ -1,0 +1,1404 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={true}
+      caption="CAS Server URL"
+      defaultValue=""
+      description="Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="serverUrl"
+      required={true}
+      type="input"
+      value=""
+    />
+    <CheckBoxInput
+      canEdit={true}
+      caption="Default to CAS Login"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="Redirects the login page directly to the CAS login instead of requiring the user click the CAS option."
+      key="1"
+      name="autoRedirect"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <SSOFields
+      canEdit={true}
+      handleDeleteLogo={[Function]}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          target="_blank"
+        >
+          More about CAS authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={true}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={false}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={false}
+      caption="CAS Server URL"
+      defaultValue=""
+      description="Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="serverUrl"
+      required={true}
+      type="input"
+      value=""
+    />
+    <CheckBoxInput
+      canEdit={false}
+      caption="Default to CAS Login"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="Redirects the login page directly to the CAS login instead of requiring the user click the CAS option."
+      key="1"
+      name="autoRedirect"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <SSOFields
+      canEdit={false}
+      handleDeleteLogo={[Function]}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          target="_blank"
+        >
+          More about CAS authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> LDAP Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={true}
+      caption="LDAP server URLs"
+      defaultValue=""
+      description="The address(es) of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for an LDAP server address is ldap://servername.domain.org"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="servers"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={true}
+      caption="LDAP domain"
+      defaultValue="labkey.com"
+      description="Email domain that determines which users will authenticate using this LDAP configuration. For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org will attempt authentication using this configuration. Specify '*' to attempt LDAP authentication on all email addresses entered, regardless of domain."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="1"
+      name="domain"
+      required={true}
+      type="input"
+      value="labkey.com"
+    />
+    <TextInput
+      canEdit={true}
+      caption="LDAP principal template"
+      defaultValue="\${email}"
+      description="LDAP principal template that matches the DN requirements of the configured LDAP server(s). The template supports substitution syntax; include \${email} to substitute the user's full email address and \${uid} to substitute the left part of the user's email address."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="2"
+      name="principalTemplate"
+      required={true}
+      type="input"
+      value="\${email}"
+    />
+    <CheckBoxInput
+      canEdit={true}
+      caption="Use SASL authentication"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      key="3"
+      name="SASL"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <CheckBoxInput
+      canEdit={true}
+      caption="Use LDAP Search"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="The LDAP Search option is rarely needed. It is useful when the LDAP server is configured to authenticate with a user name that is unrelated to the user's email address."
+      dictateFieldVisibility={true}
+      key="4"
+      name="search"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <div
+      className="modal__test-button"
+    >
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Test
+      </Button>
+    </div>
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap"
+          target="_blank"
+        >
+          More about LDAP authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> LDAP Modal View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={true}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={false}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={false}
+      caption="LDAP server URLs"
+      defaultValue=""
+      description="The address(es) of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for an LDAP server address is ldap://servername.domain.org"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="servers"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={false}
+      caption="LDAP domain"
+      defaultValue="labkey.com"
+      description="Email domain that determines which users will authenticate using this LDAP configuration. For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org will attempt authentication using this configuration. Specify '*' to attempt LDAP authentication on all email addresses entered, regardless of domain."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="1"
+      name="domain"
+      required={true}
+      type="input"
+      value="labkey.com"
+    />
+    <TextInput
+      canEdit={false}
+      caption="LDAP principal template"
+      defaultValue="\${email}"
+      description="LDAP principal template that matches the DN requirements of the configured LDAP server(s). The template supports substitution syntax; include \${email} to substitute the user's full email address and \${uid} to substitute the left part of the user's email address."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="2"
+      name="principalTemplate"
+      required={true}
+      type="input"
+      value="\${email}"
+    />
+    <CheckBoxInput
+      canEdit={false}
+      caption="Use SASL authentication"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      key="3"
+      name="SASL"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <CheckBoxInput
+      canEdit={false}
+      caption="Use LDAP Search"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="The LDAP Search option is rarely needed. It is useful when the LDAP server is configured to authenticate with a user name that is unrelated to the user's email address."
+      dictateFieldVisibility={true}
+      key="4"
+      name="search"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <div
+      className="modal__test-button"
+    >
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Test
+      </Button>
+    </div>
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap"
+          target="_blank"
+        >
+          More about LDAP authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> SAML Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <SmallFileUpload
+      canEdit={true}
+      caption="IdP Signing Certificate"
+      defaultValue=""
+      emptyRequiredFields={null}
+      index={2}
+      key="0"
+      name="IdPSigningCertificate"
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+      required={true}
+      type="pem"
+      value=""
+    />
+    <SmallFileUpload
+      canEdit={true}
+      caption="Encryption Certificate"
+      defaultValue=""
+      description="Encryption Certificate for Encrypted Assertion"
+      emptyRequiredFields={null}
+      index={3}
+      key="1"
+      name="SpEncryptCert"
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+      required={false}
+      type="pem"
+      value=""
+    />
+    <SmallFileUpload
+      canEdit={true}
+      caption="SP Private Key"
+      defaultValue=""
+      description="Private Key for the Encryption Certificate. Required if encryption cert is used."
+      emptyRequiredFields={null}
+      index={4}
+      key="2"
+      name="SpPrivateKey"
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+      required={false}
+      type="pem"
+      value=""
+    />
+    <TextInput
+      canEdit={true}
+      caption="IdP SSO URL"
+      defaultValue=""
+      description="Target IdP URL for SSO login"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="3"
+      name="IdPSsoUrl"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={true}
+      caption="Issuer URL"
+      defaultValue=""
+      description="Issuer of SP SAML metadata"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="4"
+      name="IssuerUrl"
+      required={false}
+      type="input"
+      value=""
+    />
+    <Option
+      canEdit={true}
+      caption="NameID Format"
+      defaultValue="emailAddress"
+      description="If IdP does not support 'Email Address' then select 'Transient'"
+      handleChange={[Function]}
+      key="5"
+      name="NameIdFormat"
+      options={
+        Object {
+          "emailAddress": "Email Address",
+          "transient": "Transient",
+          "unspecified": "Unspecified",
+        }
+      }
+      required={false}
+      type="options"
+      value="emailAddress"
+    />
+    <CheckBoxInput
+      canEdit={true}
+      caption="Force Authorization"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="Require user to login to IdP even if they already have an active SSO session."
+      key="6"
+      name="ForceAuth"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <FixedHtml
+      caption="EntityId"
+      html="The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href=\\"/labkey/admin-customizeSite.view?\\" target=\\"_customize\\">Customize Site page</a>."
+      key="7"
+      type="fixedHtml"
+    />
+    <FixedHtml
+      caption="Assertion Consumer Service (ACS) URL"
+      html="This is relative to the base server URL. The ACS URL for this server is: http://localhost:8080/labkey/saml-validate.view"
+      key="8"
+      type="fixedHtml"
+    />
+    <SSOFields
+      canEdit={true}
+      handleDeleteLogo={[Function]}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml"
+          target="_blank"
+        >
+          More about SAML authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> SAML Modal View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={true}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={false}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <SmallFileUpload
+      canEdit={false}
+      caption="IdP Signing Certificate"
+      defaultValue=""
+      emptyRequiredFields={null}
+      index={2}
+      key="0"
+      name="IdPSigningCertificate"
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+      required={true}
+      type="pem"
+      value=""
+    />
+    <SmallFileUpload
+      canEdit={false}
+      caption="Encryption Certificate"
+      defaultValue=""
+      description="Encryption Certificate for Encrypted Assertion"
+      emptyRequiredFields={null}
+      index={3}
+      key="1"
+      name="SpEncryptCert"
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+      required={false}
+      type="pem"
+      value=""
+    />
+    <SmallFileUpload
+      canEdit={false}
+      caption="SP Private Key"
+      defaultValue=""
+      description="Private Key for the Encryption Certificate. Required if encryption cert is used."
+      emptyRequiredFields={null}
+      index={4}
+      key="2"
+      name="SpPrivateKey"
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+      required={false}
+      type="pem"
+      value=""
+    />
+    <TextInput
+      canEdit={false}
+      caption="IdP SSO URL"
+      defaultValue=""
+      description="Target IdP URL for SSO login"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="3"
+      name="IdPSsoUrl"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={false}
+      caption="Issuer URL"
+      defaultValue=""
+      description="Issuer of SP SAML metadata"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="4"
+      name="IssuerUrl"
+      required={false}
+      type="input"
+      value=""
+    />
+    <Option
+      canEdit={false}
+      caption="NameID Format"
+      defaultValue="emailAddress"
+      description="If IdP does not support 'Email Address' then select 'Transient'"
+      handleChange={[Function]}
+      key="5"
+      name="NameIdFormat"
+      options={
+        Object {
+          "emailAddress": "Email Address",
+          "transient": "Transient",
+          "unspecified": "Unspecified",
+        }
+      }
+      required={false}
+      type="options"
+      value="emailAddress"
+    />
+    <CheckBoxInput
+      canEdit={false}
+      caption="Force Authorization"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="Require user to login to IdP even if they already have an active SSO session."
+      key="6"
+      name="ForceAuth"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <FixedHtml
+      caption="EntityId"
+      html="The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href=\\"/labkey/admin-customizeSite.view?\\" target=\\"_customize\\">Customize Site page</a>."
+      key="7"
+      type="fixedHtml"
+    />
+    <FixedHtml
+      caption="Assertion Consumer Service (ACS) URL"
+      html="This is relative to the base server URL. The ACS URL for this server is: http://localhost:8080/labkey/saml-validate.view"
+      key="8"
+      type="fixedHtml"
+    />
+    <SSOFields
+      canEdit={false}
+      handleDeleteLogo={[Function]}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml"
+          target="_blank"
+        >
+          More about SAML authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;

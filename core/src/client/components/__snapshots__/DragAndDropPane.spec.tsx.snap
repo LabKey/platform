@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<DragAndDropPane/> Drag is disabled 1`] = `
+<DragDropContext>
+  <Connect(Droppable)
+    direction="vertical"
+    ignoreContainerClipping={false}
+    isCombineEnabled={false}
+    isDropDisabled={false}
+    type="DEFAULT"
+  >
+    <Component />
+  </Connect(Droppable)>
+</DragDropContext>
+`;
+
+exports[`<DragAndDropPane/> Editable 1`] = `
+<DragDropContext>
+  <Connect(Droppable)
+    direction="vertical"
+    ignoreContainerClipping={false}
+    isCombineEnabled={false}
+    isDropDisabled={false}
+    type="DEFAULT"
+  >
+    <Component />
+  </Connect(Droppable)>
+</DragDropContext>
+`;
+
+exports[`<DragAndDropPane/> View-only 1`] = `
+<DragDropContext>
+  <Connect(Droppable)
+    direction="vertical"
+    ignoreContainerClipping={false}
+    isCombineEnabled={false}
+    isDropDisabled={false}
+    type="DEFAULT"
+  >
+    <Component />
+  </Connect(Droppable)>
+</DragDropContext>
+`;
