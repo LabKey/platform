@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -39,7 +38,6 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
@@ -112,31 +110,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     protected String getCommandClassMethodName()
     {
         return "execute";
-    }
-
-    protected boolean isGet()
-    {
-        return "GET".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPost()
-    {
-        return "POST".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPut()
-    {
-        return "PUT".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isDelete()
-    {
-        return "DELETE".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPatch()
-    {
-        return "PATCH".equals(getViewContext().getRequest().getMethod());
     }
 
     @Override
@@ -461,7 +434,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         Object o = null;
 
-        if (null != obj && obj instanceof Map && ((Map)obj).containsKey(CommonParameters.apiVersion.name()))
+        if (obj instanceof Map && ((Map) obj).containsKey(CommonParameters.apiVersion.name()))
             o = ((Map)obj).get(CommonParameters.apiVersion.name());
         if (_empty(o))
             o = getProperty(CommonParameters.apiVersion.name());
