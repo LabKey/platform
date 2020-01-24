@@ -118,11 +118,11 @@ public class ModuleContext implements Cloneable
         return getModuleState().describeModuleState(this, _installedVersion, targetVersion);
     }
 
-    private static DecimalFormat df2 = new DecimalFormat("0.00#");
+    private static DecimalFormat df3 = new DecimalFormat("0.000");
 
     public static String formatVersion(double version)
     {
-        return df2.format(version);
+        return df3.format(version);
     }
 
     public ModuleLoader.ModuleState getModuleState()

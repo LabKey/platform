@@ -328,7 +328,7 @@ public class SpecimenController extends BaseStudyController
         // to let the user apply subsequent filters and switch back and forth between vial and specimen view
         // without losing their original participant/visit selection.
         Set<String> lsids = null;
-        if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+        if (isPost())
             lsids = DataRegionSelection.getSelected(getViewContext(), true);
         HttpSession session = getViewContext().getRequest().getSession(true);
         Pair<Container, Set<String>> selectionCache = (Pair<Container, Set<String>>) session.getAttribute(SELECTED_SAMPLES_SESSION_ATTRIB_KEY);
