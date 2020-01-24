@@ -33,6 +33,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
+import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.SaveChartDialog;
@@ -1053,19 +1054,15 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setSpecimenFieldsPhi(String[] phiFields)
     {
         goToManageStudy();
-        clickAndWait(Locator.linkContainingText("Edit specimen properties"));
+        clickAndWait(Locator.linkContainingText("Edit Specimen Event fields"));
 
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("SpecimenEvent").waitFor();
-        List<String> fields = new ArrayList<>();
-        fields.addAll(Arrays.asList(phiFields));
+        DomainDesignerPage designerPage = new DomainDesignerPage(getDriver());
+        List<String> fields = new ArrayList<>(Arrays.asList(phiFields));
         for (String field : fields)
         {
-            editor.selectField(field);
-            PropertiesEditor.FieldPropertyDock.AdvancedTabPane advancedTabPane = editor.fieldProperties().selectAdvancedTab();
-            advancedTabPane.setPhiLevel(PropertiesEditor.PhiSelectType.PHI);
+            designerPage.fieldsPanel().getField(field).setPHILevel(PropertiesEditor.PhiSelectType.PHI);
         }
-        clickButton("Save", 0);
-        waitForText("Save successful.");
+       designerPage.clickFinish();
     }
 
     private void setUnshiftedDateField(String dataset, String fieldName)

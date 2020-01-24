@@ -29,7 +29,7 @@ public interface ValidationError
 {
     String getMessage();
 
-    ObjectError getObjectError();
+     ValidationException.SEVERITY getSeverity();
 
-    void addToBindException(BindException be, String errorCode);
+    void addToBindException(BindException be, String errorCode, boolean includeWarnings);
 }

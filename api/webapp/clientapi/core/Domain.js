@@ -299,6 +299,8 @@ LABKEY.Domain.create({
          *        SchemaName and queryName will be ignored if this value is not undefined or null.
          * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
+         * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
+         *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
          */
         save : function(config)
         {
@@ -310,7 +312,8 @@ LABKEY.Domain.create({
                     domainDesign: arguments[2],
                     schemaName: arguments[3],
                     queryName: arguments[4],
-                    containerPath: arguments[5]
+                    containerPath: arguments[5],
+                    includeWarnings: arguments[6]
                 };
             }
 
@@ -318,7 +321,7 @@ LABKEY.Domain.create({
                 config.success,
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
-                    domainId: config.domainId},
+                    domainId: config.domainId, includeWarnings: config.includeWarnings},
                 config.containerPath);
         },
 
