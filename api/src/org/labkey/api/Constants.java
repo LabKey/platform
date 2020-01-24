@@ -17,7 +17,6 @@ package org.labkey.api;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.module.ModuleLoader;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +35,7 @@ public class Constants
     static
     {
         Collection<Double> list = new LinkedList<>();
-        double version = ModuleLoader.EARLIEST_UPGRADE_VERSION;
+        double version = getEarliestUpgradeVersion();
 
         while (version <= getNextReleaseVersion())
         {
@@ -57,6 +56,16 @@ public class Constants
     public static double getPreviousReleaseVersion()
     {
         return 20.000;
+    }
+
+    /**
+     * The earliest LabKey version that this server will upgrade. This constant should be updated every major release.
+     *
+     * @return The earliest upgrade version number
+     */
+    public static double getEarliestUpgradeVersion()
+    {
+        return 17.3;
     }
 
     /**
