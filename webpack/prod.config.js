@@ -6,7 +6,7 @@
 const lkModule = process.env.LK_MODULE;
 const HtmlWebpackPlugin = require('../' + lkModule + '/node_modules/html-webpack-plugin');
 const MiniCssExtractPlugin = require('../' + lkModule + '/node_modules/mini-css-extract-plugin');
-const entryPoints = require('../' + lkModule + '/webpack/entryPoints');
+const entryPoints = require('../' + lkModule + '/src/client/entryPoints');
 const constants = require('./constants');
 
 // set based on the lk module calling this config

@@ -5,7 +5,7 @@
  */
 const lkModule = process.env.LK_MODULE;
 const webpack = require('../' + lkModule + '/node_modules/webpack');
-const entryPoints = require('../' + lkModule + '/webpack/entryPoints');
+const entryPoints = require('../' + lkModule + '/src/client/entryPoints');
 const constants = require('./constants');
 
 // set based on the lk module calling this config
