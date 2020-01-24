@@ -19,8 +19,6 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -34,6 +32,7 @@ import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.StudySchema;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.Arrays;
@@ -235,7 +234,7 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
         ValidationException validationException;
-        try (var transaction = DbSchema.get("Study", DbSchemaType.Module).getScope().ensureTransaction())
+        try (var transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
             validationException = new ValidationException();
 

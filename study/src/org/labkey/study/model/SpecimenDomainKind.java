@@ -17,9 +17,8 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -34,6 +33,7 @@ import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.StudySchema;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
         ValidationException exception;
-        try (var transaction = DbSchema.get("Study", DbSchemaType.Module).getScope().ensureTransaction())
+        try (var transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
             exception = new ValidationException();
             SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
@@ -176,7 +176,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
             Domain domainSpecimen = stp.getDomain("specimen", false);
 
             // Check for the same name in Specimen and Vial
-            Set<String> vialFields = new HashSet<>();
+            CaseInsensitiveHashSet vialFields = new CaseInsensitiveHashSet();
             if (null != domainVial)
             {
                 domainVial.getProperties().forEach(prop -> {
