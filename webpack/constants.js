@@ -3,9 +3,10 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-const path = require('path');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const devMode = process.env.NODE_ENV !== 'production';
+const lkModule = process.env.LK_MODULE;
+const path = require('path');
+const MiniCssExtractPlugin = require('../' + lkModule + '/node_modules/mini-css-extract-plugin');
 
 module.exports = {
     context: function(dir) {
@@ -105,6 +106,6 @@ module.exports = {
         ]
     },
     outputPath: function(dir) {
-        return path.resolve(dir, '../resources/web/assay/gen');
+        return path.resolve(dir, '../resources/web/' + lkModule + '/gen');
     }
 };

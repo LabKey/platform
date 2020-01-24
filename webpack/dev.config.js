@@ -3,9 +3,13 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-const webpack = require('webpack');
+const lkModule = process.env.LK_MODULE;
+const webpack = require('../' + lkModule + '/node_modules/webpack');
+const entryPoints = require('../' + lkModule + '/webpack/entryPoints');
 const constants = require('./constants');
-const entryPoints = require('./entryPoints');
+
+// set based on the lk module calling this config
+__dirname = lkModule;
 
 const devServer = {
     host: 'localhost',

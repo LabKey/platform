@@ -4,8 +4,8 @@
     </permissions>
     <% if (htmlWebpackPlugin.options.mode !== 'dev') { %>
     <dependencies>
-        <dependency path="experiment/gen/<%= htmlWebpackPlugin.options.name %>.css" />
-        <dependency path="experiment/gen/<%= htmlWebpackPlugin.options.name %>.js"/>
+        <dependency path="<%= htmlWebpackPlugin.options.module %>/gen/<%= htmlWebpackPlugin.options.name %>.css" />
+        <dependency path="<%= htmlWebpackPlugin.options.module %>/gen/<%= htmlWebpackPlugin.options.name %>.js"/>
     </dependencies>
     <% } %>
 </view>
