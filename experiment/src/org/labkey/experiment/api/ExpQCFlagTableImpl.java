@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFlagHandler;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
@@ -39,14 +41,13 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
-import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.experiment.ExperimentAuditProvider;
 
 import java.sql.SQLException;
@@ -55,6 +56,8 @@ import java.util.Map;
 public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> implements ExpQCFlagTable
 {
     private static final Logger LOG = Logger.getLogger(ExpQCFlagTableImpl.class);
+
+    private AssayProvider _provider;
     private ExpProtocol _assayProtocol;
     private Map<String, String> _columnMapping = new CaseInsensitiveHashMap<>();
 
@@ -70,6 +73,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         {
             case RowId:
                 var rowIdColumnInfo = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                rowIdColumnInfo.setFk(new RowIdForeignKey(rowIdColumnInfo));
                 rowIdColumnInfo.setHidden(true);
                 return rowIdColumnInfo;
             case Run:
@@ -89,13 +93,13 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                 return wrapColumn(alias, _rootTable.getColumn("Created"));
             case CreatedBy:
                 var createdByColumn = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
-                createdByColumn.setFk(new UserIdForeignKey(getUserSchema()));
+                createdByColumn.setFk(new UserIdQueryForeignKey(getUserSchema()));
                 return createdByColumn;
             case Modified:
                 return wrapColumn(alias, _rootTable.getColumn("Modified"));
             case ModifiedBy:
                 var modifiedByColumn = wrapColumn(alias, _rootTable.getColumn("ModifiedBy"));
-                modifiedByColumn.setFk(new UserIdForeignKey(getUserSchema()));
+                modifiedByColumn.setFk(new UserIdQueryForeignKey(getUserSchema()));
                 return modifiedByColumn;
             case IntKey1:
                 _columnMapping.put(column.name(), alias);
@@ -135,9 +139,16 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
     }
 
     @Override
-    public void setAssayProtocol(ExpProtocol protocol)
+    public void setAssayProtocol(AssayProvider provider, ExpProtocol protocol)
     {
         checkLocked();
+
+        if (_provider != null && !_provider.equals(provider))
+        {
+            throw new IllegalStateException("Cannot change assay provider when it has already been set to " + provider.getName());
+        }
+        _provider = provider;
+
         if (_assayProtocol != null && !_assayProtocol.equals(protocol))
         {
             throw new IllegalStateException("Cannot change assay protocol when it has already been set to " + _assayProtocol.getLSID());
@@ -149,10 +160,16 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
             @Override
             public TableInfo getLookupTableInfo()
             {
-                AssayProvider provider = AssayService.get().getProvider(_assayProtocol);
-                return null==provider ? null : provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
+                return null == _provider ? null :  _provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), _assayProtocol, null).createRunsTable(null);
             }
         });
+
+        AssayFlagHandler handler = provider != null ? AssayFlagHandler.getHandler(provider) : null;
+        if (handler != null)
+        {
+            handler.fixupQCFlagTable(this, _provider, _assayProtocol);
+        }
+
         SQLFragment protocolSQL = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
         protocolSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         protocolSQL.append(" WHERE ProtocolLSID = ?)");
