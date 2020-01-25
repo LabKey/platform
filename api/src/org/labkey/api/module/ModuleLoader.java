@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -139,7 +140,6 @@ public class ModuleLoader implements Filter
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
 
-    public static final double EARLIEST_UPGRADE_VERSION = 17.2;
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
@@ -1107,8 +1107,8 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            if (coreContext.getInstalledVersion() < EARLIEST_UPGRADE_VERSION)
-                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + EARLIEST_UPGRADE_VERSION + " or greater.");
+            if (coreContext.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
+                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + Constants.getEarliestUpgradeVersion() + " or greater.");
 
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }
