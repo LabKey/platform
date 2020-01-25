@@ -190,6 +190,7 @@ export class App extends React.Component<any, State> {
                 onComplete={this.onComplete}
                 onChange={this.onChange}
                 useTheme={true}
+                appIsValidMsg={validatePlateMetadata}
             />
         )
     }
@@ -222,3 +223,17 @@ export class App extends React.Component<any, State> {
     }
 }
 
+/**
+ * Users aren't allowed to remove the plate template run property if the plate metadata property
+ * is enabled.
+ */
+export function validatePlateMetadata(protocolModel: AssayProtocolModel): string {
+
+    if (protocolModel.allowPlateMetadata && protocolModel.plateMetadata) {
+        const runDomain = protocolModel.getDomainByNameSuffix("Run");
+        if (runDomain && runDomain.domainId !== 0) {
+            if (!runDomain.fields.some(field => field.name === 'PlateTemplate'))
+                return 'The Plate Template field cannot be removed from this assay.'
+        }
+    }
+}

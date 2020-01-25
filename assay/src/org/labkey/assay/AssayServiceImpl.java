@@ -258,6 +258,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         result.setEditableRuns(provider.isEditableRuns(protocol));
         result.setBackgroundUpload(provider.isBackgroundUpload(protocol));
         result.setQcEnabled(provider.isQCEnabled(protocol));
+        result.setPlateMetadata(provider.isPlateMetadataEnabled(protocol));
 
         // data transform scripts
         List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
@@ -289,6 +290,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
         // if the provider supports QC and if there is a valid QC service registered
         result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
+
+        result.setAllowPlateMetadata(provider.supportsPlateMetadata());
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         for (GWTDomain d : result.getDomains())
@@ -486,6 +489,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     provider.setEditableRuns(protocol, assay.isEditableRuns());
                     provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
                     provider.setQCEnabled(protocol, assay.isQcEnabled());
+                    provider.setPlateMetadataEnabled(protocol, assay.isPlateMetadata());
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
                     // get the autoCopyTargetContainer from either the id on the assay object entityId

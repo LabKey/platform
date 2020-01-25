@@ -186,12 +186,11 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 {
                     try
                     {
-                        DomainProperty method = addProperty(runDomain, PLATE_TEMPLATE_PROPERTY_NAME, PLATE_TEMPLATE_PROPERTY_CAPTION, PropertyType.INTEGER);
-                        method.setLookup(new Lookup(protocol.getContainer(), AssaySchema.NAME + "." + getResourceName(), TsvProviderSchema.PLATE_TEMPLATE_TABLE));
-                        method.setRequired(true);
-                        method.setShownInUpdateView(false);
-                        method.getPropertyDescriptor().setPropertyURI(runDomain.getTypeURI() + "#" + PLATE_TEMPLATE_PROPERTY_NAME);
-
+                        DomainProperty template = addProperty(runDomain, PLATE_TEMPLATE_PROPERTY_NAME, PLATE_TEMPLATE_PROPERTY_CAPTION, PropertyType.INTEGER);
+                        template.setLookup(new Lookup(protocol.getContainer(), AssaySchema.NAME + "." + getResourceName(), TsvProviderSchema.PLATE_TEMPLATE_TABLE));
+                        template.setRequired(true);
+                        template.setShownInUpdateView(false);
+                        template.getPropertyDescriptor().setPropertyURI(runDomain.getTypeURI() + "#" + PLATE_TEMPLATE_PROPERTY_NAME);
                         runDomain.save(User.getSearchUser());
                     }
                     catch (ChangePropertyDescriptorException e)

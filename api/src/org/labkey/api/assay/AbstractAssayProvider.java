@@ -1567,7 +1567,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public boolean isPlateMetadataEnabled(ExpProtocol protocol)
     {
-        return supportsPlateMetadata();
-//        return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
+        return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
     }
 }
