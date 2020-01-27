@@ -97,12 +97,6 @@ public class InputForeignKey extends LookupForeignKey
             }
 
             @Override
-            public String getSchemaName()
-            {
-                return "exp";
-            }
-
-            @Override
             public String getTitleColumn()
             {
                 return "LSID";
@@ -118,8 +112,8 @@ public class InputForeignKey extends LookupForeignKey
 
     private TableInfo createLookupTableInfo()
     {
-        ExpProtocolApplicationTable ret = ExperimentService.get().createProtocolApplicationTable(ExpSchema.TableType.ProtocolApplications.toString(), _schema, null);
-        ((ExpProtocolApplicationTableImpl)ret).setPublic(false);
+        ExpProtocolApplicationTableImpl ret = ExperimentServiceImpl.get().createProtocolApplicationTable(ExpSchema.TableType.ProtocolApplications.toString(), _schema, null);
+        ret.setPublic(false);
         ret.setContainerFilter(_filter);
         SamplesSchema samplesSchema = _schema.getSamplesSchema();
         for (String role : getDataInputs())

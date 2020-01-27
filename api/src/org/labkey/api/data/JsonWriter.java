@@ -304,17 +304,11 @@ public class JsonWriter
             lookupInfo.put("isPublic", isPublic);
             lookupInfo.put("public", isPublic);
             String queryName;
-            String schemaName;
+            String schemaName = lookupTable.getPublicSchemaName();
             if (isPublic)
-            {
                 queryName = lookupTable.getPublicName();
-                schemaName = lookupTable.getPublicSchemaName();
-            }
             else
-            {
                 queryName = lookupTable.getName();
-                schemaName = lookupTable.getSchemaName();
-            }
 
             // Duplicate info with different property names for backwards compatibility
             lookupInfo.put("queryName", queryName);
