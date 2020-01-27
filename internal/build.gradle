@@ -1,10 +1,13 @@
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
+// TODO java-library?
 apply plugin: 'org.labkey.javaModule'
 
 dependencies {
+   // TODO why isn't it complaining about the compile config here?
    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getApiProjectPath(project.gradle))
+   BuildUtils.addLabKeyDependency(project: project, config: "dedupe", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "external")
    compile "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
    compile "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
    compile  "org.labkey:labkey-client-api:${labkeyVersion}"
