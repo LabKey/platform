@@ -143,6 +143,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         return sql;
     }
 
+    @Override
     public String getPublicSchemaName()
     {
         return _schemaName == null ? super.getPublicSchemaName() : _schemaName;
