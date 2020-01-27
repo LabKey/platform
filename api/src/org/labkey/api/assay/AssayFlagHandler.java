@@ -77,6 +77,10 @@ public interface AssayFlagHandler
 
     BaseColumnInfo createQCEnabledColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName);
 
+    /**
+     * Give assay flag handlers an opportunity to change the assay query schema QCFlags table when it is created,
+     * e.g., adding a query foreign to the wrapped exp.assayqcflag.IntKey1 column.
+     */
     void fixupQCFlagTable(ExpQCFlagTable table, AssayProvider provider, ExpProtocol assayProtocol);
 
     /**
