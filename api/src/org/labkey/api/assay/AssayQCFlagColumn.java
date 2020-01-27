@@ -26,9 +26,9 @@ import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
@@ -53,7 +53,7 @@ public class AssayQCFlagColumn extends ExprColumn
     private String _schemaName;
     private boolean _editable;
 
-    public AssayQCFlagColumn(TableInfo parent, String schemaName, boolean editable)
+    public AssayQCFlagColumn(ExpRunTable parent, String schemaName, boolean editable)
     {
         super(parent, NAME, createSQLFragment(parent.getSqlDialect(), "FlagType"), JdbcType.VARCHAR);
         setLabel("QC Flags");
