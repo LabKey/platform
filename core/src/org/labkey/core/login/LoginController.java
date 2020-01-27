@@ -2572,48 +2572,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    public static ActionURL getConfigureDbLoginURL(boolean reshow)
-    {
-        ActionURL url = new ActionURL(ConfigureDbLoginAction.class, ContainerManager.getRoot());
-
-        if (reshow)
-            url.addParameter("reshow", "1");
-
-        return url;
-    }
-
-    @RemoveIn20_1
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ConfigureDbLoginAction extends FormViewAction<Config>
-    {
-        public ModelAndView getView(Config form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/core/login/configureDbLogin.jsp", form);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            getUrls().appendOldAuthenticationNavTrail(root).addChild("Configure Database Authentication");
-            setHelpTopic(new HelpTopic("configDbLogin"));
-            return root;
-        }
-
-        public void validateCommand(Config form, Errors errors)
-        {
-        }
-
-        public boolean handlePost(Config form, BindException errors)
-        {
-            DbLoginManager.saveProperties(form);
-            return true;
-        }
-
-        public ActionURL getSuccessURL(Config form)
-        {
-            return getConfigureDbLoginURL(true);  // Redirect to same action -- want to reload props from database
-        }
-    }
-
     @RequiresPermission(AdminOperationsPermission.class)
     public class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
     {
@@ -2763,51 +2721,6 @@ public class LoginController extends SpringActionController
     }
 
     @RemoveIn20_1
-    public static class Config extends ReturnUrlForm
-    {
-        public final PasswordRule currentRule = DbLoginManager.getPasswordRule();
-        public final PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
-
-        public boolean reshow = false;
-
-        private String strength = "Weak";
-        private String expiration = "Never";
-
-        public boolean isReshow()
-        {
-            return reshow;
-        }
-
-        public void setReshow(boolean reshow)
-        {
-            this.reshow = reshow;
-        }
-
-        public String getStrength()
-        {
-            return strength;
-        }
-
-        @SuppressWarnings("unused")
-        public void setStrength(String strength)
-        {
-            this.strength = strength;
-        }
-
-        public String getExpiration()
-        {
-            return expiration;
-        }
-
-        @SuppressWarnings("unused")
-        public void setExpiration(String expiration)
-        {
-            this.expiration = expiration;
-        }
-    }
-
-
-    @RemoveIn20_1
     public static class AuthLogoBean
     {
         public final @Nullable SSOAuthenticationConfiguration configuration;
@@ -2907,7 +2820,6 @@ public class LoginController extends SpringActionController
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
                 controller.new ConfigureAction(),
-                controller.new ConfigureDbLoginAction(),
                 controller.new InitialMountAction(),
                 controller.new GetDbLoginPropertiesAction()
             );
