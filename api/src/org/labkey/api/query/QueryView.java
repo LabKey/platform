@@ -2590,7 +2590,7 @@ public class QueryView extends WebPartView<Object>
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
                                  List<FieldKey> excludeColumns,
-                                 Map<String, String> renameColumns,
+                                 @NotNull Map<String, String> renameColumns,
                                  @Nullable String prefix
                                  )
             throws IOException
@@ -2599,7 +2599,8 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType) : getExcelWriter(docType, renameColumns))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
+                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();
