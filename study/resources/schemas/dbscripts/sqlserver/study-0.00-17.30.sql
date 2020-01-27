@@ -1562,3 +1562,22 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
 ALTER TABLE study.dataset ADD UseTimeKeyField BIT NOT NULL DEFAULT 0;
 ALTER TABLE study.VisitTag ADD Category NVARCHAR(200);
+
+/* study-17.20-17.30.sql */
+
+ALTER TABLE study.AssaySpecimen ADD DataSet INTEGER;
+
+EXEC core.fn_dropifexists 'Events','codedprocs','CONSTRAINT','FK_CODEDPROCS_EVENTS_QCSTATE'
+EXEC core.fn_dropifexists 'Pkgs','codedprocs','CONSTRAINT','FK_CODEDPROCS_PKGS_QCSTATE'
+
+EXEC core.executeJavaUpgradeCode 'moveQCStateToCore';
+
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_sequencenum';
+EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_visitrowid';
+
+-- For Resync perf
+CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (container, participantid, sequencenum, ParticipantSequenceNum);
+
+-- Adding as an explicit index because it got lost on postgresql as an include column
+CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);

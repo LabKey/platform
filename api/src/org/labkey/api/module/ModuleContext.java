@@ -118,11 +118,13 @@ public class ModuleContext implements Cloneable
         return getModuleState().describeModuleState(this, _installedVersion, targetVersion);
     }
 
+    private static DecimalFormat df2 = new DecimalFormat("0.00#");
     private static DecimalFormat df3 = new DecimalFormat("0.000");
 
     public static String formatVersion(double version)
     {
-        return df3.format(version);
+        // Use three-digit minor versions for 20.000 and later, otherwise two-digit + optional third
+        return (version < 20 ? df2 : df3).format(version);
     }
 
     public ModuleLoader.ModuleState getModuleState()

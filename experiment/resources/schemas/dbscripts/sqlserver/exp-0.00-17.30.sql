@@ -1177,3 +1177,19 @@ GO
 
 ALTER TABLE exp.list ADD FileAttachmentIndex BIT CONSTRAINT DF__list__FileAttachmentIndex DEFAULT 0 NOT NULL;
 GO
+
+/* exp-17.20-17.30.sql */
+
+ALTER TABLE exp.PropertyDescriptor ADD Phi NVARCHAR(20) NOT NULL DEFAULT 'NotPHI';
+GO
+UPDATE exp.PropertyDescriptor SET Phi='Limited' WHERE Protected='TRUE';
+GO
+
+EXEC core.fn_dropifexists 'PropertyDescriptor', 'exp', 'COLUMN', 'Protected';
+GO
+
+ALTER TABLE exp.PropertyDescriptor ADD RedactedText NVARCHAR(450) NULL;
+GO
+
+ALTER TABLE exp.PropertyDescriptor ADD mvIndicatorStorageColumnName NVARCHAR(120);
+GO
