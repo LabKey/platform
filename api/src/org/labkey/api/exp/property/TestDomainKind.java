@@ -163,7 +163,7 @@ public class TestDomainKind extends DomainKind
     }
 
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
         throw new UnsupportedOperationException();
     }

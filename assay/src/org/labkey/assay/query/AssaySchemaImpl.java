@@ -84,7 +84,9 @@ public class AssaySchemaImpl extends AssaySchema
         @Override
         public QuerySchema createSchema(DefaultSchema schema, Module module)
         {
-            return new AssaySchemaImpl(schema.getUser(), schema.getContainer(), null);
+            var ret = new AssaySchemaImpl(schema.getUser(), schema.getContainer(), null);
+            ret.setDefaultSchema(schema);
+            return ret;
         }
     }
 
@@ -120,6 +122,7 @@ public class AssaySchemaImpl extends AssaySchema
         return _protocols;
     }
 
+    // CONSIDER add DefaultSchema parameter to getSchema()!
     @Override
     public QuerySchema getSchema(String name)
     {
@@ -130,7 +133,9 @@ public class AssaySchemaImpl extends AssaySchema
         {
             if (name.equalsIgnoreCase(provider.getResourceName()))
             {
-                return getProviderSchema(provider);
+                var ret = getProviderSchema(provider);
+                ret.setDefaultSchema(getDefaultSchema());
+                return ret;
             }
         }
 
@@ -138,10 +143,17 @@ public class AssaySchemaImpl extends AssaySchema
         for (AssayProvider provider : getAllProviders())
         {
             if (name.equalsIgnoreCase(provider.getName()))
-                return getProviderSchema(provider);
+            {
+                var ret = getProviderSchema(provider);
+                ret.setDefaultSchema(getDefaultSchema());
+                return ret;
+            }
         }
 
-        return super.getSchema(name);
+        var ret = super.getSchema(name);
+        if (null != ret)
+            ret.setDefaultSchema(getDefaultSchema());
+        return ret;
     }
 
     // Get the cached AssayProviderSchema for a provider or create a new one.

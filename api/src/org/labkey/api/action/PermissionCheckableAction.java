@@ -113,12 +113,35 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
     }
 
+    protected boolean isGet()
+    {
+        return "GET".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPost()
+    {
+        return "POST".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPut()
+    {
+        return "PUT".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isDelete()
+    {
+        return "DELETE".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPatch()
+    {
+        return "PATCH".equals(getViewContext().getRequest().getMethod());
+    }
+
 
     private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
     {
         ViewContext context = getViewContext();
-        String method = context.getRequest().getMethod();
-        boolean isPOST = "POST".equals(method);
 
         Container c = context.getContainer();
         User user = context.getUser();
@@ -165,7 +188,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             if (!c.isRoot())
                 throw new NotFoundException();
 
-            if (isPOST)
+            if (isPost())
                 permissionsRequired.add(adminConsoleAction.value());
             else
                 permissionsRequired.add(AdminReadPermission.class);

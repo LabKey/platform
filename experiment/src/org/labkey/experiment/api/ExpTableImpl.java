@@ -60,6 +60,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     private final ExpObjectImpl _objectType;
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
+    private ExpSchema _expSchema = null;
 
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
@@ -344,11 +345,14 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
     public ExpSchema getExpSchema()
     {
-        if (_userSchema instanceof ExpSchema)
+        if (_expSchema == null)
         {
-            return (ExpSchema)_userSchema;
+            if (_userSchema instanceof ExpSchema)
+                _expSchema = (ExpSchema)_userSchema;
+            else
+                _expSchema = (ExpSchema)_userSchema.getDefaultSchema().getSchema(ExpSchema.SCHEMA_NAME);
         }
-        return new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
+        return _expSchema;
     }
 
     @Override

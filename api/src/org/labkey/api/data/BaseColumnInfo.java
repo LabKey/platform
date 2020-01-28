@@ -575,6 +575,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     {
         if (_displayField != null)
             return _displayField;
+        if (isUnselectable())
+            return null;
         ForeignKey fk = getFk();
         if (fk == null)
             return null;
@@ -707,6 +709,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         if (null == getFk())
             return null;
         return getFk().getLookupTableInfo();
+    }
+
+    @Override
+    public TableDescription getFkTableDescription()
+    {
+        if (null == getFk())
+            return null;
+        return getFk().getLookupTableDescription();
     }
 
 

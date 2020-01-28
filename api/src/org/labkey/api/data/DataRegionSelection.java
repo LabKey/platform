@@ -24,8 +24,10 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -277,19 +279,10 @@ public class DataRegionSelection
         view.getSettings().setShowRows(ShowRows.ALL);
         view.getSettings().setOffset(Table.NO_OFFSET);
 
-        // remove unnecessary columns and force the pk column(s) into the default list of columns
-        rgn.clearColumns();
-        List<String> colNames = rgn.getRecordSelectorValueColumns();
-        if (colNames == null)
-            colNames = table.getPkColumnNames();
-        for (String colName : colNames)
-        {
-            if (null == rgn.getDisplayColumn(colName))
-                rgn.addColumns(table, colName);
-        }
-
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
+
+        setDataRegionColumnsForSelection(rgn, rc, view, table );
 
         try (Timing ignored = MiniProfiler.step("getSelected"); Results results = rgn.getResults(rc))
         {
@@ -319,6 +312,33 @@ public class DataRegionSelection
         return setSelectionForAll(view, form.getQuerySettings().getSelectionKey(), checked);
     }
 
+    private static List<String> setDataRegionColumnsForSelection(DataRegion rgn, RenderContext rc, QueryView view, TableInfo table)
+    {
+        // force the pk column(s) into the default list of columns
+        List<String> selectorColNames = rgn.getRecordSelectorValueColumns();
+        if (selectorColNames == null)
+            selectorColNames = table.getPkColumnNames();
+        List<ColumnInfo> selectorColumns = new ArrayList<>();
+        for (String colName : selectorColNames)
+        {
+            if (null == rgn.getDisplayColumn(colName)) {
+                selectorColumns.add(table.getColumn(colName));
+            }
+        }
+        ActionURL url = view.getSettings().getSortFilterURL();
+
+        Sort sort = rc.buildSort(table, url, rgn.getName());
+        SimpleFilter filter = rc.buildFilter(table, rc.getColumnInfos(rgn.getDisplayColumns()), url, rgn.getName(), Table.ALL_ROWS, 0, sort);
+
+        // Issue 36600: remove unnecessary columns for performance purposes
+        rgn.clearColumns();
+        // Issue 39011: then add back the columns needed by the filters, if any
+        Collection<ColumnInfo> filterColumns = QueryService.get().ensureRequiredColumns(table, selectorColumns, filter, sort, null);
+        rgn.addColumns(selectorColumns);
+        rgn.addColumns(filterColumns);
+        return selectorColNames;
+    }
+
     public static int setSelectionForAll(QueryView view, String key, boolean checked) throws IOException
     {
         // Turn off features of QueryView
@@ -340,19 +360,10 @@ public class DataRegionSelection
         view.getSettings().setShowRows(ShowRows.ALL);
         view.getSettings().setOffset(Table.NO_OFFSET);
 
-        // remove unnecessary columns and force the pk column(s) into the default list of columns
-        rgn.clearColumns();
-        List<String> colNames = rgn.getRecordSelectorValueColumns();
-        if (colNames == null)
-            colNames = table.getPkColumnNames();
-        for (String colName : colNames)
-        {
-            if (null == rgn.getDisplayColumn(colName))
-                rgn.addColumns(table, colName);
-        }
-
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
+
+        List<String> colNames = setDataRegionColumnsForSelection(rgn, rc, view, table );
 
         try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
