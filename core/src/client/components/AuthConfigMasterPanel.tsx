@@ -169,7 +169,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                             description={this.state.addModalType + ' Configuration'}
                             enabled={true}
                             canEdit={this.props.canEdit}
-                            title={'New ' + this.state.addModalType + ' Authentication'}
+                            title={'New ' + this.state.addModalType + ' Configuration'}
                             provider={this.state.addModalType}
                             updateAuthRowsAfterSave={updateAuthRowsAfterSave}
                             closeModal={() => {

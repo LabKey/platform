@@ -33,7 +33,7 @@ interface State {
     auth_header_logo?: string;
     auth_login_page_logo?: string;
     deletedLogos?: string[];
-    changedFiles?: string[];
+    changedFiles?: any; // Note to reviewer: should be string[], but am receiving 'includes does not exist on type string[]' TS error
     emptyRequiredFields?: null | string[];
     servers?: string;
     principalTemplate?: string;
@@ -148,17 +148,17 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
     };
 
     onFileChange = (attachment, logoType: string) => {
-        const changedFiles = this.state.changedFiles;
-        // changedFiles.push(logoType);
-
-        this.setState(() => ({ [logoType]: attachment.first(), changedFiles }), () => console.log(changedFiles));
+        this.setState(() => ({ [logoType]: attachment.first() }));
     };
 
     onFileRemoval = (name: string) => {
-        const changedFiles = this.state.changedFiles;
-        changedFiles.push(name);
+        let changedFiles = this.state.changedFiles;
+        if (!changedFiles.includes(name)){
+            changedFiles.push(name);
+        }
 
-        this.setState(() => ({ [name]: '', changedFiles }), () => {console.log(changedFiles)});
+        console.log(changedFiles);
+        this.setState(() => ({ [name]: '', changedFiles }));
     };
 
     dynamicallyCreateFields = (fields: AuthConfigField[], expandableOpen) => {
@@ -253,14 +253,14 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             sasl: this.state.SASL,
         };
         const isAddNewConfig = this.props.title;
-        const modalTitle = isAddNewConfig ? this.props.title : this.props.description;
+        const modalTitle = isAddNewConfig ? 'Add ' + this.props.title : 'Configure ' + this.props.description;
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
 
         return (
             <Modal show={true} onHide={() => {}}>
                 <Modal.Header>
                     <Modal.Title>
-                        {'Configure ' + modalTitle}
+                        {modalTitle}
                         <FontAwesomeIcon
                             size="sm"
                             icon={faTimes}

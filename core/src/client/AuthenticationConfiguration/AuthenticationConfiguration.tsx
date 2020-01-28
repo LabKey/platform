@@ -108,10 +108,6 @@ export class App extends PureComponent<{}, State> {
         this.setState(() => ({ dirty }));
     };
 
-    test = (a) => {
-        return a + 1;
-    };
-
     saveChanges = (): void => {
         const form = new FormData();
 

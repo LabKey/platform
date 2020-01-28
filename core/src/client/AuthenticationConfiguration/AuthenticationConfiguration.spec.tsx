@@ -67,7 +67,6 @@ describe('<AuthenticationConfiguration/>', () => {
     //     // expect(spy).toHaveBeenCalled();
     // });
 
-
     test('Making global checkbox fields dirty sets dirtiness flag, brings up alert message', () => {
         let checkbox = wrapper.find(".fa-check-square").at(0);
         checkbox.simulate('click');
