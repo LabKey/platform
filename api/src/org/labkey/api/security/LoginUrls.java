@@ -17,15 +17,12 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
@@ -50,11 +47,4 @@ public interface LoginUrls extends UrlProvider
     ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile);
 
     NavTree appendAuthenticationNavTrail(NavTree root);
-
-    @RemoveIn20_1
-    ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors);
-    @RemoveIn20_1
-    ActionURL getOldConfigureURL();
-    @RemoveIn20_1
-    NavTree appendOldAuthenticationNavTrail(NavTree root);
 }

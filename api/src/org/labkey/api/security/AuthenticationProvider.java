@@ -89,16 +89,10 @@ public interface AuthenticationProvider
         return null;
     }
 
-    @RemoveIn20_1
+    @RemoveIn20_1  // Not used -- but need to remove usages in compliance and CDS, which don't have a multiAuthUI branch
     default @Nullable ActionURL getConfigurationLink()
     {
         return null;
-    }
-
-    @RemoveIn20_1
-    default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
-    {
-        return getConfigurationLink();
     }
 
     /**

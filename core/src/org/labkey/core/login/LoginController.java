@@ -32,7 +32,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
@@ -45,20 +44,35 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
-import org.labkey.api.security.AuthenticationManager.AuthLogoType;
+import org.labkey.api.security.AuthenticationConfigurationCache;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
-import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.TokenAuthenticationManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -116,8 +130,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
+import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 import static org.labkey.api.util.PageFlowUtil.urlProvider;
@@ -167,20 +181,6 @@ public class LoginController extends SpringActionController
         public ActionURL getConfigureURL()
         {
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
-        }
-
-        @Override
-        public ActionURL getOldConfigureURL()
-        {
-            return new ActionURL(OldConfigureAction.class, ContainerManager.getRoot());
-        }
-
-        @Override
-        public NavTree appendOldAuthenticationNavTrail(NavTree root)
-        {
-            root.addChild("Admin Console", AdminController.getShowAdminURL());
-            root.addChild("Authentication (Deprecated)", getOldConfigureURL());
-            return root;
         }
 
         @Override
@@ -302,13 +302,6 @@ public class LoginController extends SpringActionController
                     url.replaceParameter("urlhash", "#" + fragment);
             }
             return url;
-        }
-
-        @Override
-        public ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors)
-        {
-            SSOAuthenticationConfiguration<?> configuration = null != rowId ? AuthenticationManager.getSSOConfiguration(rowId) : null;
-            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(configuration, reshow, formatInTable), errors);
         }
     }
 
@@ -2359,24 +2352,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RemoveIn20_1
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class OldConfigureAction extends SimpleViewAction<ReturnUrlForm>
-    {
-        @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic(new HelpTopic("authenticationModule"));
-            return getUrls().appendOldAuthenticationNavTrail(root);
-        }
-    }
-
     @RequiresPermission(AdminOperationsPermission.class)
     public class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
     {
@@ -2493,7 +2468,7 @@ public class LoginController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(AuthParameterForm form)
         {
-            return getUrls().getOldConfigureURL();
+            return null;
         }
     }
 
@@ -2535,40 +2510,6 @@ public class LoginController extends SpringActionController
         public void setConfiguration(int configuration)
         {
             _configuration = configuration;
-        }
-    }
-
-    @RemoveIn20_1
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class OldDeleteConfigurationAction extends FormHandlerAction<DeleteConfigurationForm>
-    {
-        @Override
-        public void validateCommand(DeleteConfigurationForm form, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(DeleteConfigurationForm form, BindException errors) throws Exception
-        {
-            AuthenticationManager.deleteConfiguration(form.getConfiguration());
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(DeleteConfigurationForm form)
-        {
-            return getUrls().getOldConfigureURL();
-        }
-    }
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
-    {
-        @Override
-        public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
-        {
-            AuthenticationManager.deleteConfiguration(form.getConfiguration());
-            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -2720,52 +2661,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RemoveIn20_1
-    public static class AuthLogoBean
-    {
-        public final @Nullable SSOAuthenticationConfiguration configuration;
-        public final String headerLogo;
-        public final String loginPageLogo;
-        public final boolean reshow;
-        public final boolean formatInTable;
-
-        private AuthLogoBean(@Nullable SSOAuthenticationConfiguration configuration, boolean reshow, boolean formatInTable)
-        {
-            this.configuration = configuration;
-            this.reshow = reshow;
-            this.formatInTable = formatInTable;
-            headerLogo = getAuthLogoHtml(AuthLogoType.HEADER);
-            loginPageLogo = getAuthLogoHtml(AuthLogoType.LOGIN_PAGE);
-        }
-
-        public String getAuthLogoHtml(AuthLogoType logoType)
-        {
-            if (null != configuration)
-            {
-                LinkFactory factory = configuration.getLinkFactory();
-                String logo = factory.getImg(logoType);
-
-                if (null != logo)
-                {
-                    StringBuilder html = new StringBuilder();
-
-                    String id1 = logoType.getFileName() + "d1";
-                    String id2 = logoType.getFileName() + "d2";
-
-                    html.append("<div id=\"").append(id1).append("\">");
-                    html.append(logo);
-                    html.append("</div>\n<div id=\"").append(id2).append("\">");
-                    html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + logoType.getFileName() + "');").toString()); // RE_CHECK
-                    html.append("</div>\n");
-
-                    return html.toString();
-                }
-            }
-
-            return "<input name=\"" + logoType.getFileName() + "\" type=\"file\" size=\"60\">";
-        }
-    }
-
     @RequiresPermission(AdminOperationsPermission.class)
     public class MigrateAuthenticationConfigurationsAction extends ConfirmAction
     {
@@ -2810,7 +2705,6 @@ public class LoginController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new DeleteConfigurationAction(),
                 controller.new MigrateAuthenticationConfigurationsAction(),
                 controller.new SaveDbLoginPropertiesAction(),
                 controller.new SaveSettingsAction(),
