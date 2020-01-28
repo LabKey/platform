@@ -33,6 +33,9 @@ interface IAppState {
     schemaName: string
     showConfirm: boolean
     submitting: boolean
+    includeWarnings: boolean
+    showWarnings: boolean
+    badDomain : DomainDesign
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
@@ -58,7 +61,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: false,
             messages,
             showConfirm: false,
-            dirty: false
+            dirty: false,
+            includeWarnings: true
         };
     }
 
@@ -92,7 +96,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     submitHandler = (navigate : boolean) => {
-        const { domain, submitting } = this.state;
+        const { domain, submitting, includeWarnings } = this.state;
 
         if (submitting) {
             return;
@@ -102,7 +106,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: true
         });
 
-        saveDomain(domain)
+        saveDomain(domain, undefined, undefined, undefined,  includeWarnings)
             .then((savedDomain) => {
 
                 this.setState(() => ({
@@ -118,15 +122,39 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }
             })
             .catch((badDomain) => {
-                this.setState(() => ({
-                    domain: badDomain,
-                    submitting: false
-                }));
+                // if there are only warnings then show ConfirmModel
+                if (badDomain.domainException.severity === "Warning") {
+                    this.setState(() => ({
+                        showWarnings : true,
+                        badDomain: badDomain
+                    }))
+                }
+                else {
+                    this.setState(() => ({
+                        domain: badDomain,
+                        submitting: false
+                    }));
+                }
             });
     };
 
     submitAndNavigate = () => {
         this.submitHandler(true);
+    };
+
+    confirmWarningAndNavigate = () => {
+        this.setState(() => ({
+            includeWarnings : false,
+            showWarnings : false,
+            submitting : false
+        }), () => {this.submitHandler(true)});
+    };
+
+    onSubmitWarningsCancel = () => {
+        this.setState(() => ({
+            showWarnings : false,
+            submitting : false
+        }))
     };
 
     onChangeHandler = (newDomain, dirty) => {
@@ -182,6 +210,32 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         )
     }
 
+    renderWarningConfirm() {
+        const { badDomain } = this.state;
+        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
+
+        let errors = badDomain.domainException.errors;
+        let question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
+        let warnings = errors.map((error) => {
+            return <div> {error.message} </div>
+        });
+        let suggestion = <p> {"See the following documentation page for further details: "}<br/>
+            <a href={rollupURI}> {"Specimen properties and rollup rules"}</a>
+                        </p>;
+
+        return (
+            <ConfirmModal
+                title='Save without resolving issues?'
+                msg={<>{question}{warnings}{suggestion}</>}
+                confirmVariant='success'
+                onConfirm={this.confirmWarningAndNavigate}
+                onCancel={this.onSubmitWarningsCancel}
+                cancelButtonText='No, edit and resolve issues'
+                confirmButtonText='Yes, save changes'
+            />
+        )
+    }
+
     renderButtons() {
         const { submitting } = this.state;
 
@@ -203,7 +257,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, messages, showConfirm } = this.state;
+        const { domain, messages, showConfirm, showWarnings } = this.state;
         const isLoading = domain === undefined && messages === undefined;
 
         if (isLoading) {
@@ -213,6 +267,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <>
                 { showConfirm && this.renderNavigateConfirm() }
+                { showWarnings && this.renderWarningConfirm() }
                 { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm

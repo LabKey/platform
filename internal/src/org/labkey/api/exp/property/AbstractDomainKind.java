@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -113,7 +114,7 @@ public abstract class AbstractDomainKind extends DomainKind
     /** @return Errors encountered during the save attempt */
     @Override
     @NotNull
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
     {
         return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }
@@ -220,7 +221,7 @@ public abstract class AbstractDomainKind extends DomainKind
     @Override
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
-        TreeSet<String> ret = new TreeSet<>();
+        CaseInsensitiveHashSet ret = new CaseInsensitiveHashSet();
         for (PropertyStorageSpec spec : getBaseProperties(domain))
             ret.add(spec.getName());
 

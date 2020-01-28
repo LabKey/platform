@@ -46,7 +46,6 @@ public class StudyApplication implements EntryPoint
         {
             MODULES.add(new DatasetImporter());
             MODULES.add(new DatasetDesigner());
-            MODULES.add(new SpecimenDesigner());
             MODULES.add(new StudyDesigner());
         }
 
@@ -106,26 +105,6 @@ public class StudyApplication implements EntryPoint
         }
     }
 
-
-    public static class SpecimenDesigner extends GWTModule
-    {
-        public SpecimenDesigner()
-        {
-            super("gwt.client.org.labkey.specimen.client.SpecimenDesigner");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.specimen.client.SpecimenDesigner().onModuleLoad();
-        }
-
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.specimen.client.SpecimenDesigner();
-        }
-    }
-
-
     public static class StudyDesigner extends GWTModule
     {
         public StudyDesigner()
@@ -175,10 +154,6 @@ public class StudyApplication implements EntryPoint
         else if ("StudyDesigner".equalsIgnoreCase(moduleName))
         {
             GWT.runAsync(new StudyDesigner());
-        }
-        else if ("SpecimenDesigner".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new SpecimenDesigner());
         }
         else
         {

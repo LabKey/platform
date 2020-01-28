@@ -112,31 +112,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return "execute";
     }
 
-    protected boolean isGet()
-    {
-        return "GET".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPost()
-    {
-        return "POST".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPut()
-    {
-        return "PUT".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isDelete()
-    {
-        return "DELETE".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPatch()
-    {
-        return "PATCH".equals(getViewContext().getRequest().getMethod());
-    }
-
     @Override
     public ModelAndView handleRequest() throws Exception
     {
@@ -459,7 +434,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         Object o = null;
 
-        if (null != obj && obj instanceof Map && ((Map)obj).containsKey(CommonParameters.apiVersion.name()))
+        if (obj instanceof Map && ((Map) obj).containsKey(CommonParameters.apiVersion.name()))
             o = ((Map)obj).get(CommonParameters.apiVersion.name());
         if (_empty(o))
             o = getProperty(CommonParameters.apiVersion.name());
