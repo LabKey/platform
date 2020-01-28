@@ -8,6 +8,7 @@ import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 
 import './authenticationConfiguration.scss';
+import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils'
 
 interface State {
     formConfigurations?: AuthConfig[];
@@ -103,21 +104,12 @@ export class App extends PureComponent<{}, State> {
     };
 
     checkIfDirty = (obj1: any, obj2: any): void => {
-        const dirty = !this.isEquivalent(obj1, obj2);
+        const dirty = !isEquivalent(obj1, obj2);
         this.setState(() => ({ dirty }));
     };
 
-    isEquivalent = (a: any, b: any): boolean => {
-        const aProps = Object.keys(a);
-        const bProps = Object.keys(b);
-
-        if (aProps.length != bProps.length) {
-            return false;
-        }
-
-        return !aProps.some(key => {
-            return a[key] !== b[key];
-        });
+    test = (a) => {
+        return a + 1;
     };
 
     saveChanges = (): void => {
@@ -153,7 +145,8 @@ export class App extends PureComponent<{}, State> {
                 alert('Error: ' + error);
             },
             success: function() {
-                window.location.href = ActionURL.buildURL('admin', 'showAdmin');
+                // window.location.href = ActionURL.buildURL('admin', 'showAdmin');
+                window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
             },
         });
     };
@@ -164,7 +157,7 @@ export class App extends PureComponent<{}, State> {
         return stateSections.filter(stateSection => {
             const newOrdering = this.getAuthConfigArray(this.state[stateSection]);
             const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[stateSection]);
-            return !this.isEquivalent(newOrdering, oldOrdering);
+            return !isEquivalent(newOrdering, oldOrdering);
         });
     };
 
@@ -181,7 +174,7 @@ export class App extends PureComponent<{}, State> {
 
         const stateSection = result.source.droppableId;
 
-        const items = this.reorder(this.state[stateSection], result.source.index, result.destination.index);
+        const items = reorder(this.state[stateSection], result.source.index, result.destination.index);
 
         this.setState(
             () => ({
@@ -192,17 +185,6 @@ export class App extends PureComponent<{}, State> {
                 this.setState(() => ({ dirty }));
             }
         );
-    };
-
-    // to reviewer: do we have a helper function for this somewhere? I started writing this
-    // using slice instead of splice for immutability, but since I'm leaning on splice's additional
-    // parameters, the slice version gets pretty yucky.
-    reorder = (list: number[], startIndex: number, endIndex: number): number[] => {
-        const result = Array.from(list);
-        const [removed] = result.splice(startIndex, 1);
-        result.splice(endIndex, 0, removed);
-
-        return result;
     };
 
     deleteAction = (configuration: number, stateSection: string): void => {
@@ -227,22 +209,24 @@ export class App extends PureComponent<{}, State> {
     };
 
     updateAuthRowsAfterSave = (config: string, stateSection: string): void => {
-        const configObj = JSON.parse(config);
-        const configId = configObj.configuration.configuration;
+        // const configObj = JSON.parse(config);
+        // const configId = configObj.configuration.configuration;
 
         const prevState = this.state[stateSection];
-        const staleAuthIndex = prevState.findIndex(element => element.configuration == configId);
+        const newState = addOrUpdateAnAuthConfig(config, prevState, stateSection);
 
-        let newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
-        if (staleAuthIndex == -1) {
-            if (stateSection == 'formConfigurations') {
-                newState = [...newState.slice(0, -1), configObj.configuration, ...newState.slice(-1)];
-            } else {
-                newState.push(configObj.configuration);
-            }
-        } else {
-            newState[staleAuthIndex] = configObj.configuration;
-        }
+        // const staleAuthIndex = prevState.findIndex(element => element.configuration == configId);
+        //
+        // let newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
+        // if (staleAuthIndex == -1) {
+        //     if (stateSection == 'formConfigurations') {
+        //         newState = [...newState.slice(0, -1), configObj.configuration, ...newState.slice(-1)];
+        //     } else {
+        //         newState.push(configObj.configuration);
+        //     }
+        // } else {
+        //     newState[staleAuthIndex] = configObj.configuration;
+        // }
 
         // Update our dirtiness information with added modal, since dirtiness should only track reordering
         const dirtinessData = this.state.dirtinessData;
@@ -281,14 +265,14 @@ export class App extends PureComponent<{}, State> {
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}
 
-                <Button className="labkey-button primary parent-panel__save-button" onClick={this.saveChanges}>
+                <Button className="labkey-button primary parent-panel__save-button" onClick={() => this.saveChanges}>
                     Save and Finish
                 </Button>
 
                 <Button
                     className="labkey-button parent-panel__cancel-button"
                     onClick={() => {
-                        window.location.href = ActionURL.buildURL('admin', 'showAdmin');
+                        window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
                     }}>
                     Cancel
                 </Button>

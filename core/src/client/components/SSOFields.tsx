@@ -13,7 +13,7 @@ interface Props {
     canEdit?: boolean;
 }
 
-export default class SSOFields extends PureComponent<Props> {
+export class SSOFields extends PureComponent<Props> {
     render() {
         return (
             <>
@@ -57,7 +57,7 @@ interface ImgFileAttachForm_State {
     imageUrl: string;
 }
 
-class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, ImgFileAttachForm_State> {
+export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, ImgFileAttachForm_State> {
     constructor(props) {
         super(props);
         this.state = {
@@ -103,7 +103,7 @@ class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_Props, 
                                             (this.props.fileTitle == 'auth_header_logo'
                                                 ? 'sso-fields__delete-img--header-logo'
                                                 : 'sso-fields__delete-img--page-logo')
-                                            + ' sso-fields__delete-img'
+                                            + ' sso-fields__delete-img clickable'
                                         }
                                         icon={faTimesCircle}
                                         color="#d9534f"

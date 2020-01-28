@@ -79,7 +79,10 @@
       "/node_modules/"
     ],
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-    "preset": "ts-jest"
+    "preset": "ts-jest",
+    "moduleNameMapper":{
+      "\\.(css|less|sass|scss)$": "./test/styleMock.ts"
+    }
   },
   "dependencies": {
     "@fortawesome/free-regular-svg-icons": "5.11.2",

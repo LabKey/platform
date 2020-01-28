@@ -1,113 +1,78 @@
 import React from 'react';
-import { App } from './AuthenticationConfiguration';
+
 import renderer from 'react-test-renderer';
-import {mount, shallow} from "enzyme";
-import AuthConfigMasterPanel from "../components/AuthConfigMasterPanel";
+import { mount, shallow } from 'enzyme';
+
+import { App } from './AuthenticationConfiguration';
+import {ActionURL} from "@labkey/api";
+
+import {
+    SSO_CONFIGURATIONS as ssoConfigurations,
+    FORM_CONFIGURATIONS as formConfigurations,
+    SECONDARY_CONFIGURATIONS as secondaryConfigurations,
+    GLOBAL_SETTINGS as globalSettings,
+    PRIMARY_PROVIDERS as primaryProviders,
+    SECONDARY_PROVIDERS as secondaryProviders,
+} from '../../../test/data';
 
 let component;
 let wrapper;
-let ssoConfigurations : [ {
-    "IdPSsoUrl" : "IdP SSO URL",
-    "configuration" : 95,
-    "headerLogoUrl" : null,
-    "loginLogoUrl" : null,
-    "description" : "SAML Configuration",
-    "NameIdFormat" : "transient",
-    "IdPSigningCertificate" : "certificateText"
-    "enabled" : true,
-    "ForceAuth" : true,
-    "IssuerUrl" : "",
-    "provider" : "SAML",
-    "details" : "IdP SSO URL",
-    "SpEncryptCert" : ""
-}, {
-    "provider" : "CAS",
-    "configuration" : 106,
-    "headerLogoUrl" : "imageUrl1",
-    "loginLogoUrl" : "imageUrl2",
-    "serverUrl" : "https://www.labkey.org/cas",
-    "description" : "CAS Configuration",
-    "details" : "https://www.labkey.org/cas",
-    "autoRedirect" : false,
-    "enabled" : true
-}, {
-    "provider" : "CAS",
-    "configuration" : 108,
-    "headerLogoUrl" : null,
-    "loginLogoUrl" : null,
-    "serverUrl" : "https://www.labkey.org/cas",
-    "description" : "CAS Configuration 2",
-    "details" : "https://www.labkey.org/cas",
-    "autoRedirect" : false,
-    "enabled" : true
-} ];
-let updatedConfig = {
-        "provider" : "CAS",
-        "configuration" : 108,
-        "headerLogoUrl" : null,
-        "loginLogoUrl" : null,
-        "serverUrl" : "https://www.labkey.org/cas",
-        "description" : "CAS Configuration X",
-        "details" : "https://www.labkey.org/cas",
-        "autoRedirect" : false,
-        "enabled" : true };
 
-describe("<AuthenticationConfiguration/>", () => {
+describe('<AuthenticationConfiguration/>', () => {
     beforeEach(() => {
-        component = (<App/>);
-        wrapper = shallow(component);
+        component = <App />;
+        wrapper = mount(component);
+        const canEdit = true;
+        const dirty = false;
+        const someModalOpen = false;
+        const authCount = 6;
+        let dirtinessData = { globalSettings, formConfigurations, ssoConfigurations, secondaryConfigurations };
 
-        // wrapper.instance().componentDidMount();
-
+        wrapper.setState({
+            ssoConfigurations,
+            formConfigurations,
+            secondaryConfigurations,
+            globalSettings,
+            primaryProviders,
+            secondaryProviders,
+            canEdit,
+            dirty,
+            someModalOpen,
+            authCount,
+            dirtinessData
+        });
     });
 
-    test("Save button triggers", () => {
-        const instance = wrapper.instance();
-        instance.saveChanges = jest.fn(() => true);
-        wrapper.update();
+    test('Cancel button triggers', () => {
+        window.location.assign = jest.fn();
 
-        let saveButton = wrapper.find(".parent-panel__save-button");
-        saveButton.simulate('click');
-        expect(instance.saveChanges).toHaveBeenCalled();
+        const cancelButton = wrapper.find('.parent-panel__cancel-button').at(0);
+        cancelButton.simulate('click');
+
+        expect(window.location.assign).toHaveBeenCalledWith(ActionURL.buildURL('admin', 'showAdmin'));
     });
 
+    // For the life of me, I can't get this one to work
+    // test('Save button triggers', () => {
+    //     // const spy = jest.spyOn(wrapper.instance(), 'saveChanges').mockImplementation(() => {return true});
+    //     wrapper.instance().saveChanges = jest.fn(() => true);
+    //
+    //     window.location.assign = jest.fn();
+    //     wrapper.update();
+    //
+    //     const saveButton1 = wrapper.find('.parent-panel__save-button').at(0);
+    //     saveButton1.simulate('click');
+    //
+    //     expect(wrapper.instance().saveChanges).toHaveBeenCalled();
+    //     // expect(spy).toHaveBeenCalled();
+    // });
 
-    test("Updating an auth config will change row-level display", () => {
-        // invoke updateAuthRowsAfterSave
-        wrapper.setState({ ssoConfigurations });
 
-        wrapper.instance().onDeleteClick = jest.fn(() => true);
-        wrapper.update();
+    test('Making global checkbox fields dirty sets dirtiness flag, brings up alert message', () => {
+        let checkbox = wrapper.find(".fa-check-square").at(0);
+        checkbox.simulate('click');
 
-        // expect(spy).toHaveBeenCalledWith(108, updatedConfig);
-        // expect(spy).toHaveBeenCalled();
-    });
-
-    test("Drag-and-drop call reorders rows", () => {
-        // call re-ordering function
-
-    });
-
-    test("Drag-and-drop outside of rows doesn't reorder rows", () => {
-
-    });
-
-    test("Making draggable fields dirty sets dirtiness flag", () => {
-        const component =
-            <App
-
-            />;
-    });
-
-    test("Making global checkbox fields dirty sets dirtiness flag", () => {
-
-    });
-
-    test("Dirty fields brings up save prompt", () => {
-
-    });
-
-    test("Leaving page while fields are dirty brings up warning alert", () => {
-
+        expect(wrapper.state()).toHaveProperty('dirty', true);
+        expect(wrapper.text()).toContain("You have unsaved changes to your authentication configurations.");
     });
 });

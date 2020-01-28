@@ -141,7 +141,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       type="checkbox"
       value={false}
     />
-    <SSOFields
+    <Component
       canEdit={true}
       handleDeleteLogo={[Function]}
       onFileChange={[Function]}
@@ -336,7 +336,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       type="checkbox"
       value={false}
     />
-    <SSOFields
+    <Component
       canEdit={false}
       handleDeleteLogo={[Function]}
       onFileChange={[Function]}
@@ -373,6 +373,636 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
         disabled={false}
       >
         Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={true}
+      caption="Integration Key"
+      defaultValue=""
+      description="Your Labkey Admin with a Duo administrative account should have generated this key."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="integrationKey"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={true}
+      caption="Secret Key"
+      defaultValue=""
+      description="Your Labkey Admin with a Duo administrative account should have generated this key."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="1"
+      name="secretKey"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={true}
+      caption="API Hostname"
+      defaultValue=""
+      description="Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="2"
+      name="apiHostname"
+      required={true}
+      type="input"
+      value=""
+    />
+    <Option
+      canEdit={true}
+      caption="User Identifier"
+      defaultValue="UserID"
+      description="Choose the way LabKey will match with Duo accounts."
+      handleChange={[Function]}
+      key="3"
+      name="userIdentifier"
+      options={
+        Object {
+          "FullEmailAddress": "Full Email Address",
+          "UserID": "User ID",
+          "UserName": "User Name",
+        }
+      }
+      required={true}
+      type="options"
+      value="UserID"
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor"
+          target="_blank"
+        >
+          More about Duo 2 Factor authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={true}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={false}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={false}
+      caption="Integration Key"
+      defaultValue=""
+      description="Your Labkey Admin with a Duo administrative account should have generated this key."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="integrationKey"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={false}
+      caption="Secret Key"
+      defaultValue=""
+      description="Your Labkey Admin with a Duo administrative account should have generated this key."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="1"
+      name="secretKey"
+      required={true}
+      type="input"
+      value=""
+    />
+    <TextInput
+      canEdit={false}
+      caption="API Hostname"
+      defaultValue=""
+      description="Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="2"
+      name="apiHostname"
+      required={true}
+      type="input"
+      value=""
+    />
+    <Option
+      canEdit={false}
+      caption="User Identifier"
+      defaultValue="UserID"
+      description="Choose the way LabKey will match with Duo accounts."
+      handleChange={[Function]}
+      key="3"
+      name="userIdentifier"
+      options={
+        Object {
+          "FullEmailAddress": "Full Email Address",
+          "UserID": "User ID",
+          "UserName": "User Name",
+        }
+      }
+      required={true}
+      type="options"
+      value="UserID"
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor"
+          target="_blank"
+        >
+          More about Duo 2 Factor authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> Generic Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={false}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure undefined
+      <FontAwesomeIcon
+        border={false}
+        className="modal__close-icon"
+        fixedWidth={false}
+        flip={null}
+        icon={
+          Object {
+            "icon": Array [
+              352,
+              512,
+              Array [],
+              "f00d",
+              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
+            ],
+            "iconName": "times",
+            "prefix": "fas",
+          }
+        }
+        inverse={false}
+        listItem={false}
+        mask={null}
+        onClick={[Function]}
+        pull={null}
+        pulse={false}
+        rotation={null}
+        size="sm"
+        spin={false}
+        swapOpacity={false}
+        symbol={false}
+        title=""
+        transform={null}
+      />
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      name="description"
+      required={true}
+      type="text"
+    />
+    <TextInput
+      canEdit={true}
+      caption="CAS Server URL"
+      defaultValue=""
+      description="Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas."
+      emptyRequiredFields={null}
+      handleChange={[Function]}
+      key="0"
+      name="serverUrl"
+      required={true}
+      type="input"
+      value=""
+    />
+    <CheckBoxInput
+      canEdit={true}
+      caption="Default to CAS Login"
+      checkCheckBox={[Function]}
+      defaultValue={false}
+      description="Redirects the login page directly to the CAS login instead of requiring the user click the CAS option."
+      key="1"
+      name="autoRedirect"
+      required={false}
+      type="checkbox"
+      value={false}
+    />
+    <SSOFields
+      canEdit={true}
+      handleDeleteLogo={[Function]}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__test-button"
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          target="_blank"
+        >
+          More about undefined authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+      >
+        Cancel
       </Button>
     </div>
   </ModalBody>
@@ -1077,7 +1707,7 @@ exports[`<DynamicConfigurationModal/> SAML Modal 1`] = `
       key="8"
       type="fixedHtml"
     />
-    <SSOFields
+    <Component
       canEdit={true}
       handleDeleteLogo={[Function]}
       onFileChange={[Function]}
@@ -1360,7 +1990,7 @@ exports[`<DynamicConfigurationModal/> SAML Modal View-only 1`] = `
       key="8"
       type="fixedHtml"
     />
-    <SSOFields
+    <Component
       canEdit={false}
       handleDeleteLogo={[Function]}
       onFileChange={[Function]}

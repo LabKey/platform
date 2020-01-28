@@ -45,17 +45,17 @@ exports[`<AuthRow/> Editable 1`] = `
           <div
             className="description auth-row__field col-xs-4"
           >
-            My Configuration
+            My Configuration Name
           </div>
           <div
             className="details auth-row__field col-xs-4"
           >
-            some url
+            Some Url
           </div>
           <div
             className="provider auth-row__field col-xs-3"
           >
-            a provider
+            CAS
           </div>
         </div>
         <div
@@ -193,17 +193,17 @@ exports[`<AuthRow/> Non-draggable 1`] = `
           <div
             className="description auth-row__field col-xs-4"
           >
-            My Configuration
+            My Configuration Name
           </div>
           <div
             className="details auth-row__field col-xs-4"
           >
-            some url
+            Some Url
           </div>
           <div
             className="provider auth-row__field col-xs-3"
           >
-            a provider
+            CAS
           </div>
         </div>
         <div
@@ -341,17 +341,17 @@ exports[`<AuthRow/> View-only 1`] = `
           <div
             className="description auth-row__field col-xs-4"
           >
-            My Configuration
+            My Configuration Name
           </div>
           <div
             className="details auth-row__field col-xs-4"
           >
-            some url
+            Some Url
           </div>
           <div
             className="provider auth-row__field col-xs-3"
           >
-            a provider
+            CAS
           </div>
         </div>
         <div

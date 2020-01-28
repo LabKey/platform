@@ -20,7 +20,7 @@ export default class DragAndDropPane extends PureComponent<Props> {
     }
 
     render() {
-        const { primaryProviders, secondaryProviders } = this.props;
+        const { primaryProviders, secondaryProviders, stateSection } = this.props;
         const { onDragEnd, ...otherActionFunctions } = this.props.actionFunctions;
         const providers = primaryProviders ? primaryProviders : secondaryProviders;
 
@@ -39,7 +39,7 @@ export default class DragAndDropPane extends PureComponent<Props> {
                             canEdit={this.props.canEdit}
                             draggable={true}
                             modalType={providers && { ...providers[item.provider] }}
-                            stateSection={this.props.stateSection}
+                            stateSection={stateSection}
                         />
                     </div>
                 )}
@@ -48,7 +48,7 @@ export default class DragAndDropPane extends PureComponent<Props> {
 
         return (
             <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId={this.props.stateSection}>
+                <Droppable droppableId={stateSection}>
                     {provided => (
                         <div ref={provided.innerRef} {...provided.droppableProps}>
                             {DragAndDropAuthRows}

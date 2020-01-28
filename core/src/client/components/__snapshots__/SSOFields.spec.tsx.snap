@@ -24,7 +24,7 @@ Array [
         </div>
         <svg
           aria-hidden="true"
-          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--header-logo sso-fields__delete-img"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--header-logo sso-fields__delete-img clickable"
           color="#d9534f"
           data-icon="times-circle"
           data-prefix="fas"
@@ -119,7 +119,7 @@ Array [
         </div>
         <svg
           aria-hidden="true"
-          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--page-logo sso-fields__delete-img"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--page-logo sso-fields__delete-img clickable"
           color="#d9534f"
           data-icon="times-circle"
           data-prefix="fas"
@@ -216,7 +216,7 @@ Array [
         </div>
         <svg
           aria-hidden="true"
-          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--header-logo sso-fields__delete-img"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--header-logo sso-fields__delete-img clickable"
           color="#d9534f"
           data-icon="times-circle"
           data-prefix="fas"
@@ -311,7 +311,7 @@ Array [
         </div>
         <svg
           aria-hidden="true"
-          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--page-logo sso-fields__delete-img"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--page-logo sso-fields__delete-img clickable"
           color="#d9534f"
           data-icon="times-circle"
           data-prefix="fas"

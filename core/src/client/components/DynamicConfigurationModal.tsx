@@ -9,8 +9,7 @@ import { LabelHelpTip, FileAttachmentForm } from '@labkey/components';
 import { ActionURL, Ajax } from '@labkey/api';
 
 import FACheckBox from './FACheckBox';
-
-import SSOFields from './SSOFields';
+import { SSOFields } from './SSOFields';
 
 interface Props {
     modalType?: AuthConfigProvider;
@@ -150,16 +149,16 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
 
     onFileChange = (attachment, logoType: string) => {
         const changedFiles = this.state.changedFiles;
-        changedFiles.push(name);
+        // changedFiles.push(logoType);
 
-        this.setState(() => ({ [logoType]: attachment.first(), changedFiles }));
+        this.setState(() => ({ [logoType]: attachment.first(), changedFiles }), () => console.log(changedFiles));
     };
 
     onFileRemoval = (name: string) => {
         const changedFiles = this.state.changedFiles;
         changedFiles.push(name);
 
-        this.setState(() => ({ [name]: '', changedFiles }));
+        this.setState(() => ({ [name]: '', changedFiles }), () => {console.log(changedFiles)});
     };
 
     dynamicallyCreateFields = (fields: AuthConfigField[], expandableOpen) => {
@@ -248,7 +247,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
 
     render() {
         const { modalType, closeModal, canEdit } = this.props;
-        console.log(this.props);
         const queryString = {
             server: this.state.servers,
             principal: this.state.principalTemplate,
