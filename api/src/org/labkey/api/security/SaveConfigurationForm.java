@@ -1,12 +1,8 @@
 package org.labkey.api.security;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.annotations.RemoveIn20_1;
 
-// TODO: Going forward, no need to extend ReturnUrlForm
-public abstract class SaveConfigurationForm<AC extends AuthenticationConfiguration> extends ReturnUrlForm
+public abstract class SaveConfigurationForm<AC extends AuthenticationConfiguration>
 {
     private Integer _configuration;
     private String _description;
@@ -30,13 +26,6 @@ public abstract class SaveConfigurationForm<AC extends AuthenticationConfigurati
     public void setConfiguration(Integer configuration)
     {
         _configuration = configuration;
-    }
-
-    @RemoveIn20_1 // Remove once FormViewAction configuration pages are gone
-    public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
-    {
-        _description = authenticationConfiguration.getDescription();
-        _enabled = authenticationConfiguration.isEnabled();
     }
 
     public abstract String getProvider();

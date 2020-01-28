@@ -1,6 +1,5 @@
 package org.labkey.api.security;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
@@ -100,14 +99,6 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
     {
         private boolean _autoRedirect = false;
         private String _deletedLogos;  // If non-null, this is a comma-separated list of logo names
-
-        @Override
-        public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
-        {
-            super.setAuthenticationConfiguration(authenticationConfiguration);
-
-            _autoRedirect = authenticationConfiguration.isAutoRedirect();
-        }
 
         @SuppressWarnings("unused") // Accessed via reflection in Table.insert()/update()
         public boolean isAutoRedirect()
