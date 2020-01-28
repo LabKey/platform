@@ -93,14 +93,26 @@ public interface AuthenticationProvider
     }
 
     // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends AuthenticationConfigureForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
+    default <FORM extends AuthenticationConfigureForm, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
     {
         Map<String, String> map = getPropertyMap(categories);
 
         if (!map.isEmpty())
         {
-            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(clazz);
+            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
             FORM form = factory.fromMap(map);
+
+            // If description is provided in the startup properties file and an existing configuration for this provider
+            // matches that description then update the existing configuration. If not, create a new configuration. #39474
+            if (form.getDescription() != null)
+            {
+                AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                    .filter(ac -> ac.getDescription().equals(form.getDescription()))
+                    .map(AuthenticationConfiguration::getRowId)
+                    .findFirst()
+                    .ifPresent(form::setRowId);
+            }
+
             AuthenticationConfigureAction.saveForm(form, null);
         }
     }

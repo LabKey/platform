@@ -45,9 +45,11 @@ import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -155,6 +157,7 @@ public class ApiModule extends CodeOnlyModule
             FileUtil.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
+            JavaVersion.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
@@ -245,6 +248,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.class,
             TabLoader.TabLoaderTestCase.class,
             TempTableInClauseGenerator.TestCase.class,
+            TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WorkbookContainerType.TestCase.class

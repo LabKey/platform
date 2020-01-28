@@ -78,6 +78,12 @@ public class VcsServiceImpl implements VcsService
         }
 
         @Override
+        public void deleteFile(String file)
+        {
+            execute("git", "rm", file);
+        }
+
+        @Override
         public void moveFile(File file, File destinationDirectory)
         {
             execute("git", "mv", file.getName(), destinationDirectory.getAbsolutePath());
