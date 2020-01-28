@@ -52,6 +52,12 @@ public interface ForeignKey
     @Nullable
     TableInfo getLookupTableInfo();
 
+    @Nullable
+    default TableDescription getLookupTableDescription()
+    {
+        return getLookupTableInfo();
+    }
+
     /**
      * Return an URL expression for what the hyperlink for this column should be.  The hyperlink must be able to be
      * constructed knowing only the foreign key value, as other columns may not be available in the ResultSet.

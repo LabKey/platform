@@ -7925,12 +7925,11 @@ public class AdminController extends SpringActionController
             {
                 if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
-                    String previousRelease = ModuleContext.formatVersion(Constants.getPreviousReleaseVersion());
-                    String nextRelease = ModuleContext.formatVersion(Constants.getNextReleaseVersion());
+                    String currentYear = ModuleContext.formatVersion(20.000);
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
-                    url.addParameter("ignore", "0.00," + previousRelease + "," + nextRelease);
+                    url.addParameter("ignore", "0.00," + currentYear);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + previousRelease + ", " + nextRelease + " and unmanaged modules", url);
+                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + currentYear + " and unmanaged modules", url);
                 }
                 else
                 {

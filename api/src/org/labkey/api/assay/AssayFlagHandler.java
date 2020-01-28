@@ -18,9 +18,10 @@ package org.labkey.api.assay;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.query.ExpQCFlagTable;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.security.User;
 
 import java.util.HashMap;
@@ -72,9 +73,15 @@ public interface AssayFlagHandler
             return null;
     }
 
-    BaseColumnInfo createFlagColumn(ExpProtocol protocol, TableInfo parent, String schemaName, boolean editable);
+    BaseColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable);
 
-    BaseColumnInfo createQCEnabledColumn(ExpProtocol protocol, TableInfo parent, String schemaName);
+    BaseColumnInfo createQCEnabledColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName);
+
+    /**
+     * Give assay flag handlers an opportunity to change the assay query schema QCFlags table when it is created,
+     * e.g., adding a query foreign to the wrapped exp.assayqcflag.IntKey1 column.
+     */
+    void fixupQCFlagTable(ExpQCFlagTable table, AssayProvider provider, ExpProtocol assayProtocol);
 
     /**
      * Saves a ExpQCFlag instance for the specified run.

@@ -16,7 +16,6 @@
 package org.labkey.core.login;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.PasswordExpiration;
@@ -62,16 +61,6 @@ public class DbLoginManager
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
     public enum Key { Strength, Expiration }
-
-    @RemoveIn20_1
-    public static void saveProperties(LoginController.Config config)
-    {
-        PropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
-        map.clear();
-        map.put(Key.Strength.toString(), config.getStrength());
-        map.put(Key.Expiration.toString(), config.getExpiration());
-        map.save();
-    }
 
     public static void saveProperties(SaveDbLoginPropertiesForm form)
     {

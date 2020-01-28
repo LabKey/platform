@@ -507,7 +507,7 @@ public class DavController extends SpringActionController
                         o.put("exception", message);
                         // if this is a multi-part post, it's probably really a background ext form, respond in an ext compatible way
                         if (!"XMLHttpRequest".equals(getRequest().getHeader("X-Requested-With")) &&
-                                "post".equals(getViewContext().getActionURL().getAction()) &&
+                                isPost() &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
                             super.setHeader("Content-Type", "text/html");

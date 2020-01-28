@@ -3716,7 +3716,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No dataset found for id: " + _datasetId);
             }
             Set<String> lsids = null;
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
