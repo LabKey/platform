@@ -41,7 +41,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -681,6 +680,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             reusableFiles.put(AssayDataCollector.PRIMARY_FILE + (reusableFiles.size() == 0 ? "" : Integer.toString(reusableFiles.size())), inputData.getFile());
         }
+    }
+
+    @Override
+    public @Nullable AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context)
+    {
+        return null;
     }
 
     @Override

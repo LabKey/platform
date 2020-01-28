@@ -105,6 +105,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
     /**
+     * Providers that support plate metadata can provide a data collector for plate specific data
+     */
+    @Nullable
+    AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context);
+
+    /**
      * @return the name of the assay provider.
      * This should not change once assay designs have been created, or they will be orphaned because they will no longer match.
      */

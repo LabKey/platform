@@ -42,6 +42,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
@@ -627,6 +628,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         if (shouldShowDataCollectorUI(newRunForm))
         {
             insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
+
+            if (_provider.getPlateMetadataDataCollector(newRunForm) != null)
+                insertView.getDataRegion().addDisplayColumn(new PlateMetadataDisplayColumn(newRunForm));
         }
 
         if (warnings)
@@ -1157,6 +1161,60 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             else
             {
                 return super.getErrors(paramName);
+            }
+        }
+    }
+
+    private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
+    {
+        private final AssayRunUploadForm _form;
+        private ColumnInfo _col;
+
+        public PlateMetadataDisplayColumn(AssayRunUploadForm form)
+        {
+            _form = form;
+            setCaption("Plate Metadata");
+            _col = new BaseColumnInfo("Plate Metadata", JdbcType.NULL);
+            ((BaseColumnInfo)_col).setInputType("file");
+        }
+
+        @Override
+        public void renderTitle(RenderContext ctx, Writer out) throws IOException
+        {
+            super.renderTitle(ctx, out);
+            out.write(" *");
+        }
+
+        public boolean isEditable()
+        {
+            return true;
+        }
+
+        public ColumnInfo getColumnInfo()
+        {
+            return _col;
+        }
+
+        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+        {
+            //HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);
+            AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
+            if (collector != null)
+            {
+                try
+                {
+/*
+                if (descriptionView != null)
+                {
+                    descriptionView.render(ctx.getRequest(), ctx.getViewContext().getResponse());
+                }
+*/
+                    collector.getView(_form).render(ctx.getRequest(), ctx.getViewContext().getResponse());
+                }
+                catch (Exception e)
+                {
+                    throw (IOException)new IOException().initCause(e);
+                }
             }
         }
     }

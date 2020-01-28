@@ -787,6 +787,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayDataType dataType = context.getProvider().getDataType();
         for (Map.Entry<String, File> entry : files.entrySet())
         {
+            if (entry.getKey().equals(AssayDataCollector.PLATE_METADATA_FILE))
+                dataType = PlateMetadataDataHandler.DATA_TYPE;
+            else
+                dataType = context.getProvider().getDataType();
+
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), dataType, context.getReRunId() == null);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(entry.getValue()))

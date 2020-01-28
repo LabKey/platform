@@ -25,6 +25,7 @@ import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssayRunType;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.PlateMetadataDataHandler;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.data.Container;
@@ -127,6 +128,7 @@ public class AssayModule extends SpringModule
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+        ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
 
         PropertyService.get().registerDomainKind(new DefaultAssayDomainKind());
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());

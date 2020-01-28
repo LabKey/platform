@@ -260,7 +260,7 @@
 
     /**
      * Enable/disable the add and remove buttons according to how many table rows are present
-     * also, check to see if the user has selected the same file more than once
+     * also, check to see if the user has selected the same file more tha n once
      */
     function toggleAddRemoveButtons()
     {

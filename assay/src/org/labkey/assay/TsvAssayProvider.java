@@ -68,6 +68,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.view.PlateMetadataDataCollector;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
@@ -137,6 +138,16 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             result.add(0, new TextAreaDataCollector());
         }
         return result;
+    }
+
+    @Override
+    public @Nullable AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context)
+    {
+        if (context.getProvider().isPlateMetadataEnabled(context.getProtocol()))
+        {
+            return new PlateMetadataDataCollector(1);
+        }
+        return null;
     }
 
     public String getName()
