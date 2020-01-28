@@ -34,7 +34,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.query.olap.BitSetQueryImpl;
-import org.labkey.query.olap.Olap4Js;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
@@ -51,7 +50,6 @@ import org.olap4j.metadata.Member;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -925,9 +923,9 @@ public class RolapTestCase extends Assert
             stmt = conn.createStatement();
             assertNotNull(stmt);
             QueryProfiler.getInstance().ensureListenerEnvironment();
-            long ms = System.currentTimeMillis();
+            //long ms = System.currentTimeMillis();
             cs = stmt.executeOlapQuery(mdx);
-            long d = System.currentTimeMillis() - ms;
+            //long d = System.currentTimeMillis() - ms;
             return oneColumnResult(cs);
         }
         catch (RuntimeException x)
@@ -978,7 +976,7 @@ public class RolapTestCase extends Assert
                 "    NON EMPTY [Assay].[Name].members ON ROWS\n" +
                 "FROM junitcube"
         );
-        System.out.println(cs); System.out.flush();
+//        System.out.println(cs); System.out.flush();
         assertEquals( 4, cs.size());
         assertEquals(48, (int)cs.get("[Assay].[Flow Cytometry]"));
         assertEquals( 8, (int)cs.get("[Assay].[Gene Expression]"));
