@@ -784,7 +784,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         Map<String, File> files = context.getUploadedData();
 
-        AssayDataType dataType = context.getProvider().getDataType();
+        AssayDataType dataType;
         for (Map.Entry<String, File> entry : files.entrySet())
         {
             if (entry.getKey().equals(AssayDataCollector.PLATE_METADATA_FILE))
