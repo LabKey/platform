@@ -11,14 +11,16 @@
   },
   "betterScripts": {
     "build:watch": {
-      "command": "webpack-dev-server --config webpack/dev.config.js",
+      "command": "webpack-dev-server --config ../webpack/dev.config.js",
       "env": {
+        "LK_MODULE": "experiment",
         "NODE_ENV": "development"
       }
     },
     "build:prod": {
-      "command": "webpack --config webpack/prod.config.js --progress --profile --colors",
+      "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
       "env": {
+        "LK_MODULE": "experiment",
         "NODE_ENV": "production"
       }
     },
@@ -27,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.13.0"
+    "@labkey/components": "0.21.0"
   },
   "devDependencies": {
     "@babel/core": "7.4.5",
