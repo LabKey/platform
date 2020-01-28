@@ -11,14 +11,16 @@
   },
   "betterScripts": {
     "build:watch": {
-      "command": "webpack-dev-server --config webpack/dev.config.js",
+      "command": "webpack-dev-server --config ../webpack/dev.config.js",
       "env": {
+        "LK_MODULE": "assay",
         "NODE_ENV": "development"
       }
     },
     "build:prod": {
-      "command": "webpack --config webpack/prod.config.js --progress --profile --colors",
+      "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
       "env": {
+        "LK_MODULE": "assay",
         "NODE_ENV": "production"
       }
     },
