@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationForm<AC>, AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationAction<F, AC>
+public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationForm, AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationAction<F, AC>
 {
     @Override
     public void save(F form, @Nullable User user, BindException errors)
@@ -95,7 +95,7 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
         return AuthenticationManager.getSsoConfigurationMap(configuration);
     }
 
-    public static abstract class SsoSaveConfigurationForm<AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationForm<AC>
+    public static abstract class SsoSaveConfigurationForm extends SaveConfigurationForm
     {
         private boolean _autoRedirect = false;
         private String _deletedLogos;  // If non-null, this is a comma-separated list of logo names

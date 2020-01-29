@@ -2,7 +2,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 
-public abstract class SaveConfigurationForm<AC extends AuthenticationConfiguration>
+public abstract class SaveConfigurationForm
 {
     private Integer _configuration;
     private String _description;

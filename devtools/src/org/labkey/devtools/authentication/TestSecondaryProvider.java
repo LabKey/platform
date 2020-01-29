@@ -67,7 +67,7 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider<Te
     }
 
     @Override
-    public @Nullable SaveConfigurationForm<TestSecondaryConfiguration> getFormFromOldConfiguration(boolean active)
+    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
     {
         return active ? new TestSecondarySaveConfigurationForm() : null;
     }
