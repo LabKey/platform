@@ -7,9 +7,9 @@ protocols and data.
 
 ## Developing app pages
 
-This module is setup to use `webpack` to build client application pages, mostly for developing with `React`. 
+This module is setup to use `webpack` to build client application pages, mostly for developing with `React` 
 components. The artifacts will be generated and placed into the standard LabKey view locations to make 
-the pages available to the server throughthe `experiment` controller. The app HTML and view.xml files 
+the pages available to the server through the `experiment` controller. The app HTML and view.xml files 
 will get created in the `experiment/resources/views` directory and the JS/CSS artifacts will get 
 created in the `experiment/resources/web/experiment/gen` directory.
 
@@ -34,7 +34,7 @@ To add a new application page to the generated artifacts:
 1. Create a new dir for your client code and React components at `experiment/src/client/<APP PAGE NAME>`.
 1. Add a new entry point definition to the `experiment/webpack/entryPoints.js` file. For that new entry 
 point, set the `name=<action name for the app page>`, `title=<page title>`, `permission=<view.xml perm class>`,
-`path=<app code path>`, `chunks=<names of js generated files to include in view.xml dependencies`.
+and `path=<app code path>`.
 1. In your `src/client/<APP PAGE NAME>` dir, create an `app.tsx` file and a `dev.tsx` file based on
 an example from one of the existing app pages.
 1. Add your main app `React component` and any other components, models, actions, etc.
