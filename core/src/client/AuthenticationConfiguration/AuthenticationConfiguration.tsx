@@ -141,7 +141,6 @@ export class App extends PureComponent<{}, State> {
                 alert('Error: ' + error);
             },
             success: function() {
-                // window.location.href = ActionURL.buildURL('admin', 'showAdmin');
                 window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
             },
         });
@@ -205,24 +204,8 @@ export class App extends PureComponent<{}, State> {
     };
 
     updateAuthRowsAfterSave = (config: string, stateSection: string): void => {
-        // const configObj = JSON.parse(config);
-        // const configId = configObj.configuration.configuration;
-
         const prevState = this.state[stateSection];
         const newState = addOrUpdateAnAuthConfig(config, prevState, stateSection);
-
-        // const staleAuthIndex = prevState.findIndex(element => element.configuration == configId);
-        //
-        // let newState = prevState.slice(0); // To reviewer: This avoids mutation of prevState, but is it overzealous?
-        // if (staleAuthIndex == -1) {
-        //     if (stateSection == 'formConfigurations') {
-        //         newState = [...newState.slice(0, -1), configObj.configuration, ...newState.slice(-1)];
-        //     } else {
-        //         newState.push(configObj.configuration);
-        //     }
-        // } else {
-        //     newState[staleAuthIndex] = configObj.configuration;
-        // }
 
         // Update our dirtiness information with added modal, since dirtiness should only track reordering
         const dirtinessData = this.state.dirtinessData;
