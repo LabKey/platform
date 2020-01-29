@@ -76,15 +76,15 @@
     <div id="scratch-div">
         <div class="form-item">
             <div class="form-label"><label for="name">Name:</label></div>
-            <input type="text" id="name" name="name" value="<%=bean.getName() == null ? "" : h(bean.getName())%>">
+            <input type="text" id="name" name="name" value="<%=h(bean.getName())%>">
         </div>
         <div class="form-item">
             <div class="form-label"><label for="description">Description:</label></div>
-            <input type="text" id="description" name="description" class="form-longinput" value="<%=bean.getDescription() == null ? "" : h(bean.getDescription())%>">
+            <input type="text" id="description" name="description" class="form-longinput" value="<%=h(bean.getDescription())%>">
         </div>
         <div class="form-item">
             <div class="form-label"><label for="nameExpression">Name Expression:</label></div>
-            <input type="text" id="nameExpression" name="nameExpression" class="form-longinput" value="<%=bean.getNameExpression() == null ? "" : h(bean.getNameExpression())%>">
+            <input type="text" id="nameExpression" name="nameExpression" class="form-longinput" value="<%=h(bean.getNameExpression())%>">
         </div>
         <div class="form-item">
             <div class="form-label"><label for="materialSourceId">Material Source ID:</label></div>
