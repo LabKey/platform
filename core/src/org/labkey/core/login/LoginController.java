@@ -2514,6 +2514,17 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
+    public class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
+    {
+        @Override
+        public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.deleteConfiguration(form.getConfiguration());
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
     public class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
     {
         @Override
@@ -2705,6 +2716,7 @@ public class LoginController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
+                controller.new DeleteConfigurationAction(),
                 controller.new MigrateAuthenticationConfigurationsAction(),
                 controller.new SaveDbLoginPropertiesAction(),
                 controller.new SaveSettingsAction(),
