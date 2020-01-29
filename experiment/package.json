@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.21.0-fb-domainPolishFor203.3"
+    "@labkey/components": "0.21.2-fb-domainPolishFor203.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.9.0",
