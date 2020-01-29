@@ -1,0 +1,29 @@
+{
+  "name": "platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "setup": "npm install"
+  },
+  "devDependencies": {
+    "@babel/core": "7.4.5",
+    "@babel/polyfill": "7.4.4",
+    "@babel/preset-env": "7.4.5",
+    "@babel/preset-react": "7.0.0",
+    "babel-loader": "8.0.6",
+    "css-loader": "2.1.1",
+    "file-loader": "3.0.1",
+    "html-webpack-plugin": "3.2.0",
+    "mini-css-extract-plugin": "0.7.0",
+    "node-sass": "4.12.0",
+    "postcss-loader": "3.0.0",
+    "resolve-url-loader": "3.1.0",
+    "sass-loader": "7.1.0",
+    "style-loader": "1.0.0",
+    "ts-loader": "6.0.2",
+    "typescript": "3.7.3",
+    "url-loader": "1.1.2",
+    "webpack": "4.33.0",
+    "webpack-cli": "3.3.2"
+  }
+}
