@@ -127,7 +127,7 @@ public interface AuthenticationProvider
     }
 
     // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends SaveConfigurationForm<AC>, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
+    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
     {
         Map<String, String> map = getPropertyMap(categories);
 
@@ -190,7 +190,7 @@ public interface AuthenticationProvider
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
 
-        @Nullable SaveConfigurationForm<AC> getFormFromOldConfiguration(boolean active);
+        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user)
@@ -201,7 +201,7 @@ public interface AuthenticationProvider
 
     interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SsoSaveConfigurationForm<AC> getFormFromOldConfiguration(boolean active, boolean hasLogos);
+        @Nullable SsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user) throws Throwable
@@ -214,7 +214,7 @@ public interface AuthenticationProvider
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-            SsoSaveConfigurationForm<AC> form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SsoSaveConfigurationForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
             SaveConfigurationAction.saveOldProperties(form, user);
 
             if (null != form && !logos.isEmpty())
@@ -255,7 +255,7 @@ public interface AuthenticationProvider
 
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SaveConfigurationForm<AC> getFormFromOldConfiguration(boolean active);
+        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
 
         default void migrateOldConfiguration(boolean active, User user)
         {

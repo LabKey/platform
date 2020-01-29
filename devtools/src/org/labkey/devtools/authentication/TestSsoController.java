@@ -107,7 +107,7 @@ public class TestSsoController extends SpringActionController
         }
     }
 
-    public static class TestSsoSaveConfigurationForm extends SsoSaveConfigurationForm<TestSsoConfiguration>
+    public static class TestSsoSaveConfigurationForm extends SsoSaveConfigurationForm
     {
         @Override
         public String getProvider()

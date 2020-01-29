@@ -173,7 +173,7 @@ public class TestSecondaryController extends SpringActionController
         }
     }
 
-    public static class TestSecondarySaveConfigurationForm extends SaveConfigurationForm<TestSecondaryConfiguration>
+    public static class TestSecondarySaveConfigurationForm extends SaveConfigurationForm
     {
         @Override
         public String getProvider()

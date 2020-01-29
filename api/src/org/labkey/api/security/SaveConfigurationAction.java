@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
-public abstract class SaveConfigurationAction<F extends SaveConfigurationForm<AC>, AC extends AuthenticationConfiguration<?>> extends MutatingApiAction<F>
+public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, AC extends AuthenticationConfiguration<?>> extends MutatingApiAction<F>
 {
     protected @Nullable AC _configuration = null;
 
@@ -67,7 +67,7 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm<AC
         saveForm(form, user);
     }
 
-    public static <F extends SaveConfigurationForm<?>> void saveForm(F form, @Nullable User user)
+    public static <F extends SaveConfigurationForm> void saveForm(F form, @Nullable User user)
     {
         if (null == form.getRowId())
         {
@@ -94,7 +94,7 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm<AC
     }
 
     // Remove after we no longer upgrade from 20.1
-    public static void saveOldProperties(@Nullable SaveConfigurationForm<?> form, @Nullable User user)
+    public static void saveOldProperties(@Nullable SaveConfigurationForm form, @Nullable User user)
     {
         if (null != form)
         {
