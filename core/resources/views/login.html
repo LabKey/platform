@@ -23,7 +23,7 @@
             <input type="submit" tabindex="-1" class="loginSubmitButton"/>
             <a tabindex="5" class="labkey-button primary signin-btn"><span>Sign In</span></a>
             <span class="registrationSection" hidden>
-                <a class="labkey-button" href="login-register.view?">Register</a>
+                <a class="labkey-button" id="registerButton" href="login-register.view?">Register</a>
             </span>
         </div>
 
@@ -36,3 +36,9 @@
     <div class="auth-header">Or Sign In using</div>
     <div class="otherLoginMechanismsContent"></div>
 </div>
+
+<script type="application/javascript">
+    if (LABKEY.ActionURL.getParameter('returnUrl')) {
+        document.getElementById('registerButton').href += 'returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
+    }
+</script>
