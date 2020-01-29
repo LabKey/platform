@@ -16,3 +16,4 @@ dependencies{
    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "query"), depProjectConfig: "published", depExtension: "module")
 }
 
+project.tasks.npmInstall.dependsOn(project.project(":server:modules:platform").tasks.npmInstall)
