@@ -112,7 +112,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -123,6 +122,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,6 +146,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
     private final AutoDetectParser _autoDetectParser;
+    // We track this to avoid clearing last indexed multiple times in certain cases (delete index, upgrade), see #39330
+    private final AtomicLong _countIndexedSinceClearLastIndexed = new AtomicLong(1);
 
     enum FIELD_NAME
     {
@@ -204,7 +206,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _autoDetectParser = new AutoDetectParser(config);
     }
 
-
+    /**
+     * Initializes the index, if possible. Recovers from some common failures, such as incompatible existing index formats.
+     */
     private void initializeIndex()
     {
         try
@@ -302,7 +306,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _log.error("Closing index", e);
         }
 
-        // Initialize new index and clear the last indexed
+        // Initialize new index and clear last indexed
         initializeIndex();
         clearLastIndexed();
     }
@@ -400,6 +404,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             FileUtil.deleteDir(indexDir);
 
         clearLastIndexed();
+    }
+
+    @Override
+    public void clearLastIndexed()
+    {
+        // Short circuit if nothing has been indexed since clearLastIndexed() was last called
+        if (_countIndexedSinceClearLastIndexed.get() > 0)
+        {
+            super.clearLastIndexed();
+            _countIndexedSinceClearLastIndexed.set(0);
+        }
     }
 
     // Custom property code path needs to ignore "known properties", the properties we handle by name. See #26015.
@@ -1144,6 +1159,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
     protected void deleteDocument(String id)
     {
         _indexManager.deleteDocument(id);
@@ -1173,7 +1189,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-
     private long getDocCount(Query query) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
@@ -1189,19 +1204,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    protected boolean index(String id, WebdavResource r, Document doc)
+    private boolean index(String id, WebdavResource r, Document doc)
     {
         try
         {
             _indexManager.index(r.getDocumentId(), doc);
+            _countIndexedSinceClearLastIndexed.incrementAndGet();
             return true;
         }
         catch (IndexManagerClosedException x)
         {
             // Happens when an admin switches the index configuration, e.g., setting a new path to the index files.
             // We've swapped in the new IndexManager, but the indexing thread still holds an old (closed) IndexManager.
-            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories
-            // anyway, so everything's getting reindexed anyway.
+            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories,
+            // so everything's getting reindexed anyway.
         }
         catch(Throwable e)
         {
@@ -1209,7 +1225,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return false;
-
     }
 
     @Override

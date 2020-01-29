@@ -4,8 +4,8 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 const lkModule = process.env.LK_MODULE;
-const HtmlWebpackPlugin = require('../' + lkModule + '/node_modules/html-webpack-plugin');
-const MiniCssExtractPlugin = require('../' + lkModule + '/node_modules/mini-css-extract-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const entryPoints = require('../' + lkModule + '/src/client/entryPoints');
 const constants = require('./constants');
 
