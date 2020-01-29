@@ -804,26 +804,31 @@ public class StudyManager
             ensureDatasetDefinitionDomain(user, datasetDefinition);
             _datasetHelper.update(user, datasetDefinition, pk);
 
+            QueryChangeListener.QueryPropertyChange nameChange = null;
             if (!old.getName().equals(datasetDefinition.getName()))
             {
-                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                nameChange = new QueryChangeListener.QueryPropertyChange<>(
                         QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
                         QueryChangeListener.QueryProperty.Name,
                         old.getName(),
                         datasetDefinition.getName()
                 );
-
-                QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
-                        QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
-            transaction.addCommitTask(() -> {
-                // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+            final QueryChangeListener.QueryPropertyChange change = nameChange;
+
+            transaction.addCommitTask(() ->
+            {
                 uncache(datasetDefinition);
+                if (null != change)
+                {
+                    QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
+                            QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
+                }
+                indexDataset(null, datasetDefinition);
             }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
             QueryService.get().updateLastModified();
             transaction.commit();
         }
-        indexDataset(null, datasetDefinition);
         return true;
     }
 
