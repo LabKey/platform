@@ -64,6 +64,8 @@ import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -275,7 +277,17 @@ public class ListController extends SpringActionController
             props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
             props.put("loading", "Loading...");
 
-            return new GWTView("org.labkey.list.Designer", props);
+            boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove once automated test conversion of new list designer is complete.
+            if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
+            {
+                //TODO: props above need to be represented in the new list designer
+                VBox listDesigner = new VBox();
+                listDesigner.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "listDesigner"));
+                return listDesigner;
+            }
+            else {
+                return new GWTView("org.labkey.list.Designer", props);
+            }
         }
 
         @Override
