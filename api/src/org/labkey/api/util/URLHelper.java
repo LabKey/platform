@@ -796,8 +796,9 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Enumeration<String> getParameterNames()
     {
         Hashtable<String,String> h = new Hashtable<>();
-        for (Pair<String,String> p : _parameters)
-            h.put(p.getKey(), p.getKey());
+        if (null != _parameters)
+            for (Pair<String,String> p : _parameters)
+                h.put(p.getKey(), p.getKey());
         return h.keys();
     }
 

@@ -49,7 +49,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.QueryLogging;
@@ -1147,6 +1146,8 @@ public class OlapController extends SpringActionController
             return _cube;
 
         OlapSchemaDescriptor d = getOlapSchemaDescriptor(form, errors);
+        if (null == d)
+            return null;
 
         try
         {
