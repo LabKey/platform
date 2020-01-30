@@ -6,7 +6,7 @@
 const devMode = process.env.NODE_ENV !== 'production';
 const lkModule = process.env.LK_MODULE;
 const path = require('path');
-const MiniCssExtractPlugin = require('../' + lkModule + '/node_modules/mini-css-extract-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
     context: function(dir) {
