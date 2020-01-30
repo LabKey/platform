@@ -41,7 +41,7 @@ export class App extends React.Component<any, State>
 {
 
     render() {
-        const { isLoadingModel, hasDesignListPermission, message } = this.state;
+        const { isLoadingModel, hasDesignListPermission, message } = this.state; //TODO: add model once its in labkey-ui-components
 
         if (message) {
             return <Alert>{message}</Alert>
